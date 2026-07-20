@@ -143,8 +143,8 @@ abstract class Always extends Module with SystemVerilog {
       );
 
       portTypePairs.addAll(conditional.portTypePairs.map((k, v) => MapEntry(
-            conditional.driverOrReceiverPort(k),
-            conditional.driverOrReceiverPort(v),
+            conditional.registeredPort(k),
+            conditional.registeredPort(v),
           )));
     }
   }

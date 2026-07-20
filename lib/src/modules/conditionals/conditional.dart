@@ -119,13 +119,17 @@ abstract class Conditional {
   Logic receiverOutput(Logic receiver) =>
       _assignedReceiverToOutputMap[receiver]!;
 
-  //TODO: do we like this API?
-  @protected
-  Logic driverOrReceiverPort(Logic driverOrReceiver) =>
-      _assignedDriverToInputMap[driverOrReceiver] ??
-      _assignedReceiverToOutputMap[driverOrReceiver] ??
-      (throw Exception(//TODO: exception
-          'Logic $driverOrReceiver is not a driver or receiver in this Conditional.'));
+  /// Gets the port registered for [driverOrReceiver] by the enclosing block.
+  @internal
+  Logic registeredPort(Logic driverOrReceiver) {
+    final port = _assignedDriverToInputMap[driverOrReceiver] ??
+        _assignedReceiverToOutputMap[driverOrReceiver];
+    if (port == null) {
+      throw StateError(
+          'Logic $driverOrReceiver is not registered in this Conditional.');
+    }
+    return port;
+  }
 
   /// Executes the functionality of this [Conditional] and
   /// populates [drivenSignals] with all [Logic]s that were driven

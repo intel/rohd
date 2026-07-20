@@ -123,6 +123,9 @@ class SynthModuleDefinition {
   /// The [Module] being defined.
   final Module module;
 
+  /// Whether generated identifiers may use enum types and symbolic values.
+  final bool generateEnums;
+
   /// All the assignments that are part of this definition.
   final List<SynthAssignment> assignments = [];
 
@@ -389,7 +392,7 @@ class SynthModuleDefinition {
   }
 
   /// Creates a new definition representation for this [module].
-  SynthModuleDefinition(this.module)
+  SynthModuleDefinition(this.module, {this.generateEnums = true})
       : assert(
             !(module is SystemVerilog &&
                 module.generatedDefinitionType ==
@@ -1439,14 +1442,12 @@ class SynthModuleDefinition {
   /// [Namer.instanceNameOf]. All non-constant names share a single namespace
   /// managed by the module's [Namer].
   void _pickNames() {
-    for (final signal in {
+    (<SynthLogic>{
       ...inputs,
       ...outputs,
       ...inOuts,
       ...internalSignals,
-    }.where((signal) => signal.isEnum)) {
-      _pickDefinitionEnumName(signal);
-    }
+    }).where((signal) => signal.isEnum).forEach(_pickDefinitionEnumName);
 
     // Name allocation order matters -- earlier claims receive the unsuffixed
     // name when there are collisions. Weak-name claimants are intentionally

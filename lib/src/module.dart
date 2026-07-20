@@ -342,7 +342,8 @@ abstract class Module {
 
     // set unique module instance names for submodules
     final uniquifier = Uniquifier();
-    //TODO: BUG! we must guarantee this unique name is the same one used for generation!?
+    // TODO(mkorbel1): Guarantee build and generation use the same instance
+    // names.
     for (final module in _subModules) {
       module._uniqueInstanceName = uniquifier.getUniqueName(
           initialName: Sanitizer.sanitizeSV(module.name),

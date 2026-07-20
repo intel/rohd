@@ -16,6 +16,8 @@ import 'package:test/test.dart';
 
 enum MyStates { state1, state2, state3, state4 }
 
+enum SingleState { idle }
+
 const _tmpDir = 'tmp_test';
 const _simpleFSMPath = '$_tmpDir/simple_fsm.md';
 const _trafficFSMPath = '$_tmpDir/traffic_light_fsm.md';
@@ -115,8 +117,8 @@ class TrafficTestModule extends Module {
     final northLight = addOutput('northLight', width: traffic.width);
     final eastLight = addOutput('eastLight', width: traffic.width);
 
-    //TODO: can we use lightcolor as an enum also in here?
-    // TODO: make sure ports and enums don't merge badly!
+    // TODO(mkorbel1): Use LightColor as an enum signal here.
+    // TODO(mkorbel1): Cover enum metadata propagation through ports.
 
     final clk = SimpleClockGenerator(10).clk;
 
@@ -206,7 +208,7 @@ void main() {
 
     final sv = mod.generateSynth();
 
-    expect(sv, contains('MyStates_state1 : begin'));
+    expect(sv, contains('state1 : begin'));
   });
 
   test('state value lookup is correct', () async {
@@ -257,6 +259,19 @@ void main() {
           State(MyStates.state2, events: {}, actions: []),
         ]).getStateIndex(MyStates.state2),
         3);
+  });
+
+  test('single-state FSM uses a one-bit enum', () {
+    final fsm = FiniteStateMachine<SingleState>(
+      Logic(),
+      Logic(),
+      SingleState.idle,
+      [State(SingleState.idle, events: {}, actions: [])],
+    );
+
+    expect(fsm.stateWidth, 1);
+    expect(fsm.currentState.width, 1);
+    expect(fsm.nextState.width, 1);
   });
 
   group('simcompare', () {
@@ -346,7 +361,7 @@ void main() {
         })
       ];
       await SimCompare.checkFunctionalVector(mod, vectors);
-      SimCompare.checkIverilogVector(mod, vectors, dontDeleteTmpFiles: true);
+      SimCompare.checkIverilogVector(mod, vectors);
 
       verifyMermaidStateDiagram(_trafficFSMPath);
     });

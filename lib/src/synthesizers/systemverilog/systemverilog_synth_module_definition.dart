@@ -14,7 +14,7 @@ import 'package:rohd/src/synthesizers/utilities/utilities.dart';
 /// A special [SynthModuleDefinition] for SystemVerilog modules.
 class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
   /// Creates a new [SystemVerilogSynthModuleDefinition] for the given [module].
-  SystemVerilogSynthModuleDefinition(super.module)
+  SystemVerilogSynthModuleDefinition(super.module, {super.generateEnums})
       : assert(
             !(module is SystemVerilog &&
                 module.generatedDefinitionType ==

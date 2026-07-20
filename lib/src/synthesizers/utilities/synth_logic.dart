@@ -257,7 +257,10 @@ class SynthLogic {
   /// Delegates to signal namer which handles constant value naming, priority
   /// selection, and uniquification via the module's shared namespace.
   String _findName() {
-    if (isConstant && !_constNameDisallowed && isEnum) {
+    if (isConstant &&
+        !_constNameDisallowed &&
+        isEnum &&
+        parentSynthModuleDefinition.generateEnums) {
       return enumDefinition!.enumToNameMapping[characteristicEnum!
           .mapping.entries
           .firstWhere((entry) => entry.value == _constLogic!.value)
@@ -302,17 +305,17 @@ class SynthLogic {
       return null;
     }
 
-    if (_enumAndConstMergeable(a, b)) {
-      a.adopt(b);
-      return (removed: b, kept: a);
-    } else if (a.isEnum && b.isEnum) {
-      //TODO: test this scenario
-
-      // don't merge enums if they are not mergeable
+    if (a.isEnum && b.isEnum && !_enumTypesCompatible(a, b)) {
       return null;
     }
 
-    //TODO: should enum and non-enum be mergeable?
+    if ((a.isEnum && b.isConstant) || (b.isEnum && a.isConstant)) {
+      if (!_enumAndConstMergeable(a, b)) {
+        return null;
+      }
+      a.adopt(b);
+      return (removed: b, kept: a);
+    }
 
     if (!a.mergeable && !b.mergeable) {
       return null;
@@ -335,52 +338,25 @@ class SynthLogic {
       !a._constNameDisallowed &&
       !b._constNameDisallowed;
 
-  /// Indicates whether [a] and [b] represent enum(s) and constant(s) that
-  /// can be merged.
+  /// Indicates whether two enum representations have compatible types.
+  static bool _enumTypesCompatible(SynthLogic a, SynthLogic b) {
+    assert(a.isEnum && b.isEnum, 'Both signals must represent enums.');
+    final aEnum = a.characteristicEnum!;
+    final bEnum = b.characteristicEnum!;
+    return aEnum.isEquivalentTypeTo(bEnum) &&
+        !(aEnum.reserveDefinitionName &&
+            bEnum.reserveDefinitionName &&
+            aEnum.definitionName != bEnum.definitionName);
+  }
+
+  /// Indicates whether [a] and [b] are an enum and a legal enum constant.
   static bool _enumAndConstMergeable(SynthLogic a, SynthLogic b) {
-    final enums = [a, b].where((e) => e.isEnum).toList(growable: false);
-    final constants = [a, b].where((e) => e.isConstant).toList(growable: false);
-
-    // if no enums, then this is not a reason to merge
-    if (enums.isEmpty) {
-      return false;
-    }
-
-    // if we have two enums, make sure they are compatible
-    if (enums.length == 2) {
-      if (!enums[0]
-          .characteristicEnum!
-          .isEquivalentTypeTo(enums[1].characteristicEnum!)) {
-        return false;
-      }
-
-      if (enums[0].characteristicEnum!.reserveDefinitionName &&
-          enums[1].characteristicEnum!.reserveDefinitionName &&
-          enums[0].characteristicEnum!.definitionName !=
-              enums[1].characteristicEnum!.definitionName) {
-        return false;
-      }
-
-      for (final e in enums) {
-        if (!e.mergeable) {
-          return false;
-        }
-      }
-    }
-
-    // if one is constant, then ensure the constant is legal
-    if (constants.isNotEmpty) {
-      for (final c in constants) {
-        for (final e in enums) {
-          final enumMapping = e.characteristicEnum!.mapping;
-          if (!enumMapping.values.contains(c._constLogic!.value)) {
-            return false;
-          }
-        }
-      }
-    }
-
-    return true;
+    final enumLogic = a.isEnum ? a : b;
+    final constantLogic = a.isConstant ? a : b;
+    return enumLogic.isEnum &&
+        constantLogic.isConstant &&
+        enumLogic.characteristicEnum!.mapping.values
+            .contains(constantLogic._constLogic!.value);
   }
 
   /// Merges [other] to be represented by `this` instead, and updates the
@@ -411,7 +387,18 @@ class SynthLogic {
     _constLogic ??= other._constLogic;
     _reservedLogic ??= other._reservedLogic;
     _renameableLogic ??= other._renameableLogic;
-    _characteristicEnum ??= other._characteristicEnum;
+    if (other._characteristicEnum?.reserveDefinitionName ?? false) {
+      assert(
+        _characteristicEnum == null ||
+            !_characteristicEnum!.reserveDefinitionName ||
+            _characteristicEnum!.definitionName ==
+                other._characteristicEnum!.definitionName,
+        'Cannot merge enums with conflicting reserved definition names.',
+      );
+      _characteristicEnum = other._characteristicEnum;
+    } else {
+      _characteristicEnum ??= other._characteristicEnum;
+    }
 
     // the rest, take them all
     _mergeableLogics.addAll(other._mergeableLogics);
@@ -475,8 +462,8 @@ class SynthLogic {
 
   /// Computes the name of the signal at declaration time with appropriate
   /// dimensions included.
-  String definitionName() {
-    if (isEnum) {
+  String definitionName({bool useEnumType = true}) {
+    if (isEnum && useEnumType) {
       return name;
     }
 

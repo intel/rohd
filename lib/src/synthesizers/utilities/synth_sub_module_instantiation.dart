@@ -112,16 +112,24 @@ class SynthSubModuleInstantiation {
     _inOutMapping[name] = synthLogic;
   }
 
+  /// Propagates enum type metadata across the module's paired ports.
   @internal
   void adjustTypePairs() {
+    SynthLogic mappedPort(Logic port) {
+      final mapping = inputMapping[port.name] ??
+          outputMapping[port.name] ??
+          inOutMapping[port.name];
+      if (mapping == null) {
+        throw StateError('No synthesis mapping found for port ${port.name} on '
+            '${module.name}.');
+      }
+      return mapping;
+    }
+
     for (final MapEntry(key: toUpdate, value: reference)
         in module.portTypePairs.entries) {
-      final toUpdateSynth = inputMapping[toUpdate.name] ??
-          outputMapping[toUpdate.name] ??
-          inOutMapping[toUpdate.name]!;
-      final referenceSynth = inputMapping[reference.name] ??
-          outputMapping[reference.name] ??
-          inOutMapping[reference.name]!;
+      final toUpdateSynth = mappedPort(toUpdate);
+      final referenceSynth = mappedPort(reference);
 
       if (referenceSynth.isEnum) {
         if (toUpdateSynth.isEnum &&
@@ -141,8 +149,10 @@ class SynthSubModuleInstantiation {
           ),
         );
         if (mergeResult == null) {
-          //TODO
-          throw Exception('Unmergeable types');
+          throw StateError(
+              'Cannot propagate enum type ${referenceSynth.characteristicEnum}'
+              ' from port ${reference.name} to ${toUpdate.name} on '
+              '${module.name}.');
         }
         assert(identical(mergeResult.kept, toUpdateSynth),
             'We should not be replacing the original one.');

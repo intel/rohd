@@ -677,7 +677,7 @@ class Logic {
       throw UnassignableException(this, reason: _unassignableReason);
     }
 
-    //TODO: add support for enum types
+    // TODO(mkorbel1): Support enum values on untyped Logic receivers.
 
     if (other is Logic) {
       return ConditionalAssign(this, other);

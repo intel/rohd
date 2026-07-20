@@ -17,7 +17,7 @@ import 'package:rohd/src/synthesizers/utilities/utilities.dart';
 /// Extra utilities on [SynthLogic] to help with SystemVerilog synthesis.
 extension on SynthLogic {
   /// Gets the SystemVerilog type for this signal.
-  String definitionType() => isEnum
+  String definitionType({required bool useEnumType}) => isEnum && useEnumType
       ? enumDefinition!.definitionName
       : isNet
           ? 'wire'
@@ -98,7 +98,10 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
     super.module,
     super.getInstanceTypeOfModule, {
     this.configuration = const SystemVerilogSynthesizerConfiguration(),
-  }) : _synthModuleDefinition = SystemVerilogSynthModuleDefinition(module) {
+  }) : _synthModuleDefinition = SystemVerilogSynthModuleDefinition(
+          module,
+          generateEnums: configuration.generateEnums,
+        ) {
     _portsString = _verilogPorts();
     _moduleContentsString = _verilogModuleContents(getInstanceTypeOfModule);
     _parameterString = _verilogParameters(module);
@@ -158,7 +161,7 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
           objectType,
         if (configuration.portDataType == SystemVerilogPortType.explicit)
           'logic',
-        sig.definitionName(),
+        sig.definitionName(useEnumType: false),
       ].join(' ');
 
   /// Representation of all internal net declarations in generated SV.
@@ -167,7 +170,10 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
     for (final sig in _synthModuleDefinition.internalSignals
         .where((e) => e.needsDeclaration)
         .sorted((a, b) => a.name.compareTo(b.name))) {
-      declarations.add('${sig.definitionType()} ${sig.definitionName()};');
+      declarations.add(
+        '${sig.definitionType(useEnumType: configuration.generateEnums)} '
+        '${sig.definitionName(useEnumType: configuration.generateEnums)};',
+      );
     }
     return declarations.join('\n');
   }
@@ -204,8 +210,24 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
         );
       }
 
+      var sourceExpression = '${assignment.src.name}$srcSliceString';
+
+      // Handle enum type casting for assignments where necessary.
+      if (configuration.generateEnums &&
+          assignment.dst.isEnum &&
+          (!assignment.src.isEnum ||
+              !identical(
+                assignment.src.enumDefinition,
+                assignment.dst.enumDefinition,
+              )) &&
+          assignment is! PartialSynthAssignment &&
+          assignment is! RangeSynthAssignment) {
+        final enumType = assignment.dst.enumDefinition!.definitionName;
+        sourceExpression = "$enumType'($sourceExpression)";
+      }
+
       assignmentLines.add('assign ${assignment.dst.name}$dstSliceString'
-          ' = ${assignment.src.name}$srcSliceString;');
+          ' = $sourceExpression;');
     }
     return assignmentLines.join('\n');
   }
@@ -231,7 +253,8 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
   }
 
   /// Internal `typedef` definitions for this module.
-  String _verilogTypedefs() => _enumTypeDefs();
+  String _verilogTypedefs() =>
+      configuration.generateEnums ? _enumTypeDefs() : '';
 
   String _enumTypeDefs() => _synthModuleDefinition.enumDefinitions
       .map((e) => e.toSystemVerilogTypedef())
@@ -262,8 +285,7 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
         return null;
       }
 
-      //TODO: throw error if there are multiple definitionParameters with the
-      // same name
+      // TODO(mkorbel1): Reject duplicate definition parameter names.
 
       return [
         '#(',

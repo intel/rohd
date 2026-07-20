@@ -95,6 +95,7 @@ class FiniteStateMachine<StateIdentifier extends Enum> {
   /// If `true`, the [reset] signal is asynchronous.
   final bool asyncReset;
 
+  /// Creates a state signal using this machine's state-to-index encoding.
   LogicEnum<StateIdentifier> stateEnum({String? name}) =>
       LogicEnum<StateIdentifier>.withMapping(stateIndexLookup, name: name);
 
@@ -124,7 +125,7 @@ class FiniteStateMachine<StateIdentifier extends Enum> {
     this.asyncReset = false,
     List<Conditional> setupActions = const [],
   })  : setupActions = List.unmodifiable(setupActions),
-        stateWidth = _logBase(_states.length, 2) {
+        stateWidth = max(1, _logBase(_states.length, 2)) {
     _validate();
 
     var stateCounter = 0;

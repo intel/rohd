@@ -1,21 +1,18 @@
+// TODO(mkorbel1): Add file header(s).
+
 part of 'signals.dart';
 
-// TODO: what if you assign between LogicEnums of the same T, but different mappings?
-//  - by default, throw an exception if assignment between enums of different mappings?
-// TODO: should we support enum ports? then where does the typedef live?
-
-//TODO: do we need to support arrays of enums?
-
-//TODO: how do you define a constant version of an enum?
-
+/// A hardware signal constrained to values from a Dart enum [T].
+///
+/// Each enum value has a unique bit-vector encoding in [mapping]. Values not
+/// present in that mapping become `x` when observed in simulation.
 class LogicEnum<T extends Enum> extends LogicDef {
-  //TODO: if a `put` has an illegal value prop X
-
+  /// The hardware encoding for each supported enum value.
   late final Map<T, LogicValue> mapping;
-  // late final List<T> values;
 
-  //TODO better exceptions throughout
-
+  /// The enum value represented by the current signal [value].
+  ///
+  /// Throws a [StateError] when the current value is invalid or unmapped.
   T get valueEnum => mapping.entries
       .firstWhere((entry) => entry.value == value,
           orElse: () => throw StateError(
@@ -35,19 +32,15 @@ class LogicEnum<T extends Enum> extends LogicDef {
     // check that any `int` or `BigInt` mappings actually ended up matching
     for (final MapEntry(key: key, value: computedValue)
         in computedMapping.entries) {
-      if (mapping[key] is int) {
-        if (computedValue.toInt() != mapping[key]) {
+      final originalValue = mapping[key];
+      if (originalValue is int || originalValue is BigInt) {
+        final originalBigInt = originalValue is int
+            ? BigInt.from(originalValue)
+            : originalValue as BigInt;
+        if (computedValue.toBigInt() != originalBigInt) {
           throw ArgumentError(
-              'Mapping value for $key is not equal to the original int value.'
-              ' Computed: $computedValue, Original: ${mapping[key]}');
-        }
-      }
-
-      if (mapping[key] is BigInt) {
-        if (computedValue.toBigInt() != mapping[key]) {
-          throw ArgumentError(
-              'Mapping value for $key is not equal to the original BigInt value.'
-              ' Computed: $computedValue, Original: ${mapping[key]}');
+              'Mapping value for $key cannot be represented at width $width.'
+              ' Computed: $computedValue, Original: $originalValue');
         }
       }
     }
@@ -66,11 +59,33 @@ class LogicEnum<T extends Enum> extends LogicDef {
     var width = 1;
 
     if (mapping != null) {
-      width = LogicValue.ofInt(mapping.length, 32).clog2().toInt();
+      if (mapping.isEmpty) {
+        throw ArgumentError.value(mapping, 'mapping', 'Must not be empty.');
+      }
+
+      if (mapping.length > 1) {
+        width = LogicValue.ofInt(mapping.length, 32).clog2().toInt();
+      }
 
       if (mapping.values.toSet().length != mapping.values.length) {
         throw ArgumentError(
             'Mapping values must be unique, but found duplicates: $mapping');
+      }
+
+      for (final value in mapping.values.whereType<int>()) {
+        if (value < 0) {
+          throw ArgumentError.value(
+              value, 'mapping', 'Negative encodings are not supported.');
+        }
+        width = max(width, max(1, value.bitLength));
+      }
+
+      for (final value in mapping.values.whereType<BigInt>()) {
+        if (value.isNegative) {
+          throw ArgumentError.value(
+              value, 'mapping', 'Negative encodings are not supported.');
+        }
+        width = max(width, max(1, value.bitLength));
       }
 
       for (final value in [
@@ -98,10 +113,27 @@ class LogicEnum<T extends Enum> extends LogicDef {
     return width;
   }
 
-  /// TODO
+  /// Creates a signal with sequential encodings matching [values] order.
+  LogicEnum(List<T> values,
+      {int? width,
+      String? name,
+      Naming? naming,
+      String? definitionName,
+      bool reserveDefinitionName = false})
+      : this.withMapping(
+            Map.fromEntries(
+                values.mapIndexed((index, value) => MapEntry(value, index))),
+            width: width,
+            name: name,
+            naming: naming,
+            definitionName: definitionName,
+            reserveDefinitionName: reserveDefinitionName);
+
+  /// Creates a signal using the explicit hardware encodings in [mapping].
   ///
-  /// If [reserveDefinitionName] is true, then the enum names will be reserved
-  /// as well.
+  /// The width is inferred from the member count and encoding values unless
+  /// [width] is provided. If [reserveDefinitionName] is `true`, generated type
+  /// and member names cannot be uniquified around collisions.
   LogicEnum.withMapping(
     Map<T, dynamic> mapping, {
     int? width,
@@ -111,9 +143,7 @@ class LogicEnum<T extends Enum> extends LogicDef {
     super.reserveDefinitionName,
   }) : super(
             width: _computeWidth(requestedWidth: width, mapping: mapping),
-            definitionName: definitionName ??
-                Naming.validatedName(T.toString(),
-                    reserveName: reserveDefinitionName)) {
+            definitionName: definitionName ?? T.toString()) {
     this.mapping =
         Map.unmodifiable(_computeMapping(mapping: mapping, width: this.width));
 
@@ -131,74 +161,100 @@ class LogicEnum<T extends Enum> extends LogicDef {
     });
   }
 
-  LogicEnum(List<T> values,
-      {int? width,
-      String? name,
-      Naming? naming,
-      String? definitionName,
-      bool reserveDefinitionName = false})
-      //TODO: add an optional function arg to remap values
-      : this.withMapping(
-            Map.fromEntries(
-                values.mapIndexed((index, value) => MapEntry(value, index))),
-            width: width,
-            name: name,
-            naming: naming,
-            definitionName: definitionName,
-            reserveDefinitionName: reserveDefinitionName);
-
-  // TODO: do we really need to track this isConst?
-  bool _isConst = false;
-  bool get isConst => _isConst;
-
   /// Drives this [LogicEnum] with a constant value matching the enum [value].
   void getsEnum(T value) {
     if (!mapping.containsKey(value)) {
-      //TODO exception
-      throw Exception('Value $value is not mapped in $mapping for enum $T.');
+      throw ArgumentError.value(
+          value, 'value', 'Not present in the mapping for $T.');
     }
     gets(Const(mapping[value]));
   }
 
+  /// Connects this signal to a compatible enum, legal constant, or raw logic.
   @override
   void gets(Logic other) {
+    if (other is LogicEnum && !_canAcceptValuesFrom(other)) {
+      throw ArgumentError.value(
+          other, 'other', 'Enum values must be representable in this mapping.');
+    }
+
     if (other is Const) {
       if (!mapping.containsValue(other.value)) {
-        throw Exception(
-            'Value ${other.value} is not mapped in $mapping for enum $T.');
+        throw ArgumentError.value(
+            other.value, 'other', 'Not present in the mapping for $T.');
       }
-
-      _isConst = true;
     }
 
     super.gets(other);
   }
 
-  /// Conditional assignment operator, with added support for [T] enums.
+  /// Creates a conditional assignment from an enum, legal constant, or signal.
   @override
   Conditional operator <(dynamic other) {
     if (_unassignable) {
       throw UnassignableException(this, reason: _unassignableReason);
     }
 
-    //TODO: test this!
-
     if (other is T) {
       return super < (clone()..getsEnum(other));
-    } else {
+    } else if (other is LogicEnum) {
+      if (!_canAcceptValuesFrom(other)) {
+        throw ArgumentError.value(other, 'other',
+            'Enum values must be representable in this mapping.');
+      }
+      if (!isEquivalentTypeTo(other)) {
+        // here we build a bridge to convert the other enum to a raw logic
+        // signal that this enum can accept
+        final rawBridge = Logic(
+          name: '${other.name}_raw',
+          width: width,
+          naming: Naming.renameable,
+        )..gets(other);
+        return super < (clone()..gets(rawBridge));
+      }
       return super < other;
+    } else if (other is Logic) {
+      return super < other;
+    } else if (other is Enum) {
+      throw ArgumentError.value(other, 'other', 'Must be a value of $T.');
+    } else {
+      final constant = Const(other, width: width);
+      if (!mapping.containsValue(constant.value)) {
+        throw ArgumentError.value(
+            other, 'other', 'Not present in the mapping for $T.');
+      }
+      return super < constant;
     }
   }
 
+  /// Injects either a [T] value or a standard logic value into this signal.
+  @override
+  void inject(dynamic val, {bool fill = false}) {
+    if (val is T) {
+      if (fill) {
+        throw ArgumentError.value(
+            fill, 'fill', 'Enum values cannot be used as a fill pattern.');
+      }
+      if (!mapping.containsKey(val)) {
+        throw ArgumentError.value(val, 'val', 'Not present in the mapping.');
+      }
+      super.inject(mapping[val]);
+    } else {
+      super.inject(val, fill: fill);
+    }
+  }
+
+  /// Updates the signal value, accepting either [T] or standard logic values.
   @override
   void put(dynamic val, {bool fill = false}) {
     if (val is T) {
       if (fill) {
-        throw Exception(); //TODO
+        throw ArgumentError.value(
+            fill, 'fill', 'Enum values cannot be used as a fill pattern.');
       }
 
       if (!mapping.containsKey(val)) {
-        throw Exception('Value $val is not mapped in $mapping.');
+        throw ArgumentError.value(val, 'val', 'Not present in the mapping.');
       }
 
       // ignore: unnecessary_null_checks
@@ -208,6 +264,7 @@ class LogicEnum<T extends Enum> extends LogicDef {
     }
   }
 
+  /// Whether [other] has the same enum type and hardware encoding.
   bool isEquivalentTypeTo(Logic other) {
     if (other is! LogicEnum<T>) {
       return false;
@@ -225,12 +282,25 @@ class LogicEnum<T extends Enum> extends LogicDef {
     return true;
   }
 
+  /// Whether every enum value from [other] is representable by this signal.
+  bool _canAcceptValuesFrom(LogicEnum other) =>
+      other is LogicEnum<T> &&
+      width == other.width &&
+      other.mapping.entries.every((entry) => mapping[entry.key] == entry.value);
+
+  /// Creates another enum signal with the same mapping and definition policy.
   @override
-  LogicEnum<T> clone({String? name}) => LogicEnum<T>.withMapping(mapping,
-      width: width,
-      name: name ?? this.name,
-      naming:
-          naming, //TODO: use same mechanism as Logic for naming determination
-      definitionName: definitionName,
-      reserveDefinitionName: reserveDefinitionName);
+  LogicEnum<T> clone({String? name}) => LogicEnum<T>.withMapping(
+        mapping,
+        width: width,
+        name: name ?? this.name,
+        naming: Naming.chooseCloneNaming(
+          originalName: this.name,
+          newName: name,
+          originalNaming: naming,
+          newNaming: null,
+        ),
+        definitionName: definitionName,
+        reserveDefinitionName: reserveDefinitionName,
+      );
 }

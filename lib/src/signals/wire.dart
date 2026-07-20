@@ -253,8 +253,10 @@ class _Wire {
     _updateValue(newValue, signalName: signalName);
   }
 
-  //TODO docs
+  /// Value transformations applied in registration order before an update.
   final List<_LogicValueConstraint> _valueConstraints = [];
+
+  /// Adds a transformation that constrains every value written to this wire.
   void _constrainValue(_LogicValueConstraint constraint) {
     _valueConstraints.add(constraint);
   }
@@ -277,5 +279,5 @@ class _Wire {
   String toString() => 'wire $hashCode';
 }
 
-//TODO docs
+/// Transforms a proposed wire value into the value that may be stored.
 typedef _LogicValueConstraint = LogicValue Function(LogicValue origValue);

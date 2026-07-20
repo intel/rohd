@@ -1,20 +1,22 @@
+//TODO: file header
+
 part of 'signals.dart';
 
 @internal
 sealed class LogicDef extends Logic {
   final bool reserveDefinitionName;
 
-  // TODO: test naming conflicts in generated RTL
-  String get definitionName =>
-      Sanitizer.sanitizeSV(_definitionName ?? runtimeType.toString());
-  final String? _definitionName;
+  String get definitionName => _definitionName;
+  final String _definitionName;
 
   LogicDef({
+    required String definitionName,
     super.width,
     super.name,
     super.naming,
-    String? definitionName,
     this.reserveDefinitionName = false,
-  }) : _definitionName = Naming.validatedName(definitionName,
-            reserveName: reserveDefinitionName);
+  }) : _definitionName = Sanitizer.sanitizeSV(Naming.validatedName(
+          definitionName,
+          reserveName: reserveDefinitionName,
+        )!);
 }

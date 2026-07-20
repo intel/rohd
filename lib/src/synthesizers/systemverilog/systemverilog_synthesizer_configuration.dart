@@ -18,6 +18,9 @@ enum SystemVerilogPortType {
 
 /// Configuration for SystemVerilog synthesis.
 class SystemVerilogSynthesizerConfiguration {
+  /// Whether SystemVerilog enum types and symbolic values are generated.
+  final bool generateEnums;
+
   /// Whether port object types, such as `wire` and `var`, are explicit.
   final SystemVerilogPortType portObjectType;
 
@@ -26,6 +29,7 @@ class SystemVerilogSynthesizerConfiguration {
 
   /// Creates a new configuration for SystemVerilog synthesis.
   const SystemVerilogSynthesizerConfiguration({
+    this.generateEnums = true,
     this.portObjectType = SystemVerilogPortType.explicit,
     this.portDataType = SystemVerilogPortType.explicit,
   });
