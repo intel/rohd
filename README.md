@@ -9,7 +9,6 @@
 [![Chat](https://img.shields.io/discord/1001179329411166267?label=Chat)](https://discord.gg/jubxF84yGw)
 [![License](https://img.shields.io/badge/License-BSD--3-blue)](https://github.com/intel/rohd/blob/main/LICENSE)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](https://github.com/intel/rohd/blob/main/CODE_OF_CONDUCT.md)
-[![Coverage](https://raw.githubusercontent.com/intel/rohd/refs/heads/badges/coverage/main.svg)](https://github.com/intel/rohd/blob/main/.github/workflows/coverage.yml)
 
 ROHD (pronounced like "road") is a framework for describing and verifying hardware in the Dart programming language.
 
@@ -45,7 +44,7 @@ You can also open this repository in a GitHub Codespace to run the example in yo
 - **Simple and fast build**, free of complex build systems and EDA vendor tools
 - Can use the excellent pub.dev **package manager** and all the packages it has to offer
 - Built-in event-based **fast simulator** with **4-value** (0, 1, X, and Z) support and a **waveform dumper** to .vcd file format
-- Conversion of modules to equivalent, human-readable, structurally similar **SystemVerilog** for integration or downstream tool consumption
+- Conversion of modules to equivalent, human-readable, structurally similar **SystemVerilog** and **SystemC** for integration or downstream tool consumption
 - **Run-time dynamic** module port definitions (numbers, names, widths, etc.) and internal module logic, including recursive module contents
 - Leverage the [ROHD Hardware Component Library (ROHD-HCL)](https://github.com/intel/rohd-hcl) with reusable and configurable design and verification components.
 - Simple, free, **open source tool stack** without any headaches from library dependencies, file ordering, elaboration/analysis options, +defines, etc.
@@ -69,5 +68,6 @@ One of ROHD's goals is to help grow an open-source community around reusable har
 ROHD is under active development.  If you're interested in contributing, have feedback or a question, or found a bug, please see [CONTRIBUTING.md](https://github.com/intel/rohd/blob/main/CONTRIBUTING.md).
 
 ----------------
+
 Copyright (C) 2021-2026 Intel Corporation  
 SPDX-License-Identifier: BSD-3-Clause

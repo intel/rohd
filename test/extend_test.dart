@@ -52,6 +52,7 @@ void main() {
         await SimCompare.checkFunctionalVector(mod, vectors);
         final simResult = SimCompare.iverilogVector(mod, vectors);
         expect(simResult, equals(true));
+        SimCompare.checkSystemCVector(mod, vectors);
       }
 
       test('zero extend with same width returns same thing', () async {
@@ -117,6 +118,7 @@ void main() {
         await SimCompare.checkFunctionalVector(mod, vectors);
         final simResult = SimCompare.iverilogVector(mod, vectors);
         expect(simResult, equals(true));
+        SimCompare.checkSystemCVector(mod, vectors);
       }
 
       test('setting with bigger number throws exception', () async {
