@@ -194,16 +194,25 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
 
       var dstSliceString = '';
       var srcSliceString = '';
+      final assignsWholeDestination = assignment is! PartialSynthAssignment ||
+          (assignment.dstLowerIndex == 0 &&
+              assignment.dstUpperIndex == assignment.dst.width - 1);
+      final normalizesWholeEnumDestination =
+          assignment.dst.isEnum && assignsWholeDestination;
       if (assignment is RangeSynthAssignment) {
-        dstSliceString = rangeString(
-          assignment.dstUpperIndex,
-          assignment.dstLowerIndex,
-        );
+        if (!normalizesWholeEnumDestination) {
+          dstSliceString = rangeString(
+            assignment.dstUpperIndex,
+            assignment.dstLowerIndex,
+          );
+        }
         srcSliceString = rangeString(
           assignment.srcUpperIndex,
           assignment.srcLowerIndex,
         );
-      } else if (assignment is PartialSynthAssignment && assignment.width > 1) {
+      } else if (assignment is PartialSynthAssignment &&
+          assignment.width > 1 &&
+          !normalizesWholeEnumDestination) {
         dstSliceString = rangeString(
           assignment.dstUpperIndex,
           assignment.dstLowerIndex,
@@ -214,14 +223,13 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
 
       // Handle enum type casting for assignments where necessary.
       if (configuration.generateEnums &&
-          assignment.dst.isEnum &&
+          normalizesWholeEnumDestination &&
           (!assignment.src.isEnum ||
+              assignment is RangeSynthAssignment ||
               !identical(
                 assignment.src.enumDefinition,
                 assignment.dst.enumDefinition,
-              )) &&
-          assignment is! PartialSynthAssignment &&
-          assignment is! RangeSynthAssignment) {
+              ))) {
         final enumType = assignment.dst.enumDefinition!.definitionName;
         sourceExpression = "$enumType'($sourceExpression)";
       }
@@ -243,8 +251,10 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
 
       subModuleInstantiation as SystemVerilogSynthSubModuleInstantiation;
 
-      final instantiationVerilog =
-          subModuleInstantiation.instantiationVerilog(instanceType);
+      final instantiationVerilog = subModuleInstantiation.instantiationVerilog(
+        instanceType,
+        generateEnums: configuration.generateEnums,
+      );
       if (instantiationVerilog != null) {
         subModuleLines.add(instantiationVerilog);
       }

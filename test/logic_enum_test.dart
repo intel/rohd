@@ -168,7 +168,208 @@ class EnumSubsetConditionalAssignmentModule extends Module {
   }
 }
 
+class EnumFromSliceModule extends Module {
+  EnumFromSliceModule(Logic source) {
+    source = addInput('source', source, width: 8);
+    final slicedEnum = MyListLogicEnum(
+      name: 'slicedEnum',
+      naming: Naming.reserved,
+    )..gets(source.getRange(2, 4));
+
+    addOutput('result', width: slicedEnum.width) <= slicedEnum;
+  }
+}
+
+class EnumFromAssignedBitsModule extends Module {
+  EnumFromAssignedBitsModule(Logic source) {
+    source = addInput('source', source, width: 2);
+    final state = MyListLogicEnum(
+      name: 'state',
+      naming: Naming.reserved,
+    );
+    for (var index = 0; index < state.width; index++) {
+      state.assignSubset([source[index]], start: index);
+    }
+
+    addOutput('result', width: state.width) <= state;
+  }
+}
+
+class PartiallyAssignedEnumModule extends Module {
+  PartiallyAssignedEnumModule(Logic source) {
+    source = addInput('source', source);
+    final state = MyListLogicEnum(
+      name: 'state',
+      naming: Naming.reserved,
+    )..assignSubset([source]);
+
+    addOutput('result', width: state.width) <= state;
+  }
+}
+
+class SingleValueEnumModule extends Module {
+  SingleValueEnumModule() {
+    final state = LogicEnum(
+      SingleValueEnum.values,
+      name: 'state',
+      naming: Naming.reserved,
+      definitionName: 'SingleState',
+    )..getsEnum(SingleValueEnum.only);
+
+    addOutput('result', width: state.width) <= state;
+  }
+}
+
+class WideSparseEnumModule extends Module {
+  static final wideValue = BigInt.one << 80;
+
+  WideSparseEnumModule() {
+    final state = LogicEnum<TestEnum>.withMapping(
+      {
+        TestEnum.a: BigInt.zero,
+        TestEnum.c: wideValue,
+      },
+      name: 'state',
+      naming: Naming.reserved,
+      definitionName: 'WideSparseState',
+    )..getsEnum(TestEnum.c);
+
+    addOutput('result', width: state.width) <= state;
+  }
+}
+
+class EnumPacket extends LogicStructure {
+  final MyListLogicEnum state;
+  final Logic payload;
+
+  factory EnumPacket({String name = 'packet'}) => EnumPacket._(
+        MyListLogicEnum(name: 'state'),
+        Logic(width: 2, name: 'payload'),
+        name: name,
+      );
+
+  EnumPacket._(this.state, this.payload, {required super.name})
+      : super([state, payload]);
+
+  @override
+  EnumPacket clone({String? name}) => EnumPacket(name: name ?? this.name);
+}
+
+class EnumStructureModule extends Module {
+  EnumStructureModule(Logic source) {
+    source = addInput('source', source, width: 4);
+    final packet = EnumPacket()..gets(source);
+
+    addOutput('stateResult', width: packet.state.width) <= packet.state;
+    addOutput('packedResult', width: packet.width) <= packet.packed;
+    addOutput('rangeResult', width: packet.state.width) <=
+        packet.getRange(0, packet.state.width);
+  }
+}
+
+class EnumArrayBoundaryModule extends Module {
+  EnumArrayBoundaryModule(Logic source) {
+    source = addInput('source', source, width: 4);
+    final lanes = LogicArray(
+      [2],
+      2,
+      name: 'lanes',
+      numUnpackedDimensions: 1,
+    )..gets(source);
+    final state = MyListLogicEnum(
+      name: 'state',
+      naming: Naming.reserved,
+    )..gets(lanes.elements[1]);
+
+    addOutput('stateResult', width: state.width) <= state;
+    addOutput('packedResult', width: lanes.width) <= lanes.packed;
+  }
+}
+
+class EnumHierarchyChild extends Module {
+  Logic get result => output('result');
+
+  EnumHierarchyChild(Logic source) : super(name: 'enumHierarchyChild') {
+    source = addInput('source', source, width: 2);
+    final narrow = LogicEnum<TestEnum>.withMapping(
+      {
+        TestEnum.a: 0,
+        TestEnum.b: 1,
+      },
+      width: 2,
+      name: 'narrow',
+      naming: Naming.reserved,
+      definitionName: 'ChildNarrowEnum',
+    )..gets(source);
+
+    addOutput('result', width: narrow.width) <= narrow;
+  }
+}
+
+class EnumHierarchyModule extends Module {
+  EnumHierarchyModule(Logic source) {
+    source = addInput('source', source, width: 2);
+    final child = EnumHierarchyChild(source);
+    final broad = LogicEnum(
+      TestEnum.values,
+      width: 2,
+      name: 'broad',
+      naming: Naming.reserved,
+      definitionName: 'ParentBroadEnum',
+    )..gets(child.result);
+
+    addOutput('result', width: broad.width) <= broad;
+  }
+}
+
+class EnumIfElseModule extends Module {
+  EnumIfElseModule(Logic source, Logic select) {
+    source = addInput('source', source, width: 2);
+    select = addInput('select', select);
+    final narrow = LogicEnum<TestEnum>.withMapping(
+      {
+        TestEnum.a: 0,
+        TestEnum.b: 1,
+      },
+      width: 2,
+      name: 'narrow',
+      definitionName: 'IfNarrowEnum',
+    )..gets(source);
+    final broad = LogicEnum(
+      TestEnum.values,
+      width: 2,
+      name: 'broad',
+      definitionName: 'IfBroadEnum',
+    );
+
+    Combinational([
+      If(select, then: [broad < narrow], orElse: [broad < TestEnum.c])
+    ]);
+    addOutput('result', width: broad.width) <= broad;
+  }
+}
+
 class EmptyModule extends Module {}
+
+Future<void> checkEnumModeParity(Module module, List<Vector> vectors) async {
+  await module.build();
+  await SimCompare.checkFunctionalVector(module, vectors);
+
+  final typedSv = module.generateSynth();
+  expect(typedSv, contains('typedef enum'));
+  SimCompare.checkIverilogVector(module, vectors);
+
+  const configuration =
+      SystemVerilogSynthesizerConfiguration(generateEnums: false);
+  final untypedSv = module.generateSynth(configuration: configuration);
+  expect(untypedSv, isNot(contains('typedef enum')));
+  expect(untypedSv, isNot(matches(RegExp(r"[A-Za-z_]\w*'\("))));
+  SimCompare.checkIverilogVector(
+    module,
+    vectors,
+    synthesizerConfiguration: configuration,
+  );
+}
 
 void main() {
   tearDown(() async {
@@ -275,6 +476,101 @@ void main() {
     );
   });
 
+  test('duplicate, invalid, and negative mapping values are rejected', () {
+    expect(
+      () => LogicEnum<TestEnum>.withMapping({
+        TestEnum.a: 0,
+        TestEnum.b: 0,
+      }),
+      throwsA(isA<ArgumentError>()),
+    );
+    expect(
+      () => LogicEnum<TestEnum>.withMapping({
+        TestEnum.a: 0,
+        TestEnum.b: '0',
+      }),
+      throwsA(isA<ArgumentError>()),
+    );
+    expect(
+      () => LogicEnum<TestEnum>.withMapping({TestEnum.a: 'x'}),
+      throwsA(isA<ArgumentError>()),
+    );
+    expect(
+      () => LogicEnum<TestEnum>.withMapping({TestEnum.a: -BigInt.one}),
+      throwsA(isA<ArgumentError>()),
+    );
+  });
+
+  test('mixed mapping representations contribute to inferred width', () {
+    final logicEnum = LogicEnum<TestEnum>.withMapping({
+      TestEnum.a: '10101',
+      TestEnum.b: [
+        LogicValue.one,
+        LogicValue.zero,
+        LogicValue.one,
+        LogicValue.zero,
+      ],
+      TestEnum.c: 0,
+    });
+
+    expect(logicEnum.width, 5);
+    expect(logicEnum.mapping[TestEnum.a]!.toInt(), 0x15);
+    expect(logicEnum.mapping[TestEnum.b]!.width, 5);
+  });
+
+  test('sparse enum mutation APIs reject missing members and fill', () {
+    final sparse = LogicEnum<TestEnum>.withMapping({TestEnum.a: 0}, width: 2);
+
+    expect(() => sparse.getsEnum(TestEnum.b), throwsA(isA<ArgumentError>()));
+    expect(() => sparse.put(TestEnum.b), throwsA(isA<ArgumentError>()));
+    expect(() => sparse.inject(TestEnum.b), throwsA(isA<ArgumentError>()));
+    expect(
+      () => sparse.put(TestEnum.a, fill: true),
+      throwsA(isA<ArgumentError>()),
+    );
+    expect(
+      () => sparse.inject(TestEnum.a, fill: true),
+      throwsA(isA<ArgumentError>()),
+    );
+    expect(
+      () => sparse.gets(Const(1, width: sparse.width)),
+      throwsA(isA<ArgumentError>()),
+    );
+  });
+
+  test('raw four-state values and raw conditional sources remain supported',
+      () {
+    final floatingEnum = MyListLogicEnum()..put(LogicValue.ofString('zz'));
+    expect(floatingEnum.value, LogicValue.ofString('zz'));
+
+    final invalidEnum = MyListLogicEnum()..put(LogicValue.ofString('x1'));
+    expect(invalidEnum.value, LogicValue.ofString('xx'));
+
+    final conditionalEnum = MyListLogicEnum()..inject(1);
+    expect(
+      conditionalEnum < Logic(width: conditionalEnum.width),
+      isA<Conditional>(),
+    );
+  });
+
+  test('enum type identity requires the same Dart type and exact mapping', () {
+    final logicEnum = LogicEnum(TestEnum.values);
+    final remapped = LogicEnum<TestEnum>.withMapping({
+      TestEnum.a: 0,
+      TestEnum.b: 2,
+      TestEnum.c: 3,
+    });
+    final wider = LogicEnum(TestEnum.values, width: 3);
+
+    expect(
+      logicEnum.isEquivalentTypeTo(Logic(width: logicEnum.width)),
+      isFalse,
+    );
+    expect(logicEnum.isEquivalentTypeTo(LogicEnum(OtherEnum.values)), isFalse);
+    expect(logicEnum.isEquivalentTypeTo(remapped), isFalse);
+    expect(() => logicEnum.gets(wider), throwsA(isA<ArgumentError>()));
+  });
+
   test('conditional assignment validates known values and enum types', () {
     final logicEnum = LogicEnum(TestEnum.values);
     final incompatibleType = LogicEnum(OtherEnum.values);
@@ -299,6 +595,18 @@ void main() {
     );
     expect(
       () => cases(sparseExpression, {TestEnum.b: 0}, width: 1),
+      throwsA(isA<ArgumentError>()),
+    );
+  });
+
+  test('cases rejects mixed enum and raw logic results', () {
+    final expression = LogicEnum(TestEnum.values);
+
+    expect(
+      () => cases(expression, {
+        TestEnum.a: TestEnum.b,
+        TestEnum.b: Logic(width: expression.width),
+      }),
       throwsA(isA<ArgumentError>()),
     );
   });
@@ -583,6 +891,149 @@ void main() {
         vectors,
         synthesizerConfiguration: configuration,
       );
+    });
+
+    test('enum driven from a packed slice synthesizes in both modes', () async {
+      final module = EnumFromSliceModule(Logic(width: 8));
+      await module.build();
+
+      final vectors = [
+        Vector({'source': 0x00}, {'result': 0}),
+        Vector({'source': 0x04}, {'result': 1}),
+        Vector({'source': 0x08}, {'result': 2}),
+      ];
+      await SimCompare.checkFunctionalVector(module, vectors);
+
+      final sv = module.generateSynth();
+      expect(sv, contains("TestEnum'("));
+      SimCompare.checkIverilogVector(module, vectors);
+
+      const configuration =
+          SystemVerilogSynthesizerConfiguration(generateEnums: false);
+      final untypedSv = module.generateSynth(configuration: configuration);
+      expect(untypedSv, isNot(contains('typedef enum')));
+      expect(untypedSv, isNot(contains("TestEnum'(")));
+      SimCompare.checkIverilogVector(
+        module,
+        vectors,
+        synthesizerConfiguration: configuration,
+      );
+    });
+
+    test('enum assembled from assigned bits synthesizes in both modes',
+        () async {
+      final module = EnumFromAssignedBitsModule(Logic(width: 2));
+      final vectors = [
+        Vector({'source': 0}, {'result': 0}),
+        Vector({'source': 1}, {'result': 1}),
+        Vector({'source': 2}, {'result': 2}),
+      ];
+      await checkEnumModeParity(module, vectors);
+
+      expect(
+        module.generateSynth(),
+        contains("assign state = TestEnum'(source[1:0]);"),
+      );
+    });
+
+    test('partially assigned enum generates compilable SystemVerilog',
+        () async {
+      final module = PartiallyAssignedEnumModule(Logic());
+      await module.build();
+
+      SimCompare.checkIverilogVector(module, [], buildOnly: true);
+      SimCompare.checkIverilogVector(
+        module,
+        [],
+        buildOnly: true,
+        synthesizerConfiguration:
+            const SystemVerilogSynthesizerConfiguration(generateEnums: false),
+      );
+    });
+
+    test('single-value enum synthesizes in both modes', () async {
+      final module = SingleValueEnumModule();
+      await checkEnumModeParity(
+        module,
+        [
+          Vector({}, {'result': 0})
+        ],
+      );
+
+      expect(module.generateSynth(), contains('enum logic [0:0]'));
+    });
+
+    test('wide sparse enum synthesizes in both modes', () async {
+      final module = WideSparseEnumModule();
+      final vectors = [
+        Vector({}, {'result': WideSparseEnumModule.wideValue}),
+      ];
+      await checkEnumModeParity(module, vectors);
+
+      final sv = module.generateSynth();
+      expect(sv, contains('enum logic [80:0]'));
+      expect(sv, contains("c = 81'h100000000000000000000"));
+    });
+
+    test('enum leaf in a structure preserves behavior in both modes', () async {
+      final module = EnumStructureModule(Logic(width: 4));
+      final vectors = [
+        Vector(
+          {'source': 0x0},
+          {'stateResult': 0, 'packedResult': 0x0, 'rangeResult': 0},
+        ),
+        Vector(
+          {'source': 0x5},
+          {'stateResult': 1, 'packedResult': 0x5, 'rangeResult': 1},
+        ),
+        Vector(
+          {'source': 0xa},
+          {'stateResult': 2, 'packedResult': 0xa, 'rangeResult': 2},
+        ),
+      ];
+      await checkEnumModeParity(module, vectors);
+
+      expect(module.generateSynth(), contains("TestEnum'("));
+    });
+
+    test('raw unpacked array lane feeds enum in both modes', () async {
+      final module = EnumArrayBoundaryModule(Logic(width: 4));
+      final vectors = [
+        Vector({'source': 0x0}, {'stateResult': 0, 'packedResult': 0x0}),
+        Vector({'source': 0x4}, {'stateResult': 1, 'packedResult': 0x4}),
+        Vector({'source': 0xa}, {'stateResult': 2, 'packedResult': 0xa}),
+      ];
+      await checkEnumModeParity(module, vectors);
+
+      expect(module.generateSynth(), contains("TestEnum'("));
+    });
+
+    test('enum metadata crosses a submodule boundary in both modes', () async {
+      final module = EnumHierarchyModule(Logic(width: 2));
+      final vectors = [
+        Vector({'source': 0}, {'result': 0}),
+        Vector({'source': 1}, {'result': 1}),
+      ];
+      await checkEnumModeParity(module, vectors);
+
+      final sv = module.generateSynth();
+      expect(sv, contains('ChildNarrowEnum'));
+      expect(sv, contains('ParentBroadEnum'));
+    });
+
+    test('if-else mixes widened enum and enum constant in both modes',
+        () async {
+      final module = EnumIfElseModule(Logic(width: 2), Logic());
+      final vectors = [
+        Vector({'source': 0, 'select': 1}, {'result': 0}),
+        Vector({'source': 1, 'select': 1}, {'result': 1}),
+        Vector({'source': 0, 'select': 0}, {'result': 2}),
+      ];
+      await checkEnumModeParity(module, vectors);
+
+      final sv = module.generateSynth();
+      expect(sv, contains('if(select)'));
+      expect(sv, contains('else begin'));
     });
 
     test('enum with case and cond assignments', () async {

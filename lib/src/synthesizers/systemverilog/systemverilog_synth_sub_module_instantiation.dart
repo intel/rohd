@@ -64,18 +64,32 @@ class SystemVerilogSynthSubModuleInstantiation
   }
 
   /// Provides the full SV instantiation for this module.
-  String? instantiationVerilog(String instanceType) {
+  String? instantiationVerilog(
+    String instanceType, {
+    required bool generateEnums,
+  }) {
     if (!needsInstantiation) {
       return null;
     }
+
+    final ports = _modulePortsMapWithInline({
+      ...inputMapping,
+      ...outputMapping,
+      ...inOutMapping,
+    });
+    if (generateEnums &&
+        module is InlineSystemVerilog &&
+        (inlineResultLogic?.isEnum ?? false)) {
+      final inlineModule = module as InlineSystemVerilog;
+      final result = ports[inlineModule.resultSignalName];
+      final enumType = inlineResultLogic!.enumDefinition!.definitionName;
+      return "assign $result = $enumType'${inlineVerilog()};  // $name";
+    }
+
     return SystemVerilogSynthesizer.instantiationVerilogFor(
         module: module,
         instanceType: instanceType,
         instanceName: name,
-        ports: _modulePortsMapWithInline({
-          ...inputMapping,
-          ...outputMapping,
-          ...inOutMapping,
-        }));
+        ports: ports);
   }
 }
