@@ -1,7 +1,7 @@
 // Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
-// systemc_synthesizer.dart
+// systemc.dart
 // Definition for SystemC Synthesizer
 //
 // 2026 May
@@ -9,6 +9,8 @@
 
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/synthesizers/systemc/systemc_synthesis_result.dart';
+
+export 'systemc_mixins.dart';
 
 /// A [Synthesizer] which generates equivalent SystemC as the given [Module].
 ///

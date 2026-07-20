@@ -1,6 +1,10 @@
 // Copyright (C) 2024-2025 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 
+export 'inline_leaf_emitter.dart';
+export 'leaf_cell_spec.dart';
+export 'leaf_cell_spec_inference.dart';
+export 'leaf_expression_plan.dart';
 export 'synth_assignment.dart';
 export 'synth_logic.dart';
 export 'synth_module_definition.dart';

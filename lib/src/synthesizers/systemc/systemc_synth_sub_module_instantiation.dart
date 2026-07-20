@@ -8,28 +8,48 @@
 // Author: Desmond A. Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/synthesizers/systemc/systemc_leaf_emitter.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
 
 /// Represents a submodule instantiation for SystemC.
 class SystemCSynthSubModuleInstantiation extends SynthSubModuleInstantiation {
+  static const _defaultLeafEmitter =
+      SystemCLeafEmitter(typeForWidth: _systemCType);
+
+  static String _systemCType(int width) {
+    if (width == 1) {
+      return 'bool';
+    } else if (width <= 64) {
+      return 'sc_uint<$width>';
+    } else {
+      return 'sc_biguint<$width>';
+    }
+  }
+
+  /// Shared leaf emitter used for inline expression generation.
+  SystemCLeafEmitter leafEmitter = _defaultLeafEmitter;
+
   /// Creates a new [SystemCSynthSubModuleInstantiation] for the given
   /// [module].
   SystemCSynthSubModuleInstantiation(super.module);
 
-  /// If [module] is [InlineSystemVerilog], this will be the [SynthLogic] that
-  /// is the `result` of that module. Otherwise, `null`.
-  SynthLogic? get inlineResultLogic => module is! InlineSystemVerilog
-      ? null
-      : (outputMapping[(module as InlineSystemVerilog).resultSignalName] ??
-          inOutMapping[(module as InlineSystemVerilog).resultSignalName]);
+  /// If [module] is [InlineSystemVerilog], this is the [SynthLogic] mapped
+  /// from its [InlineSystemVerilog.resultSignalName].
+  SynthLogic? get inlineResultLogic {
+    final m = module;
+    if (m is! InlineSystemVerilog) {
+      return null;
+    }
+    return outputMapping[m.resultSignalName] ??
+        inOutMapping[m.resultSignalName];
+  }
 
   /// Mapping from [SynthLogic]s which are outputs of inlineable modules to
   /// those inlineable modules.
   Map<SynthLogic, SystemCSynthSubModuleInstantiation>?
       synthLogicToInlineableSynthSubmoduleMap;
 
-  /// Provides a mapping from ports of this module to a string that can be fed
-  /// into that port, which may include inline expressions.
+  /// Resolves module ports, recursively inlining mapped leaf expressions.
   Map<String, String> _modulePortsMapWithInline(
           Map<String, SynthLogic> plainPorts) =>
       plainPorts.map((name, synthLogic) => MapEntry(
@@ -57,27 +77,8 @@ class SystemCSynthSubModuleInstantiation extends SynthSubModuleInstantiation {
   String _inlineSystemCExpression(Map<String, String> inputs) {
     final m = module;
 
-    if (m is NotGate) {
-      final inVal = inputs.values.first;
-      return '~$inVal';
-    } else if (m is And2Gate) {
-      return '${inputs.values.first} & ${inputs.values.last}';
-    } else if (m is Or2Gate) {
-      return '${inputs.values.first} | ${inputs.values.last}';
-    } else if (m is Xor2Gate) {
-      return '${inputs.values.first} ^ ${inputs.values.last}';
-    } else if (m is Mux) {
-      // Mux has inputs: control, d0, d1 → output: y
-      // In SystemC: control ? d1 : d0
-      final entries = inputs.entries.toList();
-      final control = entries[0].value;
-      final d0 = entries[1].value;
-      final d1 = entries[2].value;
-      return '$control ? $d1 : $d0';
-    } else if (m is InlineSystemVerilog) {
-      // Fallback: use the verilog inline expression as a reasonable
-      // approximation (many operators are identical between SV and C++)
-      return m.inlineVerilog(inputs);
+    if (m is InlineSystemVerilog) {
+      return leafEmitter.expressionFor(m, inputs);
     }
 
     throw SynthException('Unsupported inline module type: ${m.runtimeType}');
