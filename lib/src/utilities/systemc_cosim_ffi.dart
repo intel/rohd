@@ -14,6 +14,7 @@ import 'dart:io';
 
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/synthesizers/systemc/systemc_synthesis_result.dart';
+import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:rohd/src/utilities/synchronous_propagator.dart';
 import 'package:rohd/src/utilities/web.dart';
 
