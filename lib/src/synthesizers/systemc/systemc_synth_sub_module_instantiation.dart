@@ -33,38 +33,20 @@ class SystemCSynthSubModuleInstantiation extends SynthSubModuleInstantiation {
   /// [module].
   SystemCSynthSubModuleInstantiation(super.module);
 
-  /// If [module] is [InlineSystemVerilog], this is the [SynthLogic] mapped
-  /// from its [InlineSystemVerilog.resultSignalName].
-  SynthLogic? get inlineResultLogic {
-    final m = module;
-    if (m is! InlineSystemVerilog) {
-      return null;
-    }
-    return outputMapping[m.resultSignalName] ??
-        inOutMapping[m.resultSignalName];
-  }
-
   /// Mapping from [SynthLogic]s which are outputs of inlineable modules to
   /// those inlineable modules.
   Map<SynthLogic, SystemCSynthSubModuleInstantiation>?
       synthLogicToInlineableSynthSubmoduleMap;
 
-  /// Resolves module ports, recursively inlining mapped leaf expressions.
-  Map<String, String> _modulePortsMapWithInline(
-          Map<String, SynthLogic> plainPorts) =>
-      plainPorts.map((name, synthLogic) => MapEntry(
-          name,
-          synthLogicToInlineableSynthSubmoduleMap?[synthLogic]
-                  ?.inlineSystemC() ??
-              (synthLogic.declarationCleared ? '' : synthLogic.name)));
-
   /// Provides the inline SystemC expression for this module.
   ///
   /// Should only be called if [module] is [InlineSystemVerilog].
   String inlineSystemC() {
-    final portNameToValueMapping = _modulePortsMapWithInline(
+    final portNameToValueMapping = modulePortsMapWithInline(
       {...inputMapping, ...inOutMapping}
         ..remove((module as InlineSystemVerilog).resultSignalName),
+      synthLogicToInlineableSynthSubmoduleMap,
+      (submodule) => submodule.inlineSystemC(),
     );
 
     final inlineRepresentation =

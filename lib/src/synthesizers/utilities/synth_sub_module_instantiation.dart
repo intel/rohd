@@ -114,6 +114,37 @@ class SynthSubModuleInstantiation {
   bool get needsInstantiation => _needsInstantiation;
   bool _needsInstantiation = true;
 
+  /// If [module] is [InlineSystemVerilog], this is the [SynthLogic] mapped
+  /// from its [InlineSystemVerilog.resultSignalName].
+  SynthLogic? get inlineResultLogic {
+    final m = module;
+    if (m is! InlineSystemVerilog) {
+      return null;
+    }
+    return outputMapping[m.resultSignalName] ??
+        inOutMapping[m.resultSignalName];
+  }
+
+  /// Creates a port-name to expression map, optionally inlining source
+  /// submodule expressions for mapped [SynthLogic] values.
+  Map<String, String>
+      modulePortsMapWithInline<T extends SynthSubModuleInstantiation>(
+    Map<String, SynthLogic> plainPorts,
+    Map<SynthLogic, T>? synthLogicToInlineableSynthSubmoduleMap,
+    String Function(T subModuleInstantiation) inlineExpressionFor,
+  ) =>
+          plainPorts.map((name, synthLogic) {
+            final inlineSubModule =
+                synthLogicToInlineableSynthSubmoduleMap?[synthLogic];
+            if (inlineSubModule != null) {
+              return MapEntry(name, inlineExpressionFor(inlineSubModule));
+            }
+
+            // Cleared declarations map to empty port connections.
+            return MapEntry(
+                name, synthLogic.declarationCleared ? '' : synthLogic.name);
+          });
+
   /// Removes the need for this module to be declared (via
   /// [needsInstantiation]).
   void clearInstantiation() {

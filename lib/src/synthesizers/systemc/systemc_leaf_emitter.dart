@@ -8,7 +8,6 @@
 // Author: Desmond A. Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/synthesizers/systemc/systemc_mixins.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
 
 /// Emits backend-specific SystemC/C++ expressions for semantic leaf gates.

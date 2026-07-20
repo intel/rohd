@@ -119,6 +119,14 @@ abstract class Conditional {
   Logic receiverOutput(Logic receiver) =>
       _assignedReceiverToOutputMap[receiver]!;
 
+  /// Gets the registered input used to emit [driver].
+  @internal
+  Logic emissionDriver(Logic driver) => driverInput(driver);
+
+  /// Gets the registered output used to emit [receiver].
+  @internal
+  Logic emissionReceiver(Logic receiver) => receiverOutput(receiver);
+
   /// Executes the functionality of this [Conditional] and
   /// populates [drivenSignals] with all [Logic]s that were driven
   /// during execution.

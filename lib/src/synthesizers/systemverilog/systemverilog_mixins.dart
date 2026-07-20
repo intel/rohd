@@ -28,9 +28,47 @@ class SystemVerilogParameterDefinition {
       {required this.type, required this.defaultValue});
 }
 
+BackendArtifact? _systemVerilogArtifactFor(
+    SystemVerilog module, BackendArtifactContext context) {
+  if (context.backend != EmissionBackend.systemVerilog) {
+    return null;
+  }
+
+  switch (context.kind) {
+    case BackendArtifactKind.definition:
+      final contents = module.definitionVerilog(context.definitionType!);
+      return contents == null || contents.isEmpty
+          ? null
+          : BackendArtifact(
+              backend: context.backend,
+              kind: context.kind,
+              contents: contents,
+            );
+    case BackendArtifactKind.instantiation:
+      final contents = module.instantiationVerilog(
+        context.instanceType!,
+        context.instanceName!,
+        context.ports,
+      );
+      return contents == null
+          ? null
+          : BackendArtifact(
+              backend: context.backend,
+              kind: context.kind,
+              contents: contents,
+            );
+    case BackendArtifactKind.simulationProcess:
+      return null;
+  }
+}
+
 /// Allows a [Module] to control the instantiation and/or definition of
 /// generated SystemVerilog for that module.
-mixin SystemVerilog on Module {
+mixin SystemVerilog on Module implements BackendArtifactProvider {
+  @override
+  BackendArtifact? artifactFor(BackendArtifactContext context) =>
+      _systemVerilogArtifactFor(this, context);
+
   /// Generates custom SystemVerilog to be injected in place of a `module`
   /// instantiation.
   ///
@@ -124,6 +162,10 @@ enum DefinitionGenerationType {
 /// The inline SystemVerilog will get parentheses wrapped around it and then
 /// dropped into other code in the same way a variable name is.
 mixin InlineSystemVerilog on Module implements SystemVerilog {
+  @override
+  BackendArtifact? artifactFor(BackendArtifactContext context) =>
+      _systemVerilogArtifactFor(this, context);
+
   /// Generates custom SystemVerilog to be injected in place of the output
   /// port's corresponding signal name.
   ///

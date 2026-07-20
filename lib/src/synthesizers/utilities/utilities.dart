@@ -7,10 +7,15 @@
 // 2026 July
 // Author: Desmond A. Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
+export 'backend_artifact.dart';
+export 'conditional_emission_plan.dart';
+export 'conditional_emitter.dart';
 export 'inline_leaf_emitter.dart';
 export 'leaf_cell_spec.dart';
 export 'leaf_cell_spec_inference.dart';
 export 'leaf_expression_plan.dart';
+export 'module_emission_plan.dart';
+export 'process_emission_plan.dart';
 export 'synth_assignment.dart';
 export 'synth_logic.dart';
 export 'synth_module_definition.dart';

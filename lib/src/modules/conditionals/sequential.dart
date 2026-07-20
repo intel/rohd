@@ -10,6 +10,7 @@
 import 'dart:async';
 import 'dart:collection';
 
+import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/collections/duplicate_detection_set.dart';
 import 'package:rohd/src/collections/traverseable_collection.dart';
@@ -141,6 +142,12 @@ class Sequential extends Always {
   /// fires on a positive edge (`true`) or negative edge (`false`).
   List<({String portName, bool isPosedge})> get triggerEdges => _triggers
       .map((t) => (portName: t.signal.name, isPosedge: t.isPosedge))
+      .toList();
+
+  /// Returns the trigger signals and edge polarities used for code emission.
+  @internal
+  List<({Logic signal, bool isPosedge})> get emissionTriggers => _triggers
+      .map((trigger) => (signal: trigger.signal, isPosedge: trigger.isPosedge))
       .toList();
 
   /// When `false`, an [SignalRedrivenException] will be thrown during

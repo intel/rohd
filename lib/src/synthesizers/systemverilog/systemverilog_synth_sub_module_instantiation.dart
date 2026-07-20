@@ -9,45 +9,38 @@
 
 import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/synthesizers/systemverilog/systemverilog_leaf_emitter.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
 
 /// Represents a submodule instantiation for SystemVerilog.
 class SystemVerilogSynthSubModuleInstantiation
     extends SynthSubModuleInstantiation {
-  /// If [module] is [InlineSystemVerilog], this will be the [SynthLogic] that
-  /// is the `result` of that module.  Otherwise, `null`.
-  SynthLogic? get inlineResultLogic => module is! InlineSystemVerilog
-      ? null
-      : (outputMapping[(module as InlineSystemVerilog).resultSignalName] ??
-          inOutMapping[(module as InlineSystemVerilog).resultSignalName]);
+  static const _leafEmitter = SystemVerilogLeafEmitter();
+
+  /// Whether inline expressions should be rendered using [LeafExpressionPlan].
+  final bool useLeafExpressionPlanForInlineRendering;
 
   /// Creates a new [SystemVerilogSynthSubModuleInstantiation] for the given
   /// [module].
-  SystemVerilogSynthSubModuleInstantiation(super.module);
+  SystemVerilogSynthSubModuleInstantiation(
+    super.module, {
+    this.useLeafExpressionPlanForInlineRendering = false,
+  });
 
   /// Mapping from [SynthLogic]s which are outputs of inlineable SV to those
   /// inlineable modules.
   Map<SynthLogic, SystemVerilogSynthSubModuleInstantiation>?
       synthLogicToInlineableSynthSubmoduleMap;
 
-  /// Provides a mapping from ports of this module to a string that can be fed
-  /// into that port, which may include inline SV modules as well.
-  Map<String, String> _modulePortsMapWithInline(
-          Map<String, SynthLogic> plainPorts) =>
-      plainPorts.map((name, synthLogic) => MapEntry(
-          name,
-          synthLogicToInlineableSynthSubmoduleMap?[synthLogic]
-                  ?.inlineVerilog() ??
-              // if cleared, then empty port
-              (synthLogic.declarationCleared ? '' : synthLogic.name)));
-
   /// Provides the inline SV representation for this module.
   ///
   /// Should only be called if [module] is [InlineSystemVerilog].
   String inlineVerilog() {
-    final portNameToValueMapping = _modulePortsMapWithInline(
+    final portNameToValueMapping = modulePortsMapWithInline(
       {...inputMapping, ...inOutMapping}
         ..remove((module as InlineSystemVerilog).resultSignalName),
+      synthLogicToInlineableSynthSubmoduleMap,
+      (submodule) => submodule.inlineVerilog(),
     );
 
     assert(
@@ -57,8 +50,12 @@ class SystemVerilogSynthSubModuleInstantiation
         'Inline modules should not ever receive empty port values,'
         ' only module instantiations can get something like `.port_name()`.');
 
-    final inlineSvRepresentation =
-        (module as InlineSystemVerilog).inlineVerilog(portNameToValueMapping);
+    final inlineSvRepresentation = useLeafExpressionPlanForInlineRendering
+        ? _leafEmitter.expressionFor(
+            module as InlineSystemVerilog,
+            portNameToValueMapping,
+          )
+        : (module as InlineSystemVerilog).inlineVerilog(portNameToValueMapping);
 
     return '($inlineSvRepresentation)';
   }
@@ -72,10 +69,11 @@ class SystemVerilogSynthSubModuleInstantiation
         module: module,
         instanceType: instanceType,
         instanceName: name,
-        ports: _modulePortsMapWithInline({
+        ports: modulePortsMapWithInline({
           ...inputMapping,
           ...outputMapping,
           ...inOutMapping,
-        }));
+        }, synthLogicToInlineableSynthSubmoduleMap,
+            (submodule) => submodule.inlineVerilog()));
   }
 }

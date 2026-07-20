@@ -13,8 +13,14 @@ import 'package:rohd/src/synthesizers/utilities/utilities.dart';
 
 /// A special [SynthModuleDefinition] for SystemVerilog modules.
 class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
+  /// Configuration controlling generated SystemVerilog.
+  final SystemVerilogSynthesizerConfiguration configuration;
+
   /// Creates a new [SystemVerilogSynthModuleDefinition] for the given [module].
-  SystemVerilogSynthModuleDefinition(super.module);
+  SystemVerilogSynthModuleDefinition(
+    super.module, {
+    this.configuration = const SystemVerilogSynthesizerConfiguration(),
+  });
 
   /// A shared mapping from [SynthLogic]s which are the result of an inlineable
   /// submodule to the instantiation that produces them.
@@ -205,7 +211,11 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
 
   @override
   SynthSubModuleInstantiation createSubModuleInstantiation(Module m) =>
-      SystemVerilogSynthSubModuleInstantiation(m);
+      SystemVerilogSynthSubModuleInstantiation(
+        m,
+        useLeafExpressionPlanForInlineRendering:
+            configuration.useLeafExpressionPlanForInlineRendering,
+      );
 
   /// Creates a new [_NetConnect] module to synthesize assignment between two
   /// [LogicNet]s.

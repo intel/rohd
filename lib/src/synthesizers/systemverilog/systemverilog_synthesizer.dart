@@ -57,18 +57,28 @@ class SystemVerilogSynthesizer extends Synthesizer {
       Map<String, String>? parameters,
       bool forceStandardInstantiation = false}) {
     if (!forceStandardInstantiation) {
-      if (module is SystemVerilog) {
-        return module.instantiationVerilog(
-              instanceType,
-              instanceName,
-              ports,
-            ) ??
-            instantiationVerilogFor(
-                module: module,
-                instanceType: instanceType,
-                instanceName: instanceName,
-                ports: ports,
-                forceStandardInstantiation: true);
+      if (module is BackendArtifactProvider) {
+        final artifactProvider = module as BackendArtifactProvider;
+        final artifact = artifactProvider.artifactFor(
+          BackendArtifactContext.instantiation(
+            backend: EmissionBackend.systemVerilog,
+            instanceType: instanceType,
+            instanceName: instanceName,
+            ports: ports,
+          ),
+        );
+        if (artifact != null) {
+          return artifact.contents;
+        }
+        if (module is SystemVerilog) {
+          return instantiationVerilogFor(
+            module: module,
+            instanceType: instanceType,
+            instanceName: instanceName,
+            ports: ports,
+            forceStandardInstantiation: true,
+          );
+        }
       }
       // ignore: deprecated_member_use_from_same_package
       else if (module is CustomSystemVerilog) {

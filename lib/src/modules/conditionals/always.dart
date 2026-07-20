@@ -11,6 +11,8 @@ import 'dart:collection';
 
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/synthesizers/systemverilog/systemverilog_process_emitter.dart';
+import 'package:rohd/src/synthesizers/utilities/process_emission_plan.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
 
@@ -144,17 +146,6 @@ abstract class Always extends Module with SystemVerilog {
     }
   }
 
-  String _alwaysContents(Map<String, String> inputsNameMap,
-      Map<String, String> outputsNameMap, String assignOperator) {
-    final contents = StringBuffer();
-    for (final conditional in conditionals) {
-      final subContents = conditional.verilogContents(
-          1, inputsNameMap, outputsNameMap, assignOperator);
-      contents.write('$subContents\n');
-    }
-    return contents.toString();
-  }
-
   /// The "always" part of the `always` block when generating SystemVerilog.
   ///
   /// For example, `always_comb` or `always_ff`.
@@ -174,18 +165,10 @@ abstract class Always extends Module with SystemVerilog {
     String instanceType,
     String instanceName,
     Map<String, String> ports,
-  ) {
-    // no `inouts` can be used in a `Conditional`
-    final inputs = Map.fromEntries(
-        ports.entries.where((element) => this.inputs.containsKey(element.key)));
-    final outputs = Map.fromEntries(ports.entries
-        .where((element) => this.outputs.containsKey(element.key)));
-
-    var verilog = '';
-    verilog += '//  $instanceName\n';
-    verilog += '${alwaysVerilogStatement(inputs)} begin\n';
-    verilog += _alwaysContents(inputs, outputs, assignOperator());
-    verilog += 'end\n';
-    return verilog;
-  }
+  ) =>
+      const SystemVerilogProcessEmitter().emit(
+        ProcessEmissionPlan.fromAlways(this),
+        instanceName,
+        ports,
+      );
 }

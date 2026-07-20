@@ -10,12 +10,18 @@
 import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/modules/conditionals/always.dart';
+import 'package:rohd/src/synthesizers/systemc/systemc_conditional_emitter.dart';
+import 'package:rohd/src/synthesizers/systemc/systemc_leaf_emitter.dart';
 import 'package:rohd/src/synthesizers/systemc/systemc_synth_module_definition.dart';
 import 'package:rohd/src/synthesizers/systemc/systemc_synth_sub_module_instantiation.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
 
 /// A [SynthesisResult] representing a conversion of a [Module] to SystemC.
 class SystemCSynthesisResult extends SynthesisResult {
+  /// Shared SystemC leaf-expression emitter.
+  late final SystemCLeafEmitter _leafEmitter =
+      const SystemCLeafEmitter(typeForWidth: systemCType);
+
   /// A cached copy of the generated ports.
   late final String _portsString;
 
@@ -24,6 +30,9 @@ class SystemCSynthesisResult extends SynthesisResult {
 
   /// The main [SynthModuleDefinition] for this.
   final SynthModuleDefinition _synthModuleDefinition;
+
+  /// Backend-neutral resolved structure used by this renderer.
+  late final ModuleEmissionPlan _emissionPlan;
 
   @override
   List<Module> get supportingModules =>
@@ -38,6 +47,7 @@ class SystemCSynthesisResult extends SynthesisResult {
   /// Creates a new [SystemCSynthesisResult] for the given [module].
   SystemCSynthesisResult(super.module, super.getInstanceTypeOfModule)
       : _synthModuleDefinition = SystemCSynthModuleDefinition(module) {
+    _emissionPlan = ModuleEmissionPlan.fromDefinition(_synthModuleDefinition);
     _findClockResetSignals();
     _portsString = _systemCPorts();
     _buildModuleBody(getInstanceTypeOfModule);
@@ -97,14 +107,14 @@ class SystemCSynthesisResult extends SynthesisResult {
     _scLineMap.clear();
 
     final targets = <String>{
-      for (final sig in _synthModuleDefinition.inputs) sig.name,
-      for (final sig in _synthModuleDefinition.outputs) sig.name,
-      for (final sig in _synthModuleDefinition.inOuts) sig.name,
-      for (final sig in _synthModuleDefinition.internalSignals
-          .where((e) => e.needsDeclaration))
+      for (final sig in _emissionPlan.inputs) sig.name,
+      for (final sig in _emissionPlan.outputs) sig.name,
+      for (final sig in _emissionPlan.inOuts) sig.name,
+      for (final sig
+          in _emissionPlan.internalSignals.where((e) => e.needsDeclaration))
         sig.name,
-      for (final smi in _synthModuleDefinition.subModuleInstantiations
-          .where((s) => s.needsInstantiation))
+      for (final smi
+          in _emissionPlan.instances.where((s) => s.needsInstantiation))
         smi.name,
     };
 
@@ -173,7 +183,7 @@ class SystemCSynthesisResult extends SynthesisResult {
   /// and internal clocks that should be promoted to ports.
   void _findClockResetSignals() {
     final promotedClocks = <String>{};
-    for (final ssmi in _synthModuleDefinition.subModuleInstantiations) {
+    for (final ssmi in _emissionPlan.instances) {
       final m = ssmi.module;
       // Detect SimpleClockGenerator and promote its output to a port
       if (m is SimpleClockGenerator) {
@@ -225,7 +235,7 @@ class SystemCSynthesisResult extends SynthesisResult {
 
   String _systemCPorts() {
     final lines = <String>[];
-    for (final sig in _synthModuleDefinition.inputs) {
+    for (final sig in _emissionPlan.inputs) {
       final n = _scName(sig.name);
       lines.add('  ${systemCInType(sig.width)} $n{"$n"};');
     }
@@ -234,11 +244,11 @@ class SystemCSynthesisResult extends SynthesisResult {
       final n = _scName(clkName);
       lines.add('  ${systemCInType(1)} $n{"$n"};');
     }
-    for (final sig in _synthModuleDefinition.outputs) {
+    for (final sig in _emissionPlan.outputs) {
       final n = _scName(sig.name);
       lines.add('  ${systemCOutType(sig.width)} $n{"$n"};');
     }
-    for (final sig in _synthModuleDefinition.inOuts) {
+    for (final sig in _emissionPlan.inOuts) {
       final n = _scName(sig.name);
       lines.add('  ${systemCInOutType(sig.width)} $n{"$n"};');
     }
@@ -251,7 +261,7 @@ class SystemCSynthesisResult extends SynthesisResult {
 
   String _buildInternalSignals() {
     final declarations = <String>[];
-    for (final sig in _synthModuleDefinition.internalSignals
+    for (final sig in _emissionPlan.internalSignals
         .where((e) => e.needsDeclaration)
         .where((e) => !_promotedClockSignals.contains(e.name))
         .sorted((a, b) => a.name.compareTo(b.name))) {
@@ -288,7 +298,7 @@ class SystemCSynthesisResult extends SynthesisResult {
       }
     }
 
-    for (final ssmi in _synthModuleDefinition.subModuleInstantiations) {
+    for (final ssmi in _emissionPlan.instances) {
       final m = ssmi.module;
 
       // All submodule output mappings
@@ -311,7 +321,7 @@ class SystemCSynthesisResult extends SynthesisResult {
     }
 
     // Wire assignments targeting array elements
-    for (final assignment in _synthModuleDefinition.assignments) {
+    for (final assignment in _emissionPlan.assignments) {
       addIfArrayElement(assignment.dst);
     }
 
@@ -582,200 +592,8 @@ class SystemCSynthesisResult extends SynthesisResult {
   ///
   /// Handles all gate types that have SV-specific syntax which needs
   /// translation to valid SystemC/C++.
-  String _gateExpression(InlineSystemVerilog m, Map<String, String> inputs) {
-    // ── Single-output bitwise gates (C++ operators identical to SV) ──
-    if (m is NotGate) {
-      // For bool (width-1), use logical not; for wider, bitwise not
-      if ((m as Module).outputs.values.first.width == 1) {
-        return '!${inputs.values.first}';
-      }
-      return '~${inputs.values.first}';
-    }
-
-    // ── Binary operator gates (C++ operators identical to SV) ──
-    const binaryOps = <Type, String>{
-      And2Gate: '&',
-      Or2Gate: '|',
-      Xor2Gate: '^',
-      Subtract: '-',
-      Multiply: '*',
-    };
-    final binOp = binaryOps[m.runtimeType];
-    if (binOp != null) {
-      final vals = inputs.values.toList();
-      return '${vals[0]} $binOp ${vals[1]}';
-    }
-    if (m is Divide || m is Modulo) {
-      final vals = inputs.values.toList();
-      final op = m is Divide ? '/' : '%';
-      // Guard against zero divisor (sc_uint defaults to 0 at time-0)
-      return '(${vals[1]} != 0 ? ${vals[0]} $op ${vals[1]} : 0)';
-    }
-    if (m is Power) {
-      final vals = inputs.values.toList();
-      final w = (m as Module).inputs.values.first.width;
-      return '${systemCType(w)}'
-          '(static_cast<uint64_t>'
-          '(pow(static_cast<double>(${vals[0]}),'
-          ' static_cast<double>(${vals[1]}))))';
-    }
-
-    // ── Comparison (operators identical) ──
-    const cmpOps = <Type, String>{
-      Equals: '==',
-      NotEquals: '!=',
-      LessThan: '<',
-      GreaterThan: '>',
-      LessThanOrEqual: '<=',
-      GreaterThanOrEqual: '>=',
-    };
-    final cmpOp = cmpOps[m.runtimeType];
-    if (cmpOp != null) {
-      final vals = inputs.values.toList();
-      return '${vals[0]} $cmpOp ${vals[1]}';
-    }
-
-    // ── Shifts ──
-    // Cast shift amount to int to avoid ambiguous overloads.
-    // Width 1 maps to bool in SystemC (no .to_int()), so use (int) cast.
-    // Clamp: if shift amount >= operand width, result is 0 (or sign-fill
-    // for arshift), avoiding .to_int() overflow on huge shift amounts.
-    if (m is LShift || m is RShift || m is ARShift) {
-      final vals = inputs.values.toList();
-      final w = (m as Module).inputs.values.first.width;
-      final outType = systemCType(w);
-      final shiftAmtWidth = (m as Module).inputs.values.toList()[1].width;
-      final shiftExpr =
-          shiftAmtWidth == 1 ? '(int)(${vals[1]})' : '(${vals[1]}).to_int()';
-      if (m is ARShift) {
-        final signedType = w <= 64 ? 'sc_int<$w>' : 'sc_bigint<$w>';
-        final shiftOp = '$outType(($signedType(${vals[0]})) >> $shiftExpr)';
-        if (shiftAmtWidth > 31) {
-          // Sign-fill: shift by width-1 to replicate MSB when shift >= width
-          final overflow = '$outType(($signedType(${vals[0]})) >> ${w - 1})';
-          return '(${vals[1]} >= $w) ? $overflow : $shiftOp';
-        }
-        return shiftOp;
-      }
-      final op = m is LShift ? '<<' : '>>';
-      final shiftOp = '$outType(${vals[0]} $op $shiftExpr)';
-      if (shiftAmtWidth > 31) {
-        return '(${vals[1]} >= $w) ? $outType(0) : $shiftOp';
-      }
-      return shiftOp;
-    }
-
-    // ── Unary reductions ──
-    if (m is AndUnary || m is OrUnary || m is XorUnary) {
-      final inputWidth = (m as Module).inputs.values.first.width;
-      // 1-bit: reduce is identity (and bool has no .xor_reduce() in SystemC)
-      if (inputWidth == 1) {
-        return 'static_cast<bool>(${inputs.values.first})';
-      }
-      if (m is AndUnary) {
-        return '${inputs.values.first}.and_reduce()';
-      } else if (m is OrUnary) {
-        return '${inputs.values.first}.or_reduce()';
-      } else {
-        return '${inputs.values.first}.xor_reduce()';
-      }
-    }
-
-    // ── Bus subset (slice / index) ──
-    if (m is BusSubset) {
-      final a = inputs.values.first;
-      final inputWidth = (m as Module).inputs.values.first.width;
-      // If input is already 1-bit (bool), extracting bit 0 is identity
-      if (inputWidth == 1 && m.startIndex == 0 && m.endIndex == 0) {
-        return a;
-      }
-      if (m.startIndex == m.endIndex) {
-        return 'static_cast<bool>($a[${m.startIndex}])';
-      }
-      if (m.startIndex > m.endIndex) {
-        // Reverse order — build bit-by-bit concat
-        // bits[0]=a[endIndex], ..., bits[N]=a[startIndex]
-        // SystemC concat is MSB-first: output MSB = input[endIndex]
-        // Use sc_uint<1> (not bool) so SystemC concat operator is invoked
-        final bits = List.generate(m.startIndex - m.endIndex + 1,
-            (i) => 'sc_uint<1>($a[${m.endIndex + i}])');
-        return '(${bits.join(', ')})';
-      }
-      final w = m.endIndex - m.startIndex + 1;
-      final rangeType = w <= 64 ? 'sc_uint' : 'sc_biguint';
-      return '$rangeType<$w>($a.range(${m.endIndex}, ${m.startIndex}))';
-    }
-
-    // ── Dynamic bit index ──
-    if (m is IndexGate) {
-      final vals = inputs.values.toList();
-      return 'static_cast<bool>(${vals[0]}[${vals[1]}])';
-    }
-
-    // ── Mux (ternary) ──
-    if (m is Mux) {
-      final vals = inputs.values.toList();
-      final w = m.out.width;
-      final utype = systemCType(w);
-      // Cast both branches to avoid C++ ternary type mismatch
-      // (e.g., when one branch is bool and the other is sc_uint<1>)
-      return '${vals[0]}'
-          ' ? $utype(${vals[2]})'
-          ' : $utype(${vals[1]})';
-    }
-
-    // ── Replication ──
-    if (m is ReplicationOp) {
-      final a = inputs.values.first;
-      final inputWidth = (m as Module).inputs.values.first.width;
-      final outputWidth = m.replicated.width;
-      final numReps = outputWidth ~/ inputWidth;
-      if (inputWidth == 1) {
-        // Single-bit replicate: all-1s or all-0s
-        final utype = systemCType(outputWidth);
-        return '$utype('
-            '$a '
-            '? $utype(-1) '
-            ': $utype(0))';
-      }
-      // Multi-bit replicate: concat N copies
-      final copies = List.filled(numReps, a);
-      return '(${copies.join(', ')})';
-    }
-
-    // ── Swizzle (concatenation) ──
-    if (m is Swizzle) {
-      // SystemC concatenation: (sig1, sig2, sig3)
-      // bool operands must be cast to sc_uint<1> to use SystemC concat
-      // (otherwise C++ comma operator is invoked instead)
-      final modInputs = (m as Module).inputs.values.toList();
-      final exprList = <String>[];
-      var i = 0;
-      for (final expr in inputs.values) {
-        final w = modInputs[i].width;
-        if (w == 0) {
-          i++;
-          continue; // skip zero-width padding
-        }
-        // Wrap 1-bit (bool) operands in sc_uint<1>() for concat
-        if (w == 1) {
-          exprList.add('sc_uint<1>($expr)');
-        } else {
-          exprList.add(expr);
-        }
-        i++;
-      }
-      if (exprList.length == 1) {
-        return exprList.first;
-      }
-      // Swizzle stores inputs LSB-first (in0=LSB), but SystemC concat
-      // is MSB-first: (msb, ..., lsb). So reverse.
-      return '(${exprList.reversed.join(', ')})';
-    }
-
-    // Fallback: use SV inline (may not be valid C++ — flag for review)
-    return '/* TODO: ${m.runtimeType} */ ${m.inlineVerilog(inputs)}';
-  }
+  String _gateExpression(InlineSystemVerilog m, Map<String, String> inputs) =>
+      _leafEmitter.expressionFor(m, inputs);
 
   // ────────────────────────────────────────────────────────────────────
   // Clock / trigger edge resolution
@@ -848,17 +666,20 @@ class SystemCSynthesisResult extends SynthesisResult {
           setupBuf.writeln('    sensitive << $sig;');
         }
 
-        // Build maps keyed by port name (what verilogContents expects)
+        final processPlan = ProcessEmissionPlan.fromAlways(m);
         final inputsMap = ssmi.inputMapping
             .map((k, sl) => MapEntry(k, _synthLogicReadExpr(sl)));
         final outputsMap =
             ssmi.outputMapping.map((k, sl) => MapEntry(k, _scName(sl.name)));
 
-        bodyBuf.writeln('  void $name() {');
-        for (final c in m.conditionals) {
-          bodyBuf.write(_conditionalToSC(c, 2, inputsMap, outputsMap));
-        }
         bodyBuf
+          ..writeln('  void $name() {')
+          ..write(_emitSystemCProcessBody(
+            processPlan,
+            2,
+            inputsMap,
+            outputsMap,
+          ))
           ..writeln('  }')
           ..writeln();
         ssmi.clearInstantiation();
@@ -958,11 +779,13 @@ class SystemCSynthesisResult extends SynthesisResult {
         for (final outName in outputsMap.values) {
           group.resetLines.add('    $outName = 0;');
         }
-        final condBuf = StringBuffer();
-        for (final c in m.conditionals) {
-          condBuf.write(_conditionalToSC(c, 3, inputsMap, outputsMap));
-        }
-        group.whileBodyLines.add(condBuf.toString());
+        final conditionalBody = _emitSystemCProcessBody(
+          ProcessEmissionPlan.fromAlways(m),
+          3,
+          inputsMap,
+          outputsMap,
+        );
+        group.whileBodyLines.add(conditionalBody);
         ssmi.clearInstantiation();
       } else if (m is FlipFlop) {
         // Resolve port signals via the input/output mapping
@@ -1335,84 +1158,28 @@ class SystemCSynthesisResult extends SynthesisResult {
   // Conditional → SystemC
   // ────────────────────────────────────────────────────────────────────
 
-  String _conditionalToSC(Conditional conditional, int indent,
-      Map<String, String> inputsMap, Map<String, String> outputsMap) {
-    final padding = '  ' * indent;
-
-    if (conditional is ConditionalAssign) {
-      final driverExpr = _resolveDriver(conditional.driver, inputsMap);
-      final receiver = _resolveReceiver(conditional.receiver, outputsMap);
-      return '$padding$receiver = $driverExpr;\n';
-    } else if (conditional is If) {
-      return _ifToSC(conditional, indent, inputsMap, outputsMap);
-    } else if (conditional is Case) {
-      return _caseToSC(conditional, indent, inputsMap, outputsMap);
-    } else if (conditional is ConditionalGroup) {
-      final buf = StringBuffer();
-      for (final c in conditional.conditionals) {
-        buf.write(_conditionalToSC(c, indent, inputsMap, outputsMap));
-      }
-      return buf.toString();
-    }
-    return '';
-  }
-
-  String _ifToSC(If ifBlock, int indent, Map<String, String> inputsMap,
-      Map<String, String> outputsMap) {
-    final padding = '  ' * indent;
-    final buf = StringBuffer();
-
-    for (final iff in ifBlock.iffs) {
-      final header = iff == ifBlock.iffs.first
-          ? 'if'
-          : iff is Else
-              ? ' else'
-              : ' else if';
-      final condition =
-          iff is! Else ? ' (${_resolveDriver(iff.condition, inputsMap)})' : '';
-      buf.write('$padding$header$condition {\n');
-      for (final c in iff.then) {
-        buf.write(_conditionalToSC(c, indent + 1, inputsMap, outputsMap));
-      }
-      buf.write('$padding}');
-    }
-    buf.writeln();
-    return buf.toString();
-  }
-
-  String _caseToSC(Case caseBlock, int indent, Map<String, String> inputsMap,
-      Map<String, String> outputsMap) {
-    final padding = '  ' * indent;
-    final buf = StringBuffer();
-    final expr = _resolveDriver(caseBlock.expression, inputsMap);
-
-    // Check if all case items have compile-time constant values
-    final allConst =
-        caseBlock.items.every((item) => _isConstCaseItem(item.value));
-
-    // CaseZ requires mask matching — always use if/else
-    // Non-const case items also require if/else
-    if (caseBlock is CaseZ || !allConst) {
-      return _caseToIfElseSC(caseBlock, indent, inputsMap, outputsMap, expr);
-    }
-
-    buf.writeln('${padding}switch ($expr) {');
-    for (final item in caseBlock.items) {
-      buf.writeln('$padding  case ${_constLit(item.value)}:');
-      for (final c in item.then) {
-        buf.write(_conditionalToSC(c, indent + 2, inputsMap, outputsMap));
-      }
-      buf.writeln('$padding    break;');
-    }
-    if (caseBlock.defaultItem != null) {
-      buf.writeln('$padding  default:');
-      for (final c in caseBlock.defaultItem!) {
-        buf.write(_conditionalToSC(c, indent + 2, inputsMap, outputsMap));
-      }
-      buf.writeln('$padding    break;');
-    }
-    buf.writeln('$padding}');
-    return buf.toString();
+  String _emitSystemCProcessBody(
+    ProcessEmissionPlan plan,
+    int indent,
+    Map<String, String> inputsMap,
+    Map<String, String> outputsMap,
+  ) {
+    final emitter = SystemCConditionalEmitter(
+      driverExpressionFor: (driver) => _resolveDriver(driver, inputsMap),
+      receiverExpressionFor: (receiver) =>
+          _resolveReceiver(receiver, outputsMap),
+      isConstCaseItem: _isConstCaseItem,
+      caseItemConditionFor: (value, expression, {required isCaseZ}) =>
+          _caseItemCondition(
+        value,
+        expression,
+        inputsMap,
+        isCaseZ: isCaseZ,
+      ),
+    );
+    return plan.body
+        .map((statement) => emitter.emitPlan(statement, indent))
+        .join();
   }
 
   /// Checks whether a case item value is a compile-time constant.
@@ -1434,39 +1201,6 @@ class SystemCSynthesisResult extends SynthesisResult {
       return false;
     }
     return true; // int, string, etc.
-  }
-
-  /// Converts a Case/CaseZ block to if/else chain (for non-const items
-  /// or CaseZ with z-masks).
-  String _caseToIfElseSC(
-      Case caseBlock,
-      int indent,
-      Map<String, String> inputsMap,
-      Map<String, String> outputsMap,
-      String expr) {
-    final padding = '  ' * indent;
-    final buf = StringBuffer();
-
-    for (var i = 0; i < caseBlock.items.length; i++) {
-      final item = caseBlock.items[i];
-      final condition = _caseItemCondition(item.value, expr, inputsMap,
-          isCaseZ: caseBlock is CaseZ);
-      final header = i == 0 ? 'if' : ' else if';
-      buf.write('$padding$header ($condition) {\n');
-      for (final c in item.then) {
-        buf.write(_conditionalToSC(c, indent + 1, inputsMap, outputsMap));
-      }
-      buf.write('$padding}');
-    }
-    if (caseBlock.defaultItem != null) {
-      buf.write(' else {\n');
-      for (final c in caseBlock.defaultItem!) {
-        buf.write(_conditionalToSC(c, indent + 1, inputsMap, outputsMap));
-      }
-      buf.write('$padding}');
-    }
-    buf.writeln();
-    return buf.toString();
   }
 
   /// Generates the condition expression for a case item comparison.

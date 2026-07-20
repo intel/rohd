@@ -10,6 +10,7 @@
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/modules/conditionals/ssa.dart';
+import 'package:rohd/src/synthesizers/systemverilog/systemverilog_conditional_emitter.dart';
 
 /// An assignment that only happens under certain conditions.
 ///
@@ -77,12 +78,12 @@ class ConditionalAssign extends Conditional {
 
   @override
   String verilogContents(int indent, Map<String, String> inputsNameMap,
-      Map<String, String> outputsNameMap, String assignOperator) {
-    final padding = Conditional.calcPadding(indent);
-    final driverName = inputsNameMap[driverInput(driver).name]!;
-    final receiverName = outputsNameMap[receiverOutput(receiver).name]!;
-    return '$padding$receiverName $assignOperator $driverName;';
-  }
+          Map<String, String> outputsNameMap, String assignOperator) =>
+      SystemVerilogConditionalEmitter(
+        inputsNameMap: inputsNameMap,
+        outputsNameMap: outputsNameMap,
+        assignOperator: assignOperator,
+      ).emit(this, indent);
 
   @override
   Map<Logic, Logic> processSsa(Map<Logic, Logic> currentMappings,
