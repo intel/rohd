@@ -962,8 +962,16 @@ class Logic {
   /// The input [multiplier] cannot be negative or 0; an exception will be
   /// thrown, otherwise.
   ///
+  /// If [multiplier] is 1, then this signal is returned directly, since
+  /// replicating once is a no-op and would otherwise generate a redundant
+  /// `1{...}` in the output SystemVerilog.
+  ///
   /// If [isNet], then the result will also be a net.
   Logic replicate(int multiplier) {
+    if (multiplier == 1) {
+      return this;
+    }
+
     if (isNet) {
       // many SV simulators don't support replication of nets
       return List.generate(multiplier, (i) => this).swizzle();
