@@ -24,7 +24,7 @@ As long as the total width of a `LogicArray` and another type of `Logic` (includ
 
 ## Typed and value-domain arrays
 
-[`LogicArrayOf`](https://intel.github.io/rohd/rohd/LogicArrayOf-class.html) extends `LogicArray` when every leaf should have the same specialized `Logic` type.  It preserves the normal array dimensions while exposing typed leaves with `typedLeafElements` and `elementAt`.  For example, this creates a two-dimensional array of samples with separate data and valid fields:
+`LogicArrayOf` extends `LogicArray` when every leaf should have the same specialized `Logic` type.  It preserves the normal array dimensions while exposing typed leaves with `typedLeafElements` and `elementAt`.  For example, this creates a two-dimensional array of samples with separate data and valid fields:
 
 ```dart
 class Sample extends LogicStructure {
