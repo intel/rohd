@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2024 Intel Corporation
+// Copyright (C) 2023-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // logic_array.dart
@@ -23,6 +23,15 @@ class LogicArray extends LogicStructure {
   /// If the array has no leaf elements and/or the [width] is 0, then the
   /// [elementWidth] is always 0.
   final int elementWidth;
+
+  /// Elements at the leaf dimension of this array.
+  ///
+  /// Unlike [LogicStructure.leafElements], traversal stops at the configured
+  /// array leaf. This distinction matters when an array leaf is itself a
+  /// [LogicStructure], such as a typed floating-point value.
+  late final List<Logic> arrayElements = UnmodifiableListView(
+    _calculateArrayElements(),
+  );
 
   @override
   final Naming naming;
@@ -89,6 +98,73 @@ class LogicArray extends LogicStructure {
         logicArrayBuilder: LogicArray.net,
         isNet: true,
       );
+
+  /// Creates an array from pre-built [elements].
+  ///
+  /// This constructor supports subclasses whose leaf dimension contains a
+  /// specialized [Logic] or [LogicStructure]. For arrays with more than one
+  /// dimension, [elements] must be [LogicArray]s matching the remaining
+  /// dimensions. For a one-dimensional array, each element must have
+  /// [elementWidth] bits.
+  @protected
+  LogicArray.structured(
+    super.elements, {
+    required List<int> dimensions,
+    required this.elementWidth,
+    String? name,
+    this.numUnpackedDimensions = 0,
+    Naming? naming,
+    this.isNet = false,
+  })  : dimensions = List<int>.unmodifiable(dimensions),
+        naming = Naming.chooseNaming(name, naming),
+        super(
+          name: Naming.chooseName(name, naming, nullStarter: 'a'),
+        ) {
+    if (dimensions.isEmpty) {
+      throw LogicConstructionException(
+        'Arrays must have at least 1 dimension.',
+      );
+    }
+    if (dimensions.any((dimension) => dimension < 0)) {
+      throw LogicConstructionException(
+        'Array dimensions must be non-negative.',
+      );
+    }
+    if (numUnpackedDimensions > dimensions.length) {
+      throw LogicConstructionException(
+        'Cannot unpack more than all of the dimensions.',
+      );
+    }
+    if (elements.length != dimensions.first) {
+      throw LogicConstructionException(
+        'Array elements must match the first dimension.',
+      );
+    }
+
+    if (dimensions.length == 1) {
+      if (elements.any((element) => element.width != elementWidth)) {
+        throw LogicConstructionException(
+          'Array leaves must match elementWidth.',
+        );
+      }
+    } else {
+      final childDimensions = dimensions.sublist(1);
+      if (elements.any(
+        (element) =>
+            element is! LogicArray ||
+            !_sameDimensions(element.dimensions, childDimensions) ||
+            element.elementWidth != elementWidth,
+      )) {
+        throw LogicConstructionException(
+          'Child arrays must match the remaining dimensions and width.',
+        );
+      }
+    }
+
+    for (final (index, element) in elements.indexed) {
+      element._arrayIndex = index;
+    }
+  }
 
   /// Internal factory constructor.
   ///
@@ -226,6 +302,13 @@ class LogicArray extends LogicStructure {
     required this.isNet,
   });
 
+  List<Logic> _calculateArrayElements() => dimensions.length == 1
+      ? elements
+      : elements
+          .cast<LogicArray>()
+          .expand((element) => element.arrayElements)
+          .toList(growable: false);
+
   /// Constructs a new [LogicArray] with a more convenient constructor signature
   /// for when many ports in an interface are declared together.  Also performs
   /// some basic checks on the legality of the array as a port of a [Module].
@@ -239,7 +322,8 @@ class LogicArray extends LogicStructure {
 
     return LogicArray(
       dimensions, elementWidth,
-      numUnpackedDimensions: numUnpackedDimensions, name: name,
+      numUnpackedDimensions: numUnpackedDimensions,
+      name: name,
 
       // make port names mergeable so we don't duplicate the ports
       // when calling connectIO
@@ -270,3 +354,7 @@ class LogicArray extends LogicStructure {
     );
   }
 }
+
+bool _sameDimensions(List<int> left, List<int> right) =>
+    left.length == right.length &&
+    left.indexed.every((entry) => entry.$2 == right[entry.$1]);

@@ -1,7 +1,7 @@
 ---
 title: "Logic Arrays"
 permalink: /docs/logic-arrays/
-last_modified_at: 2022-6-5
+last_modified_at: 2026-7-21
 toc: true
 ---
 
@@ -21,6 +21,48 @@ LogicArray([5, 5, 5], 128);
 ```
 
 As long as the total width of a `LogicArray` and another type of `Logic` (including `Logic`, `LogicStructure`, and another `LogicArray`) are the same, assignments and bitwise operations will work in per-element order.  This means you can assign two `LogicArray`s of different dimensions to each other as long as the total width matches.
+
+## Typed and value-domain arrays
+
+`LogicArrayOf` extends `LogicArray` when every leaf should have the same specialized `Logic` type.  It preserves the normal array dimensions while exposing typed leaves with `typedLeafElements` and `elementAt`.  For example, this creates a two-dimensional array of samples with separate data and valid fields:
+
+```dart
+class Sample extends LogicStructure {
+  final Logic data;
+  final Logic valid;
+
+  factory Sample({String? name}) => Sample._(
+        Logic(name: 'data', width: 8),
+        Logic(name: 'valid'),
+        name: name ?? 'sample',
+      );
+
+  Sample._(this.data, this.valid, {required String name})
+      : super([data, valid], name: name);
+
+  @override
+  Sample clone({String? name}) => Sample(name: name ?? this.name);
+}
+
+final samples = LogicArrayOf<Sample>(
+  [2, 3],
+  Sample.new,
+  dimensionNames: ['row_', 'column_'],
+);
+
+final bottomRightData = samples.elementAt([1, 2]).data;
+```
+
+Use `LogicValueArray` for fixed-width array data outside the hardware graph.  It keeps values in row-major order and supports indexing, reshaping, transposition, and slice operations.  `LogicValueArrayOf` adds a codec so application-level values can use the same operations while converting to and from packed `LogicValue`s.
+
+```dart
+final values = LogicValueArray.fromInts([2, 3], 8, [1, 2, 3, 4, 5, 6]);
+final transposed = values.transpose2D(); // Dimensions: [3, 2]
+
+final signals = values.toLogicArray(name: 'values');
+```
+
+`LogicValueArray.putInto` drives a compatible `LogicArray`, while `LogicArrayOf.logicValues` captures its current packed values.  Use `LogicArrayOf.valueArrayOf` and `putValueArrayOf` when a `LogicValueCodec` converts typed value-domain data at the hardware boundary.
 
 ## Unpacked arrays
 
@@ -42,6 +84,8 @@ LogicArray(
 You can declare ports of `Module`s as being arrays (including with some dimensions "unpacked") using `addInputArray` and `addOutputArray`. Note that these do _not_ automatically do validation that the dimensions, element width, number of unpacked dimensions, etc. are equal between the port and the original signal. As long as the overall width matches, the assignment will be clean.
 
 Array ports in generated SystemVerilog will match dimensions (including unpacked) as specified when the port is created.
+
+Use `addTypedInput` and `addTypedOutput` for `LogicArrayOf` ports. These methods preserve the array's specialized leaf type, allowing the module to access fields such as `samples.elementAt([1, 2]).data` directly.
 
 ## Elements of arrays
 
