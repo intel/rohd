@@ -18,12 +18,15 @@ export 'systemc_mixins.dart';
 /// using the same naming strategy as the SystemVerilog synthesizer.
 class SystemCSynthesizer extends Synthesizer {
   @override
-  bool generatesDefinition(Module module) =>
-      // ignore: deprecated_member_use_from_same_package
-      !((module is InlineLeaf) ||
-          (module is CustomSystemVerilog) ||
-          (module is SystemVerilog &&
-              module.generatedDefinitionType == DefinitionGenerationType.none));
+  bool generatesDefinition(Module module) {
+    final generatesNoDefinition = module is InlineLeaf ||
+        // ignore: deprecated_member_use_from_same_package
+        module is CustomSystemVerilog ||
+        (module is SystemVerilog &&
+            module.generatedDefinitionType == DefinitionGenerationType.none);
+
+    return !generatesNoDefinition;
+  }
 
   @override
   SynthesisResult synthesize(Module module,

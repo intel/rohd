@@ -50,24 +50,24 @@ class SystemVerilogLeafEmitter implements InlineLeafEmitter {
     var index = 0;
     while (index < operands.length) {
       final first = operands[index];
-      final firstSelect = first.width == 1 && first.canCollapse
+      final firstSel = first.width == 1 && first.canCollapse
           ? _singleBitSelect(first.expression)
           : (target: null, index: null);
 
-      if (firstSelect.target == null || firstSelect.index == null) {
+      if (firstSel.target == null || firstSel.index == null) {
         collapsed.add((expression: first.expression, width: first.width));
         index++;
         continue;
       }
 
       var lastIndex = index;
-      var expectedBit = firstSelect.index! - 1;
+      var expectedBit = firstSel.index! - 1;
       while (lastIndex + 1 < operands.length) {
         final next = operands[lastIndex + 1];
         final nextSelect = next.width == 1 && next.canCollapse
             ? _singleBitSelect(next.expression)
             : (target: null, index: null);
-        if (nextSelect.target != firstSelect.target ||
+        if (nextSelect.target != firstSel.target ||
             nextSelect.index != expectedBit) {
           break;
         }
@@ -77,14 +77,14 @@ class SystemVerilogLeafEmitter implements InlineLeafEmitter {
 
       if (lastIndex == index) {
         collapsed.add((
-          expression: '${firstSelect.target}[${firstSelect.index}]',
+          expression: '${firstSel.target}[${firstSel.index}]',
           width: 1,
         ));
       } else {
         final lowerSelect = _singleBitSelect(operands[lastIndex].expression);
         collapsed.add((
           expression:
-              '${firstSelect.target}[${firstSelect.index}:${lowerSelect.index}]',
+              '${firstSel.target}[${firstSel.index}:${lowerSelect.index}]',
           width: lastIndex - index + 1,
         ));
       }
