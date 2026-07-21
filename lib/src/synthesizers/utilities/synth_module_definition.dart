@@ -851,7 +851,7 @@ class SynthModuleDefinition {
       activePath.add(candidate);
 
       final resultSignalName =
-          (candidate.module as InlineSystemVerilog).resultSignalName;
+          (candidate.module as InlineLeaf).resultSignalName;
       for (final input in <SynthLogic>[
         ...candidate.inputMapping.values,
         ...candidate.inOutMapping.entries
