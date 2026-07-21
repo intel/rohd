@@ -85,6 +85,8 @@ You can declare ports of `Module`s as being arrays (including with some dimensio
 
 Array ports in generated SystemVerilog will match dimensions (including unpacked) as specified when the port is created.
 
+Use `addTypedInput` and `addTypedOutput` for `LogicArrayOf` ports. These methods preserve the array's specialized leaf type, allowing the module to access fields such as `samples.elementAt([1, 2]).data` directly.
+
 ## Elements of arrays
 
 To iterate through or access elements of a `LogicArray` (or bits of a simple `Logic`), use [`elements`](https://intel.github.io/rohd/rohd/Logic/elements.html).  Using the normal `[n]` accessors will return the `n`th bit regardless for `LogicArray` and `Logic` to maintain API consistency.

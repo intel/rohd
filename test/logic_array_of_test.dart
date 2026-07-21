@@ -28,6 +28,16 @@ class _TwoBitStructure extends LogicStructure {
       _TwoBitStructure(name: name ?? this.name);
 }
 
+class _TypedArrayPortModule extends Module {
+  LogicArrayOf<_TwoBitStructure> get valuesOut =>
+      output('valuesOut') as LogicArrayOf<_TwoBitStructure>;
+
+  _TypedArrayPortModule(LogicArrayOf<_TwoBitStructure> valuesIn) {
+    valuesIn = addTypedInput('valuesIn', valuesIn);
+    addTypedOutput('valuesOut', valuesIn.clone) <= valuesIn;
+  }
+}
+
 int _decodeLogicValue(LogicValue value) => value.toInt();
 
 LogicValue _encodeLogicValue(int value) => LogicValue.ofInt(value, 8);
@@ -125,6 +135,22 @@ void main() {
 
       values.putValueArrayOf(typedValues);
       expect(values.valueArrayOf(codec).flatValues, [56, 78]);
+    });
+
+    test('preserves specialized leaves in typed input and output ports', () {
+      final source = LogicArrayOf<_TwoBitStructure>(
+        [2, 3],
+        _TwoBitStructure.new,
+      );
+      final module = _TypedArrayPortModule(source);
+      final valuesIn =
+          module.input('valuesIn') as LogicArrayOf<_TwoBitStructure>;
+
+      expect(valuesIn, isA<LogicArrayOf<_TwoBitStructure>>());
+      expect(valuesIn.dimensions, [2, 3]);
+      expect(valuesIn.elementAt([1, 2]), isA<_TwoBitStructure>());
+      expect(module.valuesOut, isA<LogicArrayOf<_TwoBitStructure>>());
+      expect(module.valuesOut.elementAt([1, 2]).low.width, 1);
     });
   });
 
