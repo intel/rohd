@@ -34,8 +34,8 @@ done
 # Remove old coverage data
 rm -rf coverage
 
-# Run tests with coverage
-dart test --coverage=coverage || true
+# Run tests with line and branch coverage
+dart test --coverage=coverage --branch-coverage || true
 
 # Check if coverage was generated
 if [ ! -d "coverage" ]; then
@@ -51,6 +51,25 @@ dart run coverage:format_coverage \
     --packages=.dart_tool/package_config.json \
     --report-on=lib
 
+# package:coverage emits branch details as BRDA records without BRF/BRH totals,
+# which genhtml 2.x does not summarize. Calculate the branch rate directly.
+BRANCH_SUMMARY=$(awk -F'[:,]' '
+    /^BRDA:/ {
+        found++
+        if ($5 ~ /^[1-9][0-9]*$/) {
+            hit++
+        }
+    }
+    END {
+        if (found == 0) {
+            print "Error: no branch coverage data found" > "/dev/stderr"
+            exit 1
+        }
+        printf "%.1f%% (%d of %d branches)", 100 * hit / found, hit, found
+    }
+' coverage/lcov.info)
+echo "Branch coverage: $BRANCH_SUMMARY"
+
 # Install lcov if needed
 if ! command -v lcov &> /dev/null; then
     if [ -n "${CI:-}" ] || [ -n "${GITHUB_ACTIONS:-}" ]; then
@@ -59,8 +78,8 @@ if ! command -v lcov &> /dev/null; then
     fi
 fi
 
-# Generate HTML report
-genhtml -o coverage/html coverage/lcov.info --branch-coverage
+# Generate HTML line coverage report
+genhtml -o coverage/html coverage/lcov.info
 printf '\n%s\n\n' "Open coverage/html/index.html to review code coverage results."
 
 # Extract coverage percentage

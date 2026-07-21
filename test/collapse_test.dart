@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2025 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // collapse_test.dart
@@ -38,6 +38,15 @@ class CollapseTestModule extends Module {
   }
 }
 
+class CombinationalLoopCollapseModule extends Module {
+  CombinationalLoopCollapseModule(Logic a) {
+    a = addInput('a', a);
+    final loop = Logic();
+    loop <= loop | a;
+    addOutput('out') <= loop.eq(a);
+  }
+}
+
 void main() {
   tearDown(() async {
     await Simulator.reset();
@@ -64,5 +73,14 @@ void main() {
     expect(sv, contains(RegExp('e.*=.*a.*&.*b.*&.*c')));
 
     expect(sv, contains(RegExp('internal.*=.*~z')));
+  });
+
+  test('combinational loop does not recurse while collapsing', () async {
+    final mod = CombinationalLoopCollapseModule(Logic());
+    await mod.build();
+
+    final sv = mod.generateSynth();
+    expect(sv, contains(' | a'));
+    expect(sv, contains(' == a'));
   });
 }
