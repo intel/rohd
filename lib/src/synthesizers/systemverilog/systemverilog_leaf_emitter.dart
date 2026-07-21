@@ -103,9 +103,7 @@ class SystemVerilogLeafEmitter implements InlineLeafEmitter {
     final vals = plan.inputValues;
 
     if (op == LeafOperationKind.not && vals.length == 1) {
-      final outputWidth = plan.meta<int>('outputWidth') ??
-          plan.sourceModule.outputs.values.first.width;
-      return outputWidth == 1 ? '!${vals[0]}' : '~${vals[0]}';
+      return '~${vals[0]}';
     }
 
     const binaryOps = <LeafOperationKind, String>{
@@ -199,7 +197,7 @@ class SystemVerilogLeafEmitter implements InlineLeafEmitter {
       return '${vals[0]}[${vals[1]}]';
     }
 
-    if (op == LeafOperationKind.swizzle && vals.isNotEmpty) {
+    if (op == LeafOperationKind.swizzle) {
       final inputWidths = plan.meta<List<int>>('inputWidths');
       final inputCount = plan.meta<int>('inputCount');
       final inputIsArrayMember =
@@ -212,6 +210,10 @@ class SystemVerilogLeafEmitter implements InlineLeafEmitter {
           'SystemVerilog swizzle leaf requires inputWidths and inputCount '
           'metadata.',
         );
+      }
+
+      if (inputCount == 0 && vals.isEmpty) {
+        return '';
       }
 
       if (vals.length != inputCount && vals.length != inputCount + 1) {
@@ -236,7 +238,9 @@ class SystemVerilogLeafEmitter implements InlineLeafEmitter {
                   inputHasUnpackedArraySource[i];
           filtered.add((
             canCollapse: !isArrayMember && !hasUnpackedArraySource,
-            expression: inputExpressions[i],
+            expression: inputExpressions[i].isEmpty
+                ? "$width'b${'z' * width}"
+                : inputExpressions[i],
             width: width,
           ));
         }

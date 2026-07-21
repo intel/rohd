@@ -40,6 +40,7 @@ class SystemVerilogSynthSubModuleInstantiation
     assert(
         (module is SystemVerilog &&
                 (module as SystemVerilog).acceptsEmptyPortConnections) ||
+            module is Swizzle ||
             portNameToValueMapping.values.none((e) => e.isEmpty),
         'Inline modules should not ever receive empty port values,'
         ' only module instantiations can get something like `.port_name()`.');
@@ -49,7 +50,7 @@ class SystemVerilogSynthSubModuleInstantiation
       portNameToValueMapping,
     );
 
-    return '($inlineSvRepresentation)';
+    return inlineSvRepresentation.isEmpty ? '' : '($inlineSvRepresentation)';
   }
 
   /// Provides the full SV instantiation for this module.
@@ -64,16 +65,77 @@ class SystemVerilogSynthSubModuleInstantiation
     }, synthLogicToInlineableSynthSubmoduleMap,
         (submodule) => submodule.inlineVerilog());
 
+    for (final entry in inOutMapping.entries) {
+      final portValue = ports[entry.key];
+      final inlineSubModule =
+          synthLogicToInlineableSynthSubmoduleMap?[entry.value] ??
+              synthLogicToInlineableSynthSubmoduleMap?[entry.value.resolved];
+      final aggregateLvalue = inlineSubModule == null
+          ? null
+          : _declaredSwizzleAggregateReference(inlineSubModule);
+      if (portValue != null &&
+          portValue.contains("'bz") &&
+          inlineSubModule?.module is Swizzle &&
+          aggregateLvalue != null) {
+        ports[entry.key] = aggregateLvalue;
+      }
+    }
+
     if (module is InlineLeaf) {
       final resultName = (module as InlineLeaf).resultSignalName;
-      if ((ports[resultName] ?? '').isEmpty) {
+      final resultLogic = inlineResultLogic;
+      if (resultLogic == null || !resultLogic.hasName) {
         return null;
       }
+      ports[resultName] = resultLogic.name;
     }
     return SystemVerilogSynthesizer.instantiationVerilogFor(
         module: module,
         instanceType: instanceType,
         instanceName: name,
         ports: ports);
+  }
+
+  String? _declaredSwizzleAggregateReference(
+    SystemVerilogSynthSubModuleInstantiation swizzle,
+  ) {
+    final result = swizzle.inlineResultLogic;
+    if (result == null) {
+      return null;
+    }
+
+    final mappedInputs = [
+      ...swizzle.inputMapping.values,
+      ...swizzle.inOutMapping.entries
+          .where(
+            (entry) =>
+                entry.key != (swizzle.module as InlineLeaf).resultSignalName,
+          )
+          .map((entry) => entry.value),
+    ];
+    final parentArrays = <SynthLogic>{};
+    for (final input in mappedInputs) {
+      final element = input is SynthLogicArrayElement
+          ? input
+          : input.resolved is SynthLogicArrayElement
+              ? input.resolved as SynthLogicArrayElement
+              : null;
+      if (element == null) {
+        return null;
+      }
+      parentArrays.add(element.parentArray.resolved);
+    }
+    final parentArray = parentArrays.singleOrNull;
+    if (parentArray == null ||
+        parentArray.width != result.width ||
+        !parentArray.needsDeclaration ||
+        !parentArray.parentSynthModuleDefinition.internalSignals
+            .contains(parentArray)) {
+      return null;
+    }
+
+    return parentArray.width > 1
+        ? '(${parentArray.name}[${parentArray.width - 1}:0])'
+        : parentArray.name;
   }
 }

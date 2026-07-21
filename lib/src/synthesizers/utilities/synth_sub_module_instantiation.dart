@@ -127,23 +127,24 @@ class SynthSubModuleInstantiation {
 
   /// Creates a port-name to expression map, optionally inlining source
   /// submodule expressions for mapped [SynthLogic] values.
-  Map<String, String>
-      modulePortsMapWithInline<T extends SynthSubModuleInstantiation>(
+  Map<String, String> modulePortsMapWithInline<
+          T extends SynthSubModuleInstantiation>(
     Map<String, SynthLogic> plainPorts,
     Map<SynthLogic, T>? synthLogicToInlineableSynthSubmoduleMap,
     String Function(T subModuleInstantiation) inlineExpressionFor,
   ) =>
-          plainPorts.map((name, synthLogic) {
-            final inlineSubModule =
-                synthLogicToInlineableSynthSubmoduleMap?[synthLogic];
-            if (inlineSubModule != null) {
-              return MapEntry(name, inlineExpressionFor(inlineSubModule));
-            }
+      plainPorts.map((name, synthLogic) {
+        final resolved = synthLogic.resolved;
+        final inlineSubModule =
+            synthLogicToInlineableSynthSubmoduleMap?[synthLogic] ??
+                synthLogicToInlineableSynthSubmoduleMap?[resolved];
+        if (inlineSubModule != null) {
+          return MapEntry(name, inlineExpressionFor(inlineSubModule));
+        }
 
-            // Cleared declarations map to empty port connections.
-            return MapEntry(
-                name, synthLogic.declarationCleared ? '' : synthLogic.name);
-          });
+        // Cleared declarations map to empty port connections.
+        return MapEntry(name, resolved.declarationCleared ? '' : resolved.name);
+      });
 
   /// Removes the need for this module to be declared (via
   /// [needsInstantiation]).

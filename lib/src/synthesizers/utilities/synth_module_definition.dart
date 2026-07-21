@@ -927,7 +927,10 @@ class SynthModuleDefinition {
           (logic) =>
               logic.isPort &&
               isSubmoduleAndPresent(logic.parentModule) &&
-              ((logic.parentModule! is SystemVerilog &&
+              ((logic.parentModule! is InlineLeaf &&
+                      !(logic.parentModule! as InlineLeaf).isWiresOnly &&
+                      internalSignal is! SynthLogicArrayElement) ||
+                  (logic.parentModule! is SystemVerilog &&
                       !(logic.parentModule! as SystemVerilog)
                           .acceptsEmptyPortConnections) ||
                   // ignore: deprecated_member_use_from_same_package
@@ -1044,7 +1047,12 @@ class SynthModuleDefinition {
       )) {
         final subModule = subModuleInstantiation.module;
 
-        if (subModule is SystemVerilog && subModule.isWiresOnly) {
+        final isWiresOnly = switch (subModule) {
+          InlineLeaf() => subModule.isWiresOnly,
+          SystemVerilog() => subModule.isWiresOnly,
+          _ => false,
+        };
+        if (isWiresOnly) {
           final inputs = {
             ...subModuleInstantiation.inputMapping,
             ...subModuleInstantiation.inOutMapping,
@@ -1174,6 +1182,23 @@ class SynthModuleDefinition {
         _submoduleMappingReferences(includeInputs: true, includeOutputs: false);
     final submoduleOutputMappingReferences =
         _submoduleMappingReferences(includeInputs: false, includeOutputs: true);
+    final inlineOperationInputReferences = <SynthLogic>{};
+    for (final instantiation in subModuleInstantiations) {
+      final inlineModule = instantiation.module;
+      if (inlineModule is! InlineLeaf || inlineModule.isWiresOnly) {
+        continue;
+      }
+      for (final mapped in [
+        ...instantiation.inputMapping.values,
+        ...instantiation.inOutMapping.entries
+            .where((entry) => entry.key != inlineModule.resultSignalName)
+            .map((entry) => entry.value),
+      ]) {
+        inlineOperationInputReferences
+          ..add(mapped.resolved)
+          ..add(_referenceBase(mapped.resolved));
+      }
+    }
     final assignmentConnectedSignals = <SynthLogic>{};
 
     var foundInlineDependency = true;
@@ -1223,6 +1248,11 @@ class SynthModuleDefinition {
       final destinationReferenceBase = _referenceBase(destinationBase);
       final sourceIsMappedOutput =
           submoduleOutputMappingReferences.contains(sourceBase);
+      final destinationFeedsInlineOperation =
+          inlineOperationInputReferences.contains(destinationBase) ||
+              inlineOperationInputReferences.contains(
+                destinationReferenceBase,
+              );
 
       if (submoduleInputMappingReferences.contains(destinationBase) &&
           sourceIsMappedOutput) {
@@ -1234,6 +1264,11 @@ class SynthModuleDefinition {
       }
       if (sourceIsMappedOutput) {
         assignmentConnectedSignals.add(sourceBase);
+      }
+      if (destinationFeedsInlineOperation) {
+        assignmentConnectedSignals
+          ..add(destinationBase)
+          ..add(sourceBase);
       }
     }
 
