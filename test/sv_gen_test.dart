@@ -885,13 +885,16 @@ void main() {
     expect(sv, isNot(contains('replicate')));
     expect(sv, isNot(contains('subset')));
 
-    expect(sv, contains('''
-module ModWithUselessWireMods (
-input wire logic [7:0] a,
-input wire logic [7:0] b
-);
-
-endmodule : ModWithUselessWireMods'''));
+    expect(
+        sv,
+        contains([
+          'module ModWithUselessWireMods (',
+          'input logic [7:0] a,',
+          'input logic [7:0] b',
+          ');',
+          '',
+          'endmodule : ModWithUselessWireMods',
+        ].join('\n')));
   });
 
   test('partial array assignment sv', () async {
