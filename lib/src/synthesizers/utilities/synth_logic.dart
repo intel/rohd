@@ -252,6 +252,16 @@ class SynthLogic {
     _name = _findName();
   }
 
+  /// Picks a stable name for a signal fabricated during synthesis.
+  void pickGeneratedName(Object key, {required String initialName}) {
+    assert(_name == null, 'Should only pick a name once.');
+
+    _name = parentSynthModuleDefinition.module.namer.identifierNameOf(
+      key,
+      initialName: initialName,
+    );
+  }
+
   /// Finds the best name from the collection of [Logic]s.
   ///
   /// Delegates to signal namer which handles constant value naming, priority

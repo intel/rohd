@@ -41,6 +41,39 @@ class SystemVerilogSynthSubModuleInstantiation
               // if cleared, then empty port
               (synthLogic.declarationCleared ? '' : synthLogic.name)));
 
+  /// Replaces references to signals that were lowered after normal synthesis.
+  void replaceMappedSignals(Map<SynthLogic, SynthLogic> replacements) {
+    SynthLogic replacementFor(SynthLogic signal) =>
+        replacements[signal.resolved] ?? signal;
+
+    for (final entry in inputMapping.entries.toList()) {
+      final replacement = replacementFor(entry.value);
+      if (!identical(replacement, entry.value)) {
+        setInputMapping(entry.key, replacement, replace: true);
+      }
+    }
+    for (final entry in outputMapping.entries.toList()) {
+      final replacement = replacementFor(entry.value);
+      if (!identical(replacement, entry.value)) {
+        setOutputMapping(entry.key, replacement, replace: true);
+      }
+    }
+    for (final entry in inOutMapping.entries.toList()) {
+      final replacement = replacementFor(entry.value);
+      if (!identical(replacement, entry.value)) {
+        setInOutMapping(entry.key, replacement, replace: true);
+      }
+    }
+
+    final inlineableMap = synthLogicToInlineableSynthSubmoduleMap;
+    if (inlineableMap != null) {
+      synthLogicToInlineableSynthSubmoduleMap = {
+        for (final entry in inlineableMap.entries)
+          replacementFor(entry.key): entry.value,
+      };
+    }
+  }
+
   /// Provides the inline SV representation for this module.
   ///
   /// Should only be called if [module] is [InlineSystemVerilog].

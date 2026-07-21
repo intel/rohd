@@ -221,10 +221,14 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
 
       var sourceExpression = '${assignment.src.name}$srcSliceString';
 
+      final sourceIsPackedEnumInput = assignment.src.isEnum &&
+          _synthModuleDefinition.inputs.contains(assignment.src.resolved);
+
       // Handle enum type casting for assignments where necessary.
       if (configuration.generateEnums &&
           normalizesWholeEnumDestination &&
-          (!assignment.src.isEnum ||
+          (sourceIsPackedEnumInput ||
+              !assignment.src.isEnum ||
               assignment is RangeSynthAssignment ||
               !identical(
                 assignment.src.enumDefinition,

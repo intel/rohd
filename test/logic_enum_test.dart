@@ -333,6 +333,32 @@ class TypedEnumPortsModule extends Module {
   }
 }
 
+class TypedEnumPartialSourceModule extends Module {
+  TypedEnumPartialSourceModule(LogicEnum<TestEnum> source) {
+    final stateIn = addTypedInput('stateIn', source);
+    final packedValue = Logic(
+      width: 3,
+      name: 'packedValue',
+      naming: Naming.reserved,
+    )
+      ..assignSubset([Const(0)], start: 0)
+      ..assignSubset([stateIn], start: 1)
+      ..assignSubset([Const(0)], start: 2);
+
+    addOutput('result', width: packedValue.width) <= packedValue;
+  }
+}
+
+class TypedEnumRangeDestinationModule extends Module {
+  TypedEnumRangeDestinationModule(Logic source, LogicEnum<TestEnum> type) {
+    source = addInput('source', source, width: type.width);
+    final stateOut = addTypedOutput('stateOut', type.clone);
+    for (var index = 0; index < stateOut.width; index++) {
+      stateOut.assignSubset([source[index]], start: index);
+    }
+  }
+}
+
 class TypedEnumHierarchyModule extends Module {
   late final TypedEnumPortsModule child;
 
@@ -358,6 +384,47 @@ class TypedEnumHierarchyModule extends Module {
     )..gets(child.stateOut);
 
     addOutput('result', width: broad.width) <= broad;
+  }
+}
+
+class TypedEnumCasesModule extends Module {
+  late final LogicEnum<TestEnum> stateIn;
+  late final LogicEnum<TestEnum> stateOut;
+
+  TypedEnumCasesModule(LogicEnum<TestEnum> source)
+      : super(name: 'typedEnumCases') {
+    stateIn = addTypedInput('stateIn', source);
+    final selected = cases(stateIn, {
+      TestEnum.a: TestEnum.c,
+      TestEnum.c: TestEnum.a,
+    });
+    stateOut = addTypedOutput('stateOut', stateIn.clone)..gets(selected);
+  }
+}
+
+class TypedEnumPortNameCollisionModule extends Module {
+  TypedEnumPortNameCollisionModule(LogicEnum<TestEnum> source) {
+    final stateIn = addTypedInput('stateIn', source);
+    final stateInEnum = Logic(
+      width: stateIn.width,
+      name: 'stateIn_enum',
+      naming: Naming.reserved,
+    )..gets(stateIn);
+
+    addOutput('result', width: stateIn.width) <= stateInEnum;
+  }
+}
+
+class TypedEnumConsumersModule extends Module {
+  late final TypedEnumPortsModule child;
+
+  TypedEnumConsumersModule(LogicEnum<TestEnum> source) {
+    final stateIn = addTypedInput('stateIn', source);
+    child = TypedEnumPortsModule(stateIn);
+
+    addOutput('inlineResult', width: stateIn.width) <=
+        stateIn ^ Const(1, width: stateIn.width);
+    addOutput('childResult', width: stateIn.width) <= child.stateOut;
   }
 }
 
@@ -1086,6 +1153,78 @@ void main() {
       expect(sv, contains('input wire logic [1:0] stateIn'));
       expect(sv, contains('output var logic [1:0] stateOut'));
       expect(sv, contains('} TypedPortEnum;'));
+      expect(sv, contains('TypedPortEnum stateIn_enum;'));
+      expect(sv, contains('TypedPortEnum stateOut_enum;'));
+      expect(
+        sv,
+        contains("assign stateIn_enum = TypedPortEnum'(stateIn);"),
+      );
+      expect(sv, contains('assign stateOut = stateOut_enum;'));
+      expect(sv, contains('assign stateOut_enum = stateIn_enum;'));
+
+      const configuration =
+          SystemVerilogSynthesizerConfiguration(generateEnums: false);
+      final untypedSv = module.generateSynth(configuration: configuration);
+      expect(untypedSv, isNot(contains('stateIn_enum')));
+      expect(untypedSv, isNot(contains('stateOut_enum')));
+    });
+
+    test('typed enum input survives partial assignment rewriting', () async {
+      final type = LogicEnum<TestEnum>.withMapping(
+        {
+          TestEnum.a: 0,
+          TestEnum.b: 1,
+        },
+        width: 1,
+        definitionName: 'TypedPartialEnum',
+      );
+      final module = TypedEnumPartialSourceModule(type);
+      final vectors = [
+        Vector({'stateIn': 0}, {'result': 0}),
+        Vector({'stateIn': 1}, {'result': 2}),
+      ];
+      await checkEnumModeParity(module, vectors);
+
+      final sv = module.generateSynth();
+      expect(sv, contains('assign packedValue[1] = stateIn_enum;'));
+      expect(
+        sv,
+        contains("assign stateIn_enum = TypedPartialEnum'(stateIn);"),
+      );
+
+      const configuration =
+          SystemVerilogSynthesizerConfiguration(generateEnums: false);
+      final untypedSv = module.generateSynth(configuration: configuration);
+      expect(untypedSv, contains('assign packedValue[1] = stateIn;'));
+      expect(untypedSv, isNot(contains('stateIn_enum')));
+    });
+
+    test('typed enum output survives range assignment rewriting', () async {
+      final type = LogicEnum(
+        TestEnum.values,
+        width: 2,
+        definitionName: 'TypedRangeEnum',
+      );
+      final module = TypedEnumRangeDestinationModule(Logic(width: 2), type);
+      final vectors = [
+        Vector({'source': 0}, {'stateOut': 0}),
+        Vector({'source': 1}, {'stateOut': 1}),
+        Vector({'source': 2}, {'stateOut': 2}),
+      ];
+      await checkEnumModeParity(module, vectors);
+
+      final sv = module.generateSynth();
+      expect(
+        sv,
+        contains("assign stateOut_enum = TypedRangeEnum'(source[1:0]);"),
+      );
+      expect(sv, contains('assign stateOut = stateOut_enum;'));
+
+      const configuration =
+          SystemVerilogSynthesizerConfiguration(generateEnums: false);
+      final untypedSv = module.generateSynth(configuration: configuration);
+      expect(untypedSv, contains('assign stateOut = source[1:0];'));
+      expect(untypedSv, isNot(contains('stateOut_enum')));
     });
 
     test('typed enum ports preserve widening across hierarchy in both modes',
@@ -1104,6 +1243,91 @@ void main() {
       expect(sv, contains('TypedChildNarrowEnum'));
       expect(sv, contains('ParentTypedBroadEnum'));
       expect(sv, contains("ParentTypedBroadEnum'("));
+    });
+
+    test('typed enum backing signals are used by cases in both modes',
+        () async {
+      final source = LogicEnum<TestEnum>.withMapping(
+        {
+          TestEnum.a: 0,
+          TestEnum.c: 2,
+        },
+        width: 2,
+        definitionName: 'TypedCaseEnum',
+      );
+      final module = TypedEnumCasesModule(source);
+      final vectors = [
+        Vector({'stateIn': 0}, {'stateOut': 2}),
+        Vector({'stateIn': 2}, {'stateOut': 0}),
+      ];
+      await checkEnumModeParity(module, vectors);
+
+      final sv = module.generateSynth();
+      expect(sv, contains('case (stateIn_enum)'));
+      expect(sv, contains('stateOut_enum = c;'));
+      expect(sv, contains('stateOut_enum = a;'));
+
+      const configuration =
+          SystemVerilogSynthesizerConfiguration(generateEnums: false);
+      final untypedSv = module.generateSynth(configuration: configuration);
+      expect(untypedSv, isNot(contains('stateIn_enum')));
+      expect(untypedSv, isNot(contains('stateOut_enum')));
+    });
+
+    test('typed enum backing names avoid signal collisions', () async {
+      final source = LogicEnum<TestEnum>.withMapping(
+        {
+          TestEnum.a: 0,
+          TestEnum.c: 2,
+        },
+        width: 2,
+        definitionName: 'TypedCollisionEnum',
+      );
+      final module = TypedEnumPortNameCollisionModule(source);
+      final vectors = [
+        Vector({'stateIn': 0}, {'result': 0}),
+        Vector({'stateIn': 2}, {'result': 2}),
+      ];
+      await checkEnumModeParity(module, vectors);
+
+      final firstSv = module.generateSynth();
+      final secondSv = module.generateSynth();
+      print(firstSv);
+      for (final sv in [firstSv, secondSv]) {
+        expect(sv, contains('logic [1:0] stateIn_enum;'));
+        expect(sv, contains('TypedCollisionEnum stateIn_enum_0;'));
+        expect(
+          sv,
+          contains("assign stateIn_enum_0 = TypedCollisionEnum'(stateIn);"),
+        );
+      }
+    });
+
+    test('typed enum backing signals feed inline and child consumers',
+        () async {
+      final source = LogicEnum<TestEnum>.withMapping(
+        {
+          TestEnum.a: 0,
+          TestEnum.c: 2,
+        },
+        width: 2,
+        definitionName: 'TypedConsumerEnum',
+      );
+      final module = TypedEnumConsumersModule(source);
+      final vectors = [
+        Vector({'stateIn': 0}, {'inlineResult': 1, 'childResult': 0}),
+        Vector({'stateIn': 2}, {'inlineResult': 3, 'childResult': 2}),
+      ];
+      await checkEnumModeParity(module, vectors);
+
+      final sv = module.generateSynth();
+      expect(sv, contains("stateIn_enum ^ 2'h1"));
+      expect(sv, contains('.stateIn(stateIn_enum)'));
+
+      const configuration =
+          SystemVerilogSynthesizerConfiguration(generateEnums: false);
+      final untypedSv = module.generateSynth(configuration: configuration);
+      expect(untypedSv, isNot(contains('stateIn_enum')));
     });
 
     test('typed enum inOut requires a net-backed enum type', () {
