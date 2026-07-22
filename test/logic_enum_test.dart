@@ -341,7 +341,7 @@ class TypedEnumPartialSourceModule extends Module {
       name: 'packedValue',
       naming: Naming.reserved,
     )
-      ..assignSubset([Const(0)], start: 0)
+      ..assignSubset([Const(0)])
       ..assignSubset([stateIn], start: 1)
       ..assignSubset([Const(0)], start: 2);
 
@@ -1150,8 +1150,8 @@ void main() {
       await checkEnumModeParity(module, vectors);
 
       final sv = module.generateSynth();
-      expect(sv, contains('input wire logic [1:0] stateIn'));
-      expect(sv, contains('output var logic [1:0] stateOut'));
+      expect(sv, contains('input logic [1:0] stateIn'));
+      expect(sv, contains('output logic [1:0] stateOut'));
       expect(sv, contains('} TypedPortEnum;'));
       expect(sv, contains('TypedPortEnum stateIn_enum;'));
       expect(sv, contains('TypedPortEnum stateOut_enum;'));

@@ -193,7 +193,7 @@ void main() {
 
     // Make sure the "modify" went through:
     final sv = mod.generateSynth();
-    expect(sv, contains('input wire logic simple_clk'));
+    expect(sv, contains('input logic simple_clk'));
   });
 
   group('drive and receive other', () {
