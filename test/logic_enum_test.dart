@@ -695,6 +695,19 @@ void main() {
     expect(logicEnum < 2, isA<Conditional>());
   });
 
+  test('untyped Logic rejects enum conditional values', () {
+    expect(
+      () => Logic(width: 2) < TestEnum.a,
+      throwsA(
+        isA<ArgumentError>().having(
+          (error) => error.message,
+          'message',
+          contains('LogicEnum receiver with an explicit mapping'),
+        ),
+      ),
+    );
+  });
+
   test('cases rejects enum keys outside the expression mapping', () {
     final expression = LogicEnum(TestEnum.values);
     final sparseExpression = LogicEnum<TestEnum>.withMapping({

@@ -712,7 +712,13 @@ class Logic {
       throw UnassignableException(this, reason: _unassignableReason);
     }
 
-    // TODO(mkorbel1): Support enum values on untyped Logic receivers.
+    if (other is Enum) {
+      throw ArgumentError.value(
+        other,
+        'other',
+        'Enum values require a LogicEnum receiver with an explicit mapping.',
+      );
+    }
 
     if (other is Logic) {
       return ConditionalAssign(this, other);

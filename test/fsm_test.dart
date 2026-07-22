@@ -110,15 +110,20 @@ enum LightColor {
 }
 
 class TrafficTestModule extends Module {
+  late final LogicEnum<LightColor> northLight;
+  late final LogicEnum<LightColor> eastLight;
+
   TrafficTestModule(Logic traffic, Logic reset) {
     traffic = addInput('traffic', traffic, width: traffic.width);
     reset = addInput('reset', reset);
 
-    final northLight = addOutput('northLight', width: traffic.width);
-    final eastLight = addOutput('eastLight', width: traffic.width);
-
-    // TODO(mkorbel1): Use LightColor as an enum signal here.
-    // TODO(mkorbel1): Cover enum metadata propagation through ports.
+    final lightType = LogicEnum(
+      LightColor.values,
+      width: traffic.width,
+      definitionName: 'LightColor',
+    );
+    northLight = addTypedOutput('northLight', lightType.clone);
+    eastLight = addTypedOutput('eastLight', lightType.clone);
 
     final clk = SimpleClockGenerator(10).clk;
 
@@ -126,14 +131,14 @@ class TrafficTestModule extends Module {
       State(LightStates.northFlowing, events: {
         TrafficPresence.isEastActive(traffic): LightStates.northSlowing,
       }, actions: [
-        northLight < LightColor.green.value,
+        northLight < LightColor.green,
       ]),
       State(
         LightStates.northSlowing,
         events: {},
         defaultNextState: LightStates.eastFlowing,
         actions: [
-          northLight < LightColor.yellow.value,
+          northLight < LightColor.yellow,
         ],
       ),
       State(
@@ -142,7 +147,7 @@ class TrafficTestModule extends Module {
           TrafficPresence.isNorthActive(traffic): LightStates.eastSlowing,
         },
         actions: [
-          eastLight < LightColor.green.value,
+          eastLight < LightColor.green,
         ],
       ),
       State(
@@ -150,7 +155,7 @@ class TrafficTestModule extends Module {
         events: {},
         defaultNextState: LightStates.northFlowing,
         actions: [
-          eastLight < LightColor.yellow.value,
+          eastLight < LightColor.yellow,
         ],
       ),
     ];
@@ -162,8 +167,8 @@ class TrafficTestModule extends Module {
       states,
       setupActions: [
         // by default, lights should be red
-        northLight < LightColor.red.value,
-        eastLight < LightColor.red.value,
+        northLight < LightColor.red,
+        eastLight < LightColor.red,
       ],
     );
 
@@ -341,6 +346,11 @@ void main() {
       final mod = TrafficTestModule(Logic(width: 2), Logic());
       await mod.build();
 
+      expect(mod.northLight, isA<LogicEnum<LightColor>>());
+      expect(mod.eastLight, isA<LogicEnum<LightColor>>());
+      expect(mod.northLight.mapping.keys, LightColor.values);
+      expect(mod.eastLight.mapping, mod.northLight.mapping);
+
       final vectors = [
         Vector({'reset': 1, 'traffic': 00}, {}),
         Vector({
@@ -362,6 +372,24 @@ void main() {
       ];
       await SimCompare.checkFunctionalVector(mod, vectors);
       SimCompare.checkIverilogVector(mod, vectors);
+
+      final sv = mod.generateSynth();
+      expect(sv, contains('} LightColor;'));
+      expect(sv, contains('LightColor northLight_enum;'));
+      expect(sv, contains('LightColor eastLight_enum;'));
+      expect(sv, contains('northLight_enum = green;'));
+      expect(sv, contains('eastLight_enum = yellow;'));
+
+      const untypedConfiguration =
+          SystemVerilogSynthesizerConfiguration(generateEnums: false);
+      final untypedSv = mod.generateSynth(configuration: untypedConfiguration);
+      expect(untypedSv, isNot(contains('typedef enum')));
+      expect(untypedSv, isNot(contains('northLight_enum')));
+      SimCompare.checkIverilogVector(
+        mod,
+        vectors,
+        synthesizerConfiguration: untypedConfiguration,
+      );
 
       verifyMermaidStateDiagram(_trafficFSMPath);
     });
