@@ -40,10 +40,30 @@ Logic cases(Logic expression, Map<dynamic, dynamic> conditions,
     {int? width,
     ConditionalType conditionalType = ConditionalType.none,
     dynamic defaultValue}) {
-  for (final conditionValue in [
+  final resultValues = [
     ...conditions.values,
     if (defaultValue != null) defaultValue
-  ]) {
+  ];
+  LogicEnum? enumResult;
+  if (resultValues.any((value) => value is Enum)) {
+    if (expression is! LogicEnum ||
+        !resultValues.every((value) =>
+            value is Enum && expression.mapping.containsKey(value))) {
+      throw ArgumentError.value(
+        resultValues,
+        'conditions',
+        'Enum results must all belong to the expression enum mapping.',
+      );
+    }
+    enumResult = expression.clone();
+    if (width != null && width != enumResult.width) {
+      throw SignalWidthMismatchException.forDynamic(
+          enumResult, width, enumResult.width);
+    }
+    width = enumResult.width;
+  }
+
+  for (final conditionValue in resultValues) {
     int? inferredWidth;
 
     if (conditionValue is Logic) {
@@ -64,6 +84,24 @@ Logic cases(Logic expression, Map<dynamic, dynamic> conditions,
     throw SignalWidthMismatchException.forNull(conditions);
   }
 
+  Logic conditionLogic(dynamic condition) {
+    if (expression is LogicEnum && condition is Enum) {
+      if (!expression.mapping.containsKey(condition)) {
+        throw ArgumentError.value(
+          condition,
+          'conditions',
+          'Not present in the mapping for ${expression.runtimeType}.',
+        );
+      }
+
+      return expression.clone()..gets(Const(expression.mapping[condition]));
+    } else if (condition is Logic) {
+      return condition;
+    } else {
+      return Const(condition, width: expression.width);
+    }
+  }
+
   for (final condition in conditions.entries) {
     if (condition.key is Logic) {
       if (expression.width != (condition.key as Logic).width) {
@@ -80,18 +118,15 @@ Logic cases(Logic expression, Map<dynamic, dynamic> conditions,
     }
   }
 
-  final result = Logic(name: 'result', width: width, naming: Naming.mergeable);
+  final result = enumResult ??
+      Logic(name: 'result', width: width, naming: Naming.mergeable);
 
   Combinational([
     Case(
         expression,
         [
           for (final condition in conditions.entries)
-            CaseItem(
-                condition.key is Logic
-                    ? condition.key as Logic
-                    : Const(condition.key, width: expression.width),
-                [result < condition.value])
+            CaseItem(conditionLogic(condition.key), [result < condition.value])
         ],
         conditionalType: conditionalType,
         defaultItem: defaultValue != null ? [result < defaultValue] : null)
@@ -125,6 +160,15 @@ class Case extends Conditional {
   /// See [ConditionalType] for more details.
   final ConditionalType conditionalType;
 
+  @override
+  Map<Logic, Logic> get portTypePairs => {
+        ...super.portTypePairs,
+        ..._itemTypePortPairs,
+      };
+
+  /// Case-item values whose generated ports must match [expression]'s type.
+  final Map<Logic, Logic> _itemTypePortPairs = {};
+
   /// Whenever an item in [items] matches [expression], it will be executed.
   ///
   /// If none of [items] match, then [defaultItem] is executed.
@@ -136,6 +180,8 @@ class Case extends Conditional {
       if (item.value.width != expression.width) {
         throw PortWidthMismatchException.equalWidth(expression, item.value);
       }
+
+      _itemTypePortPairs[item.value] = expression;
     }
   }
 

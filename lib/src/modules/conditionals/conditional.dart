@@ -119,6 +119,18 @@ abstract class Conditional {
   Logic receiverOutput(Logic receiver) =>
       _assignedReceiverToOutputMap[receiver]!;
 
+  /// Gets the port registered for [driverOrReceiver] by the enclosing block.
+  @internal
+  Logic registeredPort(Logic driverOrReceiver) {
+    final port = _assignedDriverToInputMap[driverOrReceiver] ??
+        _assignedReceiverToOutputMap[driverOrReceiver];
+    if (port == null) {
+      throw StateError(
+          'Logic $driverOrReceiver is not registered in this Conditional.');
+    }
+    return port;
+  }
+
   /// Executes the functionality of this [Conditional] and
   /// populates [drivenSignals] with all [Logic]s that were driven
   /// during execution.
@@ -167,6 +179,15 @@ abstract class Conditional {
   ///
   /// Does *not* recursively call down through sub-[Conditional]s.
   List<Conditional> get conditionals;
+
+  /// A mapping between [receivers] and [drivers] to be fed up to the enclosing
+  /// [Combinational] or [Sequential]'s [Module.portTypePairs].
+  ///
+  /// NOTE: This is for internal usage only, and the API will not be guaranteed
+  /// to be stable.
+  @internal
+  Map<Logic, Logic> get portTypePairs =>
+      {for (final cond in conditionals) ...cond.portTypePairs};
 
   /// Returns a [String] of SystemVerilog to be used in generated output.
   ///

@@ -38,6 +38,9 @@ class Namer {
   /// fresh suffixes for the same submodule instances.
   final Map<Object, String> _instanceNames = {};
 
+  /// Cache of other generated identifiers, such as type and member names.
+  final Map<Object, String> _identifierNames = {};
+
   /// The set of port [Logic] objects, for O(1) port membership tests.
   final Set<Logic> _portLogics;
 
@@ -71,6 +74,25 @@ class Namer {
   /// Returns `true` if [name] has not yet been claimed in the namespace.
   @visibleForTesting
   bool isAvailable(String name) => _uniquifier.isAvailable(name);
+
+  /// Returns a stable, collision-free name for a generated identifier.
+  String identifierNameOf(
+    Object key, {
+    required String initialName,
+    bool reserved = false,
+  }) {
+    final cached = _identifierNames[key];
+    if (cached != null) {
+      return cached;
+    }
+
+    final name = _uniquifier.getUniqueName(
+      initialName: Sanitizer.sanitizeSV(initialName),
+      reserved: reserved,
+    );
+    _identifierNames[key] = name;
+    return name;
+  }
 
   // ─── Instance naming (Module → String) ──────────────────────────
 

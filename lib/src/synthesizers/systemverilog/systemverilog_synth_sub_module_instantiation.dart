@@ -41,6 +41,39 @@ class SystemVerilogSynthSubModuleInstantiation
               // if cleared, then empty port
               (synthLogic.declarationCleared ? '' : synthLogic.name)));
 
+  /// Replaces references to signals that were lowered after normal synthesis.
+  void replaceMappedSignals(Map<SynthLogic, SynthLogic> replacements) {
+    SynthLogic replacementFor(SynthLogic signal) =>
+        replacements[signal.resolved] ?? signal;
+
+    for (final entry in inputMapping.entries.toList()) {
+      final replacement = replacementFor(entry.value);
+      if (!identical(replacement, entry.value)) {
+        setInputMapping(entry.key, replacement, replace: true);
+      }
+    }
+    for (final entry in outputMapping.entries.toList()) {
+      final replacement = replacementFor(entry.value);
+      if (!identical(replacement, entry.value)) {
+        setOutputMapping(entry.key, replacement, replace: true);
+      }
+    }
+    for (final entry in inOutMapping.entries.toList()) {
+      final replacement = replacementFor(entry.value);
+      if (!identical(replacement, entry.value)) {
+        setInOutMapping(entry.key, replacement, replace: true);
+      }
+    }
+
+    final inlineableMap = synthLogicToInlineableSynthSubmoduleMap;
+    if (inlineableMap != null) {
+      synthLogicToInlineableSynthSubmoduleMap = {
+        for (final entry in inlineableMap.entries)
+          replacementFor(entry.key): entry.value,
+      };
+    }
+  }
+
   /// Provides the inline SV representation for this module.
   ///
   /// Should only be called if [module] is [InlineSystemVerilog].
@@ -64,18 +97,32 @@ class SystemVerilogSynthSubModuleInstantiation
   }
 
   /// Provides the full SV instantiation for this module.
-  String? instantiationVerilog(String instanceType) {
+  String? instantiationVerilog(
+    String instanceType, {
+    required bool generateEnums,
+  }) {
     if (!needsInstantiation) {
       return null;
     }
+
+    final ports = _modulePortsMapWithInline({
+      ...inputMapping,
+      ...outputMapping,
+      ...inOutMapping,
+    });
+    if (generateEnums &&
+        module is InlineSystemVerilog &&
+        (inlineResultLogic?.isEnum ?? false)) {
+      final inlineModule = module as InlineSystemVerilog;
+      final result = ports[inlineModule.resultSignalName];
+      final enumType = inlineResultLogic!.enumDefinition!.definitionName;
+      return "assign $result = $enumType'${inlineVerilog()};  // $name";
+    }
+
     return SystemVerilogSynthesizer.instantiationVerilogFor(
         module: module,
         instanceType: instanceType,
         instanceName: name,
-        ports: _modulePortsMapWithInline({
-          ...inputMapping,
-          ...outputMapping,
-          ...inOutMapping,
-        }));
+        ports: ports);
   }
 }

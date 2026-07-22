@@ -13,6 +13,7 @@ import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/collections/traverseable_collection.dart';
+import 'package:rohd/src/synthesizers/utilities/synth_enum_definition.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
 import 'package:rohd/src/utilities/namer.dart';
 
@@ -121,6 +122,9 @@ Map<K, List<SynthAssignment>> _assignmentsBy<K>(
 class SynthModuleDefinition {
   /// The [Module] being defined.
   final Module module;
+
+  /// Whether generated identifiers may use enum types and symbolic values.
+  final bool generateEnums;
 
   /// All the assignments that are part of this definition.
   final List<SynthAssignment> assignments = [];
@@ -388,7 +392,7 @@ class SynthModuleDefinition {
   }
 
   /// Creates a new definition representation for this [module].
-  SynthModuleDefinition(this.module)
+  SynthModuleDefinition(this.module, {this.generateEnums = true})
       : assert(
             !(module is SystemVerilog &&
                 module.generatedDefinitionType ==
@@ -620,6 +624,7 @@ class SynthModuleDefinition {
     _collapseConstantBackedRangeIntermediates();
     _collapseAssignments();
     _assignSubmodulePortMapping();
+    _adjustTypePairs();
 
     _pruneUnused();
     _collapseConstantBackedRangeIntermediates();
@@ -1167,6 +1172,36 @@ class SynthModuleDefinition {
     }
   }
 
+  void _adjustTypePairs() {
+    for (final submoduleInstantiation
+        in moduleToSubModuleInstantiationMap.values) {
+      submoduleInstantiation.adjustTypePairs();
+    }
+  }
+
+  final Map<SynthEnumDefinitionKey, SynthEnumDefinition> _enumDefinitions =
+      <SynthEnumDefinitionKey, SynthEnumDefinition>{};
+
+  List<SynthEnumDefinition> get enumDefinitions =>
+      _enumDefinitions.values.toList(growable: false);
+
+  void _pickDefinitionEnumName(SynthLogic synthEnum) {
+    assert(synthEnum.isEnum, 'Only call this on SynthLogic that is an enum.');
+    final key = SynthEnumDefinitionKey(synthEnum.characteristicEnum!);
+    if (_enumDefinitions.containsKey(key)) {
+      // already have a definition for this enum
+      synthEnum.enumDefinition = _enumDefinitions[key];
+    } else {
+      // create a new definition for this enum
+      final newDefinition = SynthEnumDefinition(
+        synthEnum.characteristicEnum!,
+        module.namer,
+      );
+      _enumDefinitions[key] = newDefinition;
+      synthEnum.enumDefinition = newDefinition;
+    }
+  }
+
   /// Resolves a submodule input mapping through any replacement and, when the
   /// mapped signal is fully driven by a packed scalar assignment, through that
   /// driver as well.
@@ -1410,6 +1445,13 @@ class SynthModuleDefinition {
   /// [Namer.instanceNameOf]. All non-constant names share a single namespace
   /// managed by the module's [Namer].
   void _pickNames() {
+    (<SynthLogic>{
+      ...inputs,
+      ...outputs,
+      ...inOuts,
+      ...internalSignals,
+    }).where((signal) => signal.isEnum).forEach(_pickDefinitionEnumName);
+
     // Name allocation order matters -- earlier claims receive the unsuffixed
     // name when there are collisions. Weak-name claimants are intentionally
     // deferred so emitted objects receive 1st chance at the shortest basenames:
