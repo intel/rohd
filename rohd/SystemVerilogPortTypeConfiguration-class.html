@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
-  <meta name="description" content="API docs for the SystemVerilogSynthesizerConfiguration class from the rohd library, for the Dart programming language.">
-  <title>SystemVerilogSynthesizerConfiguration class - rohd library - Dart API</title>
+  <meta name="description" content="API docs for the SystemVerilogPortTypeConfiguration class from the rohd library, for the Dart programming language.">
+  <title>SystemVerilogPortTypeConfiguration class - rohd library - Dart API</title>
 
 
   
@@ -26,9 +26,9 @@
   <ol class="breadcrumbs gt-separated dark hidden-xs">
     <li><a href="../index.html">rohd</a></li>
     <li><a href="../rohd/">rohd.dart</a></li>
-    <li class="self-crumb">SystemVerilogSynthesizerConfiguration class</li>
+    <li class="self-crumb">SystemVerilogPortTypeConfiguration class</li>
   </ol>
-  <div class="self-name">SystemVerilogSynthesizerConfiguration</div>
+  <div class="self-name">SystemVerilogPortTypeConfiguration</div>
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
@@ -46,15 +46,15 @@
     id="dartdoc-main-content"
     class="main-content"
     data-above-sidebar="rohd&#47;rohd-library-sidebar.html"
-    data-below-sidebar="rohd&#47;SystemVerilogSynthesizerConfiguration-class-sidebar.html">
+    data-below-sidebar="rohd&#47;SystemVerilogPortTypeConfiguration-class-sidebar.html">
     <div>
-<h1><span class="kind-class">SystemVerilogSynthesizerConfiguration</span> class 
+<h1><span class="kind-class">SystemVerilogPortTypeConfiguration</span> class 
  
 </h1></div>
 
     
 <section class="desc markdown">
-  <p>Configuration for SystemVerilog synthesis.</p>
+  <p>Configuration for types in a SystemVerilog port declaration.</p>
 </section>
 
 
@@ -63,11 +63,12 @@
   <section class="summary offset-anchor" id="constructors">
     <h2>Constructors</h2>
     <dl class="constructor-summary-list">
-        <dt id="SystemVerilogSynthesizerConfiguration.new" class="callable">
-          <span class="name"><a href="../rohd/SystemVerilogSynthesizerConfiguration/SystemVerilogSynthesizerConfiguration.html">SystemVerilogSynthesizerConfiguration</a></span><span class="signature">({<span class="parameter" id="param-inputPortType"><span class="type-annotation"><a href="../rohd/SystemVerilogPortTypeConfiguration-class.html">SystemVerilogPortTypeConfiguration</a></span> <span class="parameter-name">inputPortType</span> = <span class="default-value">const SystemVerilogPortTypeConfiguration(objectType: SystemVerilogPortType.implicit)</span>, </span><span class="parameter" id="param-outputPortType"><span class="type-annotation"><a href="../rohd/SystemVerilogPortTypeConfiguration-class.html">SystemVerilogPortTypeConfiguration</a></span> <span class="parameter-name">outputPortType</span> = <span class="default-value">const SystemVerilogPortTypeConfiguration(objectType: SystemVerilogPortType.implicit)</span>, </span><span class="parameter" id="param-inOutPortType"><span class="type-annotation"><a href="../rohd/SystemVerilogPortTypeConfiguration-class.html">SystemVerilogPortTypeConfiguration</a></span> <span class="parameter-name">inOutPortType</span> = <span class="default-value">const SystemVerilogPortTypeConfiguration(dataType: SystemVerilogPortType.implicit)</span></span>})</span>
+        <dt id="SystemVerilogPortTypeConfiguration.new" class="callable">
+          <span class="name"><a href="../rohd/SystemVerilogPortTypeConfiguration/SystemVerilogPortTypeConfiguration.html">SystemVerilogPortTypeConfiguration</a></span><span class="signature">({<span class="parameter" id="param-objectType"><span class="type-annotation"><a href="../rohd/SystemVerilogPortType.html">SystemVerilogPortType</a></span> <span class="parameter-name">objectType</span> = <span class="default-value">SystemVerilogPortType.explicit</span>, </span><span class="parameter" id="param-dataType"><span class="type-annotation"><a href="../rohd/SystemVerilogPortType.html">SystemVerilogPortType</a></span> <span class="parameter-name">dataType</span> = <span class="default-value">SystemVerilogPortType.explicit</span></span>})</span>
         </dt>
         <dd>
-          Creates a new configuration for SystemVerilog synthesis.
+          Creates a new configuration for types in a SystemVerilog port
+declaration.
             <div class="constructor-modifier features">const</div>
         </dd>
     </dl>
@@ -78,6 +79,18 @@
       id="instance-properties">
     <h2>Properties</h2>
     <dl class="properties">
+        <dt id="dataType" class="property">
+  <span class="name"><a href="../rohd/SystemVerilogPortTypeConfiguration/dataType.html">dataType</a></span>
+  <span class="signature">&#8594; <a href="../rohd/SystemVerilogPortType.html">SystemVerilogPortType</a></span>
+  
+
+</dt>
+<dd>
+  Whether the data type, such as <code>logic</code>, is explicit.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
         <dt id="hashCode" class="property inherited">
   <span class="name"><a href="https://api.dart.dev/stable/3.12.2/dart-core/Object/hashCode.html">hashCode</a></span>
   <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.12.2/dart-core/int-class.html">int</a></span>
@@ -90,38 +103,14 @@
 
 </dd>
 
-        <dt id="inOutPortType" class="property">
-  <span class="name"><a href="../rohd/SystemVerilogSynthesizerConfiguration/inOutPortType.html">inOutPortType</a></span>
-  <span class="signature">&#8594; <a href="../rohd/SystemVerilogPortTypeConfiguration-class.html">SystemVerilogPortTypeConfiguration</a></span>
+        <dt id="objectType" class="property">
+  <span class="name"><a href="../rohd/SystemVerilogPortTypeConfiguration/objectType.html">objectType</a></span>
+  <span class="signature">&#8594; <a href="../rohd/SystemVerilogPortType.html">SystemVerilogPortType</a></span>
   
 
 </dt>
 <dd>
-  Type configuration for inout ports.
-  <div class="features"><span class="feature">final</span></div>
-
-</dd>
-
-        <dt id="inputPortType" class="property">
-  <span class="name"><a href="../rohd/SystemVerilogSynthesizerConfiguration/inputPortType.html">inputPortType</a></span>
-  <span class="signature">&#8594; <a href="../rohd/SystemVerilogPortTypeConfiguration-class.html">SystemVerilogPortTypeConfiguration</a></span>
-  
-
-</dt>
-<dd>
-  Type configuration for input ports.
-  <div class="features"><span class="feature">final</span></div>
-
-</dd>
-
-        <dt id="outputPortType" class="property">
-  <span class="name"><a href="../rohd/SystemVerilogSynthesizerConfiguration/outputPortType.html">outputPortType</a></span>
-  <span class="signature">&#8594; <a href="../rohd/SystemVerilogPortTypeConfiguration-class.html">SystemVerilogPortTypeConfiguration</a></span>
-  
-
-</dt>
-<dd>
-  Type configuration for output ports.
+  Whether the object type, such as <code>wire</code> or <code>var</code>, is explicit.
   <div class="features"><span class="feature">final</span></div>
 
 </dd>
@@ -211,7 +200,7 @@
 <ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
     <li><a href="../index.html">rohd</a></li>
     <li><a href="../rohd/">rohd</a></li>
-    <li class="self-crumb">SystemVerilogSynthesizerConfiguration class</li>
+    <li class="self-crumb">SystemVerilogPortTypeConfiguration class</li>
 </ol>
 
     <h5>rohd library</h5>

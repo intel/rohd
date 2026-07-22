@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
-  <meta name="description" content="API docs for the SystemVerilogSynthesizerConfiguration.new constructor from Class SystemVerilogSynthesizerConfiguration from the rohd library, for the Dart programming language.">
-  <title>SystemVerilogSynthesizerConfiguration.new constructor - SystemVerilogSynthesizerConfiguration - rohd library - Dart API</title>
+  <meta name="description" content="API docs for the SystemVerilogPortTypeConfiguration.new constructor from Class SystemVerilogPortTypeConfiguration from the rohd library, for the Dart programming language.">
+  <title>SystemVerilogPortTypeConfiguration.new constructor - SystemVerilogPortTypeConfiguration - rohd library - Dart API</title>
 
 
   
@@ -26,10 +26,10 @@
   <ol class="breadcrumbs gt-separated dark hidden-xs">
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/">rohd.dart</a></li>
-    <li><a href="../../rohd/SystemVerilogSynthesizerConfiguration-class.html">SystemVerilogSynthesizerConfiguration</a></li>
-    <li class="self-crumb">SystemVerilogSynthesizerConfiguration.new const constructor</li>
+    <li><a href="../../rohd/SystemVerilogPortTypeConfiguration-class.html">SystemVerilogPortTypeConfiguration</a></li>
+    <li class="self-crumb">SystemVerilogPortTypeConfiguration.new const constructor</li>
   </ol>
-  <div class="self-name">SystemVerilogSynthesizerConfiguration.new</div>
+  <div class="self-name">SystemVerilogPortTypeConfiguration.new</div>
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
@@ -46,38 +46,31 @@
   <div
       id="dartdoc-main-content"
       class="main-content"
-      data-above-sidebar="rohd&#47;SystemVerilogSynthesizerConfiguration-class-sidebar.html"
+      data-above-sidebar="rohd&#47;SystemVerilogPortTypeConfiguration-class-sidebar.html"
       data-below-sidebar="">
       <div>
-<h1><span class="kind-constructor">SystemVerilogSynthesizerConfiguration</span> constructor 
+<h1><span class="kind-constructor">SystemVerilogPortTypeConfiguration</span> constructor 
 </h1></div>
 
     <section class="multi-line-signature">
       const
-      <span class="name ">SystemVerilogSynthesizerConfiguration</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="param-inputPortType"><span class="type-annotation"><a href="../../rohd/SystemVerilogPortTypeConfiguration-class.html">SystemVerilogPortTypeConfiguration</a></span> <span class="parameter-name">inputPortType</span> = <span class="default-value">const SystemVerilogPortTypeConfiguration(objectType: SystemVerilogPortType.implicit)</span>, </span></li>
-<li><span class="parameter" id="param-outputPortType"><span class="type-annotation"><a href="../../rohd/SystemVerilogPortTypeConfiguration-class.html">SystemVerilogPortTypeConfiguration</a></span> <span class="parameter-name">outputPortType</span> = <span class="default-value">const SystemVerilogPortTypeConfiguration(objectType: SystemVerilogPortType.implicit)</span>, </span></li>
-<li><span class="parameter" id="param-inOutPortType"><span class="type-annotation"><a href="../../rohd/SystemVerilogPortTypeConfiguration-class.html">SystemVerilogPortTypeConfiguration</a></span> <span class="parameter-name">inOutPortType</span> = <span class="default-value">const SystemVerilogPortTypeConfiguration(dataType: SystemVerilogPortType.implicit)</span>, </span></li>
+      <span class="name ">SystemVerilogPortTypeConfiguration</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="param-objectType"><span class="type-annotation"><a href="../../rohd/SystemVerilogPortType.html">SystemVerilogPortType</a></span> <span class="parameter-name">objectType</span> = <span class="default-value">SystemVerilogPortType.explicit</span>, </span></li>
+<li><span class="parameter" id="param-dataType"><span class="type-annotation"><a href="../../rohd/SystemVerilogPortType.html">SystemVerilogPortType</a></span> <span class="parameter-name">dataType</span> = <span class="default-value">SystemVerilogPortType.explicit</span>, </span></li>
 </ol>})
     </section>
     
 <section class="desc markdown">
-  <p>Creates a new configuration for SystemVerilog synthesis.</p>
+  <p>Creates a new configuration for types in a SystemVerilog port
+declaration.</p>
 </section>
 
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">const SystemVerilogSynthesizerConfiguration({
-  this.inputPortType = const SystemVerilogPortTypeConfiguration(
-    objectType: SystemVerilogPortType.implicit,
-  ),
-  this.outputPortType = const SystemVerilogPortTypeConfiguration(
-    objectType: SystemVerilogPortType.implicit,
-  ),
-  this.inOutPortType = const SystemVerilogPortTypeConfiguration(
-    dataType: SystemVerilogPortType.implicit,
-  ),
+  <pre class="language-dart"><code class="language-dart">const SystemVerilogPortTypeConfiguration({
+  this.objectType = SystemVerilogPortType.explicit,
+  this.dataType = SystemVerilogPortType.explicit,
 });</code></pre>
 </section>
 
@@ -93,11 +86,11 @@
 <ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/">rohd</a></li>
-    <li><a href="../../rohd/SystemVerilogSynthesizerConfiguration-class.html">SystemVerilogSynthesizerConfiguration</a></li>
-    <li class="self-crumb">SystemVerilogSynthesizerConfiguration.new const constructor</li>
+    <li><a href="../../rohd/SystemVerilogPortTypeConfiguration-class.html">SystemVerilogPortTypeConfiguration</a></li>
+    <li class="self-crumb">SystemVerilogPortTypeConfiguration.new const constructor</li>
 </ol>
 
-    <h5>SystemVerilogSynthesizerConfiguration class</h5>
+    <h5>SystemVerilogPortTypeConfiguration class</h5>
     <div id="dartdoc-sidebar-left-content"></div>
   </div><!--/.sidebar-offcanvas-left-->
   <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
