@@ -446,10 +446,22 @@ class Logic {
   Logic operator ~() => NotGate(this).out;
 
   /// Logical bitwise AND.
-  Logic operator &(Logic other) => And2Gate(this, other).out;
+  Logic operator &(Logic other) {
+    if (other is Const) {
+      return other & this;
+    }
+
+    return And2Gate(this, other).out;
+  }
 
   /// Logical bitwise OR.
-  Logic operator |(Logic other) => Or2Gate(this, other).out;
+  Logic operator |(Logic other) {
+    if (other is Const) {
+      return other | this;
+    }
+
+    return Or2Gate(this, other).out;
+  }
 
   /// Logical bitwise XOR.
   Logic operator ^(Logic other) => Xor2Gate(this, other).out;
@@ -479,6 +491,10 @@ class Logic {
   ///
   /// If [isNet] and [other] is constant, then the result will also be a net.
   Logic operator >>(dynamic other) {
+    if (_isZeroShiftAmount(other)) {
+      return this;
+    }
+
     if (isNet) {
       // many SV simulators don't support shifting of nets, so default this
       final shamt = _constShiftAmount(other);
@@ -499,6 +515,10 @@ class Logic {
   ///
   /// If [isNet] and [other] is constant, then the result will also be a net.
   Logic operator <<(dynamic other) {
+    if (_isZeroShiftAmount(other)) {
+      return this;
+    }
+
     if (isNet) {
       // many SV simulators don't support shifting of nets, so default this
       final shamt = _constShiftAmount(other);
@@ -519,6 +539,10 @@ class Logic {
   ///
   /// If [isNet] and [other] is constant, then the result will also be a net.
   Logic operator >>>(dynamic other) {
+    if (_isZeroShiftAmount(other)) {
+      return this;
+    }
+
     if (isNet) {
       // many SV simulators don't support shifting of nets, so default this
       final shamt = _constShiftAmount(other);
@@ -541,6 +565,17 @@ class Logic {
       return null;
     } else {
       return LogicValue.ofInferWidth(other).toInt();
+    }
+  }
+
+  /// Indicates whether [other] represents a known constant shift of zero.
+  static bool _isZeroShiftAmount(dynamic other) {
+    if (other is Const) {
+      return other.value.isValid && other.value.isZero;
+    } else if (other is Logic) {
+      return false;
+    } else {
+      return LogicValue.ofInferWidth(other).isZero;
     }
   }
 

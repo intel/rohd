@@ -496,7 +496,7 @@ class ModWithPartialArrayAssignment extends Module {
 
 class ModWithConstInlineUnaryOp extends Module {
   ModWithConstInlineUnaryOp() {
-    addOutput('b', width: 8) <= ~Const(0, width: 8);
+    addOutput('b', width: 8) <= NotGate(Const(0, width: 8)).out;
   }
 }
 
@@ -682,6 +682,9 @@ void main() {
   test('const unary inline op', () async {
     final mod = ModWithConstInlineUnaryOp();
     await mod.build();
+    final sv = mod.generateSynth();
+
+    expect(sv, contains("~8'h0"), reason: sv);
 
     final vectors = [
       Vector({}, {'b': 0xff}),

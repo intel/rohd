@@ -607,12 +607,16 @@ abstract class LogicValue implements Comparable<LogicValue> {
   static String _reverse(String inString) =>
       String.fromCharCodes(inString.runes.toList().reversed);
 
-  /// Return the radix encoding of the current [LogicValue] as a sequence
-  /// of radix characters prefixed by the length and encoding format.
-  /// Output format is: `<len>'<format><encoded-value>`.
+  /// Return the radix encoding of the current [LogicValue] as a sequence of
+  /// radix characters. By default, the output is prefixed by the length and
+  /// encoding format: `<len>'<format><encoded-value>`.
   ///
-  /// [ofRadixString] can parse a [String] produced by [toRadixString] and
-  /// construct a [LogicValue].
+  /// If [includeWidth] is `false`, the length and encoding format are omitted.
+  /// The resulting string is not self-describing and cannot be parsed by
+  /// [ofRadixString] without restoring that information.
+  ///
+  /// [ofRadixString] can parse a decorated [String] produced by
+  /// [toRadixString] and construct a [LogicValue].
   ///
   /// Here is the number 1492 printed as a radix string:
   /// - Binary: `15'b101_1101_0100`
@@ -624,7 +628,8 @@ abstract class LogicValue implements Comparable<LogicValue> {
   /// Separators are output according to [chunkSize] starting from the
   /// LSB(right), default is 4 characters.  The default separator is '_'.
   /// [sepChar] can be set to another character, but not in [radixStringChars],
-  /// otherwise it will throw an exception.
+  /// or to an empty string to disable separators. Otherwise, it will throw an
+  /// exception.
   ///  - [chunkSize] = default: `61'h2_9ebc_5f06_5bf7`
   ///  - [chunkSize] = 10: `61'h29e_bc5f065bf7`
   ///
@@ -650,8 +655,9 @@ abstract class LogicValue implements Comparable<LogicValue> {
       {int radix = 2,
       int chunkSize = 4,
       bool leadingZeros = false,
+      bool includeWidth = true,
       String sepChar = '_'}) {
-    if (radixStringChars.contains(sepChar)) {
+    if (sepChar.isNotEmpty && radixStringChars.contains(sepChar)) {
       throw LogicValueConversionException('separation character invalid');
     }
     final radixStr = switch (radix) {
@@ -730,7 +736,7 @@ abstract class LogicValue implements Comparable<LogicValue> {
             ? spaceString.substring(1, spaceString.length)
             : spaceString
         : '0';
-    return '$width$radixStr$fullString';
+    return '${includeWidth ? '$width$radixStr' : ''}$fullString';
   }
 
   /// Create a [LogicValue] from a length/radix-encoded string of the

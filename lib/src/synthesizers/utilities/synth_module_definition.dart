@@ -592,7 +592,10 @@ class SynthModuleDefinition {
         // as completely undriven).
 
         // make a new const node, it will merge away if not needed
-        final newReceiverConst = getSynthLogic(Const(receiver.value))!;
+        final newReceiverConst = getSynthLogic(Const(
+          receiver.value,
+          preferredRadix: receiver.preferredRadix,
+        ))!;
         internalSignals.add(newReceiverConst);
         assignments.add(SynthAssignment(newReceiverConst, synthReceiver));
       }
