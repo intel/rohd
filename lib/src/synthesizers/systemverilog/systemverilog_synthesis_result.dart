@@ -299,8 +299,6 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
         return null;
       }
 
-      // TODO(mkorbel1): Reject duplicate definition parameter names.
-
       return [
         '#(',
         defParams

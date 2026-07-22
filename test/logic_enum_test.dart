@@ -1,4 +1,11 @@
-//TODO: file headers
+// Copyright (C) 2025-2026 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// logic_enum_test.dart
+// Tests for LogicEnum.
+//
+// 2026 July 22
+// Author: Max Korbel <max.korbel@intel.com>
 
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
@@ -1292,7 +1299,6 @@ void main() {
 
       final firstSv = module.generateSynth();
       final secondSv = module.generateSynth();
-      print(firstSv);
       for (final sv in [firstSv, secondSv]) {
         expect(sv, contains('logic [1:0] stateIn_enum;'));
         expect(sv, contains('TypedCollisionEnum stateIn_enum_0;'));

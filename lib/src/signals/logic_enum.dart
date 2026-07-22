@@ -1,4 +1,11 @@
-// TODO(mkorbel1): Add file header(s).
+// Copyright (C) 2025-2026 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// logic_enum.dart
+// Definition for LogicEnum.
+//
+// 2026 July 22
+// Author: Max Korbel <max.korbel@intel.com>
 
 part of 'signals.dart';
 
