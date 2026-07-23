@@ -8,6 +8,7 @@
 // Author: Max Korbel <max.korbel@intel.com>
 
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/synthesizers/systemverilog/systemverilog_leaf_emitter.dart';
 import 'package:rohd/src/synthesizers/systemverilog/systemverilog_synthesis_result.dart';
 
 /// A [Synthesizer] which generates equivalent SystemVerilog as the
@@ -24,11 +25,15 @@ class SystemVerilogSynthesizer extends Synthesizer {
   });
 
   @override
-  bool generatesDefinition(Module module) =>
-      // ignore: deprecated_member_use_from_same_package
-      !((module is CustomSystemVerilog) ||
-          (module is SystemVerilog &&
-              module.generatedDefinitionType == DefinitionGenerationType.none));
+  bool generatesDefinition(Module module) {
+    final generatesNoDefinition = module is InlineLeaf ||
+        // ignore: deprecated_member_use_from_same_package
+        module is CustomSystemVerilog ||
+        (module is SystemVerilog &&
+            module.generatedDefinitionType == DefinitionGenerationType.none);
+
+    return !generatesNoDefinition;
+  }
 
   /// Creates a line of SystemVerilog that instantiates [module].
   ///
@@ -57,18 +62,50 @@ class SystemVerilogSynthesizer extends Synthesizer {
       Map<String, String>? parameters,
       bool forceStandardInstantiation = false}) {
     if (!forceStandardInstantiation) {
-      if (module is SystemVerilog) {
-        return module.instantiationVerilog(
-              instanceType,
-              instanceName,
-              ports,
-            ) ??
-            instantiationVerilogFor(
-                module: module,
-                instanceType: instanceType,
-                instanceName: instanceName,
-                ports: ports,
-                forceStandardInstantiation: true);
+      if (module is InlineLeaf) {
+        const leafEmitter = SystemVerilogLeafEmitter();
+        final result = ports[module.resultSignalName];
+        if (result == null) {
+          throw SynthException(
+            'Inline leaf ${module.runtimeType} has no mapped result port '
+            '${module.resultSignalName}.',
+          );
+        }
+
+        final inputPorts = Map.fromEntries(
+          ports.entries.where(
+            (element) =>
+                module.inputs.containsKey(element.key) ||
+                (module.inOuts.containsKey(element.key) &&
+                    element.key != module.resultSignalName),
+          ),
+        );
+        final inline = leafEmitter.expressionFor(module, inputPorts);
+        return 'assign $result = $inline;  // $instanceName';
+      }
+
+      if (module is BackendArtifactProvider) {
+        final artifactProvider = module as BackendArtifactProvider;
+        final artifact = artifactProvider.artifactFor(
+          BackendArtifactContext.instantiation(
+            backend: EmissionBackend.systemVerilog,
+            instanceType: instanceType,
+            instanceName: instanceName,
+            ports: ports,
+          ),
+        );
+        if (artifact != null) {
+          return artifact.contents;
+        }
+        if (module is SystemVerilog) {
+          return instantiationVerilogFor(
+            module: module,
+            instanceType: instanceType,
+            instanceName: instanceName,
+            ports: ports,
+            forceStandardInstantiation: true,
+          );
+        }
       }
       // ignore: deprecated_member_use_from_same_package
       else if (module is CustomSystemVerilog) {

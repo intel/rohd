@@ -61,8 +61,17 @@ jobs:
       - name: Install software - Icarus Verilog
         run: tool/gh_actions/install_iverilog.sh
 
+      - name: Install software - Accellera SystemC
+        run: tool/gh_actions/install_systemc.sh
+
+      - name: Pre-build SystemC PCH and Makefile
+        run: tool/gh_actions/setup_systemc_pch.sh
+
       - name: Run project tests
         run: tool/gh_actions/run_tests.sh
+
+      - name: Clean SystemC temporary files
+        run: tool/gh_actions/cleanup_systemc_tmp.sh
 
       - name: Check temporary test files
         run: tool/gh_actions/check_tmp_test.sh
@@ -71,7 +80,10 @@ jobs:
       - name: Build dev container and run tests in it
         uses: devcontainers/ci@v0.3
         with:
-          runCmd: tool/gh_actions/run_tests.sh
+          runCmd: |
+            tool/gh_actions/run_tests.sh
+            tool/gh_actions/cleanup_systemc_tmp.sh
+            tool/gh_actions/check_tmp_test.sh
 
   deploy-documentation:
     name: Deploy Documentation

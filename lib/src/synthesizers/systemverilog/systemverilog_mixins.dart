@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2025 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // systemverilog_mixins.dart
@@ -28,9 +28,47 @@ class SystemVerilogParameterDefinition {
       {required this.type, required this.defaultValue});
 }
 
+BackendArtifact? _systemVerilogArtifactFor(
+    SystemVerilog module, BackendArtifactContext context) {
+  if (context.backend != EmissionBackend.systemVerilog) {
+    return null;
+  }
+
+  switch (context.kind) {
+    case BackendArtifactKind.definition:
+      final contents = module.definitionVerilog(context.definitionType!);
+      return contents == null || contents.isEmpty
+          ? null
+          : BackendArtifact(
+              backend: context.backend,
+              kind: context.kind,
+              contents: contents,
+            );
+    case BackendArtifactKind.instantiation:
+      final contents = module.instantiationVerilog(
+        context.instanceType!,
+        context.instanceName!,
+        context.ports,
+      );
+      return contents == null
+          ? null
+          : BackendArtifact(
+              backend: context.backend,
+              kind: context.kind,
+              contents: contents,
+            );
+    case BackendArtifactKind.simulationProcess:
+      return null;
+  }
+}
+
 /// Allows a [Module] to control the instantiation and/or definition of
 /// generated SystemVerilog for that module.
-mixin SystemVerilog on Module {
+mixin SystemVerilog on Module implements BackendArtifactProvider {
+  @override
+  BackendArtifact? artifactFor(BackendArtifactContext context) =>
+      _systemVerilogArtifactFor(this, context);
+
   /// Generates custom SystemVerilog to be injected in place of a `module`
   /// instantiation.
   ///
@@ -123,7 +161,11 @@ enum DefinitionGenerationType {
 ///
 /// The inline SystemVerilog will get parentheses wrapped around it and then
 /// dropped into other code in the same way a variable name is.
-mixin InlineSystemVerilog on Module implements SystemVerilog {
+mixin InlineSystemVerilog on Module implements SystemVerilog, InlineLeaf {
+  @override
+  BackendArtifact? artifactFor(BackendArtifactContext context) =>
+      _systemVerilogArtifactFor(this, context);
+
   /// Generates custom SystemVerilog to be injected in place of the output
   /// port's corresponding signal name.
   ///
@@ -142,6 +184,7 @@ mixin InlineSystemVerilog on Module implements SystemVerilog {
   ///
   /// By default, this assumes one [output] port. This should be overridden in
   /// classes which have an [inOut] port as the in-lined symbol.
+  @override
   String get resultSignalName {
     if (outputs.keys.length != 1) {
       throw Exception('Inline verilog expected to have exactly one output,'
@@ -171,6 +214,7 @@ mixin InlineSystemVerilog on Module implements SystemVerilog {
   }
 
   @override
+  @override
   @protected
   final List<String> expressionlessInputs = const [];
 
@@ -185,6 +229,7 @@ mixin InlineSystemVerilog on Module implements SystemVerilog {
   List<SystemVerilogParameterDefinition>? get definitionParameters => null;
 
   @internal
+  @override
   @override
   bool get isWiresOnly => false;
 }

@@ -114,6 +114,9 @@ class SynthLogic {
   bool get constNameDisallowed => _constNameDisallowed;
   bool _constNameDisallowed;
 
+  /// Whether a synthesized name has been picked for this signal.
+  bool get hasName => _name != null;
+
   /// Whether this signal should be declared.
   bool get needsDeclaration =>
       !(isConstant && !_constNameDisallowed) && !declarationCleared;

@@ -11,6 +11,7 @@ import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/modules/conditionals/ssa.dart';
+import 'package:rohd/src/synthesizers/systemverilog/systemverilog_conditional_emitter.dart';
 
 /// Represents a single case within a [Case] block.
 class CaseItem {
@@ -148,6 +149,10 @@ class Case extends Conditional {
   @protected
   String get caseType => 'case';
 
+  /// Returns the case keyword used for code emission.
+  @internal
+  String get emissionCaseType => caseType;
+
   @override
   void execute(Set<Logic>? drivenSignals, [void Function(Logic)? guard]) {
     if (guard != null) {
@@ -254,44 +259,12 @@ class Case extends Conditional {
 
   @override
   String verilogContents(int indent, Map<String, String> inputsNameMap,
-      Map<String, String> outputsNameMap, String assignOperator) {
-    final padding = Conditional.calcPadding(indent);
-    final expressionName = inputsNameMap[driverInput(expression).name];
-    var caseHeader = caseType;
-    if (conditionalType == ConditionalType.priority) {
-      caseHeader = 'priority $caseType';
-    } else if (conditionalType == ConditionalType.unique) {
-      caseHeader = 'unique $caseType';
-    }
-    final verilog = StringBuffer('$padding$caseHeader ($expressionName) \n');
-    final subPadding = Conditional.calcPadding(indent + 2);
-    for (final item in items) {
-      final conditionName = inputsNameMap[driverInput(item.value).name];
-      final caseContents = item.then
-          .map((conditional) => conditional.verilogContents(
-              indent + 4, inputsNameMap, outputsNameMap, assignOperator))
-          .join('\n');
-      verilog.write('''
-$subPadding$conditionName : begin
-$caseContents
-${subPadding}end
-''');
-    }
-    if (defaultItem != null) {
-      final defaultCaseContents = defaultItem!
-          .map((conditional) => conditional.verilogContents(
-              indent + 4, inputsNameMap, outputsNameMap, assignOperator))
-          .join('\n');
-      verilog.write('''
-${subPadding}default : begin
-$defaultCaseContents
-${subPadding}end
-''');
-    }
-    verilog.write('${padding}endcase\n');
-
-    return verilog.toString();
-  }
+          Map<String, String> outputsNameMap, String assignOperator) =>
+      SystemVerilogConditionalEmitter(
+        inputsNameMap: inputsNameMap,
+        outputsNameMap: outputsNameMap,
+        assignOperator: assignOperator,
+      ).emit(this, indent);
 
   @override
   Map<Logic, Logic> processSsa(Map<Logic, Logic> currentMappings,

@@ -13,8 +13,14 @@ import 'package:rohd/src/synthesizers/utilities/utilities.dart';
 
 /// A special [SynthModuleDefinition] for SystemVerilog modules.
 class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
+  /// Configuration controlling generated SystemVerilog.
+  final SystemVerilogSynthesizerConfiguration configuration;
+
   /// Creates a new [SystemVerilogSynthModuleDefinition] for the given [module].
-  SystemVerilogSynthModuleDefinition(super.module);
+  SystemVerilogSynthModuleDefinition(
+    super.module, {
+    this.configuration = const SystemVerilogSynthesizerConfiguration(),
+  });
 
   /// A shared mapping from [SynthLogic]s which are the result of an inlineable
   /// submodule to the instantiation that produces them.
@@ -34,6 +40,56 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
     _replaceNetConnections();
     _collapseMarkedChainableModules();
     _replaceInOutConnectionInlineableModules();
+    _removeUnusedConstantIntermediates();
+  }
+
+  void _removeUnusedConstantIntermediates() {
+    final usedSignals = <SynthLogic>{};
+    for (final instantiation in subModuleInstantiations) {
+      if (instantiation.needsInstantiation) {
+        usedSignals
+          ..addAll(instantiation.inputMapping.values.map((e) => e.resolved))
+          ..addAll(instantiation.outputMapping.values.map((e) => e.resolved))
+          ..addAll(instantiation.inOutMapping.values.map((e) => e.resolved));
+      } else if (instantiation.module case final InlineLeaf inlineLeaf) {
+        usedSignals.addAll(
+          instantiation.inOutMapping.values.map((e) => e.resolved),
+        );
+        for (final inputName in inlineLeaf.expressionlessInputs) {
+          final mapped = instantiation.inputMapping[inputName] ??
+              instantiation.inOutMapping[inputName];
+          if (mapped != null) {
+            usedSignals.add(mapped.resolved);
+          }
+        }
+      }
+    }
+    for (final assignment in assignments) {
+      usedSignals.add(assignment.src.resolved);
+    }
+    usedSignals
+      ..addAll(inputs.map((e) => e.resolved))
+      ..addAll(outputs.map((e) => e.resolved))
+      ..addAll(inOuts.map((e) => e.resolved));
+
+    final removedSignals = <SynthLogic>{};
+    assignments.removeWhere((assignment) {
+      final destination = assignment.dst.resolved;
+      final remove = assignment.src.resolved.isConstant &&
+          !usedSignals.contains(destination) &&
+          destination.isClearable &&
+          !destination.isPort(module) &&
+          internalSignals.contains(destination);
+      if (remove) {
+        removedSignals.add(destination);
+      }
+      return remove;
+    });
+
+    for (final signal in removedSignals) {
+      signal.clearDeclaration();
+      internalSignals.remove(signal);
+    }
   }
 
   /// Inlines a fully covered packed bus into its sole submodule input.
@@ -57,7 +113,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
     for (final instantiation in subModuleInstantiations) {
       instantiation as SystemVerilogSynthSubModuleInstantiation;
       for (final entry in instantiation.inputMapping.entries) {
-        if (instantiation.module is! InlineSystemVerilog) {
+        if (instantiation.module is! InlineLeaf) {
           allMappedSignals.add(entry.value.resolved);
         }
         inputUses.putIfAbsent(entry.value.resolved, () => []).add((
@@ -69,7 +125,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
         ...instantiation.outputMapping.values,
         ...instantiation.inOutMapping.values,
       ]) {
-        if (instantiation.module is! InlineSystemVerilog) {
+        if (instantiation.module is! InlineLeaf) {
           allMappedSignals.add(signal.resolved);
           outputOrInOutMappedSignals.add(signal.resolved);
         }
@@ -103,7 +159,11 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
           outputOrInOutMappedSignals.contains(bus) ||
           !bus.isClearable ||
           !internalSignals.contains(bus) ||
-          use.instantiation.module is InlineSystemVerilog ||
+          use.instantiation.module is InlineLeaf ||
+          (use.instantiation.module is InlineLeaf &&
+              (use.instantiation.module as InlineLeaf)
+                  .expressionlessInputs
+                  .contains(use.portName)) ||
           (use.instantiation.module is SystemVerilog &&
               (use.instantiation.module as SystemVerilog)
                   .expressionlessInputs
@@ -169,7 +229,9 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
         continue;
       }
 
-      _addSwizzleConnect(bus, sources);
+      if (!_addSwizzleConnect(bus, sources)) {
+        continue;
+      }
       removedAssignments
         ..addAll(drivers)
         ..addAll(constantDrivers);
@@ -294,6 +356,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
       // along with where (a submodule port mapping is the only use we can
       // currently inline into).
       final aggregateUseCount = <SynthLogic, int>{};
+      final mappedSignals = <SynthLogic>{};
       final aggregatePortUse = <SynthLogic,
           ({
         SystemVerilogSynthSubModuleInstantiation instantiation,
@@ -310,6 +373,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
       for (final instantiation in subModuleInstantiations) {
         instantiation as SystemVerilogSynthSubModuleInstantiation;
         for (final entry in instantiation.inputMapping.entries) {
+          mappedSignals.add(entry.value.resolved);
           noteWholeUse(entry.value);
           if (entry.value.isArray) {
             aggregatePortUse[entry.value.resolved] =
@@ -317,6 +381,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
           }
         }
         for (final entry in instantiation.inOutMapping.entries) {
+          mappedSignals.add(entry.value.resolved);
           noteWholeUse(entry.value);
           if (entry.value.isArray) {
             aggregatePortUse[entry.value.resolved] =
@@ -324,7 +389,10 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
           }
         }
         // outputs of submodules can't be replaced by an inline concatenation
-        instantiation.outputMapping.values.forEach(noteWholeUse);
+        for (final value in instantiation.outputMapping.values) {
+          mappedSignals.add(value.resolved);
+          noteWholeUse(value);
+        }
       }
 
       // Assignments and this-module ports also count as whole-aggregate uses
@@ -342,6 +410,16 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
       // anywhere else (e.g. by a reduction), the aggregate must stay intact.
       final elementAssignments = <SynthLogic, List<SynthAssignment>>{};
       final assignmentsBySignal = _assignmentsBySignal();
+      final assignmentsByDestination = <SynthLogic, List<SynthAssignment>>{};
+      final assignmentsBySource = <SynthLogic, List<SynthAssignment>>{};
+      for (final assignment in assignments) {
+        assignmentsByDestination
+            .putIfAbsent(assignment.dst.resolved, () => [])
+            .add(assignment);
+        assignmentsBySource
+            .putIfAbsent(assignment.src.resolved, () => [])
+            .add(assignment);
+      }
       final elementUseCount = <SynthLogic, int>{};
       void noteElementUse(SynthLogic? synthLogic) {
         if (synthLogic is SynthLogicArrayElement) {
@@ -369,6 +447,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
       }
 
       final removedAssignments = <SynthAssignment>{};
+      final removedSignals = <SynthLogic>{};
       for (final aggEntry in aggregatePortUse.entries) {
         final agg = aggEntry.key;
         final use = aggEntry.value;
@@ -394,6 +473,10 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
 
         // The consuming port must accept expressions.
         final consumer = use.instantiation.module;
+        if (consumer is InlineLeaf &&
+            consumer.expressionlessInputs.contains(use.portName)) {
+          continue;
+        }
         if (consumer is SystemVerilog &&
             consumer.expressionlessInputs.contains(use.portName)) {
           continue;
@@ -439,6 +522,10 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
 
         final elementSources = <SynthLogic>[];
         var allElementsSingleSourced = true;
+        final aggregateElementAssignments = <SynthAssignment>{
+          for (final element in elementLogics.nonNulls)
+            ...elementAssignments[element] ?? const <SynthAssignment>[],
+        };
 
         // Net [BusSubset]s consumed while tracing element sources through
         // pass-through buses; their instantiations are cleared and the buses
@@ -470,7 +557,52 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
               allElementsSingleSourced = false;
               break;
             }
-            elementSources.add(source);
+            var elementSource = source;
+            final sourceDrivers =
+                assignmentsByDestination[source] ?? const <SynthAssignment>[];
+            final sourceConsumers =
+                assignmentsBySource[source] ?? const <SynthAssignment>[];
+            final removableConstantIntermediate = sourceDrivers.length == 1 &&
+                sourceConsumers.isNotEmpty &&
+                sourceConsumers.every(aggregateElementAssignments.contains) &&
+                sourceDrivers.single is! PartialSynthAssignment &&
+                sourceDrivers.single.src.resolved.isConstant &&
+                !source.hasPreservedName &&
+                !mappedSignals.contains(source) &&
+                internalSignals.contains(source);
+            if (removableConstantIntermediate) {
+              removedAssignments.add(sourceDrivers.single);
+              removedSignals.add(source);
+              elementSource = sourceDrivers.single.src.resolved;
+            } else if (source is SynthLogicArrayElement) {
+              final parentArray = source.parentArray.resolved;
+              final parentDrivers = assignmentsByDestination[parentArray] ??
+                  const <SynthAssignment>[];
+              final parentElementAssignments = <SynthAssignment>{
+                for (final parentElement in parentArray.logics
+                    .whereType<LogicArray>()
+                    .expand((logicArray) => logicArray.elements)
+                    .map(getSynthLogic)
+                    .nonNulls
+                    .map((e) => e.resolved))
+                  ...assignmentsBySignal[parentElement] ??
+                      const <SynthAssignment>[],
+              };
+              final removableConstantArray = parentDrivers.length == 1 &&
+                  parentElementAssignments.isNotEmpty &&
+                  parentElementAssignments
+                      .every(aggregateElementAssignments.contains) &&
+                  parentDrivers.single is! PartialSynthAssignment &&
+                  parentDrivers.single.src.resolved.isConstant &&
+                  !parentArray.hasPreservedName &&
+                  !mappedSignals.contains(parentArray) &&
+                  internalSignals.contains(parentArray);
+              if (removableConstantArray) {
+                removedAssignments.add(parentDrivers.single);
+                removedSignals.add(parentArray);
+              }
+            }
+            elementSources.add(elementSource);
             continue;
           }
 
@@ -531,7 +663,9 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
         // real hardware) whose concatenation reproduces the aggregate, and
         // register it so the single aggregate use renders as the inline
         // concatenation.
-        _addSwizzleConnect(agg, elementSources);
+        if (!_addSwizzleConnect(agg, elementSources)) {
+          continue;
+        }
 
         // Remove the now-inlined element assignments and clear the aggregate
         // declaration.
@@ -556,6 +690,10 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
         changed = true;
       }
       assignments.removeWhere(removedAssignments.contains);
+      for (final signal in removedSignals) {
+        signal.clearDeclaration();
+        internalSignals.remove(signal);
+      }
     }
   }
 
@@ -874,6 +1012,10 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
 
         // The consuming port must accept expressions.
         final consumer = use.instantiation.module;
+        if (consumer is InlineLeaf &&
+            consumer.expressionlessInputs.contains(use.portName)) {
+          continue;
+        }
         if (consumer is SystemVerilog &&
             consumer.expressionlessInputs.contains(use.portName)) {
           continue;
@@ -942,7 +1084,9 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
 
         // Inline the bus as a concatenation of its per-bit nets and drop the
         // bus plus its definer [BusSubset]s.
-        _addSwizzleConnect(bus, elementSources);
+        if (!_addSwizzleConnect(bus, elementSources)) {
+          continue;
+        }
 
         for (final view in definers) {
           view.inst.clearInstantiation();
@@ -1106,7 +1250,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
       }
 
       for (final inst in activeInstantiations) {
-        final isInlineable = inst.module is InlineSystemVerilog;
+        final isInlineable = inst.module is InlineLeaf;
         final resultLogic =
             isInlineable ? inst.inlineResultLogic?.resolved : null;
 
@@ -1249,8 +1393,11 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
   /// Fabricates a [_SwizzleConnect] that represents [agg] as the inline
   /// concatenation of [elementSources] (ordered with index 0 as the LSB), and
   /// registers it in [_inlineableSubmoduleMap].
-  void _addSwizzleConnect(SynthLogic agg, List<SynthLogic> elementSources) {
+  bool _addSwizzleConnect(SynthLogic agg, List<SynthLogic> elementSources) {
     final isNet = agg.isNet;
+    if (isNet && elementSources.any((source) => source.declarationCleared)) {
+      return false;
+    }
 
     // The [Swizzle] concatenates its `signals` with `signals[0]` as the MSB,
     // i.e. `out = {signals[0], signals[1], ..., signals[last]}`.  Our
@@ -1292,6 +1439,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
     supportingModules.add(swizzle);
 
     _inlineableSubmoduleMap[agg] = swizzleInst;
+    return true;
   }
 
   /// Collapses chainable, inlineable modules after naming.
@@ -1386,13 +1534,13 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
     }
   }
 
-  /// Finds all [InlineSystemVerilog] modules where all ports are [LogicNet]s
+  /// Finds all [InlineLeaf] modules where all ports are [LogicNet]s
   /// and which have not had their declarations cleared and replaces them with a
   /// [_NetConnect] assignment instead of a normal assignment.
   void _replaceInOutConnectionInlineableModules() {
     for (final subModuleInstantiation in subModuleInstantiations.toList().where(
           (e) =>
-              e.module is InlineSystemVerilog &&
+              e.module is InlineLeaf &&
               e.needsInstantiation &&
               e.outputMapping.isEmpty &&
               e.inOutMapping.isNotEmpty,
@@ -1404,12 +1552,47 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
 
       subModuleInstantiation as SystemVerilogSynthSubModuleInstantiation;
 
-      subModuleInstantiation.clearInstantiation();
-
-      final resultName = (subModuleInstantiation.module as InlineSystemVerilog)
-          .resultSignalName;
+      final resultName =
+          (subModuleInstantiation.module as InlineLeaf).resultSignalName;
 
       final subModResult = subModuleInstantiation.inOutMapping[resultName]!;
+
+      if (subModuleInstantiation.module is Swizzle &&
+          subModuleInstantiation.inOutMapping.entries.any((entry) =>
+              entry.key != resultName && entry.value.declarationCleared)) {
+        final portNameToValueMapping =
+            subModuleInstantiation.modulePortsMapWithInline(
+          {...subModuleInstantiation.inOutMapping}..remove(
+              (subModuleInstantiation.module as InlineLeaf).resultSignalName,
+            ),
+          subModuleInstantiation.synthLogicToInlineableSynthSubmoduleMap,
+          (submodule) => submodule.inlineVerilog(),
+        );
+
+        var offset = 0;
+        final sortedInputs = subModuleInstantiation.inOutMapping.entries
+            .where((entry) => entry.key != resultName)
+            .toList()
+          ..sort((a, b) => _swizzlePortIndex(a.key).compareTo(
+                _swizzlePortIndex(b.key),
+              ));
+        for (final entry in sortedInputs) {
+          final source = portNameToValueMapping[entry.key];
+          final width = entry.value.width;
+          if (source != null && source.isNotEmpty) {
+            final destination = width == subModResult.width
+                ? subModResult.name
+                : '${subModResult.name}[${offset + width - 1}:$offset]';
+            _addRawNetConnect(destination, source, width);
+          }
+          offset += width;
+        }
+
+        subModuleInstantiation.clearInstantiation();
+        continue;
+      }
+
+      subModuleInstantiation.clearInstantiation();
 
       // use a dummy as a placeholder, it will not really be used since we are
       // updating the inlineable map
@@ -1426,6 +1609,17 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
       netConnectSynthSubmod.synthLogicToInlineableSynthSubmoduleMap![dummy] =
           subModuleInstantiation;
     }
+  }
+
+  static int _swizzlePortIndex(String portName) =>
+      int.parse(portName.replaceFirst(RegExp('^_?in'), ''));
+
+  void _addRawNetConnect(String dst, String src, int width) {
+    final netConnect = _RawNetConnect(dst, src, width);
+    final inst = getSynthSubModuleInstantiation(netConnect)
+        as SystemVerilogSynthSubModuleInstantiation;
+    supportingModules.add(netConnect);
+    inst.pickName(module);
   }
 }
 
@@ -1495,6 +1689,44 @@ class _NetConnect extends Module with SystemVerilog {
         ' #(.WIDTH($width))'
         ' $instanceName'
         ' (${ports[n0Name]}, ${ports[n1Name]});';
+  }
+
+  @override
+  String? definitionVerilog(String definitionType) => '''
+// A special module for connecting two nets bidirectionally
+module $definitionType #(parameter int WIDTH=1) (w, w);
+inout wire[WIDTH-1:0] w;
+endmodule''';
+}
+
+class _RawNetConnect extends Module with SystemVerilog {
+  final String dst;
+  final String src;
+  final int width;
+
+  @override
+  bool get hasBuilt => true;
+
+  _RawNetConnect(this.dst, this.src, this.width)
+      : super(
+          definitionName: _NetConnect._definitionName,
+          name: _NetConnect._definitionName,
+        );
+
+  @override
+  String instantiationVerilog(
+    String instanceType,
+    String instanceName,
+    Map<String, String> ports,
+  ) {
+    assert(
+      instanceType == _NetConnect._definitionName,
+      'Instance type selected should match the definition name.',
+    );
+    return '$instanceType'
+        ' #(.WIDTH($width))'
+        ' $instanceName'
+        ' ($dst, $src);';
   }
 
   @override
