@@ -67,6 +67,9 @@
 this.width * <code>multiplier</code></p>
 <p>The input <code>multiplier</code> cannot be negative or 0; an exception will be
 thrown, otherwise.</p>
+<p>If <code>multiplier</code> is 1, then this signal is returned directly, since
+replicating once is a no-op and would otherwise generate a redundant
+<code>1{...}</code> in the output SystemVerilog.</p>
 <p>If <a href="../../rohd/Logic/isNet.html">isNet</a>, then the result will also be a net.</p>
 </section>
 
@@ -75,6 +78,10 @@ thrown, otherwise.</p>
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">Logic replicate(int multiplier) {
+  if (multiplier == 1) {
+    return this;
+  }
+
   if (isNet) {
     &#47;&#47; many SV simulators don&#39;t support replication of nets
     return List.generate(multiplier, (i) =&gt; this).swizzle();
