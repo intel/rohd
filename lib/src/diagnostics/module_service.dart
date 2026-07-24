@@ -1,0 +1,61 @@
+// Copyright (C) 2026 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// module_service.dart
+// Common base types shared by all module-scoped services.
+//
+// 2026 June 23
+// Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
+
+import 'package:rohd/rohd.dart';
+
+/// The common contract implemented by every module-scoped service that
+/// registers with [ModuleServices].
+///
+/// A service wraps some derived view of a built [Module] (synthesis output,
+/// netlist, source trace, waveform, etc.) and exposes a JSON-serialisable
+/// summary via [toJson].  Concrete services additionally expose their own
+/// format-specific accessors; consumers reach them through
+/// [ModuleServices.lookup] or the service's own `current` accessor rather than
+/// through getters on the registry.
+abstract interface class ModuleService {
+  /// The top-level [Module] this service operates on.
+  Module get module;
+
+  /// A JSON-serialisable summary of this service.
+  Map<String, Object?> toJson();
+}
+
+/// A [ModuleService] that emits output to one or more files.
+///
+/// Establishes the common output convention shared by synthesis, netlist,
+/// trace, and waveform services:
+///  - [outputPath] — the default file or directory written by [write].
+///  - [multiFile] — whether [write] emits one file per module definition
+///    (a directory) or a single combined file.
+///  - [write] — performs the write, honouring [multiFile].
+abstract class OutputService implements ModuleService {
+  /// The default location written by [write].
+  ///
+  /// Interpreted as a directory when [multiFile] is `true`, otherwise as a
+  /// single file path.  May be `null` when no default has been configured, in
+  /// which case a path must be passed to [write].
+  String? get outputPath;
+
+  /// Whether [write] emits one file per module definition (`true`) or a single
+  /// combined file (`false`).
+  bool get multiFile;
+
+  /// Writes this service's output to [path], or to [outputPath] when [path] is
+  /// omitted.
+  void write([String? path]);
+}
+
+/// An [OutputService] that generates source-code text.
+///
+/// Shared by language code-generation services, which all produce a combined
+/// single-file [output].
+abstract class CodeGenService extends OutputService {
+  /// The combined single-file generated output (including any header).
+  String get output;
+}

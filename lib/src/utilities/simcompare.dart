@@ -92,8 +92,10 @@ class Vector {
         }
         return arrAssigns.toString();
       } else {
-        final signalVal =
-            LogicValue.of(inputValues[signalName], width: signal.width);
+        final signalVal = LogicValue.of(
+          inputValues[signalName],
+          width: signal.width,
+        );
         return '$signalName = $signalVal;';
       }
     }).join('\n');
@@ -114,8 +116,10 @@ class Vector {
         var index = 0;
         for (final leaf in outputPort.leafElements) {
           final subVal = expectedValue.getRange(index, index + leaf.width);
-          checksList.add(_errorCheckString(
-              leaf.structureName, subVal, subVal, inputStimulus));
+          checksList.add(
+            _errorCheckString(
+                leaf.structureName, subVal, subVal, inputStimulus),
+          );
           index += leaf.width;
         }
       } else {
@@ -169,51 +173,56 @@ abstract class SimCompare {
         }
 
         if (enableChecking) {
-          unawaited(Simulator.postTick.first.then((value) {
-            for (final signalName in vector.expectedOutputValues.keys) {
-              final value = vector.expectedOutputValues[signalName];
-              final o =
-                  module.tryOutput(signalName) ?? module.inOut(signalName);
+          unawaited(
+            Simulator.postTick.first.then((value) {
+              for (final signalName in vector.expectedOutputValues.keys) {
+                final value = vector.expectedOutputValues[signalName];
+                final o =
+                    module.tryOutput(signalName) ?? module.inOut(signalName);
 
-              final errorReason =
-                  'For vector #${vectors.indexOf(vector)} $vector,'
-                  ' expected $o to be $value, but it was ${o.value}.';
-              if (value is int) {
-                expect(o.value.isValid, isTrue, reason: errorReason);
-                expect(o.value.toBigInt(),
-                    equals(BigInt.from(value).toUnsigned(o.width)),
-                    reason: errorReason);
-              } else if (value is BigInt) {
-                expect(o.value.isValid, isTrue, reason: errorReason);
-                expect(o.value.toBigInt(), equals(value), reason: errorReason);
-              } else if (value is LogicValue) {
-                if (o.width > 1 &&
-                    (value == LogicValue.x || value == LogicValue.z)) {
-                  for (final oBit in o.value.toList()) {
-                    expect(oBit, equals(value), reason: errorReason);
+                final errorReason =
+                    'For vector #${vectors.indexOf(vector)} $vector,'
+                    ' expected $o to be $value, but it was ${o.value}.';
+                if (value is int) {
+                  expect(o.value.isValid, isTrue, reason: errorReason);
+                  expect(o.value.toBigInt(),
+                      equals(BigInt.from(value).toUnsigned(o.width)),
+                      reason: errorReason);
+                } else if (value is BigInt) {
+                  expect(o.value.isValid, isTrue, reason: errorReason);
+                  expect(o.value.toBigInt(), equals(value),
+                      reason: errorReason);
+                } else if (value is LogicValue) {
+                  if (o.width > 1 &&
+                      (value == LogicValue.x || value == LogicValue.z)) {
+                    for (final oBit in o.value.toList()) {
+                      expect(oBit, equals(value), reason: errorReason);
+                    }
+                  } else {
+                    expect(o.value, equals(value), reason: errorReason);
                   }
+                } else if (value is String) {
+                  expect(o.value, LogicValue.of(value, width: o.width),
+                      reason: errorReason);
                 } else {
-                  expect(o.value, equals(value), reason: errorReason);
+                  throw NonSupportedTypeException(value);
                 }
-              } else if (value is String) {
-                expect(o.value, LogicValue.of(value, width: o.width),
-                    reason: errorReason);
-              } else {
-                throw NonSupportedTypeException(value);
               }
-            }
-          }).catchError(
-            test: (error) => error is Exception,
-            (Object err, StackTrace stackTrace) {
-              Simulator.throwException(err as Exception, stackTrace);
-            },
-          ));
+            }).catchError(
+              test: (error) => error is Exception,
+              (Object err, StackTrace stackTrace) {
+                Simulator.throwException(err as Exception, stackTrace);
+              },
+            ),
+          );
         }
       });
       timestamp += Vector._period;
     }
-    Simulator.registerAction(timestamp + Vector._period,
-        () {}); // just so it does one more thing at the end
+    Simulator.registerAction(
+      timestamp + Vector._period,
+      () {},
+    ); // just so it does one more thing at the end
     Simulator.setMaxSimTime(timestamp + 2 * Vector._period);
     await Simulator.run();
   }
@@ -347,9 +356,9 @@ abstract class SimCompare {
         allSignals.map((e) => '.$e(${logicToWireMapping[e] ?? e})').join(', ');
     final moduleInstance = '$topModule dut($moduleConnections);';
     final stimulus = vectors.map((e) => e.toTbVerilog(module)).join('\n');
-    final generatedVerilog = module.generateSynth(
-      configuration: synthesizerConfiguration,
-    );
+    final generatedVerilog =
+        SystemVerilogService(module, configuration: synthesizerConfiguration)
+            .output;
 
     // so that when they run in parallel, they dont step on each other
     final uniqueId =
@@ -403,13 +412,10 @@ abstract class SimCompare {
         print(maskedOutput);
       }
 
-      return output.toString().contains(RegExp(
-          [
-            'error',
-            'unable',
-            if (!allowWarnings) 'warning',
-          ].join('|'),
-          caseSensitive: false));
+      return output.toString().contains(
+            RegExp(['error', 'unable', if (!allowWarnings) 'warning'].join('|'),
+                caseSensitive: false),
+          );
     }
 
     if (printIfContentsAndCheckError(compileResult.stdout)) {
@@ -431,14 +437,22 @@ abstract class SimCompare {
 
     if (!dontDeleteTmpFiles) {
       try {
-        File(tmpOutput).deleteSync();
-        File(tmpTestFile).deleteSync();
+        final outFile = File(tmpOutput);
+        if (outFile.existsSync()) {
+          outFile.deleteSync();
+        }
+        final testFile = File(tmpTestFile);
+        if (testFile.existsSync()) {
+          testFile.deleteSync();
+        }
         if (dumpWaves) {
-          File(tmpVcdFile).deleteSync();
+          final vcdFile = File(tmpVcdFile);
+          if (vcdFile.existsSync()) {
+            vcdFile.deleteSync();
+          }
         }
       } on Exception catch (e) {
         print("Couldn't delete: $e");
-        return false;
       }
     }
     return true;

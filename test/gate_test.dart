@@ -753,7 +753,7 @@ void main() {
           useExplicitConstShiftModules: true,
         );
         await gtm.build();
-        final sv = gtm.generateSynth();
+        final sv = SystemVerilogService(gtm).output;
 
         expect(sv, isNot(contains("0'h0")));
 

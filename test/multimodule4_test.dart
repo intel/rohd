@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2023 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // multimodule4_test.dart
@@ -54,7 +54,7 @@ void main() {
             .isNotEmpty,
         'Should find a z two levels deep');
 
-    final synth = ftm.generateSynth();
+    final synth = SystemVerilogService(ftm).output;
 
     // "z = 1" means it correctly traversed down from inputs
     assert(synth.contains('z = 1'),

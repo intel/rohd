@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Intel Corporation
+// Copyright (C) 2023-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // helper.dart
@@ -13,7 +13,8 @@ import 'package:rohd/rohd.dart';
 
 Future<void> displaySystemVerilog(Module mod) async {
   await mod.build();
-  print('\nYour System Verilog Equivalent Code: \n ${mod.generateSynth()}');
+  print('\nYour System Verilog Equivalent Code: \n '
+      '${SystemVerilogService(mod).output}');
 }
 
 class LogicInitialization extends Module {

@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2023 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // tree.dart
@@ -85,7 +85,7 @@ Future<void> main({bool noPrint = false}) async {
 
   // Below will generate an output of the ROHD-generated SystemVerilog:
   await tree.build();
-  final generatedSystemVerilog = tree.generateSynth();
+  final generatedSystemVerilog = SystemVerilogService(tree).output;
   if (!noPrint) {
     print(generatedSystemVerilog);
   }

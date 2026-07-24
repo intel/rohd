@@ -82,7 +82,7 @@ void main() {
     test('constant value appears as literal in SV output', () async {
       final dut = _ConstantNamingModule();
       await dut.build();
-      final sv = dut.generateSynth();
+      final sv = SystemVerilogService(dut).output;
 
       // The constant "1" should appear as a literal 1'h1 in the output,
       // not as a declared signal.
@@ -92,7 +92,7 @@ void main() {
     test('constNameDisallowed falls through to signal naming', () async {
       final dut = _ConstNameDisallowedModule();
       await dut.build();
-      final sv = dut.generateSynth();
+      final sv = SystemVerilogService(dut).output;
 
       // The output assignment should NOT use the raw constant literal
       // as a wire name; a proper signal name should be used instead.
@@ -109,7 +109,7 @@ void main() {
         'in the shared namespace', () async {
       final dut = _InstanceSignalCollision();
       await dut.build();
-      final sv = dut.generateSynth();
+      final sv = SystemVerilogService(dut).output;
 
       // With a single shared namespace, one of the two "inner" identifiers
       // must be suffixed to avoid collision.
@@ -129,7 +129,7 @@ void main() {
           reason: 'Instance should win the shared namespace '
               'and keep the bare name');
 
-      final sv = dut.generateSynth();
+      final sv = SystemVerilogService(dut).output;
       // The wire (signal) must carry the suffix, not the instance.
       expect(sv, contains('inner_0'),
           reason: 'Colliding signal should be renamed to inner_0');
@@ -148,8 +148,8 @@ void main() {
       String stripHeader(String sv) =>
           sv.replaceFirst(RegExp(r'/\*\*.*?\*/\n', dotAll: true), '');
 
-      final sv1 = stripHeader(dut.generateSynth());
-      final sv2 = stripHeader(dut.generateSynth());
+      final sv1 = stripHeader(SystemVerilogService(dut).output);
+      final sv2 = stripHeader(SystemVerilogService(dut).output);
 
       expect(sv2, equals(sv1),
           reason: 'Repeated synthesis passes must produce identical '
@@ -159,7 +159,7 @@ void main() {
     test('duplicate instance names get uniquified', () async {
       final dut = _DuplicateInstances();
       await dut.build();
-      final sv = dut.generateSynth();
+      final sv = SystemVerilogService(dut).output;
 
       // Two instances named 'blk' — one should be 'blk', the other 'blk_0'.
       expect(sv, contains('blk'));

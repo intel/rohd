@@ -229,7 +229,7 @@ void main() {
     final mod = SimpleStructModuleContainer(Logic(), Logic());
     await mod.build();
 
-    final sv = mod.generateSynth();
+    final sv = SystemVerilogService(mod).output;
 
     expect(sv, isNot(contains('internal_struct')));
 
@@ -251,7 +251,7 @@ void main() {
 
     expect(mod.anyOut, isA<LogicArray>());
 
-    final sv = mod.generateSynth();
+    final sv = SystemVerilogService(mod).output;
 
     expect(sv, contains('input logic [3:0][1:0] anyIn'));
     expect(sv, contains('output logic [3:0][1:0] anyOut'));
@@ -277,7 +277,7 @@ void main() {
     final mod = ParentModuleWithStructsContainingPorts(Logic());
     await mod.build();
 
-    final sv = mod.generateSynth();
+    final sv = SystemVerilogService(mod).output;
 
     // if naming is wrong, these names will appear in the SV in ports
     expect(
@@ -357,7 +357,7 @@ void main() {
           SimpleStructModuleContainer(LogicNet(), LogicNet(), asNet: true);
       await mod.build();
 
-      final sv = mod.generateSynth();
+      final sv = SystemVerilogService(mod).output;
 
       expect(sv, isNot(contains('internal_struct')));
 
@@ -502,7 +502,7 @@ void main() {
     final mod = ModuleWithOneBitStructPort(OneBitStruct());
     await mod.build();
 
-    final sv = mod.generateSynth();
+    final sv = SystemVerilogService(mod).output;
 
     // no slicing on single-bit signals
     expect(sv, contains('assign outStruct = outStruct_oneBit'));

@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2025 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // counter_wintf_test.dart
@@ -145,7 +145,7 @@ void main() {
   test('interface ports dont get doubled up', () async {
     final mod = Counter(CounterInterface(8));
     await mod.build();
-    final sv = mod.generateSynth();
+    final sv = SystemVerilogService(mod).output;
 
     expect(!sv.contains('en_0'), true);
   });

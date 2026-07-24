@@ -701,7 +701,7 @@ void main() {
           final mod = TieOffSubsetTop(Logic(), withRedirect: redirect);
           await mod.build();
 
-          final sv = mod.generateSynth();
+          final sv = SystemVerilogService(mod).output;
 
           expect(sv, contains("assign banana_tieoff = 2'h0;"));
           expect(sv, contains("assign apple_tieoff = 2'h0;"));
@@ -722,7 +722,7 @@ void main() {
           final mod = TieOffPortTop(Logic(), withRedirect: redirect);
           await mod.build();
 
-          final sv = mod.generateSynth();
+          final sv = SystemVerilogService(mod).output;
 
           expect(sv, contains("assign banana = 1'h0;"));
           expect(sv, contains(".apple(1'h0)"));
@@ -754,7 +754,7 @@ void main() {
     test('input, output, and internal signals are sorted', () async {
       final mod = AlphabeticalModule(Logic(), Logic(), Logic());
       await mod.build();
-      final sv = mod.generateSynth();
+      final sv = SystemVerilogService(mod).output;
 
       // as instantiated
       checkSignalDeclarationOrder(sv, ['l', 'a', 'w']);
@@ -771,7 +771,7 @@ void main() {
         () async {
       final mod = AlphabeticalWidthsModule();
       await mod.build();
-      final sv = mod.generateSynth();
+      final sv = SystemVerilogService(mod).output;
 
       // as instantiated
       checkSignalDeclarationOrder(sv, ['l', 'a', 'w']);
@@ -797,7 +797,7 @@ void main() {
 
     final mod = AlphabeticalSubmodulePorts();
     await mod.build();
-    final sv = mod.generateSynth();
+    final sv = SystemVerilogService(mod).output;
 
     checkPortConnectionOrder(sv, ['l', 'a', 'w', 'm', 'x', 'b']);
   });
@@ -806,7 +806,7 @@ void main() {
     final mod = TopWithExpressions(Logic(), Logic(width: 5));
     await mod.build();
 
-    final sv = mod.generateSynth();
+    final sv = SystemVerilogService(mod).output;
 
     expect(sv, contains('.a((a | (b[2])))'));
   });
@@ -815,7 +815,7 @@ void main() {
     final mod = ModuleWithFloatingSignals();
     await mod.build();
 
-    final sv = mod.generateSynth();
+    final sv = SystemVerilogService(mod).output;
 
     // only expect 1 assignment to xylophone
     expect('assign'.allMatches(sv).length, 1);
@@ -829,8 +829,8 @@ void main() {
           final mod = TopCustomSvWrap(Logic(), Logic(),
               useOld: useOld, banExpressions: banExpressions);
           await mod.build();
-          final sv =
-              SvCleaner.removeSwizzleAnnotationComments(mod.generateSynth());
+          final sv = SvCleaner.removeSwizzleAnnotationComments(
+              SystemVerilogService(mod).output);
 
           if (banExpressions) {
             expect(sv, contains('assign my_fancy_new_signal <= ^fer_swizzle;'));
@@ -849,7 +849,7 @@ void main() {
         final mod = ModuleWithCustomDefinitionEmptyPorts(Logic(),
             acceptsEmptyPortConnections: acceptsEmptyPortConnections);
         await mod.build();
-        final sv = mod.generateSynth();
+        final sv = SystemVerilogService(mod).output;
 
         if (acceptsEmptyPortConnections) {
           expect(sv, contains('.b()'));
@@ -864,7 +864,7 @@ void main() {
   test('custom definition', () async {
     final mod = TopWithCustomDef(Logic());
     await mod.build();
-    final sv = mod.generateSynth();
+    final sv = SystemVerilogService(mod).output;
 
     expect(sv, contains('module CustomDefinitionModule ('));
     expect(sv, contains('// this is a custom definition!'));
@@ -882,7 +882,7 @@ void main() {
     final mod = ModWithUselessWireMods();
     await mod.build();
 
-    final sv = mod.generateSynth();
+    final sv = SystemVerilogService(mod).output;
 
     expect(sv, isNot(contains('swizzle')));
     expect(sv, isNot(contains('replicate')));
@@ -903,7 +903,7 @@ void main() {
   test('partial array assignment sv', () async {
     final mod = ModWithPartialArrayAssignment(Logic(width: 8));
     await mod.build();
-    final sv = mod.generateSynth();
+    final sv = SystemVerilogService(mod).output;
 
     expect(sv, contains('assign b = aArr[0];'));
     expect(sv, contains('assign aArr[0] = a;'));
@@ -1047,7 +1047,7 @@ void main() {
     final mod = OutToInOutTop(Logic());
     await mod.build();
 
-    final sv = mod.generateSynth();
+    final sv = SystemVerilogService(mod).output;
 
     expect(sv, contains('assign myNet = myOut;'));
 
@@ -1063,7 +1063,7 @@ void main() {
         () async {
       final mod = _StructLeafNamingModule();
       await mod.build();
-      final sv = mod.generateSynth();
+      final sv = SystemVerilogService(mod).output;
 
       expect(sv, isNot(contains('_in0')),
           reason: 'Struct leaf from unnamed Logic() should use its '
@@ -1073,7 +1073,7 @@ void main() {
     test('const merge not blocked by constNameDisallowed', () async {
       final mod = _ConstNamingModule();
       await mod.build();
-      final sv = mod.generateSynth();
+      final sv = SystemVerilogService(mod).output;
 
       final constAssignments =
           RegExp(r"assign \w+ = 8'h0;").allMatches(sv).length;

@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Intel Corporation
+// Copyright (C) 2023-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // logic_structure_test.dart
@@ -175,7 +175,7 @@ void main() {
     final mod = StructModuleWithInstrumentation(Const(0, width: 2));
     await mod.build();
 
-    final sv = mod.generateSynth();
+    final sv = SystemVerilogService(mod).output;
 
     expect(sv.contains('swizzle'), isFalse,
         reason: 'Should not pack from instrumentation!');

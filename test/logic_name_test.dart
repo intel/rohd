@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2025 Intel Corporation
+// Copyright (C) 2022-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // logic_name_test.dart
@@ -225,13 +225,13 @@ void main() {
     final mod = LogicWithInternalSignalModule(Logic());
     await mod.build();
 
-    expect(mod.generateSynth(), contains('shouldExist'));
+    expect(SystemVerilogService(mod).output, contains('shouldExist'));
   });
 
   test('unconnected port does not duplicate internal signal', () async {
     final pMod = ParentMod(Logic(), Logic());
     await pMod.build();
-    final sv = pMod.generateSynth();
+    final sv = SystemVerilogService(pMod).output;
     expect(RegExp('logic a[,;\n]').allMatches(sv).length, 2);
   });
 
@@ -239,7 +239,7 @@ void main() {
     test('assigns and gates', () async {
       final mod = SensitiveNaming(Logic());
       await mod.build();
-      final sv = mod.generateSynth();
+      final sv = SystemVerilogService(mod).output;
       expect(sv, contains('e = a & d'));
       expect(sv, contains('b = a'));
       expect(sv, contains('d = c'));
@@ -248,7 +248,7 @@ void main() {
     test('bus subset', () async {
       final mod = BusSubsetNaming(Logic(width: 32));
       await mod.build();
-      final sv = mod.generateSynth();
+      final sv = SystemVerilogService(mod).output;
       expect(sv, contains('c = b[3]'));
     });
   });
@@ -257,7 +257,7 @@ void main() {
     test('unconnected floating', () async {
       final mod = DrivenOutputModule(null);
       await mod.build();
-      final sv = mod.generateSynth();
+      final sv = SystemVerilogService(mod).output;
 
       // shouldn't add a Z in there if left floating
       expect(!sv.contains('z'), true);
@@ -266,7 +266,7 @@ void main() {
     test('driven to z', () async {
       final mod = DrivenOutputModule(Const('z'));
       await mod.build();
-      final sv = mod.generateSynth();
+      final sv = SystemVerilogService(mod).output;
 
       // should add a Z if it's explicitly added
       expect(sv, contains('z'));
@@ -279,7 +279,7 @@ void main() {
       portANaming: Naming.renameable,
     );
     await mod.build();
-    final sv = mod.generateSynth();
+    final sv = SystemVerilogService(mod).output;
 
     expect(
         sv,
@@ -295,7 +295,7 @@ void main() {
       () async {
     final mod = NameCollisionArrayTop();
     await mod.build();
-    final sv = mod.generateSynth();
+    final sv = SystemVerilogService(mod).output;
 
     expect(
         sv,
@@ -312,7 +312,7 @@ void main() {
 
     await dut.build();
 
-    final sv = dut.generateSynth();
+    final sv = SystemVerilogService(dut).output;
 
     expect(sv, contains('_wow_______'));
   });
@@ -321,7 +321,7 @@ void main() {
     final mod = StructElementNamingModule(VariousNamingStruct());
     await mod.build();
 
-    final sv = mod.generateSynth();
+    final sv = SystemVerilogService(mod).output;
 
     expect(sv, contains('assign outp[0] = outp_renameable;'));
     expect(sv, contains('assign outp[1] = reserved_outp;'));

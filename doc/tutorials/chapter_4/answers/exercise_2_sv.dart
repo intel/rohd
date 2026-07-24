@@ -9,7 +9,7 @@ void main() async {
 
   final mod = NBitSubtractor(a, b);
   await mod.build();
-  print(mod.generateSynth());
+  print(SystemVerilogService(mod).output);
 
   test('should return 5 when a is 25 and b is 20', () {
     a.put(25);

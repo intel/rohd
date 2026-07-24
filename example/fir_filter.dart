@@ -96,7 +96,7 @@ Future<void> main({bool noPrint = false}) async {
   await firFilter.build();
 
   // Generate SystemVerilog code.
-  final systemVerilogCode = firFilter.generateSynth();
+  final systemVerilogCode = SystemVerilogService(firFilter).output;
   if (!noPrint) {
     // Print SystemVerilog code to console.
     print(systemVerilogCode);
@@ -108,7 +108,7 @@ Future<void> main({bool noPrint = false}) async {
 
   // Attach a waveform dumper.
   if (!noPrint) {
-    WaveDumper(firFilter);
+    WaveformService(firFilter);
   }
 
   // Let's set the initial setting.

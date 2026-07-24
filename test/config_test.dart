@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2023 Intel Corporation
+// Copyright (C) 2022-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // version_hash_dumper_test.dart
@@ -14,7 +14,7 @@ import 'package:rohd/src/utilities/config.dart';
 import 'package:rohd/src/utilities/web.dart';
 import 'package:test/test.dart';
 import 'package:yaml/yaml.dart';
-import 'wave_dumper_test.dart';
+import 'waveform_service_test.dart';
 
 class SimpleModule extends Module {
   SimpleModule(Logic a, Logic b) {
@@ -46,6 +46,20 @@ void main() async {
     final mod = SimpleModule(Logic(), Logic());
     await mod.build();
 
+    final sv = SystemVerilogService(mod).output;
+
+    expect(sv, contains(version));
+  });
+
+  test(
+      'should contains ROHD version number when deprecated synth is generated.',
+      () async {
+    const version = Config.version;
+
+    final mod = SimpleModule(Logic(), Logic());
+    await mod.build();
+
+    // ignore: deprecated_member_use_from_same_package
     final sv = mod.generateSynth();
 
     expect(sv, contains(version));

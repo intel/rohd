@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2024 Intel Corporation
+// Copyright (C) 2023-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // oven_fsm.dart
@@ -225,7 +225,7 @@ Future<void> main({bool noPrint = false}) async {
 
   // Attach a waveform dumper so we can see what happens.
   if (!noPrint) {
-    WaveDumper(oven, outputPath: 'oven.vcd');
+    WaveformService(oven, outputPath: 'oven.vcd');
   }
 
   // Kick off the simulation.

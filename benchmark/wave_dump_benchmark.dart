@@ -1,4 +1,4 @@
-// Copyright (C) 2023 Intel Corporation
+// Copyright (C) 2023-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // wave_dump_benchmark.dart
@@ -56,7 +56,7 @@ class WaveDumpBenchmark extends AsyncBenchmarkBase {
     _mod = _ModuleToDump(Logic(), _clk);
     await _mod.build();
 
-    WaveDumper(_mod, outputPath: _vcdTemporaryPath);
+    WaveformService(_mod, outputPath: _vcdTemporaryPath);
 
     await Simulator.run();
 

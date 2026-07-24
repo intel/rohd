@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2024 Intel Corporation
+// Copyright (C) 2023-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // exercise_1_d_flip_flop.dart
@@ -44,7 +44,7 @@ Future<void> main() async {
     final dff = DFlipFlop(data, reset, clk);
     await dff.build();
 
-    print(dff.generateSynth());
+    print(SystemVerilogService(dff).output);
 
     data.inject(1);
     reset.inject(1);
@@ -60,7 +60,7 @@ Future<void> main() async {
 
     unawaited(Simulator.run());
 
-    WaveDumper(dff,
+    WaveformService(dff,
         outputPath: 'doc/tutorials/chapter_7/answers/d_flip_flop.vcd');
 
     printFlop('Before');

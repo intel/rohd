@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2025 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // bus_test.dart
@@ -228,7 +228,7 @@ void main() {
     final mod = SingleBitBusSubsetMod(Logic());
     await mod.build();
 
-    final sv = mod.generateSynth();
+    final sv = SystemVerilogService(mod).output;
     expect(sv, contains('assign result = oneBit'));
 
     final vectors = [
@@ -401,7 +401,7 @@ void main() {
         await SimCompare.checkFunctionalVector(mod, vectors);
         SimCompare.checkIverilogVector(mod, vectors);
 
-        final sv = mod.generateSynth();
+        final sv = SystemVerilogService(mod).output;
         expect(sv.contains("assign const_subset = 16'habcd;"), true);
       });
     });

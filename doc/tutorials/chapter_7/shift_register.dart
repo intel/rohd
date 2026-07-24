@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2024 Intel Corporation
+// Copyright (C) 2023-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // shift_register.dart
@@ -69,7 +69,7 @@ void main() async {
     // kick-off the simulator, but we don't want to wait
     unawaited(Simulator.run());
 
-    WaveDumper(shiftReg,
+    WaveformService(shiftReg,
         outputPath: 'doc/tutorials/chapter_7/shift_register.vcd');
 
     printFlop('Before');

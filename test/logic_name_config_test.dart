@@ -1,4 +1,4 @@
-// Copyright (C) 2023 Intel Corporation
+// Copyright (C) 2023-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // logic_name_config_test.dart
@@ -30,7 +30,7 @@ void main() {
       out1 <= intermediate;
     });
     await dut.build();
-    final sv = dut.generateSynth();
+    final sv = SystemVerilogService(dut).output;
 
     expect(sv, contains('intermediate'));
   });
@@ -45,7 +45,7 @@ void main() {
       out1 <= intermediate;
     });
     await dut.build();
-    final sv = dut.generateSynth();
+    final sv = SystemVerilogService(dut).output;
 
     // no intermediate
     expect(sv.contains('intermediate'), isFalse);
@@ -58,7 +58,7 @@ void main() {
       out1 <= intermediate;
     });
     await dut.build();
-    final sv = dut.generateSynth();
+    final sv = SystemVerilogService(dut).output;
 
     // just the ports
     expect('logic'.allMatches(sv).length, 3);
@@ -71,7 +71,7 @@ void main() {
       out1 <= intermediate;
     });
     await dut.build();
-    final sv = dut.generateSynth();
+    final sv = SystemVerilogService(dut).output;
 
     // just the ports
     expect('logic'.allMatches(sv).length, 3);
@@ -90,7 +90,7 @@ void main() {
       out1 <= intermediate;
     });
     await dut.build();
-    final sv = dut.generateSynth();
+    final sv = SystemVerilogService(dut).output;
 
     // held one sticks
     expect(sv, contains('intermediate_1 = in1'));
@@ -108,7 +108,7 @@ void main() {
         out1 <= intermediate;
       });
       await dut.build();
-      dut.generateSynth();
+      SystemVerilogService(dut).output;
       fail('expected an exception!');
     } on Exception catch (e) {
       expect(e, isA<UnavailableReservedNameException>());
@@ -124,7 +124,7 @@ void main() {
         out1 <= intermediate;
       });
       await dut.build();
-      dut.generateSynth();
+      SystemVerilogService(dut).output;
       fail('expected an exception!');
     } on Exception catch (e) {
       expect(e, isA<UnavailableReservedNameException>());
@@ -145,7 +145,7 @@ void main() {
         out1 <= intermediate | intermediate2;
       });
       await dut.build();
-      dut.generateSynth();
+      SystemVerilogService(dut).output;
       fail('expected an exception!');
     } on Exception catch (e) {
       expect(e, isA<UnavailableReservedNameException>());
@@ -167,7 +167,7 @@ void main() {
       out1 <= ~intermediatePost;
     });
     await dut.build();
-    final sv = dut.generateSynth();
+    final sv = SystemVerilogService(dut).output;
 
     expect(sv, contains('goodname'));
   });
@@ -220,7 +220,7 @@ void main() {
         out1 <= ~prev;
       });
       await dut.build();
-      final sv = dut.generateSynth();
+      final sv = SystemVerilogService(dut).output;
 
       expect(sv, contains(expectedName),
           reason: 'Amongst ${l.map((e) => e.name).toList()},'
@@ -235,7 +235,7 @@ void main() {
       intermediate <= in1;
     });
     await dut.build();
-    final sv = dut.generateSynth();
+    final sv = SystemVerilogService(dut).output;
 
     expect(sv, contains('intermediate'));
   });

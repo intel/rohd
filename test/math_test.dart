@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2025 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // math_test.dart
@@ -91,7 +91,7 @@ void main() {
       final mod = AddWithCarryMod(Logic(width: 8), Logic(width: 8));
       await mod.build();
 
-      final sv = mod.generateSynth();
+      final sv = SystemVerilogService(mod).output;
 
       expect(sv, contains('assign {carry, sum} = a + b'));
     });
@@ -119,7 +119,7 @@ void main() {
     final gtm = MathTestModule(Logic(width: 8), Logic(width: 8));
     await gtm.build();
 
-    final sv = gtm.generateSynth();
+    final sv = SystemVerilogService(gtm).output;
     final lines = sv.split('\n');
 
     // ensure we never lshift by a constant directly

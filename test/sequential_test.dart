@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (C) 2021-2024 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 //
 // sequential_test.dart
 // Unit test for Sequential
@@ -241,7 +241,7 @@ void main() {
     final mod = NegedgeTriggeredSeq(Logic());
     await mod.build();
 
-    final sv = mod.generateSynth();
+    final sv = SystemVerilogService(mod).output;
     expect(sv, contains('always_ff @(negedge'));
 
     final vectors = [

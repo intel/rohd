@@ -124,7 +124,7 @@ Please include the SPDX tag near the top of any new files you create:
 Here is an example of a recommended file header template:
 
 ```dart
-// Copyright (C) 2021-2023 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // example.dart

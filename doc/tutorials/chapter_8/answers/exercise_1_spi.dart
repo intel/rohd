@@ -139,7 +139,7 @@ void main() async {
 
   await tb.build();
 
-  print(tb.generateSynth());
+  print(SystemVerilogService(tb).output);
 
   testInterface.cs.inject(0);
   testInterface.sdi.inject(0);
@@ -163,7 +163,7 @@ void main() async {
   Simulator.setMaxSimTime(100);
   unawaited(Simulator.run());
 
-  WaveDumper(peri, outputPath: 'doc/tutorials/chapter_8/spi-new.vcd');
+  WaveformService(peri, outputPath: 'doc/tutorials/chapter_8/spi-new.vcd');
 
   await drive(LogicValue.ofString('01010101'));
 }
