@@ -1,3 +1,6 @@
+// Opens each nested Dart package as a workspace root so the Dart analyzer uses
+// its own package context and reports fewer cross-package Problems. Open this
+// file in VS Code with File > Open Workspace from File... .
 {
   "folders": [
     {
