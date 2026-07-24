@@ -21,7 +21,8 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(const MaterialApp(home: RohdDevToolsPage()));
+    await tester.pumpWidget(
+        const MaterialApp(home: RohdDevToolsPage(manageServiceManager: false)));
     await tester.pump();
 
     expect(find.byType(RohdExtensionModule), findsOneWidget);

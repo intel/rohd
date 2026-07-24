@@ -2,7 +2,7 @@ name: rohd_waveform
 description: "Waveform data models and APIs for wave viewers - ModuleStructure, SignalWaveform, and waveform primitives."
 homepage: https://intel.github.io/rohd-website/
 repository: https://github.com/intel/rohd
-version: 0.0.2
+version: 0.1.0
 issue_tracker: https://github.com/intel/rohd/issues
 
 publish_to: none

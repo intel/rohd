@@ -16,6 +16,14 @@
 # the progress of the execution, but MAY REVEAL ANY SECRETS PASSED TO THE SCRIPT!
 set -euxo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TOOL_PACKAGE_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+TARGET_DIR="${PWD}"
+IS_FLUTTER_PACKAGE=false
+if [ -f pubspec.yaml ] && grep -Eq '^  flutter:|^  flutter_test:' pubspec.yaml; then
+    IS_FLUTTER_PACKAGE=true
+fi
+
 #=============#
 
 # Parse arguments
@@ -34,8 +42,15 @@ done
 # Remove old coverage data
 rm -rf coverage
 
-# Run tests with coverage
-dart test --coverage=coverage || true
+if [ "${IS_FLUTTER_PACKAGE}" = true ]; then
+    # Flutter writes LCOV directly, unlike `dart test --coverage` which writes
+    # VM coverage JSON that must be converted with coverage:format_coverage.
+    flutter test --coverage --coverage-path=coverage/lcov.info || true
+else
+    # Benchmarks are smoke-tested separately and can take too long under
+    # coverage instrumentation.
+    dart test --coverage=coverage --exclude-tags benchmark || true
+fi
 
 # Check if coverage was generated
 if [ ! -d "coverage" ]; then
@@ -43,13 +58,18 @@ if [ ! -d "coverage" ]; then
     exit 1
 fi
 
-# Format to LCOV
-dart run coverage:format_coverage \
-    --lcov \
-    --in=coverage \
-    --out=coverage/lcov.info \
-    --packages=.dart_tool/package_config.json \
-    --report-on=lib
+if [ "${IS_FLUTTER_PACKAGE}" != true ]; then
+    # Format to LCOV
+    (
+        cd "${TOOL_PACKAGE_DIR}"
+        dart run coverage:format_coverage \
+            --lcov \
+            --in="${TARGET_DIR}/coverage" \
+            --out="${TARGET_DIR}/coverage/lcov.info" \
+            --package="${TARGET_DIR}" \
+            --report-on="${TARGET_DIR}/lib"
+    )
+fi
 
 # Install lcov if needed
 if ! command -v lcov &> /dev/null; then

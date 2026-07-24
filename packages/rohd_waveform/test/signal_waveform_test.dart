@@ -7,8 +7,8 @@
 // 2026 July 15
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
-import 'package:rohd_waveform/rohd_waveform.dart';
 import 'package:rohd_hierarchy/rohd_hierarchy.dart';
+import 'package:rohd_waveform/rohd_waveform.dart';
 import 'package:test/test.dart';
 
 void main() {

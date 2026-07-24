@@ -52,3 +52,7 @@ metadata access, or waveform queries.
 
 For hierarchy types such as `HierarchyOccurrence` and `SignalOccurrence`,
 import `package:rohd_hierarchy/rohd_hierarchy.dart` directly.
+
+----------------
+Copyright (C) 2026 Intel Corporation  
+SPDX-License-Identifier: BSD-3-Clause

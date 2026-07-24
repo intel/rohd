@@ -1,6 +1,12 @@
 # rohd_hierarchy
 
-An incremental design dictionary for hardware module hierarchies.
+Source-agnostic hierarchy models, addressing, and search utilities for hardware
+module navigation.
+
+`rohd_hierarchy` represents a hardware design as an incremental design
+dictionary: a tree of module occurrences and signals, plus compact addresses
+that let tools refer to any object without repeatedly sending full paths or
+structural context.
 
 ## Motivation
 
@@ -37,7 +43,7 @@ occurrence and every signal reachable by walking the hierarchy tree.
 ### Compact, canonical addressing
 
 `rohd_hierarchy` assigns each object a **canonical address** — a short
-sequence of child indices (e.g. `0.2.4`) that uniquely identifies it within
+sequence of child indices, such as `0.2.4`, that uniquely identifies it within
 the tree.
 
 Addresses are **relative within each occurrence**: an occurrence's address
@@ -54,7 +60,7 @@ At each step, both sides agree on the addresses, so subsequent data
 requests (waveform samples, signal values, schematic fragments) carry
 only the compact address, not the full path or structural description.
 
-## Package overview
+## What It Provides
 
 `rohd_hierarchy` is a source-agnostic Dart package that implements this
 dictionary model. It provides data models, search utilities, and adapter
@@ -76,7 +82,7 @@ transport layer.
   direction, and optional value. Signals with a `direction` serve as
   ports (input, output, inout).
 
-### Services & adapters
+### Services and adapters
 
 - **`HierarchyService`** — A mixin providing tree-walking search and
   navigation: `searchSignals()`, `searchOccurrences()`,
@@ -115,8 +121,8 @@ transport layer.
 ```dart
 import 'package:rohd_hierarchy/rohd_hierarchy.dart';
 
-final dict = NetlistHierarchyAdapter.fromJson(netlistJsonString);
-final root = dict.root;  // the top-level dictionary table
+final hierarchy = NetlistHierarchyAdapter.fromJson(netlistJsonString);
+final root = hierarchy.root; // The top-level dictionary table.
 ```
 
 ### Wrapping an existing tree
@@ -126,7 +132,7 @@ parser, a ROHD simulation, or any other source), wrap it to gain search
 and address resolution:
 
 ```dart
-final dict = BaseHierarchyAdapter.fromTree(rootNode);
+final hierarchy = BaseHierarchyAdapter.fromTree(rootNode);
 ```
 
 ### Incremental expansion by a remote agent
@@ -136,7 +142,7 @@ dictionary one level at a time:
 
 ```dart
 // Agent receives the root table
-final root = dict.root;
+final root = hierarchy.root;
 
 // Agent picks a child to expand (e.g. child 2)
 final child = root.children[2];
@@ -151,14 +157,15 @@ Once both sides share the dictionary, data requests use addresses only:
 
 ```dart
 // Resolve a human-readable pathname to a canonical address
-final addr = dict.pathnameToAddress('Counter/clk');
+final address = hierarchy.pathnameToAddress('Counter/clk');
 
-// Send the compact address over the wire: "0.1"
-final wire = addr!.toDotString();
+// Send the compact address over the wire, for example: "0".
+final wireAddress = address!.toDotString();
 
-// The other side resolves it back
-final resolved = dict.occurrenceByAddress(OccurrenceAddress.fromDotString(wire));
-final pathname = dict.addressToPathname(addr!);
+// The other side resolves it back as a signal address.
+final resolvedSignal =
+    hierarchy.signalByAddress(OccurrenceAddress.fromDotString(wireAddress));
+final pathname = hierarchy.addressToPathname(address, asSignal: true);
 ```
 
 ### Searching the dictionary
@@ -169,13 +176,13 @@ Segments are split on `/` or `.` and matched as case-sensitive substrings:
 
 ```dart
 // Find all signals whose path contains 'cpu' then 'clk'
-final signals = dict.searchSignals('cpu/clk');
+final signals = hierarchy.searchSignals('cpu/clk');
 
 // Find occurrences containing 'counter'
-final modules = dict.searchOccurrences('counter');
+final modules = hierarchy.searchOccurrences('counter');
 
 // Tab-completion for partial paths
-final completions = dict.autocompletePaths('Top/CPU/');
+final completions = hierarchy.autocompletePaths('Top/CPU/');
 ```
 
 #### Regex / glob search
@@ -185,22 +192,22 @@ and `?` are auto-converted. Use `**` to match across hierarchy levels:
 
 ```dart
 // All 'clk' signals anywhere in the design
-final clocks = dict.searchSignalsRegex('Top/**/clk');
+final clocks = hierarchy.searchSignalsRegex('Top/**/clk');
 
 // Signals named d0–d15 in any regfile
-final data = dict.searchSignalsRegex('Top/**/regfile/d[0-9]+');
+final data = hierarchy.searchSignalsRegex('Top/**/regfile/d[0-9]+');
 
 // Either 'clk' or 'reset' anywhere
-final resets = dict.searchSignalsRegex('Top/**/(clk|reset)');
+final resets = hierarchy.searchSignalsRegex('Top/**/(clk|reset)');
 
 // All cache channels ch0–ch2
-final channels = dict.searchOccurrencesRegex('Top/mem_ctrl/ch[0-2]');
+final channels = hierarchy.searchOccurrencesRegex('Top/mem_ctrl/ch[0-2]');
 
 // Signals containing 'mux' in their name
-final muxed = dict.searchSignalsRegex('Top/**/.*mux.*');
+final muxed = hierarchy.searchSignalsRegex('Top/**/.*mux.*');
 
 // All signals in a specific module
-final all = dict.searchSignalsRegex('Top/CPU/ALU/*');
+final all = hierarchy.searchSignalsRegex('Top/CPU/ALU/*');
 ```
 
 ### Constructing occurrences manually
@@ -244,3 +251,7 @@ print(root.signals.first.path());   // 'Counter/clk'
 | **Canonical**             | `buildAddresses()` assigns deterministic indices in tree order. The same design always produces the same addresses.                                     |
 | **No global namespace**   | Each occurrence's address table is self-contained. Adding or removing a sibling subtree does not invalidate addresses in unrelated parts of the tree.   |
 | **Transport-independent** | The package defines the dictionary model, not the wire protocol. Any transport (VM service, JSON-RPC, gRPC, WebSocket) can carry the compact addresses. |
+
+----------------
+Copyright (C) 2026 Intel Corporation  
+SPDX-License-Identifier: BSD-3-Clause
