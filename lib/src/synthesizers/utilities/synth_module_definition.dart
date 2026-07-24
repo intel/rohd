@@ -588,7 +588,10 @@ class SynthModuleDefinition {
         // as completely undriven).
 
         // make a new const node, it will merge away if not needed
-        final newReceiverConst = getSynthLogic(Const(receiver.value))!;
+        final newReceiverConst = getSynthLogic(Const(
+          receiver.value,
+          preferredRadix: receiver.preferredRadix,
+        ))!;
         internalSignals.add(newReceiverConst);
         assignments.add(SynthAssignment(newReceiverConst, synthReceiver));
       }
@@ -810,13 +813,65 @@ class SynthModuleDefinition {
       }
     }
 
-    return inlineableSubmoduleInstantiations.where((subModuleInstantiation) {
-      final resultSynthLogic = _inlineResultLogic(subModuleInstantiation);
+    final collapseCandidates = inlineableSubmoduleInstantiations.where(
+      (subModuleInstantiation) {
+        final resultSynthLogic = _inlineResultLogic(subModuleInstantiation);
 
-      return resultSynthLogic != null &&
-          singleUseSignals.contains(resultSynthLogic) &&
-          subModuleInstantiation.needsInstantiation;
-    });
+        return resultSynthLogic != null &&
+            singleUseSignals.contains(resultSynthLogic) &&
+            subModuleInstantiation.needsInstantiation;
+      },
+    ).toList();
+
+    // Keep every module in an inline dependency cycle materialized so that
+    // rendering expressions cannot recurse through the cycle indefinitely.
+    final candidateByResult = <SynthLogic, SynthSubModuleInstantiation>{
+      for (final candidate in collapseCandidates)
+        _inlineResultLogic(candidate)!.resolved: candidate,
+    };
+    final visited = <SynthSubModuleInstantiation>{};
+    final activeIndices = <SynthSubModuleInstantiation, int>{};
+    final activePath = <SynthSubModuleInstantiation>[];
+    final cyclicCandidates = <SynthSubModuleInstantiation>{};
+
+    void findCycles(SynthSubModuleInstantiation candidate) {
+      visited.add(candidate);
+      activeIndices[candidate] = activePath.length;
+      activePath.add(candidate);
+
+      final resultSignalName =
+          (candidate.module as InlineSystemVerilog).resultSignalName;
+      for (final input in <SynthLogic>[
+        ...candidate.inputMapping.values,
+        ...candidate.inOutMapping.entries
+            .where((entry) => entry.key != resultSignalName)
+            .map((entry) => entry.value),
+      ]) {
+        final dependency = candidateByResult[input.resolved];
+        if (dependency == null) {
+          continue;
+        }
+
+        final cycleStart = activeIndices[dependency];
+        if (cycleStart != null) {
+          cyclicCandidates.addAll(activePath.skip(cycleStart));
+        } else if (!visited.contains(dependency)) {
+          findCycles(dependency);
+        }
+      }
+
+      activePath.removeLast();
+      activeIndices.remove(candidate);
+    }
+
+    for (final candidate in collapseCandidates) {
+      if (!visited.contains(candidate)) {
+        findCycles(candidate);
+      }
+    }
+
+    return collapseCandidates
+        .where((candidate) => !cyclicCandidates.contains(candidate));
   }
 
   SynthLogic? _inlineResultLogic(SynthSubModuleInstantiation instantiation) {
