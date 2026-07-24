@@ -237,13 +237,14 @@ void main() {
     });
 
     test('returns empty FlcData when modules is null', () {
-      final flc = FlcData.fromJson({'version': 5, 'files': []});
+      final flc = FlcData.fromJson({'version': 5, 'files': <String>[]});
       expect(flc.isEmpty, isTrue);
       expect(flc.files, isEmpty);
     });
 
     test('returns empty FlcData when modules is empty', () {
-      final flc = FlcData.fromJson({'version': 5, 'files': [], 'modules': {}});
+      final flc = FlcData.fromJson(
+          {'version': 5, 'files': <String>[], 'modules': <String, dynamic>{}});
       expect(flc.isEmpty, isTrue);
     });
 

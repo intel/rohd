@@ -29,6 +29,8 @@ class SourceFrame {
   /// Frame type: `'sv'` for SystemVerilog, `'rohd'` for ROHD Dart source.
   final String type;
 
+  /// Creates a [SourceFrame] with the given [file], [line], [col], optional
+  /// [desc], and optional [type] tag (defaults to `'rohd'`).
   const SourceFrame({
     required this.file,
     required this.line,
@@ -105,14 +107,18 @@ class FrameCycler {
 
   /// Advance to the next frame (wrapping).
   SourceFrame? next() {
-    if (_frames.isEmpty) return null;
+    if (_frames.isEmpty) {
+      return null;
+    }
     _index = (_index + 1) % _frames.length;
     return _frames[_index];
   }
 
   /// Go back to the previous frame (wrapping).
   SourceFrame? prev() {
-    if (_frames.isEmpty) return null;
+    if (_frames.isEmpty) {
+      return null;
+    }
     _index = (_index - 1 + _frames.length) % _frames.length;
     return _frames[_index];
   }
@@ -127,7 +133,9 @@ class FrameCycler {
   ///
   /// Format: `"TYPE 1/3: file.dart:42 desc"`
   String get statusText {
-    if (_frames.isEmpty) return '';
+    if (_frames.isEmpty) {
+      return '';
+    }
     final f = _frames[_index];
     final desc = f.desc != null ? ' ${f.desc}' : '';
     return '${f.typeTag} ${_index + 1}/${_frames.length}: '
@@ -195,7 +203,9 @@ List<String> resolveCandidatePaths(
     var parent = root;
     for (var i = 0; i < parentLevels; i++) {
       final lastSlash = parent.lastIndexOf('/');
-      if (lastSlash <= 0) break;
+      if (lastSlash <= 0) {
+        break;
+      }
       parent = parent.substring(0, lastSlash);
       candidates.add('$parent/$normalized');
     }

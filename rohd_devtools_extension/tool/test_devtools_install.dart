@@ -4,8 +4,10 @@
 // test_devtools_install.dart
 // Smoke-test that Flutter DevTools can discover the installed ROHD DevTools
 // extension from a package root or extension/devtools install directory.
+//
+// 2026 July
+// Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:devtools_shared/devtools_extensions_io.dart';
@@ -35,13 +37,11 @@ Future<void> main(List<String> args) async {
     );
 
     final extensionAssetsPath = p.join(extensionDir.path, 'build');
-    final rohdExtensions = manager.devtoolsExtensions.where((extension) {
-      return extension.name == 'rohd' &&
-          p.equals(
-            extension.extensionAssetsPath,
-            extensionAssetsPath,
-          );
-    }).toList();
+    final rohdExtensions = manager.devtoolsExtensions
+        .where((extension) =>
+            extension.name == 'rohd' &&
+            p.equals(extension.extensionAssetsPath, extensionAssetsPath))
+        .toList();
 
     if (rohdExtensions.length != 1) {
       _fail(
@@ -77,14 +77,9 @@ Future<void> main(List<String> args) async {
 }
 
 Future<_ResolvedTarget> _resolveTarget(String target) async {
-  final githubTree = _githubTreeUrl.firstMatch(target);
+  final githubTree = _parseGithubTreeTarget(target);
   if (githubTree != null) {
     return _downloadGithubTree(githubTree);
-  }
-
-  final intelRohdTree = _intelRohdTreeUrl.firstMatch(target);
-  if (intelRohdTree != null) {
-    return _downloadGithubTree(intelRohdTree, isIntelRohdShorthand: true);
   }
 
   if (target.startsWith('http://') || target.startsWith('https://')) {
@@ -99,42 +94,64 @@ Future<_ResolvedTarget> _resolveTarget(String target) async {
   );
 }
 
-final _githubTreeUrl = RegExp(
-  r'^https://github\.com/([^/]+)/([^/]+)/tree/([^/]+)(?:/(.*))?$',
-);
+_GithubTreeTarget? _parseGithubTreeTarget(String target) {
+  final uri = Uri.tryParse(target);
+  if (uri == null || uri.scheme != 'https' || uri.host != 'github.com') {
+    return null;
+  }
 
-final _intelRohdTreeUrl = RegExp(
-  r'^https://github\.com/(rohd)/tree/([^/]+)(?:/(.*))?$',
-);
+  final segments = uri.pathSegments;
+  if (segments.length >= 4 && segments[2] == 'tree') {
+    return _GithubTreeTarget(
+      owner: segments[0],
+      repo: segments[1],
+      branch: segments[3],
+      treePath: segments.length > 4 ? p.joinAll(segments.skip(4)) : null,
+    );
+  }
+
+  if (segments.length >= 3 && segments[0] == 'rohd' && segments[1] == 'tree') {
+    return _GithubTreeTarget(
+      owner: 'intel',
+      repo: 'rohd',
+      branch: segments[2],
+      treePath: segments.length > 3 ? p.joinAll(segments.skip(3)) : null,
+    );
+  }
+
+  return null;
+}
 
 Future<_ResolvedTarget> _downloadGithubTree(
-  RegExpMatch match, {
-  bool isIntelRohdShorthand = false,
-}) async {
-  final owner = isIntelRohdShorthand ? 'intel' : match.group(1)!;
-  final repo = isIntelRohdShorthand ? 'rohd' : match.group(2)!;
-  final branch = isIntelRohdShorthand ? match.group(2)! : match.group(3)!;
-  final treePath = isIntelRohdShorthand ? match.group(3) : match.group(4);
+  _GithubTreeTarget target,
+) async {
   final tempDir = await Directory.systemTemp.createTemp(
     'rohd_devtools_install_tree_',
   );
-  final archivePath = p.join(tempDir.path, '$repo-$branch.zip');
+  final archivePath = p.join(
+    tempDir.path,
+    '${target.repo}-${target.branch}.zip',
+  );
+  final archiveUrl = 'https://github.com/${target.owner}/${target.repo}/'
+      'archive/refs/heads/${target.branch}.zip';
 
   await _runChecked(
     'curl',
     [
       '-fsSL',
-      'https://github.com/$owner/$repo/archive/refs/heads/$branch.zip',
+      archiveUrl,
       '-o',
       archivePath,
     ],
   );
   await _runChecked('unzip', ['-q', archivePath, '-d', tempDir.path]);
 
-  final extractedRoot = Directory(p.join(tempDir.path, '$repo-$branch'));
-  final resolvedPath = treePath == null || treePath.isEmpty
+  final extractedRoot = Directory(
+    p.join(tempDir.path, '${target.repo}-${target.branch}'),
+  );
+  final resolvedPath = target.treePath == null || target.treePath!.isEmpty
       ? extractedRoot.path
-      : p.join(extractedRoot.path, treePath);
+      : p.join(extractedRoot.path, target.treePath);
 
   return _ResolvedTarget(
     Directory(resolvedPath),
@@ -150,6 +167,20 @@ Future<void> _runChecked(String executable, List<String> arguments) async {
       '${result.stderr}',
     );
   }
+}
+
+final class _GithubTreeTarget {
+  final String owner;
+  final String repo;
+  final String branch;
+  final String? treePath;
+
+  const _GithubTreeTarget({
+    required this.owner,
+    required this.repo,
+    required this.branch,
+    required this.treePath,
+  });
 }
 
 final class _ResolvedTarget {
@@ -181,23 +212,6 @@ Directory _installRootFor(Directory extensionDir) {
 Future<Directory> _writeProjectRootPointingTo(Directory packageRoot) async {
   final projectRoot = await Directory.systemTemp.createTemp(
     'rohd_devtools_extension_discovery_',
-  );
-  final dartToolDir = Directory(p.join(projectRoot.path, '.dart_tool'));
-  dartToolDir.createSync(recursive: true);
-  final packageConfigFile =
-      File(p.join(dartToolDir.path, 'package_config.json'));
-  packageConfigFile.writeAsStringSync(
-    jsonEncode({
-      'configVersion': 2,
-      'packages': [
-        {
-          'name': 'rohd',
-          'rootUri': packageRoot.uri.toString(),
-          'packageUri': 'lib/',
-          'languageVersion': '3.6',
-        }
-      ],
-    }),
   );
   return projectRoot;
 }

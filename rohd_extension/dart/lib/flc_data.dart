@@ -25,6 +25,8 @@ class FlcFrame {
   /// Frame type: `'rohd'` for ROHD Dart source, `'sv'` for SystemVerilog.
   final String type;
 
+  /// Creates an [FlcFrame] with the given source [file], [line], [column],
+  /// and optional [type] tag (defaults to `'rohd'`).
   const FlcFrame({
     required this.file,
     required this.line,
@@ -53,6 +55,9 @@ class FlcEntry {
   /// became `sum_0`). Null if the name was not renamed.
   final String? origName;
 
+  /// Creates an [FlcEntry] with one or more ROHD source [frames], optional
+  /// [outputFrames] for generated-language positions, and an optional
+  /// [origName] alias.
   const FlcEntry({
     required this.frames,
     this.outputFrames = const [],
@@ -118,7 +123,9 @@ class FlcData {
     for (final modEntry in modules.entries) {
       final moduleName = modEntry.key;
       final modMap = modEntry.value as Map<String, dynamic>?;
-      if (modMap == null) continue;
+      if (modMap == null) {
+        continue;
+      }
 
       final svFile = modMap['svFile'] as String?;
       // Output files map.
@@ -141,7 +148,9 @@ class FlcData {
         }
       }
       final tree = modMap['tree'] as List<dynamic>?;
-      if (tree == null) continue;
+      if (tree == null) {
+        continue;
+      }
 
       final modSignals = <String, FlcEntry>{};
       final modInstances = <String, FlcEntry>{};
@@ -150,7 +159,9 @@ class FlcData {
       /// Frames are accumulated outermost-first; we reverse at the leaf
       /// to match the innermost-first convention of FlcEntry.frames.
       void walkNode(List<dynamic> node, List<String> path) {
-        if (node.isEmpty) return;
+        if (node.isEmpty) {
+          return;
+        }
         final frame = node[0] as String;
         final currentPath = [...path, frame];
 
@@ -170,9 +181,13 @@ class FlcData {
             final rohdFrames = <FlcFrame>[];
             for (final f in currentPath.reversed) {
               final parts = f.split(':');
-              if (parts.length < 2) continue;
+              if (parts.length < 2) {
+                continue;
+              }
               final fi = int.tryParse(parts[0]);
-              if (fi == null || fi >= files.length) continue;
+              if (fi == null || fi >= files.length) {
+                continue;
+              }
               final line = int.tryParse(parts[1]) ?? 1;
               final col = parts.length > 2 ? (int.tryParse(parts[2]) ?? 1) : 1;
               rohdFrames.add(
@@ -184,7 +199,9 @@ class FlcData {
             final outFrames = <FlcFrame>[];
             for (final pos in parsed.outputPositions) {
               final file = outputFiles[pos.type];
-              if (file == null) continue;
+              if (file == null) {
+                continue;
+              }
               outFrames.add(
                 FlcFrame(
                   file: file,
@@ -218,8 +235,12 @@ class FlcData {
         }
       }
 
-      if (modSignals.isNotEmpty) signals[moduleName] = modSignals;
-      if (modInstances.isNotEmpty) instances[moduleName] = modInstances;
+      if (modSignals.isNotEmpty) {
+        signals[moduleName] = modSignals;
+      }
+      if (modInstances.isNotEmpty) {
+        instances[moduleName] = modInstances;
+      }
     }
 
     return FlcData._(files: files, signals: signals, instances: instances);
@@ -259,13 +280,17 @@ class FlcData {
       rest = rest.substring(0, atIdx);
 
       for (final group in posStr.split(';')) {
-        if (group.isEmpty) continue;
+        if (group.isEmpty) {
+          continue;
+        }
         // A group is `[lang:]entry(,entry)*` where each entry is `[F:]L:C`.
         final entries = group.split(',');
         String? groupLang;
         for (var i = 0; i < entries.length; i++) {
           var part = entries[i];
-          if (part.isEmpty) continue;
+          if (part.isEmpty) {
+            continue;
+          }
           // Only the first entry of a group may carry a language tag.
           if (i == 0) {
             final segments = part.split(':');
@@ -304,19 +329,23 @@ class FlcData {
 
   /// Look up FLC frames for a signal in a given module.
   ///
-  /// Returns null if no trace data exists for this signal.
-  /// Falls back to matching by [origName] if the canonical name isn't found.
+  /// Returns null if no trace data exists for this signal. Falls back to
+  /// matching by [FlcEntry.origName] if the canonical name isn't found.
   List<FlcFrame>? lookupSignal(String moduleName, String signalName) =>
       lookupSignalEntry(moduleName, signalName)?.frames;
 
   /// Look up the full [FlcEntry] for a signal (includes SV frame if present).
   FlcEntry? lookupSignalEntry(String moduleName, String signalName) {
     final modSignals = _signals[moduleName];
-    if (modSignals == null) return null;
+    if (modSignals == null) {
+      return null;
+    }
 
     // Direct match.
     final direct = modSignals[signalName];
-    if (direct != null) return direct;
+    if (direct != null) {
+      return direct;
+    }
 
     // Fallback: search by origName.
     for (final entry in modSignals.values) {
@@ -331,13 +360,18 @@ class FlcData {
   List<FlcFrame>? lookupInstance(String moduleName, String instanceName) =>
       lookupInstanceEntry(moduleName, instanceName)?.frames;
 
-  /// Look up the full [FlcEntry] for an instance (includes SV frame if present).
+  /// Look up the full [FlcEntry] for an instance (includes SV frame if
+  /// present).
   FlcEntry? lookupInstanceEntry(String moduleName, String instanceName) {
     final modInstances = _instances[moduleName];
-    if (modInstances == null) return null;
+    if (modInstances == null) {
+      return null;
+    }
 
     final direct = modInstances[instanceName];
-    if (direct != null) return direct;
+    if (direct != null) {
+      return direct;
+    }
 
     // Fallback: search by origName.
     for (final entry in modInstances.values) {

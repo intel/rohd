@@ -16,9 +16,8 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:json_rpc_2/json_rpc_2.dart';
+import 'package:rohd_source_navigator/source_navigator.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
-
-import 'source_navigator.dart';
 
 /// Callback invoked when the DTD service receives a goToSource request.
 ///

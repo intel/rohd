@@ -173,9 +173,9 @@ class SignalDetailsCardState extends State<SignalDetailsCard> {
     super.debugFillProperties(properties);
     properties
       ..add(StringProperty('searchTerm', searchTerm))
-      ..add(FlagProperty('inputSelected', value: inputSelected.value))
-      ..add(FlagProperty('outputSelected', value: outputSelected.value))
-      ..add(FlagProperty('inoutSelected', value: inoutSelected.value))
+      ..add(DiagnosticsProperty<bool>('inputSelected', inputSelected.value))
+      ..add(DiagnosticsProperty<bool>('outputSelected', outputSelected.value))
+      ..add(DiagnosticsProperty<bool>('inoutSelected', inoutSelected.value))
       ..add(IntProperty('notifier', notifier.value));
   }
 }

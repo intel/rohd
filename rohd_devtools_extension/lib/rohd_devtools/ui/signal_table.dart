@@ -60,9 +60,9 @@ class SignalTable extends StatefulWidget {
     properties
       ..add(DiagnosticsProperty<TreeModel>('selectedModule', selectedModule))
       ..add(StringProperty('searchTerm', searchTerm))
-      ..add(FlagProperty('inputSelectedVal', value: inputSelectedVal))
-      ..add(FlagProperty('outputSelectedVal', value: outputSelectedVal))
-      ..add(FlagProperty('inoutSelectedVal', value: inoutSelectedVal))
+      ..add(DiagnosticsProperty<bool>('inputSelectedVal', inputSelectedVal))
+      ..add(DiagnosticsProperty<bool>('outputSelectedVal', outputSelectedVal))
+      ..add(DiagnosticsProperty<bool>('inoutSelectedVal', inoutSelectedVal))
       ..add(DiagnosticsProperty<SnapshotLoaded?>('snapshot', snapshot))
       ..add(DiagnosticsProperty<SimulationTimeDisplay>(
           'timeDisplay', timeDisplay));
