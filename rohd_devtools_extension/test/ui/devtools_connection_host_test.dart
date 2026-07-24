@@ -7,6 +7,7 @@
 // 2026 July
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
+import 'package:dtd/dtd.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/ui/devtools_connection_host.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/ui/vm_connection_form.dart';
@@ -86,6 +87,24 @@ void main() {
       expect(resolution.error, isNull);
     });
 
+    test('falls back to the raw discovered VM URI when no exposed URI exists',
+        () async {
+      final resolution = await resolveVmConnectionAttempt(
+        rawVmServiceUri: '',
+        rawDtdUri: ' ws://host:8181/dtd= ',
+        discoverVmServices: (uri) async => [
+          DiscoveredVmService(
+            name: 'counter',
+            uri: 'ws://internal:8181/app=/ws',
+          ),
+        ],
+      );
+
+      expect(resolution.vmServiceUri, 'ws://internal:8181/app=/ws');
+      expect(resolution.cleanedDtdUri, 'ws://host:8181/dtd=');
+      expect(resolution.error, isNull);
+    });
+
     test('returns a validation error when neither URI is usable', () async {
       final resolution = await resolveVmConnectionAttempt(
         rawVmServiceUri: 'ws://host:8181/xxxx=/ws',
@@ -116,6 +135,22 @@ void main() {
     test('matches direct and exposed VM service URIs', () {
       expect(
         dtdEventMatchesTrackedVm(
+          trackedVmUri: null,
+          eventUri: null,
+          eventExposedUri: null,
+        ),
+        isTrue,
+      );
+      expect(
+        dtdEventMatchesTrackedVm(
+          trackedVmUri: 'ws://forwarded:8181/app=/ws',
+          eventUri: null,
+          eventExposedUri: 'ws://forwarded:8181/app=/ws',
+        ),
+        isTrue,
+      );
+      expect(
+        dtdEventMatchesTrackedVm(
           trackedVmUri: 'ws://forwarded:8181/app=/ws',
           eventUri: 'ws://internal:8181/app=/ws',
           eventExposedUri: 'ws://forwarded:8181/app=/ws',
@@ -129,6 +164,47 @@ void main() {
           eventExposedUri: null,
         ),
         isFalse,
+      );
+    });
+  });
+
+  group('preferredVmServiceUriFromDtdEvent', () {
+    test('prefers exposed URI, then raw URI, then null', () {
+      expect(
+        preferredVmServiceUriFromDtdEvent(
+          DTDEvent(
+            ConnectedAppServiceConstants.serviceName,
+            ConnectedAppServiceConstants.vmServiceRegistered,
+            {
+              DtdParameters.uri: 'ws://internal:8181/app=/ws',
+              DtdParameters.exposedUri: 'ws://forwarded:8181/app=/ws',
+            },
+            1,
+          ),
+        ),
+        'ws://forwarded:8181/app=/ws',
+      );
+      expect(
+        preferredVmServiceUriFromDtdEvent(
+          DTDEvent(
+            ConnectedAppServiceConstants.serviceName,
+            ConnectedAppServiceConstants.vmServiceRegistered,
+            {DtdParameters.uri: 'ws://internal:8181/app=/ws'},
+            2,
+          ),
+        ),
+        'ws://internal:8181/app=/ws',
+      );
+      expect(
+        preferredVmServiceUriFromDtdEvent(
+          DTDEvent(
+            ConnectedAppServiceConstants.serviceName,
+            ConnectedAppServiceConstants.vmServiceRegistered,
+            const {},
+            3,
+          ),
+        ),
+        isNull,
       );
     });
   });

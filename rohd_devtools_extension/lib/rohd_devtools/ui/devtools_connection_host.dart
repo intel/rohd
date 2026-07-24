@@ -1225,6 +1225,11 @@ abstract class DevToolsConnectionHostState<T extends StatefulWidget>
     }
   }
 
+  /// Test hook for driving DTD Service stream events without a live DTD.
+  @visibleForTesting
+  void handleServiceStreamEventForTesting(DTDEvent event) =>
+      _handleServiceStreamEvent(event);
+
   /// Handle DTD VM lifecycle events.
   ///
   /// When a VM service is unregistered, marks the connection as dead.
@@ -1420,6 +1425,10 @@ abstract class DevToolsConnectionHostState<T extends StatefulWidget>
       }
     }
   }
+
+  /// Test hook for running one VM liveness probe without waiting for a timer.
+  @visibleForTesting
+  Future<void> checkVmLivenessForTesting() => _checkVmLiveness();
 
   // ══════════════════════════════════════════════════════════════════════════
   // Auto-Reconnect

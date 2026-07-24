@@ -39,33 +39,31 @@ Future<bool> captureBoundaryToPng(
   String filePrefix = 'export',
   double pixelRatio = 2.0,
   Future<String?> Function(Uint8List pngBytes, String fileName)? saveFn,
+  Future<Uint8List?> Function(
+    RenderRepaintBoundary boundary,
+    double pixelRatio,
+  )? encodeFn,
 }) async {
-  final boundary =
-      boundaryKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
-  if (boundary == null) {
+  final renderObject = boundaryKey.currentContext?.findRenderObject();
+  if (renderObject is! RenderRepaintBoundary) {
     debugPrint('[ExportPng] No RepaintBoundary found');
     return false;
   }
+  final boundary = renderObject;
 
-  final image = await boundary.toImage(pixelRatio: pixelRatio);
-  final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-  image.dispose();
+  final encode = encodeFn ?? _encodeBoundaryToPng;
+  final pngBytes = await encode(boundary, pixelRatio);
 
-  if (byteData == null) {
+  if (pngBytes == null) {
     debugPrint('[ExportPng] Failed to encode PNG');
     return false;
   }
 
-  final pngBytes = byteData.buffer.asUint8List();
   final fileName = '${filePrefix}_${DateTime.now().millisecondsSinceEpoch}.png';
 
   try {
-    final String? savedPath;
-    if (saveFn != null) {
-      savedPath = await saveFn(pngBytes, fileName);
-    } else {
-      savedPath = await export_png.savePngBytes(pngBytes, fileName);
-    }
+    final save = saveFn ?? export_png.savePngBytes;
+    final savedPath = await save(pngBytes, fileName);
     final msg =
         savedPath != null ? 'Saved: $savedPath' : 'Downloaded $fileName';
     debugPrint('[ExportPng] $msg');
@@ -80,4 +78,14 @@ Future<bool> captureBoundaryToPng(
     }
     return false;
   }
+}
+
+Future<Uint8List?> _encodeBoundaryToPng(
+  RenderRepaintBoundary boundary,
+  double pixelRatio,
+) async {
+  final image = await boundary.toImage(pixelRatio: pixelRatio);
+  final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+  image.dispose();
+  return byteData?.buffer.asUint8List();
 }
