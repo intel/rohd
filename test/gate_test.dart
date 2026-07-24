@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2024 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // gate_test.dart
@@ -68,7 +68,8 @@ class Absolute extends Module {
 class ShiftTestModule extends Module {
   dynamic constant; // int or BigInt
 
-  ShiftTestModule(Logic a, Logic b, {this.constant = 3})
+  ShiftTestModule(Logic a, Logic b,
+      {this.constant = 3, bool useExplicitConstShiftModules = false})
       : super(name: 'shifttestmodule') {
     a = addInput('a', a, width: a.width);
     b = addInput('b', b, width: b.width);
@@ -84,9 +85,15 @@ class ShiftTestModule extends Module {
     aRshiftB <= a >>> b;
     aLshiftB <= a << b;
     aArshiftB <= a >> b;
-    aRshiftConst <= a >>> constant;
-    aLshiftConst <= a << constant;
-    aArshiftConst <= a >> constant;
+    if (useExplicitConstShiftModules) {
+      aRshiftConst <= RShift(a, constant).out;
+      aLshiftConst <= LShift(a, constant).out;
+      aArshiftConst <= ARShift(a, constant).out;
+    } else {
+      aRshiftConst <= a >>> constant;
+      aLshiftConst <= a << constant;
+      aArshiftConst <= a >> constant;
+    }
   }
 }
 
@@ -109,6 +116,20 @@ class IndexGateTestModule extends Module {
     final bitSet = addOutput('index_output');
 
     bitSet <= original[index];
+  }
+}
+
+/// A module with a signal driven by a [Const].
+class ConstAliasModule extends Module {
+  /// The constant source protected from mutation.
+  late final Const constant = Const(0);
+
+  /// A named signal driven by [constant].
+  late final Logic alias = constant.named('alias');
+
+  /// Creates a module whose output is driven by [alias].
+  ConstAliasModule() : super(name: 'constaliasmodule') {
+    addOutput('out') <= alias;
   }
 }
 
@@ -352,6 +373,197 @@ void main() {
     });
   });
 
+  group('constant gate optimizations', () {
+    test('Const cannot be mutated', () async {
+      final module = ConstAliasModule();
+      final constant = module.constant;
+      final alias = module.alias;
+
+      expect(() => constant.put(1), throwsA(isA<UnassignableException>()));
+      expect(() => constant.inject(1), throwsA(isA<UnassignableException>()));
+      expect(
+          () => alias.put(1),
+          throwsA(isA<UnassignableException>().having(
+              (exception) => exception.message,
+              'message',
+              allOf(
+                contains('"${alias.name}" cannot be updated'),
+                contains('is driven by immutable signal'),
+                contains('A `Const` value cannot be modified'),
+              ))));
+      expect(() => alias.inject(1), throwsA(isA<UnassignableException>()));
+      expect(constant.value, LogicValue.zero);
+      expect(alias.value, LogicValue.zero);
+
+      await module.build();
+      expect(module.generateSynth(), contains("1'h0"));
+    });
+
+    test('bitwise NOT folds Const inputs', () {
+      final result = ~Const(LogicValue.ofString('01xz'));
+
+      expect(result, isA<Const>());
+      expect(result.value, LogicValue.ofString('10xx'));
+
+      final normalResult = ~(Logic()..put(1));
+      expect(normalResult, isNot(isA<Const>()));
+      expect(normalResult.value, LogicValue.zero);
+    });
+
+    test('bitwise AND folds only four-state-safe cases', () {
+      final signal = Logic(width: 4)..put(LogicValue.ofString('10z1'));
+      final zeros = Const(0, width: 4);
+      final ones = Const(0xf, width: 4);
+
+      expect(signal & zeros, same(zeros));
+      expect(zeros & signal, same(zeros));
+
+      final identityResult = signal & ones;
+      expect(identityResult, isNot(same(signal)));
+      expect(identityResult.value, LogicValue.ofString('10x1'));
+
+      final folded = Const(LogicValue.ofString('11x1')) &
+          Const(LogicValue.ofString('1011'));
+      expect(folded, isA<Const>());
+      expect(folded.value, LogicValue.ofString('10x1'));
+
+      expect(() => Const(0, width: 2) & Logic(),
+          throwsA(isA<PortWidthMismatchException>()));
+    });
+
+    test('bitwise OR folds only four-state-safe cases', () {
+      final signal = Logic(width: 4)..put(LogicValue.ofString('01z0'));
+      final zeros = Const(0, width: 4);
+      final ones = Const(0xf, width: 4);
+
+      expect(signal | ones, same(ones));
+      expect(ones | signal, same(ones));
+
+      final identityResult = signal | zeros;
+      expect(identityResult, isNot(same(signal)));
+      expect(identityResult.value, LogicValue.ofString('01x0'));
+
+      final folded = Const(LogicValue.ofString('10x0')) |
+          Const(LogicValue.ofString('0101'));
+      expect(folded, isA<Const>());
+      expect(folded.value, LogicValue.ofString('11x1'));
+
+      expect(() => Const(0, width: 2) | Logic(),
+          throwsA(isA<PortWidthMismatchException>()));
+    });
+
+    test('bitwise XOR folds only when both inputs are Const', () {
+      final folded = Const(LogicValue.ofString('10x0')) ^
+          Const(LogicValue.ofString('0101'));
+      expect(folded, isA<Const>());
+      expect(folded.value, LogicValue.ofString('11x1'));
+
+      final signal = Logic(width: 4)..put(LogicValue.ofString('01z0'));
+      final identityResult = Const(0, width: 4) ^ signal;
+      expect(identityResult, isNot(same(signal)));
+      expect(identityResult.value, LogicValue.ofString('01x0'));
+    });
+
+    test('reductions and comparisons fold Const inputs', () {
+      final value = Const(0xa, width: 4);
+
+      expect(value.and(), isA<Const>());
+      expect(value.and().value, LogicValue.zero);
+      expect(value.or().value, LogicValue.one);
+      expect(value.xor().value, LogicValue.zero);
+
+      final equal = value.eq(Const(0xa, width: 4));
+      final notEqual = value.neq(0xb);
+      final notEqualConst = value.neq(Const(0xb, width: 4));
+      expect(equal, isA<Const>());
+      expect(equal.value, LogicValue.one);
+      expect(notEqual, isA<Const>());
+      expect(notEqual.value, LogicValue.one);
+      expect(notEqualConst, isA<Const>());
+      expect(notEqualConst.value, LogicValue.one);
+
+      final unknown = Const(LogicValue.z).eq(Const(LogicValue.z));
+      expect(unknown, isA<Const>());
+      expect(unknown.value, LogicValue.x);
+    });
+
+    test('comparisons with mutable Logic retain comparison modules', () {
+      final value = Const(0xa, width: 4);
+      final mutable = Logic(width: 4)..put(0xa);
+
+      final equal = value.eq(mutable);
+      final notEqual = value.neq(mutable);
+
+      expect(equal.parentModule, isA<Equals>());
+      expect(notEqual.parentModule, isA<NotEquals>());
+      expect(equal.value, LogicValue.one);
+      expect(notEqual.value, LogicValue.zero);
+
+      mutable.put(0xb);
+      expect(equal.value, LogicValue.zero);
+      expect(notEqual.value, LogicValue.one);
+    });
+
+    test('shifts by constant zero return the original signal', () {
+      final signal = Logic(width: 4)..put(LogicValue.ofString('10z1'));
+
+      expect(signal << 0, same(signal));
+      expect(signal >> Const(0), same(signal));
+      expect(signal >>> BigInt.zero, same(signal));
+
+      final constant = Const(bin('1010'), width: 4);
+      expect(constant << 0, same(constant));
+      expect(constant >> BigInt.zero, same(constant));
+      expect(constant >>> Const(0), same(constant));
+
+      final left = constant << 1;
+      final right = constant >>> 1;
+      final arithmeticRight = constant >> 1;
+      expect(left, isA<Const>());
+      expect(left.value, LogicValue.ofString('0100'));
+      expect(right.value, LogicValue.ofString('0101'));
+      expect(arithmeticRight.value, LogicValue.ofString('1101'));
+    });
+
+    test('Const shifts by mutable Logic retain shift modules', () {
+      final constant = Const(bin('1010'), width: 4);
+      final amount = Logic(width: 2)..put(1);
+
+      final left = constant << amount;
+      final right = constant >>> amount;
+      final arithmeticRight = constant >> amount;
+
+      expect(left.parentModule, isA<LShift>());
+      expect(right.parentModule, isA<RShift>());
+      expect(arithmeticRight.parentModule, isA<ARShift>());
+      expect(left.value, LogicValue.ofString('0100'));
+      expect(right.value, LogicValue.ofString('0101'));
+      expect(arithmeticRight.value, LogicValue.ofString('1101'));
+
+      amount.put(2);
+      expect(left.value, LogicValue.ofString('1000'));
+      expect(right.value, LogicValue.ofString('0010'));
+      expect(arithmeticRight.value, LogicValue.ofString('1110'));
+    });
+
+    test('mux bypasses only valid constant controls', () {
+      final d0 = Logic(width: 4);
+      final d1 = Logic(width: 4);
+
+      expect(mux(Const(0), d1, d0), same(d0));
+      expect(mux(Const(1), d1, d0), same(d1));
+
+      final invalidResult = mux(Const(LogicValue.z), d1, d0);
+      expect(invalidResult, isNot(anyOf(same(d0), same(d1))));
+      expect(invalidResult.value, LogicValue.filled(4, LogicValue.x));
+
+      expect(() => mux(Const(0, width: 2), d1, d0),
+          throwsA(isA<PortWidthMismatchException>()));
+      expect(() => mux(Const(0), Logic(width: 2), d0),
+          throwsA(isA<PortWidthMismatchException>()));
+    });
+  });
+
   group('simcompare', () {
     test('NotGate single bit', () async {
       final gtm = GateTestModule(Logic(), Logic());
@@ -534,8 +746,12 @@ void main() {
       });
 
       test('shift by const zero', () async {
-        final gtm =
-            ShiftTestModule(Logic(width: 3), Logic(width: 8), constant: 0);
+        final gtm = ShiftTestModule(
+          Logic(width: 3),
+          Logic(width: 8),
+          constant: 0,
+          useExplicitConstShiftModules: true,
+        );
         await gtm.build();
         final sv = gtm.generateSynth();
 

@@ -16,17 +16,43 @@ enum SystemVerilogPortType {
   implicit,
 }
 
+/// Configuration for types in a SystemVerilog port declaration.
+class SystemVerilogPortTypeConfiguration {
+  /// Whether the object type, such as `wire` or `var`, is explicit.
+  final SystemVerilogPortType objectType;
+
+  /// Whether the data type, such as `logic`, is explicit.
+  final SystemVerilogPortType dataType;
+
+  /// Creates a new configuration for types in a SystemVerilog port
+  /// declaration.
+  const SystemVerilogPortTypeConfiguration({
+    this.objectType = SystemVerilogPortType.explicit,
+    this.dataType = SystemVerilogPortType.explicit,
+  });
+}
+
 /// Configuration for SystemVerilog synthesis.
 class SystemVerilogSynthesizerConfiguration {
-  /// Whether port object types, such as `wire` and `var`, are explicit.
-  final SystemVerilogPortType portObjectType;
+  /// Type configuration for input ports.
+  final SystemVerilogPortTypeConfiguration inputPortType;
 
-  /// Whether port data types, such as `logic`, are explicit.
-  final SystemVerilogPortType portDataType;
+  /// Type configuration for output ports.
+  final SystemVerilogPortTypeConfiguration outputPortType;
+
+  /// Type configuration for inout ports.
+  final SystemVerilogPortTypeConfiguration inOutPortType;
 
   /// Creates a new configuration for SystemVerilog synthesis.
   const SystemVerilogSynthesizerConfiguration({
-    this.portObjectType = SystemVerilogPortType.explicit,
-    this.portDataType = SystemVerilogPortType.explicit,
+    this.inputPortType = const SystemVerilogPortTypeConfiguration(
+      objectType: SystemVerilogPortType.implicit,
+    ),
+    this.outputPortType = const SystemVerilogPortTypeConfiguration(
+      objectType: SystemVerilogPortType.implicit,
+    ),
+    this.inOutPortType = const SystemVerilogPortTypeConfiguration(
+      dataType: SystemVerilogPortType.implicit,
+    ),
   });
 }
