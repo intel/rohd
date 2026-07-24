@@ -16,33 +16,10 @@ import 'package:rohd/src/collections/traverseable_collection.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
 import 'package:rohd/src/utilities/namer.dart';
 
-/// A version of [BusSubset] that can be used for slicing on [LogicStructure]
-/// ports.
-class _BusSubsetForStructSlice extends BusSubset {
-  /// The stable destination [Logic] this slice drives.
-  ///
-  /// Used as the [instanceNameKey] so that, although a fresh
-  /// [_BusSubsetForStructSlice] is created on every synthesis pass, its
-  /// canonical instance name is memoized against the persistent destination
-  /// signal and therefore does not drift run-to-run.
-  final Logic _destination;
-
-  /// Creates a [BusSubset] for use in [SynthModuleDefinition]s during
-  /// [LogicStructure] port slicing.
-  _BusSubsetForStructSlice(
-    super.bus,
-    super.startIndex,
-    super.endIndex, {
-    required Logic destination,
-  })  : _destination = destination,
-        super(name: 'struct_slice');
-
-  // we override this since it's added post-build
-  @override
-  bool get hasBuilt => true;
-
-  @override
-  Object get instanceNameKey => _destination;
+/// Adapts structure slicing to the shared synthesis operation.
+class _BusSubsetForStructSlice extends SynthStructureSlice {
+  _BusSubsetForStructSlice(super.bus, super.startIndex, super.endIndex,
+      {required super.destination});
 }
 
 /// A packed range of a base [SynthLogic], inclusive of [lower] and [upper].
@@ -390,11 +367,11 @@ class SynthModuleDefinition {
   /// Creates a new definition representation for this [module].
   SynthModuleDefinition(this.module)
       : assert(
-            !(module is SystemVerilog &&
-                module.generatedDefinitionType ==
-                    DefinitionGenerationType.none),
-            'Do not build a definition for a module'
-            ' which generates no definition!') {
+          !(module is SystemVerilog &&
+              module.generatedDefinitionType == DefinitionGenerationType.none),
+          'Do not build a definition for a module'
+          ' which generates no definition!',
+        ) {
     // start by traversing output signals
     final logicsToTraverse = TraverseableCollection<Logic>()
       ..addAll(module.outputs.values)
@@ -1433,8 +1410,10 @@ class SynthModuleDefinition {
     for (final submodule in subModuleInstantiations) {
       if (submodule.module.reserveName) {
         submodule.pickName(module);
-        assert(submodule.module.name == submodule.name,
-            'Expect reserved names to retain their name.');
+        assert(
+          submodule.module.name == submodule.name,
+          'Expect reserved names to retain their name.',
+        );
       }
     }
 

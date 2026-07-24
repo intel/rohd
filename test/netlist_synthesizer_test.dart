@@ -1,0 +1,2023 @@
+// Copyright (C) 2026 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// netlist_synthesizer_test.dart
+// Comprehensive tests for the netlist synthesizer.
+//
+// 2026 April 13
+// Author: Auto-generated
+
+import 'dart:async';
+import 'dart:convert';
+
+import 'package:rohd/rohd.dart';
+import 'package:rohd/src/synthesizers/netlist/netlist_passes.dart';
+import 'package:rohd/src/synthesizers/netlist/netlist_validation.dart';
+import 'package:rohd/src/synthesizers/utilities/synth_operation_namer.dart';
+import 'package:test/test.dart';
+
+import '../example/example.dart';
+import '../example/filter_bank/filter_bank_modules.dart';
+import '../example/fir_filter.dart';
+import '../example/logic_array.dart';
+import '../example/oven_fsm.dart';
+import '../example/tree.dart';
+
+// ────────────────────────────────────────────────────────────────────
+// Tiny helper modules for targeted gate-level tests
+// ────────────────────────────────────────────────────────────────────
+
+/// Exercises And2Gate.
+class AndModule extends Module {
+  Logic get y => output('y');
+  AndModule(Logic a, Logic b) : super(name: 'andmod') {
+    a = addInput('a', a);
+    b = addInput('b', b);
+    addOutput('y') <= a & b;
+  }
+}
+
+/// Exercises Or2Gate.
+class OrModule extends Module {
+  Logic get y => output('y');
+  OrModule(Logic a, Logic b) : super(name: 'ormod') {
+    a = addInput('a', a);
+    b = addInput('b', b);
+    addOutput('y') <= a | b;
+  }
+}
+
+/// Exercises Xor2Gate.
+class XorModule extends Module {
+  Logic get y => output('y');
+  XorModule(Logic a, Logic b) : super(name: 'xormod') {
+    a = addInput('a', a);
+    b = addInput('b', b);
+    addOutput('y') <= a ^ b;
+  }
+}
+
+/// Exercises NotGate.
+class NotModule extends Module {
+  Logic get y => output('y');
+  NotModule(Logic a) : super(name: 'notmod') {
+    a = addInput('a', a);
+    addOutput('y') <= ~a;
+  }
+}
+
+/// Exercises Mux.
+class MuxModule extends Module {
+  Logic get y => output('y');
+  MuxModule(Logic sel, Logic a, Logic b, {int width = 8}) : super(name: 'mux') {
+    sel = addInput('sel', sel);
+    a = addInput('a', a, width: width);
+    b = addInput('b', b, width: width);
+    addOutput('y', width: width) <= mux(sel, a, b);
+  }
+}
+
+/// Exercises FlipFlop.
+class FlopModule extends Module {
+  Logic get q => output('q');
+  FlopModule(Logic clk, Logic d, {int width = 8}) : super(name: 'flopmod') {
+    clk = addInput('clk', clk);
+    d = addInput('d', d, width: width);
+    addOutput('q', width: width) <= flop(clk, d);
+  }
+}
+
+/// Exercises Add.
+class AddModule extends Module {
+  Logic get sum => output('sum');
+  AddModule(Logic a, Logic b, {int width = 8}) : super(name: 'addmod') {
+    a = addInput('a', a, width: width);
+    b = addInput('b', b, width: width);
+    addOutput('sum', width: width) <= a + b;
+  }
+}
+
+/// Wraps an [AddModule] so stop-policy tests can choose whether the child
+/// receives its own definition or is emitted as a netlist cell.
+class AddWrapperModule extends Module {
+  Logic get sum => output('sum');
+
+  AddWrapperModule({int width = 8}) : super(name: 'addwrapper') {
+    final a = addInput('a', Logic(width: width), width: width);
+    final b = addInput('b', Logic(width: width), width: width);
+    final child = AddModule(a, b, width: width);
+    addOutput('sum', width: width) <= child.sum;
+  }
+}
+
+/// Exercises Multiply.
+class MulModule extends Module {
+  Logic get prod => output('prod');
+  MulModule(Logic a, Logic b, {int width = 8}) : super(name: 'mulmod') {
+    a = addInput('a', a, width: width);
+    b = addInput('b', b, width: width);
+    addOutput('prod', width: width) <= a * b;
+  }
+}
+
+/// Exercises BusSubset ($slice).
+class SliceModule extends Module {
+  Logic get y => output('y');
+  SliceModule(Logic a) : super(name: 'slicemod') {
+    a = addInput('a', a, width: 8);
+    addOutput('y', width: 4) <= a.getRange(2, 6);
+  }
+}
+
+/// Exercises comparison operators.
+class CompareModule extends Module {
+  Logic get lt => output('lt');
+  Logic get gt => output('gt');
+  Logic get eq => output('eq');
+  CompareModule(Logic a, Logic b, {int width = 8}) : super(name: 'cmpmod') {
+    a = addInput('a', a, width: width);
+    b = addInput('b', b, width: width);
+    addOutput('lt') <= LessThan(a, b).out;
+    addOutput('gt') <= GreaterThan(a, b).out;
+    addOutput('eq') <= a.eq(b);
+  }
+}
+
+/// Exercises shift operations.
+class ShiftModule extends Module {
+  Logic get shl => output('shl');
+  Logic get shr => output('shr');
+  ShiftModule(Logic a, Logic amt, {int width = 8}) : super(name: 'shiftmod') {
+    a = addInput('a', a, width: width);
+    amt = addInput('amt', amt, width: width);
+    addOutput('shl', width: width) <= a << amt;
+    addOutput('shr', width: width) <= a >>> amt;
+  }
+}
+
+/// Exercises Xor2Gate.
+class XorGateModule extends Module {
+  Logic get y => output('y');
+  XorGateModule(Logic a, Logic b) : super(name: 'xormod2') {
+    a = addInput('a', a);
+    b = addInput('b', b);
+    addOutput('y') <= a ^ b;
+  }
+}
+
+/// Exercises Subtract.
+class SubModule extends Module {
+  Logic get diff => output('diff');
+  SubModule(Logic a, Logic b, {int width = 8}) : super(name: 'submod') {
+    a = addInput('a', a, width: width);
+    b = addInput('b', b, width: width);
+    addOutput('diff', width: width) <= a - b;
+  }
+}
+
+/// Exercises Swizzle ($concat).
+class SwizzleModule extends Module {
+  Logic get y => output('y');
+  SwizzleModule(Logic a, Logic b, {int width = 4}) : super(name: 'swizmod') {
+    a = addInput('a', a, width: width);
+    b = addInput('b', b, width: width);
+    addOutput('y', width: width * 2) <= [a, b].swizzle();
+  }
+}
+
+/// Child with a LogicArray input, used to exercise array port netlisting.
+class ArrayInputChildModule extends Module {
+  LogicArray get values => input('values') as LogicArray;
+
+  Logic get packedOut => output('packedOut');
+
+  ArrayInputChildModule(LogicArray values) : super(name: 'arrayinputchild') {
+    values = addInputArray(
+      'values',
+      values,
+      dimensions: values.dimensions,
+      elementWidth: values.elementWidth,
+    );
+    addOutput('packedOut', width: values.width) <=
+        [for (final element in values.elements.reversed) element].swizzle();
+  }
+}
+
+/// Child with a LogicArray output, used to exercise regrouping array output
+/// elements into another child array input.
+class ArrayOutputChildModule extends Module {
+  LogicArray get values => output('values') as LogicArray;
+
+  ArrayOutputChildModule() : super(name: 'arrayoutputchild') {
+    addOutputArray('values', dimensions: [4], elementWidth: 8);
+  }
+}
+
+/// Parent whose internal LogicArray elements independently feed a child array
+/// input port.
+class InternalArrayToChildModule extends Module {
+  InternalArrayToChildModule() : super(name: 'internalarraytochild') {
+    final first = addInput('first', Logic(width: 8), width: 8);
+    final second = addInput('second', Logic(width: 8), width: 8);
+    final values = LogicArray([2], 8, name: 'values');
+
+    values.elements[0] <= first;
+    values.elements[1] <= second;
+    final child = ArrayInputChildModule(values);
+    addOutput('packedOut', width: values.width) <= child.packedOut;
+  }
+}
+
+/// Parent whose internal LogicArray groups elements from another child output
+/// array before feeding a child input port.
+class RegroupedArrayOutputToChildModule extends Module {
+  RegroupedArrayOutputToChildModule()
+      : super(name: 'regroupedarrayoutputtochild') {
+    final source = ArrayOutputChildModule();
+    final values = LogicArray([2], 8, name: 'values');
+
+    values.elements[0] <= source.values.elements[2];
+    values.elements[1] <= source.values.elements[3];
+    final child = ArrayInputChildModule(values);
+    addOutput('packedOut', width: values.width) <= child.packedOut;
+  }
+}
+
+/// Parent with nested internal LogicArrays, used to exercise concat-to-concat
+/// consumer rewrites after array concat outputs receive fresh wire IDs.
+class NestedInternalArrayToChildModule extends Module {
+  NestedInternalArrayToChildModule()
+      : super(name: 'nestedinternalarraytochild') {
+    final inputs = [
+      for (var index = 0; index < 4; index++)
+        addInput('in$index', Logic(width: 8), width: 8),
+    ];
+    final lower = LogicArray([2], 8, name: 'lower');
+    final upper = LogicArray([2], 8, name: 'upper');
+    final values = LogicArray([2], 16, name: 'values');
+
+    lower.elements[0] <= inputs[0];
+    lower.elements[1] <= inputs[1];
+    upper.elements[0] <= inputs[2];
+    upper.elements[1] <= inputs[3];
+    values.elements[0] <= lower;
+    values.elements[1] <= upper;
+    final child = ArrayInputChildModule(values);
+    addOutput('packedOut', width: values.width) <= child.packedOut;
+  }
+}
+
+/// Simple two-field structure used to demonstrate netlist struct unpack/pack
+/// cells.
+class NetlistPairStruct extends LogicStructure {
+  Logic get low => elements[0];
+
+  Logic get high => elements[1];
+
+  NetlistPairStruct({super.name = 'pair'})
+      : super([
+          Logic(name: 'low', width: 4),
+          Logic(name: 'high', width: 4),
+        ]);
+
+  @override
+  NetlistPairStruct clone({String? name}) => NetlistPairStruct(name: name);
+}
+
+/// Consumes fields of a typed structure input independently, requiring the
+/// netlist to unpack the aggregate port into named field connections.
+class StructInputConsumerModule extends Module {
+  StructInputConsumerModule(NetlistPairStruct pair)
+      : super(name: 'structinputconsumer') {
+    pair = addTypedInput('pair', pair);
+    addOutput('packedOut', width: pair.width) <=
+        [pair.high, pair.low].swizzle();
+  }
+}
+
+/// Drives fields of a typed structure output independently, requiring the
+/// netlist to pack the field wires back into the aggregate output port.
+class StructOutputProducerModule extends Module {
+  StructOutputProducerModule() : super(name: 'structoutputproducer') {
+    final low = addInput('low', Logic(width: 4), width: 4);
+    final high = addInput('high', Logic(width: 4), width: 4);
+    final pair = NetlistPairStruct(name: 'pairValue');
+
+    pair.low <= low;
+    pair.high <= high ^ Const(1, width: 4);
+    addTypedOutput('pair', pair.clone).gets(pair);
+  }
+}
+
+/// Exercises arithmetic right shift (ARShift).
+class ARShiftModule extends Module {
+  Logic get y => output('y');
+  ARShiftModule(Logic a, Logic amt, {int width = 8})
+      : super(name: 'arshiftmod') {
+    a = addInput('a', a, width: width);
+    amt = addInput('amt', amt, width: width);
+    addOutput('y', width: width) <= a >> amt;
+  }
+}
+
+/// Exercises unary reduction ops.
+class ReduceModule extends Module {
+  Logic get andR => output('andR');
+  Logic get orR => output('orR');
+  Logic get xorR => output('xorR');
+  ReduceModule(Logic a, {int width = 8}) : super(name: 'reducemod') {
+    a = addInput('a', a, width: width);
+    addOutput('andR') <= a.and();
+    addOutput('orR') <= a.or();
+    addOutput('xorR') <= a.xor();
+  }
+}
+
+/// Exercises individual comparison ops for cell-type checking.
+class LtModule extends Module {
+  Logic get y => output('y');
+  LtModule(Logic a, Logic b, {int width = 8}) : super(name: 'ltmod') {
+    a = addInput('a', a, width: width);
+    b = addInput('b', b, width: width);
+    addOutput('y') <= a.lt(b);
+  }
+}
+
+class GtModule extends Module {
+  Logic get y => output('y');
+  GtModule(Logic a, Logic b, {int width = 8}) : super(name: 'gtmod') {
+    a = addInput('a', a, width: width);
+    b = addInput('b', b, width: width);
+    addOutput('y') <= a.gt(b);
+  }
+}
+
+class EqModule extends Module {
+  Logic get y => output('y');
+  EqModule(Logic a, Logic b, {int width = 8}) : super(name: 'eqmod') {
+    a = addInput('a', a, width: width);
+    b = addInput('b', b, width: width);
+    addOutput('y') <= a.eq(b);
+  }
+}
+
+class NeqModule extends Module {
+  Logic get y => output('y');
+  NeqModule(Logic a, Logic b, {int width = 8}) : super(name: 'neqmod') {
+    a = addInput('a', a, width: width);
+    b = addInput('b', b, width: width);
+    addOutput('y') <= a.neq(b);
+  }
+}
+
+class LeqModule extends Module {
+  Logic get y => output('y');
+  LeqModule(Logic a, Logic b, {int width = 8}) : super(name: 'leqmod') {
+    a = addInput('a', a, width: width);
+    b = addInput('b', b, width: width);
+    addOutput('y') <= a.lte(b);
+  }
+}
+
+class GeqModule extends Module {
+  Logic get y => output('y');
+  GeqModule(Logic a, Logic b, {int width = 8}) : super(name: 'geqmod') {
+    a = addInput('a', a, width: width);
+    b = addInput('b', b, width: width);
+    addOutput('y') <= a.gte(b);
+  }
+}
+
+/// Exercises TriStateBuffer.
+class TriBufModule extends Module {
+  Logic get bus => inOut('bus');
+  TriBufModule(LogicNet busNet, Logic data, Logic en)
+      : super(name: 'tribufmod') {
+    final bus = addInOut('bus', busNet, width: data.width);
+    data = addInput('data', data, width: data.width);
+    en = addInput('en', en);
+    TriStateBuffer(data, enable: en, name: 'tsb').out.gets(bus);
+  }
+}
+
+/// Exercises Combinational with If.
+class CombIfModule extends Module {
+  Logic get y => output('y');
+  CombIfModule(Logic sel, Logic a, Logic b, {int width = 8})
+      : super(name: 'combif') {
+    sel = addInput('sel', sel);
+    a = addInput('a', a, width: width);
+    b = addInput('b', b, width: width);
+    final y = addOutput('y', width: width);
+    Combinational([
+      If(sel, then: [y < a], orElse: [y < b]),
+    ]);
+  }
+}
+
+/// Exercises Sequential with If.
+class SeqIfModule extends Module {
+  Logic get q => output('q');
+  SeqIfModule(Logic clk, Logic en, Logic d, {int width = 8})
+      : super(name: 'seqif') {
+    clk = addInput('clk', clk);
+    en = addInput('en', en);
+    d = addInput('d', d, width: width);
+    final q = addOutput('q', width: width);
+    Sequential(clk, [
+      If(en, then: [q < d]),
+    ]);
+  }
+}
+
+/// Module with multiple instances of the same sub-module (dedup test).
+class DedupTop extends Module {
+  Logic get y0 => output('y0');
+  Logic get y1 => output('y1');
+  DedupTop(Logic a, Logic b, {int width = 8})
+      : super(name: 'deduptop', definitionName: 'DedupTop') {
+    a = addInput('a', a, width: width);
+    b = addInput('b', b, width: width);
+    addOutput('y0', width: width) <= AddModule(a, b, width: width).sum;
+    addOutput('y1', width: width) <= AddModule(a, b, width: width).sum;
+  }
+}
+
+/// Module with different-width instances (no dedup).
+class NoDedupTop extends Module {
+  Logic get y0 => output('y0');
+  Logic get y1 => output('y1');
+  NoDedupTop(Logic a4, Logic b4, Logic a8, Logic b8)
+      : super(name: 'nodeduptop', definitionName: 'NoDedupTop') {
+    a4 = addInput('a4', a4, width: 4);
+    b4 = addInput('b4', b4, width: 4);
+    a8 = addInput('a8', a8, width: 8);
+    b8 = addInput('b8', b8, width: 8);
+    addOutput('y0', width: 4) <= AddModule(a4, b4, width: 4).sum;
+    addOutput('y1', width: 8) <= AddModule(a8, b8).sum;
+  }
+}
+
+/// A module with a named constant (Logic..gets(Const)) used inside a
+/// Combinational block — exercises the named-constant fix.
+class _NamedConstModule extends Module {
+  _NamedConstModule(Logic clk, Logic reset) : super(name: 'namedConstMod') {
+    clk = addInput('clk', clk);
+    reset = addInput('reset', reset);
+    final dataIn = addInput('dataIn', Logic(width: 8), width: 8);
+    final result = addOutput('result', width: 8);
+
+    // Named constant driven by Const — this is the pattern from
+    // _dynamicInputToLogic in SummationBase.
+    final myConst = Logic(name: 'myConst', width: 8)..gets(Const(0, width: 8));
+
+    Combinational([result < mux(dataIn.or(), dataIn, myConst)]);
+  }
+}
+
+// ────────────────────────────────────────────────────────────────────
+// Helpers
+// ────────────────────────────────────────────────────────────────────
+
+/// Build a FilterBank module for testing (not yet built).
+FilterBank _buildFilterBank() {
+  const dataWidth = 16;
+  const numTaps = 3;
+  const coeffs0 = [1, 2, 1];
+  const coeffs1 = [1, -2, 1];
+
+  final clk = SimpleClockGenerator(10).clk;
+  final reset = Logic(name: 'reset');
+  final start = Logic(name: 'start');
+  final samples = List.generate(2, (ch) => FilterSample(name: 'sample$ch'));
+  final inputDone = Logic(name: 'inputDone');
+
+  return FilterBank(
+    clk,
+    reset,
+    start,
+    samples,
+    inputDone,
+    numTaps: numTaps,
+    dataWidth: dataWidth,
+    coefficients: [coeffs0, coeffs1],
+  );
+}
+
+/// Build a module and synthesize to a parsed JSON map.
+Future<Map<String, dynamic>> _synthToMap(
+  Module mod, {
+  NetlistOptions options = const NetlistOptions(),
+}) async {
+  await mod.build();
+  final synth = SynthBuilder(mod, NetlistSynthesizer(options: options));
+  final json = (synth.synthesizer as NetlistSynthesizer).synthesizeToJson(mod);
+  return jsonDecode(json) as Map<String, dynamic>;
+}
+
+/// Extract the `modules` map from a synthesized JSON map.
+Map<String, dynamic> _modules(Map<String, dynamic> json) =>
+    json['modules'] as Map<String, dynamic>;
+
+/// Get cells map from a module definition.
+Map<String, dynamic> _cells(Map<String, dynamic> moduleDef) =>
+    moduleDef['cells'] as Map<String, dynamic>? ?? {};
+
+/// Get ports map from a module definition.
+Map<String, dynamic> _ports(Map<String, dynamic> moduleDef) =>
+    moduleDef['ports'] as Map<String, dynamic>? ?? {};
+
+/// Get netnames map from a module definition.
+Map<String, dynamic> _netnames(Map<String, dynamic> moduleDef) =>
+    moduleDef['netnames'] as Map<String, dynamic>? ?? {};
+
+/// Check that a module definition has a port with given name and direction.
+void _expectPort(
+  Map<String, dynamic> moduleDef,
+  String portName,
+  String direction,
+) {
+  final ports = _ports(moduleDef);
+  expect(ports, contains(portName), reason: 'Expected port "$portName"');
+  final port = ports[portName] as Map<String, dynamic>;
+  expect(
+    port['direction'],
+    equals(direction),
+    reason: 'Port "$portName" should be "$direction"',
+  );
+}
+
+/// Returns true if any cell in any module definition has the given type.
+bool _hasCellType(Map<String, dynamic> json, String cellType) {
+  final mod = _modules(json);
+  return mod.values.any((m) {
+    final def = m as Map<String, dynamic>;
+    return _cells(def).values.any((c) {
+      final cell = c as Map<String, dynamic>;
+      return (cell['type'] as String) == cellType;
+    });
+  });
+}
+
+// ────────────────────────────────────────────────────────────────────
+// Tests
+// ────────────────────────────────────────────────────────────────────
+
+void main() {
+  tearDown(() async {
+    await Simulator.reset();
+  });
+
+  // ── Group 1: Leaf cell mapper — individual gate mappings ───────────
+
+  group('netlist cell mapping', () {
+    test(r'And2Gate maps to $and cell', () async {
+      final json = await _synthToMap(AndModule(Logic(), Logic()));
+      expect(_hasCellType(json, r'$and'), isTrue);
+    });
+
+    test(r'Or2Gate maps to $or cell', () async {
+      final json = await _synthToMap(OrModule(Logic(), Logic()));
+      expect(_hasCellType(json, r'$or'), isTrue);
+    });
+
+    test(r'Xor2Gate maps to $xor cell', () async {
+      final json = await _synthToMap(XorGateModule(Logic(), Logic()));
+      expect(_hasCellType(json, r'$xor'), isTrue);
+    });
+
+    test(r'NotGate maps to $not cell', () async {
+      final json = await _synthToMap(NotModule(Logic()));
+      expect(_hasCellType(json, r'$not'), isTrue);
+    });
+
+    test(r'Mux maps to $mux cell', () async {
+      final json = await _synthToMap(
+        MuxModule(Logic(), Logic(width: 8), Logic(width: 8)),
+      );
+      expect(_hasCellType(json, r'$mux'), isTrue);
+    });
+
+    test(r'FlipFlop maps to $dff cell', () async {
+      final clk = SimpleClockGenerator(10).clk;
+      final json = await _synthToMap(FlopModule(clk, Logic(width: 8)));
+      expect(_hasCellType(json, r'$dff'), isTrue);
+    });
+
+    test(r'Add maps to $add cell', () async {
+      final json = await _synthToMap(
+        AddModule(Logic(width: 8), Logic(width: 8)),
+      );
+      expect(_hasCellType(json, r'$add'), isTrue);
+    });
+
+    test(r'Subtract maps to $sub cell', () async {
+      final json = await _synthToMap(
+        SubModule(Logic(width: 8), Logic(width: 8)),
+      );
+      expect(_hasCellType(json, r'$sub'), isTrue);
+    });
+
+    test(r'Multiply maps to $mul cell', () async {
+      final json = await _synthToMap(
+        MulModule(Logic(width: 8), Logic(width: 8)),
+      );
+      expect(_hasCellType(json, r'$mul'), isTrue);
+    });
+
+    test(r'BusSubset maps to $slice cell', () async {
+      final json = await _synthToMap(SliceModule(Logic(width: 8)));
+      expect(_hasCellType(json, r'$slice'), isTrue);
+    });
+
+    test(r'Swizzle maps to $concat cell', () async {
+      final json = await _synthToMap(
+        SwizzleModule(Logic(width: 4), Logic(width: 4)),
+      );
+      expect(_hasCellType(json, r'$concat'), isTrue);
+    });
+
+    test(r'LessThan maps to $lt cell', () async {
+      final json = await _synthToMap(
+        LtModule(Logic(width: 8), Logic(width: 8)),
+      );
+      expect(_hasCellType(json, r'$lt'), isTrue);
+    });
+
+    test(r'GreaterThan maps to $gt cell', () async {
+      final json = await _synthToMap(
+        GtModule(Logic(width: 8), Logic(width: 8)),
+      );
+      expect(_hasCellType(json, r'$gt'), isTrue);
+    });
+
+    test(r'Equals maps to $eq cell', () async {
+      final json = await _synthToMap(
+        EqModule(Logic(width: 8), Logic(width: 8)),
+      );
+      expect(_hasCellType(json, r'$eq'), isTrue);
+    });
+
+    test(r'NotEquals maps to $ne cell', () async {
+      final json = await _synthToMap(
+        NeqModule(Logic(width: 8), Logic(width: 8)),
+      );
+      expect(_hasCellType(json, r'$ne'), isTrue);
+    });
+
+    test(r'LessThanOrEqual maps to $le cell', () async {
+      final json = await _synthToMap(
+        LeqModule(Logic(width: 8), Logic(width: 8)),
+      );
+      expect(_hasCellType(json, r'$le'), isTrue);
+    });
+
+    test(r'GreaterThanOrEqual maps to $ge cell', () async {
+      final json = await _synthToMap(
+        GeqModule(Logic(width: 8), Logic(width: 8)),
+      );
+      expect(_hasCellType(json, r'$ge'), isTrue);
+    });
+
+    test(r'LShift maps to $shl cell', () async {
+      final json = await _synthToMap(
+        ShiftModule(Logic(width: 8), Logic(width: 8)),
+      );
+      expect(_hasCellType(json, r'$shl'), isTrue);
+    });
+
+    test(r'RShift maps to $shr cell', () async {
+      final json = await _synthToMap(
+        ShiftModule(Logic(width: 8), Logic(width: 8)),
+      );
+      expect(_hasCellType(json, r'$shr'), isTrue);
+    });
+
+    test(r'ARShift maps to $shiftx cell', () async {
+      final json = await _synthToMap(
+        ARShiftModule(Logic(width: 8), Logic(width: 8)),
+      );
+      expect(_hasCellType(json, r'$shiftx'), isTrue);
+    });
+
+    test(r'AndUnary maps to $reduce_and cell', () async {
+      final json = await _synthToMap(ReduceModule(Logic(width: 8)));
+      expect(_hasCellType(json, r'$reduce_and'), isTrue);
+    });
+
+    test(r'OrUnary maps to $reduce_or cell', () async {
+      final json = await _synthToMap(ReduceModule(Logic(width: 8)));
+      expect(_hasCellType(json, r'$reduce_or'), isTrue);
+    });
+
+    test(r'XorUnary maps to $reduce_xor cell', () async {
+      final json = await _synthToMap(ReduceModule(Logic(width: 8)));
+      expect(_hasCellType(json, r'$reduce_xor'), isTrue);
+    });
+
+    test(r'TriStateBuffer maps to $tribuf cell', () async {
+      final busNet = LogicNet(width: 8);
+      final json = await _synthToMap(
+        TriBufModule(busNet, Logic(width: 8), Logic()),
+      );
+      expect(_hasCellType(json, r'$tribuf'), isTrue);
+    });
+  });
+
+  // ── Group 2: Structural content validation ─────────────────────────
+
+  group('structural validation', () {
+    test('ports have correct direction', () async {
+      final json = await _synthToMap(
+        AddModule(Logic(width: 8), Logic(width: 8)),
+      );
+      // Find the top-level or AddModule definition
+      final mod = _modules(json);
+      for (final def in mod.values) {
+        final d = def as Map<String, dynamic>;
+        final ports = _ports(d);
+        for (final port in ports.entries) {
+          final p = port.value as Map<String, dynamic>;
+          expect(
+            ['input', 'output', 'inout'].contains(p['direction']),
+            isTrue,
+            reason: 'Port ${port.key} should have valid direction',
+          );
+          // Each port should have bits
+          expect(
+            p['bits'],
+            isNotNull,
+            reason: 'Port ${port.key} should have bits array',
+          );
+        }
+      }
+    });
+
+    test('cells have type and connections', () async {
+      final json = await _synthToMap(
+        MuxModule(Logic(), Logic(width: 8), Logic(width: 8)),
+      );
+      final mod = _modules(json);
+      for (final def in mod.values) {
+        final d = def as Map<String, dynamic>;
+        for (final cell in _cells(d).values) {
+          final c = cell as Map<String, dynamic>;
+          expect(c['type'], isNotNull, reason: 'Every cell should have a type');
+          expect(
+            c['connections'],
+            isNotNull,
+            reason: 'Every cell should have connections',
+          );
+        }
+      }
+    });
+
+    test('netnames have bits arrays', () async {
+      final json = await _synthToMap(
+        AddModule(Logic(width: 8), Logic(width: 8)),
+      );
+      final mod = _modules(json);
+      for (final def in mod.values) {
+        final d = def as Map<String, dynamic>;
+        for (final nn in _netnames(d).values) {
+          final n = nn as Map<String, dynamic>;
+          expect(
+            n['bits'],
+            isA<List<dynamic>>(),
+            reason: 'Each netname should have a bits list',
+          );
+        }
+      }
+    });
+
+    test('inOut ports have direction inout', () async {
+      final busNet = LogicNet(width: 8);
+      final json = await _synthToMap(
+        TriBufModule(busNet, Logic(width: 8), Logic()),
+      );
+      final mod = _modules(json);
+      // Find the TriBufModule definition
+      final tribufDef = mod.values.firstWhere((m) {
+        final d = m as Map<String, dynamic>;
+        return _ports(d).values.any((p) {
+          final port = p as Map<String, dynamic>;
+          return port['direction'] == 'inout';
+        });
+      }, orElse: () => <String, dynamic>{}) as Map<String, dynamic>;
+      expect(
+        tribufDef,
+        isNotEmpty,
+        reason: 'Should have a module with inout ports',
+      );
+    });
+
+    test('Combinational If produces Combinational cell', () async {
+      final json = await _synthToMap(
+        CombIfModule(Logic(), Logic(width: 8), Logic(width: 8)),
+      );
+      // Combinational blocks become Combinational cell type
+      expect(
+        _hasCellType(json, 'Combinational'),
+        isTrue,
+        reason: 'Combinational If should produce a Combinational cell',
+      );
+    });
+
+    test('Sequential If produces dff cells', () async {
+      final clk = SimpleClockGenerator(10).clk;
+      final json = await _synthToMap(
+        SeqIfModule(clk, Logic(), Logic(width: 8)),
+      );
+      final mod = _modules(json);
+      final hasSeq = mod.values.any((m) {
+        final def = m as Map<String, dynamic>;
+        final cells = _cells(def);
+        return cells.values.any((c) {
+          final cell = c as Map<String, dynamic>;
+          return (cell['type'] as String).contains('Sequential');
+        });
+      });
+      expect(
+        hasSeq,
+        isTrue,
+        reason: 'Sequential If should contain Sequential cells',
+      );
+    });
+  });
+
+  // ── Group 3: Module deduplication ──────────────────────────────────
+
+  group('deduplication', () {
+    test('identical sub-modules are deduplicated', () async {
+      final json = await _synthToMap(
+        DedupTop(Logic(width: 8), Logic(width: 8)),
+      );
+      final mod = _modules(json);
+      // AddModule should appear only once as a definition
+      final addDefs = mod.keys.where((k) => k.contains('Add')).toList();
+      expect(
+        addDefs.length,
+        equals(1),
+        reason: 'Two identical AddModules should produce one definition',
+      );
+      // But should be instantiated twice in the top-level cells
+      final topDef = mod.entries
+          .firstWhere((e) => e.key.contains('DedupTop'))
+          .value as Map<String, dynamic>;
+      final addCells = _cells(topDef).values.where((c) {
+        final cell = c as Map<String, dynamic>;
+        return (cell['type'] as String).contains('Add');
+      }).toList();
+      expect(
+        addCells.length,
+        equals(2),
+        reason: 'Top module should instantiate AddModule twice',
+      );
+    });
+
+    test('different-width sub-modules are not deduplicated', () async {
+      final json = await _synthToMap(
+        NoDedupTop(
+          Logic(width: 4),
+          Logic(width: 4),
+          Logic(width: 8),
+          Logic(width: 8),
+        ),
+      );
+      final mod = _modules(json);
+      // Should have two distinct AddModule definitions (different widths)
+      final addDefs = mod.keys.where((k) => k.contains('Add')).toList();
+      expect(
+        addDefs.length,
+        greaterThanOrEqualTo(2),
+        reason: 'Different-width AddModules should NOT be deduplicated',
+      );
+    });
+  });
+
+  // ── Group 4: NetlistOptions permutations ─────────────────────────
+
+  group('NetlistOptions', () {
+    late Module filterBank;
+
+    setUp(() async {
+      await Simulator.reset();
+      filterBank = _buildFilterBank();
+      await filterBank.build();
+    });
+
+    test('default options produce valid netlist', () async {
+      final synth = SynthBuilder(filterBank, NetlistSynthesizer());
+      final json = (synth.synthesizer as NetlistSynthesizer).synthesizeToJson(
+        filterBank,
+      );
+      final parsed = jsonDecode(json) as Map<String, dynamic>;
+      expect(_modules(parsed), isNotEmpty);
+    });
+
+    test('slimMode omits connections', () async {
+      final synth = SynthBuilder(
+        filterBank,
+        NetlistSynthesizer(options: const NetlistOptions(slimMode: true)),
+      );
+      final json = (synth.synthesizer as NetlistSynthesizer).synthesizeToJson(
+        filterBank,
+      );
+      final parsed = jsonDecode(json) as Map<String, dynamic>;
+      final mod = _modules(parsed);
+      expect(mod, isNotEmpty);
+      // In slim mode, cells should exist but connections should be empty
+      for (final def in mod.values) {
+        final d = def as Map<String, dynamic>;
+        for (final cell in _cells(d).values) {
+          final c = cell as Map<String, dynamic>;
+          final conns = c['connections'] as Map<String, dynamic>?;
+          if (conns != null) {
+            expect(
+              conns,
+              isEmpty,
+              reason: 'Slim mode cells should have empty connections',
+            );
+          }
+        }
+      }
+    });
+
+    test('slim then expanded matches initially expanded output', () async {
+      final module = _buildFilterBank();
+      await module.build();
+
+      final translator = NetlistSynthesizer(
+        options: const NetlistOptions(slimMode: true),
+      );
+      final slim = translator.synthesizeToJson(module);
+      final expanded = translator.synthesizeToJson(module, slimMode: false);
+      final initiallyExpanded = NetlistSynthesizer().synthesizeToJson(module);
+
+      final slimModules = _modules(jsonDecode(slim) as Map<String, dynamic>);
+      expect(
+        slimModules.values
+            .expand(
+              (definition) => _cells(definition as Map<String, dynamic>).values,
+            )
+            .every((cell) => !(cell as Map).containsKey('connections')),
+        isTrue,
+      );
+      expect(expanded, initiallyExpanded);
+    });
+
+    test(
+      'filter bank can stop traversal at an opaque custom SV module',
+      () async {
+        final synthesizer = NetlistSynthesizer(
+          options: const NetlistOptions(leafModuleTypes: [FlipFlop, MacUnit]),
+        );
+        final json = jsonDecode(synthesizer.synthesizeToJson(filterBank))
+            as Map<String, dynamic>;
+        final modules = _modules(json);
+
+        expect(
+          modules.keys.any((name) => name.contains('MacUnit')),
+          isFalse,
+          reason: 'MacUnit is treated like externally supplied/custom SV, so '
+              'the netlist should not emit a definition for it.',
+        );
+
+        final channelDefs = modules.entries.where(
+          (entry) => entry.key.contains('FilterChannel'),
+        );
+        expect(channelDefs, isNotEmpty);
+
+        final macCells = channelDefs.expand((entry) {
+          final def = entry.value as Map<String, dynamic>;
+          return _cells(def).values.where((cell) {
+            final cellMap = cell as Map<String, dynamic>;
+            return (cellMap['type'] as String).contains('MacUnit');
+          });
+        }).toList();
+
+        expect(
+          macCells,
+          isNotEmpty,
+          reason: 'FilterChannel should still instantiate the opaque MacUnit '
+              'cell; only hierarchy traversal stops at that boundary.',
+        );
+      },
+    );
+
+    test('DCE disabled still produces valid netlist', () async {
+      final synth = SynthBuilder(
+        filterBank,
+        NetlistSynthesizer(options: const NetlistOptions(enableDCE: false)),
+      );
+      final json = (synth.synthesizer as NetlistSynthesizer).synthesizeToJson(
+        filterBank,
+      );
+      final parsed = jsonDecode(json) as Map<String, dynamic>;
+      expect(_modules(parsed), isNotEmpty);
+    });
+
+    test('all optimizations disabled produces valid netlist', () async {
+      final synth = SynthBuilder(
+        filterBank,
+        NetlistSynthesizer(options: const NetlistOptions(enableDCE: false)),
+      );
+      final json = (synth.synthesizer as NetlistSynthesizer).synthesizeToJson(
+        filterBank,
+      );
+      final parsed = jsonDecode(json) as Map<String, dynamic>;
+      expect(_modules(parsed), isNotEmpty);
+    });
+
+    test('slim and full produce same module definitions', () async {
+      final fullSynth = SynthBuilder(filterBank, NetlistSynthesizer());
+      final fullJson = (fullSynth.synthesizer as NetlistSynthesizer)
+          .synthesizeToJson(filterBank);
+      final fullParsed = jsonDecode(fullJson) as Map<String, dynamic>;
+
+      // Rebuild for slim
+      await Simulator.reset();
+      final fb2 = _buildFilterBank();
+      await fb2.build();
+      final slimSynth = SynthBuilder(
+        fb2,
+        NetlistSynthesizer(options: const NetlistOptions(slimMode: true)),
+      );
+      final slimJson =
+          (slimSynth.synthesizer as NetlistSynthesizer).synthesizeToJson(fb2);
+      final slimParsed = jsonDecode(slimJson) as Map<String, dynamic>;
+
+      // Same module definition names
+      expect(
+        _modules(slimParsed).keys.toSet(),
+        equals(_modules(fullParsed).keys.toSet()),
+        reason: 'Slim and full should have identical module definition names',
+      );
+    });
+  });
+
+  // ── Group 5: Example designs — structural checks ───────────────────
+
+  group('example designs', () {
+    test('Counter netlist has FlipFlop and FSM-related cells', () async {
+      final en = Logic(name: 'en');
+      final reset = Logic(name: 'reset');
+      final clk = SimpleClockGenerator(10).clk;
+      final counter = Counter(en, reset, clk);
+      final json = await _synthToMap(counter);
+      final mod = _modules(json);
+
+      expect(
+        mod,
+        isNotEmpty,
+        reason: 'Counter should produce module definitions',
+      );
+      // Should have a Counter definition
+      expect(mod.keys.any((k) => k.contains('Counter')), isTrue);
+    });
+
+    test('FirFilter netlist has pipeline and multiplier cells', () async {
+      final en = Logic(name: 'en');
+      final resetB = Logic(name: 'resetB');
+      final clk = SimpleClockGenerator(10).clk;
+      final inputVal = Logic(name: 'inputVal', width: 8);
+      final fir = FirFilter(
+          en,
+          resetB,
+          clk,
+          inputVal,
+          [
+            0,
+            0,
+            0,
+            1,
+          ],
+          bitWidth: 8);
+      final json = await _synthToMap(fir);
+      final mod = _modules(json);
+
+      expect(
+        mod,
+        isNotEmpty,
+        reason: 'FirFilter should produce module definitions',
+      );
+    });
+
+    test('OvenModule netlist has FSM states', () async {
+      final button = Logic(name: 'button', width: 2);
+      final reset = Logic(name: 'reset');
+      final clk = SimpleClockGenerator(10).clk;
+      final oven = OvenModule(button, reset, clk);
+      final json = await _synthToMap(oven);
+      final mod = _modules(json);
+
+      expect(mod, isNotEmpty);
+      // Should have OvenModule definition
+      expect(
+        mod.keys.any((k) => k.contains('Oven') || k.contains('oven')),
+        isTrue,
+      );
+    });
+
+    test('LogicArrayExample netlist has array-related cells', () async {
+      final arrayA = LogicArray([4], 8, name: 'arrayA');
+      final id = Logic(name: 'id', width: 3);
+      final selectIndexValue = Logic(name: 'selectIndexValue', width: 8);
+      final selectFromValue = Logic(name: 'selectFromValue', width: 8);
+      final la = LogicArrayExample(
+        arrayA,
+        id,
+        selectIndexValue,
+        selectFromValue,
+      );
+      final json = await _synthToMap(la);
+      final mod = _modules(json);
+
+      expect(mod, isNotEmpty);
+    });
+
+    test('TreeOfTwoInputModules netlist has recursive hierarchy', () async {
+      final seq = List<Logic>.generate(4, (_) => Logic(width: 8));
+      final tree = TreeOfTwoInputModules(seq, (a, b) => mux(a > b, a, b));
+      await tree.build();
+      final synth = SynthBuilder(tree, NetlistSynthesizer());
+      final json = (synth.synthesizer as NetlistSynthesizer).synthesizeToJson(
+        tree,
+      );
+      expect(json, isNotEmpty);
+      final parsed = jsonDecode(json) as Map<String, dynamic>;
+      final mod = _modules(parsed);
+      expect(mod, isNotEmpty, reason: 'Tree should have module definitions');
+    });
+  });
+
+  // ── Group 6: FilterBank deep structural checks ─────────────────────
+
+  group('FilterBank netlist structure', () {
+    late Map<String, dynamic> json;
+
+    setUpAll(() async {
+      final fb = _buildFilterBank();
+      json = await _synthToMap(fb);
+    });
+
+    test('contains expected module definitions', () {
+      final mod = _modules(json);
+      final defNames = mod.keys.toSet();
+
+      // FilterBank, FilterChannel, CoeffBank, MacUnit, FilterController
+      // should all appear (possibly with parameterized suffixes)
+      expect(
+        defNames.any((k) => k.contains('FilterBank')),
+        isTrue,
+        reason: 'Should have FilterBank definition',
+      );
+      expect(
+        defNames.any((k) => k.contains('FilterChannel')),
+        isTrue,
+        reason: 'Should have FilterChannel definition',
+      );
+      expect(
+        defNames.any((k) => k.contains('CoeffBank')),
+        isTrue,
+        reason: 'Should have CoeffBank definition',
+      );
+      expect(
+        defNames.any((k) => k.contains('MacUnit')),
+        isTrue,
+        reason: 'Should have MacUnit definition',
+      );
+      expect(
+        defNames.any((k) => k.contains('FilterController')),
+        isTrue,
+        reason: 'Should have FilterController definition',
+      );
+    });
+
+    test('FilterBank has array ports', () {
+      final mod = _modules(json);
+      final fbDef = mod.entries
+          .firstWhere((e) => e.key.contains('FilterBank'))
+          .value as Map<String, dynamic>;
+      final ports = _ports(fbDef);
+
+      // Should have sample0/sample1 and channelOut as array ports
+      expect(
+        ports.keys.any((k) => k.contains('sample') || k.contains('channelOut')),
+        isTrue,
+        reason: 'FilterBank should have array port signals',
+      );
+    });
+
+    test('FilterBank top instantiates two FilterChannels', () {
+      final mod = _modules(json);
+      final fbDef = mod.entries
+          .firstWhere((e) => e.key.contains('FilterBank'))
+          .value as Map<String, dynamic>;
+      final cells = _cells(fbDef);
+
+      final channelCells = cells.entries.where((e) {
+        final cell = e.value as Map<String, dynamic>;
+        return (cell['type'] as String).contains('FilterChannel');
+      }).toList();
+
+      expect(
+        channelCells.length,
+        equals(2),
+        reason: 'FilterBank should instantiate 2 FilterChannels',
+      );
+    });
+
+    test(
+      'FilterChannels with different coefficients get separate definitions',
+      () {
+        final mod = _modules(json);
+        final channelDefs =
+            mod.keys.where((k) => k.contains('FilterChannel')).toList();
+
+        expect(
+          channelDefs.length,
+          equals(2),
+          reason: 'Two FilterChannels with different coefficients '
+              'should produce distinct definitions',
+        );
+      },
+    );
+
+    test('MacUnit definition contains Pipeline-generated cells', () {
+      final mod = _modules(json);
+      final macDef = mod.entries
+          .firstWhere((e) => e.key.contains('MacUnit'))
+          .value as Map<String, dynamic>;
+      final cells = _cells(macDef);
+
+      // Pipeline generates Sequential cells for stage registers
+      final hasSeq = cells.values.any((c) {
+        final cell = c as Map<String, dynamic>;
+        final type = cell['type'] as String;
+        return type.contains('Sequential');
+      });
+      expect(
+        hasSeq,
+        isTrue,
+        reason: 'MacUnit Pipeline should produce Sequential cells',
+      );
+    });
+
+    test('CoeffBank has coeffArray input port', () {
+      final mod = _modules(json);
+      final coeffDef = mod.entries
+          .firstWhere((e) => e.key.contains('CoeffBank'))
+          .value as Map<String, dynamic>;
+      final ports = _ports(coeffDef);
+
+      // Should have coeffArray-related port names
+      expect(
+        ports.keys.any((k) => k.contains('coeffArray')),
+        isTrue,
+        reason: 'CoeffBank should have coeffArray port',
+      );
+
+      // tapIndex should be input
+      expect(
+        ports.keys.any((k) => k.contains('tapIndex')),
+        isTrue,
+        reason: 'CoeffBank should have tapIndex port',
+      );
+    });
+
+    test('FilterController has FSM state output', () {
+      final mod = _modules(json);
+      final ctrlDef = mod.entries
+          .firstWhere((e) => e.key.contains('FilterController'))
+          .value as Map<String, dynamic>;
+      final ports = _ports(ctrlDef);
+
+      _expectPort(ctrlDef, 'state', 'output');
+      _expectPort(ctrlDef, 'filterEnable', 'output');
+      _expectPort(ctrlDef, 'doneFlag', 'output');
+      expect(ports.keys.any((k) => k.contains('clk')), isTrue);
+      expect(ports.keys.any((k) => k.contains('reset')), isTrue);
+    });
+
+    test('all module definitions have valid JSON structure', () {
+      final mod = _modules(json);
+      for (final entry in mod.entries) {
+        final defName = entry.key;
+        final def = entry.value as Map<String, dynamic>;
+
+        // Every definition must have ports and cells
+        expect(
+          def.containsKey('ports'),
+          isTrue,
+          reason: '$defName should have ports',
+        );
+        expect(
+          def.containsKey('cells'),
+          isTrue,
+          reason: '$defName should have cells',
+        );
+
+        // All ports must have direction and bits
+        for (final port in _ports(def).entries) {
+          final p = port.value as Map<String, dynamic>;
+          expect(
+            p.containsKey('direction'),
+            isTrue,
+            reason: '$defName.${port.key} should have direction',
+          );
+          expect(
+            p.containsKey('bits'),
+            isTrue,
+            reason: '$defName.${port.key} should have bits',
+          );
+        }
+
+        // All cells must have type
+        for (final cell in _cells(def).entries) {
+          final c = cell.value as Map<String, dynamic>;
+          expect(
+            c.containsKey('type'),
+            isTrue,
+            reason: '$defName cell ${cell.key} should have type',
+          );
+        }
+      }
+    });
+  });
+
+  // ── Group 8: Wire ID and structural invariants ─────────────────────
+
+  group('wire ID and structural invariants', () {
+    test('default synthesizers do not share mutable leaf mappers', () {
+      final first = NetlistSynthesizer();
+      final second = NetlistSynthesizer();
+
+      expect(
+        identical(first.netlistCellMapper, second.netlistCellMapper),
+        isFalse,
+      );
+    });
+
+    test(
+      'leaf module type option controls which modules stop traversal',
+      () async {
+        final module = AddWrapperModule();
+        await module.build();
+
+        final childDefinitionName = module.subModules.single.definitionName;
+        final synthesizer = NetlistSynthesizer(
+          options: const NetlistOptions(leafModuleTypes: [AddModule]),
+        );
+
+        final json = jsonDecode(synthesizer.synthesizeToJson(module))
+            as Map<String, dynamic>;
+        final modules = json['modules'] as Map<String, dynamic>;
+        final top = modules[module.definitionName] as Map<String, dynamic>;
+        final cells = _cells(top);
+
+        expect(modules, isNot(contains(childDefinitionName)));
+        expect(
+          cells.values,
+          contains(
+            predicate<Map<String, dynamic>>(
+              (cell) => cell['type'] == childDefinitionName,
+            ),
+          ),
+        );
+      },
+    );
+
+    test('repeated translation of the same module is identical', () async {
+      final module = LogicArrayExample(
+        LogicArray([4], 8, name: 'arrayA'),
+        Logic(name: 'id', width: 3),
+        Logic(name: 'selectIndexValue', width: 8),
+        Logic(name: 'selectFromValue', width: 8),
+      );
+      await module.build();
+
+      final synthesizer = NetlistSynthesizer();
+      final first = synthesizer.synthesizeToJson(module);
+      final second = synthesizer.synthesizeToJson(module);
+
+      expect(second, first);
+    });
+
+    test('reusing a synthesizer resets wire IDs for each module', () async {
+      final firstModule = AddModule(
+        Logic(name: 'firstA', width: 8),
+        Logic(name: 'firstB', width: 8),
+      );
+      final secondModule = AddModule(
+        Logic(name: 'secondA', width: 8),
+        Logic(name: 'secondB', width: 8),
+      );
+      await firstModule.build();
+      await secondModule.build();
+
+      final synthesizer = NetlistSynthesizer();
+
+      int firstWireId(Module module) {
+        final json = jsonDecode(synthesizer.synthesizeToJson(module))
+            as Map<String, dynamic>;
+        final definition =
+            _modules(json)[module.definitionName] as Map<String, dynamic>;
+        return _ports(definition)
+            .values
+            .expand((port) => (port as Map<String, dynamic>)['bits'] as List)
+            .whereType<int>()
+            .reduce((first, second) => first < second ? first : second);
+      }
+
+      expect(firstWireId(firstModule), 2);
+      expect(firstWireId(secondModule), 2);
+    });
+
+    test('array concat outputs use fresh wire IDs', () async {
+      final warnings = <String>[];
+      final json = await runZoned(
+        () => _synthToMap(InternalArrayToChildModule()),
+        zoneSpecification: ZoneSpecification(
+          print: (_, __, ___, line) => warnings.add(line),
+        ),
+      );
+      final moduleDef =
+          _modules(json)['InternalArrayToChildModule'] as Map<String, dynamic>;
+      final cells = _cells(moduleDef);
+      final arrayConcats = cells.entries.where(
+        (entry) => entry.key.startsWith('array_concat'),
+      );
+
+      expect(
+        warnings.where((warning) => warning.contains('multiple drivers')),
+        isEmpty,
+      );
+      expect(arrayConcats, isNotEmpty);
+      for (final arrayConcat in arrayConcats) {
+        final connections = (arrayConcat.value
+            as Map<String, dynamic>)['connections'] as Map<String, dynamic>;
+        final inputBits = connections.entries
+            .where((entry) => entry.key != 'Y')
+            .expand((entry) => entry.value as List<dynamic>)
+            .toSet();
+        final outputBits =
+            (connections['Y'] as List<dynamic>).whereType<int>().toSet();
+
+        expect(inputBits.intersection(outputBits), isEmpty);
+      }
+    });
+
+    test('regrouped array output elements get explicit concat', () async {
+      final module = RegroupedArrayOutputToChildModule();
+      final json = await _synthToMap(module);
+      final moduleDef =
+          _modules(json).values.cast<Map<String, dynamic>>().reduce(
+                (left, right) =>
+                    _cells(left).length >= _cells(right).length ? left : right,
+              );
+      final cells = _cells(moduleDef);
+      final arrayConcatEntries = cells.entries.where(
+        (entry) => entry.key.startsWith('array_concat'),
+      );
+
+      expect(arrayConcatEntries, isNotEmpty, reason: cells.keys.join(', '));
+      expect(
+        arrayConcatEntries.any((entry) {
+          final connections = (entry.value
+              as Map<String, dynamic>)['connections'] as Map<String, dynamic>;
+          final outputBits = connections['Y'] as List<dynamic>?;
+          return outputBits?.length == 16;
+        }),
+        isTrue,
+      );
+    });
+
+    test('nested array concats feed downstream concat inputs', () async {
+      final json = await _synthToMap(NestedInternalArrayToChildModule());
+      final moduleDef =
+          _modules(json).values.cast<Map<String, dynamic>>().reduce(
+                (left, right) =>
+                    _cells(left).length >= _cells(right).length ? left : right,
+              );
+      final cells = _cells(moduleDef);
+      final concatEntries = cells.entries.where((entry) {
+        final cell = entry.value as Map<String, dynamic>;
+        return cell['type'] == r'$concat';
+      }).toList();
+
+      final concatOutputBits = <int>{};
+      for (final entry in concatEntries) {
+        final cell = entry.value as Map<String, dynamic>;
+        final connections = cell['connections'] as Map<String, dynamic>;
+        concatOutputBits.addAll((connections['Y'] as List).whereType<int>());
+      }
+
+      final concatInputConsumers = <int>{};
+      for (final entry in concatEntries) {
+        final cell = entry.value as Map<String, dynamic>;
+        final connections = cell['connections'] as Map<String, dynamic>;
+        final directions = cell['port_directions'] as Map<String, dynamic>;
+        for (final portEntry in connections.entries) {
+          if (directions[portEntry.key] == 'input') {
+            concatInputConsumers.addAll(
+              (portEntry.value as List).whereType<int>(),
+            );
+          }
+        }
+      }
+
+      expect(concatOutputBits.intersection(concatInputConsumers), isNotEmpty);
+    });
+
+    test('struct input fields get explicit unpack cell', () async {
+      final module = StructInputConsumerModule(NetlistPairStruct());
+      final json = await _synthToMap(module);
+      final moduleDef =
+          _modules(json)[module.definitionName] as Map<String, dynamic>;
+      final cells = _cells(moduleDef);
+      final structUnpacks = cells.entries.where((entry) {
+        final cell = entry.value as Map<String, dynamic>;
+        return cell['type'] == r'$struct_unpack';
+      }).toList();
+
+      expect(structUnpacks, isNotEmpty, reason: cells.keys.join(', '));
+      expect(
+        structUnpacks.any((entry) {
+          final cell = entry.value as Map<String, dynamic>;
+          final directions = cell['port_directions'] as Map<String, dynamic>;
+          return directions['A'] == 'input' &&
+              directions['low'] == 'output' &&
+              directions['high'] == 'output';
+        }),
+        isTrue,
+      );
+    });
+
+    test('struct output fields get explicit pack cell', () async {
+      final module = StructOutputProducerModule();
+      final json = await _synthToMap(module);
+      final moduleDef =
+          _modules(json).values.cast<Map<String, dynamic>>().reduce(
+                (left, right) =>
+                    _cells(left).length >= _cells(right).length ? left : right,
+              );
+      final cells = _cells(moduleDef);
+      final structPacks = cells.entries.where((entry) {
+        final cell = entry.value as Map<String, dynamic>;
+        return entry.key.startsWith(
+              SynthOperationNamer.structureConcatOperationName,
+            ) &&
+            cell['type'] == r'$struct_pack';
+      }).toList();
+
+      expect(structPacks, isNotEmpty, reason: cells.keys.join(', '));
+      expect(
+        structPacks.any((entry) {
+          final cell = entry.value as Map<String, dynamic>;
+          final directions = cell['port_directions'] as Map<String, dynamic>;
+          return directions['low'] == 'input' &&
+              directions['high'] == 'input' &&
+              directions['Y'] == 'output';
+        }),
+        isTrue,
+      );
+    });
+
+    test('struct aggregate netnames cannot span multiple drivers', () {
+      final ports = <String, Map<String, Object?>>{};
+      final cells = <String, Map<String, Object?>>{
+        'first_driver': {
+          'hide_name': 0,
+          'type': r'$buf',
+          'parameters': {'WIDTH': 8},
+          'attributes': <String, Object?>{},
+          'port_directions': {'A': 'input', 'Y': 'output'},
+          'connections': {
+            'A': List<Object>.generate(8, (index) => 100 + index),
+            'Y': List<Object>.generate(8, (index) => 200 + index),
+          },
+        },
+        'second_driver': {
+          'hide_name': 0,
+          'type': r'$buf',
+          'parameters': {'WIDTH': 8},
+          'attributes': <String, Object?>{},
+          'port_directions': {'A': 'input', 'Y': 'output'},
+          'connections': {
+            'A': List<Object>.generate(8, (index) => 300 + index),
+            'Y': List<Object>.generate(8, (index) => 400 + index),
+          },
+        },
+      };
+      final netnames = <String, Object?>{
+        'values': {
+          'bits': [
+            ...List<Object>.generate(8, (index) => 200 + index),
+            ...List<Object>.generate(8, (index) => 400 + index),
+          ],
+          'logic_type': {
+            'typeName': 'PairStructure',
+            'fields': [
+              {'name': 'first', 'width': 8},
+              {'name': 'second', 'width': 8},
+            ],
+          },
+        },
+      };
+
+      expect(
+        () => NetlistValidation.validate(
+          ports,
+          cells,
+          'struct_module',
+          netnames: netnames,
+          throwOnMultipleDrivers: true,
+          printWarnings: false,
+        ),
+        throwsStateError,
+      );
+    });
+
+    test('optimized netlist removes concat aliases of named vectors', () async {
+      final json = await _synthToMap(
+        NestedInternalArrayToChildModule(),
+        options: const NetlistOptions(collapseTransparentClusters: true),
+      );
+
+      for (final moduleDef in _modules(
+        json,
+      ).values.cast<Map<String, dynamic>>()) {
+        final namedBitVectors = [
+          for (final netname
+              in (moduleDef['netnames'] as Map<String, dynamic>).values)
+            if (netname is Map && netname['bits'] is List)
+              (netname['bits'] as List).cast<Object>(),
+        ];
+
+        for (final entry in _cells(moduleDef).entries) {
+          final cell = entry.value as Map<String, dynamic>;
+          if (cell['type'] != r'$concat') {
+            continue;
+          }
+
+          final connections = cell['connections'] as Map<String, dynamic>;
+          final directions = cell['port_directions'] as Map<String, dynamic>;
+          final inputBits = <Object>[
+            for (final portEntry in connections.entries)
+              if (directions[portEntry.key] != 'output')
+                ...(portEntry.value as List).cast<Object>(),
+          ];
+
+          expect(
+            namedBitVectors.any(
+              (bits) =>
+                  bits.length == inputBits.length &&
+                  bits.indexed.every(
+                    (bitEntry) => bitEntry.$2 == inputBits[bitEntry.$1],
+                  ),
+            ),
+            isFalse,
+            reason: '${entry.key} aliases an already named vector',
+          );
+        }
+      }
+    });
+
+    test('concat of adjacent slices collapses to one slice', () {
+      final sourceBits = List<Object>.generate(32, (index) => 100 + index);
+      final modules = <String, Map<String, Object?>>{
+        'top': {
+          'attributes': <String, Object?>{},
+          'ports': <String, Map<String, Object?>>{},
+          'netnames': <String, Map<String, Object?>>{},
+          'cells': <String, Map<String, Object?>>{
+            'slice0': {
+              'hide_name': 0,
+              'type': r'$slice',
+              'parameters': {'OFFSET': 8, 'A_WIDTH': 32, 'Y_WIDTH': 4},
+              'attributes': <String, Object?>{},
+              'port_directions': {'A': 'input', 'Y': 'output'},
+              'connections': {
+                'A': sourceBits,
+                'Y': [1, 2, 3, 4],
+              },
+            },
+            'slice1': {
+              'hide_name': 0,
+              'type': r'$slice',
+              'parameters': {'OFFSET': 12, 'A_WIDTH': 32, 'Y_WIDTH': 4},
+              'attributes': <String, Object?>{},
+              'port_directions': {'A': 'input', 'Y': 'output'},
+              'connections': {
+                'A': sourceBits,
+                'Y': [5, 6, 7, 8],
+              },
+            },
+            'concat': {
+              'hide_name': 0,
+              'type': r'$concat',
+              'parameters': {'IN0_WIDTH': 4, 'IN1_WIDTH': 4},
+              'attributes': <String, Object?>{},
+              'port_directions': {
+                '[3:0]': 'input',
+                '[7:4]': 'input',
+                'Y': 'output',
+              },
+              'connections': {
+                '[3:0]': [1, 2, 3, 4],
+                '[7:4]': [5, 6, 7, 8],
+                'Y': [9, 10, 11, 12, 13, 14, 15, 16],
+              },
+            },
+          },
+        },
+      };
+
+      NetlistPasses.collapseConcatOfAdjacentSlices(modules);
+
+      final topModule = modules['top']!;
+      final cells = topModule['cells']! as Map<String, Map<String, Object?>>;
+      final concat = cells['concat']!;
+      final concatConnections = concat['connections']! as Map<String, dynamic>;
+      expect(cells, isNot(contains('slice0')));
+      expect(cells, isNot(contains('slice1')));
+      expect(concat['type'], equals(r'$slice'));
+      expect(
+        concat['parameters'],
+        equals({'OFFSET': 8, 'A_WIDTH': 32, 'Y_WIDTH': 8}),
+      );
+      expect(concatConnections['A'], equals(sourceBits));
+      expect(concatConnections['Y'], equals([9, 10, 11, 12, 13, 14, 15, 16]));
+    });
+
+    test('all wire IDs are >= 2 (0 and 1 reserved for constants)', () async {
+      final json = await _synthToMap(
+        AddModule(Logic(width: 8), Logic(width: 8)),
+      );
+      final mod = _modules(json);
+      for (final entry in mod.entries) {
+        final def = entry.value as Map<String, dynamic>;
+        // Check ports
+        for (final port in _ports(def).entries) {
+          final p = port.value as Map<String, dynamic>;
+          final bits = p['bits'] as List<dynamic>;
+          for (final bit in bits) {
+            if (bit is int) {
+              expect(
+                bit,
+                greaterThanOrEqualTo(2),
+                reason: 'Wire ID ${port.key} bit $bit should be >= 2',
+              );
+            }
+          }
+        }
+      }
+    });
+
+    test(r'FilterBank contains $const cells for constant drivers', () async {
+      final json = await _synthToMap(_buildFilterBank());
+      expect(
+        _hasCellType(json, r'$const'),
+        isTrue,
+        reason: r'FilterBank should have $const cells for constant values',
+      );
+    });
+
+    test('passthrough buffers prevent input-output wire sharing', () async {
+      // A module whose output directly comes from an input should get a
+      // $buf for wire-ID isolation.
+      final json = await _synthToMap(
+        AddModule(Logic(width: 8), Logic(width: 8)),
+      );
+      final mod = _modules(json);
+      // Verify input and output port bits don't overlap in any definition
+      for (final entry in mod.entries) {
+        final def = entry.value as Map<String, dynamic>;
+        final ports = _ports(def);
+        final inputBits = <int>{};
+        final outputBits = <int>{};
+        for (final port in ports.entries) {
+          final p = port.value as Map<String, dynamic>;
+          final bits = (p['bits'] as List<dynamic>).whereType<int>().toSet();
+          final dir = p['direction'] as String;
+          if (dir == 'input') {
+            inputBits.addAll(bits);
+          } else if (dir == 'output') {
+            outputBits.addAll(bits);
+          }
+        }
+        expect(
+          inputBits.intersection(outputBits),
+          isEmpty,
+          reason: '${entry.key}: input and output ports should not share wire '
+              'IDs (passthrough buffer should break sharing)',
+        );
+      }
+    });
+  });
+
+  // ── Group 9: DCE (dead-cell elimination) verification ──────────────
+
+  group('dead-cell elimination', () {
+    test('DCE enabled produces fewer cells than DCE disabled', () async {
+      final fbDce = _buildFilterBank();
+      final jsonDce = await _synthToMap(fbDce);
+      int countCells(Map<String, dynamic> j) {
+        var total = 0;
+        for (final def in _modules(j).values) {
+          total += _cells(def as Map<String, dynamic>).length;
+        }
+        return total;
+      }
+
+      final fbNoDce = _buildFilterBank();
+      final jsonNoDce = await _synthToMap(
+        fbNoDce,
+        options: const NetlistOptions(enableDCE: false),
+      );
+
+      final dceCells = countCells(jsonDce);
+      final noDceCells = countCells(jsonNoDce);
+      expect(
+        dceCells,
+        lessThanOrEqualTo(noDceCells),
+        reason: 'DCE should remove at least as many cells as no-DCE',
+      );
+    });
+
+    test(r'DCE removes floating $const cells', () async {
+      // With DCE disabled, there may be more $const cells
+      final fbDce = _buildFilterBank();
+      final jsonDce = await _synthToMap(fbDce);
+      int countConstCells(Map<String, dynamic> j) {
+        var total = 0;
+        for (final def in _modules(j).values) {
+          final d = def as Map<String, dynamic>;
+          for (final cell in _cells(d).values) {
+            final c = cell as Map<String, dynamic>;
+            if ((c['type'] as String) == r'$const') {
+              total++;
+            }
+          }
+        }
+        return total;
+      }
+
+      final fbNoDce = _buildFilterBank();
+      final jsonNoDce = await _synthToMap(
+        fbNoDce,
+        options: const NetlistOptions(enableDCE: false),
+      );
+
+      expect(
+        countConstCells(jsonDce),
+        lessThanOrEqualTo(countConstCells(jsonNoDce)),
+        reason: r'DCE should not produce more $const cells than no-DCE',
+      );
+    });
+  });
+
+  // ── Group 10: Post-processing option combinations ──────────────────
+
+  group('post-processing options', () {
+    test('collapseTransparentClusters produces valid netlist', () async {
+      final fb = _buildFilterBank();
+      final json = await _synthToMap(
+        fb,
+        options: const NetlistOptions(collapseTransparentClusters: true),
+      );
+      expect(_modules(json), isNotEmpty);
+    });
+
+    test('validation warns on multiple drivers', () {
+      final warnings = <String>[];
+      final ports = {
+        'a': {
+          'direction': 'input',
+          'bits': [1],
+        },
+        'y': {
+          'direction': 'output',
+          'bits': [2],
+        },
+      };
+      final cells = {
+        'driver': {
+          'type': r'$buf',
+          'port_directions': {'A': 'input', 'Y': 'output'},
+          'connections': {
+            'A': [1],
+            'Y': [1],
+          },
+        },
+      };
+
+      runZoned(
+        () => NetlistValidation.validate(ports, cells, 'ShortedModule'),
+        zoneSpecification: ZoneSpecification(
+          print: (_, __, ___, line) => warnings.add(line),
+        ),
+      );
+
+      expect(warnings, contains(contains('wire bit 1 has multiple drivers')));
+      expect(
+        () => NetlistValidation.validate(
+          ports,
+          cells,
+          'ShortedModule',
+          throwOnMultipleDrivers: true,
+          printWarnings: false,
+        ),
+        throwsStateError,
+      );
+    });
+
+    test('validation allows cells to drive inout ports', () {
+      final warnings = <String>[];
+      final ports = {
+        'bus': {
+          'direction': 'inout',
+          'bits': [1],
+        },
+      };
+      final cells = {
+        'driver': {
+          'type': r'$tribuf',
+          'port_directions': {'A': 'input', 'EN': 'input', 'Y': 'output'},
+          'connections': {
+            'A': [2],
+            'EN': [3],
+            'Y': [1],
+          },
+        },
+      };
+
+      runZoned(
+        () => NetlistValidation.validate(ports, cells, 'InOutModule'),
+        zoneSpecification: ZoneSpecification(
+          print: (_, __, ___, line) => warnings.add(line),
+        ),
+      );
+
+      expect(warnings, isEmpty);
+      expect(
+        () => NetlistValidation.validate(
+          ports,
+          cells,
+          'InOutModule',
+          throwOnMultipleDrivers: true,
+          printWarnings: false,
+        ),
+        returnsNormally,
+      );
+    });
+  });
+
+  // ── Group 11: Named constant signals ─────────────────────────────
+
+  group('named constant signals', () {
+    test(r'Logic..gets(Const) produces $const cell and netname', () async {
+      final mod = _NamedConstModule(Logic(name: 'clk'), Logic(name: 'reset'));
+      final json = await _synthToMap(mod);
+      final mods = _modules(json);
+
+      // Find the module definition for _NamedConstModule.
+      final modDef = mods.values.firstWhere((m) {
+        final def = m as Map<String, dynamic>;
+        return (def['cells'] as Map?)?.isNotEmpty ?? false;
+      }, orElse: () => mods.values.first) as Map<String, dynamic>;
+
+      final netnames = _netnames(modDef);
+      final cells = _cells(modDef);
+
+      // The signal 'myConst' should appear as a netname.
+      expect(
+        netnames.keys.any((n) => n.contains('myConst')),
+        isTrue,
+        reason: "Logic('myConst')..gets(Const(0)) should produce a netname",
+      );
+
+      // There should be a $const cell driving it.
+      expect(
+        cells.values.any(
+          (c) => (c as Map<String, dynamic>)['type'] == r'$const',
+        ),
+        isTrue,
+        reason: r'Named constant should have a $const driver cell',
+      );
+
+      // The netname bits should be integer wire IDs (not string literals).
+      final constNetname = netnames.entries.firstWhere(
+        (e) => e.key.contains('myConst'),
+      );
+      final bits = (constNetname.value as Map<String, dynamic>)['bits'] as List;
+      expect(
+        bits.every((b) => b is int),
+        isTrue,
+        reason: 'Named constant netname should have integer wire IDs '
+            r'(driven by a $const cell)',
+      );
+    });
+  });
+}

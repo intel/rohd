@@ -1,6 +1,9 @@
 # Lints set up with some guidance from here:
 # https://rydmike.com/blog_flutter_linting.html
 
+formatter:
+  trailing_commas: preserve
+
 analyzer:
   language:
     strict-casts: true

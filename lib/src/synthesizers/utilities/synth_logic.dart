@@ -136,6 +136,15 @@ class SynthLogic {
   /// may be additional conditions that prevent clearing.
   bool get isClearable => mergeable;
 
+  /// Like [isClearable], but additionally permits a *renameable* signal (whose
+  /// chosen name carries no semantic meaning and would simply be dropped).
+  ///
+  /// This is `false` only for [isReserved] (e.g. ports) and constant signals,
+  /// whose identities must be preserved.  It is used by the aggregate-collapse
+  /// optimizations to eliminate intermediate (possibly named) nets.
+  bool get isClearableOrRenameable =>
+      _reservedLogic == null && _constLogic == null;
+
   /// The source connections to any [Logic] in this [SynthLogic] which are not
   /// also contained within this [SynthLogic].
   Iterable<Logic> get srcConnections {
@@ -218,6 +227,21 @@ class SynthLogic {
     );
 
     return _name!;
+  }
+
+  /// The chosen name of this, or `null` if a name has not been picked or this
+  /// has been replaced.
+  String? get nameOrNull {
+    if (_name == null || _replacement != null) {
+      return null;
+    }
+
+    assert(
+      isConstant || Sanitizer.isSanitary(_name!),
+      'Signal names should be sanitary, but found $_name.',
+    );
+
+    return _name;
   }
 
   /// The name of this, if it has been picked.
