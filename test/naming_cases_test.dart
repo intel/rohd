@@ -557,8 +557,8 @@ void main() {
       final sv = SystemVerilogService(mod).output;
 
       // Port declarations.
-      expect(sv, contains('input wire logic [7:0] inp'));
-      expect(sv, contains('output var logic [7:0] out'));
+      expect(sv, contains('input logic [7:0] inp'));
+      expect(sv, contains('output logic [7:0] out'));
       expect(sv, contains('_uinp'));
       expect(sv, contains('mport'));
       expect(sv, contains('_muprt'));

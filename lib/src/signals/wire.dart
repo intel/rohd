@@ -26,6 +26,39 @@ class _Wire {
   /// The current active value of this signal.
   LogicValue _currentValue;
 
+  /// The [Logic] whose immutability makes this wire immutable.
+  Logic? _immutableOwner;
+
+  /// Additional context explaining why this wire is immutable.
+  String? _immutableReason;
+
+  /// Makes this wire immutable on behalf of [owner].
+  ///
+  /// If this wire is already immutable, the original owner and reason are
+  /// preserved.
+  void makeImmutable(Logic owner, {String? reason}) {
+    _immutableOwner ??= owner;
+    _immutableReason ??= reason;
+  }
+
+  /// Throws an [UnassignableException] if this wire is immutable, identifying
+  /// [signalName] as the signal through which the update was attempted.
+  void _assertMutable({required String signalName}) {
+    final immutableOwner = _immutableOwner;
+    if (immutableOwner != null) {
+      final attemptedUpdateReason =
+          'Signal "$signalName" cannot be updated because it is driven by '
+          'immutable signal "$immutableOwner".';
+      throw UnassignableException(
+        immutableOwner,
+        reason: [
+          attemptedUpdateReason,
+          if (_immutableReason != null) _immutableReason,
+        ].join(' '),
+      );
+    }
+  }
+
   /// The last value of this signal before the [Simulator] tick.
   ///
   /// This is useful for detecting when to trigger an edge.
@@ -143,6 +176,11 @@ class _Wire {
   /// Tells this [_Wire] to adopt all the behavior of [other] so that
   /// it can replace [other]. Returns the [_Wire] that has adopted everything.
   _Wire _adopt(_Wire other) {
+    if (_immutableOwner == null && other._immutableOwner != null) {
+      _immutableOwner = other._immutableOwner;
+      _immutableReason = other._immutableReason;
+    }
+
     _glitchController.emitter.adopt(other._glitchController.emitter);
     other._migrateChangedTriggers(this);
 
@@ -218,6 +256,7 @@ class _Wire {
   ///
   /// This function calls [put()] in [Simulator.injectAction()].
   void inject(dynamic val, {required String signalName, bool fill = false}) {
+    _assertMutable(signalName: signalName);
     Simulator.injectAction(() => put(val, signalName: signalName, fill: fill));
   }
 
@@ -233,6 +272,8 @@ class _Wire {
   /// This function is used for propagating glitches through connected signals.
   /// Use this function for custom definitions of [Module] behavior.
   void put(dynamic val, {required String signalName, bool fill = false}) {
+    _assertMutable(signalName: signalName);
+
     var newValue = LogicValue.of(val, fill: fill, width: width);
 
     if (newValue.width != width) {
