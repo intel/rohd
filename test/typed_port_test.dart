@@ -233,8 +233,8 @@ void main() {
 
     expect(sv, isNot(contains('internal_struct')));
 
-    expect(sv, contains('input wire logic [1:0] myIn'));
-    expect(sv, contains('output var logic [1:0] myOut'));
+    expect(sv, contains('input logic [1:0] myIn'));
+    expect(sv, contains('output logic [1:0] myOut'));
 
     final vectors = [
       Vector({'a1': 0, 'a2': 1}, {'b1': 1, 'b2': 0}),
@@ -253,8 +253,8 @@ void main() {
 
     final sv = mod.generateSynth();
 
-    expect(sv, contains('input wire logic [3:0][1:0] anyIn'));
-    expect(sv, contains('output var logic [3:0][1:0] anyOut'));
+    expect(sv, contains('input logic [3:0][1:0] anyIn'));
+    expect(sv, contains('output logic [3:0][1:0] anyOut'));
     expect(sv, contains('assign anyOut = anyIn;'));
   });
 
@@ -284,14 +284,13 @@ void main() {
         sv, isNot(contains(RegExp(r'\b(?:input|output|inout)\s+.*BADNAME'))));
 
     // if name is renamed/uniquified, it won't be an exact match
-    expect(sv,
-        contains(RegExp(r'^\s*input wire logic inp[,\s]*$', multiLine: true)));
-    expect(sv,
-        contains(RegExp(r'^\s*output var logic out1[,\s]*$', multiLine: true)));
-    expect(sv,
-        contains(RegExp(r'^\s*output var logic out2[,\s]*$', multiLine: true)));
-    expect(sv,
-        contains(RegExp(r'^\s*inout wire logic io[,\s]*$', multiLine: true)));
+    expect(
+        sv, contains(RegExp(r'^\s*input logic inp[,\s]*$', multiLine: true)));
+    expect(
+        sv, contains(RegExp(r'^\s*output logic out1[,\s]*$', multiLine: true)));
+    expect(
+        sv, contains(RegExp(r'^\s*output logic out2[,\s]*$', multiLine: true)));
+    expect(sv, contains(RegExp(r'^\s*inout wire io[,\s]*$', multiLine: true)));
   });
 
   test('packed struct output inside and outside of module', () async {
@@ -362,8 +361,8 @@ void main() {
 
       expect(sv, isNot(contains('internal_struct')));
 
-      expect(sv, contains('inout wire logic [1:0] myIn'));
-      expect(sv, contains('inout wire logic [1:0] myOut'));
+      expect(sv, contains('inout wire [1:0] myIn'));
+      expect(sv, contains('inout wire [1:0] myOut'));
 
       return mod;
     }

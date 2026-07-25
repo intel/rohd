@@ -847,8 +847,8 @@ void main() {
 
         // ensure ports with interface are still an array
         final sv = mod.generateSynth();
-        expect(sv, contains('input wire logic [2:0][1:0][2:0][7:0] laIn'));
-        expect(sv, contains('output var logic [2:0][1:0][2:0][7:0] laOut'));
+        expect(sv, contains('input logic [2:0][1:0][2:0][7:0] laIn'));
+        expect(sv, contains('output logic [2:0][1:0][2:0][7:0] laOut'));
       });
 
       test('3 dimensions with interface and unpacked', () async {
@@ -862,8 +862,8 @@ void main() {
 
         // ensure ports with interface are still an array
         final sv = mod.generateSynth();
-        expect(sv, contains('input wire logic [1:0][2:0][7:0] laIn [2:0]'));
-        expect(sv, contains('output var logic [1:0][2:0][7:0] laOut [2:0]'));
+        expect(sv, contains('input logic [1:0][2:0][7:0] laIn [2:0]'));
+        expect(sv, contains('output logic [1:0][2:0][7:0] laOut [2:0]'));
       });
     });
 

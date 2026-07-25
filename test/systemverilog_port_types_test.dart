@@ -63,39 +63,60 @@ void main() {
 
   final testCases = [
     (
-      name: 'explicit object and data types by default',
+      name: 'historical port types by default',
       configuration: const SystemVerilogSynthesizerConfiguration(),
+      inputPrefix: 'input logic',
+      outputPrefix: 'output logic',
+      inOutPrefix: 'inout wire',
+    ),
+    (
+      name: 'explicit object and data types',
+      configuration: const SystemVerilogSynthesizerConfiguration(
+        inputPortType: SystemVerilogPortTypeConfiguration(),
+        outputPortType: SystemVerilogPortTypeConfiguration(),
+        inOutPortType: SystemVerilogPortTypeConfiguration(),
+      ),
       inputPrefix: 'input wire logic',
       outputPrefix: 'output var logic',
       inOutPrefix: 'inout wire logic',
     ),
     (
-      name: 'implicit object and explicit data types',
-      configuration: const SystemVerilogSynthesizerConfiguration(
-        portObjectType: SystemVerilogPortType.implicit,
-      ),
-      inputPrefix: 'input logic',
-      outputPrefix: 'output logic',
-      inOutPrefix: 'inout logic',
-    ),
-    (
-      name: 'explicit object and implicit data types',
-      configuration: const SystemVerilogSynthesizerConfiguration(
-        portDataType: SystemVerilogPortType.implicit,
-      ),
-      inputPrefix: 'input wire',
-      outputPrefix: 'output var',
-      inOutPrefix: 'inout wire',
-    ),
-    (
       name: 'implicit object and data types',
       configuration: const SystemVerilogSynthesizerConfiguration(
-        portObjectType: SystemVerilogPortType.implicit,
-        portDataType: SystemVerilogPortType.implicit,
+        inputPortType: SystemVerilogPortTypeConfiguration(
+          objectType: SystemVerilogPortType.implicit,
+          dataType: SystemVerilogPortType.implicit,
+        ),
+        outputPortType: SystemVerilogPortTypeConfiguration(
+          objectType: SystemVerilogPortType.implicit,
+          dataType: SystemVerilogPortType.implicit,
+        ),
+        inOutPortType: SystemVerilogPortTypeConfiguration(
+          objectType: SystemVerilogPortType.implicit,
+          dataType: SystemVerilogPortType.implicit,
+        ),
       ),
       inputPrefix: 'input',
       outputPrefix: 'output',
       inOutPrefix: 'inout',
+    ),
+    (
+      name: 'independently configured port directions',
+      configuration: const SystemVerilogSynthesizerConfiguration(
+        inputPortType: SystemVerilogPortTypeConfiguration(
+          dataType: SystemVerilogPortType.implicit,
+        ),
+        outputPortType: SystemVerilogPortTypeConfiguration(
+          objectType: SystemVerilogPortType.implicit,
+          dataType: SystemVerilogPortType.implicit,
+        ),
+        inOutPortType: SystemVerilogPortTypeConfiguration(
+          objectType: SystemVerilogPortType.implicit,
+        ),
+      ),
+      inputPrefix: 'input wire',
+      outputPrefix: 'output',
+      inOutPrefix: 'inout logic',
     ),
   ];
 

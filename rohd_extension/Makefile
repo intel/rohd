@@ -47,9 +47,9 @@ help:
 # ---------------------------------------------------------------------------
 
 # Install npm dependencies (including TypeScript) if missing or out of date
-node_modules: package.json
+node_modules: package.json package-lock.json
 	@echo "Installing npm dependencies..."
-	@npm install
+	@npm ci
 	@touch node_modules
 
 # ---------------------------------------------------------------------------
@@ -101,8 +101,7 @@ clean:
 	@rm -f *.vsix
 
 real-clean: clean
-	@echo "Removing node_modules, lock files, and Dart build artifacts..."
+	@echo "Removing node_modules and Dart build artifacts..."
 	@rm -rf node_modules/
-	@rm -f package-lock.json
 	@rm -rf dart/.dart_tool/
 	@rm -f dart/pubspec.lock

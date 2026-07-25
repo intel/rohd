@@ -30,13 +30,23 @@ The `generateSynth` function will return a `String` with the SystemVerilog `modu
 
 ## Controlling port types
 
-Generated ports have explicit object and data types by default: inputs are `input wire logic`, outputs are `output var logic`, and inouts are `inout wire logic`. Use a `SystemVerilogSynthesizerConfiguration` to omit either category and rely on SystemVerilog's implicit types:
+Generated ports default to `input logic`, `output logic`, and `inout wire`, preserving the traditional ROHD declarations. Use a `SystemVerilogSynthesizerConfiguration` to independently control whether object types, such as `wire` and `var`, and data types, such as `logic`, are explicit for each port direction:
 
 ```dart
 final generatedSv = myModule.generateSynth(
   configuration: const SystemVerilogSynthesizerConfiguration(
-    portObjectType: SystemVerilogPortType.implicit,
-    portDataType: SystemVerilogPortType.implicit,
+    inputPortType: SystemVerilogPortTypeConfiguration(
+      objectType: SystemVerilogPortType.explicit,
+      dataType: SystemVerilogPortType.implicit,
+    ),
+    outputPortType: SystemVerilogPortTypeConfiguration(
+      objectType: SystemVerilogPortType.implicit,
+      dataType: SystemVerilogPortType.implicit,
+    ),
+    inOutPortType: SystemVerilogPortTypeConfiguration(
+      objectType: SystemVerilogPortType.implicit,
+      dataType: SystemVerilogPortType.explicit,
+    ),
   ),
 );
 ```

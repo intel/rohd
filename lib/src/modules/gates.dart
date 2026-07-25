@@ -815,7 +815,22 @@ class LShift extends _ShiftGate {
 /// ```SystemVerilog
 /// control ? d1 : d0
 /// ```
-Logic mux(Logic control, Logic d1, Logic d0) => Mux(control, d1, d0).out;
+///
+/// If [control] is a valid [Const], returns the selected input directly.
+Logic mux(Logic control, Logic d1, Logic d0) {
+  if (control.width != 1) {
+    throw PortWidthMismatchException(control, 1);
+  }
+  if (d0.width != d1.width) {
+    throw PortWidthMismatchException.equalWidth(d0, d1);
+  }
+
+  if (control is Const && control.value.isValid) {
+    return control.value == LogicValue.one ? d1 : d0;
+  }
+
+  return Mux(control, d1, d0).out;
+}
 
 /// A mux (multiplexer) module.
 ///
