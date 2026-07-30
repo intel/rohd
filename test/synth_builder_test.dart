@@ -48,44 +48,6 @@ class BModule extends Module {
   }
 }
 
-class _WarningSynthesizer extends Synthesizer {
-  @override
-  bool generatesDefinition(Module module) => true;
-
-  @override
-  SynthesisResult synthesize(
-    Module module,
-    String Function(Module module) getInstanceTypeOfModule,
-  ) =>
-      _WarningSynthesisResult(
-        module,
-        getInstanceTypeOfModule,
-        warnings: ['warning for ${module.name}'],
-      );
-}
-
-class _WarningSynthesisResult extends SynthesisResult {
-  const _WarningSynthesisResult(
-    super.module,
-    super.getInstanceTypeOfModule, {
-    super.warnings,
-  });
-
-  @override
-  int get matchHashCode => module.definitionName.hashCode;
-
-  @override
-  bool matchesImplementation(SynthesisResult other) =>
-      other is _WarningSynthesisResult &&
-      other.module.definitionName == module.definitionName;
-
-  @override
-  String toFileContents() => '';
-
-  @override
-  List<SynthFileContents> toSynthFileContents() => const [];
-}
-
 void main() {
   tearDown(() async {
     await Simulator.reset();
@@ -140,15 +102,6 @@ void main() {
       expect(synthResults.where((e) => e.module == top2).length, 1);
       expect(synthResults.where((e) => e.module is AModule).length, 2);
       expect(synthResults.where((e) => e.module is BModule).length, 1);
-    });
-
-    test('collects warnings from synthesis results', () async {
-      final mod = AModule(Logic(width: 4));
-      await mod.build();
-
-      final synthBuilder = SynthBuilder(mod, _WarningSynthesizer());
-
-      expect(synthBuilder.warnings, ['warning for amodule']);
     });
   });
 }

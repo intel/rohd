@@ -1,4 +1,4 @@
-// Copyright (C) 2024-2025 Intel Corporation
+// Copyright (C) 2024-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // signal_service.dart
@@ -9,14 +9,16 @@
 
 import 'package:rohd_devtools_extension/rohd_devtools/models/signal_model.dart';
 
+/// Utility methods for signal filtering and lookup.
 abstract class SignalService {
+  /// Filters signals by case-insensitive name match.
   static List<SignalModel> filterSignals(
     List<SignalModel> signals,
     String searchTerm,
   ) {
-    List<SignalModel> filteredSignals = [];
+    final filteredSignals = <SignalModel>[];
 
-    for (var signal in signals) {
+    for (final signal in signals) {
       if (signal.name.toLowerCase().contains(searchTerm.toLowerCase())) {
         filteredSignals.add(signal);
       }

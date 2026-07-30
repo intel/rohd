@@ -15,6 +15,14 @@ import 'package:rohd/src/synthesizers/systemverilog/systemverilog_synthesis_resu
 ///
 /// Attempts to maintain signal naming and structure as much as possible.
 class SystemVerilogSynthesizer extends Synthesizer {
+  /// Configuration controlling generated SystemVerilog.
+  final SystemVerilogSynthesizerConfiguration configuration;
+
+  /// Creates a SystemVerilog synthesizer with the specified [configuration].
+  SystemVerilogSynthesizer({
+    this.configuration = const SystemVerilogSynthesizerConfiguration(),
+  });
+
   @override
   bool generatesDefinition(Module module) =>
       // ignore: deprecated_member_use_from_same_package
@@ -147,6 +155,10 @@ class SystemVerilogSynthesizer extends Synthesizer {
             module.generatedDefinitionType == DefinitionGenerationType.custom
         ? SystemVerilogCustomDefinitionSynthesisResult(
             module, getInstanceTypeOfModule)
-        : SystemVerilogSynthesisResult(module, getInstanceTypeOfModule);
+        : SystemVerilogSynthesisResult(
+            module,
+            getInstanceTypeOfModule,
+            configuration: configuration,
+          );
   }
 }

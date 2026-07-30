@@ -8,9 +8,8 @@
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 import 'package:meta/meta.dart';
-import 'package:rohd/rohd.dart' hide SynthModuleStopPolicy;
+import 'package:rohd/rohd.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_cell_mapper.dart';
-import 'package:rohd/src/synthesizers/utilities/synth_module_stop_policy.dart';
 
 /// Configuration options for netlist synthesis.
 ///

@@ -417,6 +417,70 @@ class SynthLogic {
   }
 }
 
+/// A non-owning reference to one bit of a packed [SynthLogic].
+///
+/// This exists for port mappings that must render an indexed packed signal,
+/// such as `.result(bus[7])`. It has no declaration or independently selected
+/// name; [name] is always derived from [packedBase] and [bitIndex].
+class SynthLogicPackedBitReference extends SynthLogic {
+  /// The packed signal containing the referenced bit.
+  final SynthLogic packedBase;
+
+  /// The bit selected from [packedBase].
+  final int bitIndex;
+
+  /// Creates a reference to [bitIndex] of [packedBase].
+  SynthLogicPackedBitReference(
+    this.packedBase,
+    this.bitIndex, {
+    required super.parentSynthModuleDefinition,
+  })  : assert(
+            !packedBase.isArray, 'Packed reference base must not be an array.'),
+        assert(!packedBase.isNet, 'Packed reference base must not be a net.'),
+        assert(
+          !packedBase.isConstant,
+          'Packed reference base must not be a constant.',
+        ),
+        assert(bitIndex >= 0, 'Packed reference index must not be negative.'),
+        assert(
+          bitIndex < packedBase.width,
+          'Packed reference index must fit within its base.',
+        ),
+        super(Logic());
+
+  @override
+  bool get needsDeclaration => false;
+
+  @override
+  bool get mergeable => false;
+
+  @override
+  bool isPort([Module? module]) => packedBase.resolved.isPort(module);
+
+  @override
+  bool hasSrcConnectionsPresent() =>
+      packedBase.resolved.hasSrcConnectionsPresent();
+
+  @override
+  bool hasDstConnectionsPresent() =>
+      packedBase.resolved.hasDstConnectionsPresent();
+
+  @override
+  String get name {
+    final resolvedBase = packedBase.resolved;
+    assert(
+      bitIndex < resolvedBase.width,
+      'Packed reference index must fit within its resolved base.',
+    );
+    final reference = '${resolvedBase.name}[$bitIndex]';
+    assert(
+      Sanitizer.isSanitary(resolvedBase.name),
+      'Packed reference base should be sanitary, but found $reference.',
+    );
+    return reference;
+  }
+}
+
 /// Represents an element of a [LogicArray].
 ///
 /// Does not fully override or properly implement all characteristics of
@@ -478,8 +542,8 @@ class SynthLogicArrayElement extends SynthLogic {
 
   @override
   String get name {
-    final parentArrayname = parentArray.replacement?.name ?? parentArray.name;
-    final n = '$parentArrayname[${logic.arrayIndex!}]';
+    final parentArrayName = parentArray.replacement?.name ?? parentArray.name;
+    final n = '$parentArrayName[${logic.arrayIndex!}]';
     assert(
       Sanitizer.isSanitary(
         n.substring(0, n.contains('[') ? n.indexOf('[') : null),

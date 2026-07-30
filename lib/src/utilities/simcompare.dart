@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2025 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // simcompare.dart
@@ -240,6 +240,8 @@ abstract class SimCompare {
     bool maskKnownWarnings = true,
     bool enableChecking = true,
     bool buildOnly = false,
+    SystemVerilogSynthesizerConfiguration synthesizerConfiguration =
+        const SystemVerilogSynthesizerConfiguration(),
   }) {
     final result = iverilogVector(module, vectors,
         moduleName: moduleName,
@@ -248,7 +250,8 @@ abstract class SimCompare {
         iverilogExtraArgs: iverilogExtraArgs,
         allowWarnings: allowWarnings,
         maskKnownWarnings: maskKnownWarnings,
-        buildOnly: buildOnly);
+        buildOnly: buildOnly,
+        synthesizerConfiguration: synthesizerConfiguration);
     if (enableChecking) {
       expect(result, true);
     }
@@ -265,6 +268,8 @@ abstract class SimCompare {
     bool allowWarnings = false,
     bool maskKnownWarnings = true,
     bool buildOnly = false,
+    SystemVerilogSynthesizerConfiguration synthesizerConfiguration =
+        const SystemVerilogSynthesizerConfiguration(),
   }) {
     if (kIsWeb) {
       // if running in web mode, then we can't run icarus verilog
@@ -342,7 +347,9 @@ abstract class SimCompare {
         allSignals.map((e) => '.$e(${logicToWireMapping[e] ?? e})').join(', ');
     final moduleInstance = '$topModule dut($moduleConnections);';
     final stimulus = vectors.map((e) => e.toTbVerilog(module)).join('\n');
-    final generatedVerilog = module.generateSynth();
+    final generatedVerilog = module.generateSynth(
+      configuration: synthesizerConfiguration,
+    );
 
     // so that when they run in parallel, they dont step on each other
     final uniqueId =

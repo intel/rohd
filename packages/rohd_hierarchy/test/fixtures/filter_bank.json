@@ -1,0 +1,1183 @@
+{
+  "modules": {
+    "CoeffBank_T3_W16": {
+      "attributes": {
+        "src": "generated"
+      },
+      "ports": {
+        "tapIndex": {
+          "direction": "input",
+          "bits": [
+            2,
+            3
+          ]
+        },
+        "coeffArray": {
+          "direction": "input",
+          "bits": [
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23,
+            24,
+            25,
+            26,
+            27,
+            28,
+            29,
+            30,
+            31,
+            32,
+            33,
+            34,
+            35,
+            36,
+            37,
+            38,
+            39,
+            40,
+            41,
+            42,
+            43,
+            44,
+            45,
+            46,
+            47,
+            48,
+            49,
+            50,
+            51
+          ]
+        },
+        "coeffOut": {
+          "direction": "output",
+          "bits": [
+            52,
+            53,
+            54,
+            55,
+            56,
+            57,
+            58,
+            59,
+            60,
+            61,
+            62,
+            63,
+            64,
+            65,
+            66,
+            67
+          ]
+        }
+      },
+      "netnames": {
+        "tapMatch0": {
+          "bits": [
+            68
+          ],
+          "attributes": {}
+        },
+        "tapMatch1": {
+          "bits": [
+            69
+          ],
+          "attributes": {}
+        },
+        "const_0_2_h0": {
+          "bits": [
+            103,
+            104
+          ],
+          "attributes": {
+            "computed": 1
+          }
+        }
+      },
+      "cells": {
+        "mux_3": {
+          "type": "$mux",
+          "port_directions": {
+            "S": "input",
+            "A": "input",
+            "B": "input",
+            "Y": "output"
+          }
+        },
+        "equals_3": {
+          "type": "$eq",
+          "port_directions": {
+            "A": "input",
+            "B": "input",
+            "Y": "output"
+          }
+        },
+        "mux_0_1": {
+          "type": "$mux",
+          "port_directions": {
+            "S": "input",
+            "A": "input",
+            "B": "input",
+            "Y": "output"
+          }
+        },
+        "equals_0_1": {
+          "type": "$eq",
+          "port_directions": {
+            "A": "input",
+            "B": "input",
+            "Y": "output"
+          }
+        },
+        "mux_1_1": {
+          "type": "$mux",
+          "port_directions": {
+            "S": "input",
+            "A": "input",
+            "B": "input",
+            "Y": "output"
+          }
+        }
+      }
+    },
+    "MacUnit_W16": {
+      "attributes": {
+        "src": "generated"
+      },
+      "ports": {
+        "sampleIn": {
+          "direction": "input",
+          "bits": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17
+          ]
+        },
+        "coeffIn": {
+          "direction": "input",
+          "bits": [
+            18,
+            19,
+            20,
+            21,
+            22,
+            23,
+            24,
+            25,
+            26,
+            27,
+            28,
+            29,
+            30,
+            31,
+            32,
+            33
+          ]
+        },
+        "accumIn": {
+          "direction": "input",
+          "bits": [
+            34,
+            35,
+            36,
+            37,
+            38,
+            39,
+            40,
+            41,
+            42,
+            43,
+            44,
+            45,
+            46,
+            47,
+            48,
+            49
+          ]
+        },
+        "clk": {
+          "direction": "input",
+          "bits": [
+            50
+          ]
+        },
+        "reset": {
+          "direction": "input",
+          "bits": [
+            51
+          ]
+        },
+        "enable": {
+          "direction": "input",
+          "bits": [
+            52
+          ]
+        },
+        "result": {
+          "direction": "output",
+          "bits": [
+            53,
+            54,
+            55,
+            56,
+            57,
+            58,
+            59,
+            60,
+            61,
+            62,
+            63,
+            64,
+            65,
+            66,
+            67,
+            68
+          ]
+        }
+      },
+      "netnames": {
+        "sampleIn_stage2_i": {
+          "bits": [
+            69,
+            70,
+            71,
+            72,
+            73,
+            74,
+            75,
+            76,
+            77,
+            78,
+            79,
+            80,
+            81,
+            82,
+            83,
+            84
+          ],
+          "attributes": {}
+        },
+        "sampleIn_stage0_o": {
+          "bits": [
+            85,
+            86,
+            87,
+            88,
+            89,
+            90,
+            91,
+            92,
+            93,
+            94,
+            95,
+            96,
+            97,
+            98,
+            99,
+            100
+          ],
+          "attributes": {}
+        }
+      },
+      "cells": {
+        "comb_stage2_1": {
+          "type": "Combinational",
+          "port_directions": {
+            "_in0_sampleIn_stage2_i": "input",
+            "_in2_coeffIn_stage2_i": "input",
+            "_in4_accumIn_stage2_i": "input",
+            "_out1_sampleIn_stage2": "output",
+            "_out3_coeffIn_stage2": "output",
+            "_out5_accumIn_stage2": "output"
+          }
+        },
+        "ff_sampleIn_1": {
+          "type": "Sequential",
+          "port_directions": {
+            "_in0_reset": "input",
+            "_in4_sampleIn_stage0_o": "input",
+            "_in5_sampleIn_stage1_o": "input",
+            "_trigger0_clk": "input",
+            "_out6_sampleIn_stage1_i": "output",
+            "_out7_sampleIn_stage2_i": "output"
+          }
+        },
+        "comb_stage0_1": {
+          "type": "Combinational",
+          "port_directions": {
+            "_in0_sampleIn_stage0_i": "input",
+            "_in2_coeffIn_stage0_i": "input",
+            "_in4_accumIn_stage0_i": "input",
+            "_in6_product": "input",
+            "_out1_sampleIn_stage0": "output",
+            "_out3_coeffIn_stage0": "output",
+            "_out5_accumIn_stage0": "output",
+            "_out7_sampleIn_stage0": "output"
+          }
+        },
+        "multiply_1": {
+          "type": "$mul",
+          "port_directions": {
+            "A": "input",
+            "B": "input",
+            "Y": "output"
+          }
+        },
+        "ff_coeffIn_1": {
+          "type": "Sequential",
+          "port_directions": {
+            "_in0_reset": "input",
+            "_in4_coeffIn_stage0_o": "input",
+            "_in5_coeffIn_stage1_o": "input",
+            "_trigger0_clk": "input",
+            "_out6_coeffIn_stage1_i": "output",
+            "_out7_coeffIn_stage2_i": "output"
+          }
+        }
+      }
+    },
+    "FilterChannel_T3_W16": {
+      "attributes": {
+        "src": "generated"
+      },
+      "ports": {
+        "sampleIn": {
+          "direction": "input",
+          "bits": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17
+          ]
+        },
+        "validIn": {
+          "direction": "input",
+          "bits": [
+            18
+          ]
+        },
+        "clk": {
+          "direction": "input",
+          "bits": [
+            19
+          ]
+        },
+        "reset": {
+          "direction": "input",
+          "bits": [
+            20
+          ]
+        },
+        "enable": {
+          "direction": "input",
+          "bits": [
+            21
+          ]
+        },
+        "dataOut": {
+          "direction": "output",
+          "bits": [
+            22,
+            23,
+            24,
+            25,
+            26,
+            27,
+            28,
+            29,
+            30,
+            31,
+            32,
+            33,
+            34,
+            35,
+            36,
+            37
+          ]
+        },
+        "validOut": {
+          "direction": "output",
+          "bits": [
+            38
+          ]
+        }
+      },
+      "netnames": {
+        "validPipe": {
+          "bits": [
+            39
+          ],
+          "attributes": {}
+        },
+        "outputReady": {
+          "bits": [
+            40
+          ],
+          "attributes": {}
+        },
+        "const_0_2_h0": {
+          "bits": [
+            420,
+            421
+          ],
+          "attributes": {
+            "computed": 1
+          }
+        }
+      },
+      "cells": {
+        "combinational_2": {
+          "type": "Combinational",
+          "port_directions": {
+            "_in0_validPipe": "input",
+            "_in1_outputReg": "input",
+            "_out4_dataOut": "output",
+            "_out5_validOut": "output"
+          }
+        },
+        "sequential_3": {
+          "type": "Sequential",
+          "port_directions": {
+            "_in0_reset": "input",
+            "_in3_enable": "input",
+            "_in4_outputReady": "input",
+            "_trigger0_clk": "input",
+            "_out5_validPipe": "output"
+          }
+        },
+        "and__3": {
+          "type": "$and",
+          "port_directions": {
+            "A": "input",
+            "B": "input",
+            "Y": "output"
+          }
+        },
+        "sequential_0_1": {
+          "type": "Sequential",
+          "port_directions": {
+            "_in0_reset": "input",
+            "_in5_lastTap": "input",
+            "_in6_lastTapD1": "input",
+            "_in7_lastTapD2": "input",
+            "_in8_accumReg": "input",
+            "_trigger0_clk": "input",
+            "_out9_lastTapD1": "output",
+            "_out10_lastTapD2": "output",
+            "_out11_outputReg": "output"
+          }
+        },
+        "sequential_1_1": {
+          "type": "Sequential",
+          "port_directions": {
+            "_in0_reset": "input",
+            "_in3_enable": "input",
+            "_in4_lastTap": "input",
+            "_in7__tapCounter_add_const_1": "input",
+            "_trigger0_clk": "input",
+            "_out10_tapCounter": "output"
+          }
+        }
+      }
+    },
+    "FilterController": {
+      "attributes": {
+        "src": "generated"
+      },
+      "ports": {
+        "clk": {
+          "direction": "input",
+          "bits": [
+            2
+          ]
+        },
+        "reset": {
+          "direction": "input",
+          "bits": [
+            3
+          ]
+        },
+        "start": {
+          "direction": "input",
+          "bits": [
+            4
+          ]
+        },
+        "inputValid": {
+          "direction": "input",
+          "bits": [
+            5
+          ]
+        },
+        "inputDone": {
+          "direction": "input",
+          "bits": [
+            6
+          ]
+        },
+        "filterEnable": {
+          "direction": "output",
+          "bits": [
+            7
+          ]
+        },
+        "loadingPhase": {
+          "direction": "output",
+          "bits": [
+            8
+          ]
+        },
+        "doneFlag": {
+          "direction": "output",
+          "bits": [
+            9
+          ]
+        },
+        "state": {
+          "direction": "output",
+          "bits": [
+            10,
+            11,
+            12
+          ]
+        }
+      },
+      "netnames": {
+        "currentState": {
+          "bits": [
+            13,
+            14,
+            15
+          ],
+          "attributes": {}
+        },
+        "isDraining": {
+          "bits": [
+            16
+          ],
+          "attributes": {}
+        },
+        "const_0_3_h3": {
+          "bits": [
+            94,
+            95,
+            96
+          ],
+          "attributes": {
+            "computed": 1
+          }
+        }
+      },
+      "cells": {
+        "combinational_1": {
+          "type": "Combinational",
+          "port_directions": {
+            "_in0_currentState": "input",
+            "_in1_FilterState_idle": "input",
+            "_in6_start": "input",
+            "_in9_FilterState_loading": "input",
+            "_in14_inputValid": "input",
+            "_in17_FilterState_running": "input",
+            "_in22_inputDone": "input",
+            "_in25_FilterState_draining": "input",
+            "_in30_drainDone": "input",
+            "_in33_FilterState_done": "input",
+            "_out42_filterEnable": "output",
+            "_out43_loadingPhase": "output",
+            "_out44_doneFlag": "output",
+            "_out45_nextState": "output"
+          }
+        },
+        "swizzle_1": {
+          "type": "$buf",
+          "port_directions": {
+            "A": "input",
+            "Y": "output"
+          }
+        },
+        "equals_2": {
+          "type": "$eq",
+          "port_directions": {
+            "A": "input",
+            "B": "input",
+            "Y": "output"
+          }
+        },
+        "sequential_2": {
+          "type": "Sequential",
+          "port_directions": {
+            "_in0_reset": "input",
+            "_in3_isDraining": "input",
+            "_in4__drainCount_add_const_1": "input",
+            "_trigger0_clk": "input",
+            "_out7_drainCount": "output"
+          }
+        },
+        "equals_0_1": {
+          "type": "$eq",
+          "port_directions": {
+            "A": "input",
+            "B": "input",
+            "Y": "output"
+          }
+        }
+      }
+    },
+    "FilterChannel_T3_W16_0": {
+      "attributes": {
+        "src": "generated"
+      },
+      "ports": {
+        "sampleIn": {
+          "direction": "input",
+          "bits": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17
+          ]
+        },
+        "validIn": {
+          "direction": "input",
+          "bits": [
+            18
+          ]
+        },
+        "clk": {
+          "direction": "input",
+          "bits": [
+            19
+          ]
+        },
+        "reset": {
+          "direction": "input",
+          "bits": [
+            20
+          ]
+        },
+        "enable": {
+          "direction": "input",
+          "bits": [
+            21
+          ]
+        },
+        "dataOut": {
+          "direction": "output",
+          "bits": [
+            22,
+            23,
+            24,
+            25,
+            26,
+            27,
+            28,
+            29,
+            30,
+            31,
+            32,
+            33,
+            34,
+            35,
+            36,
+            37
+          ]
+        },
+        "validOut": {
+          "direction": "output",
+          "bits": [
+            38
+          ]
+        }
+      },
+      "netnames": {
+        "validPipe": {
+          "bits": [
+            39
+          ],
+          "attributes": {}
+        },
+        "outputReady": {
+          "bits": [
+            40
+          ],
+          "attributes": {}
+        },
+        "const_0_2_h0": {
+          "bits": [
+            420,
+            421
+          ],
+          "attributes": {
+            "computed": 1
+          }
+        }
+      },
+      "cells": {
+        "combinational_2": {
+          "type": "Combinational",
+          "port_directions": {
+            "_in0_validPipe": "input",
+            "_in1_outputReg": "input",
+            "_out4_dataOut": "output",
+            "_out5_validOut": "output"
+          }
+        },
+        "sequential_3": {
+          "type": "Sequential",
+          "port_directions": {
+            "_in0_reset": "input",
+            "_in3_enable": "input",
+            "_in4_outputReady": "input",
+            "_trigger0_clk": "input",
+            "_out5_validPipe": "output"
+          }
+        },
+        "and__3": {
+          "type": "$and",
+          "port_directions": {
+            "A": "input",
+            "B": "input",
+            "Y": "output"
+          }
+        },
+        "sequential_0_1": {
+          "type": "Sequential",
+          "port_directions": {
+            "_in0_reset": "input",
+            "_in5_lastTap": "input",
+            "_in6_lastTapD1": "input",
+            "_in7_lastTapD2": "input",
+            "_in8_accumReg": "input",
+            "_trigger0_clk": "input",
+            "_out9_lastTapD1": "output",
+            "_out10_lastTapD2": "output",
+            "_out11_outputReg": "output"
+          }
+        },
+        "sequential_1_1": {
+          "type": "Sequential",
+          "port_directions": {
+            "_in0_reset": "input",
+            "_in3_enable": "input",
+            "_in4_lastTap": "input",
+            "_in7__tapCounter_add_const_1": "input",
+            "_trigger0_clk": "input",
+            "_out10_tapCounter": "output"
+          }
+        }
+      }
+    },
+    "SharedDataBus": {
+      "attributes": {
+        "src": "generated"
+      },
+      "ports": {
+        "writeEnable": {
+          "direction": "input",
+          "bits": [
+            502
+          ]
+        },
+        "clk": {
+          "direction": "input",
+          "bits": [
+            503
+          ]
+        },
+        "reset": {
+          "direction": "input",
+          "bits": [
+            504
+          ]
+        },
+        "storedValue": {
+          "direction": "output",
+          "bits": [
+            505,
+            506,
+            507,
+            508,
+            509,
+            510,
+            511,
+            512,
+            513,
+            514,
+            515,
+            516,
+            517,
+            518,
+            519,
+            520
+          ]
+        },
+        "dataBus": {
+          "direction": "inout",
+          "bits": [
+            521,
+            522,
+            523,
+            524,
+            525,
+            526,
+            527,
+            528,
+            529,
+            530,
+            531,
+            532,
+            533,
+            534,
+            535,
+            536
+          ]
+        }
+      },
+      "netnames": {
+        "latch": {
+          "bits": [
+            537,
+            538,
+            539,
+            540,
+            541,
+            542,
+            543,
+            544,
+            545,
+            546,
+            547,
+            548,
+            549,
+            550,
+            551,
+            552
+          ],
+          "attributes": {}
+        }
+      },
+      "cells": {}
+    },
+    "FilterBank": {
+      "attributes": {
+        "src": "generated",
+        "top": 1
+      },
+      "ports": {
+        "clk": {
+          "direction": "input",
+          "bits": [
+            2
+          ]
+        },
+        "reset": {
+          "direction": "input",
+          "bits": [
+            3
+          ]
+        },
+        "start": {
+          "direction": "input",
+          "bits": [
+            4
+          ]
+        },
+        "samplesIn": {
+          "direction": "input",
+          "bits": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23,
+            24,
+            25,
+            26,
+            27,
+            28,
+            29,
+            30,
+            31,
+            32,
+            33,
+            34,
+            35,
+            36
+          ]
+        },
+        "validIn": {
+          "direction": "input",
+          "bits": [
+            37
+          ]
+        },
+        "inputDone": {
+          "direction": "input",
+          "bits": [
+            38
+          ]
+        },
+        "channelOut": {
+          "direction": "output",
+          "bits": [
+            39,
+            40,
+            41,
+            42,
+            43,
+            44,
+            45,
+            46,
+            47,
+            48,
+            49,
+            50,
+            51,
+            52,
+            53,
+            54,
+            55,
+            56,
+            57,
+            58,
+            59,
+            60,
+            61,
+            62,
+            63,
+            64,
+            65,
+            66,
+            67,
+            68,
+            69,
+            70
+          ]
+        },
+        "validOut": {
+          "direction": "output",
+          "bits": [
+            71
+          ]
+        },
+        "done": {
+          "direction": "output",
+          "bits": [
+            72
+          ]
+        },
+        "state": {
+          "direction": "output",
+          "bits": [
+            73,
+            74,
+            75
+          ]
+        },
+        "dataBus": {
+          "direction": "inout",
+          "bits": [
+            600,
+            601,
+            602,
+            603,
+            604,
+            605,
+            606,
+            607,
+            608,
+            609,
+            610,
+            611,
+            612,
+            613,
+            614,
+            615
+          ]
+        }
+      },
+      "netnames": {
+        "channelOut_0_": {
+          "bits": [
+            39,
+            40,
+            41,
+            42,
+            43,
+            44,
+            45,
+            46,
+            47,
+            48,
+            49,
+            50,
+            51,
+            52,
+            53,
+            54
+          ],
+          "attributes": {}
+        },
+        "sample0_data": {
+          "bits": [
+            147,
+            148,
+            149,
+            150,
+            151,
+            152,
+            153,
+            154,
+            155,
+            156,
+            157,
+            158,
+            159,
+            160,
+            161,
+            162
+          ],
+          "attributes": {}
+        },
+        "controller_1_loadingPhase": {
+          "bits": [
+            146
+          ],
+          "hide_name": 1,
+          "attributes": {}
+        }
+      },
+      "cells": {
+        "ch0_1": {
+          "type": "FilterChannel_T3_W16_0",
+          "port_directions": {
+            "sampleIn": "input",
+            "validIn": "input",
+            "clk": "input",
+            "reset": "input",
+            "enable": "input",
+            "dataOut": "output",
+            "validOut": "output"
+          }
+        },
+        "controller_1": {
+          "type": "FilterController",
+          "port_directions": {
+            "clk": "input",
+            "reset": "input",
+            "start": "input",
+            "inputValid": "input",
+            "inputDone": "input",
+            "filterEnable": "output",
+            "loadingPhase": "output",
+            "doneFlag": "output",
+            "state": "output"
+          }
+        },
+        "ch1_1": {
+          "type": "FilterChannel_T3_W16",
+          "port_directions": {
+            "sampleIn": "input",
+            "validIn": "input",
+            "clk": "input",
+            "reset": "input",
+            "enable": "input",
+            "dataOut": "output",
+            "validOut": "output"
+          }
+        },
+        "array_slice_3": {
+          "type": "$slice",
+          "port_directions": {
+            "A": "input",
+            "Y": "output"
+          }
+        },
+        "array_slice_4": {
+          "type": "$slice",
+          "port_directions": {
+            "A": "input",
+            "Y": "output"
+          }
+        },
+        "sharedBus_1": {
+          "type": "SharedDataBus",
+          "port_directions": {
+            "writeEnable": "input",
+            "clk": "input",
+            "reset": "input",
+            "storedValue": "output",
+            "dataBus": "inout"
+          }
+        }
+      }
+    }
+  }
+}

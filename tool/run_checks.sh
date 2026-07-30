@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2022-2023 Intel Corporation
+# Copyright (C) 2022-2026 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
 #
 # run_checks.sh
@@ -53,7 +53,7 @@ if which iverilog; then
   echo 'Icarus Verilog found!'
 else
   declare -r exit_code=${?}
-  declare -r iverilog_recommended_version='11'
+  declare -r iverilog_recommended_version='12'
   echo 'Icarus Verilog not found: please install Icarus Verilog'\
     "(iverilog; recommended version: ${iverilog_recommended_version})!"
   exit ${exit_code}

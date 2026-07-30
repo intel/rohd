@@ -267,6 +267,21 @@ class NestedInternalArrayToChildModule extends Module {
   }
 }
 
+/// Parent whose 2D LogicArray.net rows are driven by independent child array
+/// outputs before feeding a child array input port.
+class NestedNetArrayRowsToChildModule extends Module {
+  NestedNetArrayRowsToChildModule() : super(name: 'nestednetarrayrowstochild') {
+    final lower = ArrayOutputChildModule();
+    final upper = ArrayOutputChildModule();
+    final values = LogicArray.net([2, 4], 8, name: 'values');
+
+    values.elements[0] <= lower.values;
+    values.elements[1] <= upper.values;
+    final child = ArrayInputChildModule(values);
+    addOutput('packedOut', width: values.width) <= child.packedOut;
+  }
+}
+
 /// Simple two-field structure used to demonstrate netlist struct unpack/pack
 /// cells.
 class NetlistPairStruct extends LogicStructure {
@@ -275,10 +290,7 @@ class NetlistPairStruct extends LogicStructure {
   Logic get high => elements[1];
 
   NetlistPairStruct({super.name = 'pair'})
-      : super([
-          Logic(name: 'low', width: 4),
-          Logic(name: 'high', width: 4),
-        ]);
+      : super([Logic(name: 'low', width: 4), Logic(name: 'high', width: 4)]);
 
   @override
   NetlistPairStruct clone({String? name}) => NetlistPairStruct(name: name);
@@ -557,6 +569,68 @@ bool _hasCellType(Map<String, dynamic> json, String cellType) {
       return (cell['type'] as String) == cellType;
     });
   });
+}
+
+({List<String> undrivenInputs, Map<int, List<String>> driversByBit})
+    _connectivityReport(Map<String, dynamic> moduleDef) {
+  final ports = _ports(moduleDef);
+  final cells = _cells(moduleDef);
+  final producedBits = <int>{};
+  final driversByBit = <int, List<String>>{};
+
+  void addDriver(int bit, String driver) {
+    producedBits.add(bit);
+    (driversByBit[bit] ??= []).add(driver);
+  }
+
+  for (final entry in ports.entries) {
+    final port = entry.value as Map<String, dynamic>;
+    final direction = port['direction'] as String?;
+    if (direction != 'input' && direction != 'inout') {
+      continue;
+    }
+    for (final bit in (port['bits'] as List).whereType<int>()) {
+      addDriver(bit, 'port ${entry.key}');
+    }
+  }
+
+  for (final entry in cells.entries) {
+    final cell = entry.value as Map<String, dynamic>;
+    final directions = cell['port_directions'] as Map<String, dynamic>? ?? {};
+    final connections = cell['connections'] as Map<String, dynamic>? ?? {};
+    for (final portEntry in connections.entries) {
+      if (directions[portEntry.key] != 'output' &&
+          directions[portEntry.key] != 'inout') {
+        continue;
+      }
+      for (final bit in (portEntry.value as List).whereType<int>()) {
+        addDriver(bit, 'cell ${entry.key}.${portEntry.key}');
+      }
+    }
+  }
+
+  final undrivenInputs = <String>[];
+  for (final entry in cells.entries) {
+    final cell = entry.value as Map<String, dynamic>;
+    final directions = cell['port_directions'] as Map<String, dynamic>? ?? {};
+    final connections = cell['connections'] as Map<String, dynamic>? ?? {};
+    for (final portEntry in connections.entries) {
+      if (directions[portEntry.key] != 'input') {
+        continue;
+      }
+      final undrivenBits = (portEntry.value as List)
+          .whereType<int>()
+          .where((bit) => !producedBits.contains(bit))
+          .toList();
+      if (undrivenBits.isNotEmpty) {
+        undrivenInputs.add(
+          '${entry.key}.${portEntry.key}: ${undrivenBits.take(8).join(', ')}',
+        );
+      }
+    }
+  }
+
+  return (undrivenInputs: undrivenInputs, driversByBit: driversByBit);
 }
 
 // ────────────────────────────────────────────────────────────────────
@@ -1529,6 +1603,53 @@ void main() {
 
       expect(concatOutputBits.intersection(concatInputConsumers), isNotEmpty);
     });
+
+    test(
+      'nested LogicArray.net aggregate ports have connected concat inputs',
+      () async {
+        for (final options in [
+          const NetlistOptions(enableDCE: false),
+          const NetlistOptions(
+            collapseTransparentClusters: true,
+            enableDCE: false,
+          ),
+        ]) {
+          final json = await _synthToMap(
+            NestedNetArrayRowsToChildModule(),
+            options: options,
+          );
+          final moduleDef = _modules(json)
+              .values
+              .cast<Map<String, dynamic>>()
+              .reduce(
+                (left, right) =>
+                    _cells(left).length >= _cells(right).length ? left : right,
+              );
+          final cells = _cells(moduleDef);
+          final nestedArrayConcats = cells.entries.where((entry) {
+            final cell = entry.value as Map<String, dynamic>;
+            return entry.key.startsWith('array_concat') &&
+                cell['type'] == r'$concat';
+          });
+          final report = _connectivityReport(moduleDef);
+          final multipleDrivers = report.driversByBit.entries
+              .where((entry) => entry.value.length > 1)
+              .toList();
+
+          expect(nestedArrayConcats, isNotEmpty, reason: cells.keys.join(', '));
+          expect(
+            report.undrivenInputs,
+            isEmpty,
+            reason: report.undrivenInputs.join('\n'),
+          );
+          expect(
+            multipleDrivers,
+            isEmpty,
+            reason: multipleDrivers.take(8).join('\n'),
+          );
+        }
+      },
+    );
 
     test('struct input fields get explicit unpack cell', () async {
       final module = StructInputConsumerModule(NetlistPairStruct());
