@@ -1157,9 +1157,9 @@ abstract class Module {
 ''';
     return synthHeader +
         SynthBuilder(
-                this, SystemVerilogSynthesizer(configuration: configuration))
-            .getSynthFileContents()
-            .join('\n\n////////////////////\n\n');
+          this,
+          SystemVerilogSynthesizer(configuration: configuration),
+        ).getSynthFileContents().join('\n\n////////////////////\n\n');
   }
 
   /// Testing-only convenience for a synthesized netlist JSON representation of
