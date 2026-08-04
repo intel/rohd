@@ -2073,6 +2073,66 @@ void main() {
       );
     });
 
+    test('validation ignores structural aliases but counts buffers as drivers',
+        () {
+      final ports = {
+        'a': {
+          'direction': 'input',
+          'bits': [1],
+        },
+      };
+      final concatAlias = {
+        'concat': {
+          'type': r'$concat',
+          'port_directions': {'A': 'input', 'Y': 'output'},
+          'connections': {
+            'A': [1],
+            'Y': [1],
+          },
+        },
+      };
+
+      expect(
+        NetlistValidation.validate(
+          ports,
+          concatAlias,
+          'StructuralAlias',
+          printWarnings: false,
+        ),
+        isNot(contains(contains('multiple drivers'))),
+      );
+
+      final buffers = {
+        'firstBuffer': {
+          'type': r'$buf',
+          'port_directions': {'A': 'input', 'Y': 'output'},
+          'connections': {
+            'A': [1],
+            'Y': [2],
+          },
+        },
+        'secondBuffer': {
+          'type': r'$buf',
+          'port_directions': {'A': 'input', 'Y': 'output'},
+          'connections': {
+            'A': [1],
+            'Y': [2],
+          },
+        },
+      };
+
+      expect(
+        () => NetlistValidation.validate(
+          ports,
+          buffers,
+          'BufferedShort',
+          throwOnMultipleDrivers: true,
+          printWarnings: false,
+        ),
+        throwsStateError,
+      );
+    });
+
     test('validation can skip unconnected output warnings', () {
       final ports = {
         'a': {

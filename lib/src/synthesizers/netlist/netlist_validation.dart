@@ -12,6 +12,18 @@ import 'package:meta/meta.dart';
 /// Graph queries and structural checks for an emitted module netlist.
 @internal
 class NetlistValidation {
+  static const _nonDrivingAliasTypes = {
+    r'$slice',
+    r'$concat',
+    r'$struct_unpack',
+    r'$struct_pack',
+  };
+
+  static const _transparentTypes = {
+    r'$buf',
+    ..._nonDrivingAliasTypes,
+  };
+
   /// Prevents construction of this static utility class.
   NetlistValidation._();
 
@@ -70,13 +82,6 @@ class NetlistValidation {
       cellDirection: 'input',
     );
     final driversByBit = _driversByBit(ports, cells);
-    const transparentTypes = {
-      r'$buf',
-      r'$slice',
-      r'$concat',
-      r'$struct_unpack',
-      r'$struct_pack',
-    };
 
     for (final entry in driversByBit.entries) {
       if (entry.value.length <= 1) {
@@ -129,7 +134,7 @@ class NetlistValidation {
       for (final entry in cells.entries) {
         final cell = entry.value;
         final type = cell['type'] as String? ?? '';
-        if (transparentTypes.contains(type) || type == r'$const') {
+        if (_transparentTypes.contains(type) || type == r'$const') {
           continue;
         }
         final outputBits = _cellBits(cell, 'output');
@@ -189,6 +194,9 @@ class NetlistValidation {
         continue;
       }
       final type = entry.value['type'] as String? ?? 'unknown';
+      if (_nonDrivingAliasTypes.contains(type)) {
+        continue;
+      }
       for (final port in connections.entries) {
         final direction = directions[port.key] as String?;
         if (direction != 'output' && direction != 'inout') {
