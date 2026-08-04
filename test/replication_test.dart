@@ -1,4 +1,4 @@
-// Copyright (C) 2023 Intel Corporation
+// Copyright (C) 2023-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // replication_test.dart
@@ -18,6 +18,13 @@ class ReplicationOpModule extends Module {
     final b = addOutput('b', width: newWidth < 1 ? a.width : newWidth);
 
     b <= a.replicate(multiplier);
+  }
+}
+
+class SignExtendModule extends Module {
+  SignExtendModule(Logic a, int newWidth) {
+    a = addInput('a', a, width: a.width);
+    addOutput('b', width: newWidth) <= a.signExtend(newWidth);
   }
 }
 
@@ -50,6 +57,27 @@ void main() {
           Vector({'a': 0xf}, {'b': 0xf}),
           Vector({'a': 0x5}, {'b': 0x5}),
         ], 1, originalWidth: 4);
+      });
+
+      test('multiply by 1 returns the original signal', () {
+        final a = Logic(width: 4);
+        expect(identical(a.replicate(1), a), isTrue);
+      });
+
+      test('multiply by 1 generates no replication in SystemVerilog', () async {
+        final mod = ReplicationOpModule(Logic(width: 4), 1);
+        await mod.build();
+        final sv = mod.generateSynth();
+        expect(sv, contains('assign b = a;'));
+        expect(sv, isNot(contains('{1{')));
+      });
+
+      test('signExtend of a 1-bit signal by 1 generates no replication',
+          () async {
+        final mod = SignExtendModule(Logic(), 1);
+        await mod.build();
+        final sv = mod.generateSynth();
+        expect(sv, isNot(contains('{1{')));
       });
 
       test('multiply by 2 replicates the input signal twice', () async {
