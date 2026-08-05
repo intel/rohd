@@ -1,7 +1,7 @@
 // Copyright (C) 2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
-// sv_service.dart
+// system_verilog_service.dart
 // Service wrapper for SystemVerilog synthesis.
 //
 // 2026 April 25
@@ -24,7 +24,7 @@ import 'package:rohd/src/utilities/timestamper.dart';
 /// ```dart
 /// final dut = MyModule(...);
 /// await dut.build();
-/// final sv = SvService(dut);
+/// final sv = SystemVerilogService(dut);
 ///
 /// // Write individual .sv files:
 /// sv.writeFiles('build/');
@@ -32,15 +32,15 @@ import 'package:rohd/src/utilities/timestamper.dart';
 /// // Or get the concatenated output (like generateSynth):
 /// print(sv.allContents);
 /// ```
-class SvService extends CodegenService {
+class SystemVerilogService extends CodeGenService {
   /// The separator inserted between module definitions in the
   /// concatenated single-file output from [allContents].
   ///
   /// Matches the format historically produced by `Module.generateSynth()`.
   static const moduleSeparator = '\n\n////////////////////\n\n';
 
-  /// The most recently registered [SvService], or `null`.
-  static SvService? current;
+  /// The most recently registered [SystemVerilogService], or `null`.
+  static SystemVerilogService? current;
 
   /// The top-level [Module] being synthesized.
   @override
@@ -57,29 +57,49 @@ class SvService extends CodegenService {
   @override
   final bool multiFile;
 
+  /// Configuration controlling generated SystemVerilog.
+  final SystemVerilogSynthesizerConfiguration configuration;
+
+  /// Whether generated SV files include the ROHD generation header.
+  ///
+  /// Defaults to `true` for single-file output and `false` for multi-file
+  /// output, preserving the historical layout. Set explicitly to select any
+  /// combination of header and file layout.
+  final bool includeHeader;
+
   /// The underlying [SynthBuilder] that drove synthesis.
   late final SynthBuilder synthBuilder;
 
   /// The generated file contents (one per unique module definition).
   late final List<SynthFileContents> fileContents;
 
-  /// Creates an [SvService] for [module].
+  /// Creates an [SystemVerilogService] for [module].
   ///
   /// [module] must already be built.
   ///
   /// If [outputPath] is provided, output is written immediately: a directory
   /// of per-module files when [multiFile] is `true`, otherwise the
-  /// concatenated SV output (with header) to that single file.
-  SvService(this.module,
-      {bool register = true, this.outputPath, this.multiFile = false}) {
+  /// concatenated SV output to that single file. [includeHeader] defaults to
+  /// `!multiFile` to preserve the historical layout.
+  SystemVerilogService(
+    this.module, {
+    bool register = true,
+    this.outputPath,
+    this.multiFile = false,
+    bool? includeHeader,
+    this.configuration = const SystemVerilogSynthesizerConfiguration(),
+  }) : includeHeader = includeHeader ?? !multiFile {
     if (!module.hasBuilt) {
       throw Exception(
-        'Module must be built before creating SvService. '
+        'Module must be built before creating SystemVerilogService. '
         'Call build() first.',
       );
     }
 
-    synthBuilder = SynthBuilder(module, SystemVerilogSynthesizer());
+    synthBuilder = SynthBuilder(
+      module,
+      SystemVerilogSynthesizer(configuration: configuration),
+    );
     fileContents = synthBuilder.getSynthFileContents();
 
     if (outputPath != null) {
@@ -88,7 +108,7 @@ class SvService extends CodegenService {
 
     if (register) {
       current = this;
-      ModuleServices.instance.register<SvService>(this);
+      ModuleServices.instance.register<SystemVerilogService>(this);
     }
   }
 
@@ -113,12 +133,17 @@ class SvService extends CodegenService {
 
 ''';
 
+  /// The generation header included in each emitted SV file, when enabled.
+  ///
+  /// Cached so output and emitted files always use the same timestamp.
+  late final String header = includeHeader ? synthHeader : '';
+
   /// Returns the full single-file SystemVerilog output with header,
   /// identical to `Module.generateSynth()`.
   ///
   /// Computed once and cached so the timestamped header is stable for the
   /// lifetime of this service.
-  late final String synthOutput = synthHeader + allContents;
+  late final String synthOutput = header + allContents;
 
   /// The combined single-file generated output (alias for [synthOutput]).
   @override
@@ -131,6 +156,20 @@ class SvService extends CodegenService {
   Map<String, String> get contentsByName => {
         for (final fc in fileContents) fc.name: fc.contents,
       };
+
+  /// Returns SV output for a generated module [instanceTypeName], or `null`
+  /// when that instance type was not generated.
+  ///
+  /// The instance type name is [SynthesisResult.instanceTypeName], the
+  /// uniquified definition name used in the generated SV.
+  String? instanceTypeOutput(String instanceTypeName) {
+    for (final fc in fileContents) {
+      if (fc.name == instanceTypeName) {
+        return fc.contents;
+      }
+    }
+    return null;
+  }
 
   /// Returns a map from module definition name
   /// ([Module.definitionName]) to its SV file contents.
@@ -158,7 +197,7 @@ class SvService extends CodegenService {
   void writeFiles(String directory) {
     final dir = Directory(directory)..createSync(recursive: true);
     for (final fc in fileContents) {
-      File('${dir.path}/${fc.name}.sv').writeAsStringSync(fc.contents);
+      File('${dir.path}/${fc.name}.sv').writeAsStringSync(header + fc.contents);
     }
   }
 

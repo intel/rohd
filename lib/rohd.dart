@@ -17,7 +17,7 @@ export 'src/signals/signals.dart';
 export 'src/simulator.dart';
 export 'src/swizzle.dart';
 export 'src/synthesizers/synthesizers.dart';
-export 'src/synthesizers/systemverilog/sv_service.dart';
+export 'src/synthesizers/systemverilog/system_verilog_service.dart';
 export 'src/utilities/naming.dart';
 export 'src/values/values.dart';
 export 'src/wave_dumper.dart';

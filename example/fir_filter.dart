@@ -96,7 +96,7 @@ Future<void> main({bool noPrint = false}) async {
   await firFilter.build();
 
   // Generate SystemVerilog code.
-  final systemVerilogCode = SvService(firFilter).synthOutput;
+  final systemVerilogCode = SystemVerilogService(firFilter).synthOutput;
   if (!noPrint) {
     // Print SystemVerilog code to console.
     print(systemVerilogCode);

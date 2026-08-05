@@ -228,7 +228,9 @@ abstract class SimCompare {
       bool allowWarnings = false,
       bool maskKnownWarnings = true,
       bool enableChecking = true,
-      bool buildOnly = false}) {
+      bool buildOnly = false,
+      SystemVerilogSynthesizerConfiguration synthesizerConfiguration =
+          const SystemVerilogSynthesizerConfiguration()}) {
     final result = iverilogVector(module, vectors,
         moduleName: moduleName,
         dontDeleteTmpFiles: dontDeleteTmpFiles,
@@ -236,7 +238,8 @@ abstract class SimCompare {
         iverilogExtraArgs: iverilogExtraArgs,
         allowWarnings: allowWarnings,
         maskKnownWarnings: maskKnownWarnings,
-        buildOnly: buildOnly);
+        buildOnly: buildOnly,
+        synthesizerConfiguration: synthesizerConfiguration);
     if (enableChecking) {
       expect(result, true);
     }
@@ -250,7 +253,9 @@ abstract class SimCompare {
       List<String> iverilogExtraArgs = const [],
       bool allowWarnings = false,
       bool maskKnownWarnings = true,
-      bool buildOnly = false}) {
+      bool buildOnly = false,
+      SystemVerilogSynthesizerConfiguration synthesizerConfiguration =
+          const SystemVerilogSynthesizerConfiguration()}) {
     if (kIsWeb) {
       // if running in web mode, then we can't run icarus verilog
       return true;
@@ -327,7 +332,9 @@ abstract class SimCompare {
         allSignals.map((e) => '.$e(${logicToWireMapping[e] ?? e})').join(', ');
     final moduleInstance = '$topModule dut($moduleConnections);';
     final stimulus = vectors.map((e) => e.toTbVerilog(module)).join('\n');
-    final generatedVerilog = SvService(module, register: false).synthOutput;
+    final generatedVerilog = SystemVerilogService(module,
+            register: false, configuration: synthesizerConfiguration)
+        .synthOutput;
 
     // so that when they run in parallel, they dont step on each other
     final uniqueId =

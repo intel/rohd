@@ -58,7 +58,7 @@ Future<void> main({bool noPrint = false}) async {
   // Build the module
   await logicArrayExample.build();
 
-  final systemVerilogCode = SvService(logicArrayExample).synthOutput;
+  final systemVerilogCode = SystemVerilogService(logicArrayExample).synthOutput;
   if (!noPrint) {
     print(systemVerilogCode);
   }

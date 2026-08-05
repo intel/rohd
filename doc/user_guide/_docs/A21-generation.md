@@ -7,7 +7,7 @@ toc: true
 
 Hardware in ROHD is convertible to an output format via `Synthesizer`s, the most popular of which is SystemVerilog. Hardware in ROHD can be converted to logically equivalent, human-readable SystemVerilog with structure, hierarchy, ports, and names maintained.
 
-The simplest way to generate SystemVerilog is with the helper method `generateSynth` in `Module`:
+The simplest way to generate SystemVerilog is with `SystemVerilogService`:
 
 ```dart
 void main() async {
@@ -16,7 +16,7 @@ void main() async {
     // remember that `build` returns a `Future`, hence the `await` here
     await myModule.build();
 
-    final generatedSv = myModule.generateSynth();
+    final generatedSv = SystemVerilogService(myModule, register: false).synthOutput;
 
     // you can print it out...
     print(generatedSv);
@@ -26,7 +26,7 @@ void main() async {
 }
 ```
 
-The `generateSynth` function will return a `String` with the SystemVerilog `module` definitions for the top-level it is called on, as well as any sub-modules (recursively).  You can dump the entire contents to a file and use it anywhere you would any other SystemVerilog.
+The `SystemVerilogService.synthOutput` getter will return a `String` with the SystemVerilog `module` definitions for the top-level it is called on, as well as any sub-modules (recursively).  You can dump the entire contents to a file and use it anywhere you would any other SystemVerilog.
 
 ## Controlling naming
 
@@ -56,4 +56,4 @@ The `Naming.unpreferredName` function will modify a signal name to indicate to d
 
 ## More advanced generation
 
-Under the hood of `generateSynth`, it's actually using a [`SynthBuilder`](https://intel.github.io/rohd/rohd/SynthBuilder-class.html) which accepts a `Module` and a `Synthesizer` (usually a `SystemVerilogSynthesizer`) as arguments. This `SynthBuilder` can provide a collection of `String` file contents via `getFileContents`, or you can ask for the full set of `synthesisResults`, which contains `SynthesisResult`s which can each be converted `toSynthFileContents` but also has context about the `module` it refers to, the `instanceTypeName`, etc. With these APIs, you can easily generate named files, add file headers, ignore generation of some modules, generate file lists for other tools, etc. The `SynthBuilder.multi` constructor makes it convenient to generate outputs for multiple independent hierarchies.
+Under the hood of `SystemVerilogService`, it's actually using a [`SynthBuilder`](https://intel.github.io/rohd/rohd/SynthBuilder-class.html) which accepts a `Module` and a `Synthesizer` (usually a `SystemVerilogSynthesizer`) as arguments. This `SynthBuilder` can provide a collection of `String` file contents via `getFileContents`, or you can ask for the full set of `synthesisResults`, which contains `SynthesisResult`s which can each be converted `toSynthFileContents` but also has context about the `module` it refers to, the `instanceTypeName`, etc. With these APIs, you can easily generate named files, add file headers, ignore generation of some modules, generate file lists for other tools, etc. The `SynthBuilder.multi` constructor makes it convenient to generate outputs for multiple independent hierarchies.

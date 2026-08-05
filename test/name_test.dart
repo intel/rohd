@@ -194,20 +194,20 @@ void main() {
     test('respected with no conflicts', () async {
       final mod = SpeciallyNamedModule(Logic(), false, false);
       await mod.build();
-      final sv = SvService(mod).synthOutput;
+      final sv = SystemVerilogService(mod).synthOutput;
       expect(sv, contains('module specialName ('));
     });
     test('uniquified with conflicts', () async {
       final mod = TopModule(Logic(), false, false);
       await mod.build();
-      final sv = SvService(mod).synthOutput;
+      final sv = SystemVerilogService(mod).synthOutput;
       expect(sv, contains('module specialName ('));
       expect(sv, contains('module specialName_0 ('));
     });
     test('reserved throws exception with conflicts', () async {
       final mod = TopModule(Logic(), true, false);
       await mod.build();
-      expect(() => SvService(mod).synthOutput, throwsException);
+      expect(() => SystemVerilogService(mod).synthOutput, throwsException);
     });
   });
 
@@ -215,7 +215,7 @@ void main() {
     test('uniquified with conflicts', () async {
       final mod = TopModule(Logic(), false, false);
       await mod.build();
-      final sv = SvService(mod).synthOutput;
+      final sv = SystemVerilogService(mod).synthOutput;
 
       expect(sv, contains('specialInstanceName('));
       expect(sv, contains('specialInstanceName_0('));

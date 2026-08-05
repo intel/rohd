@@ -91,7 +91,7 @@ void main() {
     final mod = HierTop(Logic());
     await mod.build();
 
-    final sv = SvService(mod).synthOutput;
+    final sv = SystemVerilogService(mod).synthOutput;
 
     expect(sv, contains('HierConsumer  unnamed_module'));
     expect(sv, contains('HierProducer  unnamed_module'));

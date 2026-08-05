@@ -58,6 +58,9 @@ class SystemVerilogCustomDefinitionSynthesisResult extends SynthesisResult {
 /// A [SynthesisResult] representing a conversion of a [Module] to
 /// SystemVerilog.
 class SystemVerilogSynthesisResult extends SynthesisResult {
+  /// Configuration controlling generated SystemVerilog.
+  final SystemVerilogSynthesizerConfiguration configuration;
+
   /// A cached copy of the generated ports.
   late final String _portsString;
 
@@ -75,8 +78,11 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
       _synthModuleDefinition.supportingModules;
 
   /// Creates a new [SystemVerilogSynthesisResult] for the given [module].
-  SystemVerilogSynthesisResult(super.module, super.getInstanceTypeOfModule)
-      : _synthModuleDefinition = SystemVerilogSynthModuleDefinition(module) {
+  SystemVerilogSynthesisResult(
+    super.module,
+    super.getInstanceTypeOfModule, {
+    this.configuration = const SystemVerilogSynthesizerConfiguration(),
+  }) : _synthModuleDefinition = SystemVerilogSynthModuleDefinition(module) {
     _portsString = _verilogPorts();
     _moduleContentsString = _verilogModuleContents(getInstanceTypeOfModule);
     _parameterString = _verilogParameters(module);
@@ -111,7 +117,7 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
   Iterable<String> _verilogInputs() => _synthModuleDefinition.inputs.map((sig) {
         assert(module.tryInput(sig.name) != null,
             'Named input ${sig.name} not found in module ${module.name}.');
-        return 'input ${sig.definitionType()} ${sig.definitionName()}';
+        return _verilogPort('input', 'wire', configuration.inputPortType, sig);
       });
 
   /// Representation of all output port declarations in generated SV.
@@ -119,15 +125,25 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
       _synthModuleDefinition.outputs.map((sig) {
         assert(module.tryOutput(sig.name) != null,
             'Named output ${sig.name} not found in module ${module.name}.');
-        return 'output ${sig.definitionType()} ${sig.definitionName()}';
+        return _verilogPort('output', 'var', configuration.outputPortType, sig);
       });
 
   /// Representation of all inout port declarations in generated SV.
   Iterable<String> _verilogInOuts() => _synthModuleDefinition.inOuts.map((sig) {
         assert(module.tryInOut(sig.name) != null,
             'Named inOut ${sig.name} not found in module ${module.name}.');
-        return 'inout ${sig.definitionType()} ${sig.definitionName()}';
+        return _verilogPort('inout', 'wire', configuration.inOutPortType, sig);
       });
+
+  /// Representation of a port declaration in generated SV.
+  String _verilogPort(String direction, String objectType,
+          SystemVerilogPortTypeConfiguration portType, SynthLogic sig) =>
+      [
+        direction,
+        if (portType.objectType == SystemVerilogPortType.explicit) objectType,
+        if (portType.dataType == SystemVerilogPortType.explicit) 'logic',
+        sig.definitionName(),
+      ].join(' ');
 
   /// Representation of all internal net declarations in generated SV.
   String _verilogInternalSignals() {
@@ -143,21 +159,37 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
   /// Representation of all assignments in generated SV.
   String _verilogAssignments() {
     final assignmentLines = <String>[];
+    String rangeString(int upperIndex, int lowerIndex) =>
+        upperIndex == lowerIndex
+            ? '[$upperIndex]'
+            : '[$upperIndex:$lowerIndex]';
+
     for (final assignment in _synthModuleDefinition.assignments) {
       assert(
           !(assignment.src.isNet && assignment.dst.isNet),
           'Net connections should have been implemented as'
           ' bidirectional net connections.');
 
-      var sliceString = '';
-      if (assignment is PartialSynthAssignment && assignment.width > 1) {
-        sliceString = assignment.dstUpperIndex == assignment.dstLowerIndex
-            ? '[${assignment.dstUpperIndex}]'
-            : '[${assignment.dstUpperIndex}:${assignment.dstLowerIndex}]';
+      var dstSliceString = '';
+      var srcSliceString = '';
+      if (assignment is RangeSynthAssignment) {
+        dstSliceString = rangeString(
+          assignment.dstUpperIndex,
+          assignment.dstLowerIndex,
+        );
+        srcSliceString = rangeString(
+          assignment.srcUpperIndex,
+          assignment.srcLowerIndex,
+        );
+      } else if (assignment is PartialSynthAssignment && assignment.width > 1) {
+        dstSliceString = rangeString(
+          assignment.dstUpperIndex,
+          assignment.dstLowerIndex,
+        );
       }
 
-      assignmentLines.add('assign ${assignment.dst.name}$sliceString'
-          ' = ${assignment.src.name};');
+      assignmentLines.add('assign ${assignment.dst.name}$dstSliceString'
+          ' = ${assignment.src.name}$srcSliceString;');
     }
     return assignmentLines.join('\n');
   }

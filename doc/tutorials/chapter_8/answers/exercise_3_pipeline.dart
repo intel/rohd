@@ -34,7 +34,7 @@ void main(List<String> args) async {
     final pipe = Pipeline4Stages(clk, reset, a);
     await pipe.build();
 
-    // print(SvService(pipe).synthOutput);
+    // print(SystemVerilogService(pipe).synthOutput);
 
     a.inject(5);
     reset.inject(1);

@@ -168,7 +168,7 @@ Future<void> main() async {
   counterInterface.en.inject(0);
   counterInterface.reset.inject(1);
 
-  print(counter.generateSynth());
+  print(SystemVerilogService(counter, register: false).synthOutput);
 
   WaveDumper(counter,
       outputPath: 'doc/tutorials/chapter_8/counter_interface.vcd');

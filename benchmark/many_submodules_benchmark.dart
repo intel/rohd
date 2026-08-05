@@ -33,7 +33,7 @@ class ManySubmodulesBenchmark extends AsyncBenchmarkBase {
   Future<void> run() async {
     final dut = ManySubmodulesModule(Logic(), numSubModules: 10000);
     await dut.build();
-    SvService(dut).synthOutput;
+    SystemVerilogService(dut).synthOutput;
   }
 }
 

@@ -304,7 +304,7 @@ void main() {
         await mod.build();
 
         final sv = SvCleaner.removeSwizzleAnnotationComments(
-            SvService(mod).synthOutput);
+            SystemVerilogService(mod).synthOutput);
 
         if (!disconnectOutputs) {
           expect(sv, contains("assign o = {1'h1,(a ? 1'h0 : 1'h1)}"));
@@ -321,7 +321,7 @@ void main() {
         await mod.build();
 
         final sv = SvCleaner.removeSwizzleAnnotationComments(
-            SvService(mod).synthOutput);
+            SystemVerilogService(mod).synthOutput);
 
         if (!disconnectOutputs) {
           expect(sv, contains("assign o = {1'h1,a}"));
@@ -336,8 +336,8 @@ void main() {
           TopStructInoutWrap(LogicNet(), LogicNet(), LogicNet(width: 2));
       await mod.build();
 
-      final sv =
-          SvCleaner.removeSwizzleAnnotationComments(SvService(mod).synthOutput);
+      final sv = SvCleaner.removeSwizzleAnnotationComments(
+          SystemVerilogService(mod).synthOutput);
 
       expect(
           sv,
@@ -353,7 +353,7 @@ void main() {
     expect(
         mod.internalSignals.firstWhereOrNull((e) => e.name == 't0'), isNotNull);
 
-    final sv = SvService(mod).synthOutput;
+    final sv = SystemVerilogService(mod).synthOutput;
     expect(sv, contains('assign a_concat[0] = t0;'));
   });
 
@@ -364,7 +364,7 @@ void main() {
     expect(mod.internalSignals.firstWhereOrNull((e) => e.name == 'unconnected'),
         isNotNull);
 
-    final sv = SvService(mod).synthOutput;
+    final sv = SystemVerilogService(mod).synthOutput;
     expect(sv, contains('assign a_arr[1] = unconnected;'));
   });
 

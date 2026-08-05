@@ -61,7 +61,7 @@ Future<void> main({bool noPrint = false}) async {
 
   // Let's see what this module looks like as SystemVerilog, so we can pass it
   // to other tools.
-  final systemVerilogCode = SvService(counter).synthOutput;
+  final systemVerilogCode = SystemVerilogService(counter).synthOutput;
   if (!noPrint) {
     print(systemVerilogCode);
   }

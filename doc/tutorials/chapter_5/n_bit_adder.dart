@@ -79,7 +79,7 @@ void main() async {
 
   await nbitAdder.build();
 
-  // print(SvService(nbitAdder).synthOutput);
+  // print(SystemVerilogService(nbitAdder).synthOutput);
 
   test('should return 20 when A and B perform add.', () async {
     a.put(15);

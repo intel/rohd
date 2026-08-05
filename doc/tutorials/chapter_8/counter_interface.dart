@@ -63,7 +63,7 @@ Future<void> main() async {
 
   await counter.build();
 
-  print(SvService(counter).synthOutput);
+  print(SystemVerilogService(counter).synthOutput);
 
   WaveformService(counter,
       outputPath: 'doc/tutorials/chapter_8/counter_interface.vcd');

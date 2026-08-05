@@ -1136,14 +1136,22 @@ abstract class Module {
   /// may have other output formats, languages, files, etc.
   ///
   /// For richer access to per-module file contents, named maps, and individual
-  /// file writing, see [SvService] (and [SvService.synthOutput] for the
-  /// equivalent one-shot string).
-  String generateSynth() {
+  /// file writing, see [SystemVerilogService] (and
+  /// [SystemVerilogService.synthOutput] for the equivalent one-shot string).
+  /// The [configuration] controls options specific to SystemVerilog output.
+  @Deprecated('Use SystemVerilogService(this, register: false,'
+      ' configuration: ...).synthOutput instead.')
+  String generateSynth({
+    SystemVerilogSynthesizerConfiguration configuration =
+        const SystemVerilogSynthesizerConfiguration(),
+  }) {
     if (!_hasBuilt) {
       throw ModuleNotBuiltException(this);
     }
 
-    return SvService(this, register: false).synthOutput;
+    return SystemVerilogService(this,
+            register: false, configuration: configuration)
+        .synthOutput;
   }
 }
 

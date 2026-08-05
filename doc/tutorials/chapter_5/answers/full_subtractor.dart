@@ -44,7 +44,7 @@ Future<void> main() async {
 
   await diff.build();
 
-  print(SvService(diff).synthOutput);
+  print(SystemVerilogService(diff).synthOutput);
 
   test('should return true if results matched truth table', () async {
     for (var i = 0; i <= 1; i++) {
