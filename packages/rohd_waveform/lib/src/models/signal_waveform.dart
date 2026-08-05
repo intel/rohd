@@ -61,6 +61,15 @@ class SignalWaveform {
   /// rather than directly fetched from the VM service.
   bool get isComputed => _isComputed;
 
+  /// Updates whether this waveform was computed rather than fetched.
+  set isComputed(bool value) => _isComputed = value;
+
+  /// Explicit width for a computed signal not present in the hierarchy.
+  int? overrideWidth;
+
+  /// Explicit display name for a computed signal not present in the hierarchy.
+  String? overrideName;
+
   /// Creates a new SignalWaveform.
   SignalWaveform({
     required this.signalId,
@@ -88,10 +97,11 @@ class SignalWaveform {
   /// monitor entry must have its own SignalWaveform instance to avoid sharing
   /// state between rows in the waveform panel.
   factory SignalWaveform.copyFrom(SignalWaveform other) => SignalWaveform(
-        signalId: other.signalId,
-        data: List.from(other.data),
-        isComputed: other.isComputed,
-      );
+      signalId: other.signalId,
+      data: List.from(other.data),
+      isComputed: other.isComputed)
+    ..overrideWidth = other.overrideWidth
+    ..overrideName = other.overrideName;
 
   // ─────────────────────────────────────────────────────────────────────────
   // Metadata accessors (via backpointer lookup)
@@ -111,14 +121,15 @@ class SignalWaveform {
   /// [SignalOccurrence.path] when available, falls back to [signalId].
   String get hierarchyPath => signal?.path() ?? signalId;
 
-  /// The signal name from metadata or reproducible sub-field metadata.
-  String get name => signal?.name ?? _derivedSubFieldName ?? signalId;
+  /// The signal name from metadata, an explicit override, or derived metadata.
+  String get name =>
+      signal?.name ?? overrideName ?? _derivedSubFieldName ?? signalId;
 
   /// The signal type for VCD rendering. Always 'wire' in post-synthesis.
   String get type => 'wire';
 
-  /// The signal width in bits from metadata or reproducible sub-field data.
-  int get width => signal?.width ?? _derivedSubFieldWidth ?? 1;
+  /// The signal width from metadata, an explicit override, or derived metadata.
+  int get width => signal?.width ?? overrideWidth ?? _derivedSubFieldWidth ?? 1;
 
   /// The signal direction (from metadata). Returns null for internal signals.
   String? get direction => signal?.direction;
