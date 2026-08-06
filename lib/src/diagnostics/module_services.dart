@@ -8,6 +8,7 @@
 // 2026 April 25
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
+import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/diagnostics/inspector_service.dart';
 
@@ -34,17 +35,22 @@ class ModuleServices {
   /// The most recently built top-level [Module].
   ///
   /// Set automatically at the end of [Module.build].
-  Module? rootModule;
+  Module? get rootModule => ModuleTree.instance.rootModule;
+
+  /// Sets the most recently built top-level [Module].
+  ///
+  /// Intended for internal use by [Module.build] and test reset paths.
+  @internal
+  set rootModule(Module? module) {
+    ModuleTree.instance.rootModule = module;
+  }
 
   /// Returns the module hierarchy as a JSON string.
   ///
   /// DevTools evaluates this via `EvalOnDartLibrary` to display the module
   /// hierarchy.  Richer design views (e.g. a slim netlist) are composed by the
   /// DevTools client from the relevant registered service.
-  String get hierarchyJSON {
-    ModuleTree.rootModuleInstance = rootModule;
-    return ModuleTree.instance.hierarchyJSON;
-  }
+  String get hierarchyJSON => ModuleTree.instance.hierarchyJSON;
 
   // ─── Type-keyed service registry ──────────────────────────────
 

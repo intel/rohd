@@ -15,6 +15,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/diagnostics/inspector_service.dart';
 import 'package:test/test.dart';
 
 class SimpleModule extends Module {
@@ -50,6 +51,13 @@ void main() {
       await mod.build();
       final json = ModuleServices.instance.hierarchyJSON;
       expect(() => jsonDecode(json), returnsNormally);
+    });
+
+    test('ModuleTree hierarchyJSON sees rootModule after build', () async {
+      final mod = SimpleModule(Logic());
+      await mod.build();
+      final json = ModuleTree.instance.hierarchyJSON;
+      expect(jsonDecode(json), containsPair('name', 'simple'));
     });
 
     test('register and lookup round-trips a service', () async {
