@@ -95,6 +95,11 @@ if ! grep -q "^version: $VERSION$" pubspec.yaml ||
   exit 1
 fi
 
+# Build the VS Code extension and leave its VSIX ready for manual publishing.
+echo "Building the ROHD VS Code extension..."
+npm --prefix rohd_extension ci
+npm --prefix rohd_extension run package
+
 # Run the same checks used for normal development and reject malformed diffs.
 # Publishing remains a separate, intentionally manual operation.
 tool/run_checks.sh

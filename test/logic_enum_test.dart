@@ -110,16 +110,20 @@ class EnumNameCollisionModule extends Module {
 }
 
 class EnumCasesModule extends Module {
-  late final Logic result;
+  late final Logic selected;
+  late final LogicEnum<TestEnum> result;
 
   EnumCasesModule(Logic selector) {
     selector = addInput('selector', selector, width: 2);
     final enumSelector = MyListLogicEnum(name: 'enumSelector')..gets(selector);
-    result = cases(enumSelector, {
-      TestEnum.a: TestEnum.b,
-      TestEnum.b: TestEnum.c,
-      TestEnum.c: TestEnum.a,
+    LogicEnum<TestEnum> enumValue(TestEnum value) =>
+        MyListLogicEnum()..getsEnum(value);
+    selected = cases(enumSelector, {
+      TestEnum.a: enumValue(TestEnum.b),
+      TestEnum.b: enumValue(TestEnum.c),
+      TestEnum.c: enumValue(TestEnum.a),
     });
+    result = MyListLogicEnum(name: 'result')..gets(selected);
     addOutput('result', width: 2) <= result;
   }
 }
@@ -401,9 +405,11 @@ class TypedEnumCasesModule extends Module {
   TypedEnumCasesModule(LogicEnum<TestEnum> source)
       : super(name: 'typedEnumCases') {
     stateIn = addTypedInput('stateIn', source);
+    LogicEnum<TestEnum> enumValue(TestEnum value) =>
+        stateIn.clone()..getsEnum(value);
     final selected = cases(stateIn, {
-      TestEnum.a: TestEnum.c,
-      TestEnum.c: TestEnum.a,
+      TestEnum.a: enumValue(TestEnum.c),
+      TestEnum.c: enumValue(TestEnum.a),
     });
     stateOut = addTypedOutput('stateOut', stateIn.clone)..gets(selected);
   }
@@ -725,14 +731,35 @@ void main() {
     );
   });
 
-  test('cases rejects mixed enum and raw logic results', () {
+  test('cases rejects bare enum result values', () {
     final expression = LogicEnum(TestEnum.values);
 
     expect(
       () => cases(expression, {
         TestEnum.a: TestEnum.b,
+        TestEnum.b: TestEnum.c,
+      }),
+      throwsA(
+        isA<ArgumentError>().having(
+          (error) => error.message,
+          'message',
+          contains('LogicEnum signal with an explicit mapping'),
+        ),
+      ),
+    );
+    expect(
+      () => cases(expression, {
+        TestEnum.a: TestEnum.b,
         TestEnum.b: Logic(width: expression.width),
       }),
+      throwsA(isA<ArgumentError>()),
+    );
+    expect(
+      () => cases(
+        expression,
+        {TestEnum.a: Logic(width: expression.width)},
+        defaultValue: TestEnum.b,
+      ),
       throwsA(isA<ArgumentError>()),
     );
   });
@@ -939,10 +966,11 @@ void main() {
       );
     });
 
-    test('cases infers enum-valued results', () async {
+    test('cases supports explicitly mapped enum result signals', () async {
       final module = EnumCasesModule(Logic(width: 2));
       await module.build();
 
+      expect(module.selected, isNot(isA<LogicEnum<TestEnum>>()));
       expect(module.result, isA<LogicEnum<TestEnum>>());
       expect(module.generateSynth(), contains("TestEnum'(selector)"));
       final vectors = [

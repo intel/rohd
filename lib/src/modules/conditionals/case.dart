@@ -35,7 +35,9 @@ class CaseItem {
 /// The result is of type [Logic] and it is determined by conditionaly matching
 /// the expression with the values of each item in conditions. If width of the
 /// input is not provided, then the width of  the result is inferred from the
-/// width of the entries.
+/// width of the entries. Bare [Enum] values are not supported as results
+/// because an untyped result has no hardware encoding for them; use explicitly
+/// mapped [LogicEnum] signals instead.
 Logic cases(Logic expression, Map<dynamic, dynamic> conditions,
     {int? width,
     ConditionalType conditionalType = ConditionalType.none,
@@ -44,23 +46,13 @@ Logic cases(Logic expression, Map<dynamic, dynamic> conditions,
     ...conditions.values,
     if (defaultValue != null) defaultValue
   ];
-  LogicEnum? enumResult;
   if (resultValues.any((value) => value is Enum)) {
-    if (expression is! LogicEnum ||
-        !resultValues.every((value) =>
-            value is Enum && expression.mapping.containsKey(value))) {
-      throw ArgumentError.value(
-        resultValues,
-        'conditions',
-        'Enum results must all belong to the expression enum mapping.',
-      );
-    }
-    enumResult = expression.clone();
-    if (width != null && width != enumResult.width) {
-      throw SignalWidthMismatchException.forDynamic(
-          enumResult, width, enumResult.width);
-    }
-    width = enumResult.width;
+    throw ArgumentError.value(
+      resultValues,
+      'conditions',
+      'Bare enum result values have no hardware encoding. Convert each result '
+          'to a LogicEnum signal with an explicit mapping.',
+    );
   }
 
   for (final conditionValue in resultValues) {
@@ -118,8 +110,7 @@ Logic cases(Logic expression, Map<dynamic, dynamic> conditions,
     }
   }
 
-  final result = enumResult ??
-      Logic(name: 'result', width: width, naming: Naming.mergeable);
+  final result = Logic(name: 'result', width: width, naming: Naming.mergeable);
 
   Combinational([
     Case(
