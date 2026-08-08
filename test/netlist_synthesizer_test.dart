@@ -2133,6 +2133,35 @@ void main() {
       );
     });
 
+    test('validation accepts inout module boundaries', () {
+      final ports = <String, Map<String, Object?>>{
+        'dataBus': {
+          'direction': 'inout',
+          'bits': [1],
+        },
+      };
+      final cells = <String, Map<String, Object?>>{
+        'SharedDataBus': {
+          'type': 'SharedDataBus',
+          'port_directions': {'dataBus': 'inout'},
+          'connections': {
+            'dataBus': [1],
+          },
+        },
+      };
+
+      expect(
+        NetlistValidation.validate(
+          ports,
+          cells,
+          'FilterBank',
+          throwOnMultipleDrivers: true,
+          printWarnings: false,
+        ),
+        isEmpty,
+      );
+    });
+
     test('validation can skip unconnected output warnings', () {
       final ports = {
         'a': {

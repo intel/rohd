@@ -199,7 +199,8 @@ class NetlistValidation {
       }
       for (final port in connections.entries) {
         final direction = directions[port.key] as String?;
-        if (direction != 'output' && direction != 'inout') {
+        final isTriStateOutput = type == r'$tribuf' && direction == 'inout';
+        if (direction != 'output' && !isTriStateOutput) {
           continue;
         }
         for (final bit in (port.value as List?) ?? const []) {
