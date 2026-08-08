@@ -61,9 +61,6 @@ class SignalWaveform {
   /// rather than directly fetched from the VM service.
   bool get isComputed => _isComputed;
 
-  /// Updates whether this waveform was computed rather than fetched.
-  set isComputed(bool value) => _isComputed = value;
-
   /// Explicit width for a computed signal not present in the hierarchy.
   int? overrideWidth;
 
