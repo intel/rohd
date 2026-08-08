@@ -482,8 +482,20 @@ class LogicArray extends LogicArrayOf<Logic> {
   @override
 
   /// Clones this array with [name] and connects the clone to this array.
-  LogicArray named(String name, {Naming? naming}) =>
-      clone(name: name)..gets(this);
+  LogicArray named(String name, {Naming? naming}) => LogicArray._factory(
+        dimensions,
+        elementWidth,
+        name: name,
+        numUnpackedDimensions: numUnpackedDimensions,
+        naming: Naming.chooseCloneNaming(
+            originalName: this.name,
+            newName: name,
+            originalNaming: this.naming,
+            newNaming: naming),
+        logicBuilder: isNet ? LogicNet.new : Logic.new,
+        logicArrayBuilder: isNet ? LogicArray.net : LogicArray.new,
+        isNet: isNet,
+      )..gets(this);
 
   /// Creates an array port with a convenient constructor signature.
   ///
