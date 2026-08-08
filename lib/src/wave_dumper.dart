@@ -2,14 +2,14 @@
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // wave_dumper.dart
-// Deprecated waveform dumper; use WaveformService instead.
+// Deprecated waveform dumper; use Module.dumpWaveforms instead.
 //
 // 2021 May 7
 // Author: Max Korbel <max.korbel@intel.com>
 
 import 'package:rohd/rohd.dart';
 
-/// Deprecated: use [WaveformService] instead.
+/// Deprecated: use [Module.dumpWaveforms] instead.
 ///
 /// [WaveDumper] is a simple wrapper around [WaveformService] for backward
 /// compatibility. It provides the legacy API for recording all signal changes
@@ -24,12 +24,22 @@ import 'package:rohd/rohd.dart';
 ///
 /// With:
 /// ```dart
-/// var service = WaveformService(module, outputPath: 'output.vcd');
+/// var service = module.dumpWaveforms(outputPath: 'output.vcd');
 /// ```
 ///
-/// For more control over filtering, timescale, and recording windows, see
-/// [WaveformService] constructor parameters.
-@Deprecated('Use WaveformService instead')
+/// For more control over filtering, timescale, and recording windows, create a
+/// [WaveformService] directly:
+/// ```dart
+/// final service = WaveformService(
+///   module,
+///   outputPath: 'debug.vcd',
+///   timescale: '1ns',
+///   startTime: 100,
+///   signalFilter: (signal) => signal.name.startsWith('debug_'),
+/// );
+/// ```
+@Deprecated('Use Module.dumpWaveforms() for simple VCD output, or '
+    'WaveformService for advanced waveform configuration.')
 class WaveDumper {
   /// The underlying [WaveformService].
   final WaveformService _service;
@@ -45,10 +55,11 @@ class WaveDumper {
   ///
   /// [module] must be built prior to construction.
   ///
-  /// **Deprecated:** Use [WaveformService] instead, which provides more
-  /// configuration options (signal filtering, custom timescale, recording
-  /// windows) and extensibility hooks for streaming applications.
-  @Deprecated('Use WaveformService instead')
+  /// **Deprecated:** Use [Module.dumpWaveforms] for simple VCD output, or
+  /// [WaveformService] for signal filtering, custom timescale, recording
+  /// windows, and extensibility hooks for streaming applications.
+  @Deprecated('Use Module.dumpWaveforms() for simple VCD output, or '
+      'WaveformService for advanced waveform configuration.')
   WaveDumper(Module module, {String outputPath = 'waves.vcd'})
       : _service = WaveformService(
           module,
@@ -56,6 +67,7 @@ class WaveDumper {
         );
 }
 
-/// Deprecated: use [WaveformService] instead.
-@Deprecated('Use WaveformService instead')
+/// Deprecated: use [Module.dumpWaveforms] instead.
+@Deprecated('Use Module.dumpWaveforms() for simple VCD output, or '
+    'WaveformService for advanced waveform configuration.')
 typedef Dumper = WaveDumper;

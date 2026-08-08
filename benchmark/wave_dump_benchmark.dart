@@ -56,7 +56,7 @@ class WaveDumpBenchmark extends AsyncBenchmarkBase {
     _mod = _ModuleToDump(Logic(), _clk);
     await _mod.build();
 
-    WaveformService(_mod, outputPath: _vcdTemporaryPath);
+    _mod.dumpWaveforms(outputPath: _vcdTemporaryPath);
 
     await Simulator.run();
 

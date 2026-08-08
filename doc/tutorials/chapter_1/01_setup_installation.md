@@ -162,7 +162,7 @@ Future<void> main({bool noPrint = false}) async {
 
   // Let's see what this module looks like as SystemVerilog, so we can pass it
   // to other tools.
-  final systemVerilogCode = counter.generateSynth();
+  final systemVerilogCode = SystemVerilogService(counter).output;
   if (!noPrint) {
     print(systemVerilogCode);
   }
@@ -175,7 +175,7 @@ Future<void> main({bool noPrint = false}) async {
 
   // Attach a waveform dumper so we can see what happens.
   if (!noPrint) {
-    WaveDumper(counter);
+    counter.dumpWaveforms();
   }
 
   // Drop reset at time 25.

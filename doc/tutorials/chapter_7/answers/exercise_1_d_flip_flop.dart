@@ -60,7 +60,7 @@ Future<void> main() async {
 
     unawaited(Simulator.run());
 
-    WaveformService(dff,
+    dff.dumpWaveforms(
         outputPath: 'doc/tutorials/chapter_7/answers/d_flip_flop.vcd');
 
     printFlop('Before');

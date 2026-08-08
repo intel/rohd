@@ -123,6 +123,22 @@ void main() {
     deleteTemporaryDump(dumpName);
   });
 
+  test('dumpWaveforms creates a waveform service', () async {
+    final mod = SimpleModule(Logic());
+    await mod.build();
+
+    const dumpName = 'moduleDumpWaveforms';
+    final outputPath = temporaryDumpPath(dumpName);
+    Directory(tempDumpDir).createSync(recursive: true);
+    final service = mod.dumpWaveforms(outputPath: outputPath);
+
+    expect(service, isA<WaveformService>());
+    expect(File(service.outputPath).existsSync(), isTrue);
+
+    await Simulator.run();
+    deleteTemporaryDump(dumpName);
+  });
+
   test('attach dumper before put', () async {
     final a = Logic(name: 'a');
     final mod = SimpleModule(a);

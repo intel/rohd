@@ -1130,6 +1130,34 @@ abstract class Module {
   /// [hierarchy], this is only valid after [build] has been called.
   String get hierarchicalName => _hierarchyListToString(hierarchy());
 
+  /// Writes synthesized SystemVerilog for this [Module] to [outputPath].
+  ///
+  /// When [multiFile] is `true`, [outputPath] is a directory and each module
+  /// definition is written to its own `.sv` file. Otherwise, it is the path to
+  /// a single concatenated SystemVerilog file.
+  ///
+  /// For additional output controls and access to synthesis results, use
+  /// [SystemVerilogService] directly.
+  SystemVerilogService dumpSystemVerilog(
+    String outputPath, {
+    bool multiFile = false,
+    SystemVerilogSynthesizerConfiguration configuration =
+        const SystemVerilogSynthesizerConfiguration(),
+  }) =>
+      SystemVerilogService(
+        this,
+        outputPath: outputPath,
+        multiFile: multiFile,
+        configuration: configuration,
+      );
+
+  /// Attaches waveform dumping for this [Module] to a VCD at [outputPath].
+  ///
+  /// For filtering, alternative formats, and other waveform controls, use
+  /// [WaveformService] directly.
+  WaveformService dumpWaveforms({String outputPath = 'waves.vcd'}) =>
+      WaveformService(this, outputPath: outputPath);
+
   /// Returns a synthesized version of this [Module].
   ///
   /// Currently returns one long file in SystemVerilog, but in the future may
@@ -1139,8 +1167,8 @@ abstract class Module {
   /// file writing, see [SystemVerilogService] (and
   /// [SystemVerilogService.output] for the equivalent one-shot string).
   /// The [configuration] controls options specific to SystemVerilog output.
-  @Deprecated('Use SystemVerilogService(this,'
-      ' configuration: ...).output instead.')
+  @Deprecated('Use dumpSystemVerilog(outputPath, configuration: ...) for '
+      'direct file output, or SystemVerilogService for advanced options.')
   String generateSynth({
     SystemVerilogSynthesizerConfiguration configuration =
         const SystemVerilogSynthesizerConfiguration(),

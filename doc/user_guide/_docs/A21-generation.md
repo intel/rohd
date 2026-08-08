@@ -7,7 +7,8 @@ toc: true
 
 Hardware in ROHD is convertible to an output format via `Synthesizer`s, the most popular of which is SystemVerilog. Hardware in ROHD can be converted to logically equivalent, human-readable SystemVerilog with structure, hierarchy, ports, and names maintained.
 
-The simplest way to generate SystemVerilog is with the helper method `generateSynth` in `Module`:
+The simplest way to write SystemVerilog is with `dumpSystemVerilog` on
+`Module`:
 
 ```dart
 void main() async {
@@ -16,24 +17,37 @@ void main() async {
     // remember that `build` returns a `Future`, hence the `await` here
     await myModule.build();
 
-    final generatedSv = myModule.generateSynth();
-
-    // you can print it out...
-    print(generatedSv);
-
-    // or write it to a file
-    File('myHardware.sv').writeAsStringSync(generatedSv);
+    myModule.dumpSystemVerilog('myHardware.sv');
 }
 ```
 
-The `generateSynth` function will return a `String` with the SystemVerilog `module` definitions for the top-level it is called on, as well as any sub-modules (recursively).  You can dump the entire contents to a file and use it anywhere you would any other SystemVerilog.
+  `dumpSystemVerilog` writes one file containing the SystemVerilog `module`
+  definitions for the top-level module and all recursive submodules. To write
+  one `.sv` file per module definition instead, pass a directory and set
+  `multiFile` to `true`:
+
+  ```dart
+  myModule.dumpSystemVerilog('build/systemverilog', multiFile: true);
+  ```
+
+  For generated text without writing a file, per-module output, or more advanced
+  output controls, use `SystemVerilogService` directly:
+
+  ```dart
+  final service = SystemVerilogService(myModule);
+
+  // Use generated text in another tool or inspect a particular definition.
+  final generatedSv = service.output;
+  final firstGeneratedModule = service.fileContents.first.contents;
+  ```
 
 ## Controlling port types
 
 Generated ports default to `input logic`, `output logic`, and `inout wire`, preserving the traditional ROHD declarations. Use a `SystemVerilogSynthesizerConfiguration` to independently control whether object types, such as `wire` and `var`, and data types, such as `logic`, are explicit for each port direction:
 
 ```dart
-final generatedSv = myModule.generateSynth(
+myModule.dumpSystemVerilog(
+  'myHardware.sv',
   configuration: const SystemVerilogSynthesizerConfiguration(
     inputPortType: SystemVerilogPortTypeConfiguration(
       objectType: SystemVerilogPortType.explicit,
@@ -51,7 +65,8 @@ final generatedSv = myModule.generateSynth(
 );
 ```
 
-The same configuration can be passed directly to `SystemVerilogSynthesizer` when using `SynthBuilder`.
+The same configuration can be passed directly to `SystemVerilogSynthesizer`
+when using `SynthBuilder`.
 
 ## Controlling naming
 
@@ -81,4 +96,32 @@ The `Naming.unpreferredName` function will modify a signal name to indicate to d
 
 ## More advanced generation
 
-Under the hood of `generateSynth`, it's actually using a [`SynthBuilder`](https://intel.github.io/rohd/rohd/SynthBuilder-class.html) which accepts a `Module` and a `Synthesizer` (usually a `SystemVerilogSynthesizer`) as arguments. This `SynthBuilder` can provide a collection of `String` file contents via `getFileContents`, or you can ask for the full set of `synthesisResults`, which contains `SynthesisResult`s which can each be converted `toSynthFileContents` but also has context about the `module` it refers to, the `instanceTypeName`, etc. With these APIs, you can easily generate named files, add file headers, ignore generation of some modules, generate file lists for other tools, etc. The `SynthBuilder.multi` constructor makes it convenient to generate outputs for multiple independent hierarchies.
+`SystemVerilogService` provides access to the underlying synthesis results,
+per-module file contents, configurable headers, and named output files. For
+custom synthesis flows, [`SynthBuilder`](https://intel.github.io/rohd/rohd/SynthBuilder-class.html)
+accepts a `Module` and a `Synthesizer` (usually a
+`SystemVerilogSynthesizer`).
+
+## Capturing waveforms
+
+Use `dumpWaveforms` for the common case of writing all simulation signals to a
+VCD file:
+
+```dart
+myModule.dumpWaveforms(outputPath: 'waves.vcd');
+```
+
+For selective capture or other waveform configuration, create a
+`WaveformService` directly. Its options are intended for more involved capture
+flows and may grow over time:
+
+```dart
+WaveformService(
+  myModule,
+  outputPath: 'interesting-signals.vcd',
+  timescale: '1ns',
+  startTime: 100,
+  stopTime: 1000,
+  signalFilter: (signal) => signal.name.startsWith('debug_'),
+);
+```

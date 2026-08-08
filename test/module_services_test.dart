@@ -164,6 +164,36 @@ void main() {
       }
     });
 
+    test('dumpSystemVerilog writes a single file', () async {
+      final mod = SimpleModule(Logic());
+      await mod.build();
+      final dir = Directory.systemTemp.createTempSync('sv_test_');
+      try {
+        final path = '${dir.path}/out.sv';
+        final service = mod.dumpSystemVerilog(path);
+        expect(service, isA<SystemVerilogService>());
+        expect(File(path).readAsStringSync(), equals(service.output));
+      } finally {
+        dir.deleteSync(recursive: true);
+      }
+    });
+
+    test('dumpSystemVerilog writes multiple files', () async {
+      final mod = SimpleModule(Logic());
+      await mod.build();
+      final dir = Directory.systemTemp.createTempSync('sv_test_');
+      try {
+        final service = mod.dumpSystemVerilog(dir.path, multiFile: true);
+        expect(service, isA<SystemVerilogService>());
+        expect(
+          dir.listSync().whereType<File>().any((f) => f.path.endsWith('.sv')),
+          isTrue,
+        );
+      } finally {
+        dir.deleteSync(recursive: true);
+      }
+    });
+
     test('defaults headers by output layout', () async {
       final mod = SimpleModule(Logic());
       await mod.build();
