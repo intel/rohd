@@ -129,7 +129,7 @@ class LogicValueArrayOf<T> {
       _logicValues.toLogicArray(name: name);
 
   /// Drives [target] with the packed values.
-  U putInto<U extends LogicArray>(U target) => _logicValues.putInto(target);
+  U putInto<U extends BaseLogicArray>(U target) => _logicValues.putInto(target);
 
   LogicValueArrayOf<T> _fromLogicValues(LogicValueArray values) =>
       LogicValueArrayOf.fromLogicValues(values, codec: codec);

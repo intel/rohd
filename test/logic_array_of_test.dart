@@ -51,7 +51,7 @@ void main() {
         dimensionNames: const ['row_', 'column_'],
       );
 
-      expect(values, isA<LogicArray>());
+      expect(values, isA<BaseLogicArray>());
       expect(values.dimensions, equals([2, 3]));
       expect(values.elementWidth, 2);
       expect(values.arrayElements, hasLength(6));
@@ -84,6 +84,40 @@ void main() {
         () => values.getsPackedValues(LogicArray([2, 2], 4)),
         throwsA(isA<LogicConstructionException>()),
       );
+    });
+
+    test('recursively flattens nested array dimensions with typed leaves', () {
+      final nested = LogicArrayOf<LogicArray>(
+        [2, 2],
+        ({name}) => LogicArray([3, 2], 4, name: name),
+      );
+      final flattened = nested.flattenNestedDimensions<Logic>(name: 'flat');
+      final source = nested.elementAt([1, 0]).elementAt([2, 1]);
+      final target = flattened.elementAt([1, 0, 2, 1]);
+
+      expect(flattened.dimensions, equals([2, 2, 3, 2]));
+      expect(flattened.elementWidth, 4);
+      expect(flattened.typedLeafElements, hasLength(24));
+      expect(target, isA<Logic>());
+      expect(target.srcConnections, contains(source));
+    });
+
+    test('flattens every nested array layer', () {
+      final nested = LogicArrayOf<LogicArrayOf<LogicArray>>(
+        [2],
+        ({name}) => LogicArrayOf<LogicArray>(
+          [3],
+          ({name}) => LogicArray([4], 2, name: name),
+          name: name,
+        ),
+      );
+      final flattened = nested.flattenNestedDimensions<Logic>();
+      final source = nested.elementAt([1]).elementAt([2]).elementAt([3]);
+      final target = flattened.elementAt([1, 2, 3]);
+
+      expect(flattened.dimensions, equals([2, 3, 4]));
+      expect(flattened.typedLeafElements, hasLength(24));
+      expect(target.srcConnections, contains(source));
     });
 
     test('validates dimensions, names, and leaf widths', () {

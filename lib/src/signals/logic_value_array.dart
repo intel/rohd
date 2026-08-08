@@ -75,11 +75,10 @@ class LogicValueArray {
       LogicValueArray(dimensions, elementWidth,
           values.map((value) => LogicValue.ofInt(value, elementWidth)));
 
-  /// Captures the current values of a [LogicArray].
-  factory LogicValueArray.fromLogicArray(LogicArray values) => LogicValueArray(
-      values.dimensions,
-      values.elementWidth,
-      values.arrayElements.map((element) => element.packed.value));
+  /// Captures the current values of a [BaseLogicArray].
+  factory LogicValueArray.fromLogicArray(BaseLogicArray values) =>
+      LogicValueArray(values.dimensions, values.elementWidth,
+          values.arrayElements.map((element) => element.packed.value));
 
   /// Stacks equally shaped arrays along a new outer dimension.
   factory LogicValueArray.stack(Iterable<LogicValueArray> arrays) {
@@ -163,7 +162,7 @@ class LogicValueArray {
       putInto(LogicArray(dimensions, elementWidth, name: name));
 
   /// Drives [target] with this value array.
-  T putInto<T extends LogicArray>(T target) {
+  T putInto<T extends BaseLogicArray>(T target) {
     _checkCompatible(target.dimensions, target.elementWidth);
     for (var index = 0; index < _values.length; index++) {
       target.arrayElements[index].put(_values[index]);
@@ -215,8 +214,8 @@ class LogicValueArray {
       left.indexed.every((entry) => entry.$2 == right[entry.$1]);
 }
 
-/// Functional traversal helpers for [LogicArray].
-extension LogicArrayTraversal on LogicArray {
+/// Functional traversal helpers for [BaseLogicArray].
+extension LogicArrayTraversal on BaseLogicArray {
   /// Row-major leaves paired with their multidimensional indices.
   Iterable<(List<int>, Logic)> get indexedLeaves => Iterable.generate(
         arrayElements.length,
@@ -246,7 +245,7 @@ extension LogicArrayTraversal on LogicArray {
   }
 
   /// Connects row-major leaves to [sources], requiring equal lengths.
-  LogicArray getsEach(Iterable<Logic> sources) {
+  BaseLogicArray getsEach(Iterable<Logic> sources) {
     for (final (target, source) in arrayElements.zipExact(sources)) {
       target <= source;
     }
@@ -254,7 +253,7 @@ extension LogicArrayTraversal on LogicArray {
   }
 
   /// Connects each leaf to a value generated from its array indices.
-  LogicArray getsGenerated(Logic Function(List<int> indices) generator) {
+  BaseLogicArray getsGenerated(Logic Function(List<int> indices) generator) {
     for (final (indices, target) in indexedLeaves) {
       target <= generator(indices);
     }
@@ -262,7 +261,7 @@ extension LogicArrayTraversal on LogicArray {
   }
 
   /// Returns a row-major view with new [dimensions].
-  LogicArray reshape(List<int> dimensions, {String? name}) {
+  BaseLogicArray reshape(List<int> dimensions, {String? name}) {
     if (LogicValueArray._lengthFor(dimensions) != arrayElements.length) {
       throw ArgumentError.value(dimensions, 'dimensions',
           'Must contain ${arrayElements.length} leaves.');
@@ -272,18 +271,18 @@ extension LogicArrayTraversal on LogicArray {
   }
 
   /// Transposes a two-dimensional logic array.
-  LogicArray transpose2D({String? name}) {
+  BaseLogicArray transpose2D({String? name}) {
     _checkTwoDimensional(dimensions);
     return LogicArray([dimensions[1], dimensions[0]], elementWidth, name: name)
       ..getsGenerated((indices) => at([indices[1], indices[0]]));
   }
 
   /// Immediate child arrays along the first dimension.
-  Iterable<LogicArray> get majorSlices {
+  Iterable<BaseLogicArray> get majorSlices {
     if (dimensions.length < 2) {
       throw StateError('majorSlices requires at least two dimensions.');
     }
-    return elements.cast<LogicArray>();
+    return elements.cast<BaseLogicArray>();
   }
 }
 

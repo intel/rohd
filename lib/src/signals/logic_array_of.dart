@@ -14,10 +14,10 @@ typedef LogicArrayElementBuilder<T extends Logic> = T Function({String? name});
 
 /// A multidimensional logic array with leaves of type [T].
 ///
-/// Intermediate dimensions are [LogicArray]s, while the configured array leaf
-/// can be any [Logic], including a [LogicStructure] such as a floating-point
-/// signal. Packed conversion happens only at that leaf boundary.
-class LogicArrayOf<T extends Logic> extends LogicArray {
+/// Intermediate dimensions are [BaseLogicArray]s, while the configured array
+/// leaf can be any [Logic], including a [LogicStructure] such as a
+/// floating-point signal. Packed conversion happens only at that leaf boundary.
+class LogicArrayOf<T extends Logic> extends BaseLogicArray {
   /// Labels used to name elements at each dimension.
   final List<String> dimensionNames;
 
@@ -49,6 +49,24 @@ class LogicArrayOf<T extends Logic> extends LogicArray {
             elementWidth: build.elementWidth,
             name: name);
 
+  /// Creates a typed array from structurally compatible [elements].
+  @protected
+  LogicArrayOf.structured(
+    super.elements,
+    this._elementBuilder, {
+    required super.dimensions,
+    required super.elementWidth,
+    required super.numUnpackedDimensions,
+    required String name,
+    required Naming naming,
+    required super.isNet,
+  })  : dimensionNames = List<String>.unmodifiable(
+            List.generate(dimensions.length, (index) => 'd${index}_')),
+        super.structured(
+          name: name,
+          naming: naming,
+        );
+
   /// Typed leaves in row-major order.
   List<T> get typedLeafElements => UnmodifiableListView<T>(_typedLeafElements);
 
@@ -58,6 +76,53 @@ class LogicArrayOf<T extends Logic> extends LogicArray {
 
   /// Returns the typed leaf at multidimensional [indices].
   T elementAt(List<int> indices) => at(indices) as T;
+
+  /// Flattens all nested array dimensions into one typed array of [U] leaves.
+  ///
+  /// Each nested array layer must be rectangular: sibling arrays must have the
+  /// same dimensions and element width. The returned dimensions concatenate
+  /// every nested layer, preserving row-major ordering and index addresses.
+  LogicArrayOf<U> flattenNestedDimensions<U extends Logic>({String? name}) {
+    var leaves = typedLeafElements.cast<Logic>().toList(growable: false);
+    final flattenedDimensions = <int>[...dimensions];
+
+    while (leaves.any((leaf) => leaf is BaseLogicArray)) {
+      if (leaves.any((leaf) => leaf is! BaseLogicArray)) {
+        throw LogicConstructionException(
+            'Nested array leaves must have a uniform depth.');
+      }
+
+      final arrays = leaves.cast<BaseLogicArray>();
+      final reference = arrays.first;
+      if (arrays.any((array) =>
+          !_sameDimensions(array.dimensions, reference.dimensions) ||
+          array.elementWidth != reference.elementWidth)) {
+        throw LogicConstructionException(
+            'Nested array leaves must have matching dimensions and widths.');
+      }
+
+      flattenedDimensions.addAll(reference.dimensions);
+      leaves =
+          arrays.expand((array) => array.arrayElements).toList(growable: false);
+    }
+
+    if (leaves.any((leaf) => leaf is! U)) {
+      throw LogicConstructionException(
+          'Nested array leaves must have type $U.');
+    }
+
+    final prototype = leaves.first as U;
+    if (leaves.any((leaf) => leaf.width != prototype.width)) {
+      throw LogicConstructionException(
+          'Nested array leaves must have matching widths.');
+    }
+
+    return LogicArrayOf<U>(
+      flattenedDimensions,
+      ({name}) => prototype.clone(name: name) as U,
+      name: name,
+    )..getsEach(leaves);
+  }
 
   /// Current packed leaves in the value domain.
   LogicValueArray get logicValues => LogicValueArray.fromLogicArray(this);

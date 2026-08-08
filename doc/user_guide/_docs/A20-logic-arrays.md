@@ -24,7 +24,7 @@ As long as the total width of a `LogicArray` and another type of `Logic` (includ
 
 ## Typed and value-domain arrays
 
-`LogicArrayOf` extends `LogicArray` when every leaf should have the same specialized `Logic` type.  It preserves the normal array dimensions while exposing typed leaves with `typedLeafElements` and `elementAt`.  For example, this creates a two-dimensional array of samples with separate data and valid fields:
+Use `LogicArrayOf<T>` when every leaf has the same specialized `Logic` type. It preserves the normal array dimensions while exposing typed leaves with `typedLeafElements` and `elementAt`. `LogicArray` is `LogicArrayOf<Logic>`, so it retains its existing construction, port, clone, naming, and array APIs while also identifying its leaves as `Logic`. For example, this creates a two-dimensional array of samples with separate data and valid fields:
 
 ```dart
 class Sample extends LogicStructure {
@@ -53,6 +53,8 @@ final samples = LogicArrayOf<Sample>(
 final bottomRightData = samples.elementAt([1, 2]).data;
 ```
 
+When typed array leaves are themselves arrays, use `flattenNestedDimensions<U>()` to create one rectangular `LogicArrayOf<U>` with all nested dimensions concatenated. The full address is preserved: `nested.elementAt(outerIndex).elementAt(innerIndex)` maps to `flattened.elementAt([...outerIndex, ...innerIndex])`. Every sibling nested array must have matching dimensions and leaf width.
+
 Use `LogicValueArray` for fixed-width array data outside the hardware graph.  It keeps values in row-major order and supports indexing, reshaping, transposition, and slice operations.  `LogicValueArrayOf` adds a codec so application-level values can use the same operations while converting to and from packed `LogicValue`s.
 
 ```dart
@@ -62,7 +64,7 @@ final transposed = values.transpose2D(); // Dimensions: [3, 2]
 final signals = values.toLogicArray(name: 'values');
 ```
 
-`LogicValueArray.putInto` drives a compatible `LogicArray`, while `LogicArrayOf.logicValues` captures its current packed values.  Use `LogicArrayOf.valueArrayOf` and `putValueArrayOf` when a `LogicValueCodec` converts typed value-domain data at the hardware boundary.
+`LogicValueArray.putInto` drives a compatible `LogicArray` or `LogicArrayOf`, while `LogicArrayOf.logicValues` captures its current packed values.  Use `LogicArrayOf.valueArrayOf` and `putValueArrayOf` when a `LogicValueCodec` converts typed value-domain data at the hardware boundary.
 
 ## Unpacked arrays
 
