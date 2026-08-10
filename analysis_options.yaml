@@ -9,6 +9,7 @@ analyzer:
   exclude:
     - doc/tutorials/chapter_9/rohd_vf_example
     - packages/rohd_hierarchy
+    - packages/rohd_waveform
     - rohd_devtools_extension
     - rohd_extension
 

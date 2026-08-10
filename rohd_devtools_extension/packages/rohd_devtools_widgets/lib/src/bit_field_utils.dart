@@ -77,13 +77,16 @@ abstract final class BitFieldUtils {
     for (final rawLine in lines) {
       final line = rawLine.trim();
       if (line.isEmpty) continue;
+      final tokens = _splitAsciiWhitespace(line);
 
       // Try: name high:low
-      final namedRange = RegExp(r'^(\w+)\s+(\d+):(\d+)$').firstMatch(line);
+      final namedRange = tokens.length == 2 && _isWord(tokens[0])
+          ? _parseRangeToken(tokens[1])
+          : null;
       if (namedRange != null) {
-        final name = namedRange.group(1)!;
-        final a = int.parse(namedRange.group(2)!).clamp(0, maxBit);
-        final b = int.parse(namedRange.group(3)!).clamp(0, maxBit);
+        final name = tokens[0];
+        final a = namedRange.$1.clamp(0, maxBit);
+        final b = namedRange.$2.clamp(0, maxBit);
         final high = a >= b ? a : b;
         final low = a >= b ? b : a;
         fields.add(BitFieldDef(name: name, high: high, low: low));
@@ -91,19 +94,21 @@ abstract final class BitFieldUtils {
       }
 
       // Try: name bit (single bit)
-      final namedSingle = RegExp(r'^(\w+)\s+(\d+)$').firstMatch(line);
-      if (namedSingle != null) {
-        final name = namedSingle.group(1)!;
-        final bit = int.parse(namedSingle.group(2)!).clamp(0, maxBit);
+      final namedSingle = tokens.length == 2 &&
+          _isWord(tokens[0]) &&
+          _isUnsignedDecimal(tokens[1]);
+      if (namedSingle) {
+        final name = tokens[0];
+        final bit = int.parse(tokens[1]).clamp(0, maxBit);
         fields.add(BitFieldDef(name: name, high: bit, low: bit));
         continue;
       }
 
       // Try: high:low (unnamed)
-      final anonRange = RegExp(r'^(\d+):(\d+)$').firstMatch(line);
+      final anonRange = tokens.length == 1 ? _parseRangeToken(tokens[0]) : null;
       if (anonRange != null) {
-        final a = int.parse(anonRange.group(1)!).clamp(0, maxBit);
-        final b = int.parse(anonRange.group(2)!).clamp(0, maxBit);
+        final a = anonRange.$1.clamp(0, maxBit);
+        final b = anonRange.$2.clamp(0, maxBit);
         final high = a >= b ? a : b;
         final low = a >= b ? b : a;
         fields.add(BitFieldDef(name: '[$high:$low]', high: high, low: low));
@@ -111,15 +116,78 @@ abstract final class BitFieldUtils {
       }
 
       // Try: single number (unnamed single bit)
-      final anonSingle = RegExp(r'^(\d+)$').firstMatch(line);
-      if (anonSingle != null) {
-        final bit = int.parse(anonSingle.group(1)!).clamp(0, maxBit);
+      if (tokens.length == 1 && _isUnsignedDecimal(tokens[0])) {
+        final bit = int.parse(tokens[0]).clamp(0, maxBit);
         fields.add(BitFieldDef(name: '[$bit]', high: bit, low: bit));
         continue;
       }
     }
     return fields;
   }
+
+  static List<String> _splitAsciiWhitespace(String value) {
+    final tokens = <String>[];
+    var tokenStart = -1;
+    for (var i = 0; i < value.length; i++) {
+      if (_isAsciiWhitespace(value.codeUnitAt(i))) {
+        if (tokenStart >= 0) {
+          tokens.add(value.substring(tokenStart, i));
+          tokenStart = -1;
+        }
+      } else if (tokenStart < 0) {
+        tokenStart = i;
+      }
+    }
+    if (tokenStart >= 0) {
+      tokens.add(value.substring(tokenStart));
+    }
+    return tokens;
+  }
+
+  static (int, int)? _parseRangeToken(String value) {
+    final separator = value.indexOf(':');
+    if (separator <= 0 || separator != value.lastIndexOf(':')) {
+      return null;
+    }
+    final highText = value.substring(0, separator);
+    final lowText = value.substring(separator + 1);
+    if (!_isUnsignedDecimal(highText) || !_isUnsignedDecimal(lowText)) {
+      return null;
+    }
+    return (int.parse(highText), int.parse(lowText));
+  }
+
+  static bool _isWord(String value) {
+    if (value.isEmpty) return false;
+    for (var i = 0; i < value.length; i++) {
+      final char = value.codeUnitAt(i);
+      final isUppercase = char >= 65 && char <= 90;
+      final isLowercase = char >= 97 && char <= 122;
+      final isDigit = char >= 48 && char <= 57;
+      final isUnderscore = char == 95;
+      if (!isUppercase && !isLowercase && !isDigit && !isUnderscore) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  static bool _isUnsignedDecimal(String value) {
+    if (value.isEmpty) return false;
+    for (var i = 0; i < value.length; i++) {
+      final char = value.codeUnitAt(i);
+      if (char < 48 || char > 57) return false;
+    }
+    return true;
+  }
+
+  static bool _isAsciiWhitespace(int char) =>
+      char == 9 ||
+      char == 10 ||
+      char == 11 ||
+      char == 12 ||
+      char == 13 ||
+      char == 32;
 }
 
 /// Show a dialog to select a bit range for a signal.
