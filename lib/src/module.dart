@@ -52,6 +52,29 @@ abstract class Module {
   /// An internal mapping of input names to their sources to this [Module].
   late final Map<String, Logic> _inputSources = {};
 
+  /// Maps port names to their interface group name.
+  ///
+  /// Populated during [Interface.connectIO] to record which ports were
+  /// registered together as part of the same interface.  The group name
+  /// is derived from the `uniquify` prefix applied during connection.
+  ///
+  /// This enables netlist synthesis to emit port-grouping annotations
+  /// without relying on naming heuristics.
+  final Map<String, String> _portGroups = {};
+
+  /// Returns an unmodifiable view of the port-to-interface-group mapping.
+  ///
+  /// Keys are port names; values are the interface group name shared by
+  /// all ports registered in the same [Interface.connectIO] call.
+  Map<String, String> get portGroups => UnmodifiableMapView(_portGroups);
+
+  /// Registers [portName] as belonging to interface group [groupName].
+  ///
+  /// Called by [Interface.connectIO] during port registration.
+  void registerPortGroup(String portName, String groupName) {
+    _portGroups[portName] = groupName;
+  }
+
   // ─── Central naming (Namer) ─────────────────────────────────────
 
   /// Central namer that owns both the signal and instance namespaces.
@@ -1087,26 +1110,161 @@ abstract class Module {
 
   /// Connects the [source] to this [Module] using [Interface.connectIO] and
   /// returns a copy of the [source] that can be used within this module.
+  ///
+  /// When [asStruct] is `true`, input and output ports are registered as
+  /// [LogicStructure] ports (named `<prefix>_in` / `<prefix>_out`) rather than
+  /// individual leaf ports. The prefix is derived from [uniquify].
   InterfaceType addInterfacePorts<InterfaceType extends Interface<TagType>,
-              TagType extends Enum>(InterfaceType source,
-          {Iterable<TagType>? inputTags,
-          Iterable<TagType>? outputTags,
-          Iterable<TagType>? inOutTags,
-          String Function(String original)? uniquify}) =>
-      (source.clone() as InterfaceType)
+          TagType extends Enum>(InterfaceType source,
+      {Iterable<TagType>? inputTags,
+      Iterable<TagType>? outputTags,
+      Iterable<TagType>? inOutTags,
+      String Function(String original)? uniquify,
+      bool asStruct = false}) {
+    if (!asStruct) {
+      return (source.clone() as InterfaceType)
         ..connectIO(this, source,
             inputTags: inputTags,
             outputTags: outputTags,
             inOutTags: inOutTags,
             uniquify: uniquify);
+    }
+
+    return _addInterfacePortsAsStruct<InterfaceType, TagType>(
+      source,
+      inputTags: inputTags,
+      outputTags: outputTags,
+      inOutTags: inOutTags,
+      uniquify: uniquify,
+    );
+  }
 
   /// Connects the [source] to this [Module] using [PairInterface.pairConnectIO]
   /// and returns a copy of the [source] that can be used within this module.
+  ///
+  /// When [asStruct] is `true`, input and output ports are registered as
+  /// [LogicStructure] ports (named `<prefix>_in` / `<prefix>_out`) rather than
+  /// individual leaf ports. The prefix is derived from [uniquify].
   InterfaceType addPairInterfacePorts<InterfaceType extends PairInterface>(
-          InterfaceType source, PairRole role,
-          {String Function(String original)? uniquify}) =>
-      (source.clone() as InterfaceType)
+      InterfaceType source, PairRole role,
+      {String Function(String original)? uniquify, bool asStruct = false}) {
+    if (!asStruct) {
+      return (source.clone() as InterfaceType)
         ..pairConnectIO(this, source, role, uniquify: uniquify);
+    }
+
+    return (source.clone() as InterfaceType)
+      ..pairConnectIOAsStruct(this, source, role, uniquify: uniquify);
+  }
+
+  /// Derives a group prefix from [uniquify], or falls back to 'intf'.
+  static String _derivePrefix(String Function(String original)? uniquify) {
+    if (uniquify == null) {
+      return 'intf';
+    }
+    const sentinel = '\x00';
+    final probed = uniquify(sentinel);
+    String raw;
+    if (probed.endsWith(sentinel)) {
+      raw = probed.substring(0, probed.length - 1);
+    } else if (probed.startsWith(sentinel)) {
+      raw = probed.substring(1);
+    } else {
+      raw = probed;
+    }
+    // Strip leading/trailing underscores.
+    raw = raw.replaceAll(RegExp(r'^_+|_+$'), '');
+    return raw.isEmpty ? 'intf' : raw;
+  }
+
+  /// Implementation of struct-based interface port registration.
+  ///
+  /// Creates [LogicStructure] ports for inputs and outputs, wires them to the
+  /// [source] interface, and returns the internal (cloned) interface whose
+  /// port signals are the struct elements.
+  InterfaceType _addInterfacePortsAsStruct<InterfaceType extends Interface,
+      TagType extends Enum>(
+    InterfaceType source, {
+    Iterable<TagType>? inputTags,
+    Iterable<TagType>? outputTags,
+    Iterable<TagType>? inOutTags,
+    String Function(String original)? uniquify,
+  }) {
+    final prefix = _derivePrefix(uniquify);
+    final u = uniquify ?? (original) => original;
+
+    final cloned = source.clone() as InterfaceType;
+
+    // --- Inputs: build LogicStructure, register via addTypedInput ---
+    if (inputTags != null) {
+      final srcInputPorts = (source as Interface<TagType>)
+          .getPorts(inputTags)
+          .values
+          .toList(growable: false);
+
+      if (srcInputPorts.isNotEmpty) {
+        // Create elements matching source port widths/names.
+        final elements = [
+          for (final p in srcInputPorts) Logic(name: u(p.name), width: p.width),
+        ];
+        final structIn = LogicStructure(elements, name: '${prefix}_in');
+        final inPort = addTypedInput('${prefix}_in', structIn);
+
+        // Wire: cloned interface port <= struct element.
+        for (var i = 0; i < srcInputPorts.length; i++) {
+          (cloned as Interface<TagType>).port(srcInputPorts[i].name) <=
+              inPort.elements[i];
+        }
+      }
+    }
+
+    // --- Outputs: build LogicStructure, register via addTypedOutput ---
+    if (outputTags != null) {
+      final srcOutputPorts = (source as Interface<TagType>)
+          .getPorts(outputTags)
+          .values
+          .toList(growable: false);
+
+      if (srcOutputPorts.isNotEmpty) {
+        final outPort = addTypedOutput(
+          '${prefix}_out',
+          ({name = ''}) => LogicStructure(
+            [
+              for (final p in srcOutputPorts)
+                Logic(name: u(p.name), width: p.width),
+            ],
+            name: name,
+          ),
+        );
+
+        // Wire: output struct element <= cloned interface port,
+        // and source port <= output struct element.
+        for (var i = 0; i < srcOutputPorts.length; i++) {
+          outPort.elements[i] <=
+              (cloned as Interface<TagType>).port(srcOutputPorts[i].name);
+          source.port(srcOutputPorts[i].name) <= outPort.elements[i];
+        }
+      }
+    }
+
+    // --- InOuts: fall back to leaf-level registration (structs don't
+    // support bidirectional nets) ---
+    if (inOutTags != null) {
+      final srcInOutPorts = (source as Interface<TagType>)
+          .getPorts(inOutTags)
+          .values
+          .toList(growable: false);
+
+      for (final port in srcInOutPorts) {
+        final portName = u(port.name);
+        final inOutPort =
+            addInOut(portName, source.port(port.name), width: port.width);
+        (cloned as Interface<TagType>).port(port.name) <= inOutPort;
+      }
+    }
+
+    return cloned;
+  }
 
   @override
   String toString() => [
