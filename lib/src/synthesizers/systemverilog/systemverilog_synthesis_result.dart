@@ -22,6 +22,15 @@ extension on SynthLogic {
 /// A [SynthesisResult] representing a [Module] that provides a custom
 /// SystemVerilog definition.
 class SystemVerilogCustomDefinitionSynthesisResult extends SynthesisResult {
+  /// Returns the custom definition artifact for [definitionType].
+  BackendArtifact _definitionArtifactFor(String definitionType) =>
+      (module as BackendArtifactProvider).artifactFor(
+        BackendArtifactContext.definition(
+          backend: EmissionBackend.systemVerilog,
+          definitionType: definitionType,
+        ),
+      )!;
+
   /// Creates a new [SystemVerilogCustomDefinitionSynthesisResult] for the given
   /// [module].
   SystemVerilogCustomDefinitionSynthesisResult(
@@ -34,24 +43,24 @@ class SystemVerilogCustomDefinitionSynthesisResult extends SynthesisResult {
 
   @override
   int get matchHashCode =>
-      (module as SystemVerilog).definitionVerilog('*PLACEHOLDER*')!.hashCode;
+      _definitionArtifactFor('*PLACEHOLDER*').contents.hashCode;
 
   @override
   bool matchesImplementation(SynthesisResult other) =>
       other is SystemVerilogCustomDefinitionSynthesisResult &&
-      (module as SystemVerilog).definitionVerilog('*PLACEHOLDER*')! ==
-          (other.module as SystemVerilog).definitionVerilog('*PLACEHOLDER*')!;
+      _definitionArtifactFor('*PLACEHOLDER*').contents ==
+          other._definitionArtifactFor('*PLACEHOLDER*').contents;
 
   @override
-  String toFileContents() => (module as SystemVerilog)
-      .definitionVerilog(getInstanceTypeOfModule(module))!;
+  String toFileContents() =>
+      _definitionArtifactFor(getInstanceTypeOfModule(module)).contents;
 
   @override
   List<SynthFileContents> toSynthFileContents() => List.unmodifiable([
         SynthFileContents(
             name: instanceTypeName,
-            contents: (module as SystemVerilog)
-                .definitionVerilog(getInstanceTypeOfModule(module))!)
+            contents: _definitionArtifactFor(getInstanceTypeOfModule(module))
+                .contents)
       ]);
 }
 
@@ -73,6 +82,9 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
   /// The main [SynthModuleDefinition] for this.
   final SynthModuleDefinition _synthModuleDefinition;
 
+  /// Backend-neutral resolved structure used by this renderer.
+  late final ModuleEmissionPlan _emissionPlan;
+
   @override
   List<Module> get supportingModules =>
       _synthModuleDefinition.supportingModules;
@@ -82,7 +94,11 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
     super.module,
     super.getInstanceTypeOfModule, {
     this.configuration = const SystemVerilogSynthesizerConfiguration(),
-  }) : _synthModuleDefinition = SystemVerilogSynthModuleDefinition(module) {
+  }) : _synthModuleDefinition = SystemVerilogSynthModuleDefinition(
+          module,
+          configuration: configuration,
+        ) {
+    _emissionPlan = ModuleEmissionPlan.fromDefinition(_synthModuleDefinition);
     _portsString = _verilogPorts();
     _moduleContentsString = _verilogModuleContents(getInstanceTypeOfModule);
     _parameterString = _verilogParameters(module);
@@ -114,22 +130,21 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
       ]);
 
   /// Representation of all input port declarations in generated SV.
-  Iterable<String> _verilogInputs() => _synthModuleDefinition.inputs.map((sig) {
+  Iterable<String> _verilogInputs() => _emissionPlan.inputs.map((sig) {
         assert(module.tryInput(sig.name) != null,
             'Named input ${sig.name} not found in module ${module.name}.');
         return _verilogPort('input', 'wire', configuration.inputPortType, sig);
       });
 
   /// Representation of all output port declarations in generated SV.
-  Iterable<String> _verilogOutputs() =>
-      _synthModuleDefinition.outputs.map((sig) {
+  Iterable<String> _verilogOutputs() => _emissionPlan.outputs.map((sig) {
         assert(module.tryOutput(sig.name) != null,
             'Named output ${sig.name} not found in module ${module.name}.');
         return _verilogPort('output', 'var', configuration.outputPortType, sig);
       });
 
   /// Representation of all inout port declarations in generated SV.
-  Iterable<String> _verilogInOuts() => _synthModuleDefinition.inOuts.map((sig) {
+  Iterable<String> _verilogInOuts() => _emissionPlan.inOuts.map((sig) {
         assert(module.tryInOut(sig.name) != null,
             'Named inOut ${sig.name} not found in module ${module.name}.');
         return _verilogPort('inout', 'wire', configuration.inOutPortType, sig);
@@ -146,10 +161,10 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
       ].join(' ');
 
   /// Representation of all internal net declarations in generated SV.
-  String _verilogInternalSignals() {
+  String _verilogInternalSignals({Set<SynthLogic> excludedSignals = const {}}) {
     final declarations = <String>[];
-    for (final sig in _synthModuleDefinition.internalSignals
-        .where((e) => e.needsDeclaration)
+    for (final sig in _emissionPlan.internalSignals
+        .where((e) => e.needsDeclaration && !excludedSignals.contains(e))
         .sorted((a, b) => a.name.compareTo(b.name))) {
       declarations.add('${sig.definitionType()} ${sig.definitionName()};');
     }
@@ -157,14 +172,20 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
   }
 
   /// Representation of all assignments in generated SV.
-  String _verilogAssignments() {
+  String _verilogAssignments({Set<SynthLogic> excludedSignals = const {}}) {
     final assignmentLines = <String>[];
     String rangeString(int upperIndex, int lowerIndex) =>
         upperIndex == lowerIndex
             ? '[$upperIndex]'
             : '[$upperIndex:$lowerIndex]';
 
-    for (final assignment in _synthModuleDefinition.assignments) {
+    for (final assignment in _emissionPlan.assignments) {
+      if (assignment.src.declarationCleared ||
+          assignment.dst.declarationCleared ||
+          excludedSignals.contains(assignment.dst.resolved)) {
+        continue;
+      }
+
       assert(
           !(assignment.src.isNet && assignment.dst.isNet),
           'Net connections should have been implemented as'
@@ -198,8 +219,7 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
   String _verilogSubModuleInstantiations(
       String Function(Module module) getInstanceTypeOfModule) {
     final subModuleLines = <String>[];
-    for (final subModuleInstantiation
-        in _synthModuleDefinition.subModuleInstantiations) {
+    for (final subModuleInstantiation in _emissionPlan.instances) {
       final instanceType =
           getInstanceTypeOfModule(subModuleInstantiation.module);
 
@@ -217,12 +237,45 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
   /// The contents of this module converted to SystemVerilog without module
   /// declaration, ports, etc.
   String _verilogModuleContents(
-          String Function(Module module) getInstanceTypeOfModule) =>
-      [
-        _verilogInternalSignals(),
-        _verilogAssignments(), // order matters!
-        _verilogSubModuleInstantiations(getInstanceTypeOfModule),
-      ].where((element) => element.isNotEmpty).join('\n');
+    String Function(Module module) getInstanceTypeOfModule,
+  ) {
+    final subModuleInstantiations =
+        _verilogSubModuleInstantiations(getInstanceTypeOfModule);
+    final unusedConstantIntermediates =
+        _unusedConstantIntermediates(subModuleInstantiations);
+
+    return [
+      _verilogInternalSignals(excludedSignals: unusedConstantIntermediates),
+      _verilogAssignments(excludedSignals: unusedConstantIntermediates),
+      subModuleInstantiations,
+    ].where((element) => element.isNotEmpty).join('\n');
+  }
+
+  Set<SynthLogic> _unusedConstantIntermediates(String emittedInstances) {
+    final assignmentSources = <SynthLogic>{};
+    for (final assignment in _emissionPlan.assignments) {
+      assignmentSources.add(assignment.src.resolved);
+    }
+
+    return {
+      for (final assignment in _emissionPlan.assignments)
+        if (assignment.src.resolved.isConstant &&
+            assignment.dst.resolved is! SynthLogicArrayElement &&
+            _emissionPlan.internalSignals.contains(assignment.dst.resolved) &&
+            !assignment.dst.resolved.isPort(module) &&
+            !assignmentSources.contains(assignment.dst.resolved) &&
+            !_emittedTextReferences(
+              emittedInstances,
+              assignment.dst.resolved.name,
+            ))
+          assignment.dst.resolved,
+    };
+  }
+
+  bool _emittedTextReferences(String text, String signalName) => RegExp(
+        '(^|[^A-Za-z0-9_])${RegExp.escape(signalName)}(?=[^A-Za-z0-9_]|\$)',
+        multiLine: true,
+      ).hasMatch(text);
 
   /// The representation of all port declarations.
   String _verilogPorts() => [

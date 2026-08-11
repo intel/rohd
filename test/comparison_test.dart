@@ -136,6 +136,7 @@ void main() {
       await SimCompare.checkFunctionalVector(gtm, vectors);
       final simResult = SimCompare.iverilogVector(gtm, vectors);
       expect(simResult, equals(true));
+      SimCompare.checkSystemCVector(gtm, vectors);
     });
   });
 }

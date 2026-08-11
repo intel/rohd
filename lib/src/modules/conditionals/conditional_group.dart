@@ -9,6 +9,7 @@
 
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/synthesizers/systemverilog/systemverilog_conditional_emitter.dart';
 
 /// Represents a group of [Conditional]s to be executed.
 class ConditionalGroup extends Conditional {
@@ -52,12 +53,9 @@ class ConditionalGroup extends Conditional {
   @override
   String verilogContents(int indent, Map<String, String> inputsNameMap,
           Map<String, String> outputsNameMap, String assignOperator) =>
-      conditionals
-          .map((c) => c.verilogContents(
-                indent,
-                inputsNameMap,
-                outputsNameMap,
-                assignOperator,
-              ))
-          .join('\n');
+      SystemVerilogConditionalEmitter(
+        inputsNameMap: inputsNameMap,
+        outputsNameMap: outputsNameMap,
+        assignOperator: assignOperator,
+      ).emit(this, indent);
 }

@@ -490,6 +490,7 @@ void main() {
         ];
         await SimCompare.checkFunctionalVector(mod, vectors);
         SimCompare.checkIverilogVector(mod, vectors);
+        SimCompare.checkSystemCVector(mod, vectors);
       });
     });
 
@@ -564,6 +565,7 @@ void main() {
       await SimCompare.checkFunctionalVector(mod, vectors);
       final simResult = SimCompare.iverilogVector(mod, vectors);
       expect(simResult, equals(true));
+      SimCompare.checkSystemCVector(mod, vectors);
     });
 
     test('iffblock comb', () async {
@@ -578,6 +580,7 @@ void main() {
       await SimCompare.checkFunctionalVector(mod, vectors);
       final simResult = SimCompare.iverilogVector(mod, vectors);
       expect(simResult, equals(true));
+      SimCompare.checkSystemCVector(mod, vectors);
     });
 
     test('if invalid ', () async {
@@ -600,6 +603,7 @@ void main() {
       await SimCompare.checkFunctionalVector(mod, vectors);
       final simResult = SimCompare.iverilogVector(mod, vectors);
       expect(simResult, equals(true));
+      SimCompare.checkSystemCVector(mod, vectors);
     });
 
     test('elseifblock comb', () async {
@@ -614,6 +618,7 @@ void main() {
       await SimCompare.checkFunctionalVector(mod, vectors);
       final simResult = SimCompare.iverilogVector(mod, vectors);
       expect(simResult, equals(true));
+      SimCompare.checkSystemCVector(mod, vectors);
     });
 
     test('Conditional assign module with invalid inputs', () async {
@@ -654,6 +659,7 @@ void main() {
       await SimCompare.checkFunctionalVector(mod, vectors);
       final simResult = SimCompare.iverilogVector(mod, vectors);
       expect(simResult, equals(true));
+      SimCompare.checkSystemCVector(mod, vectors);
     });
 
     test('case comb', () async {
@@ -668,6 +674,7 @@ void main() {
       await SimCompare.checkFunctionalVector(mod, vectors);
       final simResult = SimCompare.iverilogVector(mod, vectors);
       expect(simResult, equals(true));
+      SimCompare.checkSystemCVector(mod, vectors);
     });
 
     test('Unique case', () async {
@@ -696,6 +703,7 @@ void main() {
       await SimCompare.checkFunctionalVector(mod, vectors);
       final simResult = SimCompare.iverilogVector(mod, vectors);
       expect(simResult, equals(true));
+      SimCompare.checkSystemCVector(mod, vectors);
     });
 
     test('should return exception if a conditional is used multiple times.',
@@ -717,6 +725,7 @@ void main() {
     await SimCompare.checkFunctionalVector(mod, vectors);
     final simResult = SimCompare.iverilogVector(mod, vectors);
     expect(simResult, equals(true));
+    SimCompare.checkSystemCVector(mod, vectors);
   });
 
   test(
@@ -731,6 +740,7 @@ void main() {
     await SimCompare.checkFunctionalVector(mod, vectors);
     final simResult = SimCompare.iverilogVector(mod, vectors);
     expect(simResult, equals(true));
+    SimCompare.checkSystemCVector(mod, vectors);
   });
 
   test(
@@ -745,6 +755,7 @@ void main() {
     await SimCompare.checkFunctionalVector(mod, vectors);
     final simResult = SimCompare.iverilogVector(mod, vectors);
     expect(simResult, equals(true));
+    SimCompare.checkSystemCVector(mod, vectors);
   });
 
   test(
@@ -780,6 +791,7 @@ void main() {
 
     await SimCompare.checkFunctionalVector(mod, vectors);
     SimCompare.checkIverilogVector(mod, vectors);
+    SimCompare.checkSystemCVector(mod, vectors);
   });
 
   test(

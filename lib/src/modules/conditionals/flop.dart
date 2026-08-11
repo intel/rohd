@@ -88,6 +88,11 @@ class FlipFlop extends Module with SystemVerilog {
   /// Only initialized if a constant value is provided.
   late LogicValue _resetValueConst;
 
+  /// Returns the constant reset value if one was provided, or null if the
+  /// reset value is a port or no reset exists.
+  LogicValue? get constantResetValue =>
+      _reset != null && _resetValuePort == null ? _resetValueConst : null;
+
   /// Indicates whether provided `reset` signals should be treated as an async
   /// reset. If no `reset` is provided, this will have no effect.
   final bool asyncReset;

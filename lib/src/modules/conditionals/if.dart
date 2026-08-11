@@ -11,6 +11,7 @@ import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/modules/conditionals/ssa.dart';
+import 'package:rohd/src/synthesizers/systemverilog/systemverilog_conditional_emitter.dart';
 
 /// A conditional block to execute only if [condition] is satisfied.
 ///
@@ -182,31 +183,12 @@ class If extends Conditional {
 
   @override
   String verilogContents(int indent, Map<String, String> inputsNameMap,
-      Map<String, String> outputsNameMap, String assignOperator) {
-    final padding = Conditional.calcPadding(indent);
-    final verilog = StringBuffer();
-    for (final iff in iffs) {
-      final header = iff == iffs.first
-          ? 'if'
-          : iff is Else
-              ? 'else'
-              : 'else if';
-
-      final conditionName = inputsNameMap[driverInput(iff.condition).name];
-      final ifContents = iff.then
-          .map((conditional) => conditional.verilogContents(
-              indent + 2, inputsNameMap, outputsNameMap, assignOperator))
-          .join('\n');
-      final condition = iff is! Else ? '($conditionName)' : '';
-      verilog.write('''
-$padding$header$condition begin
-$ifContents
-${padding}end ''');
-    }
-    verilog.write('\n');
-
-    return verilog.toString();
-  }
+          Map<String, String> outputsNameMap, String assignOperator) =>
+      SystemVerilogConditionalEmitter(
+        inputsNameMap: inputsNameMap,
+        outputsNameMap: outputsNameMap,
+        assignOperator: assignOperator,
+      ).emit(this, indent);
 
   @override
   Map<Logic, Logic> processSsa(Map<Logic, Logic> currentMappings,
