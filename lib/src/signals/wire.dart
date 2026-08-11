@@ -183,6 +183,7 @@ class _Wire {
 
     _glitchController.emitter.adopt(other._glitchController.emitter);
     other._migrateChangedTriggers(this);
+    _valueConstraints.addAll(other._valueConstraints);
 
     // ignore: avoid_returning_this
     return this;
@@ -286,7 +287,19 @@ class _Wire {
       newValue = LogicValue.filled(width, LogicValue.x);
     }
 
+    for (final constraint in _valueConstraints) {
+      newValue = constraint(newValue);
+    }
+
     _updateValue(newValue, signalName: signalName);
+  }
+
+  /// Value transformations applied in registration order before an update.
+  final List<_LogicValueConstraint> _valueConstraints = [];
+
+  /// Adds a transformation that constrains every value written to this wire.
+  void _constrainValue(_LogicValueConstraint constraint) {
+    _valueConstraints.add(constraint);
   }
 
   /// Updates the value of this signal to [newValue].
@@ -306,3 +319,6 @@ class _Wire {
   @override
   String toString() => 'wire $hashCode';
 }
+
+/// Transforms a proposed wire value into the value that may be stored.
+typedef _LogicValueConstraint = LogicValue Function(LogicValue origValue);
