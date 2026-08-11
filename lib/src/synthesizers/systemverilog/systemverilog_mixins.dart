@@ -22,10 +22,15 @@ class SystemVerilogParameterDefinition {
   /// The name of the parameter.
   final String name;
 
+  /// Whether this is a `localparam` rather than a `parameter`.
+  final bool isLocalParam;
+
   /// Creates a new SystemVerilog parameter definition with [name] of the
   /// provided [type] with the [defaultValue].
   const SystemVerilogParameterDefinition(this.name,
-      {required this.type, required this.defaultValue});
+      {required this.type,
+      required this.defaultValue,
+      this.isLocalParam = false});
 }
 
 /// Allows a [Module] to control the instantiation and/or definition of

@@ -238,6 +238,13 @@ class Logic {
   /// outputs.
   final Naming naming;
 
+  /// An optional symbolic width expression for SystemVerilog generation.
+  ///
+  /// When set, the generated SV will use this expression (e.g., `WIDTH - 1`)
+  /// instead of the concrete integer [width] for range declarations.
+  /// The concrete [width] is still used for simulation.
+  final ParameterExpression? widthExpression;
+
   /// Constructs a new [Logic] named [name] with [width] bits.
   ///
   /// The default value for [width] is 1.  The [name] should be sanitary
@@ -245,14 +252,20 @@ class Logic {
   ///
   /// The [naming] and [name], if unspecified, are chosen based on the rules in
   /// [Naming.chooseNaming] and [Naming.chooseName], respectively.
+  ///
+  /// If [widthExpression] is provided, the generated SystemVerilog will use
+  /// that expression for the signal's range declaration instead of the
+  /// concrete [width].
   Logic({
     String? name,
     int width = 1,
     Naming? naming,
+    ParameterExpression? widthExpression,
   }) : this._(
           name: name,
           width: width,
           naming: naming,
+          widthExpression: widthExpression,
         );
 
   /// A cloning utility for [clone] and [named].
@@ -264,7 +277,8 @@ class Logic {
               newName: name,
               originalNaming: this.naming,
               newNaming: naming),
-          width: width);
+          width: width,
+          widthExpression: widthExpression);
 
   /// Makes a copy of `this`, optionally with the specified [name], but the same
   /// [width].
@@ -295,6 +309,7 @@ class Logic {
     int width = 1,
     Naming? naming,
     _Wire? wire,
+    this.widthExpression,
   })  : naming = Naming.chooseNaming(name, naming),
         name = Naming.chooseName(name, naming),
         _wire = wire ?? _Wire(width: width) {
