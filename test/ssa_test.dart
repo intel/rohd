@@ -179,7 +179,7 @@ class SsaModCase extends SsaTestModule {
     } else {
       x = 3;
     }
-    // ignore: join_return_with_assignment
+    // ignore: join_return_with_assignment - match structure
     x = x + 2;
     return x;
   }
@@ -285,7 +285,7 @@ class SsaMix extends SsaTestModule {
     } else {
       x = x + 1;
     }
-    // ignore: join_return_with_assignment
+    // ignore: join_return_with_assignment - match structure
     x++;
 
     return x;

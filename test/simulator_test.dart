@@ -259,7 +259,7 @@ void main() {
   test('simulator waits for async injected actions to complete', () async {
     var injectedActionExecuted = false;
     Simulator.registerAction(100, () => true);
-    Simulator.registerAction(50, () async {
+    Simulator.registerAction(50, () {
       Simulator.injectAction(() async {
         await Future<void>.delayed(const Duration(microseconds: 10));
         injectedActionExecuted = true;
@@ -368,7 +368,7 @@ void main() {
   test('end of tick makes a re-tick if it was missed', () async {
     var endOfTickActionTaken = false;
 
-    Simulator.registerAction(100, () async {
+    Simulator.registerAction(100, () {
       unawaited(Simulator.postTick.first.then((_) {
         Simulator.injectEndOfTickAction(() => endOfTickActionTaken = true);
       }));

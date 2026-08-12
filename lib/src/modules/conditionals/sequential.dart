@@ -349,24 +349,18 @@ class Sequential extends Always {
         }
 
         if (!_pendingExecute) {
-          unawaited(Simulator.clkStable.first.then((value) {
+          unawaited(Simulator.clkStable.first.then<void>((value) {
             // once the clocks are stable, execute the contents of the seq
             _execute();
             _pendingExecute = false;
-          }).catchError(test: (error) => error is Exception,
-              (Object err, StackTrace stackTrace) {
-            Simulator.throwException(err as Exception, stackTrace);
-          }).catchError(test: (error) => error is StateError,
-              (Object err, StackTrace stackTrace) {
-            // This could be a result of the `Simulator` being reset, causing
-            // the stream to `close` before `first` occurs.
-            if (!Simulator.simulationHasEnded) {
-              // If the `Simulator` is still running, rethrow immediately.
-
-              // ignore: only_throw_errors
-              throw err;
+          }, onError: (Object err, StackTrace stackTrace) {
+            if (err is StateError) {
+              // Reset closes the stream before `first` receives an event.
+              _pendingExecute = false;
+              return;
             }
-          }));
+            Error.throwWithStackTrace(err, stackTrace);
+          }).onError<Exception>(Simulator.throwException));
         }
         _pendingExecute = true;
       });

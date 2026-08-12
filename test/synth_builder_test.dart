@@ -81,7 +81,7 @@ void main() {
 
         // test backwards compatibility
         expect(
-            // ignore: deprecated_member_use_from_same_package
+            // ignore: deprecated_member_use_from_same_package - test deprecated feature
             synth.getFileContents().first,
             firstSynthFileContents.toString());
       }

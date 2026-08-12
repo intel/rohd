@@ -31,7 +31,7 @@ class ValidDefNameModule extends Module {
   }
 }
 
-// ignore: camel_case_types
+// ignore: camel_case_types - this is specifically named for a test
 class byte extends Module {
   byte(Logic a) {
     addInput('a', a, width: a.width);

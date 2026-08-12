@@ -8,6 +8,8 @@
 // Substantial portion of test contributed by wswongat in https://github.com/intel/rohd/issues/79
 // Max Korbel <max.korbel@intel.com>
 
+import 'dart:async';
+
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
@@ -154,9 +156,75 @@ class BothTriggeredSeq extends Module {
   }
 }
 
+class ExternallyClockedSeq extends Module {
+  ExternallyClockedSeq(Logic clk, {List<Conditional>? conditionals}) {
+    clk = addInput('clk', clk);
+    final out = addOutput('out');
+
+    Sequential(clk, conditionals ?? [out < 1]);
+  }
+}
+
+class StateErrorConditional extends Conditional {
+  @override
+  final List<Conditional> conditionals = const [];
+
+  @override
+  final List<Logic> drivers = const [];
+
+  @override
+  final List<Logic> receivers = const [];
+
+  @override
+  List<Logic> calculateReceivers() => const [];
+
+  @override
+  Map<Logic, Logic> processSsa(Map<Logic, Logic> currentMappings,
+          {required int context}) =>
+      currentMappings;
+
+  @override
+  void execute(Set<Logic>? drivenSignals, void Function(Logic)? guard) {
+    throw StateError('execution failed');
+  }
+
+  @override
+  String verilogContents(int indent, Map<String, String> inputsNameMap,
+          Map<String, String> outputsNameMap, String assignOperator) =>
+      '';
+}
+
 void main() {
   tearDown(() async {
     await Simulator.reset();
+  });
+
+  test('reset handles pending sequential execution', () async {
+    final clk = Logic();
+    final dut = ExternallyClockedSeq(clk);
+    await dut.build();
+
+    clk.put(1);
+    await Simulator.reset();
+    await Future<void>.delayed(Duration.zero);
+  });
+
+  test('StateError during sequential execution is propagated', () async {
+    final clk = Logic()..put(0);
+    final dut = ExternallyClockedSeq(
+      clk,
+      conditionals: [StateErrorConditional()],
+    );
+    await dut.build();
+
+    final error = Completer<Object>();
+    runZonedGuarded(() {
+      clk.put(1);
+      Simulator.registerAction(1, () {});
+      unawaited(Simulator.run());
+    }, (caughtError, _) => error.complete(caughtError));
+
+    await expectLater(error.future, completion(isA<StateError>()));
   });
 
   test('simple pipeline', () async {

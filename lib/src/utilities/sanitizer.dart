@@ -37,7 +37,7 @@ abstract class Sanitizer {
 
     // add `_` to the end if the name is a SystemVerilog keyword
     while (_reservedSVKeywords.contains(newName)) {
-      // ignore: use_string_buffers
+      // ignore: use_string_buffers - no SV modifier ends with `_`, runs once
       newName += '_';
     }
 

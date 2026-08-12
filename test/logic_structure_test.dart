@@ -121,13 +121,13 @@ class StructModuleWithInstrumentation extends Module {
       ..isOutput
       ..changed
       ..glitch
-      // ignore: deprecated_member_use_from_same_package
+      // ignore: deprecated_member_use_from_same_package - deprecated but supported for now
       ..hasValidValue()
-      // ignore: deprecated_member_use_from_same_package
+      // ignore: deprecated_member_use_from_same_package - deprecated but supported for now
       ..isFloating()
-      // ignore: deprecated_member_use_from_same_package
+      // ignore: deprecated_member_use_from_same_package - deprecated but supported for now
       ..valueBigInt
-      // ignore: deprecated_member_use_from_same_package
+      // ignore: deprecated_member_use_from_same_package - deprecated but supported for now
       ..valueInt;
 
     unawaited(MyStruct().nextChanged);
