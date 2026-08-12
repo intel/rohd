@@ -114,7 +114,7 @@ void main() {
       expect(simResult, equals(true));
     }
 
-    Future<void> runTestGen(Map<NameType, String> names) async =>
+    Future<void> runTestGen(Map<NameType, String> names) =>
         runTest(RenameableModule(
           Logic(name: names[NameType.inputPort]),
           outputPortName: names[NameType.outputPort]!,
@@ -220,7 +220,7 @@ void main() {
       expect(sv, contains('specialInstanceName('));
       expect(sv, contains('specialInstanceName_0('));
     });
-    test('reserved throws exception with conflicts', () async {
+    test('reserved throws exception with conflicts', () {
       final mod = TopModule(Logic(), false, true);
       expect(() async {
         await mod.build();

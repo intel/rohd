@@ -1248,23 +1248,23 @@ abstract class LogicValue implements Comparable<LogicValue> {
 
   /// Addition operation.
   LogicValue operator +(dynamic other) =>
-      // ignore: avoid_dynamic_calls
+      // ignore: avoid_dynamic_calls - intentionally dynamic
       _doMath(other, (a, b) => a + b);
 
   /// Subtraction operation.
   LogicValue operator -(dynamic other) =>
-      // ignore: avoid_dynamic_calls
+      // ignore: avoid_dynamic_calls - intentionally dynamic
       _doMath(other, (a, b) => a - b);
 
   /// Multiplication operation.
   LogicValue operator *(dynamic other) =>
-      // ignore: avoid_dynamic_calls
+      // ignore: avoid_dynamic_calls - intentionally dynamic
       _doMath(other, (a, b) => a * b);
 
   /// Division operation.
   LogicValue operator /(dynamic other) => _doMath(
         other,
-        // ignore: avoid_dynamic_calls
+        // ignore: avoid_dynamic_calls - intentionally dynamic
         (a, b) => a ~/ b,
         isDivision: true,
       );
@@ -1272,7 +1272,7 @@ abstract class LogicValue implements Comparable<LogicValue> {
   /// Modulo operation.
   LogicValue operator %(dynamic other) => _doMath(
         other,
-        // ignore: avoid_dynamic_calls
+        // ignore: avoid_dynamic_calls - intentionally dynamic
         (a, b) => a % b,
         isDivision: true,
       );

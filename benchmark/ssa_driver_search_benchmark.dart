@@ -67,6 +67,6 @@ class SsaDriverSearchBenchmark extends BenchmarkBase {
   }
 }
 
-void main() async {
+void main() {
   SsaDriverSearchBenchmark().report();
 }

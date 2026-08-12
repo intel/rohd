@@ -25,8 +25,6 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:rohd.openSourceLocation",
-    "onCommand:rohd.openSourceLocations",
     "onCommand:rohd.registerSignalViewer",
     "onCommand:rohd.unregisterSignalViewer",
     "onCommand:rohd.getSignalViewers",

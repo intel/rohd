@@ -154,8 +154,8 @@ void main() {
     SimCompare.checkIverilogVector(mod, vectors);
   });
 
-  test('should return exception when port name is not sanitary.', () async {
-    expect(() async {
+  test('should return exception when port name is not sanitary.', () {
+    expect(() {
       UncleanPortInterface();
     }, throwsException);
   });

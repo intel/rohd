@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2023 Intel Corporation
+// Copyright (C) 2022-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // definition_name_test.dart
@@ -41,32 +41,31 @@ class byte extends Module {
 void main() {
   group('GIVEN that Reserved Definition Name is TRUE,', () {
     test('WHEN definition name is valid, THEN expect to compile successfully.',
-        () async {
+        () {
       final defName =
           DefinitionName(name: DefinitionName.getValidName(), isReserved: true);
       final mod = ValidDefNameModule(Logic(), defName);
       expect(mod.definitionName, equals('specialName'));
     });
     test('WHEN definition name is invalid, THEN expect to throw exception.',
-        () async {
+        () {
       final defName = DefinitionName(
           name: DefinitionName.getInvalidName(), isReserved: true);
-      expect(() async {
+      expect(() {
         ValidDefNameModule(Logic(), defName);
       }, throwsA((dynamic e) => e is InvalidReservedNameException));
     });
-    test('WHEN definition name is null, THEN expect to throw exception.',
-        () async {
+    test('WHEN definition name is null, THEN expect to throw exception.', () {
       final defName = DefinitionName(name: null, isReserved: true);
-      expect(() async {
+      expect(() {
         ValidDefNameModule(Logic(), defName);
       }, throwsA((dynamic e) => e is NullReservedNameException));
     });
     test(
         'WHEN definition name is empty string, THEN expect to throw exception.',
-        () async {
+        () {
       final defName = DefinitionName(name: '', isReserved: true);
-      expect(() async {
+      expect(() {
         ValidDefNameModule(Logic(), defName);
       }, throwsA((dynamic e) => e is EmptyReservedNameException));
     });
@@ -75,39 +74,39 @@ void main() {
   group('GIVEN that Reserved Definition Name is FALSE,', () {
     test(
         'WHEN definition name is valid, THEN expected to compile successfully.',
-        () async {
+        () {
       final defName = DefinitionName(
           name: DefinitionName.getValidName(), isReserved: false);
       final mod = ValidDefNameModule(Logic(), defName);
       expect(mod.definitionName, equals('specialName'));
     });
     test('WHEN definition name is invalid, THEN expected to sanitize name.',
-        () async {
+        () {
       final defName = DefinitionName(
           name: DefinitionName.getInvalidName(), isReserved: false);
       final mod = ValidDefNameModule(Logic(), defName);
       expect(mod.definitionName, equals('_____definitionName_'));
     });
     group('WHEN definition name is null,', () {
-      test('THEN expected to auto initialize name.', () async {
+      test('THEN expected to auto initialize name.', () {
         final defName = DefinitionName(name: null, isReserved: false);
         final mod = ValidDefNameModule(Logic(), defName);
         expect(mod.definitionName, equals('ValidDefNameModule'));
       });
       test(
           'AND runtime type name is invalid, '
-          'THEN expect to sanitize the result', () async {
+          'THEN expect to sanitize the result', () {
         final mod = byte(Logic());
         expect(mod.definitionName, equals('byte_'));
       });
     });
   });
 
-  test('should return Exception when super.name is empty string', () async {
+  test('should return Exception when super.name is empty string', () {
     final defName =
         DefinitionName(name: DefinitionName.getValidName(), isReserved: true);
 
-    expect(() async {
+    expect(() {
       ValidDefNameModule(Logic(), defName, name: '', reserveName: true);
     }, throwsA((dynamic e) => e is EmptyReservedNameException));
   });

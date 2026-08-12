@@ -301,7 +301,7 @@ class Sequential extends Always {
       // uses values directly
       _updateInputToPreTickInputValue(driverInput);
 
-      driverInput.glitch.listen((event) async {
+      driverInput.glitch.listen((event) {
         if (Simulator.phase != SimulatorPhase.clkStable) {
           // if the change happens not when the clocks are stable, immediately
           // update the map
@@ -340,7 +340,7 @@ class Sequential extends Always {
 
     // listen to every clock glitch to see if we need to execute
     for (final trigger in _triggers) {
-      trigger.signal.glitch.listen((event) async {
+      trigger.signal.glitch.listen((event) {
         // we want the first previousValue from the first glitch of this tick
         trigger.preTickValue ??= event.previousValue;
 
@@ -400,13 +400,13 @@ class Sequential extends Always {
 
       if (allowMultipleAssignments) {
         for (final element in conditionals) {
-          // ignore: invalid_use_of_protected_member
+          // ignore: invalid_use_of_protected_member - special case, always
           element.execute(null, null);
         }
       } else {
         final allDrivenSignals = DuplicateDetectionSet<Logic>();
         for (final element in conditionals) {
-          // ignore: invalid_use_of_protected_member
+          // ignore: invalid_use_of_protected_member - special case, always
           element.execute(allDrivenSignals, null);
         }
         if (allDrivenSignals.hasDuplicates) {

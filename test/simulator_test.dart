@@ -269,7 +269,7 @@ void main() {
     expect(injectedActionExecuted, isTrue);
   });
 
-  test('simulator exception when registering action in the past', () async {
+  test('simulator exception when registering action in the past', () {
     Simulator.registerAction(100, () {
       Simulator.registerAction(50, () {});
     });

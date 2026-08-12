@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (C) 2021-2024 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 //
 // sequential_test.dart
 // Unit test for Sequential
@@ -213,7 +213,7 @@ void main() {
       await testShorthand(useArrays: true);
     });
 
-    test('arrays with double reset error', () async {
+    test('arrays with double reset error', () {
       expect(testShorthand(useArrays: true, doubleResetError: true),
           throwsException);
     });

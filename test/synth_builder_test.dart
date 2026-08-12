@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2025 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // synth_builder_test.dart
@@ -54,9 +54,9 @@ void main() {
   });
 
   group('synth builder', () {
-    test('should throw exception if module is not built', () async {
+    test('should throw exception if module is not built', () {
       final mod = TopModule(Logic(width: 4), Logic());
-      expect(() async {
+      expect(() {
         SynthBuilder(mod, SystemVerilogSynthesizer());
       }, throwsA((dynamic e) => e is ModuleNotBuiltException));
     });

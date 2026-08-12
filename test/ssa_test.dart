@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Intel Corporation
+// Copyright (C) 2023-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // ssa_test.dart
@@ -592,7 +592,7 @@ void main() {
     SimCompare.checkIverilogVector(mod, vectors);
   });
 
-  test('ssa uninitialized', () async {
+  test('ssa uninitialized', () {
     expect(() => SsaUninit(Logic(width: 8)),
         throwsA(isA<UninitializedSignalException>()));
   });
