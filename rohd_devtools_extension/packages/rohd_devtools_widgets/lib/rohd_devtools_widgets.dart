@@ -36,6 +36,9 @@ export 'src/bit_field_utils.dart';
 // Shared "Expand Bits" / "Define Bit Fields" popup-menu helpers
 export 'src/bit_expansion_menu.dart';
 
+// Shared signal display-format preferences and value formatting
+export 'src/signal_value_format_registry.dart';
+
 // ROHD extension client
 export 'src/rohd_extension_status.dart';
 export 'src/rohd_extension_client.dart';
