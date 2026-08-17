@@ -54,7 +54,7 @@
 
     <section class="multi-line-signature">
       
-<span class="returntype"><a href="https://api.dart.dev/stable/3.12.2/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">void</span>&gt;</span></span>
+<span class="returntype"><a href="https://api.dart.dev/stable/3.13.0/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">void</span>&gt;</span></span>
 <span class="name ">tick</span>(<wbr>)
 
       
@@ -89,8 +89,7 @@ timestamp, and passes through all events and phases on the way.</p>
     &#47;&#47; Either way, the end result is that a whole new tick gets scheduled for
     &#47;&#47; _currentTimestamp and any outstanding injected actions get executed.
 
-    &#47;&#47; ignore: unnecessary_lambdas
-    _pendingTimestamps.putIfAbsent(_currentTimestamp, () =&gt; ListQueue());
+    _pendingTimestamps.putIfAbsent(_currentTimestamp, ListQueue.new);
   }
 
   &#47;&#47; the main event loop

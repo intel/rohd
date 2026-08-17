@@ -72,7 +72,7 @@
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">LogicValue operator &#47;(dynamic other) =&gt; _doMath(
       other,
-      &#47;&#47; ignore: avoid_dynamic_calls
+      &#47;&#47; ignore: avoid_dynamic_calls - intentionally dynamic
       (a, b) =&gt; a ~&#47; b,
       isDivision: true,
     );</code></pre>
