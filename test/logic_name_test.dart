@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2025 Intel Corporation
+// Copyright (C) 2022-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // logic_name_test.dart
@@ -181,39 +181,37 @@ class StructElementNamingModule extends Module {
 void main() {
   test(
       'GIVEN logic name is valid '
-      'THEN expected to see proper name being generated', () async {
+      'THEN expected to see proper name being generated', () {
     final bus = Logic(name: 'validName');
     expect(bus.name, equals('validName'));
   });
 
-  test('Test signals for sanitized names', () async {
+  test('Test signals for sanitized names', () {
     expect(Sanitizer.isSanitary(Const(LogicValue.ofString('1x0101z')).name),
         isTrue);
   });
 
-  test('GIVEN logic name is invalid THEN expected to see sanitized name',
-      () async {
+  test('GIVEN logic name is invalid THEN expected to see sanitized name', () {
     final bus = Logic(name: '&*-FinvalidN11Me');
     expect(bus.name, equals('___FinvalidN11Me'));
   });
 
   test('GIVEN logic name is null THEN expected to see autogeneration of name',
-      () async {
+      () {
     final bus = Logic();
     expect(bus.name, equals('_s'));
   });
 
   test(
       'GIVEN logic name is empty string THEN expected to see autogeneration '
-      'of name', () async {
+      'of name', () {
     final bus = Logic(name: '');
     expect(bus.name, isNot(equals('')));
   });
 
   group('port name:', () {
-    test('GIVEN port name is empty string THEN expected to see exception',
-        () async {
-      expect(() async {
+    test('GIVEN port name is empty string THEN expected to see exception', () {
+      expect(() {
         LogicTestModule('');
       }, throwsA((dynamic e) => e is EmptyReservedNameException));
     });

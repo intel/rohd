@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2025 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // logic_values.dart
@@ -55,7 +55,7 @@ abstract class LogicValue implements Comparable<LogicValue> {
   /// Converts `bool` [value] to a valid [LogicValue] with 1 bits either
   /// one or zero.
   @Deprecated('Use `ofBool` instead.')
-  // ignore: avoid_positional_boolean_parameters
+  // ignore: avoid_positional_boolean_parameters - literally it's "fromBool"
   static LogicValue fromBool(bool value) => ofBool(value);
 
   /// Converts `int` [value] to a valid [LogicValue] with [width] number
@@ -706,9 +706,9 @@ abstract class LogicValue implements Comparable<LogicValue> {
         }
         final s = [
           if (chunkString == 'z' * chunkString.length)
-            (span == 1 ? 'z' : 'Z')
+            if (span == 1) 'z' else 'Z'
           else if (chunkString == 'x' * chunkString.length)
-            (span == 1 ? 'x' : 'X')
+            if (span == 1) 'x' else 'X'
           else if (chunkString.contains('z') | chunkString.contains('x'))
             '>${_reverse(chunkString)}<'
           else
@@ -1111,7 +1111,7 @@ abstract class LogicValue implements Comparable<LogicValue> {
     if (width != 1) {
       throw Exception('Width must be 1, but was $width.');
     }
-    // ignore: avoid_returning_this
+    // ignore: avoid_returning_this - deprecated but supported for now
     return this;
   }
 
@@ -1248,23 +1248,23 @@ abstract class LogicValue implements Comparable<LogicValue> {
 
   /// Addition operation.
   LogicValue operator +(dynamic other) =>
-      // ignore: avoid_dynamic_calls
+      // ignore: avoid_dynamic_calls - intentionally dynamic
       _doMath(other, (a, b) => a + b);
 
   /// Subtraction operation.
   LogicValue operator -(dynamic other) =>
-      // ignore: avoid_dynamic_calls
+      // ignore: avoid_dynamic_calls - intentionally dynamic
       _doMath(other, (a, b) => a - b);
 
   /// Multiplication operation.
   LogicValue operator *(dynamic other) =>
-      // ignore: avoid_dynamic_calls
+      // ignore: avoid_dynamic_calls - intentionally dynamic
       _doMath(other, (a, b) => a * b);
 
   /// Division operation.
   LogicValue operator /(dynamic other) => _doMath(
         other,
-        // ignore: avoid_dynamic_calls
+        // ignore: avoid_dynamic_calls - intentionally dynamic
         (a, b) => a ~/ b,
         isDivision: true,
       );
@@ -1272,7 +1272,7 @@ abstract class LogicValue implements Comparable<LogicValue> {
   /// Modulo operation.
   LogicValue operator %(dynamic other) => _doMath(
         other,
-        // ignore: avoid_dynamic_calls
+        // ignore: avoid_dynamic_calls - intentionally dynamic
         (a, b) => a % b,
         isDivision: true,
       );
@@ -1401,22 +1401,22 @@ abstract class LogicValue implements Comparable<LogicValue> {
 
   /// Less-than operation.
   LogicValue operator <(dynamic other) =>
-      // ignore: avoid_dynamic_calls
+      // ignore: avoid_dynamic_calls - intentionally dynamic
       _doCompare(other, (a, b) => (a < b) as bool);
 
   /// Greater-than operation.
   LogicValue operator >(dynamic other) =>
-      // ignore: avoid_dynamic_calls
+      // ignore: avoid_dynamic_calls - intentionally dynamic
       _doCompare(other, (a, b) => (a > b) as bool);
 
   /// Less-than-or-equal operation.
   LogicValue operator <=(dynamic other) =>
-      // ignore: avoid_dynamic_calls
+      // ignore: avoid_dynamic_calls - intentionally dynamic
       _doCompare(other, (a, b) => (a <= b) as bool);
 
   /// Greater-than-or-equal operation.
   LogicValue operator >=(dynamic other) =>
-      // ignore: avoid_dynamic_calls
+      // ignore: avoid_dynamic_calls - intentionally dynamic
       _doCompare(other, (a, b) => (a >= b) as bool);
 
   /// Power operation.
