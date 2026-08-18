@@ -105,8 +105,8 @@ class SignalValueFormatRegistry {
     final digits = apostrophe > 0 && apostrophe + 2 <= lower.length
         ? lower.substring(apostrophe + 2)
         : lower.startsWith('0x') || lower.startsWith('0b')
-        ? lower.substring(2)
-        : lower;
+            ? lower.substring(2)
+            : lower;
     return digits.contains('x') || digits.contains('z');
   }
 
@@ -130,48 +130,46 @@ class SignalValueFormatRegistry {
             _ => null,
           }
         : lower.startsWith('0x')
-        ? 16
-        : lower.startsWith('0b')
-        ? 2
-        : bareDigits.codeUnits.every(
-            (codeUnit) => codeUnit == 0x30 || codeUnit == 0x31,
-          )
-        ? 2
-        : bareDigits.codeUnits.any(
-            (codeUnit) =>
-                (codeUnit >= 0x61 && codeUnit <= 0x66) ||
-                (codeUnit >= 0x41 && codeUnit <= 0x46),
-          )
-        ? 16
-        : 10;
+            ? 16
+            : lower.startsWith('0b')
+                ? 2
+                : bareDigits.codeUnits.every(
+                    (codeUnit) => codeUnit == 0x30 || codeUnit == 0x31,
+                  )
+                    ? 2
+                    : bareDigits.codeUnits.any(
+                        (codeUnit) =>
+                            (codeUnit >= 0x61 && codeUnit <= 0x66) ||
+                            (codeUnit >= 0x41 && codeUnit <= 0x46),
+                      )
+                        ? 16
+                        : 10;
     final digits = apostrophe > 0 && radix != null
         ? lower.substring(apostrophe + 2)
         : lower.startsWith('0x') || lower.startsWith('0b')
-        ? lower.substring(2)
-        : lower;
-    final numeric = radix == null
-        ? null
-        : BigInt.tryParse(digits, radix: radix);
+            ? lower.substring(2)
+            : lower;
+    final numeric =
+        radix == null ? null : BigInt.tryParse(digits, radix: radix);
     if (numeric == null) return canonical;
     final displayWidth = width > 0 ? width : 1;
     return switch (format) {
       'binary' => numeric.toRadixString(2).padLeft(displayWidth, '0'),
       'hexadecimal' => LogicValue.ofBigInt(numeric, displayWidth).toString(),
       'unsignedDecimal' => numeric.toString(),
-      'signedDecimal' =>
-        (numeric >= (BigInt.one << (displayWidth - 1))
-                ? numeric - (BigInt.one << displayWidth)
-                : numeric)
-            .toString(),
+      'signedDecimal' => (numeric >= (BigInt.one << (displayWidth - 1))
+              ? numeric - (BigInt.one << displayWidth)
+              : numeric)
+          .toString(),
       'octal' => '0o${numeric.toRadixString(8)}',
       'ascii' => String.fromCharCodes(
-        List<int>.generate(((displayWidth + 7) ~/ 8).clamp(1, 32), (index) {
-          final shift =
-              (((displayWidth + 7) ~/ 8).clamp(1, 32) - index - 1) * 8;
-          final code = ((numeric >> shift) & BigInt.from(0xff)).toInt();
-          return code >= 0x20 && code <= 0x7e ? code : 0x2e;
-        }),
-      ),
+          List<int>.generate(((displayWidth + 7) ~/ 8).clamp(1, 32), (index) {
+            final shift =
+                (((displayWidth + 7) ~/ 8).clamp(1, 32) - index - 1) * 8;
+            final code = ((numeric >> shift) & BigInt.from(0xff)).toInt();
+            return code >= 0x20 && code <= 0x7e ? code : 0x2e;
+          }),
+        ),
       _ => canonical,
     };
   }
@@ -191,18 +189,18 @@ class SignalValueFormatRegistry {
     final radix = lower.startsWith('0x')
         ? 16
         : lower.startsWith('0b')
-        ? 2
-        : digits.codeUnits.every(
-            (codeUnit) => codeUnit == 0x30 || codeUnit == 0x31,
-          )
-        ? 2
-        : digits.codeUnits.any(
-            (codeUnit) =>
-                (codeUnit >= 0x61 && codeUnit <= 0x66) ||
-                (codeUnit >= 0x41 && codeUnit <= 0x46),
-          )
-        ? 16
-        : 10;
+            ? 2
+            : digits.codeUnits.every(
+                (codeUnit) => codeUnit == 0x30 || codeUnit == 0x31,
+              )
+                ? 2
+                : digits.codeUnits.any(
+                    (codeUnit) =>
+                        (codeUnit >= 0x61 && codeUnit <= 0x66) ||
+                        (codeUnit >= 0x41 && codeUnit <= 0x46),
+                  )
+                    ? 16
+                    : 10;
     final numeric = BigInt.tryParse(digits, radix: radix);
     if (numeric == null) {
       return trimmed;
