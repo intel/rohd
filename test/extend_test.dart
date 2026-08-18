@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2024 Intel Corporation
+// Copyright (C) 2022-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // extend_test.dart
@@ -61,7 +61,7 @@ void main() {
           Vector({'a': 0x5a}, {'b': 0x5a}),
         ], 8, ExtendType.zero);
       });
-      test('zero extend with less width throws exception', () async {
+      test('zero extend with less width throws exception', () {
         expect(() => extendVectors([], 6, ExtendType.zero), throwsException);
       });
       test('sign extend with same width returns same thing', () async {
@@ -71,7 +71,7 @@ void main() {
           Vector({'a': 0x5a}, {'b': 0x5a}),
         ], 8, ExtendType.sign);
       });
-      test('sign extend with less width throws exception', () async {
+      test('sign extend with less width throws exception', () {
         expect(() => extendVectors([], 6, ExtendType.sign), throwsException);
       });
       test('zero extend pads 0s', () async {
@@ -119,10 +119,10 @@ void main() {
         expect(simResult, equals(true));
       }
 
-      test('setting with bigger number throws exception', () async {
+      test('setting with bigger number throws exception', () {
         expect(() => withSetVectors([], 0, 9), throwsRangeError);
       });
-      test('setting with number in middle overrun throws exception', () async {
+      test('setting with number in middle overrun throws exception', () {
         expect(() => withSetVectors([], 4, 5), throwsRangeError);
       });
       test('setting same width returns only new', () async {

@@ -1,4 +1,4 @@
-// Copyright (C) 2023 Intel Corporation
+// Copyright (C) 2023-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // ssa_driver_search_benchmark.dart
@@ -67,6 +67,6 @@ class SsaDriverSearchBenchmark extends BenchmarkBase {
   }
 }
 
-void main() async {
+void main() {
   SsaDriverSearchBenchmark().report();
 }

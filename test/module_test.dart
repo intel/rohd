@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Intel Corporation
+// Copyright (C) 2023-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // module_test.dart
@@ -289,7 +289,7 @@ void main() {
     });
   });
 
-  test('self-containing hierarchy', () async {
+  test('self-containing hierarchy', () {
     final mod = SelfContainingHier();
     expect(mod.build, throwsA(isA<InvalidHierarchyException>()));
   });
@@ -368,7 +368,7 @@ void main() {
   });
 
   group('trace errors', () {
-    test('multiple location hierarchy', () async {
+    test('multiple location hierarchy', () {
       final mod = MultipleLocation();
       expect(mod.build, throwsA(isA<PortRulesViolationException>()));
     });

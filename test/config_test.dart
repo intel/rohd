@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2023 Intel Corporation
+// Copyright (C) 2022-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // version_hash_dumper_test.dart
@@ -28,11 +28,11 @@ class SimpleModule extends Module {
   }
 }
 
-void main() async {
+void main() {
   if (!kIsWeb) {
     test(
         'should return true if rohd version is similar'
-        ' in both pubspec.yaml and config class.', () async {
+        ' in both pubspec.yaml and config class.', () {
       final yamlText = File('./pubspec.yaml').readAsStringSync();
       final yaml = loadYaml(yamlText) as Map;
 

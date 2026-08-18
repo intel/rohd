@@ -28,6 +28,17 @@ class _StdoutLog extends Log {
 /// VM connection strategy for native platforms (Linux/macOS/Windows).
 /// Uses vm_service_io's vmServiceConnectUri.
 class IoVmConnectionStrategy extends VmConnectionStrategy {
+  /// Creates a native VM connection strategy.
+  IoVmConnectionStrategy({
+    Future<VmService> Function(String uri, Log log)? connectUri,
+    Duration retryDelay = const Duration(milliseconds: 500),
+  })  : _connectUri =
+            connectUri ?? ((uri, log) => vmServiceConnectUri(uri, log: log)),
+        _retryDelay = retryDelay;
+
+  final Future<VmService> Function(String uri, Log log) _connectUri;
+  final Duration _retryDelay;
+
   @override
 
   /// Connects to a VM service on native platforms.
@@ -38,9 +49,9 @@ class IoVmConnectionStrategy extends VmConnectionStrategy {
       throw Exception('Invalid URI format');
     }
 
-    final vmService = await vmServiceConnectUri(
+    final vmService = await _connectUri(
       normalizedUri.toString(),
-      log: _StdoutLog(),
+      _StdoutLog(),
     ).timeout(
       const Duration(seconds: 10),
       onTimeout: () =>
@@ -59,8 +70,6 @@ class IoVmConnectionStrategy extends VmConnectionStrategy {
     // fall back to the slow polling reconnect path.
     String? isolateId;
     const maxRetries = 6;
-    const retryDelay = Duration(milliseconds: 500);
-
     for (var attempt = 1; attempt <= maxRetries; attempt++) {
       final vmInfo = attempt == 1
           ? vm
@@ -71,14 +80,14 @@ class IoVmConnectionStrategy extends VmConnectionStrategy {
         if (attempt < maxRetries) {
           Logger('VMService').info(
             'No isolates yet (attempt $attempt/$maxRetries) — '
-            'waiting ${retryDelay.inMilliseconds} ms',
+            'waiting ${_retryDelay.inMilliseconds} ms',
           );
-          await Future<void>.delayed(retryDelay);
+          await Future<void>.delayed(_retryDelay);
           continue;
         }
         throw Exception(
           'No isolates found in the VM after $maxRetries '
-          'attempts (${retryDelay.inMilliseconds * maxRetries} ms)',
+          'attempts (${_retryDelay.inMilliseconds * maxRetries} ms)',
         );
       }
 
@@ -120,7 +129,7 @@ class IoVmConnectionStrategy extends VmConnectionStrategy {
           'ROHD isolate not found yet (attempt $attempt/$maxRetries, '
           '${isolates.length} isolate(s) seen) — retrying',
         );
-        await Future<void>.delayed(retryDelay);
+        await Future<void>.delayed(_retryDelay);
         continue;
       }
 

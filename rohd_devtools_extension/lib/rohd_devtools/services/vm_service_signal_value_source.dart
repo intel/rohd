@@ -37,6 +37,9 @@ class VmServiceSignalValueSource implements SignalValueSource {
   /// VM service used for debug-event subscriptions.
   final vm.VmService vmService;
 
+  final Future<vm.Instance> Function(String, {required Disposable? isAlive})
+      _evalInstance;
+
   final StreamController<SignalValueUpdateEvent> _updatesController =
       StreamController<SignalValueUpdateEvent>.broadcast();
 
@@ -49,7 +52,11 @@ class VmServiceSignalValueSource implements SignalValueSource {
     required this.rohdControllerEval,
     required this.evalDisposable,
     required this.vmService,
-  }) {
+    Future<vm.Instance> Function(
+      String expression, {
+      required Disposable? isAlive,
+    })? evalInstance,
+  }) : _evalInstance = evalInstance ?? rohdControllerEval.evalInstance {
     _debugEventSubscription = vmService.onDebugEvent.listen(
       _handleDebugEvent,
       onError: (Object e) {
@@ -71,7 +78,7 @@ class VmServiceSignalValueSource implements SignalValueSource {
 
     for (final expression in _currentTimeExpressions) {
       try {
-        final value = await rohdControllerEval.evalInstance(
+        final value = await _evalInstance(
           expression,
           isAlive: evalDisposable,
         );
@@ -122,7 +129,7 @@ class VmServiceSignalValueSource implements SignalValueSource {
 
     for (final expression in snapshotExpressions) {
       try {
-        final value = await rohdControllerEval.evalInstance(
+        final value = await _evalInstance(
           expression,
           isAlive: evalDisposable,
         );
