@@ -1,4 +1,4 @@
-// Copyright (C) 2024 Intel Corporation
+// Copyright (C) 2024-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // traverseable_collection_test.dart
@@ -7,18 +7,14 @@
 // 2024 June 12
 // Author: Max Korbel <max.korbel@intel.com>
 
-// ignore_for_file: cascade_invocations
-
 import 'package:rohd/src/collections/traverseable_collection.dart';
 import 'package:test/test.dart';
 
 void main() {
   test('simple traverseable collection usage', () {
-    final c = TraverseableCollection<int>();
-
-    c.add(10);
-
-    c.addAll([1, 2, 3]);
+    final c = TraverseableCollection<int>()
+      ..add(10)
+      ..addAll([1, 2, 3]);
 
     expect(c.length, 4);
 

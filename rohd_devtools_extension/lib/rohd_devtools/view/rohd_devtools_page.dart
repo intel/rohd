@@ -7,6 +7,7 @@
 // 2025 January 28
 // Author: Roberto Torres <roberto.torres@intel.com>
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/const/app_theme.dart';
@@ -15,8 +16,22 @@ import 'package:rohd_devtools_extension/rohd_devtools/ui/ui.dart';
 
 /// Main page for the embedded ROHD DevTools experience.
 class RohdDevToolsPage extends StatelessWidget {
+  /// Whether this page should wire [RohdServiceCubit] to the DevTools
+  /// extension service manager.
+  final bool manageServiceManager;
+
   /// Creates the DevTools page.
-  const RohdDevToolsPage({super.key});
+  const RohdDevToolsPage({super.key, this.manageServiceManager = true});
+
+  @override
+
+  /// Adds the page configuration to Flutter's diagnostics tree.
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(
+      DiagnosticsProperty<bool>('manageServiceManager', manageServiceManager),
+    );
+  }
 
   @override
 
@@ -24,7 +39,9 @@ class RohdDevToolsPage extends StatelessWidget {
   Widget build(BuildContext context) => MultiBlocProvider(
           providers: [
             BlocProvider(create: (context) => DevToolsThemeCubit()),
-            BlocProvider(create: (context) => RohdServiceCubit()),
+            BlocProvider(
+                create: (context) => RohdServiceCubit(
+                    manageServiceManager: manageServiceManager)),
             BlocProvider(create: (context) => TreeSearchTermCubit()),
             BlocProvider(create: (context) => SelectedModuleCubit()),
             BlocProvider(create: (context) => SignalSearchTermCubit()),

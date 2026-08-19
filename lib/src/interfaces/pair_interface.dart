@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Intel Corporation
+// Copyright (C) 2023-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // pair_interface.dart
@@ -166,7 +166,7 @@ class PairInterface extends Interface<PairDirection> {
       Iterable<PairDirection>? inOutTags,
       String Function(String original)? uniquify}) {
     final nonNullUniquify = uniquify ?? (original) => original;
-    // ignore: deprecated_member_use_from_same_package
+    // ignore: deprecated_member_use_from_same_package - deprecated backwards compat
     final nonNullModify = modify ?? (original) => original;
     String newUniquify(String original) =>
         nonNullUniquify(nonNullModify(original));
@@ -413,7 +413,7 @@ class PairInterface extends Interface<PairDirection> {
 
   @override
   @mustBeOverridden
-  // ignore: deprecated_member_use_from_same_package
+  // ignore: deprecated_member_use_from_same_package - deprecated backwards compat
   PairInterface clone() => PairInterface.clone(this);
 }
 

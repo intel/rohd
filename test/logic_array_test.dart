@@ -647,7 +647,7 @@ void main() {
   });
 
   group('access logicarray', () {
-    test('slice one bit of 1d array', () async {
+    test('slice one bit of 1d array', () {
       final la = LogicArray([3], 8);
       final slice = la.slice(9, 9);
       expect(slice.width, 1);
@@ -655,7 +655,7 @@ void main() {
       expect(slice.value.toInt(), 1);
     });
 
-    test('slice 2 bits of one element of 1d array', () async {
+    test('slice 2 bits of one element of 1d array', () {
       final la = LogicArray([3], 8);
       final slice = la.slice(10, 9);
       expect(slice.width, 2);
@@ -663,7 +663,7 @@ void main() {
       expect(slice.value.toInt(), bin('11'));
     });
 
-    test('slice 2 bits spanning two elements of 1d array', () async {
+    test('slice 2 bits spanning two elements of 1d array', () {
       final la = LogicArray([3], 8);
       final slice = la.slice(8, 7);
       expect(slice.width, 2);
@@ -672,7 +672,7 @@ void main() {
       expect(slice.value.toInt(), bin('10'));
     });
 
-    test('slice 2 bits spanning 2 arrays of 2d array', () async {
+    test('slice 2 bits spanning 2 arrays of 2d array', () {
       final la = LogicArray([3, 2], 8);
       final slice = la.slice(16, 15);
       expect(slice.width, 2);
@@ -681,7 +681,7 @@ void main() {
       expect(slice.value.toInt(), bin('10'));
     });
 
-    test('slice more than one element of array', () async {
+    test('slice more than one element of array', () {
       final la = LogicArray([3], 8);
       final slice = la.slice(19, 4);
       expect(slice.width, 16);
@@ -691,7 +691,7 @@ void main() {
       expect(slice.value, LogicValue.of('xxxx000000001111'));
     });
 
-    test('slice more than one element of array at the edges', () async {
+    test('slice more than one element of array at the edges', () {
       final la = LogicArray([3], 8);
       final slice = la.slice(16, 7);
       expect(slice.width, 10);
@@ -701,7 +701,7 @@ void main() {
       expect(slice.value, LogicValue.of('x000000001'));
     });
 
-    test('slice exactly one element of array', () async {
+    test('slice exactly one element of array', () {
       final la = LogicArray([3], 8);
       final slice = la.slice(15, 8);
       expect(slice.width, 8);

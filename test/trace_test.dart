@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2023 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // trace_test.dart
@@ -60,28 +60,28 @@ void main() {
     await Simulator.reset();
   });
 
-  test('flying output', () async {
+  test('flying output', () {
     final mod = FlyingOutputModule(Logic());
     expect(() async {
       await mod.build();
     }, throwsException);
   });
 
-  test('flying input', () async {
+  test('flying input', () {
     final mod = FlyingInputModule(Logic());
     expect(() async {
       await mod.build();
     }, throwsException);
   });
 
-  test('doubled input', () async {
+  test('doubled input', () {
     final mod = DoubledInputModule(Logic());
     expect(() async {
       await mod.build();
     }, throwsException);
   });
 
-  test('doubled gapped input', () async {
+  test('doubled gapped input', () {
     final mod = DoubledGappedInputModule(Logic());
     expect(() async {
       await mod.build();
