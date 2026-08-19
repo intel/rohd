@@ -71,8 +71,9 @@ if [ "${IS_FLUTTER_PACKAGE}" != true ]; then
     )
 fi
 
-# package:coverage emits branch details as BRDA records without BRF/BRH totals,
-# which genhtml 2.x does not summarize. Calculate the branch rate directly.
+# package:coverage may emit BRDA records without BRF/BRH totals, and some
+# coverage producers do not emit branch records at all. When BRDA is present,
+# calculate the branch rate directly. Otherwise, keep reporting line coverage.
 BRANCH_SUMMARY=$(awk -F'[:,]' '
     /^BRDA:/ {
         found++
@@ -82,13 +83,17 @@ BRANCH_SUMMARY=$(awk -F'[:,]' '
     }
     END {
         if (found == 0) {
-            print "Error: no branch coverage data found" > "/dev/stderr"
-            exit 1
+            print "none"
+            exit 0
         }
         printf "%.1f%% (%d of %d branches)", 100 * hit / found, hit, found
     }
 ' coverage/lcov.info)
-echo "Branch coverage: $BRANCH_SUMMARY"
+if [ "$BRANCH_SUMMARY" = "none" ]; then
+    echo "Warning: no branch coverage data found in coverage/lcov.info; continuing with line coverage only."
+else
+    echo "Branch coverage: $BRANCH_SUMMARY"
+fi
 
 # Install lcov if needed
 if ! command -v lcov &> /dev/null; then
