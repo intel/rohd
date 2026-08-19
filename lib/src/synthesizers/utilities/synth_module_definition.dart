@@ -240,9 +240,9 @@ class SynthModuleDefinition {
       SynthLogic newSynth;
       if (logic.isArrayMember) {
         // grab the parent array (potentially recursively)
-        final parentArraySynthLogic =
-            // ignore: unnecessary_null_checks
-            getSynthLogic(logic.parentStructure!)!;
+        assert(logic.parentStructure != null,
+            'Array member should have a parent structure');
+        final parentArraySynthLogic = getSynthLogic(logic.parentStructure)!;
 
         // if there's already a parent whose element has a SynthLogic, reuse it
         final existingElementWithSynthLogic = parentArraySynthLogic.logics
@@ -261,9 +261,9 @@ class SynthModuleDefinition {
         );
       } else {
         final disallowConstName = (logic.isInput || logic.isInOut) &&
-            // ignore: deprecated_member_use_from_same_package
+            // ignore: deprecated_member_use_from_same_package - backwards compatibility with CustomSystemVerilog
             ((logic.parentModule is CustomSystemVerilog &&
-                    // ignore: deprecated_member_use_from_same_package
+                    // ignore: deprecated_member_use_from_same_package - backwards compatibility with CustomSystemVerilog
                     (logic.parentModule! as CustomSystemVerilog)
                         .expressionlessInputs
                         .contains(logic.name)) ||
@@ -802,7 +802,7 @@ class SynthModuleDefinition {
                 instantiation.inputMapping[e] ?? instantiation.inOutMapping[e],
           ),
         );
-        // ignore: deprecated_member_use_from_same_package
+        // ignore: deprecated_member_use_from_same_package - backwards compatibility with CustomSystemVerilog
       } else if (subModule is CustomSystemVerilog) {
         singleUseSignals.removeAll(
           subModule.expressionlessInputs.map(
@@ -974,7 +974,7 @@ class SynthModuleDefinition {
               ((logic.parentModule! is SystemVerilog &&
                       !(logic.parentModule! as SystemVerilog)
                           .acceptsEmptyPortConnections) ||
-                  // ignore: deprecated_member_use_from_same_package
+                  // ignore: deprecated_member_use_from_same_package - backwards compatibility with CustomSystemVerilog
                   logic.parentModule! is CustomSystemVerilog),
         );
 
@@ -3431,7 +3431,7 @@ class SynthModuleDefinition {
         final mergeResults = SynthLogic.tryMerge(dst, src);
 
         if (mergeResults != null) {
-          final (removed: mergedAway, kept: kept) = mergeResults;
+          final (removed: mergedAway, :kept) = mergeResults;
 
           _applyAssignmentMergeUpdates(mergedAway: mergedAway, kept: kept);
         } else if (assignment.src.isFloatingConstant) {

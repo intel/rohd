@@ -1260,7 +1260,10 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
     // real sources are mapped onto the ports below.
     final dummySignals = <Logic>[
       for (final source in elementSources.reversed)
-        isNet ? LogicNet(width: source.width) : Logic(width: source.width),
+        if (isNet)
+          LogicNet(width: source.width)
+        else
+          Logic(width: source.width),
     ];
 
     final swizzle = _SwizzleConnect(dummySignals);

@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Intel Corporation
+// Copyright (C) 2023-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // iterable_removable_queue.dart
@@ -8,8 +8,11 @@
 // 2023 April 21
 // Author: Max Korbel <max.korbel@intel.com>
 
+import 'package:meta/meta.dart';
+
 /// A queue that can be easily iterated through and remove items during
 /// iteration.
+@internal
 class IterableRemovableQueue<T> {
   /// The first item in this queue.
   ///
@@ -25,7 +28,7 @@ class IterableRemovableQueue<T> {
   ///
   /// On each [add], this pointer will either move forward by one element or
   /// (including wrap-around to [_first]), or will remove a contiguous set of
-  /// elements that should be removed according to the [removeWhere] function.
+  /// elements that should be removed according to the [_removeWhere] function.
   _IterableRemovableElement<T>? _patrol;
 
   /// The number of items in this queue.
@@ -34,11 +37,13 @@ class IterableRemovableQueue<T> {
 
   /// A function that determines whether an item should be removed from the
   /// queue.
-  final bool Function(T item)? removeWhere;
+  // ignore: unsafe_variance - private and only called with queued T values
+  final bool Function(T item)? _removeWhere;
 
   /// Constructs a new [IterableRemovableQueue] with an optional [removeWhere]
   /// function that determines whether an item should be removed from the queue.
-  IterableRemovableQueue({this.removeWhere});
+  IterableRemovableQueue({bool Function(T)? removeWhere})
+      : _removeWhere = removeWhere;
 
   /// Removes all elements that should be removed up until the first element
   /// that should not be, then leaves the [_patrol] pointer there. Otherwise,
@@ -48,12 +53,12 @@ class IterableRemovableQueue<T> {
       return;
     }
 
-    if (removeWhere == null) {
+    if (_removeWhere == null) {
       // Nothing to remove.
       return;
     }
 
-    if (_first == _last && removeWhere!(_first!.item)) {
+    if (_first == _last && _removeWhere!(_first!.item)) {
       // if size is 1 and its removable, then we can just clear the queue and be
       // done with it
       clear();
@@ -72,7 +77,7 @@ class IterableRemovableQueue<T> {
     }
 
     while (_patrol != null) {
-      if (removeWhere!(_patrol!.item)) {
+      if (_removeWhere!(_patrol!.item)) {
         assert(size > 0, 'Should not be removing if size is already 0.');
 
         if (_patrol == _first && _first == _last) {
@@ -111,9 +116,9 @@ class IterableRemovableQueue<T> {
   /// Adds a new item to the end of the queue.
   ///
   /// Also may remove items from the queue if they are indicated by
-  /// [removeWhere].
+  /// [_removeWhere].
   void add(T item) {
-    if (removeWhere != null && removeWhere!(item)) {
+    if (_removeWhere != null && _removeWhere!(item)) {
       // If the item should be removed, we don't add it.
       return;
     }
@@ -167,7 +172,7 @@ class IterableRemovableQueue<T> {
   }
 
   /// Iterates through all items in the queue, removing any which are indicated
-  /// by [removeWhere], and performing [action] on the rest.
+  /// by [_removeWhere], and performing [action] on the rest.
   void iterate({void Function(T item)? action}) {
     // Reset patrol pointer if we are iterating through all.
     _patrol = null;
@@ -179,7 +184,7 @@ class IterableRemovableQueue<T> {
     var element = _first;
     _IterableRemovableElement<T>? previous;
     while (element != null) {
-      if (removeWhere != null && removeWhere!(element.item)) {
+      if (_removeWhere != null && _removeWhere!(element.item)) {
         assert(size > 0, 'Should not be removing if size is already 0.');
 
         previous?.next = element.next;

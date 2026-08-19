@@ -367,19 +367,13 @@ class LogicArray extends LogicArrayOf<Logic> {
           isNet: true);
 
   LogicArray._(List<Logic> elements,
-      {required List<int> dimensions,
-      required int elementWidth,
-      required int numUnpackedDimensions,
-      required String name,
-      required Naming naming,
-      required bool isNet})
-      : super.structured(elements, Logic.new,
-            dimensions: dimensions,
-            elementWidth: elementWidth,
-            numUnpackedDimensions: numUnpackedDimensions,
-            name: name,
-            naming: naming,
-            isNet: isNet);
+      {required super.dimensions,
+      required super.elementWidth,
+      required super.numUnpackedDimensions,
+      required super.name,
+      required super.naming,
+      required super.isNet})
+      : super.structured(elements, Logic.new);
 
   factory LogicArray._factory(List<int> dimensions, int elementWidth,
           {required String? name,

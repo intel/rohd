@@ -14,11 +14,16 @@ class LogicValueCodec<T> {
   /// Converts a packed value into a semantic value.
   final T Function(LogicValue value) decode;
 
+  final Function _encode;
+
   /// Converts a semantic value into its packed representation.
-  final LogicValue Function(T value) encode;
+  LogicValue encode(T value) =>
+      (_encode as LogicValue Function(T value))(value);
 
   /// Creates a bidirectional value [decode]/[encode] codec.
-  const LogicValueCodec({required this.decode, required this.encode});
+  const LogicValueCodec(
+      {required this.decode, required LogicValue Function(T value) encode})
+      : _encode = encode;
 }
 
 /// A multidimensional array of semantic values backed by [LogicValue]s.

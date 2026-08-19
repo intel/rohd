@@ -9,6 +9,7 @@ analyzer:
   exclude:
     - doc/tutorials/chapter_9/rohd_vf_example
     - packages/rohd_hierarchy
+    - packages/rohd_waveform
     - rohd_devtools_extension
     - rohd_extension
 
@@ -23,6 +24,7 @@ linter:
     - always_use_package_imports
     - annotate_overrides
     - annotate_redeclares
+    - async_return_with_no_await
     # - avoid_annotating_with_dynamic
     - avoid_bool_literals_in_conditional_expressions
     - avoid_catches_without_on_clauses
@@ -84,18 +86,21 @@ linter:
     - directives_ordering
     - discarded_futures
     - do_not_use_environment
-    # - document_ignores
+    - document_ignores
     - empty_catches
     - empty_constructor_bodies
+    - empty_container_bodies
     - empty_statements
     - eol_at_end_of_file
     - exhaustive_cases
     - file_names
     - flutter_style_todos
+    # - future_sync_value - not valid yet, but should be enabled when it is
     - hash_and_equals
     - implementation_imports
     - implicit_call_tearoffs
     - implicit_reopen
+    - initialize_in_field_declaration
     - invalid_case_patterns
     - invalid_runtime_check_with_js_interop_types
     - join_return_with_assignment
@@ -107,16 +112,19 @@ linter:
     - lines_longer_than_80_chars
     - literal_only_boolean_expressions
     - matching_super_parameters
+    - migrate_design_widgets
     - missing_code_block_language_in_doc_comment
     - missing_whitespace_between_adjacent_strings
     - no_adjacent_strings_in_list
     - no_default_cases
     - no_duplicate_case_values
+    - no_dynamic_casts
     - no_leading_underscores_for_library_prefixes
     - no_leading_underscores_for_local_identifiers
     - no_literal_bool_comparisons
     - no_logic_in_create_state
-    - no_runtimeType_toString
+    - no_raw_types
+    - no_runtimetype_tostring
     - no_self_assignments
     - no_wildcard_variable_uses
     - non_constant_identifier_names
@@ -176,8 +184,11 @@ linter:
     - provide_deprecation_message
     - public_member_api_docs
     - recursive_getters
+    - remove_deprecations_in_breaking_versions
     # - require_trailing_commas
     - secure_pubspec_urls
+    - simple_directive_paths
+    - simplify_variable_pattern
     - sized_box_for_whitespace
     - sized_box_shrink_expand
     - slash_for_doc_comments
@@ -189,7 +200,7 @@ linter:
     # - specify_nonobvious_local_variable_types
     # - specify_nonobvious_property_types
     - strict_top_level_inference
-    # - switch_on_type
+    - switch_on_type
     - test_types_in_equals
     - throw_in_finally
     - tighten_type_of_initializing_formals
@@ -198,11 +209,12 @@ linter:
     - type_literal_in_constant_pattern
     - unawaited_futures
     - unintended_html_in_doc_comment
-    # - unnecessary_async
+    - unnecessary_async
     - unnecessary_await_in_return
     - unnecessary_brace_in_string_interps
     - unnecessary_breaks
     - unnecessary_const
+    - unnecessary_const_in_enum_constructor
     - unnecessary_constructor_name
     # - unnecessary_final
     - unnecessary_getters_setters
@@ -219,19 +231,23 @@ linter:
     - unnecessary_nullable_for_final_variable_declarations
     - unnecessary_overrides
     - unnecessary_parenthesis
+    - unnecessary_primary_constructor_body
     - unnecessary_raw_strings
     # - unnecessary_statements
     - unnecessary_string_escapes
     - unnecessary_string_interpolations
     - unnecessary_this
+    # - unnecessary_this_alias - not recognized yet, but should be enabled when it is
     - unnecessary_to_list_in_spreads
-    # - unnecessary_unawaited
+    - unnecessary_type_name_in_constructor
+    - unnecessary_unawaited
     - unnecessary_underscores
     # - unreachable_from_main
     - unrelated_type_equality_checks
-    # - unsafe_variance
+    - unsafe_variance
     - use_build_context_synchronously
     - use_colored_box
+    - use_declaring_parameters
     - use_decorated_box
     - use_enums
     - use_full_hex_values_for_flutter_colors
@@ -252,4 +268,5 @@ linter:
     - use_to_and_as_if_applicable
     - use_truncating_division
     - valid_regexps
+    - var_with_no_type_annotation
     - void_checks

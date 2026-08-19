@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Intel Corporation
+// Copyright (C) 2023-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // logic_structure_test.dart
@@ -121,13 +121,13 @@ class StructModuleWithInstrumentation extends Module {
       ..isOutput
       ..changed
       ..glitch
-      // ignore: deprecated_member_use_from_same_package
+      // ignore: deprecated_member_use_from_same_package - deprecated but supported for now
       ..hasValidValue()
-      // ignore: deprecated_member_use_from_same_package
+      // ignore: deprecated_member_use_from_same_package - deprecated but supported for now
       ..isFloating()
-      // ignore: deprecated_member_use_from_same_package
+      // ignore: deprecated_member_use_from_same_package - deprecated but supported for now
       ..valueBigInt
-      // ignore: deprecated_member_use_from_same_package
+      // ignore: deprecated_member_use_from_same_package - deprecated but supported for now
       ..valueInt;
 
     unawaited(MyStruct().nextChanged);
@@ -271,7 +271,7 @@ void main() {
           throwsA(isA<LogicConstructionException>()));
     });
 
-    test('tricky withSet', () async {
+    test('tricky withSet', () {
       // first field has width of 72 so this is the starting point
       // second field has a width of 12
       // try a withSet of a subset of the second field

@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2023 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // sanitizer.dart
@@ -37,7 +37,7 @@ abstract class Sanitizer {
 
     // add `_` to the end if the name is a SystemVerilog keyword
     while (_reservedSVKeywords.contains(newName)) {
-      // ignore: use_string_buffers
+      // ignore: use_string_buffers - no SV modifier ends with `_`, runs once
       newName += '_';
     }
 

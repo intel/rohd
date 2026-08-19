@@ -502,7 +502,9 @@ function matchingModuleNames(modules: Record<string, unknown>, moduleName: strin
   const lower = moduleName.toLowerCase();
   const matches = Object.keys(modules).filter((name) => {
     const candidate = name.toLowerCase();
-    return candidate === lower || candidate.startsWith(lower + '_');
+    return candidate === lower ||
+      candidate.startsWith(lower + '_') ||
+      lower.startsWith(candidate + '_');
   });
   return matches;
 }

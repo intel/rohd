@@ -42,12 +42,10 @@ class LogicArrayOf<T extends Logic> extends BaseLogicArray {
   LogicArrayOf._(
     _LogicArrayOfBuild<T> build,
     this._elementBuilder, {
-    String? name,
+    super.name,
   })  : dimensionNames = build.dimensionNames,
         super.structured(build.elements,
-            dimensions: build.dimensions,
-            elementWidth: build.elementWidth,
-            name: name);
+            dimensions: build.dimensions, elementWidth: build.elementWidth);
 
   /// Creates a typed array from structurally compatible [elements].
   @protected

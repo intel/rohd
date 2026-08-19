@@ -79,7 +79,7 @@ class NBitAdder extends Module {
   LogicValue get sumRes => sum.rswizzle().value;
 }
 
-void main() async {
+void main() {
   group('full adder', () {
     test(
         'should return true if result sum and cout similar to truth table when'
