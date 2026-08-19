@@ -320,6 +320,23 @@ class SynthModuleDefinition {
   /// definition.
   final List<Module> supportingModules = [];
 
+  /// Retains [signal] and every array ancestor needed to name and declare it.
+  void _retainInternalSignal(SynthLogic signal) {
+    final signalAndAncestors = <SynthLogic>[signal];
+    while (signal is SynthLogicArrayElement) {
+      signal = signal.parentArray.resolved;
+      signalAndAncestors.add(signal);
+    }
+
+    for (final retainedSignal in signalAndAncestors.reversed) {
+      if (!inputs.contains(retainedSignal) &&
+          !outputs.contains(retainedSignal) &&
+          !inOuts.contains(retainedSignal)) {
+        internalSignals.add(retainedSignal);
+      }
+    }
+  }
+
   /// Takes all the leaf elements of [port] and drives [port] with them, each
   /// with a partial assignment.
   ///
@@ -334,7 +351,7 @@ class SynthModuleDefinition {
     var idx = 0;
     for (final leafElement in port.leafElements) {
       final leafSynth = getSynthLogic(leafElement)!;
-      internalSignals.add(leafSynth);
+      _retainInternalSignal(leafSynth);
       assignments.add(
         PartialSynthAssignment(
           leafSynth,
@@ -358,7 +375,7 @@ class SynthModuleDefinition {
     var idx = 0;
     for (final leafElement in port.leafElements) {
       final leafSynth = getSynthLogic(leafElement)!;
-      internalSignals.add(leafSynth);
+      _retainInternalSignal(leafSynth);
 
       // this is DISCONNECTED, just a module used for synthesizing
       final subsetMod = _BusSubsetForStructSlice(
@@ -541,7 +558,7 @@ class SynthModuleDefinition {
               !inOuts.contains(synthReceiver),
           'Internal signals should not be ports also.',
         );
-        internalSignals.add(synthReceiver);
+        _retainInternalSignal(synthReceiver);
       }
 
       final receiverIsSubmoduleInOut =
