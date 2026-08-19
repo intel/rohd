@@ -5,6 +5,7 @@ homepage: https://intel.github.io/rohd-website
 repository: https://github.com/intel/rohd
 issue_tracker: https://github.com/intel/rohd/issues
 documentation: https://intel.github.io/rohd-website/docs/sample-example/
+publish_to: none
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
