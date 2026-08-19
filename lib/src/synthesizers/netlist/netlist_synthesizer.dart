@@ -18,6 +18,7 @@ import 'package:rohd/src/synthesizers/netlist/netlist_synthesis_result.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_validation.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
+import 'package:rohd_hierarchy/rohd_hierarchy.dart';
 
 /// A simple [Synthesizer] that produces netlist-compatible JSON.
 ///
@@ -31,19 +32,26 @@ import 'package:rohd/src/utilities/sanitizer.dart';
 ///
 /// Usage:
 /// ```dart
-/// const options = NetlistOptions(collapseTransparentClusters: true);
-/// final synth = NetlistSynthesizer(options: options);
+/// const configuration = NetlistSynthesizerConfiguration(
+///   collapseTransparentClusters: true,
+/// );
+/// final synth = NetlistSynthesizer(configuration: configuration);
 /// final builder = SynthBuilder(topModule, synth);
 /// final json = synth.synthesizeToJson(topModule);
 /// ```
 class NetlistSynthesizer extends Synthesizer {
-  /// The current format version for netlist JSON produced by this synthesizer.
-  static const String formatVersion = '0.0.5';
-
-  /// The configuration options controlling netlist synthesis.
+  /// The version of the ROHD extensions to the Yosys JSON netlist format.
   ///
-  /// See [NetlistOptions] for documentation on individual fields.
-  final NetlistOptions options;
+  /// Consumers of ROHD-generated netlists must reject an unsupported version.
+  /// This version changes when ROHD adds or changes fields that affect how a
+  /// consumer interprets the netlist.
+  static const String formatVersion = '0.0.1';
+
+  /// The configuration controlling netlist synthesis.
+  ///
+  /// See [NetlistSynthesizerConfiguration] for documentation on individual
+  /// fields.
+  final NetlistSynthesizerConfiguration configuration;
 
   final SynthModuleStopPolicy _moduleStopPolicy;
 
@@ -58,14 +66,15 @@ class NetlistSynthesizer extends Synthesizer {
 
   /// Creates a [NetlistSynthesizer].
   ///
-  /// All synthesis parameters are bundled in [options]; see
-  /// [NetlistOptions] for documentation on each field.
-  NetlistSynthesizer({this.options = const NetlistOptions()})
-      : _moduleStopPolicy = options.moduleStopPolicy ??
+  /// All synthesis parameters are bundled in [configuration]; see
+  /// [NetlistSynthesizerConfiguration] for documentation on each field.
+  NetlistSynthesizer({
+    this.configuration = const NetlistSynthesizerConfiguration(),
+  })  : _moduleStopPolicy = configuration.moduleStopPolicy ??
             SynthModuleStopPolicy.netlist(
-                leafModuleTypes: options.leafModuleTypes),
+                leafModuleTypes: configuration.leafModuleTypes),
         _netlistCellMapper =
-            options.netlistCellMapper ?? NetlistCellMapper.withDefaults();
+            configuration.netlistCellMapper ?? NetlistCellMapper.withDefaults();
 
   @override
   bool generatesDefinition(Module module) =>
@@ -492,7 +501,7 @@ class NetlistSynthesizer extends Synthesizer {
 
       for (final cellEntry in cells.entries) {
         if (!cellEntry.key.startsWith(
-          SynthOperationNamer.arraySliceOperationName,
+          SynthArraySlice.operationName,
         )) {
           continue;
         }
@@ -507,12 +516,13 @@ class NetlistSynthesizer extends Synthesizer {
           final oldBits = (portEntry.value as List).cast<Object>();
           conns[portEntry.key] = [
             for (final b in oldBits)
-              b is int
-                  ? arraySliceOldToNew.putIfAbsent(
-                      b,
-                      translation.allocateWireId,
-                    )
-                  : b,
+              if (b is int)
+                arraySliceOldToNew.putIfAbsent(
+                  b,
+                  translation.allocateWireId,
+                )
+              else
+                b,
           ];
         }
       }
@@ -522,7 +532,7 @@ class NetlistSynthesizer extends Synthesizer {
       if (arraySliceOldToNew.isNotEmpty) {
         for (final cellEntry in cells.entries) {
           if (cellEntry.key.startsWith(
-            SynthOperationNamer.arraySliceOperationName,
+            SynthArraySlice.operationName,
           )) {
             continue; // skip the slice cells themselves
           }
@@ -536,7 +546,8 @@ class NetlistSynthesizer extends Synthesizer {
             }
             final bits = (portEntry.value as List).cast<Object>();
             final newBits = [
-              for (final b in bits) b is int ? (arraySliceOldToNew[b] ?? b) : b,
+              for (final b in bits)
+                if (b is int) arraySliceOldToNew[b] ?? b else b,
             ];
             if (bits.indexed.any((e) => e.$2 != newBits[e.$1])) {
               conns[portEntry.key] = newBits;
@@ -556,7 +567,7 @@ class NetlistSynthesizer extends Synthesizer {
       }
       // Unconditionally remove struct_slice cells — they are duplicated by
       // $struct_unpack cells which carry field names.
-      if (cellKey.startsWith(SynthOperationNamer.structureSliceOperationName)) {
+      if (cellKey.startsWith(SynthStructureSlice.operationName)) {
         return true;
       }
       final params = cell['parameters'] as Map<String, Object?>?;
@@ -735,10 +746,11 @@ class NetlistSynthesizer extends Synthesizer {
         final structLayout =
             dstLogic is LogicStructure ? SynthStructureLayout(dstLogic) : null;
         final cellName = dstLogic != null
-            ? SynthOperationNamer.instanceName(
-                operationName: SynthOperationNamer.structureConcatOperationName,
-                destination: dstLogic)
-            : SynthOperationNamer.structureConcatOperationName;
+            ? _synthesizedCellName(
+                operationName: SynthStructureConcat.operationName,
+                destination: dstLogic,
+              )
+            : SynthStructureConcat.operationName;
 
         // Build port_directions and connections.
         final portDirs = <String, String>{};
@@ -787,9 +799,10 @@ class NetlistSynthesizer extends Synthesizer {
     }
 
     translation
-      ..processCellCleanup(enableDce: options.enableDCE)
+      ..processCellCleanup(enableDce: configuration.enableDeadCellElimination)
       ..processConstants(
-          applyAlias: applyAlias, pruneFloating: options.enableDCE);
+          applyAlias: applyAlias,
+          pruneFloating: configuration.enableDeadCellElimination);
 
     // -- Break shared wire IDs for array_concat cells --------------------
     // After aliasing, concat Y can share wire IDs with the independently
@@ -810,8 +823,7 @@ class NetlistSynthesizer extends Synthesizer {
     ];
 
     for (final cellEntry in cells.entries) {
-      if (!cellEntry.key
-          .startsWith(SynthOperationNamer.arrayConcatOperationName)) {
+      if (!cellEntry.key.startsWith(SynthArrayConcat.operationName)) {
         continue;
       }
       if (cellEntry.key.startsWith('array_concat_output_')) {
@@ -833,7 +845,8 @@ class NetlistSynthesizer extends Synthesizer {
           continue;
         }
         final newBits = [
-          for (final b in oldBits) b is int ? translation.allocateWireId() : b,
+          for (final b in oldBits)
+            if (b is int) translation.allocateWireId() else b,
         ];
         conns[portEntry.key] = newBits;
         arrayConcatReplacements
@@ -930,8 +943,8 @@ class NetlistSynthesizer extends Synthesizer {
         applyAlias: applyAlias,
         arraySliceOldToNew: arraySliceOldToNew,
         arrayConcatOldToNew: arrayConcatOldToNew,
-        pruneUndriven: options.enableDCE,
-        drivenBits: options.enableDCE
+        pruneUndriven: configuration.enableDeadCellElimination,
+        drivenBits: configuration.enableDeadCellElimination
             ? NetlistValidation.connectedBits(ports, cells,
                 portDirections: const {'input', 'inout'},
                 cellDirection: 'output')
@@ -939,19 +952,10 @@ class NetlistSynthesizer extends Synthesizer {
     final netnames = translation.netnames;
 
     // -- Structural validation -------------------------------------------
-    // Always catch netlist shorts, even when assertions are disabled.
-    final warnings = NetlistValidation.validate(ports, cells, module.name,
-        netnames: netnames,
-        throwOnMultipleDrivers: true,
-        printWarnings: false,
-        checkUnconnectedOutputs: options.validateUnconnectedOutputs);
+    NetlistValidation.validate(ports, cells, module.name, netnames: netnames);
 
     return NetlistSynthesisResult(module, getInstanceTypeOfModule,
-        ports: ports,
-        cells: cells,
-        netnames: netnames,
-        attributes: attr,
-        warnings: warnings);
+        ports: ports, cells: cells, netnames: netnames, attributes: attr);
   }
 
   /// Apply all post-processing passes to the modules map.
@@ -961,7 +965,7 @@ class NetlistSynthesizer extends Synthesizer {
   /// **Flow 2** (incremental full via `moduleNetlistJson`).
   /// Also used internally by [buildModulesMap] / [synthesizeToJson].
   void applyPostProcessingPasses(Map<String, Map<String, Object?>> modules) {
-    if (options.collapseTransparentClusters) {
+    if (configuration.collapseTransparentClusters) {
       NetlistPasses.collapseConcatOfAdjacentSlices(modules);
       NetlistPasses.removeTrivialConcatAliases(modules);
       NetlistPasses.applyTransparentClustering(modules);
@@ -979,7 +983,7 @@ class NetlistSynthesizer extends Synthesizer {
   Map<String, Map<String, Object?>> buildModulesMap(
       SynthBuilder synth, Module top,
       {bool? slimMode}) {
-    final effectiveSlimMode = slimMode ?? options.slimMode;
+    final effectiveSlimMode = slimMode ?? configuration.slimMode;
     final swEntries = Stopwatch()..start();
     final modules = NetlistPasses.collectModuleEntries(synth.synthesisResults,
         topModule: top, includeCellConnections: !effectiveSlimMode);
@@ -1000,7 +1004,7 @@ class NetlistSynthesizer extends Synthesizer {
     swCollect.stop();
 
     final swCompress = Stopwatch()..start();
-    if (options.compressBitRanges) {
+    if (configuration.compressBitRanges) {
       _compressModulesMap(modules);
     }
     swCompress.stop();
@@ -1012,7 +1016,7 @@ class NetlistSynthesizer extends Synthesizer {
     };
 
     final swEncode = Stopwatch()..start();
-    final encoder = options.compactJson
+    final encoder = configuration.compactJson
         ? const JsonEncoder()
         : const JsonEncoder.withIndent('  ');
     final result = encoder.convert(combined);
@@ -1113,4 +1117,116 @@ class NetlistSynthesizer extends Synthesizer {
     final sb = SynthBuilder(top, this);
     return generateCombinedJson(sb, top, slimMode: slimMode);
   }
+}
+
+String _synthesizedCellName({
+  required String operationName,
+  required Logic destination,
+}) =>
+    '${Sanitizer.sanitizeSV(operationName)}_'
+    '${_destinationSuffix(destination)}';
+
+String _destinationSuffix(Logic destination) {
+  final module = destination.parentModule;
+  if (module == null) {
+    throw SynthException(
+      'Cannot derive a netlist cell key for ${destination.name}: '
+      'the destination has no parent module.',
+    );
+  }
+
+  final rootLocation = _logicLocationInModule(module, destination);
+  final elementPath = _logicElementPathIndices(destination).path;
+  final parts = [
+    ..._modulePathIndices(module).path,
+    ...rootLocation.path,
+    ...elementPath,
+  ];
+
+  return parts.isEmpty ? '0' : parts.map((part) => part.toString()).join('_');
+}
+
+OccurrenceAddress _modulePathIndices(Module module) {
+  final parent = module.parent;
+  if (parent == null) {
+    return const OccurrenceAddress([0]);
+  }
+
+  final siblings = parent.subModules.toList();
+  final index = siblings.indexWhere(
+    (submodule) => identical(submodule, module),
+  );
+  return OccurrenceAddress([
+    ..._modulePathIndices(parent).path,
+    if (index < 0) 0 else index,
+  ]);
+}
+
+OccurrenceAddress _logicElementPathIndices(Logic destination) {
+  final elementPath = <int>[];
+  var root = destination;
+  while (root.parentStructure != null) {
+    final parent = root.parentStructure!;
+    final index = parent.elements.indexWhere(
+      (element) => identical(element, root),
+    );
+    elementPath.insert(0, index < 0 ? root.arrayIndex ?? 0 : index);
+    root = parent;
+  }
+
+  final module = root.parentModule;
+  if (module == null) {
+    throw SynthException(
+      'Cannot derive a netlist cell key for ${destination.name}: '
+      'the logic root has no parent module.',
+    );
+  }
+
+  return OccurrenceAddress(elementPath);
+}
+
+OccurrenceAddress _logicLocationInModule(Module module, Logic root) {
+  final signalIndex = _rootSignalIndexInModule(module, root);
+  return OccurrenceAddress([signalIndex]);
+}
+
+int _rootSignalIndexInModule(Module module, Logic root) {
+  final inputIndex = _identityIndex(module.inputs.values, root);
+  if (inputIndex != null) {
+    return inputIndex;
+  }
+
+  final outputIndex = _identityIndex(module.outputs.values, root);
+  if (outputIndex != null) {
+    return module.inputs.length + outputIndex;
+  }
+
+  final inOutIndex = _identityIndex(module.inOuts.values, root);
+  if (inOutIndex != null) {
+    return module.inputs.length + module.outputs.length + inOutIndex;
+  }
+
+  final internalIndex = _identityIndex(module.internalSignals, root);
+  if (internalIndex != null) {
+    return module.inputs.length +
+        module.outputs.length +
+        module.inOuts.length +
+        internalIndex;
+  }
+
+  throw SynthException(
+    'Cannot derive a netlist cell key for ${root.name}: '
+    'the logic root is not registered with module ${module.name}.',
+  );
+}
+
+int? _identityIndex(Iterable<Logic> logics, Logic target) {
+  var index = 0;
+  for (final logic in logics) {
+    if (identical(logic, target)) {
+      return index;
+    }
+    index++;
+  }
+  return null;
 }

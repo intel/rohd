@@ -927,6 +927,11 @@ abstract class Module {
     return outPort;
   }
 
+  bool _hasConsts(LogicStructure structure) => structure.elements.any(
+      (element) =>
+          element is Const ||
+          (element is LogicStructure && _hasConsts(element)));
+
   /// Checks that the [logic] meets type requirements for `Typed` [Logic]s and
   /// returns a potentially modified [logic] to use.
   LogicType _validateType<LogicType extends Logic>(LogicType logic,
@@ -940,7 +945,7 @@ abstract class Module {
       throw PortTypeException(logic, exceptionMessage);
     }
 
-    if (logic is Const || (logic is LogicStructure && logic.hasConsts)) {
+    if (logic is Const || (logic is LogicStructure && _hasConsts(logic))) {
       if (LogicType == Logic) {
         // we're ok, can just convert to Logic
         final newLogic =
@@ -1161,24 +1166,4 @@ abstract class Module {
           SystemVerilogSynthesizer(configuration: configuration),
         ).getSynthFileContents().join('\n\n////////////////////\n\n');
   }
-
-  /// Testing-only convenience for a synthesized netlist JSON representation of
-  /// this [Module]. Use [NetlistSynthesizer] directly outside tests.
-  @visibleForTesting
-  String generateNetlist(
-      {NetlistOptions options = const NetlistOptions(), String? packageRoot}) {
-    if (!_hasBuilt) {
-      throw ModuleNotBuiltException(this);
-    }
-
-    return NetlistSynthesizer(options: options)
-        .synthesizeToJson(this, packageRoot: packageRoot);
-  }
-}
-
-extension on LogicStructure {
-  /// Indicates that a [LogicStructure] has a [Const] element within it or
-  /// within one of its [elements].
-  bool get hasConsts =>
-      elements.any((e) => e is Const || (e is LogicStructure && e.hasConsts));
 }

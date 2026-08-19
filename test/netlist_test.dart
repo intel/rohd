@@ -549,15 +549,14 @@ void main() {
     });
   });
 
-  // ── NetlistOptions ───────────────────────────────────────────────────
-
-  group('NetlistOptions', () {
+  // ── NetlistSynthesizerConfiguration ──────────────────────────────────
+  group('NetlistSynthesizerConfiguration', () {
     test('slimMode omits cell connections', () async {
       final mod = _CompositeModule(Logic(name: 'a'), Logic(name: 'b'));
       await mod.build();
 
       final slimSynth = NetlistSynthesizer(
-        options: const NetlistOptions(slimMode: true),
+        configuration: const NetlistSynthesizerConfiguration(slimMode: true),
       );
       final json = slimSynth.synthesizeToJson(mod);
       final decoded = jsonDecode(json) as Map<String, dynamic>;
@@ -595,7 +594,8 @@ void main() {
       final collapsedTop = _topModuleFromJson(
         mod,
         NetlistSynthesizer(
-          options: const NetlistOptions(collapseTransparentClusters: true),
+          configuration: const NetlistSynthesizerConfiguration(
+              collapseTransparentClusters: true),
         ).synthesizeToJson(mod),
       );
       expect(_cellCount(collapsedTop, r'$slice'), equals(1));
@@ -616,7 +616,8 @@ void main() {
       final collapsedTop = _topModuleFromJson(
         mod,
         NetlistSynthesizer(
-          options: const NetlistOptions(collapseTransparentClusters: true),
+          configuration: const NetlistSynthesizerConfiguration(
+              collapseTransparentClusters: true),
         ).synthesizeToJson(mod),
       );
       expect(_cellCount(collapsedTop, r'$slice'), equals(0));
@@ -720,7 +721,8 @@ void main() {
       await module.build();
 
       final synthesizer = NetlistSynthesizer(
-        options: const NetlistOptions(compressBitRanges: true),
+        configuration:
+            const NetlistSynthesizerConfiguration(compressBitRanges: true),
       );
       final builder = SynthBuilder(module, synthesizer);
       final result = builder.synthesisResults
@@ -748,7 +750,8 @@ void main() {
       await mod.build();
 
       final synthCompressed = NetlistSynthesizer(
-        options: const NetlistOptions(compressBitRanges: true),
+        configuration:
+            const NetlistSynthesizerConfiguration(compressBitRanges: true),
       );
       final jsonCompressed = synthCompressed.synthesizeToJson(mod);
 
@@ -779,7 +782,8 @@ void main() {
       await mod.build();
 
       final synth = NetlistSynthesizer(
-        options: const NetlistOptions(compressBitRanges: true),
+        configuration:
+            const NetlistSynthesizerConfiguration(compressBitRanges: true),
       );
       final json = synth.synthesizeToJson(mod);
       final decoded = jsonDecode(json) as Map;
@@ -794,7 +798,7 @@ void main() {
       await mod.build();
 
       final synthCompact = NetlistSynthesizer(
-        options: const NetlistOptions(compactJson: true),
+        configuration: const NetlistSynthesizerConfiguration(compactJson: true),
       );
       final jsonCompact = synthCompact.synthesizeToJson(mod);
 
@@ -814,13 +818,13 @@ void main() {
       );
     });
 
-    test('both options together produce smallest output', () async {
+    test('both configuration together produce smallest output', () async {
       final a = Logic(name: 'a', width: 8);
       final mod = _AdderModule(a, Logic(name: 'b', width: 8));
       await mod.build();
 
       final synthBoth = NetlistSynthesizer(
-        options: const NetlistOptions(
+        configuration: const NetlistSynthesizerConfiguration(
           compressBitRanges: true,
           compactJson: true,
         ),
@@ -828,12 +832,13 @@ void main() {
       final jsonBoth = synthBoth.synthesizeToJson(mod);
 
       final synthCompressOnly = NetlistSynthesizer(
-        options: const NetlistOptions(compressBitRanges: true),
+        configuration:
+            const NetlistSynthesizerConfiguration(compressBitRanges: true),
       );
       final jsonCompressOnly = synthCompressOnly.synthesizeToJson(mod);
 
       final synthCompactOnly = NetlistSynthesizer(
-        options: const NetlistOptions(compactJson: true),
+        configuration: const NetlistSynthesizerConfiguration(compactJson: true),
       );
       final jsonCompactOnly = synthCompactOnly.synthesizeToJson(mod);
 
@@ -854,7 +859,8 @@ void main() {
           as Map<String, dynamic>)['modules'] as Map<String, dynamic>;
 
       final synthCompressed = NetlistSynthesizer(
-        options: const NetlistOptions(compressBitRanges: true),
+        configuration:
+            const NetlistSynthesizerConfiguration(compressBitRanges: true),
       );
       final jsonCompressed = synthCompressed.synthesizeToJson(mod);
       final compressedModules = (jsonDecode(jsonCompressed)

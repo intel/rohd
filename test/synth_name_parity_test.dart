@@ -14,6 +14,20 @@ import 'package:test/test.dart';
 
 import '../example/filter_bank.dart';
 
+extension _NetlistTestModule on Module {
+  String generateNetlist(
+      {NetlistSynthesizerConfiguration configuration =
+          const NetlistSynthesizerConfiguration(),
+      String? packageRoot}) {
+    if (!hasBuilt) {
+      throw ModuleNotBuiltException(this);
+    }
+
+    return NetlistSynthesizer(configuration: configuration)
+        .synthesizeToJson(this, packageRoot: packageRoot);
+  }
+}
+
 class _Counter extends Module {
   _Counter(Logic en, Logic reset, {int width = 8}) : super(name: 'counter') {
     en = addInput('en', en);

@@ -8,6 +8,7 @@
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 import 'package:meta/meta.dart';
+import 'package:rohd/src/exceptions/synth_exception.dart';
 
 /// Graph queries and structural checks for an emitted module netlist.
 @internal
@@ -17,11 +18,6 @@ class NetlistValidation {
     r'$concat',
     r'$struct_unpack',
     r'$struct_pack',
-  };
-
-  static const _transparentTypes = {
-    r'$buf',
-    ..._nonDrivingAliasTypes,
   };
 
   /// Prevents construction of this static utility class.
@@ -51,48 +47,27 @@ class NetlistValidation {
         }),
       };
 
-  /// Reports disconnected cells, floating constants, and shorted wires.
-  static List<String> validate(
+  /// Throws [NetlistValidationException] if the netlist has structural errors.
+  static void validate(
     Map<String, Map<String, Object?>> ports,
     Map<String, Map<String, Object?>> cells,
     String moduleName, {
     Map<String, Object?>? netnames,
-    bool throwOnMultipleDrivers = false,
-    bool printWarnings = true,
-    bool checkUnconnectedOutputs = true,
   }) {
-    final warnings = <String>[];
-    final multipleDriverWarnings = <String>[];
+    final issues = <NetlistValidationIssue>[];
 
-    void report(String message, {bool multipleDriver = false}) {
-      warnings.add(message);
-      if (multipleDriver) {
-        multipleDriverWarnings.add(message);
-      }
-      if (printWarnings) {
-        // ignore: avoid_print
-        print(message);
-      }
-    }
-
-    final consumedBits = connectedBits(
-      ports,
-      cells,
-      portDirections: const {'output', 'inout'},
-      cellDirection: 'input',
-    );
     final driversByBit = _driversByBit(ports, cells);
 
     for (final entry in driversByBit.entries) {
       if (entry.value.length <= 1) {
         continue;
       }
-      report(
-        '[netlist-validate] WARNING: $moduleName: '
+      issues.add(NetlistValidationIssue(
         'wire bit ${entry.key} has multiple drivers: '
         '${entry.value.join(', ')}',
-        multipleDriver: true,
-      );
+        wireBit: entry.key,
+        drivers: entry.value,
+      ));
     }
 
     if (netnames != null) {
@@ -113,55 +88,18 @@ class NetlistValidation {
         if (aggregateDrivers.length <= 1) {
           continue;
         }
-        report(
-          '[netlist-validate] WARNING: $moduleName: '
+        issues.add(NetlistValidationIssue(
           'aggregate net "${entry.key}" is reached from multiple drivers: '
           '${aggregateDrivers.join(', ')}',
-          multipleDriver: true,
-        );
+          netname: entry.key,
+          drivers: aggregateDrivers.toList(),
+        ));
       }
     }
 
-    if (throwOnMultipleDrivers && multipleDriverWarnings.isNotEmpty) {
-      throw StateError(
-        'Netlist validation failed for $moduleName: '
-        '${multipleDriverWarnings.length} multiple-driver wire bit(s) found.\n'
-        '${multipleDriverWarnings.join('\n')}',
-      );
+    if (issues.isNotEmpty) {
+      throw NetlistValidationException(moduleName, issues);
     }
-
-    if (checkUnconnectedOutputs) {
-      for (final entry in cells.entries) {
-        final cell = entry.value;
-        final type = cell['type'] as String? ?? '';
-        if (_transparentTypes.contains(type) || type == r'$const') {
-          continue;
-        }
-        final outputBits = _cellBits(cell, 'output');
-        if (outputBits.isNotEmpty && !outputBits.any(consumedBits.contains)) {
-          report(
-            '[netlist-validate] WARNING: $moduleName: '
-            'cell "${entry.key}" (type: $type) has no consumed outputs '
-            '— fully disconnected logic gate',
-          );
-        }
-      }
-
-      for (final entry in cells.entries.where(
-        (entry) => entry.value['type'] == r'$const',
-      )) {
-        final outputBits = _cellBits(entry.value, 'output');
-        if (outputBits.isNotEmpty && !outputBits.any(consumedBits.contains)) {
-          report(
-            '[netlist-validate] WARNING: $moduleName: '
-            r'$const cell "${entry.key}" drives wires consumed by nothing '
-            '— floating constant',
-          );
-        }
-      }
-    }
-
-    return warnings;
   }
 
   /// Collects the port and cell output drivers for each integer bit ID.
@@ -213,18 +151,52 @@ class NetlistValidation {
 
     return drivers;
   }
+}
 
-  /// Returns integer bits connected to ports with the requested [direction].
-  static List<int> _cellBits(Map<String, Object?> cell, String direction) {
-    final connections = cell['connections'] as Map<String, dynamic>?;
-    final directions = cell['port_directions'] as Map<String, dynamic>?;
-    if (connections == null || directions == null) {
-      return const [];
-    }
-    return connections.entries
-        .where((port) => directions[port.key] == direction)
-        .expand((port) => (port.value as List?) ?? const [])
-        .whereType<int>()
-        .toList();
-  }
+/// A structural netlist validation failure.
+@internal
+class NetlistValidationException extends SynthException {
+  /// The module containing the structural errors.
+  final String moduleName;
+
+  /// The structural errors found in [moduleName].
+  final List<NetlistValidationIssue> issues;
+
+  /// Creates a validation exception for [moduleName].
+  NetlistValidationException(
+      this.moduleName, Iterable<NetlistValidationIssue> issues)
+      : issues = List.unmodifiable(issues),
+        super('Netlist validation failed for $moduleName.');
+
+  @override
+  String toString() => 'Netlist validation failed for $moduleName: '
+      '${issues.length} issue(s) found.\n'
+      '${issues.join('\n')}';
+}
+
+/// A structural problem found while validating an emitted netlist.
+@internal
+class NetlistValidationIssue {
+  /// A human-readable explanation of the structural problem.
+  final String description;
+
+  /// The affected wire bit, when the problem concerns one bit.
+  final int? wireBit;
+
+  /// The affected aggregate net name, when applicable.
+  final String? netname;
+
+  /// The drivers involved in the problem, when applicable.
+  final List<String> drivers;
+
+  /// Creates a structural validation issue.
+  NetlistValidationIssue(
+    this.description, {
+    this.wireBit,
+    this.netname,
+    Iterable<String> drivers = const [],
+  }) : drivers = List.unmodifiable(drivers);
+
+  @override
+  String toString() => description;
 }

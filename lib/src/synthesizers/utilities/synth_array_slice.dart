@@ -9,12 +9,14 @@
 
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/synthesizers/utilities/synth_operation_namer.dart';
 
 /// A [BusSubset] used by synthesis backends to explicitly extract a
 /// [LogicArray] element from its packed parent representation.
 @internal
 class SynthArraySlice extends BusSubset {
+  /// The canonical base name for synthesized array slice operations.
+  static const String operationName = 'array_slice';
+
   final Logic _destination;
 
   /// Creates a synthesis array slice over the selected indices of [bus].
@@ -24,19 +26,14 @@ class SynthArraySlice extends BusSubset {
     super.endIndex, {
     required Logic destination,
   })  : _destination = destination,
-        super(
-          name: SynthOperationNamer.instanceName(
-            operationName: SynthOperationNamer.arraySliceOperationName,
-            destination: destination,
-          ),
-        );
+        super(name: operationName);
 
   @override
   bool get hasBuilt => true;
 
   @override
   Object get instanceNameKey => (
-        operationName: SynthOperationNamer.arraySliceOperationName,
+        operationName: operationName,
         destination: _destination,
       );
 }

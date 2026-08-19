@@ -485,14 +485,14 @@ class NetlistModuleTranslation {
             synthLogic is SynthLogicArrayElement) {
           bits = [
             for (final bit in bits)
-              bit is int ? (arraySliceOldToNew[bit] ?? bit) : bit,
+              if (bit is int) arraySliceOldToNew[bit] ?? bit else bit,
           ];
         }
         if (arrayConcatOldToNew.isNotEmpty &&
             synthLogic is SynthLogicArrayElement) {
           bits = [
             for (final bit in bits)
-              bit is int ? (arrayConcatOldToNew[bit] ?? bit) : bit,
+              if (bit is int) arrayConcatOldToNew[bit] ?? bit else bit,
           ];
         }
         bits = resolveAggregateBits(bits);

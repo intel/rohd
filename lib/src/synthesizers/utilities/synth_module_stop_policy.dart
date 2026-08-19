@@ -40,15 +40,9 @@ class SynthModuleStopPolicy {
   /// Creates the default SystemVerilog stopping policy.
   factory SynthModuleStopPolicy.systemVerilog() => SynthModuleStopPolicy(
         leafPredicates: [
-          (module) {
-            // ignore: deprecated_member_use_from_same_package
-            if (module is CustomSystemVerilog) {
-              return true;
-            }
-
-            return module is SystemVerilog &&
-                module.generatedDefinitionType == DefinitionGenerationType.none;
-          },
+          (module) =>
+              module is SystemVerilog &&
+              module.generatedDefinitionType == DefinitionGenerationType.none,
         ],
       );
 

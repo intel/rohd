@@ -9,30 +9,27 @@
 
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/synthesizers/utilities/synth_operation_namer.dart';
 
 /// A [Swizzle] used by synthesis backends to explicitly assemble a
 /// [LogicArray] from its elements.
 @internal
 class SynthArrayConcat extends Swizzle {
+  /// The canonical base name for synthesized array concat operations.
+  static const String operationName = 'array_concat';
+
   final LogicArray _destination;
 
   /// Creates a synthesis array concatenation from [signals].
   SynthArrayConcat(super.signals, {required LogicArray destination})
       : _destination = destination,
-        super(
-          name: SynthOperationNamer.instanceName(
-            operationName: SynthOperationNamer.arrayConcatOperationName,
-            destination: destination,
-          ),
-        );
+        super(name: operationName);
 
   @override
   bool get hasBuilt => true;
 
   @override
   Object get instanceNameKey => (
-        operationName: SynthOperationNamer.arrayConcatOperationName,
+        operationName: operationName,
         destination: _destination,
       );
 }

@@ -13,7 +13,7 @@ import 'dart:convert';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_passes.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_validation.dart';
-import 'package:rohd/src/synthesizers/utilities/synth_operation_namer.dart';
+import 'package:rohd/src/synthesizers/utilities/synth_structure_concat.dart';
 import 'package:test/test.dart';
 
 import '../example/example.dart';
@@ -519,10 +519,12 @@ FilterBank _buildFilterBank() {
 /// Build a module and synthesize to a parsed JSON map.
 Future<Map<String, dynamic>> _synthToMap(
   Module mod, {
-  NetlistOptions options = const NetlistOptions(),
+  NetlistSynthesizerConfiguration configuration =
+      const NetlistSynthesizerConfiguration(),
 }) async {
   await mod.build();
-  final synth = SynthBuilder(mod, NetlistSynthesizer(options: options));
+  final synth =
+      SynthBuilder(mod, NetlistSynthesizer(configuration: configuration));
   final json = (synth.synthesizer as NetlistSynthesizer).synthesizeToJson(mod);
   return jsonDecode(json) as Map<String, dynamic>;
 }
@@ -969,9 +971,9 @@ void main() {
     });
   });
 
-  // ── Group 4: NetlistOptions permutations ─────────────────────────
+  // ── Group 4: NetlistSynthesizerConfiguration permutations ──────────────────
 
-  group('NetlistOptions', () {
+  group('NetlistSynthesizerConfiguration', () {
     late Module filterBank;
 
     setUp(() async {
@@ -980,19 +982,23 @@ void main() {
       await filterBank.build();
     });
 
-    test('default options produce valid netlist', () async {
+    test('default configuration produce valid netlist', () {
       final synth = SynthBuilder(filterBank, NetlistSynthesizer());
       final json = (synth.synthesizer as NetlistSynthesizer).synthesizeToJson(
         filterBank,
       );
       final parsed = jsonDecode(json) as Map<String, dynamic>;
+      expect(parsed['creator'], equals('NetlistSynthesizer (rohd)'));
+      expect(parsed['version'], equals(NetlistSynthesizer.formatVersion));
       expect(_modules(parsed), isNotEmpty);
     });
 
-    test('slimMode omits connections', () async {
+    test('slimMode omits connections', () {
       final synth = SynthBuilder(
         filterBank,
-        NetlistSynthesizer(options: const NetlistOptions(slimMode: true)),
+        NetlistSynthesizer(
+            configuration:
+                const NetlistSynthesizerConfiguration(slimMode: true)),
       );
       final json = (synth.synthesizer as NetlistSynthesizer).synthesizeToJson(
         filterBank,
@@ -1022,7 +1028,7 @@ void main() {
       await module.build();
 
       final translator = NetlistSynthesizer(
-        options: const NetlistOptions(slimMode: true),
+        configuration: const NetlistSynthesizerConfiguration(slimMode: true),
       );
       final slim = translator.synthesizeToJson(module);
       final expanded = translator.synthesizeToJson(module, slimMode: false);
@@ -1042,9 +1048,10 @@ void main() {
 
     test(
       'filter bank can stop traversal at an opaque custom SV module',
-      () async {
+      () {
         final synthesizer = NetlistSynthesizer(
-          options: const NetlistOptions(leafModuleTypes: [FlipFlop, MacUnit]),
+          configuration: const NetlistSynthesizerConfiguration(
+              leafModuleTypes: [FlipFlop, MacUnit]),
         );
         final json = jsonDecode(synthesizer.synthesizeToJson(filterBank))
             as Map<String, dynamic>;
@@ -1079,10 +1086,12 @@ void main() {
       },
     );
 
-    test('DCE disabled still produces valid netlist', () async {
+    test('DCE disabled still produces valid netlist', () {
       final synth = SynthBuilder(
         filterBank,
-        NetlistSynthesizer(options: const NetlistOptions(enableDCE: false)),
+        NetlistSynthesizer(
+            configuration: const NetlistSynthesizerConfiguration(
+                enableDeadCellElimination: false)),
       );
       final json = (synth.synthesizer as NetlistSynthesizer).synthesizeToJson(
         filterBank,
@@ -1091,10 +1100,12 @@ void main() {
       expect(_modules(parsed), isNotEmpty);
     });
 
-    test('all optimizations disabled produces valid netlist', () async {
+    test('all optimizations disabled produces valid netlist', () {
       final synth = SynthBuilder(
         filterBank,
-        NetlistSynthesizer(options: const NetlistOptions(enableDCE: false)),
+        NetlistSynthesizer(
+            configuration: const NetlistSynthesizerConfiguration(
+                enableDeadCellElimination: false)),
       );
       final json = (synth.synthesizer as NetlistSynthesizer).synthesizeToJson(
         filterBank,
@@ -1115,7 +1126,9 @@ void main() {
       await fb2.build();
       final slimSynth = SynthBuilder(
         fb2,
-        NetlistSynthesizer(options: const NetlistOptions(slimMode: true)),
+        NetlistSynthesizer(
+            configuration:
+                const NetlistSynthesizerConfiguration(slimMode: true)),
       );
       final slimJson =
           (slimSynth.synthesizer as NetlistSynthesizer).synthesizeToJson(fb2);
@@ -1441,7 +1454,8 @@ void main() {
 
         final childDefinitionName = module.subModules.single.definitionName;
         final synthesizer = NetlistSynthesizer(
-          options: const NetlistOptions(leafModuleTypes: [AddModule]),
+          configuration: const NetlistSynthesizerConfiguration(
+              leafModuleTypes: [AddModule]),
         );
 
         final json = jsonDecode(synthesizer.synthesizeToJson(module))
@@ -1509,13 +1523,7 @@ void main() {
     });
 
     test('array concat outputs use fresh wire IDs', () async {
-      final warnings = <String>[];
-      final json = await runZoned(
-        () => _synthToMap(InternalArrayToChildModule()),
-        zoneSpecification: ZoneSpecification(
-          print: (_, __, ___, line) => warnings.add(line),
-        ),
-      );
+      final json = await _synthToMap(InternalArrayToChildModule());
       final moduleDef =
           _modules(json)['InternalArrayToChildModule'] as Map<String, dynamic>;
       final cells = _cells(moduleDef);
@@ -1523,10 +1531,6 @@ void main() {
         (entry) => entry.key.startsWith('array_concat'),
       );
 
-      expect(
-        warnings.where((warning) => warning.contains('multiple drivers')),
-        isEmpty,
-      );
       expect(arrayConcats, isNotEmpty);
       for (final arrayConcat in arrayConcats) {
         final connections = (arrayConcat.value
@@ -1607,16 +1611,17 @@ void main() {
     test(
       'nested LogicArray.net aggregate ports have connected concat inputs',
       () async {
-        for (final options in [
-          const NetlistOptions(enableDCE: false),
-          const NetlistOptions(
+        for (final configuration in [
+          const NetlistSynthesizerConfiguration(
+              enableDeadCellElimination: false),
+          const NetlistSynthesizerConfiguration(
             collapseTransparentClusters: true,
-            enableDCE: false,
+            enableDeadCellElimination: false,
           ),
         ]) {
           final json = await _synthToMap(
             NestedNetArrayRowsToChildModule(),
-            options: options,
+            configuration: configuration,
           );
           final moduleDef = _modules(json)
               .values
@@ -1687,7 +1692,7 @@ void main() {
       final structPacks = cells.entries.where((entry) {
         final cell = entry.value as Map<String, dynamic>;
         return entry.key.startsWith(
-              SynthOperationNamer.structureConcatOperationName,
+              SynthStructureConcat.operationName,
             ) &&
             cell['type'] == r'$struct_pack';
       }).toList();
@@ -1753,17 +1758,16 @@ void main() {
           cells,
           'struct_module',
           netnames: netnames,
-          throwOnMultipleDrivers: true,
-          printWarnings: false,
         ),
-        throwsStateError,
+        throwsA(isA<NetlistValidationException>()),
       );
     });
 
     test('optimized netlist removes concat aliases of named vectors', () async {
       final json = await _synthToMap(
         NestedInternalArrayToChildModule(),
-        options: const NetlistOptions(collapseTransparentClusters: true),
+        configuration: const NetlistSynthesizerConfiguration(
+            collapseTransparentClusters: true),
       );
 
       for (final moduleDef in _modules(
@@ -1955,7 +1959,8 @@ void main() {
       final fbNoDce = _buildFilterBank();
       final jsonNoDce = await _synthToMap(
         fbNoDce,
-        options: const NetlistOptions(enableDCE: false),
+        configuration: const NetlistSynthesizerConfiguration(
+            enableDeadCellElimination: false),
       );
 
       final dceCells = countCells(jsonDce);
@@ -1988,7 +1993,8 @@ void main() {
       final fbNoDce = _buildFilterBank();
       final jsonNoDce = await _synthToMap(
         fbNoDce,
-        options: const NetlistOptions(enableDCE: false),
+        configuration: const NetlistSynthesizerConfiguration(
+            enableDeadCellElimination: false),
       );
 
       expect(
@@ -2001,18 +2007,18 @@ void main() {
 
   // ── Group 10: Post-processing option combinations ──────────────────
 
-  group('post-processing options', () {
+  group('post-processing configuration', () {
     test('collapseTransparentClusters produces valid netlist', () async {
       final fb = _buildFilterBank();
       final json = await _synthToMap(
         fb,
-        options: const NetlistOptions(collapseTransparentClusters: true),
+        configuration: const NetlistSynthesizerConfiguration(
+            collapseTransparentClusters: true),
       );
       expect(_modules(json), isNotEmpty);
     });
 
-    test('validation warns on multiple drivers', () {
-      final warnings = <String>[];
+    test('validation reports multiple drivers with their locations', () {
       final ports = {
         'a': {
           'direction': 'input',
@@ -2034,42 +2040,24 @@ void main() {
         },
       };
 
-      runZoned(
-        () => NetlistValidation.validate(ports, cells, 'ShortedModule'),
-        zoneSpecification: ZoneSpecification(
-          print: (_, __, ___, line) => warnings.add(line),
-        ),
-      );
-
-      expect(warnings, contains(contains('wire bit 1 has multiple drivers')));
-      warnings.clear();
-
-      final capturedWarnings = runZoned(
-        () => NetlistValidation.validate(
-          ports,
-          cells,
-          'ShortedModule',
-          printWarnings: false,
-        ),
-        zoneSpecification: ZoneSpecification(
-          print: (_, __, ___, line) => warnings.add(line),
-        ),
-      );
-
-      expect(
-        capturedWarnings,
-        contains(contains('wire bit 1 has multiple drivers')),
-      );
-      expect(warnings, isEmpty);
       expect(
         () => NetlistValidation.validate(
           ports,
           cells,
           'ShortedModule',
-          throwOnMultipleDrivers: true,
-          printWarnings: false,
         ),
-        throwsStateError,
+        throwsA(
+          isA<NetlistValidationException>()
+              .having(
+                  (error) => error.moduleName, 'module name', 'ShortedModule')
+              .having((error) => error.issues, 'issues', hasLength(1))
+              .having((error) => error.issues.single.wireBit, 'wire bit', 1)
+              .having(
+                (error) => error.issues.single.drivers,
+                'drivers',
+                containsAll(['port a (input)', r'cell driver.Y ($buf)']),
+              ),
+        ),
       );
     });
 
@@ -2093,13 +2081,8 @@ void main() {
       };
 
       expect(
-        NetlistValidation.validate(
-          ports,
-          concatAlias,
-          'StructuralAlias',
-          printWarnings: false,
-        ),
-        isNot(contains(contains('multiple drivers'))),
+        () => NetlistValidation.validate(ports, concatAlias, 'StructuralAlias'),
+        returnsNormally,
       );
 
       final buffers = {
@@ -2126,10 +2109,8 @@ void main() {
           ports,
           buffers,
           'BufferedShort',
-          throwOnMultipleDrivers: true,
-          printWarnings: false,
         ),
-        throwsStateError,
+        throwsA(isA<NetlistValidationException>()),
       );
     });
 
@@ -2151,18 +2132,12 @@ void main() {
       };
 
       expect(
-        NetlistValidation.validate(
-          ports,
-          cells,
-          'FilterBank',
-          throwOnMultipleDrivers: true,
-          printWarnings: false,
-        ),
-        isEmpty,
+        () => NetlistValidation.validate(ports, cells, 'FilterBank'),
+        returnsNormally,
       );
     });
 
-    test('validation can skip unconnected output warnings', () {
+    test('validation allows disconnected cell outputs', () {
       final ports = {
         'a': {
           'direction': 'input',
@@ -2186,29 +2161,12 @@ void main() {
       };
 
       expect(
-        NetlistValidation.validate(
-          ports,
-          cells,
-          'UnusedOutputModule',
-          printWarnings: false,
-        ),
-        contains(contains('unusedAnd')),
-      );
-
-      expect(
-        NetlistValidation.validate(
-          ports,
-          cells,
-          'UnusedOutputModule',
-          printWarnings: false,
-          checkUnconnectedOutputs: false,
-        ),
-        isEmpty,
+        () => NetlistValidation.validate(ports, cells, 'UnusedOutputModule'),
+        returnsNormally,
       );
     });
 
     test('validation allows cells to drive inout ports', () {
-      final warnings = <String>[];
       final ports = {
         'bus': {
           'direction': 'inout',
@@ -2227,21 +2185,11 @@ void main() {
         },
       };
 
-      runZoned(
-        () => NetlistValidation.validate(ports, cells, 'InOutModule'),
-        zoneSpecification: ZoneSpecification(
-          print: (_, __, ___, line) => warnings.add(line),
-        ),
-      );
-
-      expect(warnings, isEmpty);
       expect(
         () => NetlistValidation.validate(
           ports,
           cells,
           'InOutModule',
-          throwOnMultipleDrivers: true,
-          printWarnings: false,
         ),
         returnsNormally,
       );

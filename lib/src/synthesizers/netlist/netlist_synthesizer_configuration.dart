@@ -1,7 +1,7 @@
 // Copyright (C) 2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
-// netlist_options.dart
+// netlist_synthesizer_configuration.dart
 // Configuration for netlist synthesis.
 //
 // 2026 March 12
@@ -10,11 +10,12 @@
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_cell_mapper.dart';
+export '../utilities/synth_module_stop_policy.dart';
 
-/// Configuration options for netlist synthesis.
+/// Configuration for netlist synthesis.
 ///
 /// The netlist synthesizer serves two main consumer flows, both configured
-/// through these options:
+/// through this configuration:
 ///
 /// **Flow 1 — Slim JSON** (`NetlistService.slimJson`):
 ///   Batch synthesis of the entire design, producing a lightweight
@@ -37,12 +38,9 @@ import 'package:rohd/src/synthesizers/netlist/netlist_cell_mapper.dart';
 ///
 /// Example usage:
 /// ```dart
-/// const options = NetlistOptions(
-///   collapseTransparentClusters: true,
-/// );
-/// final synth = NetlistSynthesizer(options: options);
+/// final synth = NetlistSynthesizer();
 /// ```
-class NetlistOptions {
+class NetlistSynthesizerConfiguration {
   /// The policy used to decide which modules stop hierarchy traversal and are
   /// emitted as cells in their parent instead of as separate module
   /// definitions. When `null`, [SynthModuleStopPolicy.netlist] is used.
@@ -69,16 +67,14 @@ class NetlistOptions {
   /// bits back to their ultimate source bits, and replaces every
   /// multi-cell cluster with a direct `$buf`.  This subsumes all of
   /// the individual collapse passes above.
+  @internal
   final bool collapseTransparentClusters;
 
   /// When `true`, dead-cell elimination is performed after aliasing to
   /// remove cells whose inputs are entirely undriven or whose outputs
   /// are entirely unconsumed.
-  final bool enableDCE;
-
-  /// When `true`, validation reports debug warnings for cells whose output
-  /// bits are not consumed. Multiple-driver validation always runs.
-  final bool validateUnconnectedOutputs;
+  @internal
+  final bool enableDeadCellElimination;
 
   /// When `true`, the synthesizer produces "slim" output: cell connection maps
   /// are not copied into the emitted JSON projection. Netnames and ports are
@@ -100,17 +96,13 @@ class NetlistOptions {
   /// indentation.
   final bool compactJson;
 
-  /// Creates a [NetlistOptions] with the given configuration.
-  ///
-  /// All parameters have sensible defaults matching the current
-  /// netlist synthesizer behaviour.
-  const NetlistOptions({
+  /// Creates a configuration for netlist synthesis.
+  const NetlistSynthesizerConfiguration({
     this.moduleStopPolicy,
     this.leafModuleTypes = const [FlipFlop],
     this.netlistCellMapper,
-    this.collapseTransparentClusters = false,
-    this.enableDCE = true,
-    this.validateUnconnectedOutputs = true,
+    @visibleForTesting this.collapseTransparentClusters = false,
+    @visibleForTesting this.enableDeadCellElimination = true,
     this.slimMode = false,
     this.compressBitRanges = false,
     this.compactJson = false,

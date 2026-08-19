@@ -164,8 +164,8 @@ abstract class NetlistUtils {
       // Choose a name for the aggregate port.
       final rootName = tryGetSynthLogicName(rootSL) ?? 'agg_${minBit}_$maxBit';
 
-      // Replace individual ports with the aggregate.  The bypassed
-      // BusSubset cells are left in place; the post-synthesis DCE pass
+      // Replace individual ports with the aggregate.  The bypassed BusSubset
+      // cells are left in place; the post-synthesis Dead Cell Elimination pass
       // will remove them if their outputs are no longer consumed.
       for (final (portName, _, _, _) in ports) {
         connections.remove(portName);
