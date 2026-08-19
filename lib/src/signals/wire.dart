@@ -89,7 +89,7 @@ class _Wire {
       _changedBeingWatched = true;
 
       StreamSubscription<void> subscribe() {
-        unawaited(Simulator.resetRequested.then((_) async {
+        unawaited(Simulator.resetRequested.then((_) {
           final oldPostTickSubscription = _postTickSubscription;
 
           _postTickSubscription = subscribe();
@@ -120,7 +120,7 @@ class _Wire {
       _preTickValue = value;
     });
 
-    unawaited(Simulator.resetRequested.then((_) async {
+    unawaited(Simulator.resetRequested.then((_) {
       assert(_preTickSubscription != null,
           'Should not be null if we are setting up a new one.');
 
@@ -184,7 +184,7 @@ class _Wire {
     _glitchController.emitter.adopt(other._glitchController.emitter);
     other._migrateChangedTriggers(this);
 
-    // ignore: avoid_returning_this
+    // ignore: avoid_returning_this - this is overriding a function that sometimes returns not this
     return this;
   }
 

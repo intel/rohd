@@ -28,11 +28,11 @@ class SimpleModule extends Module {
   }
 }
 
-void main() async {
+void main() {
   if (!kIsWeb) {
     test(
         'should return true if rohd version is similar'
-        ' in both pubspec.yaml and config class.', () async {
+        ' in both pubspec.yaml and config class.', () {
       final yamlText = File('./pubspec.yaml').readAsStringSync();
       final yaml = loadYaml(yamlText) as Map;
 

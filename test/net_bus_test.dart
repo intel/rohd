@@ -276,7 +276,7 @@ void main() {
     SimCompare.checkIverilogVector(mod, vectors);
   });
 
-  test('net put propagate', () async {
+  test('net put propagate', () {
     final a = LogicNet();
     final b = LogicNet();
     final c = LogicNet();
@@ -342,7 +342,7 @@ void main() {
 
   group('multi-connection', () {
     group('func only', () {
-      test('tied subsets', () async {
+      test('tied subsets', () {
         final base = LogicNet(width: 8);
 
         final lowerDriver = Logic(width: 4);

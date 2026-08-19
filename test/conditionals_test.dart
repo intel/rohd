@@ -520,7 +520,7 @@ void main() {
     });
 
     group('bad if blocks', () {
-      test('IfBlock with only else fails', () async {
+      test('IfBlock with only else fails', () {
         expect(
             () => If.block([
                   Else([]),
@@ -699,7 +699,7 @@ void main() {
     });
 
     test('should return exception if a conditional is used multiple times.',
-        () async {
+        () {
       expect(() => MultipleConditionalModule(Logic(), Logic()),
           throwsA(isA<InvalidConditionalException>()));
     });

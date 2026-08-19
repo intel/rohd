@@ -7,7 +7,7 @@
 // 2023 February 14
 // Author: Yao Jing Quek <yao.jing.quek@intel.com>
 
-// ignore_for_file: avoid_print
+// ignore_for_file: avoid_print - tutorial
 
 import 'package:rohd/rohd.dart';
 

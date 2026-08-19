@@ -1,4 +1,4 @@
-// ignore_for_file: avoid_print
+// ignore_for_file: avoid_print - tutorial
 
 import 'dart:async';
 
@@ -118,7 +118,7 @@ class TestBench extends Module {
 
     final sout = addOutput('sout', width: 8);
 
-    // ignore: unused_local_variable
+    // ignore: unused_local_variable - tutorial
     final ctrl = Controller(spiInterface, reset, clk);
     final peripheral = Peripheral(spiInterface);
 

@@ -67,6 +67,16 @@ class UncleanPortInterface extends Interface<MyDirection> {
   UncleanPortInterface clone() => UncleanPortInterface();
 }
 
+class DuplicatePortInterface extends Interface<MyDirection> {
+  DuplicatePortInterface() {
+    setPorts([Logic.port('dup')], [MyDirection.dir1]);
+    setPorts([Logic.port('dup')], [MyDirection.dir2]);
+  }
+
+  @override
+  DuplicatePortInterface clone() => DuplicatePortInterface();
+}
+
 class MaybePortInterface extends Interface<MyDirection> {
   Logic? get p => tryPort('p');
 
@@ -144,10 +154,15 @@ void main() {
     SimCompare.checkIverilogVector(mod, vectors);
   });
 
-  test('should return exception when port name is not sanitary.', () async {
-    expect(() async {
+  test('should return exception when port name is not sanitary.', () {
+    expect(() {
       UncleanPortInterface();
     }, throwsException);
+  });
+
+  test('adding a port with a name already on the interface throws', () {
+    expect(
+        DuplicatePortInterface.new, throwsA(isA<DuplicatePortNameException>()));
   });
 
   group('bad net args intf', () {

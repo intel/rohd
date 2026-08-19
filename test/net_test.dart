@@ -691,11 +691,10 @@ void main() {
     SimCompare.checkIverilogVector(mod, vectors);
   });
 
-  test('build fails with missing inout port', () async {
+  test('build fails with missing inout port', () {
     final mod = MissingPortTop(LogicNet());
 
-    expect(
-        () async => mod.build(), throwsA(isA<PortRulesViolationException>()));
+    expect(mod.build, throwsA(isA<PortRulesViolationException>()));
   });
 
   test('double connected port mod', () async {

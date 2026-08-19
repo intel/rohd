@@ -395,7 +395,7 @@ class SubModWithSomePortsUsed extends Module {
 }
 
 /// This is for legacy deprecated testing.
-// ignore: deprecated_member_use_from_same_package
+// ignore: deprecated_member_use_from_same_package - backwards compatibility with CustomSystemVerilog
 class SubCustomSv extends Module with CustomSystemVerilog {
   final bool banExpressions;
 

@@ -7,14 +7,14 @@
 // 2021 May 20
 // Author: Max Korbel <max.korbel@intel.com>
 
-// ignore_for_file: avoid_multiple_declarations_per_line
-
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
 
 class FlopArrayPort {
-  final Logic en, ptr, data;
+  final Logic en;
+  final Logic ptr;
+  final Logic data;
   FlopArrayPort(this.en, this.ptr, this.data);
 }
 
@@ -24,9 +24,14 @@ class FlopArray extends Module {
   Logic get lrst => input('lrst');
   Logic rdData(int idx) => _rdPorts[idx].data;
 
-  final List<FlopArrayPort> _wrPorts = [], _rdPorts = [];
+  final List<FlopArrayPort> _wrPorts = [];
+  final List<FlopArrayPort> _rdPorts = [];
 
-  final int numWrites, numReads, awidth, dwidth, numEntries;
+  final int numWrites;
+  final int numReads;
+  final int awidth;
+  final int dwidth;
+  final int numEntries;
   FlopArray(Logic lclk, Logic lrst, List<Logic> rdEn, List<Logic> rdPtr,
       List<Logic> wrEn, List<Logic> wrPtr, List<Logic> wrData,
       {this.numEntries = 8})

@@ -483,22 +483,22 @@ abstract class _ShiftGate extends Module with InlineSystemVerilog {
 /// A two-input AND gate.
 class And2Gate extends _TwoInputBitwiseGate {
   /// Calculates the AND of [in0] and [in1].
-  And2Gate(Logic in0, Logic in1, {String name = 'and'})
-      : super((a, b) => a & b, '&', in0, in1, name: name);
+  And2Gate(Logic in0, Logic in1, {super.name = 'and'})
+      : super((a, b) => a & b, '&', in0, in1);
 }
 
 /// A two-input OR gate.
 class Or2Gate extends _TwoInputBitwiseGate {
   /// Calculates the OR of [in0] and [in1].
-  Or2Gate(Logic in0, Logic in1, {String name = 'or'})
-      : super((a, b) => a | b, '|', in0, in1, name: name);
+  Or2Gate(Logic in0, Logic in1, {super.name = 'or'})
+      : super((a, b) => a | b, '|', in0, in1);
 }
 
 /// A two-input XOR gate.
 class Xor2Gate extends _TwoInputBitwiseGate {
   /// Calculates the XOR of [in0] and [in1].
-  Xor2Gate(Logic in0, Logic in1, {String name = 'xor'})
-      : super((a, b) => a ^ b, '^', in0, in1, name: name);
+  Xor2Gate(Logic in0, Logic in1, {super.name = 'xor'})
+      : super((a, b) => a ^ b, '^', in0, in1);
 }
 
 /// A two-input power module.
@@ -507,9 +507,8 @@ class Power extends _TwoInputBitwiseGate {
   ///
   /// [in1] can be either a [Logic] or a constant be processable by
   /// [LogicValue.of].
-  Power(Logic in0, dynamic in1, {String name = 'power'})
-      : super((a, b) => a.pow(b), '**', in0, in1,
-            name: name, makeSelfDetermined: true);
+  Power(Logic in0, dynamic in1, {super.name = 'power'})
+      : super((a, b) => a.pow(b), '**', in0, in1, makeSelfDetermined: true);
 }
 
 /// A two-input addition module.
@@ -626,8 +625,8 @@ class Subtract extends _TwoInputBitwiseGate {
   ///
   /// [in1] can be either a [Logic] or a constant be processable by
   /// [LogicValue.of].
-  Subtract(Logic in0, dynamic in1, {String name = 'subtract'})
-      : super((a, b) => a - b, '-', in0, in1, name: name);
+  Subtract(Logic in0, dynamic in1, {super.name = 'subtract'})
+      : super((a, b) => a - b, '-', in0, in1);
 }
 
 /// A two-input multiplication module.
@@ -636,9 +635,8 @@ class Multiply extends _TwoInputBitwiseGate {
   ///
   /// [in1] can be either a [Logic] or a constant be processable by
   /// [LogicValue.of].
-  Multiply(Logic in0, dynamic in1, {String name = 'multiply'})
-      : super((a, b) => a * b, '*', in0, in1,
-            name: name, makeSelfDetermined: true);
+  Multiply(Logic in0, dynamic in1, {super.name = 'multiply'})
+      : super((a, b) => a * b, '*', in0, in1, makeSelfDetermined: true);
 }
 
 /// A two-input division module.
@@ -647,8 +645,8 @@ class Divide extends _TwoInputBitwiseGate {
   ///
   /// [in1] can be either a [Logic] or a constant be processable by
   /// [LogicValue.of].
-  Divide(Logic in0, dynamic in1, {String name = 'divide'})
-      : super((a, b) => a / b, '/', in0, in1, name: name);
+  Divide(Logic in0, dynamic in1, {super.name = 'divide'})
+      : super((a, b) => a / b, '/', in0, in1);
 }
 
 /// A two-input modulo module.
@@ -657,8 +655,8 @@ class Modulo extends _TwoInputBitwiseGate {
   ///
   /// [in1] can be either a [Logic] or a constant be processable by
   /// [LogicValue.of].
-  Modulo(Logic in0, dynamic in1, {String name = 'modulo'})
-      : super((a, b) => a % b, '%', in0, in1, name: name);
+  Modulo(Logic in0, dynamic in1, {super.name = 'modulo'})
+      : super((a, b) => a % b, '%', in0, in1);
 }
 
 /// A two-input equality comparison module.
@@ -667,8 +665,8 @@ class Equals extends _TwoInputComparisonGate {
   ///
   /// [in1] can be either a [Logic] or a constant be processable by
   /// [LogicValue.of].
-  Equals(Logic in0, dynamic in1, {String name = 'equals'})
-      : super((a, b) => a.eq(b), '==', in0, in1, name: name);
+  Equals(Logic in0, dynamic in1, {super.name = 'equals'})
+      : super((a, b) => a.eq(b), '==', in0, in1);
 }
 
 /// A two-input inequality comparison module.
@@ -677,8 +675,8 @@ class NotEquals extends _TwoInputComparisonGate {
   ///
   /// [in1] can be either a [Logic] or a constant be processable by
   /// [LogicValue.of].
-  NotEquals(Logic in0, dynamic in1, {String name = 'notEquals'})
-      : super((a, b) => a.neq(b), '!=', in0, in1, name: name);
+  NotEquals(Logic in0, dynamic in1, {super.name = 'notEquals'})
+      : super((a, b) => a.neq(b), '!=', in0, in1);
 }
 
 /// A two-input comparison module for less-than.
@@ -687,8 +685,8 @@ class LessThan extends _TwoInputComparisonGate {
   ///
   /// [in1] can be either a [Logic] or a constant be processable by
   /// [LogicValue.of].
-  LessThan(Logic in0, dynamic in1, {String name = 'lessthan'})
-      : super((a, b) => a < b, '<', in0, in1, name: name);
+  LessThan(Logic in0, dynamic in1, {super.name = 'lessthan'})
+      : super((a, b) => a < b, '<', in0, in1);
 }
 
 /// A two-input comparison module for greater-than.
@@ -697,8 +695,8 @@ class GreaterThan extends _TwoInputComparisonGate {
   ///
   /// [in1] can be either a [Logic] or a constant be processable by
   /// [LogicValue.of].
-  GreaterThan(Logic in0, dynamic in1, {String name = 'greaterThan'})
-      : super((a, b) => a > b, '>', in0, in1, name: name);
+  GreaterThan(Logic in0, dynamic in1, {super.name = 'greaterThan'})
+      : super((a, b) => a > b, '>', in0, in1);
 }
 
 /// A two-input comparison module for less-than-or-equal-to.
@@ -707,8 +705,8 @@ class LessThanOrEqual extends _TwoInputComparisonGate {
   ///
   /// [in1] can be either a [Logic] or a constant be processable by
   /// [LogicValue.of].
-  LessThanOrEqual(Logic in0, dynamic in1, {String name = 'lessThanOrEqual'})
-      : super((a, b) => a <= b, '<=', in0, in1, name: name);
+  LessThanOrEqual(Logic in0, dynamic in1, {super.name = 'lessThanOrEqual'})
+      : super((a, b) => a <= b, '<=', in0, in1);
 }
 
 /// A two-input comparison module for greater-than-or-equal-to.
@@ -718,29 +716,26 @@ class GreaterThanOrEqual extends _TwoInputComparisonGate {
   /// [in1] can be either a [Logic] or a constant be processable by
   /// [LogicValue.of].
   GreaterThanOrEqual(Logic in0, dynamic in1,
-      {String name = 'greaterThanOrEqual'})
-      : super((a, b) => a >= b, '>=', in0, in1, name: name);
+      {super.name = 'greaterThanOrEqual'})
+      : super((a, b) => a >= b, '>=', in0, in1);
 }
 
 /// A unary AND gate.
 class AndUnary extends _OneInputUnaryGate {
   /// Calculates whether all bits of [in_] are high.
-  AndUnary(Logic in_, {String name = 'uand'})
-      : super((a) => a.and(), '&', in_, name: name);
+  AndUnary(Logic in_, {super.name = 'uand'}) : super((a) => a.and(), '&', in_);
 }
 
 /// A unary OR gate.
 class OrUnary extends _OneInputUnaryGate {
   /// Calculates whether any bits of [in_] are high.
-  OrUnary(Logic in_, {String name = 'uor'})
-      : super((a) => a.or(), '|', in_, name: name);
+  OrUnary(Logic in_, {super.name = 'uor'}) : super((a) => a.or(), '|', in_);
 }
 
 /// A unary XOR gate.
 class XorUnary extends _OneInputUnaryGate {
   /// Calculates the parity of the bits of [in_].
-  XorUnary(Logic in_, {String name = 'uxor'})
-      : super((a) => a.xor(), '^', in_, name: name);
+  XorUnary(Logic in_, {super.name = 'uxor'}) : super((a) => a.xor(), '^', in_);
 }
 
 /// A logical right-shift module.
@@ -753,9 +748,9 @@ class RShift extends _ShiftGate {
   ///
   /// [shiftAmount] can be either a [Logic] or a constant be processable by
   /// [LogicValue.of].
-  RShift(Logic in_, dynamic shiftAmount, {String name = 'rshift'})
+  RShift(Logic in_, dynamic shiftAmount, {super.name = 'rshift'})
       : // Note: >>> vs >> is backwards for SystemVerilog and Dart
-        super((a, shamt) => a >>> shamt, '>>', in_, shiftAmount, name: name);
+        super((a, shamt) => a >>> shamt, '>>', in_, shiftAmount);
 
   @override
   void _netSetup(LogicNet internalOut) {
@@ -775,10 +770,9 @@ class ARShift extends _ShiftGate {
   ///
   /// [shiftAmount] can be either a [Logic] or a constant be processable by
   /// [LogicValue.of].
-  ARShift(Logic in_, dynamic shiftAmount, {String name = 'arshift'})
+  ARShift(Logic in_, dynamic shiftAmount, {super.name = 'arshift'})
       : // Note: >>> vs >> is backwards for SystemVerilog and Dart
-        super((a, shamt) => a >> shamt, '>>>', in_, shiftAmount,
-            name: name, signed: true);
+        super((a, shamt) => a >> shamt, '>>>', in_, shiftAmount, signed: true);
 
   @override
   void _netSetup(LogicNet internalOut) {
@@ -798,9 +792,9 @@ class LShift extends _ShiftGate {
   ///
   /// [shiftAmount] can be either a [Logic] or a constant be processable by
   /// [LogicValue.of].
-  LShift(Logic in_, dynamic shiftAmount, {String name = 'lshift'})
+  LShift(Logic in_, dynamic shiftAmount, {super.name = 'lshift'})
       : super((a, shamt) => a << shamt, '<<', in_, shiftAmount,
-            name: name, outputSvWidthExpansion: true);
+            outputSvWidthExpansion: true);
 
   @override
   void _netSetup(LogicNet internalOut) {

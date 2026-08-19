@@ -86,7 +86,7 @@ class ParentOfDifferentModuleDefNames extends Module {
   }
 }
 
-void main() async {
+void main() {
   test('complex trunk with leaves doesnt duplicate identical modules',
       () async {
     final dut = TrunkWithLeaves(Logic(), Logic());

@@ -36,6 +36,6 @@ class DevToolsHelpButton extends StatelessWidget {
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(FlagProperty('isDark', value: isDark));
+    properties.add(DiagnosticsProperty<bool>('isDark', isDark));
   }
 }

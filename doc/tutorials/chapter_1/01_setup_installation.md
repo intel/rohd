@@ -96,7 +96,7 @@ code .
 Delete all the content in `bin/rohd_project.dart` and replace with:
 
 ```dart
-// ignore_for_file: avoid_print
+// ignore_for_file: avoid_print - tutorial
 
 // Import the ROHD package
 import 'package:rohd/rohd.dart';

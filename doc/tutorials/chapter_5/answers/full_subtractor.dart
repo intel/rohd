@@ -1,4 +1,4 @@
-// ignore_for_file: avoid_print
+// ignore_for_file: avoid_print - tutorial
 
 import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
@@ -46,7 +46,7 @@ Future<void> main() async {
 
   print(SystemVerilogService(diff).output);
 
-  test('should return true if results matched truth table', () async {
+  test('should return true if results matched truth table', () {
     for (var i = 0; i <= 1; i++) {
       for (var j = 0; j <= 1; j++) {
         for (var k = 0; k <= 1; k++) {

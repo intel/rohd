@@ -42,7 +42,7 @@ void main() {
         expect(simResult, equals(true));
       }
 
-      test('multiply by a multiplier <1 throws exception', () async {
+      test('multiply by a multiplier <1 throws exception', () {
         expect(
             () => replicateVectors([
                   Vector({'a': 0}, {'b': 0})
@@ -96,7 +96,7 @@ void main() {
         ], 3, originalWidth: 4);
       });
 
-      test('LogicValue.replicate tests', () async {
+      test('LogicValue.replicate tests', () {
         expect(LogicValue.one.replicate(2).toString(includeWidth: false),
             equals('11'));
         expect(LogicValue.zero.replicate(2).toString(includeWidth: false),

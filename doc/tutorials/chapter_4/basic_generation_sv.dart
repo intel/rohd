@@ -1,7 +1,7 @@
 import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
 
-// ignore_for_file: avoid_print
+// ignore_for_file: avoid_print - tutorial
 
 class FullAdderResult {
   final sum = Logic(name: 'sum');
@@ -80,7 +80,7 @@ void main() async {
 
   print(SystemVerilogService(nbitAdder).output);
 
-  test('should return 10 when both inputs are 5.', () async {
+  test('should return 10 when both inputs are 5.', () {
     a.put(5);
     b.put(5);
 
