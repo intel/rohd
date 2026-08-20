@@ -389,7 +389,8 @@ void main() {
       final mod = SwizzleAdjacentBitSlices();
       await mod.build();
 
-      final sv = SvCleaner.removeSwizzleAnnotationComments(mod.generateSynth());
+      final sv = SvCleaner.removeSwizzleAnnotationComments(
+          mod.dumpSystemVerilog().output);
 
       expect(sv, contains('assign out = {a[7:5],a[2:0]};'));
       expect(sv, isNot(contains('a[7],a[6]')));
@@ -412,7 +413,8 @@ void main() {
       final mod = SwizzleAllAdjacentBitSlices();
       await mod.build();
 
-      final sv = SvCleaner.removeSwizzleAnnotationComments(mod.generateSynth());
+      final sv = SvCleaner.removeSwizzleAnnotationComments(
+          mod.dumpSystemVerilog().output);
 
       expect(sv, contains('assign out = a[7:5];'));
       expect(sv, isNot(contains('assign out = {a[7:5]};')));
@@ -430,7 +432,8 @@ void main() {
       final mod = SwizzleAscendingBitSlices();
       await mod.build();
 
-      final sv = SvCleaner.removeSwizzleAnnotationComments(mod.generateSynth());
+      final sv = SvCleaner.removeSwizzleAnnotationComments(
+          mod.dumpSystemVerilog().output);
 
       expect(sv, isNot(contains('a[2:0]')));
       expect(sv, contains('a[0]'));
@@ -457,7 +460,8 @@ void main() {
       final mod = SwizzleNestedAdjacentBitSlices();
       await mod.build();
 
-      final sv = SvCleaner.removeSwizzleAnnotationComments(mod.generateSynth());
+      final sv = SvCleaner.removeSwizzleAnnotationComments(
+          mod.dumpSystemVerilog().output);
 
       expect(sv, contains('assign out = {(a[7:5]),a[4:3]};'));
       expect(sv, isNot(contains('a[7:3]')));
@@ -475,7 +479,8 @@ void main() {
       final mod = SwizzleAdjacentRanges();
       await mod.build();
 
-      final sv = SvCleaner.removeSwizzleAnnotationComments(mod.generateSynth());
+      final sv = SvCleaner.removeSwizzleAnnotationComments(
+          mod.dumpSystemVerilog().output);
 
       expect(sv, contains('assign out = {(a[5:2]),(a[1:0])};'));
       expect(sv, isNot(contains('a[5:0]')));
@@ -494,7 +499,8 @@ void main() {
       final mod = SwizzlePackedArrayElementBits(LogicArray([2, 2], 1));
       await mod.build();
 
-      final sv = SvCleaner.removeSwizzleAnnotationComments(mod.generateSynth());
+      final sv = SvCleaner.removeSwizzleAnnotationComments(
+          mod.dumpSystemVerilog().output);
 
       expect(sv, contains('assign out = {arr[1][1:0],arr[0][1:0]};'));
       expect(sv, isNot(contains('arr[1][1],arr[1][0]')));
@@ -514,7 +520,8 @@ void main() {
       );
       await mod.build();
 
-      final sv = SvCleaner.removeSwizzleAnnotationComments(mod.generateSynth());
+      final sv = SvCleaner.removeSwizzleAnnotationComments(
+          mod.dumpSystemVerilog().output);
 
       expect(sv, isNot(contains('arr[3:0]')));
       expect(sv, contains('arr[3]'));

@@ -396,7 +396,7 @@ void main() {
       expect(alias.value, LogicValue.zero);
 
       await module.build();
-      expect(module.generateSynth(), contains("1'h0"));
+      expect(module.dumpSystemVerilog().output, contains("1'h0"));
     });
 
     test('bitwise NOT folds Const inputs', () {

@@ -181,7 +181,7 @@ void main() {
         );
         await module.build();
 
-        final generated = module.generateSynth();
+        final generated = module.dumpSystemVerilog().output;
 
         expect(generated, contains('module ArrayRecordHierarchy'));
         expect(generated, contains('.inputData('));
@@ -197,7 +197,7 @@ void main() {
     final module = RootArrayPassThrough(LogicArray([2, 3], 4));
     await module.build();
 
-    final generated = module.generateSynth();
+    final generated = module.dumpSystemVerilog().output;
 
     expect(generated, contains('input logic [1:0][2:0][3:0] inputData'));
     expect(generated, contains('output logic [1:0][2:0][3:0] outputData'));

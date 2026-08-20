@@ -29,14 +29,14 @@ import 'package:rohd/src/utilities/timestamper.dart';
 /// // Write individual .sv files:
 /// sv.writeFiles('build/');
 ///
-/// // Or get the concatenated output (like generateSynth):
+/// // Or get the concatenated output:
 /// print(sv.allContents);
 /// ```
 class SystemVerilogService extends CodeGenService {
   /// The separator inserted between module definitions in the
   /// concatenated single-file output from [allContents].
   ///
-  /// Matches the format historically produced by `Module.generateSynth()`.
+  /// Matches the format returned by [Module.dumpSystemVerilog].
   static const moduleSeparator = '\n\n////////////////////\n\n';
 
   /// The most recently registered [SystemVerilogService], or `null`.
@@ -118,7 +118,7 @@ class SystemVerilogService extends CodeGenService {
   /// Returns the concatenated SystemVerilog module definitions as a single
   /// string, without the generation header.
   ///
-  /// For the full output with header (matching `Module.generateSynth()`),
+  /// For the full output with header,
   /// use [synthOutput].
   String get allContents =>
       fileContents.map((fc) => fc.contents).join(moduleSeparator);
@@ -139,7 +139,7 @@ class SystemVerilogService extends CodeGenService {
   late final String header = includeHeader ? synthHeader : '';
 
   /// Returns the full single-file SystemVerilog output with header,
-  /// identical to `Module.generateSynth()`.
+  /// identical to [Module.dumpSystemVerilog].
   ///
   /// Computed once and cached so the timestamped header is stable for the
   /// lifetime of this service.

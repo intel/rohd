@@ -682,7 +682,7 @@ void main() {
   test('const unary inline op', () async {
     final mod = ModWithConstInlineUnaryOp();
     await mod.build();
-    final sv = mod.generateSynth();
+    final sv = mod.dumpSystemVerilog().output;
 
     expect(sv, contains("~8'h0"), reason: sv);
 

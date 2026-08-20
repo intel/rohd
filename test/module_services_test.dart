@@ -46,17 +46,17 @@ void main() {
       expect(ModuleServices.instance.rootModule, equals(mod));
     });
 
-    test('hierarchyJSON returns valid JSON', () async {
+    test('hierarchyJson returns valid JSON', () async {
       final mod = SimpleModule(Logic());
       await mod.build();
-      final json = ModuleServices.instance.hierarchyJSON;
+      final json = ModuleServices.instance.hierarchyJson;
       expect(() => jsonDecode(json), returnsNormally);
     });
 
-    test('ModuleTree hierarchyJSON sees rootModule after build', () async {
+    test('ModuleTree hierarchyJson sees rootModule after build', () async {
       final mod = SimpleModule(Logic());
       await mod.build();
-      final json = ModuleTree.instance.hierarchyJSON;
+      final json = ModuleTree.instance.hierarchyJson;
       expect(jsonDecode(json), containsPair('name', 'simple'));
     });
 
@@ -93,6 +93,26 @@ void main() {
   });
 
   group('SystemVerilogService', () {
+    test('dumpSystemVerilog returns the simple synthesized output', () async {
+      final mod = SimpleModule(Logic());
+      await mod.build();
+
+      expect(mod.dumpSystemVerilog().output, isNotEmpty);
+    });
+
+    test('dumpSystemVerilog writes the requested output path', () async {
+      final mod = SimpleModule(Logic());
+      await mod.build();
+      final dir = Directory.systemTemp.createTempSync('sv_test_');
+      try {
+        final path = '${dir.path}/out.sv';
+        final sv = mod.dumpSystemVerilog(outputPath: path);
+        expect(File(path).readAsStringSync(), equals(sv.output));
+      } finally {
+        dir.deleteSync(recursive: true);
+      }
+    });
+
     test('registers with ModuleServices and sets current', () async {
       final mod = SimpleModule(Logic());
       await mod.build();

@@ -33,7 +33,7 @@ void main() async {
   await fSub.build();
 
   // ignore: avoid_print - tutorial
-  print(fSub.generateSynth());
+  print(fSub.dumpSystemVerilog().output);
 
   test('should return 0 when a and b equal 1', () {
     a.put(1);

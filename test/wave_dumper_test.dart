@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2024 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // wave_dumper_test.dart
@@ -40,11 +40,10 @@ const tempDumpDir = 'tmp_test';
 /// Gets the path of the VCD file based on a name.
 String temporaryDumpPath(String name) => '$tempDumpDir/temp_dump_$name.vcd';
 
-/// Attaches a [WaveformService] to [module] to VCD with [name].
+/// Attaches a VCD waveform dump to [module] with [name].
 void createTemporaryDump(Module module, String name) {
   Directory(tempDumpDir).createSync(recursive: true);
-  final tmpDumpFile = temporaryDumpPath(name);
-  WaveformService(module, outputPath: tmpDumpFile);
+  module.dumpWaves(outputPath: temporaryDumpPath(name));
 }
 
 /// Deletes the temporary VCD file associated with [name].

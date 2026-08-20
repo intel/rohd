@@ -7,7 +7,7 @@ toc: true
 
 Hardware in ROHD is convertible to an output format via `Synthesizer`s, the most popular of which is SystemVerilog. Hardware in ROHD can be converted to logically equivalent, human-readable SystemVerilog with structure, hierarchy, ports, and names maintained.
 
-The simplest way to generate SystemVerilog is with `SystemVerilogService`:
+The simplest way to generate SystemVerilog is with `dumpSystemVerilog`:
 
 ```dart
 void main() async {
@@ -16,7 +16,7 @@ void main() async {
     // remember that `build` returns a `Future`, hence the `await` here
     await myModule.build();
 
-    final generatedSv = SystemVerilogService(myModule, register: false).synthOutput;
+    final generatedSv = myModule.dumpSystemVerilog().output;
 
     // you can print it out...
     print(generatedSv);
@@ -26,14 +26,14 @@ void main() async {
 }
 ```
 
-The `SystemVerilogService.synthOutput` getter will return a `String` with the SystemVerilog `module` definitions for the top-level it is called on, as well as any sub-modules (recursively).  You can dump the entire contents to a file and use it anywhere you would any other SystemVerilog.
+The `dumpSystemVerilog().output` getter returns a `String` with the SystemVerilog `module` definitions for the top-level it is called on, as well as any sub-modules (recursively). You can dump the entire contents to a file and use it anywhere you would any other SystemVerilog.
 
 ## Controlling port types
 
 Generated ports default to `input logic`, `output logic`, and `inout wire`, preserving the traditional ROHD declarations. Use a `SystemVerilogSynthesizerConfiguration` to independently control whether object types, such as `wire` and `var`, and data types, such as `logic`, are explicit for each port direction:
 
 ```dart
-final generatedSv = myModule.generateSynth(
+final generatedSv = myModule.dumpSystemVerilog(
   configuration: const SystemVerilogSynthesizerConfiguration(
     inputPortType: SystemVerilogPortTypeConfiguration(
       objectType: SystemVerilogPortType.explicit,
@@ -48,7 +48,7 @@ final generatedSv = myModule.generateSynth(
       dataType: SystemVerilogPortType.explicit,
     ),
   ),
-);
+).output;
 ```
 
 The same configuration can be passed directly to `SystemVerilogSynthesizer` when using `SynthBuilder`.

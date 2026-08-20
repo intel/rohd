@@ -110,7 +110,7 @@ class ModuleTree {
   ///
   /// Returns: string representing hierarchical structure of modules in JSON
   /// format.
-  String get hierarchyJSON {
+  String get hierarchyJson {
     final rootModule = _rootModule;
     return rootModule?.buildModuleTreeJsonSchema(rootModule) ??
         json.encode({
