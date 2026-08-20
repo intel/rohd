@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2024 Intel Corporation
+// Copyright (C) 2023-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // oven_fsm.dart
@@ -7,7 +7,7 @@
 // 2023 February 13
 // Author: Yao Jing Quek <yao.jing.quek@intel.com>
 
-// ignore_for_file: avoid_print
+// ignore_for_file: avoid_print - example
 
 // Import the ROHD package.
 import 'dart:async';
@@ -15,7 +15,7 @@ import 'dart:async';
 import 'package:rohd/rohd.dart';
 
 // Import the counter module implement in example.dart.
-import './example.dart';
+import 'example.dart';
 
 // Enumerated type named `OvenState` with four possible states:
 // `standby`, `cooking`,`paused`, and `completed`.

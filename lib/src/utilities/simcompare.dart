@@ -7,7 +7,7 @@
 // 2021 May 7
 // Author: Max Korbel <max.korbel@intel.com>
 
-// ignore_for_file: avoid_print
+// ignore_for_file: avoid_print - testing lib, printing important for debug
 
 import 'dart:async';
 import 'dart:io';
@@ -161,7 +161,7 @@ abstract class SimCompare {
     }
 
     for (final vector in vectors) {
-      Simulator.registerAction(timestamp, () async {
+      Simulator.registerAction(timestamp, () {
         for (final signalName in vector.inputValues.keys) {
           final value = vector.inputValues[signalName];
           (module.tryInput(signalName) ?? getIoInputDriver(signalName))
@@ -295,13 +295,14 @@ abstract class SimCompare {
             signal.dimensions.getRange(0, signal.numUnpackedDimensions);
         final packedDims = signal.dimensions
             .getRange(signal.numUnpackedDimensions, signal.dimensions.length);
-        // ignore: prefer_interpolation_to_compose_strings
-        return signalType +
-            ' ' +
-            // ignore: prefer_interpolation_to_compose_strings
-            packedDims.map((d) => '[${d - 1}:0]').join() +
-            ' [${signal.elementWidth - 1}:0] $signalName' +
-            unpackedDims.map((d) => '[${d - 1}:0]').join();
+        final packedDimensions =
+            packedDims.map((dimension) => '[${dimension - 1}:0]').join();
+        final unpackedDimensions =
+            unpackedDims.map((dimension) => '[${dimension - 1}:0]').join();
+
+        return '$signalType $packedDimensions'
+            ' [${signal.elementWidth - 1}:0] $signalName'
+            '$unpackedDimensions';
       } else if (signal.width != 1) {
         return '$signalType [${signal.width - 1}:0] $signalName';
       } else {

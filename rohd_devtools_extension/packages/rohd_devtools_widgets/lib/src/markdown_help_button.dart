@@ -21,7 +21,6 @@
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show rootBundle;
 
 /// A help button that loads its content from a markdown asset file.
 ///
@@ -117,8 +116,8 @@ class _MarkdownHelpButtonState extends State<MarkdownHelpButton> {
   _HelpContent? _content;
 
   @override
-  void initState() {
-    super.initState();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
     _loadContent();
   }
 
@@ -133,23 +132,24 @@ class _MarkdownHelpButtonState extends State<MarkdownHelpButton> {
 
   Future<void> _loadContent() async {
     try {
+      final assetBundle = DefaultAssetBundle.of(context);
       String raw;
       if (widget.package != null) {
         // Try the package-qualified path first (works when embedded as a
         // dependency in a host app), then fall back to the bare asset path
         // (standalone mode). This order avoids a spurious 404 on the web
         // when the bare path doesn't exist.
-        // Use catch-all because rootBundle.loadString throws FlutterError
+        // Use catch-all because AssetBundle.loadString throws FlutterError
         // (an Error, not Exception) when the asset is missing.
         try {
-          raw = await rootBundle
+          raw = await assetBundle
               .loadString('packages/${widget.package}/${widget.assetPath}');
           // ignore: avoid_catches_without_on_clauses
         } catch (_) {
-          raw = await rootBundle.loadString(widget.assetPath);
+          raw = await assetBundle.loadString(widget.assetPath);
         }
       } else {
-        raw = await rootBundle.loadString(widget.assetPath);
+        raw = await assetBundle.loadString(widget.assetPath);
       }
       // Apply substitutions before parsing.
       final subs = widget.substitutions;
@@ -364,11 +364,7 @@ class _HelpContent {
     final detailsIdx = raw.indexOf(detailsMarker);
 
     // Extract title from the first # heading.
-    String title = 'Help';
-    final titleMatch = RegExp(r'^#\s+(.+)$', multiLine: true).firstMatch(raw);
-    if (titleMatch != null) {
-      title = titleMatch.group(1)!.trim();
-    }
+    final title = _extractTitle(raw) ?? 'Help';
 
     // Extract tooltip text.
     String tooltip = '';
@@ -412,7 +408,7 @@ class _HelpContent {
       }
 
       // Table separator row (|---|---|) — skip
-      if (RegExp(r'^\|[\s\-:|]+\|$').hasMatch(trimmed)) {
+      if (_isTableSeparatorRow(trimmed)) {
         continue;
       }
 
@@ -420,7 +416,7 @@ class _HelpContent {
       if (trimmed.startsWith('|') &&
           trimmed.endsWith('|') &&
           i + 1 < lines.length &&
-          RegExp(r'^\|[\s\-:|]+\|$').hasMatch(lines[i + 1].trim())) {
+          _isTableSeparatorRow(lines[i + 1].trim())) {
         continue;
       }
 
@@ -458,6 +454,39 @@ class _HelpContent {
 
     return blocks;
   }
+
+  static String? _extractTitle(String raw) {
+    for (final line in raw.split('\n')) {
+      if (line.length > 2 &&
+          line.codeUnitAt(0) == 35 &&
+          _isAsciiWhitespace(line.codeUnitAt(1))) {
+        return line.substring(2).trim();
+      }
+    }
+    return null;
+  }
+
+  static bool _isTableSeparatorRow(String line) {
+    if (line.length < 3 || !line.startsWith('|') || !line.endsWith('|')) {
+      return false;
+    }
+    for (var i = 1; i < line.length - 1; i++) {
+      final char = line.codeUnitAt(i);
+      final isSeparatorChar = char == 45 || char == 58 || char == 124;
+      if (!isSeparatorChar && !_isAsciiWhitespace(char)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  static bool _isAsciiWhitespace(int char) =>
+      char == 9 ||
+      char == 10 ||
+      char == 11 ||
+      char == 12 ||
+      char == 13 ||
+      char == 32;
 
   /// Strip backtick inline code markers: `text` → text.
   static String _stripInlineCode(String s) => s.replaceAll('`', '');

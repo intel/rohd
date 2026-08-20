@@ -25,7 +25,7 @@ class Pipeline4Stages extends Module {
   }
 }
 
-void main(List<String> args) async {
+void main(List<String> args) {
   test('should return the the matching stage result if input is 5.', () async {
     final a = Logic(name: 'a', width: 8);
     final reset = Logic(name: 'reset');
@@ -43,7 +43,7 @@ void main(List<String> args) async {
 
     WaveformService(pipe, outputPath: 'answer_1.vcd');
 
-    Simulator.registerAction(50, () async {
+    Simulator.registerAction(50, () {
       // stage 4 / result: 30 + (30 * 3) = 120
       expect(pipe.result.value.toInt(), 120);
     });

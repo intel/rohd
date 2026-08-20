@@ -81,7 +81,7 @@ void main() async {
 
   // print(nbitAdder.generateSynth());
 
-  test('should return 20 when A and B perform add.', () async {
+  test('should return 20 when A and B perform add.', () {
     a.put(15);
     b.put(5);
 
