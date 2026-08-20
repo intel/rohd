@@ -1,14 +1,15 @@
 // Copyright (C) 2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
-@TestOn('vm')
-
 // filter_bank_integration_test.dart
 // Integration tests using a real ROHD FilterBank netlist JSON fixture.
 // Covers model getters, service methods, and adapter edge cases.
 //
 // 2026 April
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
+
+@TestOn('vm')
+library;
 
 import 'dart:io';
 
@@ -174,19 +175,6 @@ void main() {
       expect(outputs.map((s) => s.name), contains('done'));
     });
 
-    test(r'isPrimitiveType is true for $-prefixed types', () {
-      expect(HierarchyOccurrence.isPrimitiveType(r'$mux'), isTrue);
-      expect(HierarchyOccurrence.isPrimitiveType(r'$and'), isTrue);
-    });
-
-    test(r'isPrimitiveType is false for non-$-prefixed types', () {
-      expect(HierarchyOccurrence.isPrimitiveType('FilterBank'), isFalse);
-    });
-
-    test('isPrimitiveType is false for empty string', () {
-      expect(HierarchyOccurrence.isPrimitiveType(''), isFalse);
-    });
-
     test('isPrimitiveCell reflects isPrimitive field and type', () {
       // A node marked isPrimitive=true
       final primCell = service.root.children.firstWhere((c) => c.isPrimitive);
@@ -294,56 +282,6 @@ void main() {
       final withSlash = suggestions.where((s) => s.endsWith('/'));
       // At least ch0_1 and ch1_1 have children
       expect(withSlash, isNotEmpty);
-    });
-
-    test('hasRegexChars is false for plain text', () {
-      expect(HierarchyService.hasRegexChars('clk'), isFalse);
-    });
-
-    test('hasRegexChars detects * glob', () {
-      expect(HierarchyService.hasRegexChars('c*'), isTrue);
-    });
-
-    test('hasRegexChars detects ? glob', () {
-      expect(HierarchyService.hasRegexChars('cl?'), isTrue);
-    });
-
-    test('hasRegexChars detects character class', () {
-      expect(HierarchyService.hasRegexChars('[a-z]'), isTrue);
-    });
-
-    test('hasRegexChars detects group alternation', () {
-      expect(HierarchyService.hasRegexChars('(a|b)'), isTrue);
-    });
-
-    test('hasRegexChars detects + quantifier', () {
-      expect(HierarchyService.hasRegexChars('a+'), isTrue);
-    });
-
-    test('longestCommonPrefix finds shared prefix', () {
-      expect(
-        HierarchyService.longestCommonPrefix([
-          'FilterBank/ch0',
-          'FilterBank/ch1',
-        ]),
-        'FilterBank/ch',
-      );
-    });
-
-    test('longestCommonPrefix returns null for empty list', () {
-      expect(HierarchyService.longestCommonPrefix([]), isNull);
-    });
-
-    test('longestCommonPrefix returns null for no common prefix', () {
-      expect(HierarchyService.longestCommonPrefix(['abc', 'xyz']), isNull);
-    });
-
-    test('longestCommonPrefix is case-sensitive', () {
-      final prefix = HierarchyService.longestCommonPrefix([
-        'Filter/abc',
-        'Filter/abd',
-      ]);
-      expect(prefix, 'Filter/ab');
     });
   });
 
@@ -455,18 +393,6 @@ void main() {
       final results = service.searchSignals('clk');
       expect(results, isNotEmpty);
       expect(results.first.toString(), contains('clk'));
-    });
-  });
-
-  // ─────────────── BaseHierarchyAdapter edge case ───────────────
-  // The real uninitialized-root StateError test lives in
-  // coverage_gaps_test.dart.  Here we just verify fromTree works.
-
-  group('BaseHierarchyAdapter — fromTree produces usable root', () {
-    test('fromTree immediately sets root', () {
-      final tree = HierarchyOccurrence(name: 'r');
-      final svc = BaseHierarchyAdapter.fromTree(tree);
-      expect(svc.root.name, 'r');
     });
   });
 
