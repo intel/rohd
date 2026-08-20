@@ -27,7 +27,7 @@ jobs:
         uses: flutter-actions/setup-flutter@v2
         with:
           channel: stable
-          version: 3.29.0
+          version: 3.47.0
 
       - name: Install dependencies
         run: tool/gh_actions/install_dependencies.sh
