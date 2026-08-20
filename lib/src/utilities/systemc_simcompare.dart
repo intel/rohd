@@ -7,6 +7,7 @@
 // 2026 July 20
 // Author: Desmond A. Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
+// SystemC vector execution logs compilation and simulator output for debugging.
 // ignore_for_file: avoid_print
 
 part of 'simcompare.dart';
@@ -15,6 +16,8 @@ class _SystemCSimCompare {
   /// The default SystemC installation path (Accellera).
   static const _systemCDefaultHome = '/opt/systemc/include';
   static const _systemCDefaultLib = '/opt/systemc/lib';
+  static const _systemCPackageHome = '/usr/include';
+  static const _systemCPackageLib = '/usr/lib/x86_64-linux-gnu';
 
   /// Cache of compiled SystemC vector-testbench executables keyed by generated
   /// code hash.
@@ -73,16 +76,23 @@ class _SystemCSimCompare {
   }
 
   /// Resolves SystemC home/lib paths. If explicit paths are given, uses them.
-  /// Otherwise uses the default Accellera install paths.
+  /// Otherwise uses the Accellera or Ubuntu package install paths.
   static (String?, String?) _resolveSystemCPaths(String scHome, String scLib) {
     if (scHome.isNotEmpty && scLib.isNotEmpty) {
-      if (Directory(scHome).existsSync()) {
+      if (Directory(scHome).existsSync() &&
+          File('$scLib/libsystemc.so').existsSync()) {
         return (scHome, scLib);
       }
       return (null, null);
     }
-    if (Directory(_systemCDefaultHome).existsSync()) {
-      return (_systemCDefaultHome, _systemCDefaultLib);
+    for (final (home, lib) in [
+      (_systemCDefaultHome, _systemCDefaultLib),
+      (_systemCPackageHome, _systemCPackageLib),
+    ]) {
+      if (Directory(home).existsSync() &&
+          File('$lib/libsystemc.so').existsSync()) {
+        return (home, lib);
+      }
     }
     return (null, null);
   }

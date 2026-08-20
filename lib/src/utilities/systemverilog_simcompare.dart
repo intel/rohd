@@ -8,6 +8,7 @@
 // 2026 July 20
 // Author: Desmond A. Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
+// SystemVerilog vector execution logs simulator output for debugging.
 // ignore_for_file: avoid_print
 
 part of 'simcompare.dart';
@@ -207,9 +208,11 @@ class _SystemVerilogSimCompare {
           signal.numUnpackedDimensions,
           signal.dimensions.length,
         );
+        // Generate packed and unpacked dimensions incrementally for arrays.
         // ignore: prefer_interpolation_to_compose_strings
         return signalType +
             ' ' +
+            // Preserve the existing incremental dimension construction.
             // ignore: prefer_interpolation_to_compose_strings
             packedDims.map((d) => '[${d - 1}:0]').join() +
             ' [${signal.elementWidth - 1}:0] $signalName' +

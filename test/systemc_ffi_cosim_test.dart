@@ -10,7 +10,6 @@
 @TestOn('vm')
 @Tags(['ffi'])
 library;
-// ignore_for_file: avoid_print
 
 import 'dart:async';
 
@@ -143,9 +142,9 @@ void main() {
       clk: clk,
     );
 
-    // If SystemC isn't installed, skip gracefully
+    // SystemC is optional in local development environments.
     if (cosim == null) {
-      print('SystemC not available — skipping FFI cosim test');
+      markTestSkipped('SystemC is unavailable on this platform.');
       return;
     }
 
@@ -248,7 +247,7 @@ void main() {
     );
 
     if (cosim == null) {
-      print('SystemC not available — skipping FFI cosim test');
+      markTestSkipped('SystemC is unavailable on this platform.');
       return;
     }
 

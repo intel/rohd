@@ -78,7 +78,7 @@ typedef _AdvanceDart = void Function(Pointer<Void>, int);
 /// await counter.build();
 ///
 /// final cosim = await SystemCFfiCosim.create(counter, clk: clk);
-/// if (cosim == null) return; // SystemC not installed
+/// if (cosim == null) return; // SystemC is unavailable on this platform
 ///
 /// // Now run your test exactly as before:
 /// unawaited(Simulator.run());
@@ -196,7 +196,10 @@ class SystemCFfiCosim {
   /// Compiles the module's SystemC output to a shared library, loads it,
   /// and begins co-simulation.
   ///
-  /// Returns `null` if SystemC is not installed or compilation fails.
+  /// Returns `null` when SystemC is unavailable on this platform.
+  ///
+  /// Throws a [ProcessException] if compiling the generated wrapper fails, or a
+  /// [StateError] if its native SystemC context cannot be created.
   ///
   /// If [clk] is provided, the cosim operates in clocked mode — stepping
   /// SystemC at each clock edge via `Simulator.clkStable`.
@@ -238,7 +241,10 @@ class SystemCFfiCosim {
   /// instantiated during the elaboration phase (before `sc_start`), which
   /// avoids E113 errors when multiple configurations are tested.
   ///
-  /// Returns `false` if SystemC is not installed or compilation fails.
+  /// Returns `false` when SystemC is unavailable on this platform.
+  ///
+  /// Throws a [ProcessException] if compiling the generated wrapper fails, or a
+  /// [StateError] if its native SystemC context cannot be created.
   static Future<bool> preElaborate(
     Module module, {
     Logic? clk,
@@ -268,8 +274,6 @@ class SystemCFfiCosim {
     final resolvedHome = _resolveHome(systemcHome);
     final resolvedLib = _resolveLib(systemcLib);
     if (resolvedHome == null || resolvedLib == null) {
-      // ignore: avoid_print
-      print('SystemC FFI cosim: SystemC installation not found');
       return false;
     }
 
@@ -360,9 +364,24 @@ class SystemCFfiCosim {
       ]);
 
       if (result.exitCode != 0) {
-        // ignore: avoid_print
-        print('SystemC FFI: compilation failed:\n${result.stderr}');
-        return false;
+        throw ProcessException(
+          'g++',
+          [
+            '-std=$cxxStd',
+            '-shared',
+            '-fPIC',
+            '-O2',
+            '-I$resolvedHome',
+            '-L$resolvedLib',
+            '-Wl,-rpath,$resolvedLib',
+            '-o',
+            _soPath!,
+            cppFile,
+            '-lsystemc',
+          ],
+          result.stderr.toString(),
+          result.exitCode,
+        );
       }
     }
 
@@ -396,9 +415,7 @@ class SystemCFfiCosim {
     _free(namePtr);
 
     if (_handle == nullptr) {
-      // ignore: avoid_print
-      print('SystemC FFI: sc_cosim_create returned null');
-      return false;
+      throw StateError('SystemC FFI: sc_cosim_create returned null.');
     }
 
     // Cache for reuse
@@ -922,13 +939,17 @@ class SystemCFfiCosim {
 
   static const _defaultHome = '/opt/systemc/include';
   static const _defaultLib = '/opt/systemc/lib';
+  static const _packageHome = '/usr/include';
+  static const _packageLib = '/usr/lib/x86_64-linux-gnu';
 
   static String? _resolveHome(String scHome) {
     if (scHome.isNotEmpty && Directory(scHome).existsSync()) {
       return scHome;
     }
-    if (Directory(_defaultHome).existsSync()) {
-      return _defaultHome;
+    for (final home in [_defaultHome, _packageHome]) {
+      if (Directory(home).existsSync()) {
+        return home;
+      }
     }
     return null;
   }
@@ -937,8 +958,10 @@ class SystemCFfiCosim {
     if (scLib.isNotEmpty && Directory(scLib).existsSync()) {
       return scLib;
     }
-    if (Directory(_defaultLib).existsSync()) {
-      return _defaultLib;
+    for (final lib in [_defaultLib, _packageLib]) {
+      if (File('$lib/libsystemc.so').existsSync()) {
+        return lib;
+      }
     }
     return null;
   }
