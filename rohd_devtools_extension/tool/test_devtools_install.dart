@@ -61,7 +61,8 @@ Future<void> main(List<String> args) async {
     _requireFile(extensionAssetsPath, 'flutter.js');
     _requireFile(extensionAssetsPath, 'main.dart.js');
     _requireFile(extensionAssetsPath, 'version.json');
-    _requireFile(extensionAssetsPath, p.join('assets', 'AssetManifest.bin.json'));
+    _requireFile(
+        extensionAssetsPath, p.join('assets', 'AssetManifest.bin.json'));
     _requireFile(extensionAssetsPath, p.join('assets', 'FontManifest.json'));
     _requireFile(extensionAssetsPath, p.join('canvaskit', 'canvaskit.js'));
     _requireFile(extensionAssetsPath, p.join('canvaskit', 'canvaskit.wasm'));
