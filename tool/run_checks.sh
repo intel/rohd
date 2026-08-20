@@ -63,6 +63,10 @@ fi
 print_step 'Run project tests'
 tool/gh_actions/run_tests.sh
 
+# Clean SystemC temporary files
+print_step 'Clean SystemC temporary files'
+tool/gh_actions/cleanup_systemc_tmp.sh
+
 # Check temporary test files
 print_step 'Check temporary test files'
 tool/gh_actions/check_tmp_test.sh
