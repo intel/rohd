@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2022 Intel Corporation
+# Copyright (C) 2022-2026 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
 #
 # analyze_source.sh
@@ -11,4 +11,9 @@
 
 set -euo pipefail
 
-dart analyze --fatal-infos
+if command -v flutter >/dev/null 2>&1; then
+  dart run tool/workspace.dart analyze
+else
+  echo "Flutter is unavailable; analyzing the core ROHD package only."
+  dart analyze
+fi

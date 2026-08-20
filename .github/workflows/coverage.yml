@@ -23,6 +23,12 @@ jobs:
       - name: Setup Dart
         uses: dart-lang/setup-dart@v1
 
+      - name: Setup Flutter
+        uses: flutter-actions/setup-flutter@v2
+        with:
+          channel: stable
+          version: 3.47.0
+
       - name: Install dependencies
         run: tool/gh_actions/install_dependencies.sh
 
