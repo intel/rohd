@@ -31,6 +31,7 @@ Future<void> main(List<String> arguments) async {
 
   final root = Directory.current.absolute;
   final packages = _workspacePackages(root);
+  final workspaceUsesFlutter = packages.any(_usesFlutter);
 
   if (arguments.single == 'vscode') {
     _generateVsCodeWorkspace(root, packages);
@@ -38,10 +39,16 @@ Future<void> main(List<String> arguments) async {
   }
 
   for (final package in packages) {
-    final command = _usesFlutter(package) ? 'flutter' : 'dart';
-    if (arguments.single == 'test-node' && command == 'flutter') {
+    final packageUsesFlutter = _usesFlutter(package);
+    if (arguments.single == 'test-node' && packageUsesFlutter) {
       continue;
     }
+    final command = packageUsesFlutter ||
+            (arguments.single != 'test-node' &&
+                package.path == root.path &&
+                workspaceUsesFlutter)
+        ? 'flutter'
+        : 'dart';
 
     final commandArguments = switch (arguments.single) {
       'analyze' => const ['analyze', '--no-fatal-warnings'],
