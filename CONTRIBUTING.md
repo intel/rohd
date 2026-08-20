@@ -134,16 +134,18 @@ Run repository-wide validation from the repository root:
 # Analyze every active workspace member.
 dart run tool/workspace.dart analyze
 
-# Run native tests, using flutter test for Flutter packages.
+# Run native non-benchmark tests, using flutter test for Flutter packages.
 dart run tool/workspace.dart test
 
-# Run Node.js tests for each non-Flutter workspace member.
+# Run non-benchmark Node.js tests for each non-Flutter workspace member.
 dart run tool/workspace.dart test-node
 ```
 
 The Node.js pass can take substantially longer than native tests because Dart
 compiles browser test bundles. Run an individual package or test file directly
 while iterating, then use the workspace commands before submitting a change.
+The workspace test commands exclude the long-running `benchmark` tag; run the
+[benchmark suite](benchmark/README.md) separately when measuring performance.
 
 When adding or removing an active package, update the root `workspace:` list,
 regenerate `rohd-multipackage.code-workspace` with

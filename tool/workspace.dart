@@ -15,8 +15,8 @@ Usage: dart run tool/workspace.dart <command>
 Commands:
   analyze       Analyze every workspace package.
   clean         Delete build artifacts from every workspace package.
-  test          Run native tests in every workspace package.
-  test-node     Run Node.js tests in every non-Flutter workspace package.
+  test          Run native non-benchmark tests in every workspace package.
+  test-node     Run Node.js non-benchmark tests in every non-Flutter workspace package.
   vscode        Generate rohd-multipackage.code-workspace.
 ''';
 
@@ -53,8 +53,14 @@ Future<void> main(List<String> arguments) async {
     final commandArguments = switch (arguments.single) {
       'analyze' => const ['analyze', '--no-fatal-warnings'],
       'clean' => const ['clean'],
-      'test' => const ['test'],
-      'test-node' => const ['test', '--platform', 'node'],
+      'test' => const ['test', '--exclude-tags', 'benchmark'],
+      'test-node' => const [
+          'test',
+          '--platform',
+          'node',
+          '--exclude-tags',
+          'benchmark',
+        ],
       _ => throw StateError('Unexpected command.'),
     };
     await _run(command, commandArguments, package);
@@ -106,6 +112,7 @@ Future<void> _run(
   stdout.writeln(
     'Running $command ${arguments.join(' ')} in ${workingDirectory.path}',
   );
+  final stopwatch = Stopwatch()..start();
   final process = await Process.start(
     command,
     arguments,
@@ -113,6 +120,11 @@ Future<void> _run(
     mode: ProcessStartMode.inheritStdio,
   );
   final exitCode = await process.exitCode;
+  stopwatch.stop();
+  stdout.writeln(
+    'Completed $command ${arguments.join(' ')} in ${workingDirectory.path} '
+    'in ${stopwatch.elapsed}.',
+  );
   if (exitCode != 0) {
     throw ProcessException(command, arguments, 'Command failed.', exitCode);
   }
