@@ -1,6 +1,8 @@
 // Copyright (C) 2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
+@TestOn('vm')
+
 // filter_bank_integration_test.dart
 // Integration tests using a real ROHD FilterBank netlist JSON fixture.
 // Covers model getters, service methods, and adapter edge cases.
