@@ -15,7 +15,7 @@
 // confirm the fixture, determinism, and coverage checks all pass.
 //
 // 2026 August 20
-// Author: Copilot <223556219+Copilot@users.noreply.github.com>
+// Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 import 'dart:io';
 
