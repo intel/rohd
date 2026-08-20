@@ -106,9 +106,9 @@ Future<void> main({bool noPrint = false}) async {
 
   // Now let's try simulating!
 
-  // Attach a waveform dumper.
+  // Attach a waveform service.
   if (!noPrint) {
-    WaveDumper(firFilter);
+    WaveformService(firFilter);
   }
 
   // Let's set the initial setting.

@@ -65,7 +65,7 @@ Future<void> main({bool noPrint = false}) async {
 
   // Simulate the module
   if (!noPrint) {
-    WaveDumper(logicArrayExample);
+    WaveformService(logicArrayExample);
   }
 
   // Set the input values

@@ -107,8 +107,8 @@ void main() async {
   b.inject(14);
   reset.inject(1);
 
-  // Attach a waveform dumper so we can see what happens.
-  WaveDumper(csm, outputPath: 'csm.vcd');
+  // Attach a waveform service so we can see what happens.
+  WaveformService(csm, outputPath: 'csm.vcd');
 
   Simulator.registerAction(10, () {
     reset.inject(0);

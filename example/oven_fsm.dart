@@ -223,9 +223,9 @@ Future<void> main({bool noPrint = false}) async {
   // Set a maximum time for the simulation so it doesn't keep running forever.
   Simulator.setMaxSimTime(300);
 
-  // Attach a waveform dumper so we can see what happens.
+  // Attach a waveform service so we can see what happens.
   if (!noPrint) {
-    WaveDumper(oven, outputPath: 'oven.vcd');
+    WaveformService(oven, outputPath: 'oven.vcd');
   }
 
   // Kick off the simulation.
