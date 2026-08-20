@@ -231,11 +231,12 @@ so the construction site closest to the signal or instance is selected first.
 
 ## Prerequisites
 
-- **Node.js ≥ 18** (use nvm if the container ships an older version):
+- **Node.js >= 22** for the pinned VSIX packaging tool (CI uses Node 24):
 
   ```bash
-  export PATH="$HOME/.nvm/versions/node/v20.19.6/bin:$PATH"
-  node --version   # v18+ or v20+
+  nvm install
+  nvm use
+  node --version
   ```
 
 - **npm** (comes with Node)
@@ -244,7 +245,7 @@ so the construction site closest to the signal or instance is selected first.
 
 ```bash
 cd rohd_extension
-npm install
+npm ci
 npm run compile        # produces out/extension.js
 ```
 
@@ -254,7 +255,7 @@ npm run compile        # produces out/extension.js
 
 ```bash
 cd rohd_extension
-yes | npx @vscode/vsce package --allow-missing-repository
+npm run package
 ```
 
 This produces `rohd-0.1.0.vsix`.
@@ -270,12 +271,9 @@ Then reload the VS Code window (**Developer: Reload Window**).
 ### One-liner (build + install)
 
 ```bash
-export PATH="$HOME/.nvm/versions/node/v20.19.6/bin:$PATH" \
-  && cd rohd_extension \
-  && npm install \
-  && npm run compile \
-  && rm -f *.vsix \
-  && yes | npx @vscode/vsce package --allow-missing-repository \
+cd rohd_extension \
+  && npm ci \
+  && npm run package \
   && code --install-extension rohd-0.1.0.vsix --force \
   && echo "Done — reload the VS Code window to activate."
 ```
@@ -292,7 +290,7 @@ Place the extension source in your repo and build it on container creation:
 ```jsonc
 // .devcontainer/devcontainer.json
 {
-  "postCreateCommand": "cd rohd_extension && export PATH=\"$HOME/.nvm/versions/node/v20.19.6/bin:$PATH\" && npm install && npm run compile && rm -f *.vsix && yes | npx @vscode/vsce package --allow-missing-repository && code --install-extension rohd-0.1.0.vsix --force"
+  "postCreateCommand": "cd rohd_extension && npm ci && npm run package && code --install-extension rohd-0.1.0.vsix --force"
 }
 ```
 

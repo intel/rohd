@@ -296,8 +296,7 @@ abstract class Simulator {
       // Either way, the end result is that a whole new tick gets scheduled for
       // _currentTimestamp and any outstanding injected actions get executed.
 
-      // ignore: unnecessary_lambdas
-      _pendingTimestamps.putIfAbsent(_currentTimestamp, () => ListQueue());
+      _pendingTimestamps.putIfAbsent(_currentTimestamp, ListQueue.new);
     }
 
     // the main event loop
@@ -433,7 +432,7 @@ abstract class Simulator {
         (_maxSimTime < 0 || _currentTimestamp < _maxSimTime)) {
       try {
         await tick();
-      } catch (_, __) {
+      } catch (_) {
         // trigger the end of simulation if an error occurred
         _simulationEndedCompleter.complete();
 

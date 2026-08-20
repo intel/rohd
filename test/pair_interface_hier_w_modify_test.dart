@@ -7,7 +7,8 @@
 // 2023 March 9
 // Author: Max Korbel <max.korbel@intel.com>
 
-// ignore_for_file: deprecated_member_use_from_same_package
+// ignore_for_file: deprecated_member_use_from_same_package - this tests a
+//  deprecated feature
 
 import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
@@ -97,7 +98,7 @@ void main() {
 
     expect(sv, contains('HierConsumer  unnamed_module'));
     expect(sv, contains('HierProducer  unnamed_module'));
-    expect(sv, contains('inout wire logic io_0'));
-    expect(sv, contains('inout wire logic [2:0] io_arr_0'));
+    expect(sv, contains('inout wire io_0'));
+    expect(sv, contains('inout wire [2:0] io_arr_0'));
   });
 }

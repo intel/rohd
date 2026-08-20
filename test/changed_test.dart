@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2024 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // changed_test.dart
@@ -117,7 +117,7 @@ void main() {
     final b = Logic();
 
     var val = false;
-    clk.negedge.listen((event) async {
+    clk.negedge.listen((event) {
       b.inject(val);
       val = !val;
     });
@@ -345,7 +345,7 @@ void main() {
     expect(detectedAChanged, isTrue);
   });
 
-  test('chain of reconnected signals still glitches', () async {
+  test('chain of reconnected signals still glitches', () {
     final a = Logic(name: 'a');
     final b = Logic(name: 'b');
     final c = Logic(name: 'c');
@@ -360,7 +360,7 @@ void main() {
     expect(a.value, equals(LogicValue.one));
   });
 
-  test('late connection propagates without put', () async {
+  test('late connection propagates without put', () {
     final a = Logic(name: 'a');
     final b = ~a;
     a <= Const(0);

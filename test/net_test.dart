@@ -1,4 +1,4 @@
-// Copyright (C) 2024-2025 Intel Corporation
+// Copyright (C) 2024-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // net_test.dart
@@ -692,11 +692,10 @@ void main() {
     SimCompare.checkSystemCVector(mod, vectors);
   });
 
-  test('build fails with missing inout port', () async {
+  test('build fails with missing inout port', () {
     final mod = MissingPortTop(LogicNet());
 
-    expect(
-        () async => mod.build(), throwsA(isA<PortRulesViolationException>()));
+    expect(mod.build, throwsA(isA<PortRulesViolationException>()));
   });
 
   test('double connected port mod', () async {

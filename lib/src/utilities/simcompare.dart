@@ -8,6 +8,8 @@
 // 2021 May 7
 // Author: Max Korbel <max.korbel@intel.com>
 
+// ignore_for_file: avoid_print - testing lib, printing important for debug
+
 import 'dart:async';
 import 'dart:io';
 
@@ -77,7 +79,7 @@ abstract class SimCompare {
     }
 
     for (final vector in vectors) {
-      Simulator.registerAction(timestamp, () async {
+      Simulator.registerAction(timestamp, () {
         for (final signalName in vector.inputValues.keys) {
           final value = vector.inputValues[signalName];
           (module.tryInput(signalName) ?? getIoInputDriver(signalName))

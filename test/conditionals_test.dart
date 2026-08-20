@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2025 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // conditionals_test.dart
@@ -521,7 +521,7 @@ void main() {
     });
 
     group('bad if blocks', () {
-      test('IfBlock with only else fails', () async {
+      test('IfBlock with only else fails', () {
         expect(
             () => If.block([
                   Else([]),
@@ -707,7 +707,7 @@ void main() {
     });
 
     test('should return exception if a conditional is used multiple times.',
-        () async {
+        () {
       expect(() => MultipleConditionalModule(Logic(), Logic()),
           throwsA(isA<InvalidConditionalException>()));
     });

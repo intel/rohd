@@ -1,10 +1,19 @@
-## Next release
+## 0.6.10
 
+- Improved `Logic.replicate(1)` and same-width `signExtend` to return the original signal, eliminating redundant replication modules and generated SystemVerilog (<https://github.com/intel/rohd/pull/689>).
+- Improved simulation performance and generated outputs by avoiding module creation for four-state-safe operations involving `Const`s, zero shifts, and muxes with constant controls (<https://github.com/intel/rohd/issues/429>).
+- Enforced that `Const` values cannot be changed through `put` or `inject`, including through another `Logic` driven by a `Const` (<https://github.com/intel/rohd/issues/486>).
+- Added per-`Const` preferred radix control for generated literals, normalized `Const` names to reflect their displayed radix, and enhanced `LogicValue.toRadixString` to omit its width and radix decorator or digit separators (<https://github.com/intel/rohd/issues/601>).
+- Fixed a bug to prevent stack overflows when synthesizing designs with combinational loops (<https://github.com/intel/rohd/pull/680>).
 - Improved generated SystemVerilog to collapse contiguous partial array and range assignments into packed slice assignments when safe (<https://github.com/intel/rohd/pull/676>).
-- Added configurable explicit or implicit object and data types for generated SystemVerilog ports, defaulting to `input wire logic`, `output var logic`, and `inout wire logic` (<https://github.com/intel/rohd/pull/678>).
+- Added per-direction configuration of explicit or implicit object and data types for generated SystemVerilog ports. Defaults preserve the existing `input logic`, `output logic`, and `inout wire` declarations (<https://github.com/intel/rohd/pull/678>, <https://github.com/intel/rohd/pull/687>).
+- Significantly enhanced ROHD DevTools with embedded and standalone VM connections, live hierarchy and signal inspection, filtering, snapshots and export, and cross-probe integration (<https://github.com/intel/rohd/pull/665>).
+- Added the `rohd_hierarchy` package for compact hierarchy dictionaries, canonical occurrence addresses, hierarchy search, and netlist adapters (<https://github.com/intel/rohd/pull/653>).
+- Added the ROHD VS Code extension with context-aware snippets, Dart Tooling Daemon integration, and source navigation for cross-probing from ROHD viewers (<https://github.com/intel/rohd/pull/670>).
 - Improved `Logic.getRange` and `slice` on filled `Const`s to return direct constants instead of constructing `BusSubset` modules (<https://github.com/intel/rohd/pull/677>).
 - Improved generated SystemVerilog for swizzles to compact adjacent bit selections into legal slice expressions (<https://github.com/intel/rohd/pull/674>).
 - Improved generated SystemVerilog to collapse a variety of intermediate `LogicArray`s and net buses (e.g. from bit-blasting, aggregate connections, `assignSubset`) into inline concatenations on their consuming connections, eliminating unnecessary intermediate declarations, `assign`s, and `net_connect`s when it is safe to do so (<https://github.com/intel/rohd/pull/663>).
+- Centralized synthesizer naming so output names in different contexts are more consistent. Generated SystemVerilog signal and instance names may change in designs with name collisions, repeated constants, or mergeable intermediate signals, so tests or downstream scripts that match exact generated identifiers may need updates (<https://github.com/intel/rohd/pull/652>).
 
 ## 0.6.9
 

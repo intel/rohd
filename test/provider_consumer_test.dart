@@ -178,37 +178,41 @@ void main() {
 
     final sv = mod.generateSynth();
 
-    expect(sv, contains('''
-module Provider (
-input wire logic clk,
-input wire logic reset,
-input wire logic wd0_ready_req,
-input wire logic wd1_ready_req,
-input wire logic [31:0] rd_data_rsp,
-input wire logic rd_valid_rsp,
-output var logic [31:0] wd0_data_req,
-output var logic wd0_valid_req,
-output var logic [31:0] wd1_data_req,
-output var logic wd1_valid_req,
-output var logic rd_ready_rsp
-);
-'''));
+    expect(
+        sv,
+        contains([
+          'module Provider (',
+          'input logic clk,',
+          'input logic reset,',
+          'input logic wd0_ready_req,',
+          'input logic wd1_ready_req,',
+          'input logic [31:0] rd_data_rsp,',
+          'input logic rd_valid_rsp,',
+          'output logic [31:0] wd0_data_req,',
+          'output logic wd0_valid_req,',
+          'output logic [31:0] wd1_data_req,',
+          'output logic wd1_valid_req,',
+          'output logic rd_ready_rsp',
+          ');',
+        ].join('\n')));
 
-    expect(sv, contains('''
-module Consumer (
-input wire logic clk,
-input wire logic reset,
-input wire logic [31:0] wd0_data_req,
-input wire logic wd0_valid_req,
-input wire logic [31:0] wd1_data_req,
-input wire logic wd1_valid_req,
-input wire logic rd_ready_rsp,
-output var logic wd0_ready_req,
-output var logic wd1_ready_req,
-output var logic [31:0] rd_data_rsp,
-output var logic rd_valid_rsp
-);
-'''));
+    expect(
+        sv,
+        contains([
+          'module Consumer (',
+          'input logic clk,',
+          'input logic reset,',
+          'input logic [31:0] wd0_data_req,',
+          'input logic wd0_valid_req,',
+          'input logic [31:0] wd1_data_req,',
+          'input logic wd1_valid_req,',
+          'input logic rd_ready_rsp,',
+          'output logic wd0_ready_req,',
+          'output logic wd1_ready_req,',
+          'output logic [31:0] rd_data_rsp,',
+          'output logic rd_valid_rsp',
+          ');',
+        ].join('\n')));
 
     await SimCompare.checkFunctionalVector(mod, vectors);
     SimCompare.checkIverilogVector(mod, vectors);

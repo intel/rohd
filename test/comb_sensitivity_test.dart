@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2023 Intel Corporation
+// Copyright (C) 2022-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // comb_sensitivity_test.dart
@@ -66,7 +66,7 @@ class TopMod extends Module {
   }
 }
 
-void main() async {
+void main() {
   test('false sensitivity does not cause false comb cycle', () async {
     final theSource = Logic(name: 'theSource')..put(0);
 

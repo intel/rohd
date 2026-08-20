@@ -117,7 +117,7 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
   Iterable<String> _verilogInputs() => _synthModuleDefinition.inputs.map((sig) {
         assert(module.tryInput(sig.name) != null,
             'Named input ${sig.name} not found in module ${module.name}.');
-        return _verilogPort('input', 'wire', sig);
+        return _verilogPort('input', 'wire', configuration.inputPortType, sig);
       });
 
   /// Representation of all output port declarations in generated SV.
@@ -125,23 +125,23 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
       _synthModuleDefinition.outputs.map((sig) {
         assert(module.tryOutput(sig.name) != null,
             'Named output ${sig.name} not found in module ${module.name}.');
-        return _verilogPort('output', 'var', sig);
+        return _verilogPort('output', 'var', configuration.outputPortType, sig);
       });
 
   /// Representation of all inout port declarations in generated SV.
   Iterable<String> _verilogInOuts() => _synthModuleDefinition.inOuts.map((sig) {
         assert(module.tryInOut(sig.name) != null,
             'Named inOut ${sig.name} not found in module ${module.name}.');
-        return _verilogPort('inout', 'wire', sig);
+        return _verilogPort('inout', 'wire', configuration.inOutPortType, sig);
       });
 
   /// Representation of a port declaration in generated SV.
-  String _verilogPort(String direction, String objectType, SynthLogic sig) => [
+  String _verilogPort(String direction, String objectType,
+          SystemVerilogPortTypeConfiguration portType, SynthLogic sig) =>
+      [
         direction,
-        if (configuration.portObjectType == SystemVerilogPortType.explicit)
-          objectType,
-        if (configuration.portDataType == SystemVerilogPortType.explicit)
-          'logic',
+        if (portType.objectType == SystemVerilogPortType.explicit) objectType,
+        if (portType.dataType == SystemVerilogPortType.explicit) 'logic',
         sig.definitionName(),
       ].join(' ');
 
