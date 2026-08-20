@@ -192,7 +192,7 @@ void main() {
     await mod.build();
 
     // Make sure the "modify" went through:
-    final sv = SystemVerilogService(mod).output;
+    final sv = mod.dumpSystemVerilog().output;
     expect(sv, contains('input logic simple_clk'));
   });
 

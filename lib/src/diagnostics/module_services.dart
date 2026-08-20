@@ -23,7 +23,7 @@ import 'package:rohd/src/diagnostics/inspector_service.dart';
 /// all feature branches that contribute services.
 ///
 /// **Auto-registered:**
-///  - [rootModule] / [hierarchyJSON] — set by [Module.build].
+///  - [rootModule] / [hierarchyJson] — set by [Module.build].
 class ModuleServices {
   ModuleServices._();
 
@@ -50,7 +50,7 @@ class ModuleServices {
   /// DevTools evaluates this via `EvalOnDartLibrary` to display the module
   /// hierarchy.  Richer design views (e.g. a slim netlist) are composed by the
   /// DevTools client from the relevant registered service.
-  String get hierarchyJSON => ModuleTree.instance.hierarchyJSON;
+  String get hierarchyJson => ModuleTree.instance.hierarchyJson;
 
   // ─── Type-keyed service registry ──────────────────────────────
 

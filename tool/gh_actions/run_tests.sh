@@ -11,17 +11,14 @@
 
 set -euo pipefail
 
-# Run main package tests (auto-discovers test/)
-dart test
+if command -v flutter >/dev/null 2>&1; then
+  # Run workspace tests using each package's Dart or Flutter runner.
+  dart run tool/workspace.dart test
 
-# Run tests in sub-packages
-for pkg in packages/*/; do
-  if [ -d "${pkg}test" ]; then
-    echo "Running tests in ${pkg}..."
-    (cd "$pkg" && dart test)
-  fi
-done
-
-# Run main package tests in JS (increase heap size for large synthesis tests)
-export NODE_OPTIONS="--max-old-space-size=8192"
-dart test --platform node
+  # Run workspace Dart tests in JS (increase heap size for large synthesis tests).
+  export NODE_OPTIONS="--max-old-space-size=8192"
+  dart run tool/workspace.dart test-node
+else
+  echo "Flutter is unavailable; running native tests for the core ROHD package only."
+  dart test
+fi

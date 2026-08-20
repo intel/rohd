@@ -19,10 +19,10 @@ import 'package:vm_service/vm_service.dart';
 class TreeService {
   /// Primary expression for hierarchy JSON — available in all ROHD versions
   /// that ship inspector_service.dart (i.e. main and later).
-  static const _primaryInvokeFunc = 'ModuleTree.instance.hierarchyJSON';
+  static const _primaryInvokeFunc = 'ModuleTree.instance.hierarchyJson';
 
   /// Fallback kept for any pre-inspector ROHD target.
-  static const _legacyInvokeFunc = 'ModuleTree.instance.hierarchyJSON';
+  static const _legacyInvokeFunc = 'ModuleTree.instance.hierarchyJson';
 
   /// Eval wrapper for accessing ROHD code in the target isolate.
   final EvalOnDartLibrary rohdControllerEval;

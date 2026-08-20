@@ -44,7 +44,7 @@ Future<void> main() async {
     final dff = DFlipFlop(data, reset, clk);
     await dff.build();
 
-    print(SystemVerilogService(dff).output);
+    print(dff.dumpSystemVerilog().output);
 
     data.inject(1);
     reset.inject(1);
@@ -60,7 +60,7 @@ Future<void> main() async {
 
     unawaited(Simulator.run());
 
-    dff.dumpWaveforms(
+    dff.dumpWaves(
         outputPath: 'doc/tutorials/chapter_7/answers/d_flip_flop.vcd');
 
     printFlop('Before');

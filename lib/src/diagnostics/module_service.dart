@@ -7,6 +7,8 @@
 // 2026 June 23
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
+import 'dart:async';
+
 import 'package:rohd/rohd.dart';
 
 /// The common contract implemented by every module-scoped service that
@@ -26,36 +28,69 @@ abstract interface class ModuleService {
   Map<String, Object?> toJson();
 }
 
-/// A [ModuleService] that emits output to one or more files.
+/// A named artifact produced by an [ArtifactProducingService].
 ///
-/// Establishes the common output convention shared by synthesis, netlist,
-/// trace, and waveform services:
-///  - [outputPath] — the default file or directory written by [write].
-///  - [multiFile] — whether [write] emits one file per module definition
-///    (a directory) or a single combined file.
-///  - [write] — performs the write, honouring [multiFile].
-abstract class OutputService implements ModuleService {
-  /// The default location written by [write].
-  ///
-  /// Interpreted as a directory when [multiFile] is `true`, otherwise as a
-  /// single file path.  May be `null` when no default has been configured, in
-  /// which case a path must be passed to [write].
-  String? get outputPath;
+/// Artifacts expose their content as bytes so services can retain data in
+/// memory, generate it lazily, or stream it without requiring a filesystem.
+class ModuleServiceArtifact {
+  /// Creates an artifact with [fileName], [mediaType], and byte [openRead].
+  const ModuleServiceArtifact({
+    required this.fileName,
+    required this.mediaType,
+    required Stream<List<int>> Function() openRead,
+  }) : _openRead = openRead;
 
-  /// Whether [write] emits one file per module definition (`true`) or a single
-  /// combined file (`false`).
-  bool get multiFile;
+  /// The artifact filename, including its format-specific extension.
+  final String fileName;
 
-  /// Writes this service's output to [path], or to [outputPath] when [path] is
-  /// omitted.
-  void write([String? path]);
+  /// The IANA-style media type of the artifact.
+  final String mediaType;
+
+  final Stream<List<int>> Function() _openRead;
+
+  /// Opens a new stream of the artifact's bytes.
+  Stream<List<int>> openRead() => _openRead();
 }
 
-/// An [OutputService] that generates source-code text.
+/// A [ModuleService] that produces named output artifacts.
+///
+/// The output location is always a directory. [outputBaseName] defaults to the
+/// module definition name, while each concrete service configuration determines
+/// artifact extensions and layouts.
+abstract class ArtifactProducingService implements ModuleService {
+  /// Creates an artifact-producing service for [module].
+  ArtifactProducingService(
+    this.module, {
+    this.outputDirectory = '.',
+    String? outputBaseName,
+  }) : outputBaseName = outputBaseName ?? module.definitionName;
+
+  /// The top-level [Module] this service operates on.
+  @override
+  final Module module;
+
+  /// Directory receiving filesystem artifacts when this service writes them.
+  final String outputDirectory;
+
+  /// Filename stem used for primary artifacts.
+  final String outputBaseName;
+
+  /// The artifacts this service can provide.
+  Iterable<ModuleServiceArtifact> get artifacts;
+}
+
+/// An [ArtifactProducingService] that generates source-code text.
 ///
 /// Shared by language code-generation services, which all produce a combined
 /// single-file [output].
-abstract class CodeGenService extends OutputService {
+abstract class CodeGenService extends ArtifactProducingService {
+  /// Creates a code-generation service for [module].
+  CodeGenService(
+    super.module, {
+    super.outputDirectory,
+    super.outputBaseName,
+  });
+
   /// The combined single-file generated output (including any header).
   String get output;
 }

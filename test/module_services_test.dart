@@ -44,10 +44,10 @@ void main() {
       expect(ModuleServices.instance.rootModule, equals(mod));
     });
 
-    test('hierarchyJSON returns valid JSON', () async {
+    test('hierarchyJson returns valid JSON', () async {
       final mod = SimpleModule(Logic());
       await mod.build();
-      final json = ModuleServices.instance.hierarchyJSON;
+      final json = ModuleServices.instance.hierarchyJson;
       expect(() => jsonDecode(json), returnsNormally);
     });
 
@@ -104,6 +104,22 @@ void main() {
       expect(sv.output, isNotEmpty);
     });
 
+    test('artifact defaults to the module definition name', () async {
+      final mod = SimpleModule(Logic());
+      await mod.build();
+      final sv = SystemVerilogService(mod);
+
+      final artifact = sv.artifacts.single;
+
+      expect(artifact.fileName, equals('${mod.definitionName}.sv'));
+      expect(artifact.mediaType, equals('text/x-systemverilog'));
+      expect(
+        (await artifact.openRead().expand((bytes) => bytes).toList())
+            .isNotEmpty,
+        isTrue,
+      );
+    });
+
     test('instanceTypeOutput returns the instance type contents', () async {
       final mod = SimpleModule(Logic());
       await mod.build();
@@ -121,13 +137,16 @@ void main() {
       expect(sv.toJson()['modules'], isList);
     });
 
-    test('writeFiles creates SV files', () async {
+    test('writeOutputs creates SV files', () async {
       final mod = SimpleModule(Logic());
       await mod.build();
-      final sv = SystemVerilogService(mod);
       final dir = Directory.systemTemp.createTempSync('sv_test_');
       try {
-        sv.writeFiles(dir.path);
+        SystemVerilogService(
+          mod,
+          outputDirectory: dir.path,
+          multiFile: true,
+        ).writeOutputs();
         final files = dir.listSync().whereType<File>().toList();
         expect(files, isNotEmpty);
         expect(files.any((f) => f.path.endsWith('.sv')), isTrue);
@@ -136,59 +155,35 @@ void main() {
       }
     });
 
-    test('write() emits a single file', () async {
+    test('writeOutputs emits a single file', () async {
       final mod = SimpleModule(Logic());
       await mod.build();
-      final sv = SystemVerilogService(mod);
       final dir = Directory.systemTemp.createTempSync('sv_test_');
       try {
+        final configuredSv = SystemVerilogService(
+          mod,
+          outputDirectory: dir.path,
+          outputBaseName: 'out',
+        )..writeOutputs();
         final path = '${dir.path}/out.sv';
-        sv.write(path);
-        expect(File(path).readAsStringSync(), equals(sv.output));
+        expect(File(path).readAsStringSync(), equals(configuredSv.output));
       } finally {
         dir.deleteSync(recursive: true);
       }
     });
 
-    test('write() with multiFile emits a directory of files', () async {
+    test('multiFile writeOutputs emits a directory of files', () async {
       final mod = SimpleModule(Logic());
       await mod.build();
       final dir = Directory.systemTemp.createTempSync('sv_test_');
       try {
-        // Construction with outputPath writes immediately.
-        SystemVerilogService(mod, outputPath: dir.path, multiFile: true);
+        SystemVerilogService(
+          mod,
+          outputDirectory: dir.path,
+          multiFile: true,
+        ).writeOutputs();
         final files = dir.listSync().whereType<File>().toList();
         expect(files.any((f) => f.path.endsWith('.sv')), isTrue);
-      } finally {
-        dir.deleteSync(recursive: true);
-      }
-    });
-
-    test('dumpSystemVerilog writes a single file', () async {
-      final mod = SimpleModule(Logic());
-      await mod.build();
-      final dir = Directory.systemTemp.createTempSync('sv_test_');
-      try {
-        final path = '${dir.path}/out.sv';
-        final service = mod.dumpSystemVerilog(path);
-        expect(service, isA<SystemVerilogService>());
-        expect(File(path).readAsStringSync(), equals(service.output));
-      } finally {
-        dir.deleteSync(recursive: true);
-      }
-    });
-
-    test('dumpSystemVerilog writes multiple files', () async {
-      final mod = SimpleModule(Logic());
-      await mod.build();
-      final dir = Directory.systemTemp.createTempSync('sv_test_');
-      try {
-        final service = mod.dumpSystemVerilog(dir.path, multiFile: true);
-        expect(service, isA<SystemVerilogService>());
-        expect(
-          dir.listSync().whereType<File>().any((f) => f.path.endsWith('.sv')),
-          isTrue,
-        );
       } finally {
         dir.deleteSync(recursive: true);
       }
@@ -213,8 +208,12 @@ void main() {
       final dir = Directory.systemTemp.createTempSync('sv_test_');
       try {
         final singlePath = '${dir.path}/single.sv';
-        final singleFile = SystemVerilogService(mod, includeHeader: false)
-          ..write(singlePath);
+        final singleFile = SystemVerilogService(
+          mod,
+          outputDirectory: dir.path,
+          outputBaseName: 'single',
+          includeHeader: false,
+        )..writeOutputs();
         expect(
           File(singlePath).readAsStringSync(),
           equals(singleFile.allContents),
@@ -222,9 +221,10 @@ void main() {
 
         final multiFile = SystemVerilogService(
           mod,
+          outputDirectory: dir.path,
           multiFile: true,
           includeHeader: true,
-        )..writeFiles(dir.path);
+        )..writeOutputs();
         final output =
             File('${dir.path}/${multiFile.fileContents.single.name}.sv')
                 .readAsStringSync();

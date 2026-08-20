@@ -176,7 +176,7 @@ void main() {
       Vector({}, {'rsp_data': 9}),
     ];
 
-    final sv = SystemVerilogService(mod).output;
+    final sv = mod.dumpSystemVerilog().output;
 
     expect(
         sv,

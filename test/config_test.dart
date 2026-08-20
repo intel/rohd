@@ -46,7 +46,7 @@ void main() {
     final mod = SimpleModule(Logic(), Logic());
     await mod.build();
 
-    final sv = SystemVerilogService(mod).output;
+    final sv = mod.dumpSystemVerilog().output;
 
     expect(sv, contains(version));
   });
@@ -59,6 +59,7 @@ void main() {
     final mod = SimpleModule(Logic(), Logic());
     await mod.build();
 
+    // This test verifies that the deprecated API still includes the version.
     // ignore: deprecated_member_use_from_same_package
     final sv = mod.generateSynth();
 

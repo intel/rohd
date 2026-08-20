@@ -6,7 +6,7 @@ Anyone interested in participating in ROHD is more than welcome to help!
 
 ## Code of Conduct
 
-ROHD adopts the [Contributor Covenant](https://www.contributor-covenant.org/) v2.1 for the code of conduct. It can be accessed [here](CODE_OF_CONDUCT.md).
+ROHD adopts the [Contributor Covenant](https://www.contributor-covenant.org/) v2.1 for the code of conduct. It can be accessed [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## Getting Help
 
@@ -40,7 +40,12 @@ The [ROHD Forum](https://intel.github.io/rohd-website/forum/rohd-forum/) is a pe
 
 ### Requirements
 
-You must have [Dart](https://dart.dev/) installed on your system to use ROHD. You can find detailed instructions for how to install Dart here: <https://dart.dev/get-dart>
+ROHD uses a [pub workspace](https://dart.dev/tools/pub/workspaces) for its
+active packages. [Dart](https://dart.dev/get-dart) is sufficient to develop,
+analyze, and test the core ROHD package. Install
+[Flutter](https://docs.flutter.dev/get-started/install), which includes a
+compatible Dart SDK, to develop the DevTools application or validate the full
+mixed Dart/Flutter workspace.
 
 To run the complete ROHD test suite for development, you need to install [Icarus Verilog](https://steveicarus.github.io/iverilog/). It is used to compare SystemVerilog functionality with the ROHD simulator functionality. Installation instructions are available here: <https://iverilog.fandom.com/wiki/Installation_Guide>
 
@@ -64,16 +69,86 @@ The below button will allow you to create a GitHub Codespace with ROHD already c
 
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://github.com/codespaces/new?hide_repo_select=true&ref=main&repo=409325108)
 
-### Cloning and Running the Tests
+### Core ROHD Setup and Validation
 
-Once requirements are installed, you can clone and run the test suite:
+The root [`pubspec.yaml`](pubspec.yaml) `workspace:` list defines the active
+packages. The legacy
+[`doc/tutorials/chapter_9/rohd_vf_example`](doc/tutorials/chapter_9/rohd_vf_example)
+is intentionally outside the workspace because it demonstrates an older
+published ROHD release.
+
+For core ROHD development, clone the repository and use Dart from the
+repository root:
 
 ```shell
 git clone https://github.com/intel/rohd.git
 cd rohd
+
+# Resolve the core package and workspace dependencies.
 dart pub get
+
+# Open Folder: open only the root ROHD package in VSCode.
+code .
+
+# Analyze and test the core package.
+dart analyze
 dart test
 ```
+
+As a local convenience, `tool/gh_actions/install_dependencies.sh` performs the
+same dependency-resolution step. It uses Flutter for the full workspace when
+Flutter is installed and otherwise uses Dart for the core package.
+
+In VSCode, this is equivalent to **File > Open Folder...** and selecting the
+repository root. Use this mode when working only on the core ROHD package.
+
+### Full Workspace Setup, VSCode, and Validation
+
+For DevTools development or repository-wide validation, use Flutter to resolve
+the mixed Dart/Flutter workspace. The checked-in
+[`rohd-multipackage.code-workspace`](rohd-multipackage.code-workspace) is
+generated from the root `workspace:` list, so it can be opened immediately
+after cloning:
+
+```shell
+# Open Workspace from File: open every active member in its own package context.
+code rohd-multipackage.code-workspace
+
+# Resolve every workspace member from a terminal at the repository root.
+flutter pub get
+```
+
+In VSCode, this is equivalent to **File > Open Workspace from File...** and
+selecting `rohd-multipackage.code-workspace`. Do not use **Open Folder** for
+all-package work: the generated multi-root workspace gives each active package
+its own Dart or Flutter package context.
+
+After opening the generated workspace, select the Flutter-bundled Dart SDK if
+the Dart extension does not select it automatically. The generated workspace
+includes every active member, so Dart and Flutter analysis can resolve package
+boundaries correctly.
+
+Run repository-wide validation from the repository root:
+
+```shell
+# Analyze every active workspace member.
+dart run tool/workspace.dart analyze
+
+# Run native tests, using flutter test for Flutter packages.
+dart run tool/workspace.dart test
+
+# Run Node.js tests for each non-Flutter workspace member.
+dart run tool/workspace.dart test-node
+```
+
+The Node.js pass can take substantially longer than native tests because Dart
+compiles browser test bundles. Run an individual package or test file directly
+while iterating, then use the workspace commands before submitting a change.
+
+When adding or removing an active package, update the root `workspace:` list,
+regenerate `rohd-multipackage.code-workspace` with
+`dart run tool/workspace.dart vscode`, and commit the generated workspace file
+alongside the `pubspec.yaml` change. Then run `flutter pub get`.
 
 ## How to Contribute
 
@@ -109,7 +184,13 @@ Take a look around the issues on the repo and see if there's any you'd like to t
 
 If you have a change that you have implemented and would like to contribute, you can open a pull request. Please try to make sure you have implemented tests covering the changes, if applicable. Smaller, simpler pull requests are easier to review.
 
-Be sure to run the test suite (`dart test`) before asking for your code to be merged. You may also locally generate API documentation (`dart doc`) to make sure it looks right and doesn't have any errors. You should use the dart formatter on all code (`dart format .`), and may prefer to have it automatically format on every file save. If you are using VSCode with the Dart extension, then consider using the recommended settings: <https://dartcode.org/docs/recommended-settings/>
+Be sure to run the applicable workspace validation commands described above
+before asking for your code to be merged. You may also locally generate API
+documentation (`dart doc`) to make sure it looks right and doesn't have any
+errors. You should use the dart formatter on all code (`dart format .`), and
+may prefer to have it automatically format on every file save. If you are using
+VSCode with the Dart extension, then consider using the recommended settings:
+<https://dartcode.org/docs/recommended-settings/>
 
 **Tests must pass, documentation must generate, and the formatter must be run on every pull request or the automated GitHub Actions flow will fail.**
 

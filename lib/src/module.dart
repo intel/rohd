@@ -1130,33 +1130,51 @@ abstract class Module {
   /// [hierarchy], this is only valid after [build] has been called.
   String get hierarchicalName => _hierarchyListToString(hierarchy());
 
-  /// Writes synthesized SystemVerilog for this [Module] to [outputPath].
+  /// Generates synthesized SystemVerilog for this [Module].
   ///
-  /// When [multiFile] is `true`, [outputPath] is a directory and each module
-  /// definition is written to its own `.sv` file. Otherwise, it is the path to
-  /// a single concatenated SystemVerilog file.
+  /// Access [SystemVerilogService.output] for a single in-memory SystemVerilog
+  /// file. This legacy convenience method writes to [outputPath] when provided.
+  /// With [multiFile] `true`, [outputPath] must be a directory and each module
+  /// definition is written there. Otherwise, it is the path to a single
+  /// concatenated SystemVerilog file.
   ///
   /// For additional output controls and access to synthesis results, use
   /// [SystemVerilogService] directly.
-  SystemVerilogService dumpSystemVerilog(
-    String outputPath, {
+  SystemVerilogService dumpSystemVerilog({
+    String? outputPath,
     bool multiFile = false,
     SystemVerilogSynthesizerConfiguration configuration =
         const SystemVerilogSynthesizerConfiguration(),
-  }) =>
-      SystemVerilogService(
-        this,
-        outputPath: outputPath,
-        multiFile: multiFile,
-        configuration: configuration,
-      );
+  }) {
+    final service = SystemVerilogService(
+      this,
+      outputDirectory: outputPath ?? '.',
+      multiFile: multiFile,
+      configuration: configuration,
+    );
+    if (outputPath != null) {
+      if (multiFile) {
+        service.writeOutputs();
+      } else {
+        service.writeLegacyOutputPath(outputPath);
+      }
+    }
+    return service;
+  }
 
   /// Attaches waveform dumping for this [Module] to a VCD at [outputPath].
   ///
   /// For filtering, alternative formats, and other waveform controls, use
   /// [WaveformService] directly.
-  WaveformService dumpWaveforms({String outputPath = 'waves.vcd'}) =>
-      WaveformService(this, outputPath: outputPath);
+  WaveformService dumpWaves({String outputPath = 'waves.vcd'}) {
+    final (outputDirectory, outputFileName) = _legacyOutputLocation(outputPath);
+    return WaveformService(
+      this,
+      outputDirectory: outputDirectory,
+      outputFileName: outputFileName,
+      writeToFile: true,
+    );
+  }
 
   /// Returns a synthesized version of this [Module].
   ///
@@ -1167,8 +1185,10 @@ abstract class Module {
   /// file writing, see [SystemVerilogService] (and
   /// [SystemVerilogService.output] for the equivalent one-shot string).
   /// The [configuration] controls options specific to SystemVerilog output.
-  @Deprecated('Use dumpSystemVerilog(outputPath, configuration: ...) for '
-      'direct file output, or SystemVerilogService for advanced options.')
+  @Deprecated('Use Module.dumpSystemVerilog(configuration: ...).output for '
+      'in-memory output, Module.dumpSystemVerilog(outputPath: outputPath, '
+      'configuration: ...) '
+      'for direct file output, or SystemVerilogService for advanced options.')
   String generateSynth({
     SystemVerilogSynthesizerConfiguration configuration =
         const SystemVerilogSynthesizerConfiguration(),
@@ -1177,11 +1197,21 @@ abstract class Module {
       throw ModuleNotBuiltException(this);
     }
 
-    return SystemVerilogService(
-      this,
-      configuration: configuration,
-    ).output;
+    return dumpSystemVerilog(configuration: configuration).output;
   }
+}
+
+/// Splits a legacy file [outputPath] into its directory and exact filename.
+(String, String) _legacyOutputLocation(String outputPath) {
+  final normalized = outputPath.replaceAll(r'\', '/');
+  final separatorIndex = normalized.lastIndexOf('/');
+  final directory = switch (separatorIndex) {
+    -1 => '.',
+    0 => '/',
+    _ => normalized.substring(0, separatorIndex),
+  };
+  final fileName = normalized.substring(separatorIndex + 1);
+  return (directory, fileName);
 }
 
 extension on LogicStructure {

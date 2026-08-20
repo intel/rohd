@@ -63,9 +63,9 @@ Future<void> main() async {
 
   await counter.build();
 
-  print(SystemVerilogService(counter).output);
+  print(counter.dumpSystemVerilog().output);
 
-  counter.dumpWaveforms(
+  counter.dumpWaves(
       outputPath: 'doc/tutorials/chapter_8/counter_interface.vcd');
   Simulator.registerAction(25, () {
     intf.en.put(1);

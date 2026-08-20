@@ -43,15 +43,22 @@ String temporaryDumpPath(String name) => '$tempDumpDir/temp_dump_$name.vcd';
 /// Attaches a [WaveformService] to [module] to VCD with [name].
 void createTemporaryDump(Module module, String name) {
   Directory(tempDumpDir).createSync(recursive: true);
-  final tmpDumpFile = temporaryDumpPath(name);
-  WaveformService(module, outputPath: tmpDumpFile);
+  WaveformService(
+    module,
+    outputDirectory: tempDumpDir,
+    outputBaseName: 'temp_dump_$name',
+    writeToFile: true,
+  );
 }
 
+// The helper intentionally exercises the deprecated WaveDumper compatibility
+// path.
 // ignore: deprecated_member_use_from_same_package
 /// Attaches the deprecated [WaveDumper] to [module] to VCD with [name].
 void createTemporaryWaveDumperDump(Module module, String name) {
   Directory(tempDumpDir).createSync(recursive: true);
   final tmpDumpFile = temporaryDumpPath(name);
+  // The deprecated WaveDumper constructor is invoked to test its behavior.
   // ignore: deprecated_member_use_from_same_package
   WaveDumper(module, outputPath: tmpDumpFile);
 }
@@ -123,20 +130,65 @@ void main() {
     deleteTemporaryDump(dumpName);
   });
 
-  test('dumpWaveforms creates a waveform service', () async {
+  test('dumpWaves creates a waveform service', () async {
     final mod = SimpleModule(Logic());
     await mod.build();
 
     const dumpName = 'moduleDumpWaveforms';
     final outputPath = temporaryDumpPath(dumpName);
     Directory(tempDumpDir).createSync(recursive: true);
-    final service = mod.dumpWaveforms(outputPath: outputPath);
+    final service = mod.dumpWaves(outputPath: outputPath);
 
     expect(service, isA<WaveformService>());
-    expect(File(service.outputPath).existsSync(), isTrue);
+    expect(File(service.outputFilePath).existsSync(), isTrue);
 
     await Simulator.run();
     deleteTemporaryDump(dumpName);
+  });
+
+  test('dumpWaves preserves an arbitrary legacy output filename', () async {
+    final mod = SimpleModule(Logic());
+    await mod.build();
+
+    const outputPath = '$tempDumpDir/capture.trace';
+    final service = mod.dumpWaves(outputPath: outputPath);
+
+    expect(service.outputFilePath, equals(outputPath));
+    expect(File(outputPath).existsSync(), isTrue);
+
+    await Simulator.run();
+    File(outputPath).deleteSync();
+  });
+
+  test('waveform artifact derives its extension from the format', () async {
+    final mod = SimpleModule(Logic());
+    await mod.build();
+
+    final waveformService = WaveformService(
+      mod,
+      outputDirectory: tempDumpDir,
+      outputBaseName: 'capture',
+    );
+
+    final artifact = waveformService.artifacts.single;
+
+    expect(artifact.fileName, equals('capture.vcd'));
+    expect(artifact.mediaType, equals('text/x-vcd'));
+    expect(File(waveformService.outputFilePath).existsSync(), isFalse);
+    expect(
+      (await artifact.openRead().expand((bytes) => bytes).toList()).isNotEmpty,
+      isTrue,
+    );
+  });
+
+  test('rejects formats without a matching waveform writer', () async {
+    final mod = SimpleModule(Logic());
+    await mod.build();
+
+    expect(
+      () => WaveformService(mod, format: WaveOutputFormat.fst),
+      throwsUnsupportedError,
+    );
   });
 
   test('attach dumper before put', () async {
@@ -294,12 +346,16 @@ void main() {
 
     const dir1Path = '$tempDumpDir/dir1';
 
-    final waveformService =
-        WaveformService(mod, outputPath: '$dir1Path/dir2/waves.vcd');
+    final waveformService = WaveformService(
+      mod,
+      outputDirectory: '$dir1Path/dir2',
+      outputBaseName: 'waves',
+      writeToFile: true,
+    );
 
-    expect(File(waveformService.outputPath).existsSync(), equals(true));
+    expect(File(waveformService.outputFilePath).existsSync(), equals(true));
 
-    if (File(waveformService.outputPath).existsSync()) {
+    if (File(waveformService.outputFilePath).existsSync()) {
       File(dir1Path).deleteSync(recursive: true);
     }
   });

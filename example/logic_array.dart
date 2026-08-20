@@ -58,14 +58,14 @@ Future<void> main({bool noPrint = false}) async {
   // Build the module
   await logicArrayExample.build();
 
-  final systemVerilogCode = SystemVerilogService(logicArrayExample).output;
+  final systemVerilogCode = logicArrayExample.dumpSystemVerilog().output;
   if (!noPrint) {
     print(systemVerilogCode);
   }
 
   // Simulate the module
   if (!noPrint) {
-    logicArrayExample.dumpWaveforms();
+    logicArrayExample.dumpWaves();
   }
 
   // Set the input values

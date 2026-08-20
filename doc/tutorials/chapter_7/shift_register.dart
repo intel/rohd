@@ -69,7 +69,7 @@ void main() {
     // kick-off the simulator, but we don't want to wait
     unawaited(Simulator.run());
 
-    shiftReg.dumpWaveforms(
+    shiftReg.dumpWaves(
         outputPath: 'doc/tutorials/chapter_7/shift_register.vcd');
 
     printFlop('Before');

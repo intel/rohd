@@ -91,7 +91,7 @@ void main() {
       final mod = AddWithCarryMod(Logic(width: 8), Logic(width: 8));
       await mod.build();
 
-      final sv = SystemVerilogService(mod).output;
+      final sv = mod.dumpSystemVerilog().output;
 
       expect(sv, contains('assign {carry, sum} = a + b'));
     });
@@ -119,7 +119,7 @@ void main() {
     final gtm = MathTestModule(Logic(width: 8), Logic(width: 8));
     await gtm.build();
 
-    final sv = SystemVerilogService(gtm).output;
+    final sv = gtm.dumpSystemVerilog().output;
     final lines = sv.split('\n');
 
     // ensure we never lshift by a constant directly

@@ -7,6 +7,8 @@
 // 2023 September 11
 // Author: Max Korbel <max.korbel@intel.com>
 
+import 'dart:io';
+
 import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/sv_cleaner.dart';
@@ -231,6 +233,34 @@ class MissingInputRegistrationTopModule extends Module {
 }
 
 void main() {
+  group('output convenience methods', () {
+    test('dumpSystemVerilog generates in-memory output', () async {
+      final mod = FlexibleModule();
+      await mod.build();
+
+      final service = mod.dumpSystemVerilog();
+
+      expect(service, isA<SystemVerilogService>());
+      expect(service.output, isNotEmpty);
+    });
+
+    test('dumpSystemVerilog preserves an arbitrary legacy output filename',
+        () async {
+      final mod = FlexibleModule();
+      await mod.build();
+      final directory = Directory.systemTemp.createTempSync('sv_test_');
+      try {
+        final outputPath = '${directory.path}/design.verilog';
+
+        mod.dumpSystemVerilog(outputPath: outputPath);
+
+        expect(File(outputPath).existsSync(), isTrue);
+      } finally {
+        directory.deleteSync(recursive: true);
+      }
+    });
+  });
+
   group('try ports', () {
     test('tryInput, exists', () {
       final mod = ModuleWithMaybePorts(addIn: true);
@@ -304,7 +334,7 @@ void main() {
         await mod.build();
 
         final sv = SvCleaner.removeSwizzleAnnotationComments(
-            SystemVerilogService(mod).output);
+            mod.dumpSystemVerilog().output);
 
         if (!disconnectOutputs) {
           expect(sv, contains("assign o = {1'h1,(a ? 1'h0 : 1'h1)}"));
@@ -321,7 +351,7 @@ void main() {
         await mod.build();
 
         final sv = SvCleaner.removeSwizzleAnnotationComments(
-            SystemVerilogService(mod).output);
+            mod.dumpSystemVerilog().output);
 
         if (!disconnectOutputs) {
           expect(sv, contains("assign o = {1'h1,a}"));
@@ -337,7 +367,7 @@ void main() {
       await mod.build();
 
       final sv = SvCleaner.removeSwizzleAnnotationComments(
-          SystemVerilogService(mod).output);
+          mod.dumpSystemVerilog().output);
 
       expect(
           sv,
@@ -353,7 +383,7 @@ void main() {
     expect(
         mod.internalSignals.firstWhereOrNull((e) => e.name == 't0'), isNotNull);
 
-    final sv = SystemVerilogService(mod).output;
+    final sv = mod.dumpSystemVerilog().output;
     expect(sv, contains('assign a_concat[0] = t0;'));
   });
 
@@ -364,7 +394,7 @@ void main() {
     expect(mod.internalSignals.firstWhereOrNull((e) => e.name == 'unconnected'),
         isNotNull);
 
-    final sv = SystemVerilogService(mod).output;
+    final sv = mod.dumpSystemVerilog().output;
     expect(sv, contains('assign a_arr[1] = unconnected;'));
   });
 

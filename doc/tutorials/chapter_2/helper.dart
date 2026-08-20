@@ -14,7 +14,7 @@ import 'package:rohd/rohd.dart';
 Future<void> displaySystemVerilog(Module mod) async {
   await mod.build();
   print('\nYour System Verilog Equivalent Code: \n '
-      '${SystemVerilogService(mod).output}');
+      '${mod.dumpSystemVerilog().output}');
 }
 
 class LogicInitialization extends Module {

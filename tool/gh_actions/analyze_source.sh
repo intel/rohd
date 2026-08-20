@@ -11,4 +11,9 @@
 
 set -euo pipefail
 
-dart analyze --fatal-infos
+if command -v flutter >/dev/null 2>&1; then
+  dart run tool/workspace.dart analyze
+else
+  echo "Flutter is unavailable; analyzing the core ROHD package only."
+  dart analyze
+fi

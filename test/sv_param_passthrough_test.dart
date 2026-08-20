@@ -162,7 +162,7 @@ void main() {
       () async {
     final mod = TopForEmptyParams(Logic(width: 8));
     await mod.build();
-    final sv = SystemVerilogService(mod).output;
+    final sv = mod.dumpSystemVerilog().output;
     expect(sv.contains('#'), isFalse);
   });
 }

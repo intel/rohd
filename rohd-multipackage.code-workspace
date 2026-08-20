@@ -1,6 +1,3 @@
-// Opens each nested Dart package as a workspace root so the Dart analyzer uses
-// its own package context and reports fewer cross-package Problems. Open this
-// file in VS Code with File > Open Workspace from File... .
 {
   "folders": [
     {
@@ -22,6 +19,10 @@
     {
       "name": "rohd_devtools_widgets",
       "path": "rohd_devtools_extension/packages/rohd_devtools_widgets"
+    },
+    {
+      "name": "dart",
+      "path": "rohd_extension/dart"
     }
   ],
   "settings": {

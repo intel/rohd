@@ -10,6 +10,7 @@
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 import 'dart:collection';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:meta/meta.dart';
@@ -30,7 +31,19 @@ enum WaveOutputFormat {
   ///
   /// Requires an FST writer to be available; see the DevTools subclass for
   /// a fully FST-backed implementation.
-  fst,
+  fst;
+
+  /// The filename extension associated with this format.
+  String get fileExtension => switch (this) {
+        WaveOutputFormat.vcd => 'vcd',
+        WaveOutputFormat.fst => 'fst',
+      };
+
+  /// The media type associated with this format.
+  String get mediaType => switch (this) {
+        WaveOutputFormat.vcd => 'text/x-vcd',
+        WaveOutputFormat.fst => 'application/vnd.gtkwave.fst',
+      };
 }
 
 /// Policy applied when the output file already exists at construction time.
@@ -44,13 +57,13 @@ enum OverwritePolicy {
 
 // ─── Service ─────────────────────────────────────────────────────────────────
 
-/// A waveform capture service that writes signal changes to a file.
+/// A waveform capture service that records signal changes.
 ///
 /// This is the base class for waveform capture.  It handles:
 /// - Signal collection (with optional [signalFilter])
-/// - VCD file output with configurable [timescale]
+/// - In-memory VCD output with configurable [timescale]
 /// - Selective recording via [startTime] / [stopTime]
-/// - Periodic buffer flushing and [overwritePolicy]
+/// - Optional file output with periodic buffer flushing and [overwritePolicy]
 /// - Optional registration with [ModuleServices]
 ///
 /// **Subclassing for DevTools streaming:**
@@ -71,7 +84,11 @@ enum OverwritePolicy {
 /// Example subclass skeleton:
 /// ```dart
 /// class DevToolsWaveformService extends WaveformService {
-///   DevToolsWaveformService(super.module, {super.outputPath});
+///   DevToolsWaveformService(
+///     super.module, {
+///     super.outputDirectory,
+///     super.outputBaseName,
+///   });
 ///
 ///   @override
 ///   void onSignalCollected(Logic signal) {
@@ -86,18 +103,21 @@ enum OverwritePolicy {
 ///   }
 /// }
 /// ```
-class WaveformService implements ModuleService {
+class WaveformService extends ArtifactProducingService {
   /// The most recently registered [WaveformService], or `null`.
   static WaveformService? current;
 
-  /// The top-level [Module] being captured.
-  @override
-  final Module module;
-
   /// Path of the output waveform file.
   ///
-  /// The parent directory is created if necessary.
-  final String outputPath;
+  /// Derived from [outputDirectory], [outputBaseName], and [format].
+  String get outputFilePath => '$outputDirectory${Platform.pathSeparator}'
+      '${outputFileName ?? '$outputBaseName.${format.fileExtension}'}';
+
+  /// Exact output filename override.
+  ///
+  /// Prefer [outputBaseName] for new service code. This override exists for
+  /// compatibility with legacy APIs that accepted an arbitrary output path.
+  final String? outputFileName;
 
   /// Output format.
   final WaveOutputFormat format;
@@ -135,6 +155,12 @@ class WaveformService implements ModuleService {
   /// Whether to register this service with [ModuleServices] for inspection.
   final bool register;
 
+  /// Whether waveform bytes are written to [outputFilePath].
+  ///
+  /// When `false`, the service retains its waveform bytes in memory and exposes
+  /// them through [artifacts].
+  final bool writeToFile;
+
   /// Whether to enable DevTools streaming.
   ///
   /// The base [WaveformService] stores this flag but takes no action on it.
@@ -143,14 +169,14 @@ class WaveformService implements ModuleService {
 
   // ─── Internal file-writing state ─────────────────────────────
 
-  /// The output file.
-  late final File _outputFile;
-
-  /// Sink writing into [_outputFile].
-  late final IOSink _outFileSink;
+  /// Sink writing to [outputFilePath] when [writeToFile] is true.
+  IOSink? _outFileSink;
 
   /// Write buffer; flushed when it exceeds [flushBufferSize].
   final StringBuffer _fileBuffer = StringBuffer();
+
+  /// The complete waveform output retained for streaming artifacts.
+  final StringBuffer _inMemoryOutput = StringBuffer();
 
   /// Counter for assigning compact signal markers in the VCD.
   int _signalMarkerIdx = 0;
@@ -170,11 +196,18 @@ class WaveformService implements ModuleService {
   ///
   /// [module] must be built before construction.
   ///
-  /// Use the optional constructor parameters to configure format, path,
-  /// filtering, timescale, start/stop times, flush size, and overwrite policy.
+  /// [outputDirectory] defaults to the current directory and [outputBaseName]
+  /// defaults to [Module.definitionName]. The selected [format] determines the
+  /// output filename extension. Only [WaveOutputFormat.vcd] is currently
+  /// supported by this service.
+  ///
+  /// Use the optional constructor parameters to configure format, filtering,
+  /// timescale, start/stop times, flush size, and overwrite policy.
   WaveformService(
-    this.module, {
-    this.outputPath = 'waves.vcd',
+    Module module, {
+    super.outputDirectory,
+    super.outputBaseName,
+    this.outputFileName,
     this.format = WaveOutputFormat.vcd,
     this.signalFilter,
     this.timescale = '1ps',
@@ -183,28 +216,36 @@ class WaveformService implements ModuleService {
     this.flushBufferSize = 100000,
     this.overwritePolicy = OverwritePolicy.overwrite,
     this.register = true,
+    this.writeToFile = false,
     this.enableDevToolsStreaming = false,
-  }) {
+  }) : super(module) {
     if (!module.hasBuilt) {
       throw Exception(
         'Module must be built before creating WaveformService. '
         'Call build() first.',
       );
     }
+    if (format != WaveOutputFormat.vcd) {
+      throw UnsupportedError(
+        'Waveform format ${format.name} is not supported by WaveformService.',
+      );
+    }
 
-    if (overwritePolicy == OverwritePolicy.failIfExists) {
-      final f = File(outputPath);
+    if (writeToFile && overwritePolicy == OverwritePolicy.failIfExists) {
+      final f = File(outputFilePath);
       if (f.existsSync()) {
         throw FileSystemException(
           'Waveform output file already exists and overwritePolicy is '
           'failIfExists.',
-          outputPath,
+          outputFilePath,
         );
       }
     }
 
-    _outputFile = File(outputPath)..createSync(recursive: true);
-    _outFileSink = _outputFile.openWrite();
+    if (writeToFile) {
+      _outFileSink =
+          (File(outputFilePath)..createSync(recursive: true)).openWrite();
+    }
 
     _collectSignals();
     _writeHeader();
@@ -404,28 +445,42 @@ class WaveformService implements ModuleService {
 
   void _writeToBuffer(String contents) {
     _fileBuffer.write(contents);
+    _inMemoryOutput.write(contents);
     if (_fileBuffer.length > flushBufferSize) {
       _flushBuffer();
     }
   }
 
   void _flushBuffer() {
-    _outFileSink.write(_fileBuffer.toString());
+    _outFileSink?.write(_fileBuffer.toString());
     _fileBuffer.clear();
   }
 
   Future<void> _terminate() async {
     _flushBuffer();
-    await _outFileSink.flush();
-    await _outFileSink.close();
+    await _outFileSink?.flush();
+    await _outFileSink?.close();
   }
 
   // ─── Inspection ───────────────────────────────────────────────
 
+  /// The waveform artifact produced by this service.
+  @override
+  Iterable<ModuleServiceArtifact> get artifacts => [
+        ModuleServiceArtifact(
+          fileName: outputFileName ?? '$outputBaseName.${format.fileExtension}',
+          mediaType: format.mediaType,
+          openRead: () => Stream.value(utf8.encode(_inMemoryOutput.toString())),
+        ),
+      ];
+
   /// Returns a JSON-serialisable summary of this service.
   @override
   Map<String, Object> toJson() => {
-        'outputPath': outputPath,
+        'outputDirectory': outputDirectory,
+        'outputBaseName': outputBaseName,
+        'outputFilePath': outputFilePath,
+        'writeToFile': writeToFile,
         'format': format.name,
         'signalCount': _signalToMarkerMap.length,
         'timescale': timescale,

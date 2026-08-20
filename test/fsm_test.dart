@@ -183,7 +183,7 @@ void main() {
     final mod = TestModule(Logic(), Logic(), Logic());
     await mod.build();
 
-    final sv = SystemVerilogService(mod).output;
+    final sv = mod.dumpSystemVerilog().output;
 
     expect(sv, contains("b = 1'h0;"));
   });
@@ -192,7 +192,7 @@ void main() {
     final mod = TestModule(Logic(), Logic(), Logic());
     await mod.build();
 
-    final sv = SystemVerilogService(mod).output;
+    final sv = mod.dumpSystemVerilog().output;
 
     expect(sv, contains('priority case'));
   });
@@ -201,7 +201,7 @@ void main() {
     final mod = TestModule(Logic(), Logic(), Logic());
     await mod.build();
 
-    final sv = SystemVerilogService(mod).output;
+    final sv = mod.dumpSystemVerilog().output;
 
     expect(sv, contains('MyStates_state1 : begin'));
   });

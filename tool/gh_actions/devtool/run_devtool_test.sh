@@ -13,6 +13,4 @@ set -euo pipefail
 
 cd rohd_devtools_extension
 
-flutter pub get
-
 flutter test --platform chrome

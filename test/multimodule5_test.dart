@@ -35,7 +35,7 @@ void main() {
     final mod = TopModule(Logic());
     await mod.build();
 
-    final sv = SystemVerilogService(mod).output;
+    final sv = mod.dumpSystemVerilog().output;
 
     expect(sv, contains('Passthrough'));
   });

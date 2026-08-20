@@ -1,7 +1,7 @@
 ---
 title: "Generating Outputs"
 permalink: /docs/generation/
-last_modified_at: 2023-11-13
+last_modified_at: 2026-08-19
 toc: true
 ---
 
@@ -17,7 +17,7 @@ void main() async {
     // remember that `build` returns a `Future`, hence the `await` here
     await myModule.build();
 
-    myModule.dumpSystemVerilog('myHardware.sv');
+    myModule.dumpSystemVerilog(outputPath: 'myHardware.sv');
 }
 ```
 
@@ -27,19 +27,22 @@ void main() async {
   `multiFile` to `true`:
 
   ```dart
-  myModule.dumpSystemVerilog('build/systemverilog', multiFile: true);
+  myModule.dumpSystemVerilog(
+    outputPath: 'build/systemverilog',
+    multiFile: true,
+  );
   ```
 
-  For generated text without writing a file, per-module output, or more advanced
-  output controls, use `SystemVerilogService` directly:
+  For generated text without writing a file, use `dumpSystemVerilog` without an
+  `outputPath`:
 
   ```dart
-  final service = SystemVerilogService(myModule);
-
-  // Use generated text in another tool or inspect a particular definition.
-  final generatedSv = service.output;
-  final firstGeneratedModule = service.fileContents.first.contents;
+  final generatedSv = myModule.dumpSystemVerilog().output;
   ```
+
+  The dump methods preserve the legacy one-shot output workflow. For the service
+  API, artifact streams, or explicit output configuration, use
+  `SystemVerilogService` directly.
 
 ## Controlling port types
 
@@ -47,7 +50,7 @@ Generated ports default to `input logic`, `output logic`, and `inout wire`, pres
 
 ```dart
 myModule.dumpSystemVerilog(
-  'myHardware.sv',
+  outputPath: 'myHardware.sv',
   configuration: const SystemVerilogSynthesizerConfiguration(
     inputPortType: SystemVerilogPortTypeConfiguration(
       objectType: SystemVerilogPortType.explicit,
@@ -94,34 +97,69 @@ Internal signals, unlike ports, don't need to always have the same exact name as
 
 The `Naming.unpreferredName` function will modify a signal name to indicate to downstream flows that the name is preferably omitted from the output, but preferable to an unnamed signal. This is generally most useful for things like output ports of `InlineSystemVerilog` modules.
 
-## More advanced generation
+## Services API
 
-`SystemVerilogService` provides access to the underlying synthesis results,
-per-module file contents, configurable headers, and named output files. For
-custom synthesis flows, [`SynthBuilder`](https://intel.github.io/rohd/rohd/SynthBuilder-class.html)
+`ModuleService` is the shared API for module-scoped generation, capture, and
+inspection. Services can register with `ModuleServices` for lookup by DevTools
+and other consumers. `ArtifactProducingService` implementations expose named
+artifacts as media-typed byte streams, so consumers do not need to require a
+local output file.
+
+`SystemVerilogService` is the direct synthesis service. Its `outputDirectory`
+defaults to the current directory and its `outputBaseName` defaults to the top
+module's `definitionName`. The service generates output in memory; call
+`writeOutputs` only when files are required:
+
+```dart
+final service = SystemVerilogService(
+  myModule,
+  outputDirectory: 'build/netlist',
+  outputBaseName: 'accelerator',
+  configuration: const SystemVerilogSynthesizerConfiguration(),
+);
+
+// Use the generated SystemVerilog directly.
+final generatedSv = service.output;
+
+// Or inspect a transport-neutral artifact stream.
+final artifact = service.artifacts.single;
+final bytes = await artifact.openRead().expand((chunk) => chunk).toList();
+
+// Write build/netlist/accelerator.sv.
+service.writeOutputs();
+```
+
+With `multiFile: true`, `SystemVerilogService` writes one `.sv` file per
+generated module definition. For custom synthesis flows,
+[`SynthBuilder`](https://intel.github.io/rohd/rohd/SynthBuilder-class.html)
 accepts a `Module` and a `Synthesizer` (usually a
 `SystemVerilogSynthesizer`).
 
 ## Capturing waveforms
 
-Use `dumpWaveforms` for the common case of writing all simulation signals to a
-VCD file:
+Use `dumpWaves` for the legacy-compatible common case of writing all simulation
+signals to a VCD file:
 
 ```dart
-myModule.dumpWaveforms(outputPath: 'waves.vcd');
+myModule.dumpWaves(outputPath: 'waves.vcd');
 ```
 
-For selective capture or other waveform configuration, create a
-`WaveformService` directly. Its options are intended for more involved capture
-flows and may grow over time:
+`WaveformService` records VCD data in memory by default and exposes it as a
+`ModuleServiceArtifact`. Its output directory and basename use the same
+defaults as other artifact-producing services. Set `writeToFile` when capture
+should also create a VCD file:
 
 ```dart
-WaveformService(
+final waveform = WaveformService(
   myModule,
-  outputPath: 'interesting-signals.vcd',
+  outputDirectory: 'build/waves',
+  outputBaseName: 'interesting-signals',
+  writeToFile: true,
   timescale: '1ns',
   startTime: 100,
   stopTime: 1000,
   signalFilter: (signal) => signal.name.startsWith('debug_'),
 );
+
+final vcdArtifact = waveform.artifacts.single;
 ```

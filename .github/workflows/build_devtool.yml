@@ -24,6 +24,9 @@ jobs:
             channel: stable
             version: 3.29.0
 
+        - name: Install project dependencies
+          run: tool/gh_actions/install_dependencies.sh
+
         - name: Run Flutter Test
           run: tool/gh_actions/devtool/run_devtool_test.sh
 
