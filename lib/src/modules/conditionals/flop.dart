@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2025 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // flop.dart
@@ -146,7 +146,7 @@ class FlipFlop extends Module with SystemVerilog {
     var contents = [q < _d];
 
     if (_en != null) {
-      contents = [If(_en!, then: contents)];
+      contents = [If(_en, then: contents)];
     }
 
     Sequential(

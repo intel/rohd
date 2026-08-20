@@ -533,7 +533,7 @@ void main() {
     // ── Golden SV snapshot ──────────────────────────────────────
 
     test('golden SV output snapshot', () {
-      final sv = mod.generateSynth();
+      final sv = mod.dumpSystemVerilog().output;
 
       // Port declarations.
       expect(sv, contains('input logic [7:0] inp'));

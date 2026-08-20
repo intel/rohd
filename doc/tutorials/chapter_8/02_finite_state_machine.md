@@ -272,7 +272,7 @@ Let also attach a `WaveDumper` to preview what is the waveform and what happened
 
 ```dart
 if (!noPrint) {
-  WaveDumper(oven, outputPath: 'oven.vcd');
+  oven.dumpWaves(outputPath: 'oven.vcd');
 }
 ```
 

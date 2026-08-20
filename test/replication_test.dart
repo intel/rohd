@@ -67,7 +67,7 @@ void main() {
       test('multiply by 1 generates no replication in SystemVerilog', () async {
         final mod = ReplicationOpModule(Logic(width: 4), 1);
         await mod.build();
-        final sv = mod.generateSynth();
+        final sv = mod.dumpSystemVerilog().output;
         expect(sv, contains('assign b = a;'));
         expect(sv, isNot(contains('{1{')));
       });
@@ -76,7 +76,7 @@ void main() {
           () async {
         final mod = SignExtendModule(Logic(), 1);
         await mod.build();
-        final sv = mod.generateSynth();
+        final sv = mod.dumpSystemVerilog().output;
         expect(sv, isNot(contains('{1{')));
       });
 
