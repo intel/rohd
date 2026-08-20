@@ -14,6 +14,10 @@ set -euo pipefail
 # Install Dart SDK.
 tool/gh_codespaces/install_dart.sh
 
+# Install Flutter SDK. The workspace contains Flutter packages, so
+# dependencies must be resolved through `flutter pub`.
+tool/gh_codespaces/install_flutter.sh
+
 # Install Pub dependencies.
 tool/gh_actions/install_dependencies.sh
 
