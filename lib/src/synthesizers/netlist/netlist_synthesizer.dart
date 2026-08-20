@@ -1138,28 +1138,11 @@ String _destinationSuffix(Logic destination) {
   final rootLocation = _logicLocationInModule(module, destination);
   final elementPath = _logicElementPathIndices(destination).path;
   final parts = [
-    ..._modulePathIndices(module).path,
     ...rootLocation.path,
     ...elementPath,
   ];
 
   return parts.isEmpty ? '0' : parts.map((part) => part.toString()).join('_');
-}
-
-OccurrenceAddress _modulePathIndices(Module module) {
-  final parent = module.parent;
-  if (parent == null) {
-    return const OccurrenceAddress([0]);
-  }
-
-  final siblings = parent.subModules.toList();
-  final index = siblings.indexWhere(
-    (submodule) => identical(submodule, module),
-  );
-  return OccurrenceAddress([
-    ..._modulePathIndices(parent).path,
-    if (index < 0) 0 else index,
-  ]);
 }
 
 OccurrenceAddress _logicElementPathIndices(Logic destination) {

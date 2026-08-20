@@ -178,6 +178,69 @@ class NetlistCellMapper {
     );
   }
 
+  /// Maps a shift gate to a Yosys binary shift cell.
+  static NetlistCellMapping? shiftABY(
+    NetlistCellContext ctx,
+    String cellType, {
+    required bool aSigned,
+  }) {
+    final a = ctx.findInput('_in');
+    final b = ctx.findInput('_shiftAmount');
+    final y = ctx.firstOutput;
+    if (a == null || b == null || y == null) {
+      return null;
+    }
+    final r = ctx.remap({a: 'A', b: 'B', y: 'Y'});
+    return (
+      cellType: cellType,
+      portDirs: r.portDirs,
+      connections: r.connections,
+      parameters: <String, Object?>{
+        'A_SIGNED': aSigned ? 1 : 0,
+        'A_WIDTH': ctx.width(a),
+        'B_SIGNED': 0,
+        'B_WIDTH': ctx.width(b),
+        'Y_WIDTH': ctx.width(y),
+      },
+    );
+  }
+
+  /// Map a two-input gate with ports A, B, Y (e.g. `$pow`, `$div`, `$mod`),
+  /// including the standard Yosys `A_SIGNED`/`B_SIGNED` parameters.
+  ///
+  /// Unlike [binaryABY], this always emits the full standard parameter set
+  /// (`A_SIGNED`, `A_WIDTH`, `B_SIGNED`, `B_WIDTH`, `Y_WIDTH`) so the result
+  /// is directly consumable by standard Yosys tooling that expects these
+  /// arithmetic cells to be fully specified.
+  static NetlistCellMapping? binaryABYSigned(
+    NetlistCellContext ctx,
+    String cellType, {
+    required String inAPrefix,
+    required String inBPrefix,
+    bool aSigned = false,
+    bool bSigned = false,
+  }) {
+    final a = ctx.findInput(inAPrefix);
+    final b = ctx.findInput(inBPrefix);
+    final out = ctx.firstOutput;
+    if (a == null || b == null || out == null) {
+      return null;
+    }
+    final r = ctx.remap({a: 'A', b: 'B', out: 'Y'});
+    return (
+      cellType: cellType,
+      portDirs: r.portDirs,
+      connections: r.connections,
+      parameters: <String, Object?>{
+        'A_SIGNED': aSigned ? 1 : 0,
+        'A_WIDTH': ctx.width(a),
+        'B_SIGNED': bSigned ? 1 : 0,
+        'B_WIDTH': ctx.width(b),
+        'Y_WIDTH': ctx.width(out),
+      },
+    );
+  }
+
   // ══════════════════════════════════════════════════════════════════════
   //  Built-in handler registration
   // ══════════════════════════════════════════════════════════════════════
@@ -353,9 +416,10 @@ class NetlistCellMapper {
           },
         );
       })
-      // ── FlipFlop → $dff ───────────────────────────────────────────────
+      // ── FlipFlop → Yosys register cells ───────────────────────────────
       ..register((ctx) {
-        if (ctx.module is! FlipFlop) {
+        final flipFlop = ctx.module;
+        if (flipFlop is! FlipFlop) {
           return null;
         }
         final clk = ctx.findInput('_clk') ?? ctx.findInput('clk');
@@ -366,38 +430,74 @@ class NetlistCellMapper {
         if (clk == null || d == null || q == null) {
           return null;
         }
-        final pd = <String, String>{
-          '_clk': 'input',
-          '_d': 'input',
-          '_q': 'output',
-        };
-        final cn = <String, List<Object>>{
-          '_clk': ctx.rawConns[clk] ?? [],
-          '_d': ctx.rawConns[d] ?? [],
-          '_q': ctx.rawConns[q] ?? [],
-        };
-        if (en != null && ctx.rawConns.containsKey(en)) {
-          pd['_en'] = 'input';
-          cn['_en'] = ctx.rawConns[en] ?? [];
-        }
-        if (rst != null && ctx.rawConns.containsKey(rst)) {
-          pd['_reset'] = 'input';
-          cn['_reset'] = ctx.rawConns[rst] ?? [];
-        }
+        final hasEnable = en != null && ctx.rawConns.containsKey(en);
+        final hasReset = rst != null && ctx.rawConns.containsKey(rst);
         final rstVal =
             ctx.findInput('_resetValue') ?? ctx.findInput('resetValue');
-        if (rstVal != null && ctx.rawConns.containsKey(rstVal)) {
-          pd['_resetValue'] = 'input';
-          cn['_resetValue'] = ctx.rawConns[rstVal] ?? [];
+        final hasDynamicResetValue =
+            hasReset && rstVal != null && ctx.rawConns.containsKey(rstVal);
+
+        String cellType;
+        if (!hasReset) {
+          cellType = hasEnable ? r'$dffe' : r'$dff';
+        } else if (flipFlop.asyncReset) {
+          cellType = hasDynamicResetValue
+              ? (hasEnable ? r'$aldffe' : r'$aldff')
+              : (hasEnable ? r'$adffe' : r'$adff');
+        } else if (!hasDynamicResetValue) {
+          cellType = hasEnable ? r'$sdffe' : r'$sdff';
+        } else {
+          // Dynamic synchronous reset values are lowered to standard mux cells
+          // by NetlistModuleTranslation.
+          return null;
         }
+
+        final pd = <String, String>{
+          'CLK': 'input',
+          'D': 'input',
+          'Q': 'output',
+        };
+        final cn = <String, List<Object>>{
+          'CLK': ctx.rawConns[clk] ?? [],
+          'D': ctx.rawConns[d] ?? [],
+          'Q': ctx.rawConns[q] ?? [],
+        };
+        if (hasEnable) {
+          pd['EN'] = 'input';
+          cn['EN'] = ctx.rawConns[en] ?? [];
+        }
+        if (hasReset) {
+          final resetPort = flipFlop.asyncReset
+              ? (hasDynamicResetValue ? 'ALOAD' : 'ARST')
+              : 'SRST';
+          pd[resetPort] = 'input';
+          cn[resetPort] = ctx.rawConns[rst] ?? [];
+        }
+        if (hasDynamicResetValue) {
+          pd['AD'] = 'input';
+          cn['AD'] = ctx.rawConns[rstVal] ?? [];
+        }
+
+        final parameters = <String, Object?>{
+          'WIDTH': ctx.width(d),
+          'CLK_POLARITY': 1,
+          if (hasEnable) 'EN_POLARITY': 1,
+          if (hasReset && flipFlop.asyncReset)
+            (hasDynamicResetValue ? 'ALOAD_POLARITY' : 'ARST_POLARITY'): 1,
+          if (hasReset && !flipFlop.asyncReset) 'SRST_POLARITY': 1,
+          if (hasReset && !hasDynamicResetValue)
+            if (flipFlop.asyncReset)
+              'ARST_VALUE':
+                  flipFlop.constantResetValue!.toString(includeWidth: false)
+            else
+              'SRST_VALUE':
+                  flipFlop.constantResetValue!.toString(includeWidth: false),
+        };
         return (
-          cellType: r'$dff',
+          cellType: cellType,
           portDirs: pd,
           connections: cn,
-          parameters: <String, Object?>{
-            'WIDTH': ctx.width(d),
-            'CLK_POLARITY': 1,
-          },
+          parameters: parameters,
         );
       });
 
@@ -438,22 +538,61 @@ class NetlistCellMapper {
             binaryABY(ctx, type, inAPrefix: '_in0', inBPrefix: '_in1'),
       ),
       (
+        const <Type, String>{LShift: r'$shl', RShift: r'$shr'},
+        (ctx, type) => shiftABY(ctx, type, aSigned: false),
+      ),
+      (
+        const <Type, String>{ARShift: r'$sshr'},
+        (ctx, type) => shiftABY(ctx, type, aSigned: true),
+      ),
+      (
         const <Type, String>{
-          LShift: r'$shl',
-          RShift: r'$shr',
-          ARShift: r'$shiftx',
+          Power: r'$pow',
+          Divide: r'$div',
+          Modulo: r'$mod',
         },
-        (ctx, type) => binaryABY(
-              ctx,
-              type,
-              inAPrefix: '_in',
-              inBPrefix: '_shiftAmount',
-            ),
+        (ctx, type) =>
+            binaryABYSigned(ctx, type, inAPrefix: '_in0', inBPrefix: '_in1'),
       ),
     ];
     for (final (typeMap, handler) in gateRegistrations) {
       registerByTypeMap(typeMap, handler);
     }
+
+    // ── IndexGate → $shiftx ─────────────────────────────────────────────
+    //
+    // `$shiftx` extracts `Y_WIDTH` bits of `A` starting at bit offset `B`,
+    // producing `x` when the offset is out of range. This matches
+    // [IndexGate]'s bit-select semantics (`original[index]`, `Y_WIDTH == 1`)
+    // exactly, including its out-of-range-selects-`x` behavior.
+    register((ctx) {
+      if (ctx.module is! IndexGate) {
+        return null;
+      }
+      final inputNames = ctx.module.inputs.keys.toList();
+      if (inputNames.length != 2) {
+        return null;
+      }
+      final a = inputNames[0];
+      final b = inputNames[1];
+      final y = ctx.firstOutput;
+      if (y == null) {
+        return null;
+      }
+      final r = ctx.remap({a: 'A', b: 'B', y: 'Y'});
+      return (
+        cellType: r'$shiftx',
+        portDirs: r.portDirs,
+        connections: r.connections,
+        parameters: <String, Object?>{
+          'A_SIGNED': 0,
+          'A_WIDTH': ctx.width(a),
+          'B_SIGNED': 0,
+          'B_WIDTH': ctx.width(b),
+          'Y_WIDTH': ctx.width(y),
+        },
+      );
+    });
 
     // ── TriStateBuffer → $tribuf ──────────────────────────────────────
     register((ctx) {
@@ -465,6 +604,7 @@ class NetlistCellMapper {
       final enName = tsb.inputs.keys.last; // enable
       final outName = tsb.inOuts.keys.first; // inout output
       final r = ctx.remap({inName: 'A', enName: 'EN', outName: 'Y'});
+      r.portDirs['Y'] = 'output';
       return (
         cellType: r'$tribuf',
         portDirs: r.portDirs,

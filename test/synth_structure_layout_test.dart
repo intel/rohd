@@ -42,6 +42,26 @@ void main() {
       expect(layout.fieldNameAt(3, fallbackName: 'fallback'), 'payload_1');
     });
 
+    test('returns bit ranges for nested field paths', () {
+      final nested = LogicStructure([
+        Logic(name: 'b', width: 2),
+        LogicStructure([
+          Logic(name: 'd', width: 3),
+        ], name: 'c'),
+      ], name: 'a');
+      final structure = LogicStructure([
+        Logic(name: 'prefix'),
+        nested,
+      ]);
+      final layout = SynthStructureLayout(structure);
+
+      expect(layout.bitRangeForPath('a'), (start: 1, end: 6));
+      expect(layout.bitRangeForPath('a.b'), (start: 1, end: 3));
+      expect(layout.bitRangeForPath('a.c'), (start: 3, end: 6));
+      expect(layout.bitRangeForPath('a.c.d'), (start: 3, end: 6));
+      expect(layout.bitRangeForPath('a.missing'), isNull);
+    });
+
     test('supports unpack-specific anonymous field names', () {
       final fieldName = Naming.unpreferredName('field');
       final structure = LogicStructure([Logic(name: fieldName)]);

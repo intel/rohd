@@ -23,16 +23,9 @@ abstract class SynthesisResult {
   /// The name of the definition type for this module instance.
   String get instanceTypeName => getInstanceTypeOfModule(module);
 
-  /// Non-fatal warnings reported while producing this synthesis result.
-  final List<String> warnings;
-
   /// Represents a constant computed synthesis result for [module] given
   /// the provided type mapping in [getInstanceTypeOfModule].
-  const SynthesisResult(
-    this.module,
-    this.getInstanceTypeOfModule, {
-    this.warnings = const [],
-  });
+  const SynthesisResult(this.module, this.getInstanceTypeOfModule);
 
   /// Whether two implementations are identical or not
   ///

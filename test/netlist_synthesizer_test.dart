@@ -5,7 +5,7 @@
 // Comprehensive tests for the netlist synthesizer.
 //
 // 2026 April 13
-// Author: Auto-generated
+// Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 import 'dart:async';
 import 'dart:convert';
@@ -84,6 +84,40 @@ class FlopModule extends Module {
     clk = addInput('clk', clk);
     d = addInput('d', d, width: width);
     addOutput('q', width: width) <= flop(clk, d);
+  }
+}
+
+/// Exercises flip-flops with optional control signals.
+class ControlledFlopModule extends Module {
+  ControlledFlopModule(
+    Logic clk,
+    Logic d, {
+    Logic? en,
+    Logic? reset,
+    Logic? resetValue,
+    int? constantResetValue,
+    bool asyncReset = false,
+  }) : super(name: 'controlledflop') {
+    clk = addInput('clk', clk);
+    d = addInput('d', d, width: d.width);
+    if (en != null) {
+      en = addInput('en', en);
+    }
+    if (reset != null) {
+      reset = addInput('reset', reset);
+    }
+    if (resetValue != null) {
+      resetValue = addInput('resetValue', resetValue, width: d.width);
+    }
+    addOutput('q', width: d.width) <=
+        flop(
+          clk,
+          d,
+          en: en,
+          reset: reset,
+          resetValue: resetValue ?? constantResetValue,
+          asyncReset: asyncReset,
+        );
   }
 }
 
@@ -318,6 +352,17 @@ class StructOutputProducerModule extends Module {
     pair.low <= low;
     pair.high <= high ^ Const(1, width: 4);
     addTypedOutput('pair', pair.clone).gets(pair);
+  }
+}
+
+/// Instantiates identical structure-packing children at distinct parent paths.
+class StructOutputProducerDedupTop extends Module {
+  StructOutputProducerDedupTop() : super(name: 'structoutputproducerdeduptop') {
+    final first = StructOutputProducerModule();
+    final second = StructOutputProducerModule();
+
+    addOutput('first', width: 8) <= first.output('pair');
+    addOutput('second', width: 8) <= second.output('pair');
   }
 }
 
@@ -680,6 +725,166 @@ void main() {
       expect(_hasCellType(json, r'$dff'), isTrue);
     });
 
+    test('FlipFlop controls map to standard Yosys register cells', () async {
+      final clk = SimpleClockGenerator(10).clk;
+      final d = Logic(width: 4);
+      final en = Logic();
+      final reset = Logic();
+      final resetValue = Logic(width: 4);
+      final cases = <(
+        ControlledFlopModule module,
+        String type,
+        Set<String> ports,
+        Map<String, Object?> parameters,
+      )>[
+        (
+          ControlledFlopModule(clk, d, en: en),
+          r'$dffe',
+          {'CLK', 'D', 'EN', 'Q'},
+          {'WIDTH': 4, 'CLK_POLARITY': 1, 'EN_POLARITY': 1},
+        ),
+        (
+          ControlledFlopModule(clk, d, reset: reset, constantResetValue: 9),
+          r'$sdff',
+          {'CLK', 'D', 'SRST', 'Q'},
+          {
+            'WIDTH': 4,
+            'CLK_POLARITY': 1,
+            'SRST_POLARITY': 1,
+            'SRST_VALUE': '1001',
+          },
+        ),
+        (
+          ControlledFlopModule(
+            clk,
+            d,
+            en: en,
+            reset: reset,
+            constantResetValue: 9,
+          ),
+          r'$sdffe',
+          {'CLK', 'D', 'EN', 'SRST', 'Q'},
+          {
+            'WIDTH': 4,
+            'CLK_POLARITY': 1,
+            'EN_POLARITY': 1,
+            'SRST_POLARITY': 1,
+            'SRST_VALUE': '1001',
+          },
+        ),
+        (
+          ControlledFlopModule(
+            clk,
+            d,
+            reset: reset,
+            constantResetValue: 9,
+            asyncReset: true,
+          ),
+          r'$adff',
+          {'CLK', 'D', 'ARST', 'Q'},
+          {
+            'WIDTH': 4,
+            'CLK_POLARITY': 1,
+            'ARST_POLARITY': 1,
+            'ARST_VALUE': '1001',
+          },
+        ),
+        (
+          ControlledFlopModule(
+            clk,
+            d,
+            en: en,
+            reset: reset,
+            constantResetValue: 9,
+            asyncReset: true,
+          ),
+          r'$adffe',
+          {'CLK', 'D', 'EN', 'ARST', 'Q'},
+          {
+            'WIDTH': 4,
+            'CLK_POLARITY': 1,
+            'EN_POLARITY': 1,
+            'ARST_POLARITY': 1,
+            'ARST_VALUE': '1001',
+          },
+        ),
+        (
+          ControlledFlopModule(
+            clk,
+            d,
+            reset: reset,
+            resetValue: resetValue,
+            asyncReset: true,
+          ),
+          r'$aldff',
+          {'CLK', 'D', 'ALOAD', 'AD', 'Q'},
+          {'WIDTH': 4, 'CLK_POLARITY': 1, 'ALOAD_POLARITY': 1},
+        ),
+        (
+          ControlledFlopModule(
+            clk,
+            d,
+            en: en,
+            reset: reset,
+            resetValue: resetValue,
+            asyncReset: true,
+          ),
+          r'$aldffe',
+          {'CLK', 'D', 'EN', 'ALOAD', 'AD', 'Q'},
+          {
+            'WIDTH': 4,
+            'CLK_POLARITY': 1,
+            'EN_POLARITY': 1,
+            'ALOAD_POLARITY': 1,
+          },
+        ),
+      ];
+
+      for (final testCase in cases) {
+        final (module, type, ports, parameters) = testCase;
+        final json = await _synthToMap(module);
+        final moduleDef =
+            _modules(json)[module.definitionName] as Map<String, dynamic>;
+        final cell =
+            _cells(moduleDef).values.cast<Map<String, dynamic>>().singleWhere(
+                  (cell) => cell['type'] == type,
+                );
+        expect(
+          (cell['port_directions'] as Map<String, dynamic>).keys.toSet(),
+          equals(ports),
+          reason: type,
+        );
+        expect(
+          cell['parameters'],
+          equals(parameters),
+          reason: type,
+        );
+      }
+    });
+
+    test('FlipFlop dynamic synchronous reset is lowered to standard cells',
+        () async {
+      final module = ControlledFlopModule(
+        SimpleClockGenerator(10).clk,
+        Logic(width: 4),
+        en: Logic(),
+        reset: Logic(),
+        resetValue: Logic(width: 4),
+      );
+      final json = await _synthToMap(module);
+      final moduleDef =
+          _modules(json)[module.definitionName] as Map<String, dynamic>;
+      final cells = _cells(moduleDef).values.cast<Map<String, dynamic>>();
+      final dff = cells.singleWhere((cell) => cell['type'] == r'$dffe');
+
+      expect(_hasCellType(json, r'$mux'), isTrue);
+      expect(_hasCellType(json, r'$or'), isTrue);
+      expect(
+        (dff['port_directions'] as Map<String, dynamic>).keys.toSet(),
+        equals({'CLK', 'D', 'EN', 'Q'}),
+      );
+    });
+
     test(r'Add maps to $add cell', () async {
       final json = await _synthToMap(
         AddModule(Logic(width: 8), Logic(width: 8)),
@@ -769,11 +974,47 @@ void main() {
       expect(_hasCellType(json, r'$shr'), isTrue);
     });
 
-    test(r'ARShift maps to $shiftx cell', () async {
+    test(r'ARShift maps to $sshr cell', () async {
       final json = await _synthToMap(
         ARShiftModule(Logic(width: 8), Logic(width: 8)),
       );
-      expect(_hasCellType(json, r'$shiftx'), isTrue);
+      expect(_hasCellType(json, r'$sshr'), isTrue);
+    });
+
+    test('shift cells use standard ports and signedness parameters', () async {
+      final cases = <(Module Function() moduleGen, String type, int aSigned)>[
+        (() => ShiftModule(Logic(width: 8), Logic(width: 8)), r'$shl', 0),
+        (() => ShiftModule(Logic(width: 8), Logic(width: 8)), r'$shr', 0),
+        (() => ARShiftModule(Logic(width: 8), Logic(width: 8)), r'$sshr', 1),
+      ];
+
+      for (final (moduleGen, type, aSigned) in cases) {
+        final module = moduleGen();
+        final json = await _synthToMap(module);
+        final moduleDef =
+            _modules(json)[module.definitionName] as Map<String, dynamic>;
+        final cell =
+            _cells(moduleDef).values.cast<Map<String, dynamic>>().singleWhere(
+                  (cell) => cell['type'] == type,
+                );
+
+        expect(
+          cell['port_directions'],
+          equals({'A': 'input', 'B': 'input', 'Y': 'output'}),
+          reason: type,
+        );
+        expect(
+          cell['parameters'],
+          equals({
+            'A_SIGNED': aSigned,
+            'A_WIDTH': 8,
+            'B_SIGNED': 0,
+            'B_WIDTH': 8,
+            'Y_WIDTH': 8,
+          }),
+          reason: type,
+        );
+      }
     });
 
     test(r'AndUnary maps to $reduce_and cell', () async {
@@ -797,6 +1038,16 @@ void main() {
         TriBufModule(busNet, Logic(width: 8), Logic()),
       );
       expect(_hasCellType(json, r'$tribuf'), isTrue);
+      final tribuf = _modules(json)
+          .values
+          .cast<Map<String, dynamic>>()
+          .expand((moduleDef) => _cells(moduleDef).values)
+          .cast<Map<String, dynamic>>()
+          .singleWhere((cell) => cell['type'] == r'$tribuf');
+      expect(
+        tribuf['port_directions'],
+        equals({'A': 'input', 'EN': 'input', 'Y': 'output'}),
+      );
     });
   });
 
@@ -967,6 +1218,25 @@ void main() {
         addDefs.length,
         greaterThanOrEqualTo(2),
         reason: 'Different-width AddModules should NOT be deduplicated',
+      );
+    });
+
+    test('structure-pack children at different paths are deduplicated',
+        () async {
+      final json = await _synthToMap(StructOutputProducerDedupTop());
+      final structProducerDefs = _modules(json)
+          .keys
+          .where(
+            (definitionName) =>
+                definitionName.startsWith('StructOutputProducerModule'),
+          )
+          .toList();
+
+      expect(
+        structProducerDefs,
+        hasLength(1),
+        reason:
+            'The structure-pack cell keys must be local to each child module.',
       );
     });
   });

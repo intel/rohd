@@ -38,13 +38,6 @@ class SynthBuilder {
   Set<SynthesisResult> get synthesisResults =>
       UnmodifiableSetView(_synthesisResults);
 
-  /// Non-fatal warnings reported by generated [SynthesisResult]s.
-  List<String> get warnings => UnmodifiableListView(
-        _synthesisResults
-            .expand((synthesisResult) => synthesisResult.warnings)
-            .toList(growable: false),
-      );
-
   /// [Uniquifier] for instance type names.
   final Uniquifier _instanceTypeUniquifier = Uniquifier();
 

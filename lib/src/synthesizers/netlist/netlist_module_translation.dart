@@ -271,6 +271,7 @@ class NetlistModuleTranslation {
       }
 
       final submodule = instance.module;
+      final cellKey = instance.name;
       final isLeaf = !_generatesDefinition(submodule);
       final defaultCellType = isLeaf
           ? submodule.definitionName
@@ -292,9 +293,19 @@ class NetlistModuleTranslation {
       final mapped = isLeaf
           ? _netlistCellMapper.map(submodule, rawPortDirs, rawConnections)
           : null;
+      if (mapped == null &&
+          submodule is FlipFlop &&
+          _emitDynamicSynchronousResetFlipFlop(
+            cellKey,
+            submodule,
+            rawPortDirs,
+            rawConnections,
+          )) {
+        emittedCellKeys[instance] = cellKey;
+        continue;
+      }
       final cellPortDirs = mapped?.portDirs ?? rawPortDirs;
       final cellConnections = mapped?.connections ?? rawConnections;
-      final cellKey = instance.name;
       emittedCellKeys[instance] = cellKey;
 
       if (submodule is Combinational || submodule is Sequential) {
@@ -371,6 +382,134 @@ class NetlistModuleTranslation {
         .map((instance) => emittedCellKeys[instance])
         .whereType<String>()
         .forEach(cells.remove);
+  }
+
+  /// Lowers a flip-flop with a dynamic synchronous reset value to Yosys cells.
+  ///
+  /// `$sdff` requires a constant reset value. The reset mux precedes the
+  /// enable, and the enable is ORed with reset so reset retains priority.
+  bool _emitDynamicSynchronousResetFlipFlop(
+    String cellKey,
+    FlipFlop flipFlop,
+    Map<String, String> rawPortDirs,
+    Map<String, List<Object>> rawConnections,
+  ) {
+    if (flipFlop.asyncReset) {
+      return false;
+    }
+
+    String? findInput(String unpreferredName, String name) {
+      for (final entry in rawPortDirs.entries) {
+        if (entry.value == 'input' &&
+            (entry.key.startsWith(unpreferredName) || entry.key == name)) {
+          return entry.key;
+        }
+      }
+      return null;
+    }
+
+    final clk = findInput('_clk', 'clk');
+    final d = findInput('_d', 'd');
+    final en = findInput('_en', 'en');
+    final reset = findInput('_reset', 'reset');
+    final resetValue = findInput('_resetValue', 'resetValue');
+    final q = rawPortDirs.entries
+        .where((entry) => entry.value == 'output')
+        .map((entry) => entry.key)
+        .firstOrNull;
+    if (clk == null ||
+        d == null ||
+        reset == null ||
+        resetValue == null ||
+        q == null) {
+      return false;
+    }
+
+    final dBits = rawConnections[d] ?? const <Object>[];
+    final resetValueBits = rawConnections[resetValue] ?? const <Object>[];
+    final resetBits = rawConnections[reset] ?? const <Object>[];
+    final clkBits = rawConnections[clk] ?? const <Object>[];
+    final qBits = rawConnections[q] ?? const <Object>[];
+    if (dBits.isEmpty ||
+        dBits.length != resetValueBits.length ||
+        resetBits.length != 1 ||
+        clkBits.length != 1 ||
+        qBits.length != dBits.length) {
+      return false;
+    }
+
+    final resetMuxOutput =
+        List<Object>.generate(dBits.length, (_) => allocateWireId());
+    cells['${cellKey}_reset_mux'] = {
+      'hide_name': 0,
+      'type': r'$mux',
+      'parameters': <String, Object?>{'WIDTH': dBits.length},
+      'attributes': <String, Object?>{},
+      'port_directions': {
+        'A': 'input',
+        'B': 'input',
+        'S': 'input',
+        'Y': 'output'
+      },
+      'connections': {
+        'A': dBits,
+        'B': resetValueBits,
+        'S': resetBits,
+        'Y': resetMuxOutput,
+      },
+    };
+
+    final hasEnable = en != null && rawConnections.containsKey(en);
+    final dffConnections = <String, List<Object>>{
+      'CLK': clkBits,
+      'D': resetMuxOutput,
+      'Q': qBits,
+    };
+    final dffDirections = <String, String>{
+      'CLK': 'input',
+      'D': 'input',
+      'Q': 'output',
+    };
+    final dffParameters = <String, Object?>{
+      'WIDTH': dBits.length,
+      'CLK_POLARITY': 1,
+    };
+    if (hasEnable) {
+      final enableBits = rawConnections[en] ?? const <Object>[];
+      if (enableBits.length != 1) {
+        return false;
+      }
+      final effectiveEnable = <Object>[allocateWireId()];
+      cells['${cellKey}_reset_enable'] = {
+        'hide_name': 0,
+        'type': r'$or',
+        'parameters': <String, Object?>{
+          'A_WIDTH': 1,
+          'B_WIDTH': 1,
+          'Y_WIDTH': 1,
+        },
+        'attributes': <String, Object?>{},
+        'port_directions': {'A': 'input', 'B': 'input', 'Y': 'output'},
+        'connections': {
+          'A': enableBits,
+          'B': resetBits,
+          'Y': effectiveEnable,
+        },
+      };
+      dffConnections['EN'] = effectiveEnable;
+      dffDirections['EN'] = 'input';
+      dffParameters['EN_POLARITY'] = 1;
+    }
+
+    cells[cellKey] = {
+      'hide_name': 0,
+      'type': hasEnable ? r'$dffe' : r'$dff',
+      'parameters': dffParameters,
+      'attributes': <String, Object?>{},
+      'port_directions': dffDirections,
+      'connections': dffConnections,
+    };
+    return true;
   }
 
   /// Emits port and internal netnames, fills unnamed connection coverage,

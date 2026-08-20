@@ -9,26 +9,32 @@
 
 import 'package:rohd/rohd.dart';
 
+/// An exclusive-end bit range within a packed [LogicStructure].
+typedef SynthStructureBitRange = ({int start, int end});
+
+typedef _SynthStructureRange = ({
+  int start,
+  int end,
+  String name,
+  String path,
+  String fieldPath,
+  int indexInParent,
+});
+
 /// Provides bit ranges and field names for a packed [LogicStructure].
 class SynthStructureLayout {
-  final List<
-      ({
-        int start,
-        int end,
-        String name,
-        String path,
-        int indexInParent,
-      })> _ranges = [];
+  final List<_SynthStructureRange> _ranges = [];
 
   /// Creates a layout with elements ordered from least to most significant.
   SynthStructureLayout(LogicStructure structure) {
-    _addStructure(structure, 0, '');
+    _addStructure(structure, 0, '', '');
   }
 
   void _addStructure(
     LogicStructure structure,
     int baseOffset,
     String parentPath,
+    String parentFieldPath,
   ) {
     var offset = baseOffset;
     for (var index = 0; index < structure.elements.length; index++) {
@@ -36,18 +42,35 @@ class SynthStructureLayout {
       final end = offset + element.width;
       final path =
           parentPath.isEmpty ? element.name : '${parentPath}_${element.name}';
+      final fieldPath = parentFieldPath.isEmpty
+          ? element.name
+          : '$parentFieldPath.${element.name}';
       _ranges.add((
         start: offset,
         end: end,
         name: element.name,
         path: path,
+        fieldPath: fieldPath,
         indexInParent: index,
       ));
       if (element is LogicStructure && element is! LogicArray) {
-        _addStructure(element, offset, path);
+        _addStructure(element, offset, path, fieldPath);
       }
       offset = end;
     }
+  }
+
+  /// Returns the exclusive-end bit range for a dot-separated [fieldPath].
+  ///
+  /// For example, `a.b` returns the range for the nested `b` field in `a`.
+  /// Returns `null` when [fieldPath] does not identify a field.
+  SynthStructureBitRange? bitRangeForPath(String fieldPath) {
+    for (final range in _ranges) {
+      if (range.fieldPath == fieldPath) {
+        return (start: range.start, end: range.end);
+      }
+    }
+    return null;
   }
 
   /// Returns the best field name containing [bitOffset].
@@ -59,20 +82,8 @@ class SynthStructureLayout {
     required String fallbackName,
     bool anonymousUnpreferred = false,
   }) {
-    ({
-      int start,
-      int end,
-      String name,
-      String path,
-      int indexInParent,
-    })? bestNamed;
-    ({
-      int start,
-      int end,
-      String name,
-      String path,
-      int indexInParent,
-    })? narrowest;
+    _SynthStructureRange? bestNamed;
+    _SynthStructureRange? narrowest;
 
     for (final range in _ranges) {
       if (bitOffset < range.start || bitOffset >= range.end) {

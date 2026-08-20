@@ -39,7 +39,6 @@ class NetlistSynthesisResult extends SynthesisResult {
     required this.cells,
     required this.netnames,
     this.attributes = const {},
-    super.warnings,
   });
 
   /// Builds the JSON representation for this single module entry.
