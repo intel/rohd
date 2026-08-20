@@ -309,7 +309,7 @@ void main() {
     final mod = NegedgeTriggeredSeq(Logic());
     await mod.build();
 
-    final sv = mod.generateSynth();
+    final sv = SystemVerilogService(mod).synthOutput;
     expect(sv, contains('always_ff @(negedge'));
 
     final vectors = [

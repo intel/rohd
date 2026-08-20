@@ -44,7 +44,7 @@ class ShiftRegister extends Module {
 void main() async {
   final shiftReg = ShiftRegister();
   await shiftReg.build();
-  print(shiftReg.generateSynth());
+  print(SystemVerilogService(shiftReg, register: false).synthOutput);
 }
 ```
 
@@ -196,7 +196,7 @@ void main() async {
 
   final shiftReg = ShiftRegister(clk, reset, sin);
   await shiftReg.build();
-  print(shiftReg.generateSynth());
+  print(SystemVerilogService(shiftReg, register: false).synthOutput);
 
   // Inject 1 to reset and 0 to shift in
   reset.inject(1);

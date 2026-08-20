@@ -348,9 +348,11 @@ abstract class SimCompare {
         allSignals.map((e) => '.$e(${logicToWireMapping[e] ?? e})').join(', ');
     final moduleInstance = '$topModule dut($moduleConnections);';
     final stimulus = vectors.map((e) => e.toTbVerilog(module)).join('\n');
-    final generatedVerilog = module.generateSynth(
-      configuration: synthesizerConfiguration,
-    );
+    final generatedVerilog = module
+        .dumpSystemVerilog(
+          configuration: synthesizerConfiguration,
+        )
+        .output;
 
     // so that when they run in parallel, they dont step on each other
     final uniqueId =

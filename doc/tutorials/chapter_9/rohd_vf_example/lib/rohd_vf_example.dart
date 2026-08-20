@@ -315,7 +315,7 @@ Future<void> main({Level loggerLevel = Level.FINER}) async {
   await tb.counter.build();
 
   // dump wave here
-  WaveDumper(tb.counter);
+  WaveformService(tb.counter);
 
   // Set a maximum simulation time so it doesn't run forever
   Simulator.setMaxSimTime(300);
