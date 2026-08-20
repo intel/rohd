@@ -44,9 +44,7 @@ Future<void> main(List<String> arguments) async {
       continue;
     }
     final command = packageUsesFlutter ||
-            (arguments.single != 'test-node' &&
-                package.path == root.path &&
-                workspaceUsesFlutter)
+            (arguments.single != 'test-node' && workspaceUsesFlutter)
         ? 'flutter'
         : 'dart';
 
