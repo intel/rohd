@@ -17,6 +17,7 @@ declare -r flutter_archive_url="https://storage.googleapis.com/flutter_infra_rel
 
 if [[ -x "${flutter_sdk_dir}/bin/flutter" ]] &&
     "${flutter_sdk_dir}/bin/flutter" --version | grep -q "Flutter ${flutter_version}"; then
+  sudo ln --force --symbolic "${flutter_sdk_dir}/bin/dart" /usr/local/bin/dart
   echo "Flutter ${flutter_version} is already installed."
   exit 0
 fi
@@ -32,5 +33,6 @@ curl --fail --location --silent --show-error "${flutter_archive_url}" \
   --output "${archive}"
 sudo tar --extract --xz --file "${archive}" --directory /opt
 sudo ln --force --symbolic "${flutter_sdk_dir}/bin/flutter" /usr/local/bin/flutter
+sudo ln --force --symbolic "${flutter_sdk_dir}/bin/dart" /usr/local/bin/dart
 
 flutter --version

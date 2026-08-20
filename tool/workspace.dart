@@ -38,15 +38,20 @@ Future<void> main(List<String> arguments) async {
     return;
   }
 
+  if (arguments.single == 'test-node' && workspaceUsesFlutter) {
+    await _run('flutter', const ['pub', 'get'], root);
+  }
+
   for (final package in packages) {
     final packageUsesFlutter = _usesFlutter(package);
     if (arguments.single == 'test-node' && packageUsesFlutter) {
       continue;
     }
-    final command = packageUsesFlutter ||
-            (arguments.single != 'test-node' && workspaceUsesFlutter)
-        ? 'flutter'
-        : 'dart';
+    final command = arguments.single == 'test-node'
+        ? 'dart'
+        : workspaceUsesFlutter
+            ? 'flutter'
+            : 'dart';
 
     final commandArguments = switch (arguments.single) {
       'analyze' => const ['analyze', '--no-fatal-warnings'],
