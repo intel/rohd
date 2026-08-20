@@ -4,7 +4,7 @@
 {
   "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
 
-  "updateContentCommand": "tool/gh_codespaces/run_setup.sh",
+  "postCreateCommand": "tool/gh_codespaces/run_setup.sh",
 
   "customizations": {
     "codespaces": {
