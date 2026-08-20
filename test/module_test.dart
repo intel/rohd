@@ -258,7 +258,7 @@ void main() {
       } finally {
         directory.deleteSync(recursive: true);
       }
-    });
+    }, testOn: 'vm');
   });
 
   group('try ports', () {

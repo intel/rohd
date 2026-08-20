@@ -14,6 +14,7 @@ Usage: dart run tool/workspace.dart <command>
 
 Commands:
   analyze       Analyze every workspace package.
+  clean         Delete build artifacts from every workspace package.
   test          Run native tests in every workspace package.
   test-node     Run Node.js tests in every non-Flutter workspace package.
   vscode        Generate rohd-multipackage.code-workspace.
@@ -21,7 +22,8 @@ Commands:
 
 Future<void> main(List<String> arguments) async {
   if (arguments.length != 1 ||
-      !{'analyze', 'test', 'test-node', 'vscode'}.contains(arguments.single)) {
+      !{'analyze', 'clean', 'test', 'test-node', 'vscode'}
+          .contains(arguments.single)) {
     stderr.write(_usage);
     exitCode = 64;
     return;
@@ -43,6 +45,7 @@ Future<void> main(List<String> arguments) async {
 
     final commandArguments = switch (arguments.single) {
       'analyze' => const ['analyze', '--no-fatal-warnings'],
+      'clean' => const ['clean'],
       'test' => const ['test'],
       'test-node' => const ['test', '--platform', 'node'],
       _ => throw StateError('Unexpected command.'),
