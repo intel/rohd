@@ -283,7 +283,6 @@ void main() {
       // At least ch0_1 and ch1_1 have children
       expect(withSlash, isNotEmpty);
     });
-
   });
 
   // ─────────────── HierarchySearchController ───────────────
