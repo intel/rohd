@@ -9,13 +9,6 @@ documentation: https://intel.github.io/rohd-website/docs/sample-example/
 environment:
   sdk: ^3.6.0
 
-workspace:
-  - packages/rohd_hierarchy
-  - packages/rohd_waveform
-  - rohd_devtools_extension
-  - rohd_devtools_extension/packages/rohd_devtools_widgets
-  - rohd_extension/dart
-
 dependencies:
   collection: ^1.15.0
   logging: ^1.0.1
