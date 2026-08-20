@@ -520,19 +520,21 @@ class FstWriter {
     for (final entry in _hierEntries) {
       switch (entry) {
         case _ScopeEntry():
-          buf.addByte(_hierTypeScopeBegin);
-          buf.addByte(entry.type.value);
-          buf.add(_cString(entry.name));
-          buf.add(_cString(entry.component));
+          buf
+            ..addByte(_hierTypeScopeBegin)
+            ..addByte(entry.type.value)
+            ..add(_cString(entry.name))
+            ..add(_cString(entry.component));
         case _UpScopeEntry():
           buf.addByte(_hierTypeUpScope);
         case _VarEntry():
-          buf.addByte(entry.varType.value);
-          buf.addByte(entry.direction.value);
-          buf.add(_cString(entry.name));
-          buf.add(encodeVarint(entry.width)); // length
-          // alias = 0 means "new handle, not an alias"
-          buf.add(encodeVarint(0));
+          buf
+            ..addByte(entry.varType.value)
+            ..addByte(entry.direction.value)
+            ..add(_cString(entry.name))
+            ..add(encodeVarint(entry.width)) // length
+            // alias = 0 means "new handle, not an alias"
+            ..add(encodeVarint(0));
           handleCount++;
       }
     }
