@@ -89,6 +89,7 @@ class NetlistSynthesizerConfiguration {
   /// This is backward-compatible: Yosys-format arrays already mix
   /// integers with constant strings `"0"` and `"1"`.  Parsers can
   /// detect range strings by the presence of `:`.
+  @internal
   final bool compressBitRanges;
 
   /// When `true`, the JSON output uses no indentation (compact form).
@@ -104,7 +105,7 @@ class NetlistSynthesizerConfiguration {
     @visibleForTesting this.collapseTransparentClusters = false,
     @visibleForTesting this.enableDeadCellElimination = true,
     this.slimMode = false,
-    this.compressBitRanges = false,
+    @visibleForTesting this.compressBitRanges = false,
     this.compactJson = false,
   });
 }
