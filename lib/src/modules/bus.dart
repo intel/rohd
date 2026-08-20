@@ -183,6 +183,11 @@ class BusSubset extends Module with InlineSystemVerilog {
 class Swizzle extends Module with InlineSystemVerilog {
   final String _out = Naming.unpreferredName('swizzled');
 
+  /// A regular expression that will have matches if an expression is a single
+  /// bit select of a signal or packed array element.
+  static final RegExp _singleBitSelectRegex =
+      RegExp(r'^\(?([A-Za-z_][A-Za-z0-9_$]*(?:\[\d+\])*)\[(\d+)\]\)?$');
+
   /// The output port containing concatenated signals.
   late final Logic out;
 
@@ -261,25 +266,25 @@ class Swizzle extends Module with InlineSystemVerilog {
     // Calculate all width descriptions upfront to determine alignment
     final validInputs =
         _swizzleInputs.reversed.where((e) => e.width > 0).toList();
+    final operands = _collapseContiguousBitSelects(validInputs, inputs);
 
     // If there's only one element, no need for width descriptions
-    if (validInputs.length == 1) {
-      final inName = inputs[validInputs.first.name]!;
-      return inName;
+    if (operands.length == 1) {
+      return operands.first.expression;
     }
 
     final widthDescriptions = <({int upper, int? lower})>[];
     var upperIndex = out.width - 1;
 
     // First pass: calculate all width descriptions
-    for (final e in validInputs) {
-      if (e.width > 1) {
-        final lowerIndex = upperIndex - e.width + 1;
+    for (final operand in operands) {
+      if (operand.width > 1) {
+        final lowerIndex = upperIndex - operand.width + 1;
         widthDescriptions.add((upper: upperIndex, lower: lowerIndex));
       } else {
         widthDescriptions.add((upper: upperIndex, lower: null));
       }
-      upperIndex -= e.width;
+      upperIndex -= operand.width;
     }
 
     // Find maximum width for alignment
@@ -301,8 +306,7 @@ class Swizzle extends Module with InlineSystemVerilog {
     final inputLines = <String>[];
     var descIndex = 0;
 
-    for (final e in validInputs) {
-      final inName = inputs[e.name]!;
+    for (final operand in operands) {
       final desc = widthDescriptions[descIndex++];
 
       String alignedDesc;
@@ -317,15 +321,108 @@ class Swizzle extends Module with InlineSystemVerilog {
         alignedDesc = desc.upper.toString().padLeft(totalWidth);
       }
 
-      upperIndex -= e.width;
+      upperIndex -= operand.width;
       final maybeComma =
           upperIndex >= 0 ? ',' : ' '; // space at end for alignment
-      inputLines.add('$inName$maybeComma /* $alignedDesc */');
+      inputLines.add('${operand.expression}$maybeComma /* $alignedDesc */');
     }
 
     return '''
 {
 ${inputLines.join('\n')}
 }''';
+  }
+
+  /// Rewrites runs of adjacent descending single-bit selects from the same
+  /// packed signal into wider SystemVerilog slices.
+  ///
+  /// For example, `a[7], a[6], a[5]` becomes `a[7:5]`, and
+  /// `a[0][1], a[0][0]` becomes `a[0][1:0]`. Ascending runs are intentionally
+  /// left expanded because SystemVerilog slices cannot reverse bit order with
+  /// `lower:upper` syntax.
+  List<({String expression, int width})> _collapseContiguousBitSelects(
+    List<Logic> validInputs,
+    Map<String, String> inputs,
+  ) {
+    final operands = <({String expression, int width})>[];
+
+    var index = 0;
+    while (index < validInputs.length) {
+      final input = validInputs[index];
+      final expression = inputs[input.name]!;
+      final selectedBit = _singleBitSelect(input, expression);
+      if (selectedBit == null) {
+        operands.add((expression: expression, width: input.width));
+        index++;
+        continue;
+      }
+
+      var lowerIndex = selectedBit.index;
+      var endIndex = index + 1;
+      while (endIndex < validInputs.length) {
+        final nextInput = validInputs[endIndex];
+        final nextExpression = inputs[nextInput.name]!;
+        final nextSelectedBit = _singleBitSelect(nextInput, nextExpression);
+        if (nextSelectedBit == null ||
+            nextSelectedBit.source != selectedBit.source ||
+            nextSelectedBit.index != lowerIndex - 1) {
+          break;
+        }
+
+        lowerIndex = nextSelectedBit.index;
+        endIndex++;
+      }
+
+      if (endIndex == index + 1) {
+        operands.add((expression: expression, width: input.width));
+      } else {
+        operands.add((
+          expression: '${selectedBit.source}[${selectedBit.index}:$lowerIndex]',
+          width: endIndex - index,
+        ));
+      }
+      index = endIndex;
+    }
+
+    return operands;
+  }
+
+  /// Parses [expression] as a single-bit select of a packed signal when it is
+  /// safe to participate in slice collapsing.
+  ///
+  /// Returns `null` for multi-bit inputs, non-select expressions, or selects
+  /// sourced from unpacked arrays.
+  ({String source, int index})? _singleBitSelect(
+    Logic input,
+    String expression,
+  ) {
+    if (input.width != 1 || _hasUnpackedArraySource(input.srcConnection)) {
+      return null;
+    }
+
+    final match = _singleBitSelectRegex.firstMatch(expression);
+    if (match == null) {
+      return null;
+    }
+
+    return (source: match.group(1)!, index: int.parse(match.group(2)!));
+  }
+
+  /// Walks up [logic]'s containing structures to detect unpacked arrays.
+  ///
+  /// SystemVerilog packed slices are not interchangeable with unpacked array
+  /// indexing, so any unpacked array source disables bit-select collapsing.
+  bool _hasUnpackedArraySource(Logic? logic) {
+    var current = logic;
+    while (current?.parentStructure != null) {
+      final parentStructure = current!.parentStructure!;
+      if (parentStructure is LogicArray &&
+          parentStructure.numUnpackedDimensions > 0) {
+        return true;
+      }
+      current = parentStructure;
+    }
+
+    return false;
   }
 }

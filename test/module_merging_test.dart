@@ -1,4 +1,4 @@
-// Copyright (C) 2023 Intel Corporation
+// Copyright (C) 2023-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // module_merging_test.dart
@@ -86,7 +86,7 @@ class ParentOfDifferentModuleDefNames extends Module {
   }
 }
 
-void main() async {
+void main() {
   test('complex trunk with leaves doesnt duplicate identical modules',
       () async {
     final dut = TrunkWithLeaves(Logic(), Logic());

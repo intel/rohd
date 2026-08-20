@@ -25,7 +25,7 @@ class SystemVerilogSynthesizer extends Synthesizer {
 
   @override
   bool generatesDefinition(Module module) =>
-      // ignore: deprecated_member_use_from_same_package
+      // ignore: deprecated_member_use_from_same_package - backwards compatibility with CustomSystemVerilog
       !((module is CustomSystemVerilog) ||
           (module is SystemVerilog &&
               module.generatedDefinitionType == DefinitionGenerationType.none));
@@ -70,7 +70,7 @@ class SystemVerilogSynthesizer extends Synthesizer {
                 ports: ports,
                 forceStandardInstantiation: true);
       }
-      // ignore: deprecated_member_use_from_same_package
+      // ignore: deprecated_member_use_from_same_package - backwards compatibility with CustomSystemVerilog
       else if (module is CustomSystemVerilog) {
         return module.instantiationVerilog(
           instanceType,
@@ -155,7 +155,10 @@ class SystemVerilogSynthesizer extends Synthesizer {
             module.generatedDefinitionType == DefinitionGenerationType.custom
         ? SystemVerilogCustomDefinitionSynthesisResult(
             module, getInstanceTypeOfModule)
-        : SystemVerilogSynthesisResult(module, getInstanceTypeOfModule,
-            configuration: configuration);
+        : SystemVerilogSynthesisResult(
+            module,
+            getInstanceTypeOfModule,
+            configuration: configuration,
+          );
   }
 }

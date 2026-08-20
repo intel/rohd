@@ -30,5 +30,16 @@
                 "--dart-define=use_simulated_environment=true"
             ],
         },
+        {
+            "name": "Run: Web Standalone (port 9099)",
+            "request": "launch",
+            "type": "dart",
+            "program": "lib/main_standalone.dart",
+            "deviceId": "web-server",
+            "args": [
+                "--web-port=9099",
+                "--web-hostname=0.0.0.0"
+            ]
+        }
     ]
 }

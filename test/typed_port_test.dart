@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Intel Corporation
+// Copyright (C) 2025-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // typed_port_test.dart
@@ -75,10 +75,8 @@ class SimpleStructModuleContainer extends Module {
   SimpleStructModuleContainer(Logic a1, Logic a2,
       {super.name = 'simple_struct_mod_container', bool asNet = false}) {
     final Logic Function(String, Logic) inMaker = asNet ? addInOut : addInput;
-    // ignore: omit_local_variable_types
-    final Logic Function(String name) outMaker = asNet
-        ? (name) => addInOut(name, LogicNet(name: 'ext$name'))
-        : addOutput;
+    Logic makeOutput(String name) =>
+        asNet ? addInOut(name, LogicNet(name: 'ext$name')) : addOutput(name);
 
     a1 = inMaker('a1', a1);
     a2 = inMaker('a2', a2);
@@ -87,8 +85,8 @@ class SimpleStructModuleContainer extends Module {
     upperStruct.valid <= a2;
     final sub = SimpleStructModule(upperStruct);
 
-    outMaker('b1') <= sub.myOut.ready;
-    outMaker('b2') <= sub.myOut.valid;
+    makeOutput('b1') <= sub.myOut.ready;
+    makeOutput('b2') <= sub.myOut.valid;
   }
 }
 

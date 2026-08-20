@@ -1,4 +1,4 @@
-// Copyright (C) 2024-2025 Intel Corporation
+// Copyright (C) 2024-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // net_bus_test.dart
@@ -276,7 +276,7 @@ void main() {
     SimCompare.checkIverilogVector(mod, vectors);
   });
 
-  test('net put propagate', () async {
+  test('net put propagate', () {
     final a = LogicNet();
     final b = LogicNet();
     final c = LogicNet();
@@ -342,7 +342,7 @@ void main() {
 
   group('multi-connection', () {
     group('func only', () {
-      test('tied subsets', () async {
+      test('tied subsets', () {
         final base = LogicNet(width: 8);
 
         final lowerDriver = Logic(width: 4);
@@ -602,7 +602,7 @@ void main() {
                     sv,
                     contains('net_connect_0'
                         ' (_original__swizzled, '
-                        '({bus[1][1],bus[1][0],bus[0][3],bus[0][2]}));'));
+                        '({bus[1][1:0],bus[0][3:2]}));'));
               }
 
               final vectors = [
@@ -632,7 +632,7 @@ void main() {
                     sv,
                     contains('net_connect_0'
                         ' (_original__swizzled, '
-                        '({bus[1][1],bus[1][0],bus[0][3],bus[0][2]}));'));
+                        '({bus[1][1:0],bus[0][3:2]}));'));
               }
 
               final vectors = [
@@ -789,7 +789,7 @@ void main() {
                 sv,
                 contains('assign _swizzled = '
                     '{({({in0[1][1],in0[1][0]}),({in0[0][1],in0[0][0]})}),'
-                    '({in1[3],in1[2],in1[1],in1[0]})};'));
+                    '(in1[3:0])};'));
           });
 
           test('net array 2', () async {
@@ -806,7 +806,7 @@ void main() {
             expect(
                 sv,
                 contains('net_connect (swizzled,'
-                    ' ({({in0[3],in0[2],in0[1],in0[0]}),in1[0]}));'));
+                    ' ({(in0[3:0]),in1[0]}));'));
           });
 
           test('net array 3', () async {
@@ -826,7 +826,7 @@ void main() {
                 contains('net_connect (swizzled, '
                     '({({({in0[1][1],in0[1][0]}),'
                     '({in0[0][1],in0[0][0]})}),'
-                    '({in1[3],in1[2],in1[1],in1[0]}),in2[0]}));'));
+                    '(in1[3:0]),in2[0]}));'));
           });
 
           test('net and non-net', () async {
@@ -932,7 +932,7 @@ void main() {
                             'net_connect #(.WIDTH(16)) net_connect (swizzled, '
                             '({({({in0[1][1],in0[1][0]}),'
                             '({in0[0][1],in0[0][0]})}),'
-                            '({in1[3],in1[2],in1[1],in1[0]}),in2[0]}));'));
+                            '(in1[3:0]),in2[0]}));'));
                   }
                 }
 

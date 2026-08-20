@@ -1,10 +1,10 @@
-// ignore_for_file: avoid_print
+// ignore_for_file: avoid_print - tutorial
 
 // Import the ROHD package.
 import 'package:rohd/rohd.dart';
 
 // Import the counter module interface.
-import './counter_interface.dart';
+import 'counter_interface.dart';
 
 // Enumerated type named `OvenState` with four possible states:
 // `standby`, `cooking`,`paused`, and `completed`.

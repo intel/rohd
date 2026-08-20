@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2025 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // simcompare.dart
@@ -7,7 +7,7 @@
 // 2021 May 7
 // Author: Max Korbel <max.korbel@intel.com>
 
-// ignore_for_file: avoid_print
+// ignore_for_file: avoid_print - testing lib, printing important for debug
 
 import 'dart:async';
 import 'dart:io';
@@ -104,7 +104,10 @@ class Vector {
       final outputPort =
           module.tryInOut(outputName) ?? module.output(outputName);
       final expected = expectedOutput.value;
-      final expectedValue = LogicValue.of(expected, width: outputPort.width);
+      final expectedValue = LogicValue.of(
+        expected,
+        width: outputPort.width,
+      );
       final inputStimulus = inputValues.toString();
 
       if (outputPort is LogicArray) {
@@ -122,8 +125,12 @@ class Vector {
     }
     final checks = checksList.join('\n');
 
-    final tbVerilog =
-        [assignments, '#$_offset', checks, '#${_period - _offset}'].join('\n');
+    final tbVerilog = [
+      assignments,
+      '#$_offset',
+      checks,
+      '#${_period - _offset}',
+    ].join('\n');
     return tbVerilog;
   }
 }
@@ -154,7 +161,7 @@ abstract class SimCompare {
     }
 
     for (final vector in vectors) {
-      Simulator.registerAction(timestamp, () async {
+      Simulator.registerAction(timestamp, () {
         for (final signalName in vector.inputValues.keys) {
           final value = vector.inputValues[signalName];
           (module.tryInput(signalName) ?? getIoInputDriver(signalName))
@@ -195,10 +202,12 @@ abstract class SimCompare {
                 throw NonSupportedTypeException(value);
               }
             }
-          }).catchError(test: (error) => error is Exception,
-              (Object err, StackTrace stackTrace) {
-            Simulator.throwException(err as Exception, stackTrace);
-          }));
+          }).catchError(
+            test: (error) => error is Exception,
+            (Object err, StackTrace stackTrace) {
+              Simulator.throwException(err as Exception, stackTrace);
+            },
+          ));
         }
       });
       timestamp += Vector._period;
@@ -215,22 +224,25 @@ abstract class SimCompare {
     RegExp(r'sorry: constant selects in always_\* processes'
         ' are not currently supported'),
     RegExp('warning: always_comb process has no sensitivities'),
-    RegExp('finish called at')
+    RegExp('finish called at'),
   ];
 
   /// Executes [vectors] against the Icarus Verilog simulator and checks
   /// that it passes.
-  static void checkIverilogVector(Module module, List<Vector> vectors,
-      {String? moduleName,
-      bool dontDeleteTmpFiles = false,
-      bool dumpWaves = false,
-      List<String> iverilogExtraArgs = const [],
-      bool allowWarnings = false,
-      bool maskKnownWarnings = true,
-      bool enableChecking = true,
-      bool buildOnly = false,
-      SystemVerilogSynthesizerConfiguration synthesizerConfiguration =
-          const SystemVerilogSynthesizerConfiguration()}) {
+  static void checkIverilogVector(
+    Module module,
+    List<Vector> vectors, {
+    String? moduleName,
+    bool dontDeleteTmpFiles = false,
+    bool dumpWaves = false,
+    List<String> iverilogExtraArgs = const [],
+    bool allowWarnings = false,
+    bool maskKnownWarnings = true,
+    bool enableChecking = true,
+    bool buildOnly = false,
+    SystemVerilogSynthesizerConfiguration synthesizerConfiguration =
+        const SystemVerilogSynthesizerConfiguration(),
+  }) {
     final result = iverilogVector(module, vectors,
         moduleName: moduleName,
         dontDeleteTmpFiles: dontDeleteTmpFiles,
@@ -246,16 +258,19 @@ abstract class SimCompare {
   }
 
   /// Executes [vectors] against the Icarus Verilog simulator.
-  static bool iverilogVector(Module module, List<Vector> vectors,
-      {String? moduleName,
-      bool dontDeleteTmpFiles = false,
-      bool dumpWaves = false,
-      List<String> iverilogExtraArgs = const [],
-      bool allowWarnings = false,
-      bool maskKnownWarnings = true,
-      bool buildOnly = false,
-      SystemVerilogSynthesizerConfiguration synthesizerConfiguration =
-          const SystemVerilogSynthesizerConfiguration()}) {
+  static bool iverilogVector(
+    Module module,
+    List<Vector> vectors, {
+    String? moduleName,
+    bool dontDeleteTmpFiles = false,
+    bool dumpWaves = false,
+    List<String> iverilogExtraArgs = const [],
+    bool allowWarnings = false,
+    bool maskKnownWarnings = true,
+    bool buildOnly = false,
+    SystemVerilogSynthesizerConfiguration synthesizerConfiguration =
+        const SystemVerilogSynthesizerConfiguration(),
+  }) {
     if (kIsWeb) {
       // if running in web mode, then we can't run icarus verilog
       return true;
@@ -280,13 +295,14 @@ abstract class SimCompare {
             signal.dimensions.getRange(0, signal.numUnpackedDimensions);
         final packedDims = signal.dimensions
             .getRange(signal.numUnpackedDimensions, signal.dimensions.length);
-        // ignore: prefer_interpolation_to_compose_strings
-        return signalType +
-            ' ' +
-            // ignore: prefer_interpolation_to_compose_strings
-            packedDims.map((d) => '[${d - 1}:0]').join() +
-            ' [${signal.elementWidth - 1}:0] $signalName' +
-            unpackedDims.map((d) => '[${d - 1}:0]').join();
+        final packedDimensions =
+            packedDims.map((dimension) => '[${dimension - 1}:0]').join();
+        final unpackedDimensions =
+            unpackedDims.map((dimension) => '[${dimension - 1}:0]').join();
+
+        return '$signalType $packedDimensions'
+            ' [${signal.elementWidth - 1}:0] $signalName'
+            '$unpackedDimensions';
       } else if (signal.width != 1) {
         return '$signalType [${signal.width - 1}:0] $signalName';
       } else {
@@ -297,7 +313,7 @@ abstract class SimCompare {
     final topModule = moduleName ?? module.definitionName;
     final allSignals = <String>{
       for (final v in vectors) ...v.inputValues.keys,
-      for (final v in vectors) ...v.expectedOutputValues.keys
+      for (final v in vectors) ...v.expectedOutputValues.keys,
     };
 
     late final tbWireUniquifier = Uniquifier();
@@ -325,16 +341,16 @@ abstract class SimCompare {
         final sigDecl = signalDeclaration(logicName,
             adjust: toTbWireName, signalTypeOverride: 'wire');
         return '$sigDecl; assign $wireName = $logicName;';
-      })
+      }),
     ].join('\n');
 
     final moduleConnections =
         allSignals.map((e) => '.$e(${logicToWireMapping[e] ?? e})').join(', ');
     final moduleInstance = '$topModule dut($moduleConnections);';
     final stimulus = vectors.map((e) => e.toTbVerilog(module)).join('\n');
-    final generatedVerilog = SystemVerilogService(module,
-            register: false, configuration: synthesizerConfiguration)
-        .synthOutput;
+    final generatedVerilog = module.generateSynth(
+      configuration: synthesizerConfiguration,
+    );
 
     // so that when they run in parallel, they dont step on each other
     final uniqueId =
@@ -362,7 +378,7 @@ abstract class SimCompare {
       stimulus,
       r'$finish;', // so the test doesn't run forever if there's a clock gen
       'end',
-      'endmodule'
+      'endmodule',
     ].join('\n');
 
     Directory(dir).createSync(recursive: true);
@@ -389,7 +405,11 @@ abstract class SimCompare {
       }
 
       return output.toString().contains(RegExp(
-          ['error', 'unable', if (!allowWarnings) 'warning'].join('|'),
+          [
+            'error',
+            'unable',
+            if (!allowWarnings) 'warning',
+          ].join('|'),
           caseSensitive: false));
     }
 

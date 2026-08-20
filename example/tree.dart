@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2023 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // tree.dart
@@ -9,7 +9,7 @@
 
 // Though we usually avoid them, for this example,
 // allow `print` messages (disable lint):
-// ignore_for_file: avoid_print
+// ignore_for_file: avoid_print - example
 
 import 'package:rohd/rohd.dart';
 

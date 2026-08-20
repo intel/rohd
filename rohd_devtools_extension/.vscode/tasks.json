@@ -1,0 +1,137 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Run: Web Standalone (Debug, port 9099)",
+      "type": "shell",
+      "command": "flutter run -d web-server --web-port=9099 --web-hostname=0.0.0.0 lib/main_standalone.dart",
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": {
+          "regexp": "^$"
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^Launching",
+          "endsPattern": "is being served at"
+        }
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": true
+      },
+      "detail": "Runs standalone web app in debug mode on port 9099"
+    },
+    {
+      "label": "Run: Web Standalone (Release, port 9099)",
+      "type": "shell",
+      "command": "flutter run --release -d web-server --web-port=9099 --web-hostname=0.0.0.0 lib/main_standalone.dart",
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": {
+          "regexp": "^$"
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^Launching",
+          "endsPattern": "is being served at"
+        }
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": true
+      },
+      "detail": "Runs standalone web app in release mode on port 9099"
+    },
+    {
+      "label": "Run: Linux Standalone (Debug)",
+      "type": "shell",
+      "command": "flutter run -d linux lib/main_standalone.dart",
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": {
+          "regexp": "^$"
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^Launching",
+          "endsPattern": "^Application finished"
+        }
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": true
+      },
+      "detail": "Runs standalone Linux app in debug mode"
+    },
+    {
+      "label": "Run: Linux Standalone (Debug, software rendering)",
+      "type": "shell",
+      "command": "flutter run -d linux --enable-software-rendering lib/main_standalone.dart",
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": {
+          "regexp": "^$"
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^Launching",
+          "endsPattern": "^Application finished"
+        }
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": true
+      },
+      "detail": "Runs standalone Linux app in debug mode with software rendering"
+    },
+    {
+      "label": "Run: Linux Standalone (Release)",
+      "type": "shell",
+      "command": "flutter run --release -d linux lib/main_standalone.dart",
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": {
+          "regexp": "^$"
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^Launching",
+          "endsPattern": "^Application finished"
+        }
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": true
+      },
+      "detail": "Runs standalone Linux app in release mode"
+    },
+    {
+      "label": "Run: Linux Standalone (Release, software rendering)",
+      "type": "shell",
+      "command": "flutter run --release -d linux --enable-software-rendering lib/main_standalone.dart",
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": {
+          "regexp": "^$"
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^Launching",
+          "endsPattern": "^Application finished"
+        }
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": true
+      },
+      "detail": "Runs standalone Linux app in release mode with software rendering"
+    }
+  ]
+}

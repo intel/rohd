@@ -165,6 +165,12 @@ class Namer {
     bool constNameDisallowed = false,
   }) {
     if (constValue != null && !constNameDisallowed) {
+      final preferredRadix = constValue.preferredRadix;
+      if (preferredRadix != null && constValue.value.isValid) {
+        return constValue.value
+            .toRadixString(radix: preferredRadix, sepChar: '');
+      }
+
       return constValue.value.toString();
     }
 

@@ -7,27 +7,37 @@
 // 2022 March 7
 // Author: Max Korbel <max.korbel@intel.com>
 
-// ignore_for_file: avoid_positional_boolean_parameters
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
 
 class TopModule extends Module {
-  TopModule(Logic a, bool causeDefConflict, bool causeInstConflict)
-      : super(name: 'topModule') {
+  TopModule(
+    Logic a, {
+    required bool causeDefConflict,
+    required bool causeInstConflict,
+  }) : super(name: 'topModule') {
     a = addInput('a', a);
 
     // note: order matters
-    SpeciallyNamedModule([a, a].swizzle(), causeDefConflict, causeInstConflict);
-    SpeciallyNamedModule(a, true, causeInstConflict);
+    SpeciallyNamedModule(
+      [a, a].swizzle(),
+      reserveDefName: causeDefConflict,
+      reserveInstanceName: causeInstConflict,
+    );
+    SpeciallyNamedModule(
+      a,
+      reserveDefName: true,
+      reserveInstanceName: causeInstConflict,
+    );
   }
 }
 
 class SpeciallyNamedModule extends Module {
   SpeciallyNamedModule(
-    Logic a,
-    bool reserveDefName,
-    bool reserveInstanceName, {
+    Logic a, {
+    required bool reserveDefName,
+    required bool reserveInstanceName,
     super.name = 'specialInstanceName',
     super.definitionName = 'specialName',
   }) : super(
@@ -66,16 +76,16 @@ class RenameableModule extends Module {
 
     SpeciallyNamedModule(
       ~internalSignal,
-      true,
-      false,
+      reserveDefName: true,
+      reserveInstanceName: false,
       name: internalModuleInstanceName,
       definitionName: internalModuleDefinitionName,
     );
 
     SpeciallyNamedModule(
       ~reservedInternalSignal,
-      true,
-      true,
+      reserveDefName: true,
+      reserveInstanceName: true,
       name: reservedInternalModuleInstanceName,
       definitionName: internalModuleDefinitionName,
     );
@@ -114,7 +124,7 @@ void main() {
       expect(simResult, equals(true));
     }
 
-    Future<void> runTestGen(Map<NameType, String> names) async =>
+    Future<void> runTestGen(Map<NameType, String> names) =>
         runTest(RenameableModule(
           Logic(name: names[NameType.inputPort]),
           outputPortName: names[NameType.outputPort]!,
@@ -192,20 +202,32 @@ void main() {
 
   group('definition name', () {
     test('respected with no conflicts', () async {
-      final mod = SpeciallyNamedModule(Logic(), false, false);
+      final mod = SpeciallyNamedModule(
+        Logic(),
+        reserveDefName: false,
+        reserveInstanceName: false,
+      );
       await mod.build();
       final sv = SystemVerilogService(mod).synthOutput;
       expect(sv, contains('module specialName ('));
     });
     test('uniquified with conflicts', () async {
-      final mod = TopModule(Logic(), false, false);
+      final mod = TopModule(
+        Logic(),
+        causeDefConflict: false,
+        causeInstConflict: false,
+      );
       await mod.build();
       final sv = SystemVerilogService(mod).synthOutput;
       expect(sv, contains('module specialName ('));
       expect(sv, contains('module specialName_0 ('));
     });
     test('reserved throws exception with conflicts', () async {
-      final mod = TopModule(Logic(), true, false);
+      final mod = TopModule(
+        Logic(),
+        causeDefConflict: true,
+        causeInstConflict: false,
+      );
       await mod.build();
       expect(() => SystemVerilogService(mod).synthOutput, throwsException);
     });
@@ -213,15 +235,23 @@ void main() {
 
   group('instance name', () {
     test('uniquified with conflicts', () async {
-      final mod = TopModule(Logic(), false, false);
+      final mod = TopModule(
+        Logic(),
+        causeDefConflict: false,
+        causeInstConflict: false,
+      );
       await mod.build();
       final sv = SystemVerilogService(mod).synthOutput;
 
       expect(sv, contains('specialInstanceName('));
       expect(sv, contains('specialInstanceName_0('));
     });
-    test('reserved throws exception with conflicts', () async {
-      final mod = TopModule(Logic(), false, true);
+    test('reserved throws exception with conflicts', () {
+      final mod = TopModule(
+        Logic(),
+        causeDefConflict: false,
+        causeInstConflict: true,
+      );
       expect(() async {
         await mod.build();
       }, throwsException);

@@ -1,4 +1,4 @@
-// ignore_for_file: avoid_print
+// ignore_for_file: avoid_print - tutorial
 
 import 'package:rohd/rohd.dart';
 import '../chapter_5/n_bit_adder.dart';

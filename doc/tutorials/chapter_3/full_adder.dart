@@ -1,4 +1,4 @@
-// ignore_for_file: avoid_print
+// ignore_for_file: avoid_print - tutorial
 
 import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
@@ -24,7 +24,7 @@ void main() async {
 
   faOps(a, b, cIn, xorAB, sum, cOut);
 
-  test('should return xor results correctly in a xor b.', () async {
+  test('should return xor results correctly in a xor b.', () {
     for (var i = 0; i <= 1; i++) {
       for (var j = 0; j <= 1; j++) {
         a.put(i);
@@ -35,7 +35,7 @@ void main() async {
     }
   });
 
-  test('should return true if result sum similar to truth table.', () async {
+  test('should return true if result sum similar to truth table.', () {
     for (var i = 0; i <= 1; i++) {
       for (var j = 0; j <= 1; j++) {
         for (var k = 0; k <= 1; k++) {
@@ -54,8 +54,7 @@ void main() async {
     }
   });
 
-  test('should return true if result c-out is similar to truth table.',
-      () async {
+  test('should return true if result c-out is similar to truth table.', () {
     for (var i = 0; i <= 1; i++) {
       for (var j = 0; j <= 1; j++) {
         for (var k = 0; k <= 1; k++) {
