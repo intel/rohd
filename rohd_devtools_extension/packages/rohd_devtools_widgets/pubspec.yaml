@@ -8,6 +8,7 @@ environment:
 dependencies:
   flutter: {sdk: flutter}
   rohd: ^0.6.9
+  rohd_hierarchy: ^0.1.0
   web: ^1.0.0
 dev_dependencies:
   flutter_test: {sdk: flutter}
@@ -16,3 +17,5 @@ dev_dependencies:
 dependency_overrides:
   rohd:
     path: ../../..
+  rohd_hierarchy:
+    path: ../../../packages/rohd_hierarchy

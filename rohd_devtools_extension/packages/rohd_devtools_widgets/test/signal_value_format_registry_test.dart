@@ -9,69 +9,165 @@
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:rohd_devtools_widgets/rohd_devtools_widgets.dart';
+import 'package:rohd_hierarchy/rohd_hierarchy.dart';
 
 void main() {
+  tearDown(SignalValueFormatRegistry.clear);
+
   test('formats bare binary and hexadecimal waveform values', () {
     expect(
-      SignalValueFormatRegistry.formatValue('0000', 'waveform', 4),
+      SignalValueFormatRegistry.formatValue(
+        '0000',
+        SignalValueFormat.waveform,
+        4,
+      ),
       "4'h0",
     );
     expect(
-      SignalValueFormatRegistry.formatValue('11111111', 'signedDecimal', 8),
+      SignalValueFormatRegistry.formatValue(
+        '11111111',
+        SignalValueFormat.signedDecimal,
+        8,
+      ),
       '-1',
     );
     expect(
-      SignalValueFormatRegistry.formatValue('11111111', 'hexadecimal', 8),
+      SignalValueFormatRegistry.formatValue(
+        '11111111',
+        SignalValueFormat.hexadecimal,
+        8,
+      ),
       "8'hff",
     );
     expect(
-      SignalValueFormatRegistry.formatValue('ff', 'unsignedDecimal', 8),
+      SignalValueFormatRegistry.formatValue(
+        'ff',
+        SignalValueFormat.unsignedDecimal,
+        8,
+      ),
       '255',
     );
     expect(
-      SignalValueFormatRegistry.formatValue('0x0', 'unsignedDecimal', 4),
+      SignalValueFormatRegistry.formatValue(
+        '0x0',
+        SignalValueFormat.unsignedDecimal,
+        4,
+      ),
       '0',
     );
   });
 
-  test('looks up equivalent dotted and slash-separated paths', () {
-    SignalValueFormatRegistry.update({'top/adder/result': 'signedDecimal'});
-
+  test('uses ROHD radix literals for typed format conversions', () {
     expect(
-      SignalValueFormatRegistry.formatFor('top.adder.result'),
-      'signedDecimal',
+      SignalValueFormatRegistry.formatValue(
+        "8'd255",
+        SignalValueFormat.hexadecimal,
+        8,
+      ),
+      "8'hff",
+    );
+    expect(
+      SignalValueFormatRegistry.formatValue(
+        '1010',
+        SignalValueFormat.octal,
+        4,
+      ),
+      '0o12',
+    );
+    expect(
+      SignalValueFormatRegistry.formatValue(
+        '0x4142',
+        SignalValueFormat.ascii,
+        16,
+      ),
+      'AB',
     );
   });
 
-  test('looks up a fallback waveform identity', () {
-    SignalValueFormatRegistry.update({'top/adder/result': 'unsignedDecimal'});
+  test('looks up an occurrence address from the format trie', () {
+    SignalValueFormatRegistry.setFormatFor(
+      [
+        const OccurrenceAddress([0, 2, 4]),
+      ],
+      SignalValueFormat.signedDecimal,
+    );
+
+    expect(
+      SignalValueFormatRegistry.formatFor(const OccurrenceAddress([0, 2, 4])),
+      SignalValueFormat.signedDecimal,
+    );
+  });
+
+  test('looks up a fallback occurrence address', () {
+    SignalValueFormatRegistry.setFormatFor(
+      [
+        const OccurrenceAddress([0, 2, 4]),
+      ],
+      SignalValueFormat.unsignedDecimal,
+    );
 
     expect(
       SignalValueFormatRegistry.formatForAny([
-        'unresolved-id',
-        'top/adder/result',
+        const OccurrenceAddress([7, 8, 9]),
+        const OccurrenceAddress([0, 2, 4]),
       ]),
-      'unsignedDecimal',
+      SignalValueFormat.unsignedDecimal,
     );
   });
 
-  test('looks up a uniquely matching hierarchy suffix', () {
-    SignalValueFormatRegistry.update({
-      'waveform-root/top/adder/result': 'unsignedDecimal',
-    });
+  test('stores shared address prefixes once in the format trie', () {
+    SignalValueFormatRegistry.update([
+      SignalValueFormatPreference(
+        const OccurrenceAddress([0, 2, 4]),
+        SignalValueFormat.unsignedDecimal,
+      ),
+      SignalValueFormatPreference(
+        const OccurrenceAddress([0, 2, 5]),
+        SignalValueFormat.signedDecimal,
+      ),
+    ]);
 
     expect(
-      SignalValueFormatRegistry.formatFor('schematic-root/top/adder/result'),
-      'unsignedDecimal',
+      SignalValueFormatRegistry.formatFor(const OccurrenceAddress([0, 2, 4])),
+      SignalValueFormat.unsignedDecimal,
+    );
+    expect(
+      SignalValueFormatRegistry.formatFor(const OccurrenceAddress([0, 2, 5])),
+      SignalValueFormat.signedDecimal,
+    );
+    expect(
+      SignalValueFormatRegistry.formatFor(const OccurrenceAddress([0, 2, 6])),
+      SignalValueFormat.waveform,
     );
   });
 
-  test('does not use an ambiguous hierarchy suffix', () {
-    SignalValueFormatRegistry.update({
-      'top/left/result': 'unsignedDecimal',
-      'top/right/result': 'signedDecimal',
-    });
+  test('rejects an invalid signal occurrence address', () {
+    expect(
+      () => SignalValueFormatRegistry.setFormatFor(
+        const [OccurrenceAddress([])],
+        SignalValueFormat.unsignedDecimal,
+      ),
+      throwsArgumentError,
+    );
+    expect(
+      () => SignalValueFormatRegistry.formatFor(
+        const OccurrenceAddress([0, -1]),
+      ),
+      throwsArgumentError,
+    );
+  });
 
-    expect(SignalValueFormatRegistry.formatFor('result'), 'waveform');
+  test('converts between serialized names and format enum values', () {
+    expect(
+      SignalValueFormatRegistry.formatFromString('signedDecimal'),
+      SignalValueFormat.signedDecimal,
+    );
+    expect(
+      SignalValueFormatRegistry.formatToString(
+        SignalValueFormat.signedDecimal,
+      ),
+      'signedDecimal',
+    );
+    expect(SignalValueFormatRegistry.formatFromString('unknown'), isNull);
   });
 }

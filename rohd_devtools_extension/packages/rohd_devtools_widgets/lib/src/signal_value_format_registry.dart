@@ -8,96 +8,132 @@
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 import 'package:flutter/foundation.dart';
-import 'package:rohd/rohd.dart' show LogicValue;
+import 'package:rohd/rohd.dart'
+    show LogicValue, LogicValueConstructionException;
+import 'package:rohd_hierarchy/rohd_hierarchy.dart'
+    show OccurrenceAddress, OccurrenceTrie;
 
-/// Shared display-format preferences keyed by signal hierarchy path.
+/// The available display formats for signal values.
+enum SignalValueFormat {
+  /// The source waveform representation.
+  waveform,
+
+  /// A binary representation.
+  binary,
+
+  /// A hexadecimal representation.
+  hexadecimal,
+
+  /// An unsigned decimal representation.
+  unsignedDecimal,
+
+  /// A two's-complement signed decimal representation.
+  signedDecimal,
+
+  /// An octal representation.
+  octal,
+
+  /// An ASCII representation.
+  ascii,
+}
+
+/// A format preference for one signal occurrence address.
+class SignalValueFormatPreference {
+  /// Creates a preference for [address] using [format].
+  SignalValueFormatPreference(
+    this.address,
+    this.format,
+  );
+
+  /// The occurrence address, including the signal index.
+  final OccurrenceAddress address;
+
+  /// The selected display format.
+  final SignalValueFormat format;
+}
+
+/// Shared display-format preferences keyed by occurrence address.
 ///
-/// Viewer packages publish format names from their local format enums; other
-/// embedded surfaces read the same names without depending on those enums.
+/// Viewer packages publish [SignalValueFormat] values; embedded surfaces use
+/// the same values without depending on viewer-local format enums.
 class SignalValueFormatRegistry {
   SignalValueFormatRegistry._();
 
-  /// Current occurrence-format preferences.
-  static final formats = ValueNotifier<Map<String, String>>(
-    const <String, String>{},
-  );
+  static final _formatTrie = OccurrenceTrie<SignalValueFormat>();
 
-  /// Replaces the current occurrence-format preferences.
-  static void update(Map<String, String> value) {
-    if (mapEquals(formats.value, value)) {
+  /// Notifies listeners whenever occurrence-format preferences change.
+  static final changes = ValueNotifier<int>(0);
+
+  /// Replaces all occurrence-format preferences with [preferences].
+  static void update(Iterable<SignalValueFormatPreference> preferences) {
+    _formatTrie.clear();
+    for (final preference in preferences) {
+      _formatTrie.set(preference.address, preference.format);
+    }
+    _notifyListeners();
+  }
+
+  /// Removes all occurrence-format preferences.
+  static void clear() {
+    if (_formatTrie.isEmpty) {
       return;
     }
-    formats.value = Map<String, String>.unmodifiable(value);
+    _formatTrie.clear();
+    _notifyListeners();
   }
 
-  /// Sets [format] for each signal occurrence in [signalPaths].
-  static void setFormatFor(Iterable<String> signalPaths, String format) {
-    final updated = Map<String, String>.from(formats.value);
-    for (final signalPath in signalPaths) {
-      updated[signalPath] = format;
+  /// Sets [format] for each signal occurrence in [addresses].
+  static void setFormatFor(
+    Iterable<OccurrenceAddress> addresses,
+    SignalValueFormat format,
+  ) {
+    var changed = false;
+    for (final address in addresses) {
+      changed = (_formatTrie.set(address, format) != format) || changed;
     }
-    update(updated);
+    if (changed) {
+      _notifyListeners();
+    }
   }
 
-  /// Returns the requested format name, or the waveform default.
-  static String formatFor(String signalPath) {
-    return formatForAny([signalPath]);
-  }
-
-  /// Returns the first registered format matching [signalPaths].
+  /// Converts a serialized format name to its corresponding enum value.
   ///
-  /// A waveform row may only have its transport ID while another surface has
-  /// the canonical hierarchy path. Consumers should provide both identities
-  /// in canonical-path-first order.
-  static String formatForAny(
-    Iterable<String?> signalPaths, {
-    String fallback = 'waveform',
+  /// Returns `null` when [value] is not a known format name.
+  static SignalValueFormat? formatFromString(String value) {
+    for (final format in SignalValueFormat.values) {
+      if (format.name == value) {
+        return format;
+      }
+    }
+    return null;
+  }
+
+  /// Converts [format] to its serialized format name.
+  static String formatToString(SignalValueFormat format) => format.name;
+
+  /// Returns the requested format for [address], or the waveform default.
+  static SignalValueFormat formatFor(OccurrenceAddress address) {
+    return formatForAny([address]);
+  }
+
+  /// Returns the first registered format matching [addresses].
+  static SignalValueFormat formatForAny(
+    Iterable<OccurrenceAddress?> addresses, {
+    SignalValueFormat fallback = SignalValueFormat.waveform,
   }) {
-    for (final signalPath in signalPaths) {
-      if (signalPath == null || signalPath.isEmpty) {
+    for (final address in addresses) {
+      if (address == null) {
         continue;
       }
-      final direct = formats.value[signalPath];
-      if (direct != null) {
-        return direct;
-      }
-      final normalizedPath = _normalizePath(signalPath);
-      for (final entry in formats.value.entries) {
-        if (_normalizePath(entry.key) == normalizedPath) {
-          return entry.value;
-        }
-      }
-      final suffixFormats = formats.value.entries
-          .where(
-            (entry) =>
-                _hasWholePathSuffix(_normalizePath(entry.key), normalizedPath),
-          )
-          .map((entry) => entry.value)
-          .toSet();
-      if (suffixFormats.length == 1) {
-        return suffixFormats.single;
+      final format = _formatTrie[address];
+      if (format != null) {
+        return format;
       }
     }
     return fallback;
   }
 
-  static String _normalizePath(String path) => path
-      .replaceAll('.', '/')
-      .replaceAll(RegExp('/+'), '/')
-      .replaceFirst(RegExp(r'^/+|/+$'), '');
-
-  static bool _hasWholePathSuffix(String first, String second) {
-    final firstSegments = first.split('/');
-    final secondSegments = second.split('/');
-    var matchingSegments = 0;
-    while (matchingSegments < firstSegments.length &&
-        matchingSegments < secondSegments.length &&
-        firstSegments[firstSegments.length - matchingSegments - 1] ==
-            secondSegments[secondSegments.length - matchingSegments - 1]) {
-      matchingSegments++;
-    }
-    return matchingSegments >= 2;
-  }
+  static void _notifyListeners() => changes.value++;
 
   static bool _containsUnknownDigits(String value) {
     final lower = value.toLowerCase();
@@ -110,101 +146,94 @@ class SignalValueFormatRegistry {
     return digits.contains('x') || digits.contains('z');
   }
 
-  /// Formats a ROHD radix literal according to a published format name.
-  static String formatValue(String value, String format, int width) {
-    final canonical = _canonicalWaveformValue(value, width);
-    if (format == 'waveform' || _containsUnknownDigits(canonical)) {
+  /// Formats a ROHD radix literal according to [format].
+  static String formatValue(
+    String value,
+    SignalValueFormat format,
+    int width,
+  ) {
+    final waveformValue = _waveformValue(value, width);
+    if (waveformValue == null) {
+      return _canonicalWaveformValue(value, width);
+    }
+    final (logicValue, canonical) = waveformValue;
+    if (format == SignalValueFormat.waveform ||
+        _containsUnknownDigits(canonical)) {
       return canonical;
     }
-    final lower = canonical.toLowerCase();
-    final apostrophe = lower.indexOf("'");
-    final bareDigits = lower.startsWith('0x') || lower.startsWith('0b')
-        ? lower.substring(2)
-        : lower;
-    final radix = apostrophe > 0 && apostrophe + 1 < lower.length
-        ? switch (lower[apostrophe + 1]) {
-            'b' => 2,
-            'o' || 'q' => 8,
-            'd' => 10,
-            'h' => 16,
-            _ => null,
-          }
-        : lower.startsWith('0x')
-            ? 16
-            : lower.startsWith('0b')
-                ? 2
-                : bareDigits.codeUnits.every(
-                    (codeUnit) => codeUnit == 0x30 || codeUnit == 0x31,
-                  )
-                    ? 2
-                    : bareDigits.codeUnits.any(
-                        (codeUnit) =>
-                            (codeUnit >= 0x61 && codeUnit <= 0x66) ||
-                            (codeUnit >= 0x41 && codeUnit <= 0x46),
-                      )
-                        ? 16
-                        : 10;
-    final digits = apostrophe > 0 && radix != null
-        ? lower.substring(apostrophe + 2)
-        : lower.startsWith('0x') || lower.startsWith('0b')
-            ? lower.substring(2)
-            : lower;
-    final numeric =
-        radix == null ? null : BigInt.tryParse(digits, radix: radix);
-    if (numeric == null) return canonical;
-    final displayWidth = width > 0 ? width : 1;
     return switch (format) {
-      'binary' => numeric.toRadixString(2).padLeft(displayWidth, '0'),
-      'hexadecimal' => LogicValue.ofBigInt(numeric, displayWidth).toString(),
-      'unsignedDecimal' => numeric.toString(),
-      'signedDecimal' => (numeric >= (BigInt.one << (displayWidth - 1))
-              ? numeric - (BigInt.one << displayWidth)
-              : numeric)
-          .toString(),
-      'octal' => '0o${numeric.toRadixString(8)}',
-      'ascii' => String.fromCharCodes(
-          List<int>.generate(((displayWidth + 7) ~/ 8).clamp(1, 32), (index) {
-            final shift =
-                (((displayWidth + 7) ~/ 8).clamp(1, 32) - index - 1) * 8;
-            final code = ((numeric >> shift) & BigInt.from(0xff)).toInt();
-            return code >= 0x20 && code <= 0x7e ? code : 0x2e;
-          }),
+      SignalValueFormat.binary => logicValue.toRadixString(
+          leadingZeros: true,
+          includeWidth: false,
+          sepChar: '',
         ),
-      _ => canonical,
+      SignalValueFormat.hexadecimal =>
+        logicValue.toRadixString(radix: 16, sepChar: ''),
+      SignalValueFormat.unsignedDecimal =>
+        logicValue.toRadixString(radix: 10, includeWidth: false, sepChar: ''),
+      SignalValueFormat.signedDecimal =>
+        logicValue.toBigInt().toSigned(logicValue.width).toString(),
+      SignalValueFormat.octal =>
+        '0o${logicValue.toRadixString(radix: 8, includeWidth: false, sepChar: '')}',
+      SignalValueFormat.ascii => String.fromCharCodes(
+          List<int>.generate(
+            ((logicValue.width + 7) ~/ 8).clamp(1, 32),
+            (index) {
+              final shift =
+                  (((logicValue.width + 7) ~/ 8).clamp(1, 32) - index - 1) * 8;
+              final code =
+                  ((logicValue.toBigInt() >> shift) & BigInt.from(0xff))
+                      .toInt();
+              return code >= 0x20 && code <= 0x7e ? code : 0x2e;
+            },
+          ),
+        ),
+      SignalValueFormat.waveform => canonical,
     };
   }
 
-  static String _canonicalWaveformValue(String value, int width) {
+  static (LogicValue, String)? _waveformValue(String value, int width) {
     final trimmed = value.trim().replaceAll('\u0000', '');
     if (trimmed.isEmpty || _containsUnknownDigits(trimmed)) {
-      return trimmed;
+      return null;
     }
     final lower = trimmed.toLowerCase();
-    if (RegExp(r"^\d+'[bqodh]").hasMatch(lower)) {
-      return trimmed;
-    }
+    final displayWidth = width > 0 ? width : 1;
+    final isRadixLiteral = RegExp(r"^\d+'[bqodh]").hasMatch(lower);
     final digits = lower.startsWith('0x') || lower.startsWith('0b')
         ? lower.substring(2)
         : lower;
     final radix = lower.startsWith('0x')
-        ? 16
+        ? 'h'
         : lower.startsWith('0b')
-            ? 2
-            : digits.codeUnits.every(
-                (codeUnit) => codeUnit == 0x30 || codeUnit == 0x31,
-              )
-                ? 2
-                : digits.codeUnits.any(
-                    (codeUnit) =>
-                        (codeUnit >= 0x61 && codeUnit <= 0x66) ||
-                        (codeUnit >= 0x41 && codeUnit <= 0x46),
+            ? 'b'
+            : isRadixLiteral
+                ? lower[lower.indexOf("'") + 1]
+                : digits.codeUnits.every(
+                    (codeUnit) => codeUnit == 0x30 || codeUnit == 0x31,
                   )
-                    ? 16
-                    : 10;
-    final numeric = BigInt.tryParse(digits, radix: radix);
-    if (numeric == null) {
-      return trimmed;
+                    ? 'b'
+                    : digits.codeUnits.any(
+                        (codeUnit) =>
+                            (codeUnit >= 0x61 && codeUnit <= 0x66) ||
+                            (codeUnit >= 0x41 && codeUnit <= 0x46),
+                      )
+                        ? 'h'
+                        : 'd';
+    final radixLiteral = isRadixLiteral ? lower : "$displayWidth'$radix$digits";
+    try {
+      final logicValue = LogicValue.ofRadixString(radixLiteral);
+      return (
+        logicValue,
+        isRadixLiteral ? trimmed : logicValue.toString(),
+      );
+    } on LogicValueConstructionException {
+      return null;
     }
-    return LogicValue.ofBigInt(numeric, width > 0 ? width : 1).toString();
+  }
+
+  static String _canonicalWaveformValue(String value, int width) {
+    final waveformValue = _waveformValue(value, width);
+    return waveformValue?.$2 ?? value.trim().replaceAll('\u0000', '');
   }
 }
