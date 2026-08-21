@@ -118,7 +118,7 @@ abstract class Module {
         ..._inputs.values,
         ..._outputs.values,
         ..._inOuts.values,
-        ...internalSignals,
+        ...internalSignals
       ]);
 
   /// Accesses the [Logic] associated with this [Module]s [input] port
@@ -927,6 +927,11 @@ abstract class Module {
     return outPort;
   }
 
+  bool _hasConsts(LogicStructure structure) => structure.elements.any(
+      (element) =>
+          element is Const ||
+          (element is LogicStructure && _hasConsts(element)));
+
   /// Checks that the [logic] meets type requirements for `Typed` [Logic]s and
   /// returns a potentially modified [logic] to use.
   LogicType _validateType<LogicType extends Logic>(LogicType logic,
@@ -940,7 +945,7 @@ abstract class Module {
       throw PortTypeException(logic, exceptionMessage);
     }
 
-    if (logic is Const || (logic is LogicStructure && logic.hasConsts)) {
+    if (logic is Const || (logic is LogicStructure && _hasConsts(logic))) {
       if (LogicType == Logic) {
         // we're ok, can just convert to Logic
         final newLogic =
@@ -1161,11 +1166,4 @@ abstract class Module {
           SystemVerilogSynthesizer(configuration: configuration),
         ).getSynthFileContents().join('\n\n////////////////////\n\n');
   }
-}
-
-extension on LogicStructure {
-  /// Indicates that a [LogicStructure] has a [Const] element within it or
-  /// within one of its [elements].
-  bool get hasConsts =>
-      elements.any((e) => e is Const || (e is LogicStructure && e.hasConsts));
 }
