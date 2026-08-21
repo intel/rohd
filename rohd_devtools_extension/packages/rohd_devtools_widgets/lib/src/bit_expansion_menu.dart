@@ -10,20 +10,20 @@
 // 2026 January
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
-import 'bit_field_utils.dart';
+import 'package:rohd_devtools_widgets/src/bit_field_utils.dart';
 
 /// Popup-menu values used by the bit-expansion items.
 ///
 /// Callers may match against these string constants when handling a
 /// `showMenu<String>` result that includes bit-expansion items.
 abstract final class BitExpansionMenuValues {
-  /// Menu item: "Expand Bits [N]" — expand each bit (or a chosen range)
+  /// Menu item: "Expand Bits \[N\]" — expand each bit (or a chosen range)
   /// as a synthesized 1-bit waveform.
   static const String expandBits = 'expand_bits';
 
-  /// Menu item: "Define Bit Fields [N]..." — open a dialog that lets the
+  /// Menu item: "Define Bit Fields \[N\]..." — open a dialog that lets the
   /// user name arbitrary bit ranges.
   static const String defineFields = 'define_fields';
 }
@@ -44,6 +44,7 @@ class BitExpandRangeAction extends BitExpansionAction {
   /// High bit (inclusive) of the range to expand.
   final int bitEnd;
 
+  /// Creates an action that expands the inclusive bit range.
   const BitExpandRangeAction(this.bitStart, this.bitEnd);
 }
 
@@ -53,6 +54,7 @@ class BitDefineFieldsAction extends BitExpansionAction {
   /// The user-defined bit fields.
   final List<BitFieldDef> fields;
 
+  /// Creates an action that defines [fields].
   const BitDefineFieldsAction(this.fields);
 }
 
@@ -73,24 +75,24 @@ List<PopupMenuEntry<String>> buildBitExpansionMenuItems({
   double fontSize = 13,
   double itemHeight = 32,
   bool includeDivider = false,
-}) {
-  return <PopupMenuEntry<String>>[
-    if (includeDivider) const PopupMenuDivider(height: 8),
-    PopupMenuItem<String>(
-      height: itemHeight,
-      value: BitExpansionMenuValues.expandBits,
-      child: Text('Expand Bits [$width]', style: TextStyle(fontSize: fontSize)),
-    ),
-    PopupMenuItem<String>(
-      height: itemHeight,
-      value: BitExpansionMenuValues.defineFields,
-      child: Text(
-        'Define Bit Fields [$width]...',
-        style: TextStyle(fontSize: fontSize),
+}) =>
+    <PopupMenuEntry<String>>[
+      if (includeDivider) const PopupMenuDivider(height: 8),
+      PopupMenuItem<String>(
+        height: itemHeight,
+        value: BitExpansionMenuValues.expandBits,
+        child:
+            Text('Expand Bits [$width]', style: TextStyle(fontSize: fontSize)),
       ),
-    ),
-  ];
-}
+      PopupMenuItem<String>(
+        height: itemHeight,
+        value: BitExpansionMenuValues.defineFields,
+        child: Text(
+          'Define Bit Fields [$width]...',
+          style: TextStyle(fontSize: fontSize),
+        ),
+      ),
+    ];
 
 /// Translate a popup-menu [value] returned by `showMenu<String>` into a
 /// [BitExpansionAction], showing any follow-up dialog as needed.
@@ -122,7 +124,9 @@ Future<BitExpansionAction?> resolveBitExpansionMenuValue(
       signalName: signalName,
       width: width,
     );
-    if (parsed == null) return null;
+    if (parsed == null) {
+      return null;
+    }
     final (high, low) = parsed;
     return BitExpandRangeAction(low, high);
   }
@@ -132,7 +136,9 @@ Future<BitExpansionAction?> resolveBitExpansionMenuValue(
       signalName: signalName,
       width: width,
     );
-    if (fields == null || fields.isEmpty) return null;
+    if (fields == null || fields.isEmpty) {
+      return null;
+    }
     return BitDefineFieldsAction(fields);
   }
   return null;

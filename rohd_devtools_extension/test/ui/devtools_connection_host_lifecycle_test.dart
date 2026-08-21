@@ -10,8 +10,8 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/models/dtd_vm_service_info.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/services/connection_state_machine.dart';
@@ -80,7 +80,7 @@ class _TestConnectionHostState
   VmConnectionStrategy? get connectionStrategy => widget.strategy;
 
   @override
-  Future<List<DiscoveredVmService>> discoverVmServices(String dtdUri) async =>
+  Future<List<DiscoveredVmService>> discoverVmServices(String dtdUri) =>
       widget.discoverVmServices?.call(dtdUri) ??
       super.discoverVmServices(dtdUri);
 

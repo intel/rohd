@@ -12,7 +12,7 @@ import 'dart:async';
 
 import 'package:dtd/dtd.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/models/dtd_vm_service_info.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/services/services.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/ui/ui.dart';
@@ -1084,7 +1084,7 @@ abstract class DevToolsConnectionHostState<T extends StatefulWidget>
   ///
   /// Connects to DTD, calls getVmServices(), returns the list.
   /// Also probes for registered services (new DTD 4.0 API).
-  Future<List<DiscoveredVmService>> discoverVmServices(String dtdUri) async =>
+  Future<List<DiscoveredVmService>> discoverVmServices(String dtdUri) =>
       discoverVmServicesViaDtd(
         dtdUri,
         onRegisteredServices: (serviceNames) {

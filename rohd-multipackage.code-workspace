@@ -21,8 +21,8 @@
       "path": "rohd_devtools_extension/packages/rohd_devtools_widgets"
     },
     {
-      "name": "dart",
-      "path": "rohd_extension/dart"
+      "name": "vscode",
+      "path": "rohd_extension/vscode"
     }
   ],
   "settings": {

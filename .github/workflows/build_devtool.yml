@@ -18,11 +18,8 @@ jobs:
       steps:
         - uses: actions/checkout@v2
 
-        - name: Setup Flutter SDK
-          uses: flutter-actions/setup-flutter@v2
-          with:
-            channel: stable
-            version: 3.47.0
+        - name: Setup Flutter and Dart
+          run: tool/gh_codespaces/install_flutter.sh
 
         - name: Install project dependencies
           run: tool/gh_actions/install_dependencies.sh

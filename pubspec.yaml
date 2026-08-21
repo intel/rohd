@@ -14,7 +14,7 @@ workspace:
   - packages/rohd_waveform
   - rohd_devtools_extension
   - rohd_devtools_extension/packages/rohd_devtools_widgets
-  - rohd_extension/dart
+  - rohd_extension/vscode
 
 dependencies:
   collection: ^1.15.0

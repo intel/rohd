@@ -32,14 +32,8 @@ jobs:
           use-quiet-mode: yes # output is too noisy, see https://github.com/gaurav-nelson/github-action-markdown-link-check/issues/121
           config-file: .github/configs/mlc_config.json
 
-      - name: Setup Dart
-        uses: dart-lang/setup-dart@v1
-
-      - name: Setup Flutter
-        uses: flutter-actions/setup-flutter@v2
-        with:
-          channel: stable
-          version: 3.47.0
+      - name: Setup Flutter and Dart
+        run: tool/gh_codespaces/install_flutter.sh
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -77,9 +71,7 @@ jobs:
       - name: Build dev container and run tests in it
         uses: devcontainers/ci@v0.3
         with:
-          runCmd: >-
-            tool/gh_codespaces/install_flutter.sh &&
-            tool/gh_actions/run_tests.sh
+          runCmd: tool/gh_actions/run_tests.sh
 
   deploy-documentation:
     name: Deploy Documentation
@@ -93,14 +85,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Setup Dart
-        uses: dart-lang/setup-dart@v1
-
-      - name: Setup Flutter
-        uses: flutter-actions/setup-flutter@v2
-        with:
-          channel: stable
-          version: 3.47.0
+      - name: Setup Flutter and Dart
+        run: tool/gh_codespaces/install_flutter.sh
 
       - name: Install project dependencies
         run: tool/gh_actions/install_dependencies.sh
@@ -121,11 +107,8 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Setup Flutter SDK
-        uses: flutter-actions/setup-flutter@v2
-        with:
-          channel: stable
-          version: 3.47.0
+      - name: Setup Flutter and Dart
+        run: tool/gh_codespaces/install_flutter.sh
 
       - name: Install project dependencies
         run: tool/gh_actions/install_dependencies.sh

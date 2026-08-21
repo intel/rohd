@@ -17,7 +17,7 @@ import 'package:rohd_devtools_extension/rohd_devtools/models/tree_model.dart';
 
 void main() {
   group('search term cubits', () {
-    test('store the latest signal and tree search terms', () async {
+    test('store the latest signal and tree search terms', () {
       final signalCubit = SignalSearchTermCubit();
       final treeCubit = TreeSearchTermCubit();
       addTearDown(signalCubit.close);
@@ -34,7 +34,7 @@ void main() {
     });
   });
 
-  test('DetailsTabCubit selects each available details view', () async {
+  test('DetailsTabCubit selects each available details view', () {
     final cubit = DetailsTabCubit();
     addTearDown(cubit.close);
 
@@ -47,7 +47,7 @@ void main() {
     expect(cubit.state, DetailsTab.schematic);
   });
 
-  test('SelectedModuleCubit exposes the selected module', () async {
+  test('SelectedModuleCubit exposes the selected module', () {
     final cubit = SelectedModuleCubit();
     addTearDown(cubit.close);
     final module = TreeModel(
@@ -66,7 +66,7 @@ void main() {
   });
 
   group('DevToolsThemeCubit', () {
-    test('starts dark and toggles between the supported modes', () async {
+    test('starts dark and toggles between the supported modes', () {
       final cubit = DevToolsThemeCubit();
       addTearDown(cubit.close);
 
@@ -81,7 +81,7 @@ void main() {
       expect(cubit.state, DevToolsThemeMode.dark);
     });
 
-    test('sets an explicit theme mode', () async {
+    test('sets an explicit theme mode', () {
       final cubit = DevToolsThemeCubit();
       addTearDown(cubit.close);
 

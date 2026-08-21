@@ -39,6 +39,7 @@ class RohdFormatInfo {
   /// Resolved absolute path to the file, if known.
   final String? path;
 
+  /// Creates information for one source format.
   const RohdFormatInfo({
     required this.available,
     this.fileFound = false,
@@ -92,6 +93,7 @@ class RohdModuleInfo {
   /// `true` while the extension is still loading an FST file asynchronously.
   final bool fstLoading;
 
+  /// Creates information for one ROHD module.
   const RohdModuleInfo({
     required this.extensionAvailable,
     this.module,
@@ -165,7 +167,9 @@ class RohdModuleInfo {
     final formats = <RohdSourceFormat, RohdFormatInfo>{};
     for (final entry in rawFormats.entries) {
       final fmt = _parseFormat(entry.key);
-      if (fmt == null) continue;
+      if (fmt == null) {
+        continue;
+      }
       final fmtMap = entry.value as Map<String, dynamic>? ?? const {};
       formats[fmt] = RohdFormatInfo(
         available: fmtMap['available'] as bool? ?? false,

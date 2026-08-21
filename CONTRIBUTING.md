@@ -6,7 +6,7 @@ Anyone interested in participating in ROHD is more than welcome to help!
 
 ## Code of Conduct
 
-ROHD adopts the [Contributor Covenant](https://www.contributor-covenant.org/) v2.1 for the code of conduct. It can be accessed [Code of Conduct](CODE_OF_CONDUCT.md).
+ROHD adopts the [Contributor Covenant](https://www.contributor-covenant.org/) v2.1 for the [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## Getting Help
 
@@ -72,10 +72,7 @@ The below button will allow you to create a GitHub Codespace with ROHD already c
 ### Core ROHD Setup and Validation
 
 The root [`pubspec.yaml`](pubspec.yaml) `workspace:` list defines the active
-packages. The legacy
-[`doc/tutorials/chapter_9/rohd_vf_example`](doc/tutorials/chapter_9/rohd_vf_example)
-is intentionally outside the workspace because it demonstrates an older
-published ROHD release.
+packages.
 
 For core ROHD development, clone the repository and use Dart from the
 repository root:
