@@ -44,7 +44,9 @@ class DtdService {
   ///
   /// Returns `true` if connection and registration succeeded.
   Future<bool> connect(String uri) async {
-    if (_disposed) return false;
+    if (_disposed) {
+      return false;
+    }
 
     try {
       _channel = WebSocketChannel.connect(Uri.parse(uri));
@@ -66,6 +68,7 @@ class DtdService {
     } on Exception catch (e) {
       _peer = null;
       _channel = null;
+      // Surface connection failures in the extension-host log for diagnosis.
       // ignore: avoid_print
       print('[DtdService] Failed to connect to DTD at $uri: $e');
       return false;

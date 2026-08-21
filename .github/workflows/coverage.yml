@@ -20,8 +20,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Dart
-        uses: dart-lang/setup-dart@v1
+      - name: Setup Flutter and Dart
+        run: tool/gh_codespaces/install_flutter.sh
 
       - name: Install dependencies
         run: tool/gh_actions/install_dependencies.sh

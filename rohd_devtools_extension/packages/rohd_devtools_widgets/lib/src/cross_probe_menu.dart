@@ -15,9 +15,9 @@
 // 2026 June
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
-import 'rohd_extension_status.dart';
+import 'package:rohd_devtools_widgets/src/rohd_extension_status.dart';
 
 /// Returns the source formats currently navigable for the active module.
 ///
@@ -139,7 +139,9 @@ Widget _sourceFormatAssetIcon(
           ),
         );
 
-        if (!isDark) return image;
+        if (!isDark) {
+          return image;
+        }
 
         return Container(
           width: size + 4,
