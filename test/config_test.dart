@@ -67,8 +67,9 @@ void main() {
   });
 
   if (!kIsWeb) {
-    test('should contains ROHD version number when wavedumper is generated.',
-        () async {
+    test(
+        'should contains ROHD version number when '
+        'waveform service is generated.', () async {
       const version = Config.version;
 
       final mod = SimpleModule(Logic(), Logic());
