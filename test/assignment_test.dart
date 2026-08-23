@@ -95,6 +95,7 @@ void main() {
       allowWarnings: true, // since always_comb has no sensitivities
     );
     expect(simResult, equals(true));
+    SimCompare.checkSystemCVector(exampleModule, vectors);
   });
 
   group('assign subset', () {
@@ -110,6 +111,7 @@ void main() {
 
         await SimCompare.checkFunctionalVector(mod, vectors);
         SimCompare.checkIverilogVector(mod, vectors);
+        SimCompare.checkSystemCVector(mod, vectors);
       });
 
       test('multiple bits', () async {
