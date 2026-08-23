@@ -1,14 +1,13 @@
 ---
 title: "Generating Outputs"
 permalink: /docs/generation/
-last_modified_at: 2026-08-19
+last_modified_at: 2023-11-13
 toc: true
 ---
 
 Hardware in ROHD is convertible to an output format via `Synthesizer`s. The most popular output format is SystemVerilog, with SystemC also available. Hardware in ROHD can be converted to logically equivalent, human-readable SystemVerilog or SystemC with structure, hierarchy, ports, and names maintained.
 
-The simplest way to write SystemVerilog is with `dumpSystemVerilog` on
-`Module`:
+The simplest way to generate SystemVerilog is with the helper method `generateSynth` in `Module`:
 
 ```dart
 void main() async {
@@ -17,32 +16,17 @@ void main() async {
     // remember that `build` returns a `Future`, hence the `await` here
     await myModule.build();
 
-    myModule.dumpSystemVerilog(outputPath: 'myHardware.sv');
+    final generatedSv = myModule.generateSynth();
+
+    // you can print it out...
+    print(generatedSv);
+
+    // or write it to a file
+    File('myHardware.sv').writeAsStringSync(generatedSv);
 }
 ```
 
-  `dumpSystemVerilog` writes one file containing the SystemVerilog `module`
-  definitions for the top-level module and all recursive submodules. To write
-  one `.sv` file per module definition instead, pass a directory and set
-  `multiFile` to `true`:
-
-  ```dart
-  myModule.dumpSystemVerilog(
-    outputPath: 'build/systemverilog',
-    multiFile: true,
-  );
-  ```
-
-  For generated text without writing a file, use `dumpSystemVerilog` without an
-  `outputPath`:
-
-  ```dart
-  final generatedSv = myModule.dumpSystemVerilog().output;
-  ```
-
-  The dump methods preserve the legacy one-shot output workflow. For the service
-  API, artifact streams, or explicit output configuration, use
-  `SystemVerilogService` directly.
+The `generateSynth` function will return a `String` with the SystemVerilog `module` definitions for the top-level it is called on, as well as any sub-modules (recursively).  You can dump the entire contents to a file and use it anywhere you would any other SystemVerilog.
 
 ## SystemC generation
 
@@ -69,8 +53,7 @@ For more control over SystemC generation, use `SynthBuilder` with `SystemCSynthe
 Generated ports default to `input logic`, `output logic`, and `inout wire`, preserving the traditional ROHD declarations. Use a `SystemVerilogSynthesizerConfiguration` to independently control whether object types, such as `wire` and `var`, and data types, such as `logic`, are explicit for each port direction:
 
 ```dart
-myModule.dumpSystemVerilog(
-  outputPath: 'myHardware.sv',
+final generatedSv = myModule.generateSynth(
   configuration: const SystemVerilogSynthesizerConfiguration(
     inputPortType: SystemVerilogPortTypeConfiguration(
       objectType: SystemVerilogPortType.explicit,
@@ -88,8 +71,7 @@ myModule.dumpSystemVerilog(
 );
 ```
 
-The same configuration can be passed directly to `SystemVerilogSynthesizer`
-when using `SynthBuilder`.
+The same configuration can be passed directly to `SystemVerilogSynthesizer` when using `SynthBuilder`.
 
 ## Controlling naming
 
@@ -116,6 +98,10 @@ Internal signals, unlike ports, don't need to always have the same exact name as
 ### Unpreferred names
 
 The `Naming.unpreferredName` function will modify a signal name to indicate to downstream flows that the name is preferably omitted from the output, but preferable to an unnamed signal. This is generally most useful for things like output ports of `InlineSystemVerilog` modules.
+
+## More advanced generation
+
+Under the hood of `generateSynth`, it's actually using a [`SynthBuilder`](https://intel.github.io/rohd/rohd/SynthBuilder-class.html) which accepts a `Module` and a `Synthesizer` (usually a `SystemVerilogSynthesizer`) as arguments. This `SynthBuilder` can provide a collection of `String` file contents via `getFileContents`, or you can ask for the full set of `synthesisResults`, which contains `SynthesisResult`s which can each be converted `toSynthFileContents` but also has context about the `module` it refers to, the `instanceTypeName`, etc. With these APIs, you can easily generate named files, add file headers, ignore generation of some modules, generate file lists for other tools, etc. The `SynthBuilder.multi` constructor makes it convenient to generate outputs for multiple independent hierarchies.
 
 ## Services API
 

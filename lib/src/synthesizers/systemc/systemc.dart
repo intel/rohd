@@ -17,8 +17,8 @@ import 'package:rohd/src/synthesizers/systemc/systemc_synthesis_result.dart';
 class SystemCSynthesizer extends Synthesizer {
   @override
   bool generatesDefinition(Module module) =>
-      // CustomSystemVerilog modules must remain excluded while the legacy
-      // compatibility type is still supported.
+      // SystemC generation must still detect legacy SV-backed custom modules
+      // until the upstream API is migrated away from this deprecated type.
       // ignore: deprecated_member_use_from_same_package
       !((module is CustomSystemVerilog) ||
           (module is SystemVerilog &&
