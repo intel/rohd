@@ -10,6 +10,8 @@
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/synthesizers/systemc/systemc_synthesis_result.dart';
 
+export 'systemc_service.dart';
+
 /// A [Synthesizer] which generates equivalent SystemC as the given [Module].
 ///
 /// Attempts to maintain signal naming and structure as much as possible,
