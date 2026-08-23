@@ -7,6 +7,9 @@
 // 2026 August 18
 // Author: Max Korbel <max.korbel@intel.com>
 
+@TestOn('vm')
+library;
+
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
