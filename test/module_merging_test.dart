@@ -91,7 +91,7 @@ void main() {
       () async {
     final dut = TrunkWithLeaves(Logic(), Logic());
     await dut.build();
-    final sv = dut.generateSynth();
+    final sv = dut.dumpSystemVerilog().output;
 
     expect('module ComplicatedLeaf'.allMatches(sv).length, 1);
   });
@@ -99,7 +99,7 @@ void main() {
   test('different reserved definition name modules stay separate', () async {
     final dut = ParentOfDifferentModuleDefNames(Logic());
     await dut.build();
-    final sv = dut.generateSynth();
+    final sv = dut.dumpSystemVerilog().output;
 
     expect(sv, contains('module def1'));
     expect(sv, contains('module def2'));

@@ -1,8 +1,8 @@
-// Copyright (C) 2021-2024 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
-// wave_dumper_test.dart
-// Tests for the WaveDumper
+// waveform_service_test.dart
+// Tests for the WaveformService
 //
 // 2021 November 4
 // Author: Max Korbel <max.korbel@intel.com>
@@ -40,10 +40,26 @@ const tempDumpDir = 'tmp_test';
 /// Gets the path of the VCD file based on a name.
 String temporaryDumpPath(String name) => '$tempDumpDir/temp_dump_$name.vcd';
 
-/// Attaches a [WaveDumper] to [module] to VCD with [name].
+/// Attaches a [WaveformService] to [module] to VCD with [name].
 void createTemporaryDump(Module module, String name) {
   Directory(tempDumpDir).createSync(recursive: true);
+  WaveformService(
+    module,
+    outputDirectory: tempDumpDir,
+    outputBaseName: 'temp_dump_$name',
+    writeToFile: true,
+  );
+}
+
+// The helper intentionally exercises the deprecated WaveDumper compatibility
+// path.
+// ignore: deprecated_member_use_from_same_package
+/// Attaches the deprecated [WaveDumper] to [module] to VCD with [name].
+void createTemporaryWaveDumperDump(Module module, String name) {
+  Directory(tempDumpDir).createSync(recursive: true);
   final tmpDumpFile = temporaryDumpPath(name);
+  // The deprecated WaveDumper constructor is invoked to test its behavior.
+  // ignore: deprecated_member_use_from_same_package
   WaveDumper(module, outputPath: tmpDumpFile);
 }
 
@@ -84,6 +100,95 @@ void main() {
         equals(true));
 
     deleteTemporaryDump(dumpName);
+  });
+
+  test('attach deprecated wave dumper after put', () async {
+    final a = Logic(name: 'a');
+    final mod = SimpleModule(a);
+    await mod.build();
+
+    const dumpName = 'deprecatedDumpAfterPut';
+
+    a.put(1);
+    createTemporaryWaveDumperDump(mod, dumpName);
+
+    Simulator.registerAction(10, () => a.put(0));
+    await Simulator.run();
+
+    final vcdContents = File(temporaryDumpPath(dumpName)).readAsStringSync();
+
+    expect(
+        VcdParser.confirmValue(vcdContents, 'a', 0, LogicValue.ofString('1')),
+        equals(true));
+    expect(
+        VcdParser.confirmValue(vcdContents, 'a', 5, LogicValue.ofString('1')),
+        equals(true));
+    expect(
+        VcdParser.confirmValue(vcdContents, 'a', 10, LogicValue.ofString('0')),
+        equals(true));
+
+    deleteTemporaryDump(dumpName);
+  });
+
+  test('dumpWaves creates a waveform service', () async {
+    final mod = SimpleModule(Logic());
+    await mod.build();
+
+    const dumpName = 'moduleDumpWaveforms';
+    final outputPath = temporaryDumpPath(dumpName);
+    Directory(tempDumpDir).createSync(recursive: true);
+    final service = mod.dumpWaves(outputPath: outputPath);
+
+    expect(service, isA<WaveformService>());
+    expect(File(service.outputFilePath).existsSync(), isTrue);
+
+    await Simulator.run();
+    deleteTemporaryDump(dumpName);
+  });
+
+  test('dumpWaves preserves an arbitrary legacy output filename', () async {
+    final mod = SimpleModule(Logic());
+    await mod.build();
+
+    const outputPath = '$tempDumpDir/capture.trace';
+    final service = mod.dumpWaves(outputPath: outputPath);
+
+    expect(service.outputFilePath, equals(outputPath));
+    expect(File(outputPath).existsSync(), isTrue);
+
+    await Simulator.run();
+    File(outputPath).deleteSync();
+  });
+
+  test('waveform artifact derives its extension from the format', () async {
+    final mod = SimpleModule(Logic());
+    await mod.build();
+
+    final waveformService = WaveformService(
+      mod,
+      outputDirectory: tempDumpDir,
+      outputBaseName: 'capture',
+    );
+
+    final artifact = waveformService.artifacts.single;
+
+    expect(artifact.fileName, equals('capture.vcd'));
+    expect(artifact.mediaType, equals('text/x-vcd'));
+    expect(File(waveformService.outputFilePath).existsSync(), isFalse);
+    expect(
+      (await artifact.openRead().expand((bytes) => bytes).toList()).isNotEmpty,
+      isTrue,
+    );
+  });
+
+  test('rejects formats without a matching waveform writer', () async {
+    final mod = SimpleModule(Logic());
+    await mod.build();
+
+    expect(
+      () => WaveformService(mod, format: WaveOutputFormat.fst),
+      throwsUnsupportedError,
+    );
   });
 
   test('attach dumper before put', () async {
@@ -241,11 +346,16 @@ void main() {
 
     const dir1Path = '$tempDumpDir/dir1';
 
-    final waveDumper = WaveDumper(mod, outputPath: '$dir1Path/dir2/waves.vcd');
+    final waveformService = WaveformService(
+      mod,
+      outputDirectory: '$dir1Path/dir2',
+      outputBaseName: 'waves',
+      writeToFile: true,
+    );
 
-    expect(File(waveDumper.outputPath).existsSync(), equals(true));
+    expect(File(waveformService.outputFilePath).existsSync(), equals(true));
 
-    if (File(waveDumper.outputPath).existsSync()) {
+    if (File(waveformService.outputFilePath).existsSync()) {
       File(dir1Path).deleteSync(recursive: true);
     }
   });
@@ -263,7 +373,7 @@ void main() {
     Simulator.registerAction(13, () => reset.put(1));
     reset.put(0);
 
-    // add wave dumper *after* the put to reset
+    // add waveform service *after* the put to reset
     createTemporaryDump(mod, dumpName);
 
     // check functional matches

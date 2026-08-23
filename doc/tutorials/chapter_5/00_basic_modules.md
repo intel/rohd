@@ -95,7 +95,7 @@ Do note that the `build()` method returns a `Future<void>`, not just `void`. Thi
 
 ## Converting ROHD Module to System Verilog RTL
 
-Next, we can see how extending your `Logic` to `Module` enables the generation of system Verilog code. Building on the previous example, we've made some slight modifications by adding `simModule.build()` and `simModule.generateSynth()`.
+Next, we can see how extending your `Logic` to `Module` enables the generation of system Verilog code. Building on the previous example, we've made some slight modifications by adding `simModule.build()` and `simModule.dumpSystemVerilog().output`.
 
 ```dart
 void main() async {
@@ -106,7 +106,7 @@ void main() async {
     await simModule.build();
 
     // Print out system verilog code
-    print(simModule.generateSynth());
+    print(simModule.dumpSystemVerilog().output);
 
     test('should return input value.',
           () => expect(simModule.out.value.toInt(), equals(1)));
@@ -114,7 +114,8 @@ void main() async {
     // Add this to test on generate system verilog code
     test(
           'should generate system verilog code.',
-        () => expect(simModule.generateSynth(), contains('module SimpleModule(')));
+        () => expect(simModule.dumpSystemVerilog().output,
+          contains('module SimpleModule(')));
 }
 ```
 

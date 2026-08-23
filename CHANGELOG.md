@@ -1,3 +1,27 @@
+## Next Release
+
+- Migrated active packages to a pub workspace. The root `workspace:` list is
+  the single package roster, and `tool/workspace.dart` now provides
+  repository-wide analysis, native and Node.js test commands, and generation
+  of the multi-root VSCode workspace.
+- Added the `ModuleService` API for module-scoped generation, capture, and
+  inspection services. `ModuleServices` registers and looks up services for a
+  built module hierarchy, and `hierarchyJson` exposes its hierarchy as JSON.
+- Added `ArtifactProducingService` and `ModuleServiceArtifact` for
+  transport-neutral output. Artifact-producing services default
+  `outputDirectory` to the current directory and `outputBaseName` to the
+  module definition name, and expose named, media-typed byte streams without
+  requiring filesystem output.
+- Added `SystemVerilogService` for configured SystemVerilog synthesis,
+  in-memory source output, artifact inspection, and explicit directory writes.
+  Added `WaveformService` for in-memory waveform capture with optional file
+  writing through `writeToFile`.
+- Added legacy-compatible `Module.dumpSystemVerilog` and `Module.dumpWaves`
+  convenience methods. `dumpSystemVerilog()` provides simple in-memory output
+  or writes an optional `outputPath`; `dumpWaves()` replaces `dumpWaveforms`
+  for standard VCD capture. `WaveDumper` and `generateSynth` are deprecated in
+  favor of these `Module` methods.
+
 ## 0.6.10
 
 - Improved `Logic.replicate(1)` and same-width `signExtend` to return the original signal, eliminating redundant replication modules and generated SystemVerilog (<https://github.com/intel/rohd/pull/689>).

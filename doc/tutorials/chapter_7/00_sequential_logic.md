@@ -44,7 +44,7 @@ class ShiftRegister extends Module {
 void main() async {
   final shiftReg = ShiftRegister();
   await shiftReg.build();
-  print(shiftReg.generateSynth());
+  print(shiftReg.dumpSystemVerilog().output);
 }
 ```
 
@@ -196,7 +196,7 @@ void main() async {
 
   final shiftReg = ShiftRegister(clk, reset, sin);
   await shiftReg.build();
-  print(shiftReg.generateSynth());
+  print(shiftReg.dumpSystemVerilog().output);
 
   // Inject 1 to reset and 0 to shift in
   reset.inject(1);
@@ -243,7 +243,7 @@ void main() async {
   unawaited(Simulator.run());
 
   // Output the simulation waveform using WaveDumper
-  WaveDumper(shiftReg,
+  shiftReg.dumpWaves(
         outputPath: 'doc/tutorials/chapter_7/shift_register.vcd');
 }
 ```
@@ -252,7 +252,7 @@ Now, let print the flop before the first clock Positive edge. We can just call t
 
 ```dart
 ...
-WaveDumper(shiftReg,
+shiftReg.dumpWaves(
         outputPath: 'doc/tutorials/chapter_7/shift_register.vcd');
 printFlop('Before');
 ```

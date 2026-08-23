@@ -49,13 +49,13 @@ Future<void> main(List<String> args) async {
   final toyCap = ToyCapsuleFSM(clk, reset, dispenseBtn, coin);
   await toyCap.build();
 
-  print(toyCap.generateSynth());
+  print(toyCap.dumpSystemVerilog().output);
 
   toyCap.toyCapsuleStateMachine.generateDiagram();
 
   reset.inject(1);
 
-  WaveDumper(toyCap, outputPath: 'toyCapsuleFSM.vcd');
+  toyCap.dumpWaves(outputPath: 'toyCapsuleFSM.vcd');
 
   Simulator.setMaxSimTime(100);
   Simulator.registerAction(25, () {

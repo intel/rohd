@@ -208,7 +208,7 @@ void main() {
         reserveInstanceName: false,
       );
       await mod.build();
-      final sv = mod.generateSynth();
+      final sv = mod.dumpSystemVerilog().output;
       expect(sv, contains('module specialName ('));
     });
     test('uniquified with conflicts', () async {
@@ -218,7 +218,7 @@ void main() {
         causeInstConflict: false,
       );
       await mod.build();
-      final sv = mod.generateSynth();
+      final sv = mod.dumpSystemVerilog().output;
       expect(sv, contains('module specialName ('));
       expect(sv, contains('module specialName_0 ('));
     });
@@ -229,7 +229,7 @@ void main() {
         causeInstConflict: false,
       );
       await mod.build();
-      expect(mod.generateSynth, throwsException);
+      expect(() => mod.dumpSystemVerilog().output, throwsException);
     });
   });
 
@@ -241,7 +241,7 @@ void main() {
         causeInstConflict: false,
       );
       await mod.build();
-      final sv = mod.generateSynth();
+      final sv = mod.dumpSystemVerilog().output;
 
       expect(sv, contains('specialInstanceName('));
       expect(sv, contains('specialInstanceName_0('));
