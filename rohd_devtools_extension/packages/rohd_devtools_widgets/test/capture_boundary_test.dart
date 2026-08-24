@@ -9,9 +9,9 @@
 
 import 'dart:typed_data';
 
-import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show RenderRepaintBoundary;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:rohd_devtools_widgets/rohd_devtools_widgets.dart';
 
 void main() {
@@ -100,7 +100,7 @@ void main() {
       find.byWidgetPredicate(
         (widget) =>
             widget is Text &&
-            widget.data?.startsWith('Saved: /tmp/wave_') == true,
+            (widget.data?.startsWith('Saved: /tmp/wave_') ?? false),
       ),
       findsOneWidget,
     );
@@ -132,7 +132,7 @@ void main() {
       find.byWidgetPredicate(
         (widget) =>
             widget is Text &&
-            widget.data?.startsWith('Downloaded capture_') == true,
+            (widget.data?.startsWith('Downloaded capture_') ?? false),
       ),
       findsOneWidget,
     );

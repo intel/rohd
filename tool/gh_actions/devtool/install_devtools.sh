@@ -23,8 +23,6 @@ DEST="../extension/devtools"
 
 cd rohd_devtools_extension
 
-flutter pub get
-
 echo ""
 echo "════════════════════════════════════════════════════════════"
 echo "  Building DevTools extension..."

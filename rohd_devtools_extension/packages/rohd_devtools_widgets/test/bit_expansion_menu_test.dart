@@ -7,8 +7,8 @@
 // 2026 July
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:rohd_devtools_widgets/rohd_devtools_widgets.dart';
 
 void main() {
@@ -112,7 +112,7 @@ void main() {
     await tester.tap(find.text('OK'));
     await tester.pumpAndSettle();
 
-    final range = await rangeFuture as BitExpandRangeAction;
+    final range = (await rangeFuture)! as BitExpandRangeAction;
     expect(range.bitStart, 3);
     expect(range.bitEnd, 6);
 
@@ -127,7 +127,7 @@ void main() {
     await tester.tap(find.text('OK'));
     await tester.pumpAndSettle();
 
-    final fields = await fieldsFuture as BitDefineFieldsAction;
+    final fields = (await fieldsFuture)! as BitDefineFieldsAction;
     expect(fields.fields.map((field) => field.name), ['upper', 'lower']);
   });
 }

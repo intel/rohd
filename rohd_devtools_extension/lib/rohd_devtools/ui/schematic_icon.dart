@@ -9,7 +9,7 @@
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// A custom-painted icon showing three colored rectangles connected
 /// by orthogonal (right-angle) wires — a miniature schematic diagram.

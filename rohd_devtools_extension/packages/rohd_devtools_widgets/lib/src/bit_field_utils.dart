@@ -7,7 +7,7 @@
 // 2025 May
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// A named bit-field definition within a bitvector signal.
 class BitFieldDef {
@@ -20,6 +20,7 @@ class BitFieldDef {
   /// Low bit (inclusive, LSB of the field).
   final int low;
 
+  /// Creates a bit-field definition.
   const BitFieldDef({
     required this.name,
     required this.high,
@@ -50,16 +51,22 @@ abstract final class BitFieldUtils {
   static (int, int)? parseBitRange(String input, int maxBit) {
     if (input.contains(':')) {
       final parts = input.split(':');
-      if (parts.length != 2) return null;
+      if (parts.length != 2) {
+        return null;
+      }
       final high = int.tryParse(parts[0].trim());
       final low = int.tryParse(parts[1].trim());
-      if (high == null || low == null) return null;
+      if (high == null || low == null) {
+        return null;
+      }
       final h = high.clamp(0, maxBit);
       final l = low.clamp(0, maxBit);
       return h >= l ? (h, l) : (l, h);
     }
     final bit = int.tryParse(input);
-    if (bit == null) return null;
+    if (bit == null) {
+      return null;
+    }
     final clamped = bit.clamp(0, maxBit);
     return (clamped, clamped);
   }
@@ -76,7 +83,9 @@ abstract final class BitFieldUtils {
     final fields = <BitFieldDef>[];
     for (final rawLine in lines) {
       final line = rawLine.trim();
-      if (line.isEmpty) continue;
+      if (line.isEmpty) {
+        continue;
+      }
       final tokens = _splitAsciiWhitespace(line);
 
       // Try: name high:low
@@ -158,7 +167,9 @@ abstract final class BitFieldUtils {
   }
 
   static bool _isWord(String value) {
-    if (value.isEmpty) return false;
+    if (value.isEmpty) {
+      return false;
+    }
     for (var i = 0; i < value.length; i++) {
       final char = value.codeUnitAt(i);
       final isUppercase = char >= 65 && char <= 90;
@@ -173,10 +184,14 @@ abstract final class BitFieldUtils {
   }
 
   static bool _isUnsignedDecimal(String value) {
-    if (value.isEmpty) return false;
+    if (value.isEmpty) {
+      return false;
+    }
     for (var i = 0; i < value.length; i++) {
       final char = value.codeUnitAt(i);
-      if (char < 48 || char > 57) return false;
+      if (char < 48 || char > 57) {
+        return false;
+      }
     }
     return true;
   }
@@ -208,37 +223,37 @@ Future<(int, int)?> showBitRangeDialog(
   final result = await showDialog<String>(
     context: context,
     barrierColor: Colors.black26,
-    builder: (ctx) {
-      return AlertDialog(
-        title: Text(
-          '$signalName  [$width bits]',
-          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+    builder: (ctx) => AlertDialog(
+      title: Text(
+        '$signalName  [$width bits]',
+        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+      ),
+      content: TextField(
+        controller: controller,
+        autofocus: true,
+        decoration: InputDecoration(
+          labelText: 'Bit range (high:low) or single bit',
+          hintText: '$maxBit:0',
+          isDense: true,
         ),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          decoration: InputDecoration(
-            labelText: 'Bit range (high:low) or single bit',
-            hintText: '$maxBit:0',
-            isDense: true,
-          ),
-          onSubmitted: (value) => Navigator.of(ctx).pop(value),
+        onSubmitted: (value) => Navigator.of(ctx).pop(value),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(ctx).pop(),
+          child: const Text('Cancel'),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(controller.text),
-            child: const Text('OK'),
-          ),
-        ],
-      );
-    },
+        TextButton(
+          onPressed: () => Navigator.of(ctx).pop(controller.text),
+          child: const Text('OK'),
+        ),
+      ],
+    ),
   );
 
-  if (result == null || result.trim().isEmpty) return null;
+  if (result == null || result.trim().isEmpty) {
+    return null;
+  }
   return BitFieldUtils.parseBitRange(result.trim(), maxBit);
 }
 
@@ -258,11 +273,7 @@ Future<List<BitFieldDef>?> showDefineBitFieldsDialog(
   // type additional fields without accidentally replacing existing ones.
   final hasExisting = existingDefs != null && existingDefs.isNotEmpty;
   final initialText = hasExisting
-      ? '${existingDefs.map((f) {
-          return f.high == f.low
-              ? '${f.name} ${f.high}'
-              : '${f.name} ${f.high}:${f.low}';
-        }).join('\n')}\n'
+      ? '${_formatBitFieldDefs(existingDefs)}\n'
       : 'field0 $maxBit:0';
 
   final controller = TextEditingController(text: initialText);
@@ -282,44 +293,52 @@ Future<List<BitFieldDef>?> showDefineBitFieldsDialog(
   final result = await showDialog<String>(
     context: context,
     barrierColor: Colors.black26,
-    builder: (ctx) {
-      return AlertDialog(
-        title: Text(
-          '$signalName  [$width bits] — Define Fields',
-          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-        ),
-        content: SizedBox(
-          width: 320,
-          child: TextField(
-            controller: controller,
-            autofocus: true,
-            maxLines: 8,
-            minLines: 3,
-            style: const TextStyle(fontFamily: 'monospace', fontSize: 13),
-            decoration: InputDecoration(
-              labelText: 'One field per line: name high:low',
-              hintText: 'exponent $maxBit:${maxBit - 10}\n'
-                  'mantissa ${maxBit - 11}:0',
-              isDense: true,
-              border: const OutlineInputBorder(),
-            ),
+    builder: (ctx) => AlertDialog(
+      title: Text(
+        '$signalName  [$width bits] — Define Fields',
+        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+      ),
+      content: SizedBox(
+        width: 320,
+        child: TextField(
+          controller: controller,
+          autofocus: true,
+          maxLines: 8,
+          minLines: 3,
+          style: const TextStyle(fontFamily: 'monospace', fontSize: 13),
+          decoration: InputDecoration(
+            labelText: 'One field per line: name high:low',
+            hintText: 'exponent $maxBit:${maxBit - 10}\n'
+                'mantissa ${maxBit - 11}:0',
+            isDense: true,
+            border: const OutlineInputBorder(),
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(controller.text),
-            child: const Text('OK'),
-          ),
-        ],
-      );
-    },
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(ctx).pop(),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.of(ctx).pop(controller.text),
+          child: const Text('OK'),
+        ),
+      ],
+    ),
   );
 
-  if (result == null || result.trim().isEmpty) return null;
+  if (result == null || result.trim().isEmpty) {
+    return null;
+  }
   final fields = BitFieldUtils.parseBitFieldDefs(result, maxBit);
   return fields.isEmpty ? null : fields;
 }
+
+String _formatBitFieldDefs(List<BitFieldDef> fields) => fields
+    .map(
+      (field) => field.high == field.low
+          ? '${field.name} ${field.high}'
+          : '${field.name} ${field.high}:${field.low}',
+    )
+    .join('\n');

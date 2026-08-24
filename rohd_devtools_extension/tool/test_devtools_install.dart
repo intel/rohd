@@ -61,7 +61,8 @@ Future<void> main(List<String> args) async {
     _requireFile(extensionAssetsPath, 'flutter.js');
     _requireFile(extensionAssetsPath, 'main.dart.js');
     _requireFile(extensionAssetsPath, 'version.json');
-    _requireFile(extensionAssetsPath, p.join('assets', 'AssetManifest.json'));
+    _requireFile(
+        extensionAssetsPath, p.join('assets', 'AssetManifest.bin.json'));
     _requireFile(extensionAssetsPath, p.join('assets', 'FontManifest.json'));
     _requireFile(extensionAssetsPath, p.join('canvaskit', 'canvaskit.js'));
     _requireFile(extensionAssetsPath, p.join('canvaskit', 'canvaskit.wasm'));
@@ -76,7 +77,7 @@ Future<void> main(List<String> args) async {
   }
 }
 
-Future<_ResolvedTarget> _resolveTarget(String target) async {
+Future<_ResolvedTarget> _resolveTarget(String target) {
   final githubTree = _parseGithubTreeTarget(target);
   if (githubTree != null) {
     return _downloadGithubTree(githubTree);
@@ -89,8 +90,10 @@ Future<_ResolvedTarget> _resolveTarget(String target) async {
     );
   }
 
-  return _ResolvedTarget(
-    Directory(p.normalize(p.absolute(target))),
+  return Future.value(
+    _ResolvedTarget(
+      Directory(p.normalize(p.absolute(target))),
+    ),
   );
 }
 

@@ -20,7 +20,10 @@
 // 2026 March
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
-import 'package:flutter/material.dart';
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// A help button that loads its content from a markdown asset file.
 ///
@@ -109,6 +112,22 @@ class MarkdownHelpButton extends StatefulWidget {
 
   @override
   State<MarkdownHelpButton> createState() => _MarkdownHelpButtonState();
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties
+      ..add(StringProperty('assetPath', assetPath))
+      ..add(DiagnosticsProperty<bool>('isDark', isDark))
+      ..add(StringProperty('label', label))
+      ..add(StringProperty('package', package))
+      ..add(
+        DiagnosticsProperty<Map<String, String>?>(
+          'substitutions',
+          substitutions,
+        ),
+      );
+  }
 }
 
 class _MarkdownHelpButtonState extends State<MarkdownHelpButton> {
@@ -118,7 +137,7 @@ class _MarkdownHelpButtonState extends State<MarkdownHelpButton> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _loadContent();
+    unawaited(_loadContent());
   }
 
   @override
@@ -126,7 +145,7 @@ class _MarkdownHelpButtonState extends State<MarkdownHelpButton> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.assetPath != widget.assetPath ||
         oldWidget.package != widget.package) {
-      _loadContent();
+      unawaited(_loadContent());
     }
   }
 
@@ -139,13 +158,10 @@ class _MarkdownHelpButtonState extends State<MarkdownHelpButton> {
         // dependency in a host app), then fall back to the bare asset path
         // (standalone mode). This order avoids a spurious 404 on the web
         // when the bare path doesn't exist.
-        // Use catch-all because AssetBundle.loadString throws FlutterError
-        // (an Error, not Exception) when the asset is missing.
         try {
           raw = await assetBundle
               .loadString('packages/${widget.package}/${widget.assetPath}');
-          // ignore: avoid_catches_without_on_clauses
-        } catch (_) {
+        } on Object {
           raw = await assetBundle.loadString(widget.assetPath);
         }
       } else {
@@ -163,8 +179,7 @@ class _MarkdownHelpButtonState extends State<MarkdownHelpButton> {
           _content = _HelpContent.parse(raw);
         });
       }
-      // ignore: avoid_catches_without_on_clauses
-    } catch (e) {
+    } on Object catch (e) {
       debugPrint('Failed to load help asset: $e');
       if (mounted) {
         setState(() {
@@ -281,7 +296,7 @@ class _MarkdownHelpButtonState extends State<MarkdownHelpButton> {
       }
     }
 
-    showDialog<void>(
+    unawaited(showDialog<void>(
       context: context,
       builder: (ctx) => Dialog(
         backgroundColor: bgColor,
@@ -330,7 +345,7 @@ class _MarkdownHelpButtonState extends State<MarkdownHelpButton> {
           ),
         ),
       ),
-    );
+    ));
   }
 }
 
@@ -367,7 +382,7 @@ class _HelpContent {
     final title = _extractTitle(raw) ?? 'Help';
 
     // Extract tooltip text.
-    String tooltip = '';
+    var tooltip = '';
     if (tooltipIdx >= 0 && detailsIdx > tooltipIdx) {
       tooltip =
           raw.substring(tooltipIdx + tooltipMarker.length, detailsIdx).trim();
@@ -392,7 +407,7 @@ class _HelpContent {
     final blocks = <_DetailBlock>[];
     final lines = raw.split('\n');
 
-    for (int i = 0; i < lines.length; i++) {
+    for (var i = 0; i < lines.length; i++) {
       final line = lines[i];
       final trimmed = line.trim();
 

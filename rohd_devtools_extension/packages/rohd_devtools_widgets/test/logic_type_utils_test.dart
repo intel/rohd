@@ -151,7 +151,8 @@ void main() {
 
     expect(
       tooltip,
-      '''packet (Packet)
+      '''
+packet (Packet)
   payload: 4'b1010
     nibble: 4'b1010
       ...''',

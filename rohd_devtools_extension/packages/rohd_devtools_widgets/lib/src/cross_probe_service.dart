@@ -64,7 +64,9 @@ class LocalCrossProbeChannel extends ChangeNotifier {
   ///
   /// Does nothing when [signalPaths] is empty.
   void broadcast(List<String> signalPaths, String source) {
-    if (signalPaths.isEmpty) return;
+    if (signalPaths.isEmpty) {
+      return;
+    }
     _lastSource = source;
     _lastPaths = List.unmodifiable(signalPaths);
     notifyListeners();
@@ -75,7 +77,7 @@ class LocalCrossProbeChannel extends ChangeNotifier {
 ///
 /// Create one [LocalCrossProbeService] per viewer, all sharing the same
 /// [LocalCrossProbeChannel].  Each service filters out its own broadcasts
-/// (matched by [source]) so viewers do not receive their own selections.
+/// (matched by the source tag) so viewers do not receive their own selections.
 ///
 /// ```dart
 /// final channel  = LocalCrossProbeChannel();
@@ -109,15 +111,21 @@ class LocalCrossProbeService implements CrossProbeService {
   }
 
   void _onChannelMessage() {
-    if (!isActive.value) return;
+    if (!isActive.value) {
+      return;
+    }
     final src = _channel.lastSource;
-    if (src == null || src == _source) return; // ignore own broadcasts
+    if (src == null || src == _source) {
+      return;
+    }
     incomingSignals.value = _channel.lastPaths;
   }
 
   @override
   void send(List<String> signalPaths, {required String source}) {
-    if (!isActive.value || signalPaths.isEmpty) return;
+    if (!isActive.value || signalPaths.isEmpty) {
+      return;
+    }
     _channel.broadcast(signalPaths, source);
   }
 

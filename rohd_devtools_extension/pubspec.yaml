@@ -6,6 +6,8 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 
 version: 1.0.0+1
 
+resolution: workspace
+
 environment:
  sdk: ^3.6.0
   
@@ -19,8 +21,10 @@ dependencies:
   flutter_bloc: ^9.0.0
   flutter_simple_treeview: ^3.0.2
   logging: ^1.2.0
+  material_ui: ^1.0.1
+  rohd: ^0.6.10
   rohd_devtools_widgets:
-    path: packages/rohd_devtools_widgets
+    ^0.1.0
   vm_service: ^14.3.1
   web: ^1.0.0
   web_socket_channel: ^3.0.0
@@ -37,7 +41,3 @@ flutter:
   assets:
     - assets/help/
     - assets/icons/
-
-dependency_overrides:
-  rohd:
-    path: ../

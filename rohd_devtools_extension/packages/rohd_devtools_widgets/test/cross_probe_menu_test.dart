@@ -7,8 +7,8 @@
 // 2026 July
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:rohd_devtools_widgets/rohd_devtools_widgets.dart';
 
 void main() {
@@ -39,7 +39,7 @@ void main() {
   test('resolves default and exact navigable formats', () {
     expect(resolveNavigableFormats(null), kDefaultNavigableFormats);
     expect(
-      resolveNavigableFormats(const RohdModuleInfo(extensionAvailable: false)),
+      resolveNavigableFormats(RohdModuleInfo.unavailable),
       kDefaultNavigableFormats,
     );
     expect(
@@ -55,7 +55,6 @@ void main() {
           formats: {
             RohdSourceFormat.rohd: RohdFormatInfo(
               available: true,
-              fileFound: false,
             ),
             RohdSourceFormat.sv: RohdFormatInfo(
               available: false,
@@ -67,18 +66,18 @@ void main() {
       isEmpty,
     );
 
-    final info = RohdModuleInfo(
+    const info = RohdModuleInfo(
       extensionAvailable: true,
       formats: {
-        RohdSourceFormat.rohd: const RohdFormatInfo(
+        RohdSourceFormat.rohd: RohdFormatInfo(
           available: true,
           fileFound: true,
         ),
-        RohdSourceFormat.sc: const RohdFormatInfo(
+        RohdSourceFormat.sc: RohdFormatInfo(
           available: true,
           fileFound: true,
         ),
-        RohdSourceFormat.fst: const RohdFormatInfo(
+        RohdSourceFormat.fst: RohdFormatInfo(
           available: true,
           fileFound: true,
         ),
@@ -96,8 +95,7 @@ void main() {
     final items = buildGotoSourceMenuItems(
       formats: [RohdSourceFormat.rohd, RohdSourceFormat.sv],
       count: 2,
-      showIcons: true,
-      iconBuilder: (format, {double size = 18}) => Icon(
+      iconBuilder: (format, {size = 18}) => Icon(
         Icons.code,
         key: ValueKey(format),
         size: size,
@@ -185,7 +183,7 @@ void main() {
                 ],
                 size: 13,
                 gap: 5,
-                iconBuilder: (format, {double size = 16}) => Icon(
+                iconBuilder: (format, {size = 16}) => Icon(
                   Icons.code,
                   key: ValueKey('strip-${format.name}'),
                   size: size,
