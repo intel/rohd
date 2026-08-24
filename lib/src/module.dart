@@ -1148,7 +1148,7 @@ abstract class Module {
   }) {
     final service = SystemVerilogService(
       this,
-      outputDirectory: outputPath ?? '.',
+      outputDirectory: multiFile ? outputPath ?? '.' : '.',
       multiFile: multiFile,
       configuration: configuration,
     );
@@ -1192,13 +1192,8 @@ abstract class Module {
   String generateSynth({
     SystemVerilogSynthesizerConfiguration configuration =
         const SystemVerilogSynthesizerConfiguration(),
-  }) {
-    if (!_hasBuilt) {
-      throw ModuleNotBuiltException(this);
-    }
-
-    return dumpSystemVerilog(configuration: configuration).output;
-  }
+  }) =>
+      dumpSystemVerilog(configuration: configuration).output;
 }
 
 /// Splits a legacy file [outputPath] into its directory and exact filename.

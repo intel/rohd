@@ -17,12 +17,8 @@ import 'package:vm_service/vm_service.dart';
 
 /// Service helpers for evaluating and filtering the ROHD module tree.
 class TreeService {
-  /// Primary expression for hierarchy JSON — available in all ROHD versions
-  /// that ship inspector_service.dart (i.e. main and later).
-  static const _primaryInvokeFunc = 'ModuleTree.instance.hierarchyJson';
-
-  /// Fallback kept for any pre-inspector ROHD target.
-  static const _legacyInvokeFunc = 'ModuleTree.instance.hierarchyJson';
+  /// Expression for retrieving the module hierarchy JSON.
+  static const _hierarchyExpression = 'ModuleTree.instance.hierarchyJson';
 
   /// Eval wrapper for accessing ROHD code in the target isolate.
   final EvalOnDartLibrary rohdControllerEval;
@@ -68,19 +64,14 @@ class TreeService {
   }
 
   Future<String?> _evalTreePayload() async {
-    final expressions = <String>[_primaryInvokeFunc, _legacyInvokeFunc];
-
-    for (final expression in expressions) {
-      try {
-        final treeInstance = await rohdControllerEval.evalInstance(expression,
-            isAlive: evalDisposable);
-        return treeInstance.valueAsString;
-      } on Exception catch (e) {
-        debugPrint('[TreeService] Eval failed for "$expression": $e');
-      }
+    try {
+      final treeInstance = await rohdControllerEval
+          .evalInstance(_hierarchyExpression, isAlive: evalDisposable);
+      return treeInstance.valueAsString;
+    } on Exception catch (e) {
+      debugPrint('[TreeService] Eval failed for "$_hierarchyExpression": $e');
+      return null;
     }
-
-    return null;
   }
 
   /// Returns whether the current module or any descendant matches the search.

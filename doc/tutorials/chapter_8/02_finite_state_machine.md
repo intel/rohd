@@ -268,7 +268,7 @@ await oven.build();
 reset.inject(1);
 ```
 
-Let also attach a `WaveDumper` to preview what is the waveform and what happened during the Simulation.
+Let also call `dumpWaves` to preview the waveform and what happened during the Simulation.
 
 ```dart
 if (!noPrint) {

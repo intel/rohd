@@ -217,9 +217,9 @@ void main() async {
 }
 ```
 
-## Wave Dumper
+## Waveform Dumping
 
-Let also add `WaveDumper` to view the waveform of the Simulation results.
+Let also call `dumpWaves` to view the waveform of the Simulation results.
 
 ```dart
 void main() async {
@@ -242,7 +242,7 @@ void main() async {
   // Run the simulator but don't wait for it
   unawaited(Simulator.run());
 
-  // Output the simulation waveform using WaveDumper
+  // Output the simulation waveform
   shiftReg.dumpWaves(
         outputPath: 'doc/tutorials/chapter_7/shift_register.vcd');
 }

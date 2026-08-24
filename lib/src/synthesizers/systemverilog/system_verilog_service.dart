@@ -37,6 +37,9 @@ import 'package:rohd/src/utilities/timestamper.dart';
 /// print(sv.output);
 /// ```
 class SystemVerilogService extends CodeGenService {
+  /// The most recently registered [SystemVerilogService], or `null`.
+  static SystemVerilogService? current;
+
   /// The separator inserted between module definitions in the
   /// concatenated single-file output from [allContents].
   ///
@@ -69,7 +72,8 @@ class SystemVerilogService extends CodeGenService {
   ///
   /// [outputDirectory] defaults to the current directory and [outputBaseName]
   /// defaults to [Module.definitionName]. [includeHeader] defaults to
-  /// `!multiFile` to preserve the historical layout.
+  /// `!multiFile` to preserve the historical layout. Set [register] to `false`
+  /// to keep this service out of [ModuleServices].
   SystemVerilogService(
     Module module, {
     super.outputDirectory,
@@ -77,6 +81,7 @@ class SystemVerilogService extends CodeGenService {
     this.multiFile = false,
     bool? includeHeader,
     this.configuration = const SystemVerilogSynthesizerConfiguration(),
+    bool register = true,
   })  : includeHeader = includeHeader ?? !multiFile,
         super(module) {
     if (!module.hasBuilt) {
@@ -88,6 +93,11 @@ class SystemVerilogService extends CodeGenService {
     synthBuilder = SynthBuilder(
         module, SystemVerilogSynthesizer(configuration: configuration));
     fileContents = synthBuilder.getSynthFileContents();
+
+    if (register) {
+      current = this;
+      ModuleServices.instance.register<SystemVerilogService>(this);
+    }
   }
 
   /// All [SynthesisResult]s produced by synthesis.
@@ -185,9 +195,8 @@ class SystemVerilogService extends CodeGenService {
 
   /// Writes the single-file output to an exact legacy [outputPath].
   ///
-  /// This preserves the legacy convenience API's arbitrary filename behavior.
-  /// New service code should use [outputDirectory], [outputBaseName], and
-  /// [writeOutputs].
+  /// This preserves the legacy convenience API's arbitrary filename behavior
+  /// without changing the service artifact naming convention.
   void writeLegacyOutputPath(String outputPath) {
     if (multiFile) {
       throw StateError(

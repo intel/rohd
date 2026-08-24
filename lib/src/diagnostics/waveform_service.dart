@@ -161,12 +161,6 @@ class WaveformService extends ArtifactProducingService {
   /// them through [artifacts].
   final bool writeToFile;
 
-  /// Whether to enable DevTools streaming.
-  ///
-  /// The base [WaveformService] stores this flag but takes no action on it.
-  /// The DevTools subclass uses it to conditionally register extensions.
-  final bool enableDevToolsStreaming;
-
   // ─── Internal file-writing state ─────────────────────────────
 
   /// Sink writing to [outputFilePath] when [writeToFile] is true.
@@ -217,7 +211,6 @@ class WaveformService extends ArtifactProducingService {
     this.overwritePolicy = OverwritePolicy.overwrite,
     this.register = true,
     this.writeToFile = false,
-    this.enableDevToolsStreaming = false,
   }) : super(module) {
     if (!module.hasBuilt) {
       throw Exception(

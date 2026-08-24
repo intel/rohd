@@ -105,6 +105,50 @@ and other consumers. `ArtifactProducingService` implementations expose named
 artifacts as media-typed byte streams, so consumers do not need to require a
 local output file.
 
+### Registering and discovering services
+
+Services such as `SystemVerilogService` and `WaveformService` register
+themselves by default when constructed. `ModuleServices` keeps the most recently
+registered service of each concrete type. This allows DevTools, application
+code, and other services to discover an optional capability without requiring
+the creator to pass the service instance to every consumer:
+
+```dart
+final systemVerilog = SystemVerilogService(myModule);
+
+final registeredSystemVerilog =
+    ModuleServices.instance.lookup<SystemVerilogService>();
+
+assert(identical(systemVerilog, registeredSystemVerilog));
+assert(identical(systemVerilog, SystemVerilogService.current));
+```
+
+Constructing another `SystemVerilogService` replaces the previous
+`SystemVerilogService` in the registry. Other service types remain registered.
+Use `unregister<T>()` to remove one service type or `reset()` to clear the
+registry.
+
+Registration also enables services to collaborate without directly depending
+on how the application created them. For example, a generation or capture
+service can look up an optional tracing service and include source file, line,
+and column information when tracing is available. Because a service may consult
+the registry during construction or generation, register supporting services
+before constructing the services that consume them.
+
+For one-shot work that should not change globally discoverable service state,
+set `register` to `false`:
+
+```dart
+final oneShotSystemVerilog = SystemVerilogService(
+  myModule,
+  register: false,
+);
+```
+
+The `Module.dumpSystemVerilog()` and `Module.dumpWaves()` convenience methods
+use the normal registration defaults. Construct the corresponding service
+directly with `register: false` when this side effect is not desired.
+
 `SystemVerilogService` is the direct synthesis service. Its `outputDirectory`
 defaults to the current directory and its `outputBaseName` defaults to the top
 module's `definitionName`. The service generates output in memory; call

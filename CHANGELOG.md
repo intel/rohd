@@ -1,9 +1,5 @@
 ## Next Release
 
-- Migrated active packages to a pub workspace. The root `workspace:` list is
-  the single package roster, and `tool/workspace.dart` now provides
-  repository-wide analysis, native and Node.js test commands, and generation
-  of the multi-root VSCode workspace.
 - Added the `ModuleService` API for module-scoped generation, capture, and
   inspection services. `ModuleServices` registers and looks up services for a
   built module hierarchy, and `hierarchyJson` exposes its hierarchy as JSON.
@@ -18,9 +14,9 @@
   writing through `writeToFile`.
 - Added legacy-compatible `Module.dumpSystemVerilog` and `Module.dumpWaves`
   convenience methods. `dumpSystemVerilog()` provides simple in-memory output
-  or writes an optional `outputPath`; `dumpWaves()` replaces `dumpWaveforms`
-  for standard VCD capture. `WaveDumper` and `generateSynth` are deprecated in
-  favor of these `Module` methods.
+  or writes an optional `outputPath`; `dumpWaves()` provides standard VCD
+  capture as the replacement for `WaveDumper`. `WaveDumper` and `generateSynth`
+  are deprecated in favor of these `Module` methods.
 
 ## 0.6.10
 

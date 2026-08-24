@@ -252,9 +252,15 @@ void main() {
       try {
         final outputPath = '${directory.path}/design.verilog';
 
-        mod.dumpSystemVerilog(outputPath: outputPath);
+        final service = mod.dumpSystemVerilog(outputPath: outputPath);
 
         expect(File(outputPath).existsSync(), isTrue);
+        expect(File(outputPath).readAsStringSync(), equals(service.output));
+        expect(service.outputDirectory, equals('.'));
+        expect(
+          service.artifacts.single.fileName,
+          equals('${mod.definitionName}.sv'),
+        );
       } finally {
         directory.deleteSync(recursive: true);
       }

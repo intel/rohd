@@ -35,7 +35,10 @@ class FakeService implements ModuleService {
 }
 
 void main() {
-  tearDown(ModuleServices.instance.reset);
+  tearDown(() {
+    SystemVerilogService.current = null;
+    ModuleServices.instance.reset();
+  });
 
   group('ModuleServices registry', () {
     test('rootModule is set after build', () async {
@@ -84,6 +87,31 @@ void main() {
   });
 
   group('SystemVerilogService', () {
+    test('registers by default', () async {
+      final mod = SimpleModule(Logic());
+      await mod.build();
+      final sv = SystemVerilogService(mod);
+
+      expect(SystemVerilogService.current, same(sv));
+      expect(
+        ModuleServices.instance.lookup<SystemVerilogService>(),
+        same(sv),
+      );
+    });
+
+    test('can opt out of registration', () async {
+      final mod = SimpleModule(Logic());
+      await mod.build();
+      final sv = SystemVerilogService(mod, register: false);
+
+      expect(SystemVerilogService.current, isNull);
+      expect(
+        ModuleServices.instance.lookup<SystemVerilogService>(),
+        isNull,
+      );
+      expect(sv.output, isNotEmpty);
+    });
+
     test('is a CodeGenService', () async {
       final mod = SimpleModule(Logic());
       await mod.build();
