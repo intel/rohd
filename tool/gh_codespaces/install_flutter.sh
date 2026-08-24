@@ -49,6 +49,7 @@ declare -r flutter_archive_url="https://storage.googleapis.com/flutter_infra_rel
 
 if [[ -x "${flutter_sdk_dir}/bin/flutter" ]] &&
     "${flutter_sdk_dir}/bin/flutter" --version | grep -q "Flutter ${flutter_version}"; then
+  sudo ln --force --symbolic "${flutter_sdk_dir}/bin/flutter" /usr/local/bin/flutter
   sudo ln --force --symbolic "${flutter_sdk_dir}/bin/dart" /usr/local/bin/dart
   echo "Flutter ${flutter_version} is already installed."
   exit 0
@@ -61,6 +62,12 @@ sudo apt-get install -y xz-utils
 curl --fail --location --silent --show-error "${flutter_archive_url}" \
   --output "${archive}"
 sudo tar --extract --xz --file "${archive}" --directory /opt
+
+# The archive is extracted as root; transfer ownership to the invoking user so
+# Flutter (run unprivileged below and by later steps) can write to its own SDK
+# cache and Git does not reject the checkout for having dubious ownership.
+sudo chown --recursive "$(id --user):$(id --group)" "${flutter_sdk_dir}"
+
 sudo ln --force --symbolic "${flutter_sdk_dir}/bin/flutter" /usr/local/bin/flutter
 sudo ln --force --symbolic "${flutter_sdk_dir}/bin/dart" /usr/local/bin/dart
 

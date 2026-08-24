@@ -41,11 +41,13 @@ The [ROHD Forum](https://intel.github.io/rohd-website/forum/rohd-forum/) is a pe
 ### Requirements
 
 ROHD uses a [pub workspace](https://dart.dev/tools/pub/workspaces) for its
-active packages. [Dart](https://dart.dev/get-dart) is sufficient to develop,
-analyze, and test the core ROHD package. Install
+active packages. Pub resolves every workspace member together, and some
+members declare `sdk: flutter`, so
 [Flutter](https://docs.flutter.dev/get-started/install), which includes a
-compatible Dart SDK, to develop the DevTools application or validate the full
-mixed Dart/Flutter workspace.
+compatible Dart SDK, is required to resolve dependencies anywhere in the
+workspace, even for core-ROHD-only development. Once dependencies are
+resolved, day-to-day analysis and testing of the core ROHD package uses plain
+[Dart](https://dart.dev/get-dart) tooling (`dart analyze`, `dart test`).
 
 To run the complete ROHD test suite for development, you need to install [Icarus Verilog](https://steveicarus.github.io/iverilog/). It is used to compare SystemVerilog functionality with the ROHD simulator functionality. Installation instructions are available here: <https://iverilog.fandom.com/wiki/Installation_Guide>
 
@@ -74,15 +76,17 @@ The below button will allow you to create a GitHub Codespace with ROHD already c
 The root [`pubspec.yaml`](pubspec.yaml) `workspace:` list defines the active
 packages.
 
-For core ROHD development, clone the repository and use Dart from the
-repository root:
+For core ROHD development, clone the repository and resolve the workspace with
+Flutter, then use Dart for everyday analysis and testing:
 
 ```shell
 git clone https://github.com/intel/rohd.git
 cd rohd
 
-# Resolve the core package and workspace dependencies.
-dart pub get
+# Resolve the workspace dependencies. Flutter is required because pub
+# resolves every workspace member together and some members declare
+# `sdk: flutter`.
+flutter pub get
 
 # Open Folder: open only the root ROHD package in VSCode.
 code .
@@ -93,8 +97,7 @@ dart test
 ```
 
 As a local convenience, `tool/gh_actions/install_dependencies.sh` performs the
-same dependency-resolution step. It uses Flutter for the full workspace when
-Flutter is installed and otherwise uses Dart for the core package.
+same dependency-resolution step and requires Flutter to be installed.
 
 In VSCode, this is equivalent to **File > Open Folder...** and selecting the
 repository root. Use this mode when working only on the core ROHD package.

@@ -47,14 +47,17 @@ Future<void> main(List<String> arguments) async {
     if (arguments.single == 'test-node' && packageUsesFlutter) {
       continue;
     }
-    final command = arguments.single == 'test-node'
-        ? 'dart'
-        : workspaceUsesFlutter
-            ? 'flutter'
-            : 'dart';
+
+    final command = switch (arguments.single) {
+      // There is no `dart clean`; `flutter clean` works for both Dart-only
+      // and Flutter packages.
+      'clean' => 'flutter',
+      'test-node' => 'dart',
+      _ => packageUsesFlutter ? 'flutter' : 'dart',
+    };
 
     final commandArguments = switch (arguments.single) {
-      'analyze' => const ['analyze', '--no-fatal-warnings'],
+      'analyze' => const ['analyze', '--fatal-infos'],
       'clean' => const ['clean'],
       'test' => const ['test', '--exclude-tags', 'benchmark'],
       'test-node' => const [

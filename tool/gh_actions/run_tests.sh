@@ -11,14 +11,9 @@
 
 set -euo pipefail
 
-if command -v flutter >/dev/null 2>&1; then
-  # Run workspace tests using each package's Dart or Flutter runner.
-  dart run tool/workspace.dart test
+# Run workspace tests using each package's Dart or Flutter runner.
+dart run tool/workspace.dart test
 
-  # Run workspace Dart tests in JS (increase heap size for large synthesis tests).
-  export NODE_OPTIONS="--max-old-space-size=8192"
-  dart run tool/workspace.dart test-node
-else
-  echo "Flutter is unavailable; running native tests for the core ROHD package only."
-  dart test
-fi
+# Run workspace Dart tests in JS (increase heap size for large synthesis tests).
+export NODE_OPTIONS="--max-old-space-size=8192"
+dart run tool/workspace.dart test-node
