@@ -27,6 +27,10 @@ export '../utilities/synth_module_stop_policy.dart';
 /// `slimMode: false`):
 ///   Synthesizes the entire design with complete cell connections.
 ///
+/// [NetlistService] exposes these projections through [NetlistService.slimJson]
+/// and [NetlistService.moduleJson], preserving a shared netlist representation
+/// across the two flows.
+///
 /// Both flows retain complete per-module synthesis results. Flow 1 skips cell
 /// connection copying while collecting the emitted JSON projection. This keeps
 /// slim output lightweight while guaranteeing a later expanded request has the
