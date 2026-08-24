@@ -1200,6 +1200,7 @@ abstract class Module {
     return dumpSystemVerilog(configuration: configuration).output;
   }
 }
+
 /// Splits a legacy file [outputPath] into its directory and exact filename.
 (String, String) _legacyOutputLocation(String outputPath) {
   final normalized = outputPath.replaceAll(r'\', '/');
