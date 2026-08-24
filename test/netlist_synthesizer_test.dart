@@ -87,6 +87,11 @@ class FlopModule extends Module {
   }
 }
 
+/// A custom [FlipFlop] used to verify inheritance-aware leaf matching.
+class CustomFlipFlop extends FlipFlop {
+  CustomFlipFlop(super.clk, super.d);
+}
+
 /// Exercises flip-flops with optional control signals.
 class ControlledFlopModule extends Module {
   ControlledFlopModule(
@@ -128,6 +133,18 @@ class AddModule extends Module {
     a = addInput('a', a, width: width);
     b = addInput('b', b, width: width);
     addOutput('sum', width: width) <= a + b;
+  }
+}
+
+/// Exercises both the sum and carry outputs of [Add].
+class AddWithCarryModule extends Module {
+  AddWithCarryModule(Logic a, Logic b, {int width = 8})
+      : super(name: 'addwithcarry') {
+    a = addInput('a', a, width: width);
+    b = addInput('b', b, width: width);
+    final add = Add(a, b);
+    addOutput('sum', width: width) <= add.sum;
+    addOutput('carry') <= add.carry;
   }
 }
 
@@ -244,6 +261,28 @@ class ArrayOutputChildModule extends Module {
 
   ArrayOutputChildModule() : super(name: 'arrayoutputchild') {
     addOutputArray('values', dimensions: [4], elementWidth: 8);
+  }
+}
+
+/// Provides multiple array outputs to verify synthesized concat cell names.
+class MultipleArrayOutputModule extends Module {
+  MultipleArrayOutputModule()
+      : super(
+          name: 'multiplearrayoutput',
+          definitionName: 'MultipleArrayOutputModule',
+        ) {
+    final dataA = addInput('dataA', Logic(width: 8), width: 8);
+    final dataB = addInput('dataB', Logic(width: 8), width: 8);
+    final first = addOutputArray('first', dimensions: [2], elementWidth: 8);
+    final second = addOutputArray('second', dimensions: [2], elementWidth: 8);
+    for (final element in first.elements) {
+      element <= dataA;
+    }
+    for (final element in second.elements) {
+      element <= dataB;
+    }
+    final child = NotModule(dataA[0]);
+    addOutput('childOut') <= child.y;
   }
 }
 
@@ -892,6 +931,26 @@ void main() {
       expect(_hasCellType(json, r'$add'), isTrue);
     });
 
+    test(r'Add maps carry into the high bit of standard $add Y', () async {
+      final json = await _synthToMap(
+        AddWithCarryModule(Logic(width: 8), Logic(width: 8)),
+      );
+      final addCell = _modules(json)
+          .values
+          .cast<Map<String, dynamic>>()
+          .expand((definition) => _cells(definition).values)
+          .cast<Map<String, dynamic>>()
+          .singleWhere((cell) => cell['type'] == r'$add');
+      final directions = addCell['port_directions'] as Map<String, dynamic>;
+      final connections = addCell['connections'] as Map<String, dynamic>;
+      final parameters = addCell['parameters'] as Map<String, dynamic>;
+
+      expect(directions.keys.toSet(), equals({'A', 'B', 'Y'}));
+      expect(connections.keys.toSet(), equals({'A', 'B', 'Y'}));
+      expect(connections['Y'], hasLength(9));
+      expect(parameters['Y_WIDTH'], 9);
+    });
+
     test(r'Subtract maps to $sub cell', () async {
       final json = await _synthToMap(
         SubModule(Logic(width: 8), Logic(width: 8)),
@@ -1320,8 +1379,10 @@ void main() {
       'filter bank can stop traversal at an opaque custom SV module',
       () {
         final synthesizer = NetlistSynthesizer(
-          configuration: const NetlistSynthesizerConfiguration(
-              leafModuleTypes: [FlipFlop, MacUnit]),
+          configuration: NetlistSynthesizerConfiguration(
+            leafModulePredicate: (module) =>
+                module is FlipFlop || module is MacUnit,
+          ),
         );
         final json = jsonDecode(synthesizer.synthesizeToJson(filterBank))
             as Map<String, dynamic>;
@@ -1717,15 +1778,16 @@ void main() {
     });
 
     test(
-      'leaf module type option controls which modules stop traversal',
+      'leaf module predicate controls which modules stop traversal',
       () async {
         final module = AddWrapperModule();
         await module.build();
 
         final childDefinitionName = module.subModules.single.definitionName;
         final synthesizer = NetlistSynthesizer(
-          configuration: const NetlistSynthesizerConfiguration(
-              leafModuleTypes: [AddModule]),
+          configuration: NetlistSynthesizerConfiguration(
+            leafModulePredicate: (module) => module is AddModule,
+          ),
         );
 
         final json = jsonDecode(synthesizer.synthesizeToJson(module))
@@ -1745,6 +1807,15 @@ void main() {
         );
       },
     );
+
+    test('default leaf predicate matches FlipFlop subclasses', () {
+      const configuration = NetlistSynthesizerConfiguration();
+
+      expect(
+        configuration.leafModulePredicate(CustomFlipFlop(Logic(), Logic())),
+        isTrue,
+      );
+    });
 
     test('repeated translation of the same module is identical', () async {
       final module = LogicArrayExample(
@@ -1814,6 +1885,26 @@ void main() {
 
         expect(inputBits.intersection(outputBits), isEmpty);
       }
+    });
+
+    test('array concat output names use unique destination addresses',
+        () async {
+      final module = MultipleArrayOutputModule();
+      final json = await _synthToMap(module);
+      final moduleDef =
+          _modules(json)[module.definitionName] as Map<String, dynamic>;
+      final arrayConcatNames = _cells(moduleDef)
+          .entries
+          .where(
+            (entry) =>
+                (entry.value as Map<String, dynamic>)['type'] == r'$concat',
+          )
+          .map((entry) => entry.key)
+          .where((name) => name.startsWith('array_concat_output_'))
+          .toList();
+
+      expect(arrayConcatNames, hasLength(2));
+      expect(arrayConcatNames.toSet(), hasLength(2));
     });
 
     test('regrouped array output elements get explicit concat', () async {

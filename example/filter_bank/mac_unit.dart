@@ -60,11 +60,13 @@ class MacUnit extends Module {
     reset = addInput('reset', reset);
     enable = addInput('enable', enable);
     final result = addOutput('result', width: dataWidth);
+    final stall = (~enable).named('stall', naming: Naming.mergeable);
 
     // A 2-stage pipeline: multiply, then accumulate
     final pipe = Pipeline(
       clk,
       reset: reset,
+      stalls: [stall, stall],
       stages: [
         // Stage 0: multiply
         (p) => [

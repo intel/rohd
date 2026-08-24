@@ -36,7 +36,15 @@ class NetlistCellContext {
   final Map<String, List<Object>> rawConns;
 
   /// Creates a [NetlistCellContext].
-  const NetlistCellContext(this.module, this.rawPortDirs, this.rawConns);
+  NetlistCellContext(
+    this.module,
+    Map<String, String> rawPortDirs,
+    Map<String, List<Object>> rawConns,
+  )   : rawPortDirs = Map<String, String>.unmodifiable(rawPortDirs),
+        rawConns = Map<String, List<Object>>.unmodifiable({
+          for (final entry in rawConns.entries)
+            entry.key: List<Object>.unmodifiable(entry.value),
+        });
 
   // ── Shared helper methods ───────────────────────────────────────────
 
@@ -395,16 +403,16 @@ class NetlistCellMapper {
         if (in0 == null || in1 == null || sumName.isEmpty) {
           return null;
         }
+        final sumBits = ctx.rawConns[sumName] ?? [];
+        final carryBits = carryName.isEmpty
+            ? const <Object>[]
+            : ctx.rawConns[carryName] ?? [];
         final pd = <String, String>{'A': 'input', 'B': 'input', 'Y': 'output'};
         final cn = <String, List<Object>>{
           'A': ctx.rawConns[in0] ?? [],
           'B': ctx.rawConns[in1] ?? [],
-          'Y': ctx.rawConns[sumName] ?? [],
+          'Y': [...sumBits, ...carryBits],
         };
-        if (carryName.isNotEmpty) {
-          pd['CO'] = 'output';
-          cn['CO'] = ctx.rawConns[carryName] ?? [];
-        }
         return (
           cellType: r'$add',
           portDirs: pd,
@@ -412,7 +420,7 @@ class NetlistCellMapper {
           parameters: <String, Object?>{
             'A_WIDTH': ctx.width(in0),
             'B_WIDTH': ctx.width(in1),
-            'Y_WIDTH': ctx.width(sumName),
+            'Y_WIDTH': sumBits.length + carryBits.length,
           },
         );
       })

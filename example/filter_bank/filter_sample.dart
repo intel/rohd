@@ -11,8 +11,8 @@ import 'package:rohd/rohd.dart';
 
 /// A structured signal bundling a data sample with metadata.
 ///
-/// Packs three fields — [data], and [valid] — into a single
-/// bus that can be driven and sampled as a unit.  Used throughout the
+/// Packs two fields — [data] and [valid] — into a single bus that can be
+/// driven and sampled as a unit. Used throughout the
 /// filter bank to carry tagged samples between modules.
 class FilterSample extends LogicStructure {
   /// The sample data word.

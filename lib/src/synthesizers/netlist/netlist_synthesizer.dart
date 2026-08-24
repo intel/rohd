@@ -15,10 +15,10 @@ import 'package:rohd/src/synthesizers/netlist/netlist_cell_mapper.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_module_translation.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_passes.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_synthesis_result.dart';
+import 'package:rohd/src/synthesizers/netlist/netlist_utils.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_validation.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
-import 'package:rohd_hierarchy/rohd_hierarchy.dart';
 
 /// A simple [Synthesizer] that produces netlist-compatible JSON.
 ///
@@ -72,7 +72,7 @@ class NetlistSynthesizer extends Synthesizer {
     this.configuration = const NetlistSynthesizerConfiguration(),
   })  : _moduleStopPolicy = configuration.moduleStopPolicy ??
             SynthModuleStopPolicy.netlist(
-                leafModuleTypes: configuration.leafModuleTypes),
+                leafModulePredicate: configuration.leafModulePredicate),
         _netlistCellMapper =
             configuration.netlistCellMapper ?? NetlistCellMapper.withDefaults();
 
@@ -746,7 +746,7 @@ class NetlistSynthesizer extends Synthesizer {
         final structLayout =
             dstLogic is LogicStructure ? SynthStructureLayout(dstLogic) : null;
         final cellName = dstLogic != null
-            ? _synthesizedCellName(
+            ? NetlistUtils.synthesizedCellName(
                 operationName: SynthStructureConcat.operationName,
                 destination: dstLogic,
               )
@@ -1117,99 +1117,4 @@ class NetlistSynthesizer extends Synthesizer {
     final sb = SynthBuilder(top, this);
     return generateCombinedJson(sb, top, slimMode: slimMode);
   }
-}
-
-String _synthesizedCellName({
-  required String operationName,
-  required Logic destination,
-}) =>
-    '${Sanitizer.sanitizeSV(operationName)}_'
-    '${_destinationSuffix(destination)}';
-
-String _destinationSuffix(Logic destination) {
-  final module = destination.parentModule;
-  if (module == null) {
-    throw SynthException(
-      'Cannot derive a netlist cell key for ${destination.name}: '
-      'the destination has no parent module.',
-    );
-  }
-
-  final rootLocation = _logicLocationInModule(module, destination);
-  final elementPath = _logicElementPathIndices(destination).path;
-  final parts = [
-    ...rootLocation.path,
-    ...elementPath,
-  ];
-
-  return parts.isEmpty ? '0' : parts.map((part) => part.toString()).join('_');
-}
-
-OccurrenceAddress _logicElementPathIndices(Logic destination) {
-  final elementPath = <int>[];
-  var root = destination;
-  while (root.parentStructure != null) {
-    final parent = root.parentStructure!;
-    final index = parent.elements.indexWhere(
-      (element) => identical(element, root),
-    );
-    elementPath.insert(0, index < 0 ? root.arrayIndex ?? 0 : index);
-    root = parent;
-  }
-
-  final module = root.parentModule;
-  if (module == null) {
-    throw SynthException(
-      'Cannot derive a netlist cell key for ${destination.name}: '
-      'the logic root has no parent module.',
-    );
-  }
-
-  return OccurrenceAddress(elementPath);
-}
-
-OccurrenceAddress _logicLocationInModule(Module module, Logic root) {
-  final signalIndex = _rootSignalIndexInModule(module, root);
-  return OccurrenceAddress([signalIndex]);
-}
-
-int _rootSignalIndexInModule(Module module, Logic root) {
-  final inputIndex = _identityIndex(module.inputs.values, root);
-  if (inputIndex != null) {
-    return inputIndex;
-  }
-
-  final outputIndex = _identityIndex(module.outputs.values, root);
-  if (outputIndex != null) {
-    return module.inputs.length + outputIndex;
-  }
-
-  final inOutIndex = _identityIndex(module.inOuts.values, root);
-  if (inOutIndex != null) {
-    return module.inputs.length + module.outputs.length + inOutIndex;
-  }
-
-  final internalIndex = _identityIndex(module.internalSignals, root);
-  if (internalIndex != null) {
-    return module.inputs.length +
-        module.outputs.length +
-        module.inOuts.length +
-        internalIndex;
-  }
-
-  throw SynthException(
-    'Cannot derive a netlist cell key for ${root.name}: '
-    'the logic root is not registered with module ${module.name}.',
-  );
-}
-
-int? _identityIndex(Iterable<Logic> logics, Logic target) {
-  var index = 0;
-  for (final logic in logics) {
-    if (identical(logic, target)) {
-      return index;
-    }
-    index++;
-  }
-  return null;
 }

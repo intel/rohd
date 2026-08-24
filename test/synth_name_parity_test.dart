@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // synth_name_parity_test.dart
-// Tests that verify canonicalNameOf works consistently across
+// Tests that verify signalNameOfBest works consistently across
 // different synthesis paths (SV and netlist).
 //
 // 2026 April 14
@@ -186,7 +186,7 @@ void main() {
     await Simulator.reset();
   });
 
-  group('canonicalNameOf after netlist synthesis', () {
+  group('signalNameOfBest after netlist synthesis', () {
     test('counter — returns names after netlist synthesis', () async {
       final mod = _Counter(Logic(), Logic());
       await mod.build();
@@ -228,8 +228,8 @@ void main() {
     });
   });
 
-  group('canonicalNameOf after SV synthesis', () {
-    test('counter — returns canonical name after SV synth', () async {
+  group('signalNameOfBest after SV synthesis', () {
+    test('counter — returns best signal name after SV synth', () async {
       final mod = _Counter(Logic(), Logic());
       await mod.build();
 
@@ -242,7 +242,7 @@ void main() {
 
   group('cross-synthesizer parity', () {
     test(
-      'counter — SV and netlist produce identical canonicalNameOf',
+      'counter — SV and netlist produce identical signalNameOfBest',
       () async {
         final modNetlist = _Counter(Logic(), Logic());
         await modNetlist.build();

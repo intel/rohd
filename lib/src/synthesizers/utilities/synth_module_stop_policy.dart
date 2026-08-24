@@ -19,22 +19,19 @@ typedef SynthModuleDefinitionPredicate = bool Function(Module module);
 
 /// Shared hierarchy stopping policy for synthesis backends.
 ///
-/// A synthesizer configures this with backend-specific leaf module types,
-/// predicates, and a default definition rule, then queries [isLeaf] or
-/// [generatesDefinition] while walking a module hierarchy.
+/// A synthesizer configures this with backend-specific leaf predicates and a
+/// default definition rule, then queries [isLeaf] or [generatesDefinition]
+/// while walking a module hierarchy.
 class SynthModuleStopPolicy {
-  final Set<Type> _leafModuleTypes;
   final List<SynthModuleLeafPredicate> _leafPredicates;
   final SynthModuleDefinitionPredicate _generatesDefinitionByDefault;
 
   /// Creates a module stopping policy.
   SynthModuleStopPolicy({
     SynthModuleDefinitionPredicate? generatesDefinitionByDefault,
-    Iterable<Type> leafModuleTypes = const [],
     Iterable<SynthModuleLeafPredicate> leafPredicates = const [],
   })  : _generatesDefinitionByDefault =
             generatesDefinitionByDefault ?? ((_) => true),
-        _leafModuleTypes = Set.unmodifiable(leafModuleTypes),
         _leafPredicates = List.unmodifiable(leafPredicates);
 
   /// Creates the default SystemVerilog stopping policy.
@@ -48,22 +45,21 @@ class SynthModuleStopPolicy {
 
   /// Creates the default netlist stopping policy.
   factory SynthModuleStopPolicy.netlist({
-    Iterable<Type> leafModuleTypes = const [FlipFlop],
-    Iterable<SynthModuleLeafPredicate> leafPredicates = const [],
+    SynthModuleLeafPredicate leafModulePredicate = _isFlipFlop,
   }) =>
       SynthModuleStopPolicy(
         generatesDefinitionByDefault: (module) => module.subModules.isNotEmpty,
-        leafModuleTypes: leafModuleTypes,
-        leafPredicates: leafPredicates,
+        leafPredicates: [leafModulePredicate],
       );
 
   /// Returns `true` when [module] should be treated as a leaf cell in its
   /// parent instead of receiving its own generated definition.
   bool isLeaf(Module module) =>
       !_generatesDefinitionByDefault(module) ||
-      _leafModuleTypes.contains(module.runtimeType) ||
       _leafPredicates.any((predicate) => predicate(module));
 
   /// Returns `true` when [module] should receive its own generated definition.
   bool generatesDefinition(Module module) => !isLeaf(module);
 }
+
+bool _isFlipFlop(Module module) => module is FlipFlop;

@@ -20,7 +20,7 @@ import 'package:rohd/src/utilities/sanitizer.dart';
 @internal
 class NetlistModuleTranslation {
   /// The module being translated.
-  final Module module;
+  final Module _module;
 
   /// The synthesis definition for this module level, when one can be built.
   final NetlistSynthModuleDefinition? synthDef;
@@ -33,10 +33,9 @@ class NetlistModuleTranslation {
   ///
   /// Starts at 2 so consumers never confuse wire IDs 0 or 1 with the
   /// Yosys-JSON constant bit strings `"0"` and `"1"`.
-  int nextId = 2;
+  int _nextId = 2;
 
-  /// Wire identifiers allocated for each synthesis logic.
-  final Map<SynthLogic, List<int>> synthLogicIds = {};
+  final Map<SynthLogic, List<int>> _synthLogicIds = {};
 
   /// Emitted module ports.
   final Map<String, Map<String, Object?>> ports = {};
@@ -47,16 +46,16 @@ class NetlistModuleTranslation {
   /// Emitted netnames.
   final Map<String, Object?> netnames = {};
 
-  /// Constants consumed only by procedural cells, which need no driver cell.
-  final Set<SynthLogic> blockedConstSynthLogics = {};
+  final Set<SynthLogic> _blockedConstSynthLogics = {};
 
   /// Creates translation state for one [module].
   NetlistModuleTranslation(
-    this.module, {
+    Module module, {
     required NetlistCellMapper netlistCellMapper,
     required bool Function(Module module) generatesDefinition,
     required String Function(Module module) getInstanceTypeOfModule,
-  })  : _netlistCellMapper = netlistCellMapper,
+  })  : _module = module,
+        _netlistCellMapper = netlistCellMapper,
         _generatesDefinition = generatesDefinition,
         _getInstanceTypeOfModule = getInstanceTypeOfModule,
         synthDef = module is SystemVerilog &&
@@ -65,12 +64,12 @@ class NetlistModuleTranslation {
             : NetlistSynthModuleDefinition(module);
 
   /// Allocates the next wire identifier.
-  int allocateWireId() => nextId++;
+  int allocateWireId() => _nextId++;
 
   /// Allocates or returns the wire identifiers for [synthLogic].
   List<int> getIds(SynthLogic synthLogic) {
     final resolved = synthLogic.isConstant ? synthLogic : synthLogic.resolved;
-    return synthLogicIds.putIfAbsent(
+    return _synthLogicIds.putIfAbsent(
       resolved,
       () => List<int>.generate(resolved.width, (_) => allocateWireId()),
     );
@@ -79,9 +78,9 @@ class NetlistModuleTranslation {
   /// Emits input, output, and inout ports in canonical allocation order.
   void processPorts() {
     final portGroups = [
-      ('input', synthDef?.inputs, module.inputs),
-      ('output', synthDef?.outputs, module.outputs),
-      ('inout', synthDef?.inOuts, module.inOuts),
+      ('input', synthDef?.inputs, _module.inputs),
+      ('output', synthDef?.outputs, _module.outputs),
+      ('inout', synthDef?.inOuts, _module.inOuts),
     ];
     for (final (direction, synthLogics, modulePorts) in portGroups) {
       if (synthLogics != null) {
@@ -187,7 +186,11 @@ class NetlistModuleTranslation {
     concatConnections['Y'] = outputIds.cast<Object>();
     concatDirections['Y'] = 'output';
 
-    cells['array_concat_output_$concatName'] = {
+    final cellName = NetlistUtils.synthesizedCellName(
+      operationName: 'array_concat_output',
+      destination: array,
+    );
+    cells[cellName] = {
       'hide_name': 0,
       'type': r'$concat',
       'parameters': <String, Object?>{
@@ -250,7 +253,7 @@ class NetlistModuleTranslation {
     if (definition == null) {
       return;
     }
-    module.internalSignals
+    _module.internalSignals
         .map((signal) => definition.logicToSynthMap[signal])
         .whereType<SynthLogic>()
         .where((synthLogic) => !synthLogic.isConstant)
@@ -522,7 +525,7 @@ class NetlistModuleTranslation {
     required Set<int> drivenBits,
   }) {
     final emittedNames = <String>{};
-    final isInlineSystemVerilog = module is InlineSystemVerilog;
+    final isInlineSystemVerilog = _module is InlineSystemVerilog;
 
     void addNetname(
       String name,
@@ -611,7 +614,7 @@ class NetlistModuleTranslation {
     }
 
     if (synthDef != null) {
-      for (final entry in synthLogicIds.entries.where(
+      for (final entry in _synthLogicIds.entries.where(
         (entry) => !entry.key.isConstant && !entry.key.declarationCleared,
       )) {
         final synthLogic = entry.key;
@@ -801,9 +804,9 @@ class NetlistModuleTranslation {
   }) {
     var constantIndex = 0;
     final emittedConstantWires = <int>{};
-    for (final entry in synthLogicIds.entries
+    for (final entry in _synthLogicIds.entries
         .where((entry) => entry.key.isConstant)
-        .where((entry) => !blockedConstSynthLogics.contains(entry.key))
+        .where((entry) => !_blockedConstSynthLogics.contains(entry.key))
         .where((entry) => entry.value.isNotEmpty)) {
       final constant = NetlistUtils.constValueFromSynthLogic(entry.key);
       if (constant == null) {
@@ -871,7 +874,7 @@ class NetlistModuleTranslation {
           instance.inputMapping[port.key] ?? instance.inOutMapping[port.key];
       if (synthLogic != null && NetlistUtils.isConstantSynthLogic(synthLogic)) {
         portsToRemove.add(port.key);
-        blockedConstSynthLogics.add(synthLogic.resolved);
+        _blockedConstSynthLogics.add(synthLogic.resolved);
       }
     }
     for (final portName in portsToRemove) {

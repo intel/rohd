@@ -927,11 +927,6 @@ abstract class Module {
     return outPort;
   }
 
-  bool _hasConsts(LogicStructure structure) => structure.elements.any(
-      (element) =>
-          element is Const ||
-          (element is LogicStructure && _hasConsts(element)));
-
   /// Checks that the [logic] meets type requirements for `Typed` [Logic]s and
   /// returns a potentially modified [logic] to use.
   LogicType _validateType<LogicType extends Logic>(LogicType logic,
@@ -945,7 +940,7 @@ abstract class Module {
       throw PortTypeException(logic, exceptionMessage);
     }
 
-    if (logic is Const || (logic is LogicStructure && _hasConsts(logic))) {
+    if (logic is Const || (logic is LogicStructure && logic.hasConsts)) {
       if (LogicType == Logic) {
         // we're ok, can just convert to Logic
         final newLogic =

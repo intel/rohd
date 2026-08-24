@@ -119,9 +119,49 @@ class FilterBank extends Module {
     super.name = 'FilterBank',
     String? definitionName,
   }) : super(definitionName: definitionName ?? 'FilterBank') {
+    if (numChannels <= 0) {
+      throw ArgumentError.value(
+        numChannels,
+        'numChannels',
+        'must be greater than zero',
+      );
+    }
+    if (numTaps <= 0) {
+      throw ArgumentError.value(
+        numTaps,
+        'numTaps',
+        'must be greater than zero',
+      );
+    }
+    if (dataWidth <= 0) {
+      throw ArgumentError.value(
+        dataWidth,
+        'dataWidth',
+        'must be greater than zero',
+      );
+    }
+    if (samples.length != numChannels) {
+      throw ArgumentError.value(
+        samples.length,
+        'samples',
+        'must have $numChannels entries (one per channel)',
+      );
+    }
     if (coefficients.length != numChannels) {
-      throw Exception(
-          'coefficients must have $numChannels entries (one per channel).');
+      throw ArgumentError.value(
+        coefficients.length,
+        'coefficients',
+        'must have $numChannels entries (one per channel)',
+      );
+    }
+    for (var ch = 0; ch < numChannels; ch++) {
+      if (coefficients[ch].length != numTaps) {
+        throw ArgumentError.value(
+          coefficients[ch].length,
+          'coefficients[$ch]',
+          'must have $numTaps entries (one per tap)',
+        );
+      }
     }
 
     // ── Register ports ──

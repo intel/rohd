@@ -46,14 +46,15 @@ class NetlistSynthesizerConfiguration {
   /// definitions. When `null`, [SynthModuleStopPolicy.netlist] is used.
   ///
   /// When this is provided, it owns the complete stopping policy and
-  /// [leafModuleTypes] is ignored.
+  /// [leafModulePredicate] is ignored.
   final SynthModuleStopPolicy? moduleStopPolicy;
 
-  /// Exact [Module.runtimeType]s that should stop netlist hierarchy traversal
-  /// and be emitted as cells in their parent. Defaults to [FlipFlop], which
-  /// contains internal sequential submodules but should be emitted as a `$dff`
-  /// netlist cell.
-  final List<Type> leafModuleTypes;
+  /// Determines which modules should stop netlist hierarchy traversal and be
+  /// emitted as cells in their parent.
+  ///
+  /// Defaults to matching [FlipFlop] and its subclasses, which contain internal
+  /// sequential submodules but should be emitted as `$dff` netlist cells.
+  final SynthModuleLeafPredicate leafModulePredicate;
 
   /// The netlist-internal mapper used to convert selected leaf modules to
   /// Yosys primitive cell types. When `null`, each synthesizer creates its own
@@ -100,7 +101,7 @@ class NetlistSynthesizerConfiguration {
   /// Creates a configuration for netlist synthesis.
   const NetlistSynthesizerConfiguration({
     this.moduleStopPolicy,
-    this.leafModuleTypes = const [FlipFlop],
+    this.leafModulePredicate = _isFlipFlop,
     this.netlistCellMapper,
     @visibleForTesting this.collapseTransparentClusters = false,
     @visibleForTesting this.enableDeadCellElimination = true,
@@ -109,3 +110,5 @@ class NetlistSynthesizerConfiguration {
     this.compactJson = false,
   });
 }
+
+bool _isFlipFlop(Module module) => module is FlipFlop;

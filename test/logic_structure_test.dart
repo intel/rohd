@@ -191,6 +191,19 @@ void main() {
       expect(s.name, 'structure');
     });
 
+    test('hasConsts detects constants at any depth', () {
+      final withoutConsts = LogicStructure([Logic()]);
+      final withDirectConst = LogicStructure([Logic(), Const(0)]);
+      final withNestedConst = LogicStructure([
+        Logic(),
+        LogicStructure([Logic(), Const(1)]),
+      ]);
+
+      expect(withoutConsts.hasConsts, isFalse);
+      expect(withDirectConst.hasConsts, isTrue);
+      expect(withNestedConst.hasConsts, isTrue);
+    });
+
     test('sub logic in two structures throws exception', () {
       final s = LogicStructure([
         Logic(),

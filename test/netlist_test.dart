@@ -182,6 +182,133 @@ void main() {
     await Simulator.reset();
   });
 
+  group('FilterBank argument validation', () {
+    FilterBank construct({
+      int numChannels = 2,
+      int numTaps = 3,
+      int dataWidth = 16,
+      List<FilterSample>? samples,
+      List<List<int>> coefficients = const [
+        [1, 2, 1],
+        [1, -2, 1],
+      ],
+    }) =>
+        FilterBank(
+          Logic(),
+          Logic(),
+          Logic(),
+          samples ??
+              List.generate(
+                numChannels,
+                (ch) => FilterSample(
+                  dataWidth: dataWidth,
+                  name: 'sample$ch',
+                ),
+              ),
+          Logic(),
+          numChannels: numChannels,
+          numTaps: numTaps,
+          dataWidth: dataWidth,
+          coefficients: coefficients,
+        );
+
+    test('rejects an empty channel count', () {
+      expect(
+        () => construct(
+          numChannels: 0,
+          samples: const [],
+          coefficients: const [],
+        ),
+        throwsA(
+          isA<ArgumentError>().having(
+            (error) => error.name,
+            'name',
+            'numChannels',
+          ),
+        ),
+      );
+    });
+
+    test('rejects an empty tap count', () {
+      expect(
+        () => construct(
+          numTaps: 0,
+          coefficients: const [[], []],
+        ),
+        throwsA(
+          isA<ArgumentError>().having(
+            (error) => error.name,
+            'name',
+            'numTaps',
+          ),
+        ),
+      );
+    });
+
+    test('rejects a non-positive data width', () {
+      expect(
+        () => construct(
+          dataWidth: 0,
+          samples: [
+            FilterSample(name: 'sample0'),
+            FilterSample(name: 'sample1'),
+          ],
+        ),
+        throwsA(
+          isA<ArgumentError>().having(
+            (error) => error.name,
+            'name',
+            'dataWidth',
+          ),
+        ),
+      );
+    });
+
+    test('rejects a sample count that differs from the channel count', () {
+      expect(
+        () => construct(samples: [FilterSample(name: 'sample0')]),
+        throwsA(
+          isA<ArgumentError>().having(
+            (error) => error.name,
+            'name',
+            'samples',
+          ),
+        ),
+      );
+    });
+
+    test('rejects a coefficient count that differs from the channel count', () {
+      expect(
+        () => construct(coefficients: const [
+          [1, 2, 1],
+        ]),
+        throwsA(
+          isA<ArgumentError>().having(
+            (error) => error.name,
+            'name',
+            'coefficients',
+          ),
+        ),
+      );
+    });
+
+    test('rejects a coefficient row with the wrong tap count', () {
+      expect(
+        () => construct(coefficients: const [
+          [1, 2, 1],
+          [1, -2],
+        ]),
+        throwsA(
+          isA<ArgumentError>().having(
+            (error) => error.name,
+            'name',
+            'coefficients[1]',
+          ),
+        ),
+      );
+    });
+  });
+
   // ── Example smoke tests ───────────────────────────────────────────────
   //
   // Each example is synthesized once, verifying that the netlist is
@@ -494,6 +621,31 @@ void main() {
           .whereType<NetlistSynthesisResult>()
           .firstWhere((r) => r.module == mod);
       expect(result.netnames, isNotEmpty);
+    });
+
+    test('result maps and nested values are unmodifiable', () async {
+      final mod = _CompositeModule(Logic(name: 'a'), Logic(name: 'b'));
+      await mod.build();
+
+      final result = SynthBuilder(mod, NetlistSynthesizer())
+          .synthesisResults
+          .whereType<NetlistSynthesisResult>()
+          .firstWhere((result) => result.module == mod);
+      final firstCell = result.cells.values.first;
+      final connections = firstCell['connections']! as Map;
+
+      expect(
+        () => result.cells['replacement'] = <String, Object?>{},
+        throwsUnsupportedError,
+      );
+      expect(
+        () => firstCell['type'] = r'$replacement',
+        throwsUnsupportedError,
+      );
+      expect(
+        () => connections['replacement'] = <Object>[],
+        throwsUnsupportedError,
+      );
     });
   });
 

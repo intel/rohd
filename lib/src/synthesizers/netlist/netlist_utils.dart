@@ -10,12 +10,101 @@
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
+import 'package:rohd/src/utilities/sanitizer.dart';
 
 /// Shared utility functions for netlist synthesis and post-processing passes.
 ///
 /// All methods are static.
 @internal
 abstract class NetlistUtils {
+  /// Returns a deterministic cell name for an operation producing
+  /// [destination].
+  static String synthesizedCellName({
+    required String operationName,
+    required Logic destination,
+  }) =>
+      '${Sanitizer.sanitizeSV(operationName)}_'
+      '${_destinationSuffix(destination)}';
+
+  static String _destinationSuffix(Logic destination) {
+    final module = destination.parentModule;
+    if (module == null) {
+      throw SynthException(
+        'Cannot derive a netlist cell key for ${destination.name}: '
+        'the destination has no parent module.',
+      );
+    }
+
+    final parts = [
+      _rootSignalIndexInModule(module, _rootLogic(destination)),
+      ..._logicElementPathIndices(destination),
+    ];
+    return parts.map((part) => part.toString()).join('_');
+  }
+
+  static Logic _rootLogic(Logic destination) {
+    var root = destination;
+    while (root.parentStructure != null) {
+      root = root.parentStructure!;
+    }
+    return root;
+  }
+
+  static List<int> _logicElementPathIndices(Logic destination) {
+    final elementPath = <int>[];
+    var current = destination;
+    while (current.parentStructure != null) {
+      final parent = current.parentStructure!;
+      final index = parent.elements.indexWhere(
+        (element) => identical(element, current),
+      );
+      elementPath.insert(0, index < 0 ? current.arrayIndex ?? 0 : index);
+      current = parent;
+    }
+    return elementPath;
+  }
+
+  static int _rootSignalIndexInModule(Module module, Logic root) {
+    final inputIndex = _identityIndex(module.inputs.values, root);
+    if (inputIndex != null) {
+      return inputIndex;
+    }
+
+    final outputIndex = _identityIndex(module.outputs.values, root);
+    if (outputIndex != null) {
+      return module.inputs.length + outputIndex;
+    }
+
+    final inOutIndex = _identityIndex(module.inOuts.values, root);
+    if (inOutIndex != null) {
+      return module.inputs.length + module.outputs.length + inOutIndex;
+    }
+
+    final internalIndex = _identityIndex(module.internalSignals, root);
+    if (internalIndex != null) {
+      return module.inputs.length +
+          module.outputs.length +
+          module.inOuts.length +
+          internalIndex;
+    }
+
+    throw SynthException(
+      'Cannot derive a netlist cell key for ${root.name}: '
+      'the logic root is not registered with module ${module.name}.',
+    );
+  }
+
+  static int? _identityIndex(Iterable<Logic> logics, Logic target) {
+    var index = 0;
+    for (final logic in logics) {
+      if (identical(logic, target)) {
+        return index;
+      }
+      index++;
+    }
+    return null;
+  }
+
   /// Find the port name in [portMap] that corresponds to [sl].
   static String? portNameForSynthLogic(
     SynthLogic sl,
