@@ -1,22 +1,19 @@
 // Copyright (C) 2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
-// gate_catalog_module.dart
+// gate_catalog.dart
 // A single ROHD module that instantiates every public gate API in
 // `lib/src/modules/gates.dart` (plus a few closely related primitives:
 // FlipFlop variants, TriStateBuffer, BusSubset, and Swizzle) so that the
-// netlist synthesizer's cell-mapper coverage can be captured in one
-// deterministic, checked-in JSON asset.
+// netlist synthesizer's cell-mapper output can be generated as one catalog.
 //
 // Every instantiated gate's output (or, for multi-output gates, every
 // output) is wired directly to a uniquely named top-level output port. This
 // guarantees dead-cell elimination cannot prune any of the cells this file
 // is meant to exercise.
 //
-// See `test/gate_catalog_test.dart` for the test that verifies the checked-in
-// `test/fixtures/gate_catalog.rohd.json` asset still matches what this module
-// produces, and `tool/generate_gate_catalog.dart` for the script that
-// (re)generates that asset.
+// See `tool/generate_gate_catalog.dart` for the script that generates the
+// catalog.
 //
 // 2026 August 20
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>

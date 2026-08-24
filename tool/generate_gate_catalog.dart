@@ -2,17 +2,11 @@
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // generate_gate_catalog.dart
-// Regenerates the checked-in gate-catalog netlist asset
-// (`test/fixtures/gate_catalog.rohd.json`) from `GateCatalog` (see
-// `test/fixtures/gate_catalog_module.dart`) using the default
+// Generates a gate-catalog netlist from `GateCatalog` using the default
 // [NetlistSynthesizerConfiguration].
 //
 // Usage:
-//   dart run tool/generate_gate_catalog.dart
-//
-// After regenerating, review the diff to `test/fixtures/gate_catalog.rohd.json`
-// before committing it, and re-run `dart test test/gate_catalog_test.dart` to
-// confirm the fixture, determinism, and coverage checks all pass.
+//   dart run tool/generate_gate_catalog.dart [output-path]
 //
 // 2026 August 20
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
@@ -21,17 +15,13 @@ import 'dart:io';
 
 import 'package:rohd/rohd.dart';
 
-import '../test/fixtures/gate_catalog_module.dart';
+import 'gate_catalog.dart';
 
-/// Relative (to the package root) output path for the generated fixture.
-const _fixturePath = 'test/fixtures/gate_catalog.rohd.json';
+/// Default output path relative to the current working directory.
+const _defaultOutputPath = 'gate_catalog.rohd.json';
 
 /// Builds a fresh [GateCatalog] with deterministic, freshly-allocated input
 /// signals.
-///
-/// This must stay in sync with `_buildCatalog()` in
-/// `test/gate_catalog_test.dart` so that the fixture this tool generates is
-/// exactly what that test's byte-for-byte comparison expects.
 GateCatalog _buildCatalog() => GateCatalog(
       clk: Logic(name: 'clk'),
       en: Logic(name: 'en'),
@@ -50,7 +40,15 @@ GateCatalog _buildCatalog() => GateCatalog(
       busNet: LogicNet(name: 'busNet', width: 8),
     );
 
-Future<void> main() async {
+Future<void> main(List<String> arguments) async {
+  if (arguments.length > 1) {
+    stderr.writeln(
+      'Usage: dart run tool/generate_gate_catalog.dart [output-path]',
+    );
+    exitCode = 64;
+    return;
+  }
+  final outputPath = arguments.isEmpty ? _defaultOutputPath : arguments.single;
   final catalog = _buildCatalog();
   await catalog.build();
 
@@ -59,11 +57,11 @@ Future<void> main() async {
   // ignore: invalid_use_of_visible_for_testing_member
   final json = synth.synthesizeToJson(catalog);
 
-  final fixtureFile = File(_fixturePath);
-  fixtureFile.parent.createSync(recursive: true);
-  fixtureFile.writeAsStringSync(json);
+  final outputFile = File(outputPath);
+  outputFile.parent.createSync(recursive: true);
+  outputFile.writeAsStringSync(json);
 
-  stdout.writeln('Wrote $_fixturePath (${json.length} bytes).');
+  stdout.writeln('Wrote $outputPath (${json.length} bytes).');
 
   await Simulator.reset();
 }
