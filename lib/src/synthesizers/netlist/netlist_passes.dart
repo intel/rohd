@@ -9,6 +9,8 @@
 
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/synthesizers/netlist/netlist_cell.dart';
+import 'package:rohd/src/synthesizers/netlist/netlist_port_direction.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_synthesis_result.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_utils.dart';
 
@@ -575,21 +577,25 @@ class NetlistPasses {
           continue;
         }
 
-        cells[concatEntry.key] = {
-          'hide_name': concat['hide_name'] ?? 0,
-          'type': r'$slice',
-          'parameters': <String, Object?>{
+        cells[concatEntry.key] = NetlistCell(
+          hideName: concat['hide_name'] as int? ?? 0,
+          type: r'$slice',
+          parameters: <String, Object?>{
             'OFFSET': startOffset,
             'A_WIDTH': sourceWidth,
             'Y_WIDTH': combinedWidth,
           },
-          'attributes': concat['attributes'] ?? <String, Object?>{},
-          'port_directions': <String, String>{'A': 'input', 'Y': 'output'},
-          'connections': <String, List<Object>>{
+          attributes: (concat['attributes'] as Map?)?.cast<String, Object?>() ??
+              const {},
+          portDirections: const {
+            'A': NetlistPortDirection.input,
+            'Y': NetlistPortDirection.output,
+          },
+          connections: <String, List<Object>>{
             'A': sourceBits,
             'Y': outputBits,
           },
-        };
+        ).toJson();
 
         for (final sliceRef in inputSliceRefs) {
           if (!_sliceOutputConsumedOutside(

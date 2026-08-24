@@ -9,7 +9,9 @@
 
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/synthesizers/netlist/netlist_cell.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_cell_mapper.dart';
+import 'package:rohd/src/synthesizers/netlist/netlist_port_direction.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_synth_module_definition.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_utils.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_validation.dart';
@@ -48,6 +50,15 @@ class NetlistModuleTranslation {
 
   final Set<SynthLogic> _blockedConstSynthLogics = {};
 
+  late final ({
+    Set<SynthLogic> arrayConcatOutputs,
+    Set<SynthLogic> directSubmoduleOutputs,
+  }) _submoduleOutputDrivers = _indexSubmoduleOutputDrivers();
+
+  late final NetlistAlwaysBlockPortCollapseIndex?
+      _alwaysBlockPortCollapseIndex =
+      synthDef == null ? null : NetlistAlwaysBlockPortCollapseIndex(synthDef!);
+
   /// Creates translation state for one [module].
   NetlistModuleTranslation(
     Module module, {
@@ -78,29 +89,29 @@ class NetlistModuleTranslation {
   /// Emits input, output, and inout ports in canonical allocation order.
   void processPorts() {
     final portGroups = [
-      ('input', synthDef?.inputs, _module.inputs),
-      ('output', synthDef?.outputs, _module.outputs),
-      ('inout', synthDef?.inOuts, _module.inOuts),
+      (NetlistPortDirection.input, synthDef?.inputs, _module.inputs),
+      (NetlistPortDirection.output, synthDef?.outputs, _module.outputs),
+      (NetlistPortDirection.inout, synthDef?.inOuts, _module.inOuts),
     ];
     for (final (direction, synthLogics, modulePorts) in portGroups) {
       if (synthLogics != null) {
+        final portNames =
+            NetlistUtils.portNamesForSynthLogics(synthLogics, modulePorts);
         for (final synthLogic in synthLogics) {
-          final portName = NetlistUtils.portNameForSynthLogic(
-            synthLogic,
-            modulePorts,
-          );
+          final portName = portNames[synthLogic];
           if (portName != null) {
             final portLogic = modulePorts[portName];
-            final emitOutputArrayConcat = direction == 'output' &&
-                portLogic is LogicArray &&
-                !_hasExistingOutputArrayConcat(synthLogic) &&
-                !_hasDirectSubmoduleOutputDriver(synthLogic);
+            final emitOutputArrayConcat =
+                direction == NetlistPortDirection.output &&
+                    portLogic is LogicArray &&
+                    !_hasExistingOutputArrayConcat(synthLogic) &&
+                    !_hasDirectSubmoduleOutputDriver(synthLogic);
             final originalIds = getIds(synthLogic);
             final ids = emitOutputArrayConcat
                 ? List<int>.generate(synthLogic.width, (_) => allocateWireId())
                 : originalIds;
             ports[portName] = {
-              'direction': direction,
+              'direction': direction.name,
               'bits': ids,
               if (portLogic != null)
                 'logic_type': NetlistUtils.buildLogicType(portLogic, ids),
@@ -117,7 +128,7 @@ class NetlistModuleTranslation {
             (_) => allocateWireId(),
           );
           ports[entry.key] = {
-            'direction': direction,
+            'direction': direction.name,
             'bits': ids,
             'logic_type': NetlistUtils.buildLogicType(entry.value, ids),
           };
@@ -147,7 +158,7 @@ class NetlistModuleTranslation {
     }
 
     final concatConnections = <String, List<Object>>{};
-    final concatDirections = <String, String>{};
+    final concatDirections = <String, NetlistPortDirection>{};
     var lowerIndex = 0;
 
     for (final (index, element) in array.elements.indexed) {
@@ -175,7 +186,8 @@ class NetlistModuleTranslation {
       final upperIndex = lowerIndex + elementIds.length - 1;
       concatConnections['[$upperIndex:$lowerIndex]'] =
           elementIds.cast<Object>();
-      concatDirections['[$upperIndex:$lowerIndex]'] = 'input';
+      concatDirections['[$upperIndex:$lowerIndex]'] =
+          NetlistPortDirection.input;
       lowerIndex = upperIndex + 1;
     }
 
@@ -184,67 +196,61 @@ class NetlistModuleTranslation {
     }
 
     concatConnections['Y'] = outputIds.cast<Object>();
-    concatDirections['Y'] = 'output';
+    concatDirections['Y'] = NetlistPortDirection.output;
 
     final cellName = NetlistUtils.synthesizedCellName(
       operationName: 'array_concat_output',
       destination: array,
     );
-    cells[cellName] = {
-      'hide_name': 0,
-      'type': r'$concat',
-      'parameters': <String, Object?>{
+    cells[cellName] = NetlistCell(
+      type: r'$concat',
+      parameters: <String, Object?>{
         for (var index = 0; index < array.elements.length; index++)
           'IN${index}_WIDTH': array.elements[index].width,
       },
-      'attributes': <String, Object?>{},
-      'port_directions': concatDirections,
-      'connections': concatConnections,
-    };
+      portDirections: concatDirections,
+      connections: concatConnections,
+    ).toJson();
 
     return true;
   }
 
   /// Checks whether [synthLogic] is already driven by an output concat cell.
-  bool _hasExistingOutputArrayConcat(SynthLogic synthLogic) {
-    final definition = synthDef;
-    if (definition == null) {
-      return false;
-    }
-
-    for (final instance in definition.subModuleInstantiations) {
-      if (instance.module is! SynthArrayConcat) {
-        continue;
-      }
-      if (instance.outputMapping.values.any(
-        (outputLogic) => outputLogic.resolved == synthLogic.resolved,
-      )) {
-        return true;
-      }
-    }
-
-    return false;
-  }
+  bool _hasExistingOutputArrayConcat(SynthLogic synthLogic) =>
+      _submoduleOutputDrivers.arrayConcatOutputs.contains(synthLogic.resolved);
 
   /// Checks whether [synthLogic] is driven directly by a non-concat submodule.
-  bool _hasDirectSubmoduleOutputDriver(SynthLogic synthLogic) {
+  bool _hasDirectSubmoduleOutputDriver(SynthLogic synthLogic) =>
+      _submoduleOutputDrivers.directSubmoduleOutputs
+          .contains(synthLogic.resolved);
+
+  ({
+    Set<SynthLogic> arrayConcatOutputs,
+    Set<SynthLogic> directSubmoduleOutputs,
+  }) _indexSubmoduleOutputDrivers() {
     final definition = synthDef;
     if (definition == null) {
-      return false;
+      return (
+        arrayConcatOutputs: <SynthLogic>{},
+        directSubmoduleOutputs: <SynthLogic>{},
+      );
     }
 
+    final arrayConcatOutputs = <SynthLogic>{};
+    final directSubmoduleOutputs = <SynthLogic>{};
     for (final instance in definition.subModuleInstantiations) {
-      if (instance.module is SynthArrayConcat) {
-        continue;
-      }
-      if (instance.outputMapping.values.any(
-        (outputLogic) => outputLogic.resolved == synthLogic.resolved,
-      )) {
-        return true;
-      }
+      (instance.module is SynthArrayConcat
+              ? arrayConcatOutputs
+              : directSubmoduleOutputs)
+          .addAll(
+        instance.outputMapping.values.map((output) => output.resolved),
+      );
     }
 
-    return false;
+    return (
+      arrayConcatOutputs: arrayConcatOutputs,
+      directSubmoduleOutputs: directSubmoduleOutputs,
+    );
   }
 
   /// Preallocates internal wires in [Module.internalSignals] order.
@@ -279,13 +285,13 @@ class NetlistModuleTranslation {
       final defaultCellType = isLeaf
           ? submodule.definitionName
           : _getInstanceTypeOfModule(submodule);
-      final rawPortDirs = <String, String>{};
+      final rawPortDirs = <String, NetlistPortDirection>{};
       final rawConnections = <String, List<Object>>{};
 
       for (final (direction, mapping) in [
-        ('input', instance.inputMapping),
-        ('output', instance.outputMapping),
-        ('inout', instance.inOutMapping),
+        (NetlistPortDirection.input, instance.inputMapping),
+        (NetlistPortDirection.output, instance.outputMapping),
+        (NetlistPortDirection.inout, instance.inOutMapping),
       ]) {
         for (final entry in mapping.entries) {
           rawPortDirs[entry.key] = direction;
@@ -313,7 +319,7 @@ class NetlistModuleTranslation {
 
       if (submodule is Combinational || submodule is Sequential) {
         NetlistUtils.collapseAlwaysBlockPorts(
-          definition,
+          _alwaysBlockPortCollapseIndex!,
           instance,
           cellPortDirs,
           cellConnections,
@@ -327,7 +333,8 @@ class NetlistModuleTranslation {
         for (final portEntry in submodule.inputs.entries) {
           final portName = portEntry.key;
           final port = portEntry.value;
-          if (port is! LogicArray || cellPortDirs[portName] != 'input') {
+          if (port is! LogicArray ||
+              cellPortDirs[portName] != NetlistPortDirection.input) {
             continue;
           }
           final bits = cellConnections[portName];
@@ -336,7 +343,7 @@ class NetlistModuleTranslation {
           }
 
           final concatConnections = <String, List<Object>>{};
-          final concatDirections = <String, String>{};
+          final concatDirections = <String, NetlistPortDirection>{};
           var lowerIndex = 0;
           for (final element in port.elements) {
             final upperIndex = lowerIndex + element.width - 1;
@@ -345,7 +352,7 @@ class NetlistModuleTranslation {
               lowerIndex,
               upperIndex + 1,
             );
-            concatDirections[concatPort] = 'input';
+            concatDirections[concatPort] = NetlistPortDirection.input;
             lowerIndex = upperIndex + 1;
           }
 
@@ -353,31 +360,27 @@ class NetlistModuleTranslation {
             for (var i = 0; i < bits.length; i++) allocateWireId(),
           ];
           concatConnections['Y'] = concatOutput;
-          concatDirections['Y'] = 'output';
+          concatDirections['Y'] = NetlistPortDirection.output;
           cellConnections[portName] = concatOutput;
 
-          cells['array_concat_${cellKey}_$portName'] = {
-            'hide_name': 0,
-            'type': r'$concat',
-            'parameters': <String, Object?>{
+          cells['array_concat_${cellKey}_$portName'] = NetlistCell(
+            type: r'$concat',
+            parameters: <String, Object?>{
               for (var index = 0; index < port.elements.length; index++)
                 'IN${index}_WIDTH': port.elements[index].width,
             },
-            'attributes': <String, Object?>{},
-            'port_directions': concatDirections,
-            'connections': concatConnections,
-          };
+            portDirections: concatDirections,
+            connections: concatConnections,
+          ).toJson();
         }
       }
 
-      cells[cellKey] = {
-        'hide_name': 0,
-        'type': mapped?.cellType ?? defaultCellType,
-        'parameters': mapped?.parameters ?? <String, Object?>{},
-        'attributes': <String, Object?>{},
-        'port_directions': cellPortDirs,
-        'connections': cellConnections,
-      };
+      cells[cellKey] = NetlistCell(
+        type: mapped?.cellType ?? defaultCellType,
+        parameters: mapped?.parameters ?? const {},
+        portDirections: cellPortDirs,
+        connections: cellConnections,
+      ).toJson();
     }
 
     definition.subModuleInstantiations
@@ -394,7 +397,7 @@ class NetlistModuleTranslation {
   bool _emitDynamicSynchronousResetFlipFlop(
     String cellKey,
     FlipFlop flipFlop,
-    Map<String, String> rawPortDirs,
+    Map<String, NetlistPortDirection> rawPortDirs,
     Map<String, List<Object>> rawConnections,
   ) {
     if (flipFlop.asyncReset) {
@@ -403,7 +406,7 @@ class NetlistModuleTranslation {
 
     String? findInput(String unpreferredName, String name) {
       for (final entry in rawPortDirs.entries) {
-        if (entry.value == 'input' &&
+        if (entry.value == NetlistPortDirection.input &&
             (entry.key.startsWith(unpreferredName) || entry.key == name)) {
           return entry.key;
         }
@@ -417,7 +420,7 @@ class NetlistModuleTranslation {
     final reset = findInput('_reset', 'reset');
     final resetValue = findInput('_resetValue', 'resetValue');
     final q = rawPortDirs.entries
-        .where((entry) => entry.value == 'output')
+        .where((entry) => entry.value == NetlistPortDirection.output)
         .map((entry) => entry.key)
         .firstOrNull;
     if (clk == null ||
@@ -443,24 +446,22 @@ class NetlistModuleTranslation {
 
     final resetMuxOutput =
         List<Object>.generate(dBits.length, (_) => allocateWireId());
-    cells['${cellKey}_reset_mux'] = {
-      'hide_name': 0,
-      'type': r'$mux',
-      'parameters': <String, Object?>{'WIDTH': dBits.length},
-      'attributes': <String, Object?>{},
-      'port_directions': {
-        'A': 'input',
-        'B': 'input',
-        'S': 'input',
-        'Y': 'output'
+    cells['${cellKey}_reset_mux'] = NetlistCell(
+      type: r'$mux',
+      parameters: <String, Object?>{'WIDTH': dBits.length},
+      portDirections: {
+        'A': NetlistPortDirection.input,
+        'B': NetlistPortDirection.input,
+        'S': NetlistPortDirection.input,
+        'Y': NetlistPortDirection.output,
       },
-      'connections': {
+      connections: {
         'A': dBits,
         'B': resetValueBits,
         'S': resetBits,
         'Y': resetMuxOutput,
       },
-    };
+    ).toJson();
 
     final hasEnable = en != null && rawConnections.containsKey(en);
     final dffConnections = <String, List<Object>>{
@@ -468,10 +469,10 @@ class NetlistModuleTranslation {
       'D': resetMuxOutput,
       'Q': qBits,
     };
-    final dffDirections = <String, String>{
-      'CLK': 'input',
-      'D': 'input',
-      'Q': 'output',
+    final dffDirections = <String, NetlistPortDirection>{
+      'CLK': NetlistPortDirection.input,
+      'D': NetlistPortDirection.input,
+      'Q': NetlistPortDirection.output,
     };
     final dffParameters = <String, Object?>{
       'WIDTH': dBits.length,
@@ -483,35 +484,35 @@ class NetlistModuleTranslation {
         return false;
       }
       final effectiveEnable = <Object>[allocateWireId()];
-      cells['${cellKey}_reset_enable'] = {
-        'hide_name': 0,
-        'type': r'$or',
-        'parameters': <String, Object?>{
+      cells['${cellKey}_reset_enable'] = NetlistCell(
+        type: r'$or',
+        parameters: <String, Object?>{
           'A_WIDTH': 1,
           'B_WIDTH': 1,
           'Y_WIDTH': 1,
         },
-        'attributes': <String, Object?>{},
-        'port_directions': {'A': 'input', 'B': 'input', 'Y': 'output'},
-        'connections': {
+        portDirections: {
+          'A': NetlistPortDirection.input,
+          'B': NetlistPortDirection.input,
+          'Y': NetlistPortDirection.output,
+        },
+        connections: {
           'A': enableBits,
           'B': resetBits,
           'Y': effectiveEnable,
         },
-      };
+      ).toJson();
       dffConnections['EN'] = effectiveEnable;
-      dffDirections['EN'] = 'input';
+      dffDirections['EN'] = NetlistPortDirection.input;
       dffParameters['EN_POLARITY'] = 1;
     }
 
-    cells[cellKey] = {
-      'hide_name': 0,
-      'type': hasEnable ? r'$dffe' : r'$dff',
-      'parameters': dffParameters,
-      'attributes': <String, Object?>{},
-      'port_directions': dffDirections,
-      'connections': dffConnections,
-    };
+    cells[cellKey] = NetlistCell(
+      type: hasEnable ? r'$dffe' : r'$dff',
+      parameters: dffParameters,
+      portDirections: dffDirections,
+      connections: dffConnections,
+    ).toJson();
     return true;
   }
 
@@ -556,7 +557,7 @@ class NetlistModuleTranslation {
     }
 
     final aggregateConstructors =
-        <({List<Object> inputBits, List<Object> outputBits})>[];
+        <int, List<({List<Object> inputBits, List<Object> outputBits})>>{};
     for (final cellEntry in cells.entries) {
       final cell = cellEntry.value;
       final cellType = cell['type'] as String?;
@@ -588,7 +589,9 @@ class NetlistModuleTranslation {
       }
 
       if (inputBits.length == outputBits.length) {
-        aggregateConstructors.add((
+        aggregateConstructors
+            .putIfAbsent(Object.hashAll(inputBits), () => [])
+            .add((
           inputBits: inputBits,
           outputBits: outputBits,
         ));
@@ -596,7 +599,11 @@ class NetlistModuleTranslation {
     }
 
     List<Object> resolveAggregateBits(List<Object> bits) {
-      for (final constructorBits in aggregateConstructors) {
+      final candidates = aggregateConstructors[Object.hashAll(bits)];
+      if (candidates == null) {
+        return bits;
+      }
+      for (final constructorBits in candidates) {
         if (bits.length == constructorBits.inputBits.length) {
           var matches = true;
           for (var index = 0; index < bits.length; index++) {
@@ -827,14 +834,13 @@ class NetlistModuleTranslation {
       final valuePart = NetlistUtils.constValuePart(constant);
       final cellName = 'const_${constantIndex}_$valuePart';
       final valueLiteral = valuePart.replaceFirst('_', "'");
-      cells[cellName] = {
-        'hide_name': 0,
-        'type': r'$const',
-        'parameters': <String, Object?>{},
-        'attributes': <String, Object?>{},
-        'port_directions': <String, String>{valueLiteral: 'output'},
-        'connections': <String, List<Object>>{valueLiteral: resolvedIds},
-      };
+      cells[cellName] = NetlistCell(
+        type: r'$const',
+        portDirections: {
+          valueLiteral: NetlistPortDirection.output,
+        },
+        connections: <String, List<Object>>{valueLiteral: resolvedIds},
+      ).toJson();
       constantIndex++;
     }
 
@@ -865,7 +871,7 @@ class NetlistModuleTranslation {
   /// Removes procedural constant ports and records their constants as blocked.
   void _filterProceduralConstants(
     SynthSubModuleInstantiation instance,
-    Map<String, String> portDirections,
+    Map<String, NetlistPortDirection> portDirections,
     Map<String, List<Object>> connections,
   ) {
     final portsToRemove = <String>[];
@@ -886,7 +892,7 @@ class NetlistModuleTranslation {
   /// Renames procedural ports to match their resolved synth logic names.
   void _renameProceduralPorts(
     SynthSubModuleInstantiation instance,
-    Map<String, String> portDirections,
+    Map<String, NetlistPortDirection> portDirections,
     Map<String, List<Object>> connections,
   ) {
     final renames = <String, String>{};

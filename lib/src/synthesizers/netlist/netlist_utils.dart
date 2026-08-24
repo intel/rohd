@@ -9,8 +9,65 @@
 
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/synthesizers/netlist/netlist_cell.dart';
+import 'package:rohd/src/synthesizers/netlist/netlist_port_direction.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
+
+typedef _BusSubsetCollapseInfo = (
+  BusSubset,
+  SynthLogic,
+  SynthSubModuleInstantiation,
+);
+
+typedef _SwizzleCollapseInfo = (
+  String,
+  int,
+  int,
+  SynthLogic,
+  SynthSubModuleInstantiation,
+);
+
+/// Reusable indexes for collapsing procedural-cell ports.
+@internal
+class NetlistAlwaysBlockPortCollapseIndex {
+  final Module _module;
+  final Map<SynthLogic, _BusSubsetCollapseInfo> _busSubsets = {};
+  final Map<SynthLogic, _SwizzleCollapseInfo> _swizzles = {};
+
+  /// Indexes aggregate-producing submodules in [synthDef].
+  NetlistAlwaysBlockPortCollapseIndex(SynthModuleDefinition synthDef)
+      : _module = synthDef.module {
+    for (final instance in synthDef.subModuleInstantiations) {
+      final module = instance.module;
+      if (module is BusSubset) {
+        final output = instance.outputMapping.values.firstOrNull;
+        final input = instance.inputMapping.values.firstOrNull;
+        if (output != null && input != null) {
+          _busSubsets[output.resolved] = (module, input.resolved, instance);
+        }
+      } else if (module is Swizzle) {
+        final output = instance.outputMapping.values.firstOrNull;
+        if (output == null) {
+          continue;
+        }
+
+        var offset = 0;
+        for (final input in instance.inputMapping.entries) {
+          final resolvedInput = input.value.resolved;
+          _swizzles[resolvedInput] = (
+            input.key,
+            offset,
+            resolvedInput.width,
+            output.resolved,
+            instance,
+          );
+          offset += resolvedInput.width;
+        }
+      }
+    }
+  }
+}
 
 /// Shared utility functions for netlist synthesis and post-processing passes.
 ///
@@ -105,17 +162,26 @@ abstract class NetlistUtils {
     return null;
   }
 
-  /// Find the port name in [portMap] that corresponds to [sl].
-  static String? portNameForSynthLogic(
-    SynthLogic sl,
+  /// Indexes [synthLogics] by their corresponding name in [portMap].
+  static Map<SynthLogic, String> portNamesForSynthLogics(
+    Iterable<SynthLogic> synthLogics,
     Map<String, Logic> portMap,
   ) {
-    for (final e in portMap.entries) {
-      if (sl.logics.contains(e.value)) {
-        return e.key;
+    final namesByLogic = Map<Logic, String>.identity()
+      ..addEntries(
+        portMap.entries.map((entry) => MapEntry(entry.value, entry.key)),
+      );
+    final portNames = Map<SynthLogic, String>.identity();
+    for (final synthLogic in synthLogics) {
+      for (final logic in synthLogic.logics) {
+        final portName = namesByLogic[logic];
+        if (portName != null) {
+          portNames[synthLogic] = portName;
+          break;
+        }
       }
     }
-    return null;
+    return portNames;
   }
 
   /// Safely retrieve the name from a [SynthLogic], returning null if
@@ -129,14 +195,15 @@ abstract class NetlistUtils {
     List<Object> aBits,
     List<Object> yBits,
   ) =>
-      <String, Object?>{
-        'hide_name': 0,
-        'type': r'$buf',
-        'parameters': <String, Object?>{'WIDTH': width},
-        'attributes': <String, Object?>{},
-        'port_directions': <String, String>{'A': 'input', 'Y': 'output'},
-        'connections': <String, List<Object>>{'A': aBits, 'Y': yBits},
-      };
+      NetlistCell(
+        type: r'$buf',
+        parameters: <String, Object?>{'WIDTH': width},
+        portDirections: {
+          'A': NetlistPortDirection.input,
+          'Y': NetlistPortDirection.output,
+        },
+        connections: <String, List<Object>>{'A': aBits, 'Y': yBits},
+      ).toJson();
 
   /// Collapses bit-slice ports of a Combinational/Sequential cell into
   /// aggregate ports.
@@ -154,37 +221,13 @@ abstract class NetlistUtils {
   /// the inputs of the same Swizzle submodule are collapsed into a single
   /// aggregate port connected to the Swizzle's output wire IDs.
   static void collapseAlwaysBlockPorts(
-    SynthModuleDefinition synthDef,
+    NetlistAlwaysBlockPortCollapseIndex index,
     SynthSubModuleInstantiation instance,
-    Map<String, String> portDirs,
+    Map<String, NetlistPortDirection> portDirs,
     Map<String, List<Object>> connections,
     List<int> Function(SynthLogic) getIds,
   ) {
     // ── Input-side collapsing (BusSubset → Combinational) ──────────────
-
-    // Build reverse lookup: resolved BusSubset output SynthLogic →
-    //   (BusSubset module, resolved root input SynthLogic,
-    //    SynthSubModuleInstantiation).
-    final busSubsetLookup =
-        <SynthLogic, (BusSubset, SynthLogic, SynthSubModuleInstantiation)>{};
-    for (final bsInst in synthDef.subModuleInstantiations) {
-      if (bsInst.module is! BusSubset) {
-        continue;
-      }
-      final bsMod = bsInst.module as BusSubset;
-
-      // BusSubset has input 'original' and output 'subset'
-      final outputSL = bsInst.outputMapping.values.firstOrNull;
-      final inputSL = bsInst.inputMapping.values.firstOrNull;
-      if (outputSL == null || inputSL == null) {
-        continue;
-      }
-
-      final resolvedOutput = outputSL.resolved;
-      final resolvedInput = inputSL.resolved;
-
-      busSubsetLookup[resolvedOutput] = (bsMod, resolvedInput, bsInst);
-    }
 
     // Group input ports by root signal, also tracking the BusSubset
     // instantiations that produced each port.
@@ -204,7 +247,7 @@ abstract class NetlistUtils {
       }
 
       final resolved = e.value.resolved;
-      final info = busSubsetLookup[resolved];
+      final info = index._busSubsets[resolved];
       if (info != null) {
         final (bsMod, rootSL, bsInst) = info;
         final width = bsMod.endIndex - bsMod.startIndex + 1;
@@ -261,48 +304,10 @@ abstract class NetlistUtils {
         portDirs.remove(portName);
       }
       connections[rootName] = aggBits;
-      portDirs[rootName] = 'input';
+      portDirs[rootName] = NetlistPortDirection.input;
     }
 
     // ── Output-side collapsing (Combinational → Swizzle) ───────────────
-
-    // Build reverse lookup: resolved Swizzle input SynthLogic →
-    //   (Swizzle port name, bit offset within the Swizzle output,
-    //    port width, resolved Swizzle output SynthLogic,
-    //    SynthSubModuleInstantiation).
-    final swizzleLookup = <SynthLogic,
-        (
-      String portName,
-      int offset,
-      int width,
-      SynthLogic,
-      SynthSubModuleInstantiation,
-    )>{};
-    for (final szInst in synthDef.subModuleInstantiations) {
-      if (szInst.module is! Swizzle) {
-        continue;
-      }
-      final outputSL = szInst.outputMapping.values.firstOrNull;
-      if (outputSL == null) {
-        continue;
-      }
-      final resolvedOutput = outputSL.resolved;
-
-      // Swizzle inputs are in0, in1, ... with bit-0 first.
-      var offset = 0;
-      for (final inEntry in szInst.inputMapping.entries) {
-        final resolvedInput = inEntry.value.resolved;
-        final w = resolvedInput.width;
-        swizzleLookup[resolvedInput] = (
-          inEntry.key,
-          offset,
-          w,
-          resolvedOutput,
-          szInst,
-        );
-        offset += w;
-      }
-    }
 
     // Group output ports by Swizzle output signal.
     final outputGroups = <SynthLogic,
@@ -321,7 +326,7 @@ abstract class NetlistUtils {
       }
 
       final resolved = e.value.resolved;
-      final info = swizzleLookup[resolved];
+      final info = index._swizzles[resolved];
       if (info != null) {
         final (_, offset, width, swizzleOutputSL, szInst) = info;
         outputGroups.putIfAbsent(swizzleOutputSL, () => []).add((
@@ -344,14 +349,13 @@ abstract class NetlistUtils {
       // with a single aggregate that uses the downstream Swizzle's bit
       // IDs, which would orphan the module-level port bits (they would
       // no longer be driven by any cell).
-      final parentModule = synthDef.module;
       final hasModulePort = entry.value.any((member) {
         final sl = instance.outputMapping[member.$1];
         if (sl == null) {
           return false;
         }
         final resolved = sl.resolved;
-        return resolved.isPort(parentModule);
+        return resolved.isPort(index._module);
       });
       if (hasModulePort) {
         continue;
@@ -394,7 +398,7 @@ abstract class NetlistUtils {
         portDirs.remove(portName);
       }
       connections[outName] = aggBits;
-      portDirs[outName] = 'output';
+      portDirs[outName] = NetlistPortDirection.output;
     }
   }
 

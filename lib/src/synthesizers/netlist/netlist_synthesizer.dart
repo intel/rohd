@@ -11,9 +11,11 @@ import 'dart:convert';
 
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/synthesizers/netlist/netlist_cell.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_cell_mapper.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_module_translation.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_passes.dart';
+import 'package:rohd/src/synthesizers/netlist/netlist_port_direction.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_synthesis_result.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_utils.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_validation.dart';
@@ -645,7 +647,9 @@ class NetlistSynthesizer extends Synthesizer {
             : null;
 
         // Build port_directions and connections with one output per field.
-        final portDirs = <String, String>{'A': 'input'};
+        final portDirs = <String, NetlistPortDirection>{
+          'A': NetlistPortDirection.input,
+        };
         final conns = <String, List<Object>>{'A': resolvedParentBits};
 
         for (var i = 0; i < nonTrivialFields.length; i++) {
@@ -658,7 +662,7 @@ class NetlistSynthesizer extends Synthesizer {
           if (portDirs.containsKey(portName)) {
             portName = '${fieldName}_$i';
           }
-          portDirs[portName] = 'output';
+          portDirs[portName] = NetlistPortDirection.output;
           conns[portName] = f.resolvedElemBits;
         }
 
@@ -676,14 +680,12 @@ class NetlistSynthesizer extends Synthesizer {
           params['FIELD_${i}_WIDTH'] = f.width;
         }
 
-        cells['struct_unpack_${suIdx}_$structName'] = {
-          'hide_name': 0,
-          'type': r'$struct_unpack',
-          'parameters': params,
-          'attributes': <String, Object?>{},
-          'port_directions': portDirs,
-          'connections': conns
-        };
+        cells['struct_unpack_${suIdx}_$structName'] = NetlistCell(
+          type: r'$struct_unpack',
+          parameters: params,
+          portDirections: portDirs,
+          connections: conns,
+        ).toJson();
         suIdx++;
       }
     }
@@ -753,7 +755,7 @@ class NetlistSynthesizer extends Synthesizer {
             : SynthStructureConcat.operationName;
 
         // Build port_directions and connections.
-        final portDirs = <String, String>{};
+        final portDirs = <String, NetlistPortDirection>{};
         final conns = <String, List<Object>>{};
 
         for (var i = 0; i < nonTrivialFields.length; i++) {
@@ -765,12 +767,12 @@ class NetlistSynthesizer extends Synthesizer {
           if (portDirs.containsKey(portName)) {
             portName = '${fieldName}_$i';
           }
-          portDirs[portName] = 'input';
+          portDirs[portName] = NetlistPortDirection.input;
           conns[portName] = f.resolvedSrcBits;
         }
 
         // Output port Y: full destination bus.
-        portDirs['Y'] = 'output';
+        portDirs['Y'] = NetlistPortDirection.output;
         conns['Y'] = resolvedDstBits;
 
         // Parameters list field metadata for the schematic viewer.
@@ -787,14 +789,12 @@ class NetlistSynthesizer extends Synthesizer {
           params['FIELD_${i}_WIDTH'] = f.dstUpperIndex - f.dstLowerIndex + 1;
         }
 
-        cells['${cellName}_$structName'] = {
-          'hide_name': 0,
-          'type': r'$struct_pack',
-          'parameters': params,
-          'attributes': <String, Object?>{},
-          'port_directions': portDirs,
-          'connections': conns
-        };
+        cells['${cellName}_$structName'] = NetlistCell(
+          type: r'$struct_pack',
+          parameters: params,
+          portDirections: portDirs,
+          connections: conns,
+        ).toJson();
       }
     }
 
@@ -1113,6 +1113,7 @@ class NetlistSynthesizer extends Synthesizer {
   /// The [packageRoot] parameter is accepted for API compatibility with
   /// downstream trace-enabled branches. [slimMode] overrides the configured
   /// output mode for this call, allowing expansion after a slim request.
+  @visibleForTesting
   String synthesizeToJson(Module top, {String? packageRoot, bool? slimMode}) {
     final sb = SynthBuilder(top, this);
     return generateCombinedJson(sb, top, slimMode: slimMode);

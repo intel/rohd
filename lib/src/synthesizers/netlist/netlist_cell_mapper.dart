@@ -9,12 +9,13 @@
 
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/synthesizers/netlist/netlist_port_direction.dart';
 
 /// The result of mapping a netlist cell module to a Yosys-style cell.
 @internal
 typedef NetlistCellMapping = ({
   String cellType,
-  Map<String, String> portDirs,
+  Map<String, NetlistPortDirection> portDirs,
   Map<String, List<Object>> connections,
   Map<String, Object?> parameters,
 });
@@ -29,8 +30,8 @@ class NetlistCellContext {
   /// The ROHD [Module] being mapped.
   final Module module;
 
-  /// Raw ROHD port-direction map (`{'portName': 'input'|'output'|'inout'}`).
-  final Map<String, String> rawPortDirs;
+  /// Raw ROHD port-direction map.
+  final Map<String, NetlistPortDirection> rawPortDirs;
 
   /// Raw ROHD connection map (`{'portName': [wireId, ...]}`).
   final Map<String, List<Object>> rawConns;
@@ -38,9 +39,10 @@ class NetlistCellContext {
   /// Creates a [NetlistCellContext].
   NetlistCellContext(
     this.module,
-    Map<String, String> rawPortDirs,
+    Map<String, NetlistPortDirection> rawPortDirs,
     Map<String, List<Object>> rawConns,
-  )   : rawPortDirs = Map<String, String>.unmodifiable(rawPortDirs),
+  )   : rawPortDirs =
+            Map<String, NetlistPortDirection>.unmodifiable(rawPortDirs),
         rawConns = Map<String, List<Object>>.unmodifiable({
           for (final entry in rawConns.entries)
             entry.key: List<Object>.unmodifiable(entry.value),
@@ -71,15 +73,19 @@ class NetlistCellContext {
 
   /// Build new port-direction and connection maps from a
   /// `{rohdPortName: yosysPortName}` mapping.
-  ({Map<String, String> portDirs, Map<String, List<Object>> connections}) remap(
+  ({
+    Map<String, NetlistPortDirection> portDirs,
+    Map<String, List<Object>> connections,
+  }) remap(
     Map<String, String> nameMap,
   ) {
-    final pd = <String, String>{};
+    final pd = <String, NetlistPortDirection>{};
     final cn = <String, List<Object>>{};
     for (final e in nameMap.entries) {
       final rohdName = e.key;
       final netlistPortName = e.value;
-      pd[netlistPortName] = rawPortDirs[rohdName] ?? 'output';
+      pd[netlistPortName] =
+          rawPortDirs[rohdName] ?? NetlistPortDirection.output;
       cn[netlistPortName] = rawConns[rohdName] ?? [];
     }
     return (portDirs: pd, connections: cn);
@@ -124,7 +130,7 @@ class NetlistCellMapper {
   /// Returns `null` if no registered handler matches.
   NetlistCellMapping? map(
     Module module,
-    Map<String, String> rawPortDirs,
+    Map<String, NetlistPortDirection> rawPortDirs,
     Map<String, List<Object>> rawConns,
   ) {
     final ctx = NetlistCellContext(module, rawPortDirs, rawConns);
@@ -332,7 +338,7 @@ class NetlistCellMapper {
         }
 
         // N-input concat: per-input range labels, output is Y.
-        final pd = <String, String>{};
+        final pd = <String, NetlistPortDirection>{};
         final cn = <String, List<Object>>{};
         final params = <String, Object?>{};
         var bitOffset = 0;
@@ -341,13 +347,13 @@ class NetlistCellMapper {
           final w = ctx.width(ik);
           final label =
               w == 1 ? '[$bitOffset]' : '[${bitOffset + w - 1}:$bitOffset]';
-          pd[label] = 'input';
+          pd[label] = NetlistPortDirection.input;
           cn[label] = ctx.rawConns[ik] ?? [];
           params['IN${i}_WIDTH'] = w;
           bitOffset += w;
         }
         if (outName != null) {
-          pd['Y'] = 'output';
+          pd['Y'] = NetlistPortDirection.output;
           cn['Y'] = ctx.rawConns[outName] ?? [];
         }
         return (
@@ -407,7 +413,11 @@ class NetlistCellMapper {
         final carryBits = carryName.isEmpty
             ? const <Object>[]
             : ctx.rawConns[carryName] ?? [];
-        final pd = <String, String>{'A': 'input', 'B': 'input', 'Y': 'output'};
+        final pd = <String, NetlistPortDirection>{
+          'A': NetlistPortDirection.input,
+          'B': NetlistPortDirection.input,
+          'Y': NetlistPortDirection.output,
+        };
         final cn = <String, List<Object>>{
           'A': ctx.rawConns[in0] ?? [],
           'B': ctx.rawConns[in1] ?? [],
@@ -460,10 +470,10 @@ class NetlistCellMapper {
           return null;
         }
 
-        final pd = <String, String>{
-          'CLK': 'input',
-          'D': 'input',
-          'Q': 'output',
+        final pd = <String, NetlistPortDirection>{
+          'CLK': NetlistPortDirection.input,
+          'D': NetlistPortDirection.input,
+          'Q': NetlistPortDirection.output,
         };
         final cn = <String, List<Object>>{
           'CLK': ctx.rawConns[clk] ?? [],
@@ -471,18 +481,18 @@ class NetlistCellMapper {
           'Q': ctx.rawConns[q] ?? [],
         };
         if (hasEnable) {
-          pd['EN'] = 'input';
+          pd['EN'] = NetlistPortDirection.input;
           cn['EN'] = ctx.rawConns[en] ?? [];
         }
         if (hasReset) {
           final resetPort = flipFlop.asyncReset
               ? (hasDynamicResetValue ? 'ALOAD' : 'ARST')
               : 'SRST';
-          pd[resetPort] = 'input';
+          pd[resetPort] = NetlistPortDirection.input;
           cn[resetPort] = ctx.rawConns[rst] ?? [];
         }
         if (hasDynamicResetValue) {
-          pd['AD'] = 'input';
+          pd['AD'] = NetlistPortDirection.input;
           cn['AD'] = ctx.rawConns[rstVal] ?? [];
         }
 
@@ -612,7 +622,7 @@ class NetlistCellMapper {
       final enName = tsb.inputs.keys.last; // enable
       final outName = tsb.inOuts.keys.first; // inout output
       final r = ctx.remap({inName: 'A', enName: 'EN', outName: 'Y'});
-      r.portDirs['Y'] = 'output';
+      r.portDirs['Y'] = NetlistPortDirection.output;
       return (
         cellType: r'$tribuf',
         portDirs: r.portDirs,
