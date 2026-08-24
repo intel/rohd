@@ -1353,14 +1353,13 @@
           "parameters": {
             "A_WIDTH": 4,
             "B_WIDTH": 4,
-            "Y_WIDTH": 4
+            "Y_WIDTH": 5
           },
           "attributes": {},
           "port_directions": {
             "A": "input",
             "B": "input",
-            "Y": "output",
-            "CO": "output"
+            "Y": "output"
           },
           "connections": {
             "A": [
@@ -1379,9 +1378,7 @@
               110,
               111,
               112,
-              113
-            ],
-            "CO": [
+              113,
               114
             ]
           }
@@ -1392,14 +1389,13 @@
           "parameters": {
             "A_WIDTH": 4,
             "B_WIDTH": 4,
-            "Y_WIDTH": 4
+            "Y_WIDTH": 5
           },
           "attributes": {},
           "port_directions": {
             "A": "input",
             "B": "input",
-            "Y": "output",
-            "CO": "output"
+            "Y": "output"
           },
           "connections": {
             "A": [
@@ -1418,9 +1414,7 @@
               115,
               116,
               117,
-              118
-            ],
-            "CO": [
+              118,
               119
             ]
           }
