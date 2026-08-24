@@ -204,6 +204,7 @@ class NetlistModuleTranslation {
     );
     cells[cellName] = NetlistCell(
       type: r'$concat',
+      origin: NetlistCellOrigin.outputArrayConcat,
       parameters: <String, Object?>{
         for (var index = 0; index < array.elements.length; index++)
           'IN${index}_WIDTH': array.elements[index].width,
@@ -365,6 +366,7 @@ class NetlistModuleTranslation {
 
           cells['array_concat_${cellKey}_$portName'] = NetlistCell(
             type: r'$concat',
+            origin: NetlistCellOrigin.arrayConcat,
             parameters: <String, Object?>{
               for (var index = 0; index < port.elements.length; index++)
                 'IN${index}_WIDTH': port.elements[index].width,
@@ -377,6 +379,12 @@ class NetlistModuleTranslation {
 
       cells[cellKey] = NetlistCell(
         type: mapped?.cellType ?? defaultCellType,
+        origin: switch (submodule) {
+          SynthArraySlice() => NetlistCellOrigin.arraySlice,
+          SynthArrayConcat() => NetlistCellOrigin.arrayConcat,
+          SynthStructureSlice() => NetlistCellOrigin.structureSlice,
+          _ => NetlistCellOrigin.module,
+        },
         parameters: mapped?.parameters ?? const {},
         portDirections: cellPortDirs,
         connections: cellConnections,

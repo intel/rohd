@@ -1869,13 +1869,16 @@ void main() {
           _modules(json)['InternalArrayToChildModule'] as Map<String, dynamic>;
       final cells = _cells(moduleDef);
       final arrayConcats = cells.entries.where(
-        (entry) => entry.key.startsWith('array_concat'),
+        (entry) =>
+            (entry.value as Map<String, dynamic>)['synthetic_origin'] ==
+            'arrayConcat',
       );
 
       expect(arrayConcats, isNotEmpty);
       for (final arrayConcat in arrayConcats) {
-        final connections = (arrayConcat.value
-            as Map<String, dynamic>)['connections'] as Map<String, dynamic>;
+        final cell = arrayConcat.value as Map<String, dynamic>;
+        expect(cell['is_synthetic'], isTrue);
+        final connections = cell['connections'] as Map<String, dynamic>;
         final inputBits = connections.entries
             .where((entry) => entry.key != 'Y')
             .expand((entry) => entry.value as List<dynamic>)
@@ -1897,7 +1900,8 @@ void main() {
           .entries
           .where(
             (entry) =>
-                (entry.value as Map<String, dynamic>)['type'] == r'$concat',
+                (entry.value as Map<String, dynamic>)['synthetic_origin'] ==
+                'outputArrayConcat',
           )
           .map((entry) => entry.key)
           .where((name) => name.startsWith('array_concat_output_'))
@@ -1917,7 +1921,9 @@ void main() {
               );
       final cells = _cells(moduleDef);
       final arrayConcatEntries = cells.entries.where(
-        (entry) => entry.key.startsWith('array_concat'),
+        (entry) =>
+            (entry.value as Map<String, dynamic>)['synthetic_origin'] ==
+            'arrayConcat',
       );
 
       expect(arrayConcatEntries, isNotEmpty, reason: cells.keys.join(', '));

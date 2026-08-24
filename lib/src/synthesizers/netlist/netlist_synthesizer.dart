@@ -502,8 +502,11 @@ class NetlistSynthesizer extends Synthesizer {
       //   parent (original IDs) → slice A → slice Y (fresh IDs) → consumer
 
       for (final cellEntry in cells.entries) {
-        if (!cellEntry.key.startsWith(
-          SynthArraySlice.operationName,
+        // Only array slices need fresh outputs; other cells retain their
+        // aliased connections until downstream inputs are rewritten below.
+        if (!NetlistCell.hasOrigin(
+          cellEntry.value,
+          NetlistCellOrigin.arraySlice,
         )) {
           continue;
         }
@@ -533,10 +536,14 @@ class NetlistSynthesizer extends Synthesizer {
       // gets replaced with the corresponding fresh ID.
       if (arraySliceOldToNew.isNotEmpty) {
         for (final cellEntry in cells.entries) {
-          if (cellEntry.key.startsWith(
-            SynthArraySlice.operationName,
+          if (NetlistCell.hasOrigin(
+            cellEntry.value,
+            NetlistCellOrigin.arraySlice,
           )) {
-            continue; // skip the slice cells themselves
+            // Keep each slice input connected to the original parent-array
+            // bits. Rewriting it would bypass the slice by connecting both
+            // its input and fresh output to the replacement IDs.
+            continue;
           }
           final cell = cellEntry.value as Map<String, dynamic>;
           final conns = cell['connections'] as Map<String, dynamic>;
@@ -569,7 +576,7 @@ class NetlistSynthesizer extends Synthesizer {
       }
       // Unconditionally remove struct_slice cells — they are duplicated by
       // $struct_unpack cells which carry field names.
-      if (cellKey.startsWith(SynthStructureSlice.operationName)) {
+      if (NetlistCell.hasOrigin(cell, NetlistCellOrigin.structureSlice)) {
         return true;
       }
       final params = cell['parameters'] as Map<String, Object?>?;
@@ -682,6 +689,7 @@ class NetlistSynthesizer extends Synthesizer {
 
         cells['struct_unpack_${suIdx}_$structName'] = NetlistCell(
           type: r'$struct_unpack',
+          origin: NetlistCellOrigin.structureUnpack,
           parameters: params,
           portDirections: portDirs,
           connections: conns,
@@ -791,6 +799,7 @@ class NetlistSynthesizer extends Synthesizer {
 
         cells['${cellName}_$structName'] = NetlistCell(
           type: r'$struct_pack',
+          origin: NetlistCellOrigin.structurePack,
           parameters: params,
           portDirections: portDirs,
           connections: conns,
@@ -823,10 +832,10 @@ class NetlistSynthesizer extends Synthesizer {
     ];
 
     for (final cellEntry in cells.entries) {
-      if (!cellEntry.key.startsWith(SynthArrayConcat.operationName)) {
-        continue;
-      }
-      if (cellEntry.key.startsWith('array_concat_output_')) {
+      if (!NetlistCell.hasOrigin(
+        cellEntry.value,
+        NetlistCellOrigin.arrayConcat,
+      )) {
         continue;
       }
       final cell = cellEntry.value as Map<String, dynamic>;

@@ -413,7 +413,10 @@ class NetlistPasses {
         for (final entry in cells.entries) {
           final cell = entry.value;
           if (cell['type'] != r'$concat' ||
-              entry.key.startsWith('array_concat_output_')) {
+              NetlistCell.hasOrigin(
+                cell,
+                NetlistCellOrigin.outputArrayConcat,
+              )) {
             continue;
           }
 
@@ -504,7 +507,10 @@ class NetlistPasses {
       for (final concatEntry in cells.entries.toList()) {
         final concat = concatEntry.value;
         if (concat['type'] != r'$concat' ||
-            concatEntry.key.startsWith('array_concat_output_')) {
+            NetlistCell.hasOrigin(
+              concat,
+              NetlistCellOrigin.outputArrayConcat,
+            )) {
           continue;
         }
 
@@ -580,6 +586,7 @@ class NetlistPasses {
         cells[concatEntry.key] = NetlistCell(
           hideName: concat['hide_name'] as int? ?? 0,
           type: r'$slice',
+          origin: NetlistCellOrigin.arraySlice,
           parameters: <String, Object?>{
             'OFFSET': startOffset,
             'A_WIDTH': sourceWidth,
