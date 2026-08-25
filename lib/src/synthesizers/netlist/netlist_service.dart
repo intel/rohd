@@ -11,7 +11,7 @@ import 'dart:convert';
 
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/diagnostics/output_file_writer.dart'
-  if (dart.library.io) 'package:rohd/src/diagnostics/output_file_writer_io.dart';
+    if (dart.library.io) 'package:rohd/src/diagnostics/output_file_writer_io.dart';
 
 /// A service that wraps netlist (Yosys JSON) synthesis of a [Module]
 /// hierarchy.
@@ -151,9 +151,8 @@ class NetlistService extends ArtifactProducingService {
   /// Writes the full netlist [json] to [path], or to [outputPath] when [path]
   /// is omitted.
   void write([String? path]) {
-    final target = path ??
-        outputPath ??
-        '$outputDirectory/$outputBaseName.rohd.json';
+    final target =
+        path ?? outputPath ?? '$outputDirectory/$outputBaseName.rohd.json';
     writeOutputTextFile(target, _fullJson);
   }
 
