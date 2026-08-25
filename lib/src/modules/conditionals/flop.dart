@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2025 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // flop.dart
@@ -91,6 +91,10 @@ class FlipFlop extends Module with SystemVerilog {
   /// Indicates whether provided `reset` signals should be treated as an async
   /// reset. If no `reset` is provided, this will have no effect.
   final bool asyncReset;
+
+  /// The constant reset value, or `null` when reset is absent or data-driven.
+  LogicValue? get constantResetValue =>
+      _reset == null || _resetValuePort != null ? null : _resetValueConst;
 
   /// Constructs a flip flop which is positive edge triggered on [clk].
   ///
