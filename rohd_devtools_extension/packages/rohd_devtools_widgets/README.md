@@ -26,6 +26,48 @@ across DevTools packages.
 - ROHD extension client/status abstractions: `RohdExtensionClient`,
  `NullExtensionClient`, `RohdModuleInfo`, and `RohdFormatInfo`.
 
+## Widgets & Utilities
+
+### UI Controls & Buttons
+
+- **`MarkdownHelpButton`** — A help button that displays Markdown content from an asset file in a dialog. Supports tooltip text and rich formatting.
+
+- **`ExportPngButton`** — A camera icon button for triggering PNG export functionality. Includes customizable tooltip text.
+
+- **`CrossProbeButton`** — A toolbar button for toggling cross-probing between viewers. Shows a bidirectional arrows icon that reflects the active/inactive state.
+
+### Overlays & Layout
+
+- **`AppBarOverlay`** — An auto-hiding AppBar that slides in from the top edge when the mouse approaches. When disabled, behaves like a standard AppBar.
+
+### Export & Capture
+
+- **`captureBoundaryToPng`** — Captures a `RepaintBoundary` as PNG and saves or downloads it.
+
+- **`showExportToast`** — Shows export feedback and status messages.
+
+### Cross-Probing
+
+- **`CrossProbeService`** — Service for managing cross-probe state between multiple viewers/debuggers. Handles bidirectional signal selection synchronization.
+
+- **`buildGotoSourceMenuItems`** — Builds source-navigation menu items for ROHD DevTools surfaces.
+
+### Signal & Bit Field Utilities
+
+- **`expandLogicType`**, **`formatFieldValue`**, and **`formatTypeTooltip`** — Format ROHD logic types and values for display.
+
+- **`BitFieldDef`**, **`showBitRangeDialog`**, and **`showDefineBitFieldsDialog`** — Define and edit bit-field ranges.
+
+- **`buildBitExpansionMenuItems`** and **`resolveBitExpansionMenuValue`** — Build and resolve the "Expand Bits" and "Define Bit Fields" actions used across signal selection overlays and panels.
+
+- **`SignalValueFormatRegistry`** — Shared registry for signal display-format preferences, allowing consistent formatting across multiple viewers.
+
+### Extension Integration
+
+- **`RohdExtensionClient`** — Abstract interface for querying the ROHD VS Code extension. Supports multiple implementations (DevTools, VS Code webview, offline mode).
+
+- **`RohdSourceFormat`** and **`RohdFormatInfo`** — Describe source formats and their availability.
+
 ## Usage
 
 Add this package as a path dependency from a ROHD DevTools package and import the shared widgets you need:
