@@ -86,6 +86,18 @@ class NetlistModuleTranslation {
     );
   }
 
+  /// Wire IDs belonging to signals whose names must survive synthesis.
+  Set<int> preservedNameBits(
+    List<Object> Function(List<Object> bits) applyAlias,
+  ) =>
+      {
+        for (final entry in _synthLogicIds.entries)
+          if (!entry.key.isConstant &&
+              !entry.key.declarationCleared &&
+              entry.key.hasPreservedName)
+            ...applyAlias(entry.value.cast<Object>()).whereType<int>(),
+      };
+
   /// Emits input, output, and inout ports in canonical allocation order.
   void processPorts() {
     final portGroups = [
@@ -541,6 +553,7 @@ class NetlistModuleTranslation {
       List<Object> bits, {
       bool hideName = false,
       bool computed = false,
+      bool preservedName = false,
       Map<String, Object?>? logicType,
     }) {
       if (!emittedNames.add(name)) {
@@ -552,6 +565,7 @@ class NetlistModuleTranslation {
         if (logicType != null) 'logic_type': logicType,
         'attributes': <String, Object?>{
           if (computed || isInlineSystemVerilog) 'computed': 1,
+          if (preservedName) 'preserved_name': 1,
         },
       };
     }
@@ -657,6 +671,7 @@ class NetlistModuleTranslation {
         addNetname(
           Sanitizer.sanitizeSV(name),
           bits,
+          preservedName: synthLogic.hasPreservedName,
           logicType: typeLogic == null
               ? null
               : NetlistUtils.buildLogicType(typeLogic, bits),
@@ -715,7 +730,10 @@ class NetlistModuleTranslation {
   }
 
   /// Separates passthrough outputs and removes dead cells when requested.
-  void processCellCleanup({required bool enableDce}) {
+  void processCellCleanup({
+    required bool enableDce,
+    required Set<int> preservedNameBits,
+  }) {
     final inputBitIds = ports.values
         .where(
           (port) =>
@@ -762,7 +780,7 @@ class NetlistModuleTranslation {
         cells,
         portDirections: const {'output', 'inout'},
         cellDirection: 'input',
-      );
+      )..addAll(preservedNameBits);
 
       cells
         ..removeWhere((_, rawCell) {
@@ -816,6 +834,7 @@ class NetlistModuleTranslation {
   void processConstants({
     required List<Object> Function(List<Object> bits) applyAlias,
     required bool pruneFloating,
+    required Set<int> preservedNameBits,
   }) {
     var constantIndex = 0;
     final emittedConstantWires = <int>{};
@@ -860,7 +879,7 @@ class NetlistModuleTranslation {
       cells,
       portDirections: const {'output', 'inout'},
       cellDirection: 'input',
-    );
+    )..addAll(preservedNameBits);
     cells.removeWhere((_, rawCell) {
       final cell = rawCell as Map<String, dynamic>;
       if (cell['type'] != r'$const') {

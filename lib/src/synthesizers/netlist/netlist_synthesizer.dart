@@ -807,11 +807,17 @@ class NetlistSynthesizer extends Synthesizer {
       }
     }
 
+    final preservedNameBits = translation.preservedNameBits(applyAlias);
     translation
-      ..processCellCleanup(enableDce: configuration.enableDeadCellElimination)
+      ..processCellCleanup(
+        enableDce: configuration.enableDeadCellElimination,
+        preservedNameBits: preservedNameBits,
+      )
       ..processConstants(
-          applyAlias: applyAlias,
-          pruneFloating: configuration.enableDeadCellElimination);
+        applyAlias: applyAlias,
+        pruneFloating: configuration.enableDeadCellElimination,
+        preservedNameBits: preservedNameBits,
+      );
 
     // -- Break shared wire IDs for array_concat cells --------------------
     // After aliasing, concat Y can share wire IDs with the independently

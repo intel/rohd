@@ -66,6 +66,17 @@ class NotModule extends Module {
   }
 }
 
+/// Exercises preservation of user-named internal signals.
+class UserNamedInternalSignalsModule extends Module {
+  UserNamedInternalSignalsModule(Logic a, Logic b)
+      : super(name: 'userNamedInternalSignals') {
+    a = addInput('a', a);
+    b = addInput('b', b);
+    Logic(name: 'keepReserved', naming: Naming.reserved).gets(a & b);
+    Logic(name: 'keepRenameable', naming: Naming.renameable).gets(a | b);
+  }
+}
+
 /// Exercises Mux.
 class MuxModule extends Module {
   Logic get y => output('y');
@@ -749,6 +760,37 @@ void main() {
     test(r'NotGate maps to $not cell', () async {
       final json = await _synthToMap(NotModule(Logic()));
       expect(_hasCellType(json, r'$not'), isTrue);
+    });
+
+    test('user-named internal signals remain driven and named', () async {
+      final json = await _synthToMap(
+        UserNamedInternalSignalsModule(Logic(), Logic()),
+      );
+      final moduleDef = _modules(json).values.single as Map<String, dynamic>;
+      final cells = _cells(moduleDef);
+      final netnames = _netnames(moduleDef);
+
+      for (final name in ['keepReserved', 'keepRenameable']) {
+        final netname = netnames[name] as Map<String, dynamic>;
+        expect(
+          (netname['attributes'] as Map<String, dynamic>)['preserved_name'],
+          1,
+        );
+        final bits = (netname['bits'] as List).whereType<int>().toSet();
+        expect(
+          cells.values.cast<Map<String, dynamic>>().any((cell) {
+            final directions = cell['port_directions'] as Map<String, dynamic>;
+            final connections = cell['connections'] as Map<String, dynamic>;
+            return connections.entries
+                .where((entry) => directions[entry.key] == 'output')
+                .expand((entry) => entry.value as List)
+                .whereType<int>()
+                .any(bits.contains);
+          }),
+          isTrue,
+          reason: '$name must retain a driving cell',
+        );
+      }
     });
 
     test(r'Mux maps to $mux cell', () async {
@@ -2241,6 +2283,46 @@ void main() {
       );
       expect(concatConnections['A'], equals(sourceBits));
       expect(concatConnections['Y'], equals([9, 10, 11, 12, 13, 14, 15, 16]));
+    });
+
+    test('transparent cleanup preserves user-named signal drivers', () {
+      final modules = <String, Map<String, Object?>>{
+        'top': {
+          'attributes': <String, Object?>{},
+          'ports': <String, Map<String, Object?>>{},
+          'netnames': <String, Object?>{
+            'keepMe': {
+              'bits': [10],
+              'attributes': {'preserved_name': 1},
+            },
+          },
+          'cells': <String, Map<String, Object?>>{
+            'namedSlice': {
+              'type': r'$slice',
+              'port_directions': {'A': 'input', 'Y': 'output'},
+              'connections': {
+                'A': [2, 3],
+                'Y': [10],
+              },
+            },
+            'unnamedSlice': {
+              'type': r'$slice',
+              'port_directions': {'A': 'input', 'Y': 'output'},
+              'connections': {
+                'A': [2, 3],
+                'Y': [11],
+              },
+            },
+          },
+        },
+      };
+
+      NetlistPasses.removeUnconsumedTransparentCells(modules);
+
+      final cells =
+          modules['top']!['cells']! as Map<String, Map<String, Object?>>;
+      expect(cells, contains('namedSlice'));
+      expect(cells, isNot(contains('unnamedSlice')));
     });
 
     test('all wire IDs are >= 2 (0 and 1 reserved for constants)', () async {

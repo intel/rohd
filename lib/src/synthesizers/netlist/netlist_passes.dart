@@ -137,6 +137,7 @@ class NetlistPasses {
       }
 
       final ports = moduleDef['ports'] as Map<String, dynamic>? ?? {};
+      final preservedNameBits = _preservedNameBits(moduleDef);
 
       // ── Gather transparent cells ──
 
@@ -266,6 +267,7 @@ class NetlistPasses {
                 continue;
               }
               if (portOutBits.contains(b) ||
+                  preservedNameBits.contains(b) ||
                   (wireConsumers[b]?.any((c) => !comp.contains(c)) ?? false)) {
                 extOut.add(b);
               }
@@ -331,6 +333,7 @@ class NetlistPasses {
       }
 
       final ports = moduleDef['ports'] as Map<String, dynamic>? ?? {};
+      final preservedNameBits = _preservedNameBits(moduleDef);
       var changed = true;
       while (changed) {
         changed = false;
@@ -355,6 +358,7 @@ class NetlistPasses {
           }
           consumedBits.addAll((portMap['bits'] as List).whereType<int>());
         }
+        consumedBits.addAll(preservedNameBits);
 
         cells.removeWhere((_, cell) {
           if (!_transparentCleanupTypes.contains(cell['type'] as String?)) {
@@ -502,6 +506,7 @@ class NetlistPasses {
       }
 
       final ports = moduleDef['ports'] as Map<String, dynamic>? ?? {};
+      final preservedNameBits = _preservedNameBits(moduleDef);
       final cellsToRemove = <String>{};
 
       for (final concatEntry in cells.entries.toList()) {
@@ -610,6 +615,7 @@ class NetlistPasses {
             sliceRef.cell,
             cells,
             ports,
+            preservedNameBits,
           )) {
             cellsToRemove.add(sliceRef.name);
           }
@@ -645,6 +651,7 @@ class NetlistPasses {
     Map<String, Object?> slice,
     Map<String, Map<String, Object?>> cells,
     Map<String, dynamic> ports,
+    Set<int> preservedNameBits,
   ) {
     final sliceConns = slice['connections'] as Map<String, dynamic>? ?? {};
     final outputBits =
@@ -652,6 +659,9 @@ class NetlistPasses {
     final outputBitSet = outputBits.toSet();
     if (outputBitSet.isEmpty) {
       return false;
+    }
+    if (outputBitSet.any(preservedNameBits.contains)) {
+      return true;
     }
 
     for (final rawPort in ports.values) {
@@ -702,6 +712,16 @@ class NetlistPasses {
   static bool _sameBits(List<Object> left, List<Object> right) =>
       left.length == right.length &&
       left.indexed.every((entry) => entry.$2 == right[entry.$1]);
+
+  static Set<int> _preservedNameBits(Map<String, Object?> moduleDef) {
+    final netnames = moduleDef['netnames'] as Map<String, Object?>? ?? {};
+    return {
+      for (final rawNetname in netnames.values)
+        if (rawNetname is Map &&
+            (rawNetname['attributes'] as Map?)?['preserved_name'] == 1)
+          ...((rawNetname['bits'] as List?) ?? const []).whereType<int>(),
+    };
+  }
 
   /// Populates [bitMap] with output-wire-bit → input-wire-bit entries
   /// for a single transparent cell.
