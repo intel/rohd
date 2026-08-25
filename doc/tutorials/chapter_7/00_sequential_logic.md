@@ -5,7 +5,7 @@
 - [Shift Register](#shift-register)
 - [ROHD Simulator](#rohd-simulator)
 - [Unit Test in Sequential Logic](#unit-test-in-sequential-logic)
-- [Wave Dumper](#wave-dumper)
+- [Waveform Dumping](#waveform-dumping)
 - [Exercise](#exercise)
 
 ## Learning Outcome
