@@ -34,14 +34,14 @@ void main(List<String> args) {
     final pipe = Pipeline4Stages(clk, reset, a);
     await pipe.build();
 
-    // print(pipe.generateSynth());
+    // print(pipe.dumpSystemVerilog().output);
 
     a.inject(5);
     reset.inject(1);
 
     Simulator.registerAction(10, () => reset.put(0));
 
-    WaveDumper(pipe, outputPath: 'answer_1.vcd');
+    pipe.dumpWaves(outputPath: 'answer_1.vcd');
 
     Simulator.registerAction(50, () {
       // stage 4 / result: 30 + (30 * 3) = 120

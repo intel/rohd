@@ -1,3 +1,4 @@
+// Copyright (C) 2022-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // fir_filter.dart
@@ -96,7 +97,7 @@ Future<void> main({bool noPrint = false}) async {
   await firFilter.build();
 
   // Generate SystemVerilog code.
-  final systemVerilogCode = firFilter.generateSynth();
+  final systemVerilogCode = firFilter.dumpSystemVerilog().output;
   if (!noPrint) {
     // Print SystemVerilog code to console.
     print(systemVerilogCode);
@@ -108,7 +109,7 @@ Future<void> main({bool noPrint = false}) async {
 
   // Attach a waveform dumper.
   if (!noPrint) {
-    WaveDumper(firFilter);
+    firFilter.dumpWaves();
   }
 
   // Let's set the initial setting.

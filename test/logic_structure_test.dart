@@ -175,7 +175,7 @@ void main() {
     final mod = StructModuleWithInstrumentation(Const(0, width: 2));
     await mod.build();
 
-    final sv = mod.generateSynth();
+    final sv = mod.dumpSystemVerilog().output;
 
     expect(sv.contains('swizzle'), isFalse,
         reason: 'Should not pack from instrumentation!');
@@ -189,6 +189,19 @@ void main() {
       ], name: 'structure');
 
       expect(s.name, 'structure');
+    });
+
+    test('hasConsts detects constants at any depth', () {
+      final withoutConsts = LogicStructure([Logic()]);
+      final withDirectConst = LogicStructure([Logic(), Const(0)]);
+      final withNestedConst = LogicStructure([
+        Logic(),
+        LogicStructure([Logic(), Const(1)]),
+      ]);
+
+      expect(withoutConsts.hasConsts, isFalse);
+      expect(withDirectConst.hasConsts, isTrue);
+      expect(withNestedConst.hasConsts, isTrue);
     });
 
     test('sub logic in two structures throws exception', () {

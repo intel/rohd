@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2025 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // assignment_test.dart
@@ -95,6 +95,7 @@ void main() {
       allowWarnings: true, // since always_comb has no sensitivities
     );
     expect(simResult, equals(true));
+    SimCompare.checkSystemCVector(exampleModule, vectors);
   });
 
   group('assign subset', () {
@@ -110,6 +111,7 @@ void main() {
 
         await SimCompare.checkFunctionalVector(mod, vectors);
         SimCompare.checkIverilogVector(mod, vectors);
+        SimCompare.checkSystemCVector(mod, vectors);
       });
 
       test('multiple bits', () async {
