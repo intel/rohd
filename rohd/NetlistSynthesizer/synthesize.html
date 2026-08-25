@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the synthesize method from the NetlistSynthesizer class, for the Dart programming language.">
+  <title>synthesize method - NetlistSynthesizer class - rohd library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">rohd</a></li>
+    <li><a href="../../rohd/">rohd.dart</a></li>
+    <li><a href="../../rohd/NetlistSynthesizer-class.html">NetlistSynthesizer</a></li>
+    <li class="self-crumb">synthesize method</li>
+  </ol>
+  <div class="self-name">synthesize</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="rohd&#47;NetlistSynthesizer-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
+<h1><span class="kind-method">synthesize</span> method 
+</h1></div>
+
+    <section class="multi-line-signature">
+      
+  <div>
+    <ol class="annotation-list">
+        <li>@<a href="https://api.dart.dev/stable/3.13.2/dart-core/override-constant.html">override</a></li>
+    </ol>
+  </div>
+<span class="returntype"><a href="../../rohd/SynthesisResult-class.html">SynthesisResult</a></span>
+<span class="name ">synthesize</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="synthesize-param-module"><span class="type-annotation"><a href="../../rohd/Module-class.html">Module</a></span> <span class="parameter-name">module</span>, </span></li>
+<li><span class="parameter" id="synthesize-param-getInstanceTypeOfModule"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.2/dart-core/String-class.html">String</a></span> <span class="parameter-name">getInstanceTypeOfModule</span>(<ol class="parameter-list single-line"> <li><span class="parameter" id="param-module"><span class="type-annotation"><a href="../../rohd/Module-class.html">Module</a></span> <span class="parameter-name">module</span></span></li>
+</ol>), {</span></li>
+<li><span class="parameter" id="synthesize-param-lookupExistingResult"><span class="type-annotation"><a href="../../rohd/SynthesisResult-class.html">SynthesisResult</a>?</span> <span class="parameter-name">lookupExistingResult</span>(<ol class="parameter-list single-line"> <li><span class="parameter" id="param-module"><span class="type-annotation"><a href="../../rohd/Module-class.html">Module</a></span> <span class="parameter-name">module</span></span></li>
+</ol>)?, </span></li>
+<li><span class="parameter" id="synthesize-param-existingResults"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.2/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/Module-class.html">Module</a></span>, <span class="type-parameter"><a href="../../rohd/SynthesisResult-class.html">SynthesisResult</a></span>&gt;</span>?</span> <span class="parameter-name">existingResults</span>, </span></li>
+</ol>})
+
+      <div class="features"><span class="feature">override</span></div>
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Synthesizes <code>module</code> into a <a href="../../rohd/SynthesisResult-class.html">SynthesisResult</a>, given the mapping provided
+by <code>getInstanceTypeOfModule</code>.</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">@override
+SynthesisResult synthesize(
+  Module module,
+  String Function(Module module) getInstanceTypeOfModule, {
+  SynthesisResult? Function(Module module)? lookupExistingResult,
+  Map&lt;Module, SynthesisResult&gt;? existingResults,
+}) {
+  final attr = &lt;String, Object?&gt;{&#39;src&#39;: &#39;generated&#39;};
+
+  final translation = NetlistModuleTranslation(module,
+      netlistCellMapper: netlistCellMapper,
+      generatesDefinition: generatesDefinition,
+      getInstanceTypeOfModule: getInstanceTypeOfModule)
+    ..processPorts()
+    ..processInternalWires()
+    ..processCells();
+  final synthDef = translation.synthDef;
+  final ports = translation.ports;
+  final cells = translation.cells;
+  final getIds = translation.getIds;
+
+  &#47;&#47; -- Wire-ID aliasing from remaining assignments -------------------
+  &#47;&#47; SynthModuleDefinition._collapseAssignments may leave assignments
+  &#47;&#47; between non-mergeable SynthLogics (e.g., reserved port +
+  &#47;&#47; renameable internal signal).  In SV synthesis these become
+  &#47;&#47; `assign` statements.  In netlist we need the two sides to
+  &#47;&#47; share wire IDs so that the netlist is properly connected.
+  &#47;&#47;
+  &#47;&#47; Similarly, PartialSynthAssignments for output struct ports tell
+  &#47;&#47; us which leaf-field IDs should compose the port&#39;s bits, and
+  &#47;&#47; input-struct BusSubsets (which may be pruned) tell us which
+  &#47;&#47; leaf-field IDs should be carved from the port&#39;s bits.
+  final idAlias = &lt;int, int&gt;{};
+
+  &#47;&#47; Pending $struct_field cells collected during Step 3.
+  &#47;&#47; Each entry records a single field extraction from a parent struct.
+  &#47;&#47; The `parentLogic` and `fullParentIds` fields are used to group
+  &#47;&#47; entries from the same LogicStructure into a single multi-port
+  &#47;&#47; `$struct_unpack` cell.
+  final structFieldCells = &lt;({
+    List&lt;int&gt; elemIds,
+    int offset,
+    int width,
+    Logic elemLogic,
+    Logic parentLogic,
+    List&lt;int&gt; fullParentIds
+  })&gt;[];
+
+  &#47;&#47; Pending $struct_pack fields: for output struct ports, instead of
+  &#47;&#47; aliasing port bits to leaf bits (which causes &quot;shorting&quot;), we
+  &#47;&#47; collect structure-pack field operations and emit explicit cells later.
+  &#47;&#47; Each entry records: field (src) → port sub-range [lower:upper].
+  final structPackFields = &lt;({
+    List&lt;int&gt; srcIds,
+    List&lt;int&gt; dstIds,
+    int dstLowerIndex,
+    int dstUpperIndex,
+    SynthLogic srcSynthLogic,
+    SynthLogic dstSynthLogic
+  })&gt;[];
+
+  &#47;&#47; Track struct ports (both output ports of the current module AND
+  &#47;&#47; sub-module input struct ports) so Step 3 can skip $struct_field
+  &#47;&#47; collection for them ($struct_pack handles these instead).
+  final outputStructPortLogics = &lt;Logic&gt;{};
+
+  if (synthDef != null) {
+    &#47;&#47; 1. Non-partial assignments: src drives dst → dst IDs become
+    &#47;&#47;    src IDs (the driver&#39;s IDs are canonical).
+    void aliasArrayChildren(SynthLogic src, SynthLogic dst) {
+      final srcLogic = src.logics.firstOrNull;
+      final dstLogic = dst.logics.firstOrNull;
+      if (srcLogic is! LogicArray || dstLogic is! LogicArray) {
+        return;
+      }
+      if (srcLogic.elements.length != dstLogic.elements.length) {
+        return;
+      }
+
+      for (final (index, srcElement) in srcLogic.elements.indexed) {
+        final dstElement = dstLogic.elements[index];
+        final srcElementSynth = synthDef.logicToSynthMap[srcElement];
+        final dstElementSynth = synthDef.logicToSynthMap[dstElement];
+        if (srcElementSynth == null || dstElementSynth == null) {
+          continue;
+        }
+
+        final srcElementLogic = srcElementSynth.logics.firstOrNull;
+        final dstElementLogic = dstElementSynth.logics.firstOrNull;
+        if (srcElementLogic is LogicArray &amp;&amp; dstElementLogic is LogicArray) {
+          aliasArrayChildren(srcElementSynth, dstElementSynth);
+        }
+
+        final srcElementIds = getIds(srcElementSynth);
+        final dstElementIds = getIds(dstElementSynth);
+        final len = srcElementIds.length &lt; dstElementIds.length
+            ? srcElementIds.length
+            : dstElementIds.length;
+        for (var i = 0; i &lt; len; i++) {
+          if (dstElementIds[i] != srcElementIds[i]) {
+            idAlias[dstElementIds[i]] = srcElementIds[i];
+          }
+        }
+      }
+    }
+
+    for (final assignment
+        in synthDef.assignments.where((a) =&gt; a is! PartialSynthAssignment)) {
+      final srcIds = getIds(assignment.src);
+      final dstIds = getIds(assignment.dst);
+      final len =
+          srcIds.length &lt; dstIds.length ? srcIds.length : dstIds.length;
+      for (var i = 0; i &lt; len; i++) {
+        if (dstIds[i] != srcIds[i]) {
+          idAlias[dstIds[i]] = srcIds[i];
+        }
+      }
+      aliasArrayChildren(assignment.src, assignment.dst);
+    }
+
+    &#47;&#47; 2. Partial assignments (output &#47; sub-module struct ports):
+    &#47;&#47;    src → dst[lower:upper].  The port-slice IDs become the
+    &#47;&#47;    leaf&#39;s IDs so that the port is composed from its fields.
+    &#47;&#47;
+    &#47;&#47;    For struct ports (both output ports of the current module
+    &#47;&#47;    AND sub-module input struct ports), we keep distinct port
+    &#47;&#47;    and field IDs and instead collect pending $struct_pack
+    &#47;&#47;    cells.  This avoids &quot;shorting&quot; where field wires are
+    &#47;&#47;    aliased directly to port bits, which creates multi-driver
+    &#47;&#47;    conflicts with $struct_unpack cells emitted in Step 3.
+    &#47;&#47;
+    &#47;&#47;    For non-struct sub-module input ports, we alias as before.
+
+    &#47;&#47;&#47; Recursively add [struct] and all its nested [LogicStructure]
+    &#47;&#47;&#47; descendants (excluding [LogicArray]) to [set].
+    void addStructAndDescendants(LogicStructure struct, Set&lt;Logic&gt; set) {
+      set.add(struct);
+      for (final elem in struct.elements) {
+        if (elem is LogicStructure &amp;&amp; elem is! LogicArray) {
+          addStructAndDescendants(elem, set);
+        }
+      }
+    }
+
+    for (final pa
+        in synthDef.assignments.whereType&lt;PartialSynthAssignment&gt;()) {
+      final srcIds = getIds(pa.src);
+      final dstIds = getIds(pa.dst);
+
+      &#47;&#47; Detect: is pa.dst an output struct port of the current module?
+      final isCurrentModuleOutputPort =
+          pa.dst.isPort(module) &amp;&amp; pa.dst.logics.any((l) =&gt; l.isOutput);
+
+      &#47;&#47; Detect: is pa.dst a sub-module input struct port?
+      &#47;&#47; (LogicStructure but not LogicArray, and not an output of the
+      &#47;&#47; current module.)
+      final isSubModuleInputStructPort = !isCurrentModuleOutputPort &amp;&amp;
+          pa.dst.logics.any((l) =&gt; l is LogicStructure &amp;&amp; l is! LogicArray);
+
+      if (isCurrentModuleOutputPort || isSubModuleInputStructPort) {
+        &#47;&#47; Record as pending compose cell instead of aliasing.
+        structPackFields.add((
+          srcIds: srcIds,
+          dstIds: dstIds,
+          dstLowerIndex: pa.dstLowerIndex,
+          dstUpperIndex: pa.dstUpperIndex,
+          srcSynthLogic: pa.src,
+          dstSynthLogic: pa.dst,
+        ));
+        &#47;&#47; Track the Logic (and nested structs) so Step 3 skips
+        &#47;&#47; $struct_unpack for them.
+        for (final l in pa.dst.logics) {
+          if (l is LogicStructure &amp;&amp; l is! LogicArray) {
+            addStructAndDescendants(l, outputStructPortLogics);
+          }
+        }
+      } else {
+        &#47;&#47; Non-struct sub-module input port: alias as before.
+        for (var i = 0; i &lt; srcIds.length; i++) {
+          final dstIdx = pa.dstLowerIndex + i;
+          if (dstIdx &lt; dstIds.length &amp;&amp; dstIds[dstIdx] != srcIds[i]) {
+            idAlias[dstIds[dstIdx]] = srcIds[i];
+          }
+        }
+      }
+    }
+
+    &#47;&#47; 3. LogicStructure and LogicArray: child IDs → parent-slice IDs.
+    &#47;&#47;
+    &#47;&#47;    LogicArray elements alias their IDs to matching parent bits
+    &#47;&#47;    so array connectivity works.
+    &#47;&#47;
+    &#47;&#47;    Non-array LogicStructure elements are NOT aliased.  Instead,
+    &#47;&#47;    their parent→element mappings are collected in
+    &#47;&#47;    [structFieldCells] and emitted as explicit $struct_field
+    &#47;&#47;    cells after alias resolution.  This preserves element signals
+    &#47;&#47;    (e.g. &quot;a_mantissa&quot;) as distinct named wires visible in the
+    &#47;&#47;    schematic, rather than collapsing them into parent bit ranges.
+    &#47;&#47;
+    &#47;&#47;    For arrays with explicit $slice&#47;$concat cells (from
+    &#47;&#47;    SynthArraySlice &#47; SynthArrayConcat), aliasing
+    &#47;&#47;    is skipped entirely — the cells provide the structural link.
+    &#47;&#47;
+    &#47;&#47;    Applied to ALL instances (ports AND internal signals) since
+    &#47;&#47;    internal arrays&#47;structs (e.g. constant-driven coefficients)
+    &#47;&#47;    also need child→parent aliasing.
+    &#47;&#47;
+    &#47;&#47;    - LogicStructure (non-array): walks leafElements (recursive)
+    &#47;&#47;    - LogicArray: walks elements (direct children only, since
+    &#47;&#47;      each element is already a flat bitvector).
+    &#47;&#47;      For input array ports that have SynthArraySlice
+    &#47;&#47;      cells, we skip aliasing so the $slice cells provide the
+    &#47;&#47;      structural connection (see _subsetReceiveArrayPort).
+    &#47;&#47;
+    &#47;&#47;    When a child ID was already aliased (e.g. by step 1 to a
+    &#47;&#47;    constant driver), we also redirect that prior target to the
+    &#47;&#47;    parent ID so the transitive chain resolves correctly:
+    &#47;&#47;    constId → childId → parentId.
+    void aliasChildToParent(int childId, int parentId) {
+      if (childId == parentId) {
+        return;
+      }
+      &#47;&#47; If childId already aliases somewhere (e.g. constId → childId
+      &#47;&#47; was set in step 1 as childId → constId), redirect that old
+      &#47;&#47; target to parentId as well, so constId → parentId.
+      final existing = idAlias[childId];
+      if (existing != null &amp;&amp; existing != parentId) {
+        idAlias[existing] = parentId;
+      }
+      idAlias[childId] = parentId;
+    }
+
+    &#47;&#47; Collect LogicArray ports that have explicit array_slice or
+    &#47;&#47; array_concat submodules so we can skip aliasing them (the
+    &#47;&#47; $slice&#47;$concat cells provide the structural link).
+    final arraysWithExplicitCells = &lt;Logic&gt;{};
+    for (final inst in synthDef.subModuleInstantiations) {
+      if (inst.module is SynthArraySlice) {
+        &#47;&#47; The input of the BusSubset is the array port.
+        for (final inputSL in inst.inputMapping.values) {
+          final logic = synthDef.logicToSynthMap.entries
+              .where(
+                (e) =&gt; e.value == inputSL || e.value.replacement == inputSL,
+              )
+              .map((e) =&gt; e.key)
+              .firstOrNull;
+          if (logic != null &amp;&amp; logic is LogicArray) {
+            arraysWithExplicitCells.add(logic);
+          }
+          &#47;&#47; Also check the resolved replacement chain.
+          final resolved = inputSL.resolved;
+          final logic2 = synthDef.logicToSynthMap.entries
+              .where((e) =&gt; e.value == resolved)
+              .map((e) =&gt; e.key)
+              .firstOrNull;
+          if (logic2 != null &amp;&amp; logic2 is LogicArray) {
+            arraysWithExplicitCells.add(logic2);
+          }
+        }
+      }
+      if (inst.module is SynthArrayConcat) {
+        &#47;&#47; The output of the Swizzle is the array signal.
+        for (final outputSL in inst.outputMapping.values) {
+          final logic = synthDef.logicToSynthMap.entries
+              .where(
+                (e) =&gt; e.value == outputSL || e.value.replacement == outputSL,
+              )
+              .map((e) =&gt; e.key)
+              .firstOrNull;
+          if (logic != null &amp;&amp; logic is LogicArray) {
+            arraysWithExplicitCells.add(logic);
+          }
+        }
+      }
+    }
+
+    for (final entry in synthDef.logicToSynthMap.entries) {
+      final logic = entry.key;
+      if (logic is! LogicStructure) {
+        continue;
+      }
+      final parentSL = entry.value;
+      final parentIds = getIds(parentSL);
+
+      if (logic is LogicArray) {
+        &#47;&#47; Skip aliasing for arrays that have explicit $slice&#47;$concat cells.
+        if (arraysWithExplicitCells.contains(logic)) {
+          continue;
+        }
+        &#47;&#47; Array: alias each element&#39;s IDs to matching parent slice.
+        var idx = 0;
+        for (final element in logic.elements) {
+          final elemSL = synthDef.logicToSynthMap[element];
+          if (elemSL != null) {
+            final elemIds = getIds(elemSL);
+            for (var i = 0;
+                i &lt; elemIds.length &amp;&amp; idx + i &lt; parentIds.length;
+                i++) {
+              aliasChildToParent(elemIds[i], parentIds[idx + i]);
+            }
+          }
+          idx += element.width;
+        }
+      } else {
+        &#47;&#47; Struct: collect element→parent mappings for $struct_field
+        &#47;&#47; cell emission instead of aliasing.  This preserves named
+        &#47;&#47; field signals as distinct wires connected through explicit
+        &#47;&#47; cells, making them visible in the schematic and evaluable
+        &#47;&#47; by the netlist evaluator.
+        &#47;&#47;
+        &#47;&#47; Skip output struct ports of the current module — those are
+        &#47;&#47; handled by $struct_pack cells (from Step 2).
+        if (outputStructPortLogics.contains(logic)) {
+          continue;
+        }
+        var idx = 0;
+        for (final elem in logic.elements) {
+          final elemSL = synthDef.logicToSynthMap[elem];
+          if (elemSL != null) {
+            final elemIds = getIds(elemSL);
+            final sliceLen = elemIds.length &lt; parentIds.length - idx
+                ? elemIds.length
+                : parentIds.length - idx;
+            if (sliceLen &gt; 0) {
+              structFieldCells.add((
+                elemIds: elemIds.sublist(0, sliceLen),
+                offset: idx,
+                width: sliceLen,
+                elemLogic: elem,
+                parentLogic: logic,
+                fullParentIds: parentIds,
+              ));
+            }
+          } else if (elem is LogicStructure &amp;&amp; elem is! LogicArray) {
+            &#47;&#47; Nested InterfaceStructure: the intermediate struct
+            &#47;&#47; itself has no SynthLogic, but its leaf elements do
+            &#47;&#47; (created by _subsetReceiveStructPort).  Walk leaf
+            &#47;&#47; elements and emit struct field entries for each,
+            &#47;&#47; using the top-level parent as the parent Logic.
+            var leafIdx = idx;
+            for (final leaf in elem.leafElements) {
+              final leafSL = synthDef.logicToSynthMap[leaf];
+              if (leafSL != null) {
+                final leafIds = getIds(leafSL);
+                final sliceLen = leafIds.length &lt; parentIds.length - leafIdx
+                    ? leafIds.length
+                    : parentIds.length - leafIdx;
+                if (sliceLen &gt; 0) {
+                  structFieldCells.add((
+                    elemIds: leafIds.sublist(0, sliceLen),
+                    offset: leafIdx,
+                    width: sliceLen,
+                    elemLogic: leaf,
+                    parentLogic: logic,
+                    fullParentIds: parentIds,
+                  ));
+                }
+              }
+              leafIdx += leaf.width;
+            }
+          }
+          idx += elem.width;
+        }
+      }
+    }
+  }
+
+  &#47;&#47; Transitively resolve an alias chain to its canonical ID.
+  &#47;&#47; Uses a visited set to detect cycles created by conflicting
+  &#47;&#47; child→parent and assignment aliasing directions.
+  int resolveAlias(int id) {
+    var resolved = id;
+    final visited = &lt;int&gt;{};
+    while (idAlias.containsKey(resolved)) {
+      if (!visited.add(resolved)) {
+        &#47;&#47; Cycle detected — break the cycle by removing this entry.
+        idAlias.remove(resolved);
+        break;
+      }
+      resolved = idAlias[resolved]!;
+    }
+    return resolved;
+  }
+
+  &#47;&#47; Apply aliases to a list of bit IDs &#47; string constants.
+  List&lt;Object&gt; applyAlias(List&lt;Object&gt; bits) =&gt; idAlias.isEmpty
+      ? bits
+      : bits.map((b) =&gt; b is int ? resolveAlias(b) : b).toList();
+
+  &#47;&#47; -- Break shared wire IDs for array slice&#47;concat cells -----------------
+  &#47;&#47; (Populated inside the alias block below; declared here so netnames
+  &#47;&#47; can reference it later.)
+  final arraySliceOldToNew = &lt;int, int&gt;{};
+
+  &#47;&#47; Alias port bits.
+  if (idAlias.isNotEmpty) {
+    for (final p in ports.values) {
+      p[&#39;bits&#39;] = applyAlias((p[&#39;bits&#39;]! as List).cast&lt;Object&gt;());
+    }
+    &#47;&#47; Alias cell connections.
+    for (final c in cells.values) {
+      final conns = c[&#39;connections&#39;]! as Map&lt;String, dynamic&gt;;
+      for (final key in conns.keys.toList()) {
+        conns[key] = applyAlias((conns[key] as List).cast&lt;Object&gt;());
+      }
+    }
+
+    &#47;&#47; After aliasing, the slice output Y bits share the same wire IDs
+    &#47;&#47; as the corresponding sub-range of input A (because LogicArray
+    &#47;&#47; elements share the parent&#39;s bit storage).  This makes the slice
+    &#47;&#47; trivial and it would be elided below.
+    &#47;&#47;
+    &#47;&#47; To preserve the structural decomposition in the schematic, we
+    &#47;&#47; allocate fresh wire IDs for each array_slice Y output, then
+    &#47;&#47; redirect all other cells that consume those IDs as inputs to
+    &#47;&#47; read from the fresh IDs instead.  The slice input A keeps the
+    &#47;&#47; original parent-array IDs, so the data flow becomes:
+    &#47;&#47;   parent (original IDs) → slice A → slice Y (fresh IDs) → consumer
+
+    for (final cellEntry in cells.entries) {
+      &#47;&#47; Only array slices need fresh outputs; other cells retain their
+      &#47;&#47; aliased connections until downstream inputs are rewritten below.
+      if (!NetlistCell.hasOrigin(
+        cellEntry.value,
+        NetlistCellOrigin.arraySlice,
+      )) {
+        continue;
+      }
+      final cell = cellEntry.value as Map&lt;String, dynamic&gt;;
+      final conns = cell[&#39;connections&#39;] as Map&lt;String, dynamic&gt;;
+      final dirs = cell[&#39;port_directions&#39;] as Map&lt;String, dynamic&gt;;
+
+      for (final portEntry in conns.entries.toList()) {
+        if (dirs[portEntry.key] != &#39;output&#39;) {
+          continue;
+        }
+        final oldBits = (portEntry.value as List).cast&lt;Object&gt;();
+        conns[portEntry.key] = [
+          for (final b in oldBits)
+            if (b is int)
+              arraySliceOldToNew.putIfAbsent(
+                b,
+                translation.allocateWireId,
+              )
+            else
+              b,
+        ];
+      }
+    }
+
+    &#47;&#47; Redirect other cells: any input port bit that matches an old ID
+    &#47;&#47; gets replaced with the corresponding fresh ID.
+    if (arraySliceOldToNew.isNotEmpty) {
+      for (final cellEntry in cells.entries) {
+        if (NetlistCell.hasOrigin(
+          cellEntry.value,
+          NetlistCellOrigin.arraySlice,
+        )) {
+          &#47;&#47; Keep each slice input connected to the original parent-array
+          &#47;&#47; bits. Rewriting it would bypass the slice by connecting both
+          &#47;&#47; its input and fresh output to the replacement IDs.
+          continue;
+        }
+        final cell = cellEntry.value as Map&lt;String, dynamic&gt;;
+        final conns = cell[&#39;connections&#39;] as Map&lt;String, dynamic&gt;;
+        final dirs = cell[&#39;port_directions&#39;] as Map&lt;String, dynamic&gt;;
+
+        for (final portEntry in conns.entries.toList()) {
+          if (dirs[portEntry.key] != &#39;input&#39;) {
+            continue;
+          }
+          final bits = (portEntry.value as List).cast&lt;Object&gt;();
+          final newBits = [
+            for (final b in bits)
+              if (b is int) arraySliceOldToNew[b] ?? b else b,
+          ];
+          if (bits.indexed.any((e) =&gt; e.$2 != newBits[e.$1])) {
+            conns[portEntry.key] = newBits;
+          }
+        }
+      }
+    }
+  }
+
+  &#47;&#47; -- Elide trivial $slice cells ----------------------------------
+  &#47;&#47; Also elide struct_slice cells ([SynthStructureSlice] instances from
+  &#47;&#47; `_subsetReceiveStructPort`) because the new `$struct_unpack` cells
+  &#47;&#47; emitted below supersede them with better-named field-level connections.
+  cells.removeWhere((cellKey, cell) {
+    if (cell[&#39;type&#39;] != r&#39;$slice&#39;) {
+      return false;
+    }
+    &#47;&#47; Unconditionally remove struct_slice cells — they are duplicated by
+    &#47;&#47; $struct_unpack cells which carry field names.
+    if (NetlistCell.hasOrigin(cell, NetlistCellOrigin.structureSlice)) {
+      return true;
+    }
+    final params = cell[&#39;parameters&#39;] as Map&lt;String, Object?&gt;?;
+    final offset = params?[&#39;OFFSET&#39;];
+    if (offset is! int) {
+      return false;
+    }
+    final conns = cell[&#39;connections&#39;]! as Map&lt;String, dynamic&gt;;
+    final aBits = conns[&#39;A&#39;] as List?;
+    final yBits = conns[&#39;Y&#39;] as List?;
+    if (aBits == null || yBits == null) {
+      return false;
+    }
+    return yBits.indexed.every(
+      (e) =&gt; offset + e.$1 &lt; aBits.length &amp;&amp; e.$2 == aBits[offset + e.$1],
+    );
+  });
+
+  &#47;&#47; -- Emit $struct_unpack cells for LogicStructure elements ----------
+  &#47;&#47; Group per-field entries by their parent LogicStructure and emit a
+  &#47;&#47; single multi-port cell per group.  Each group has:
+  &#47;&#47;   • input port A: the full parent bus (packed bitvector)
+  &#47;&#47;   • one output port per non-trivial field: bits for that field
+  &#47;&#47; This replaces the old per-field $struct_field cells.
+  if (synthDef != null &amp;&amp; structFieldCells.isNotEmpty) {
+    &#47;&#47; Group by parent Logic identity.
+    final groups = &lt;Logic,
+        List&lt;
+            ({
+              List&lt;int&gt; elemIds,
+              int offset,
+              int width,
+              Logic elemLogic,
+              Logic parentLogic,
+              List&lt;int&gt; fullParentIds
+            })&gt;&gt;{};
+    for (final sf in structFieldCells) {
+      (groups[sf.parentLogic] ??= []).add(sf);
+    }
+
+    var suIdx = 0;
+    for (final entry in groups.entries) {
+      final parentLogic = entry.key;
+      final fields = entry.value;
+      final fullParentIds = fields.first.fullParentIds;
+      final resolvedParentBits = applyAlias(fullParentIds.cast&lt;Object&gt;());
+
+      &#47;&#47; Filter out trivial fields (input slice == output after aliasing).
+      final nonTrivialFields = fields
+          .map((sf) {
+            final resolvedElemBits = applyAlias(sf.elemIds.cast&lt;Object&gt;());
+            return (
+              resolvedElemBits: resolvedElemBits,
+              offset: sf.offset,
+              width: sf.width,
+              elemLogic: sf.elemLogic
+            );
+          })
+          .where((f) =&gt; !f.resolvedElemBits.indexed.every((e) {
+                final (i, bit) = e;
+                return f.offset + i &lt; resolvedParentBits.length &amp;&amp;
+                    bit == resolvedParentBits[f.offset + i];
+              }))
+          .toList();
+
+      if (nonTrivialFields.isEmpty) {
+        continue;
+      }
+
+      &#47;&#47; Derive struct name for the cell key.
+      final structName = Sanitizer.sanitizeSV(parentLogic.name);
+
+      final structLayout = parentLogic is LogicStructure
+          ? SynthStructureLayout(parentLogic)
+          : null;
+
+      &#47;&#47; Build port_directions and connections with one output per field.
+      final portDirs = &lt;String, NetlistPortDirection&gt;{
+        &#39;A&#39;: NetlistPortDirection.input,
+      };
+      final conns = &lt;String, List&lt;Object&gt;&gt;{&#39;A&#39;: resolvedParentBits};
+
+      for (var i = 0; i &lt; nonTrivialFields.length; i++) {
+        final f = nonTrivialFields[i];
+        final fieldName = structLayout?.fieldNameAt(f.offset,
+                fallbackName: f.elemLogic.name, anonymousUnpreferred: true) ??
+            f.elemLogic.name;
+        &#47;&#47; Disambiguate duplicate field names with index suffix.
+        var portName = fieldName;
+        if (portDirs.containsKey(portName)) {
+          portName = &#39;${fieldName}_$i&#39;;
+        }
+        portDirs[portName] = NetlistPortDirection.output;
+        conns[portName] = f.resolvedElemBits;
+      }
+
+      &#47;&#47; Parameters list field metadata for the schematic viewer.
+      final params = &lt;String, Object?&gt;{
+        &#39;STRUCT_NAME&#39;: parentLogic.name,
+        &#39;FIELD_COUNT&#39;: nonTrivialFields.length,
+      };
+      for (var i = 0; i &lt; nonTrivialFields.length; i++) {
+        final f = nonTrivialFields[i];
+        params[&#39;FIELD_${i}_NAME&#39;] = structLayout?.fieldNameAt(f.offset,
+                fallbackName: f.elemLogic.name, anonymousUnpreferred: true) ??
+            f.elemLogic.name;
+        params[&#39;FIELD_${i}_OFFSET&#39;] = f.offset;
+        params[&#39;FIELD_${i}_WIDTH&#39;] = f.width;
+      }
+
+      cells[&#39;struct_unpack_${suIdx}_$structName&#39;] = NetlistCell(
+        type: r&#39;$struct_unpack&#39;,
+        origin: NetlistCellOrigin.structureUnpack,
+        parameters: params,
+        portDirections: portDirs,
+        connections: conns,
+      ).toJson();
+      suIdx++;
+    }
+  }
+
+  &#47;&#47; -- Emit $struct_pack cells for output struct ports ------------------
+  &#47;&#47; Group compose entries by destination port and emit a single
+  &#47;&#47; multi-port cell per group.  Each group has:
+  &#47;&#47;   • one input port per non-trivial field
+  &#47;&#47;   • output port Y: the full packed output bus
+  &#47;&#47; This emits explicit structure packing cells.
+  if (structPackFields.isNotEmpty) {
+    &#47;&#47; Group by destination SynthLogic identity.
+    final packGroups = &lt;SynthLogic,
+        List&lt;
+            ({
+              List&lt;int&gt; srcIds,
+              List&lt;int&gt; dstIds,
+              int dstLowerIndex,
+              int dstUpperIndex,
+              SynthLogic srcSynthLogic,
+              SynthLogic dstSynthLogic,
+            })&gt;&gt;{};
+    for (final sc in structPackFields) {
+      (packGroups[sc.dstSynthLogic] ??= []).add(sc);
+    }
+
+    for (final entry in packGroups.entries) {
+      final dstSynthLogic = entry.key;
+      final fields = entry.value;
+      final resolvedDstBits = applyAlias(fields.first.dstIds.cast&lt;Object&gt;());
+
+      &#47;&#47; Filter out trivial fields.
+      final nonTrivialFields = fields
+          .map((sc) {
+            final resolvedSrcBits = applyAlias(sc.srcIds.cast&lt;Object&gt;());
+            final yBits = resolvedDstBits.sublist(
+                sc.dstLowerIndex, sc.dstUpperIndex + 1);
+            return (
+              resolvedSrcBits: resolvedSrcBits,
+              yBits: yBits,
+              dstLowerIndex: sc.dstLowerIndex,
+              dstUpperIndex: sc.dstUpperIndex,
+              srcSynthLogic: sc.srcSynthLogic
+            );
+          })
+          .where((f) =&gt; !f.resolvedSrcBits
+              .take(f.yBits.length)
+              .indexed
+              .every((e) =&gt; e.$2 == f.yBits[e.$1]))
+          .toList();
+
+      if (nonTrivialFields.isEmpty) {
+        continue;
+      }
+
+      &#47;&#47; Derive struct metadata from the destination Logic.
+      final dstLogic = dstSynthLogic.logics.firstOrNull;
+      final structName =
+          dstLogic != null ? Sanitizer.sanitizeSV(dstLogic.name) : &#39;struct&#39;;
+      final structLayout =
+          dstLogic is LogicStructure ? SynthStructureLayout(dstLogic) : null;
+      final cellName = dstLogic != null
+          ? NetlistUtils.synthesizedCellName(
+              operationName: SynthStructureConcat.operationName,
+              destination: dstLogic,
+            )
+          : SynthStructureConcat.operationName;
+
+      &#47;&#47; Build port_directions and connections.
+      final portDirs = &lt;String, NetlistPortDirection&gt;{};
+      final conns = &lt;String, List&lt;Object&gt;&gt;{};
+
+      for (var i = 0; i &lt; nonTrivialFields.length; i++) {
+        final f = nonTrivialFields[i];
+        final fieldName = structLayout?.fieldNameAt(f.dstLowerIndex,
+                fallbackName: f.srcSynthLogic.resolved.name) ??
+            f.srcSynthLogic.resolved.name;
+        var portName = fieldName;
+        if (portDirs.containsKey(portName)) {
+          portName = &#39;${fieldName}_$i&#39;;
+        }
+        portDirs[portName] = NetlistPortDirection.input;
+        conns[portName] = f.resolvedSrcBits;
+      }
+
+      &#47;&#47; Output port Y: full destination bus.
+      portDirs[&#39;Y&#39;] = NetlistPortDirection.output;
+      conns[&#39;Y&#39;] = resolvedDstBits;
+
+      &#47;&#47; Parameters list field metadata for the schematic viewer.
+      final params = &lt;String, Object?&gt;{
+        &#39;STRUCT_NAME&#39;: dstLogic?.name ?? &#39;struct&#39;,
+        &#39;FIELD_COUNT&#39;: nonTrivialFields.length,
+      };
+      for (var i = 0; i &lt; nonTrivialFields.length; i++) {
+        final f = nonTrivialFields[i];
+        params[&#39;FIELD_${i}_NAME&#39;] = structLayout?.fieldNameAt(f.dstLowerIndex,
+                fallbackName: f.srcSynthLogic.resolved.name) ??
+            f.srcSynthLogic.resolved.name;
+        params[&#39;FIELD_${i}_OFFSET&#39;] = f.dstLowerIndex;
+        params[&#39;FIELD_${i}_WIDTH&#39;] = f.dstUpperIndex - f.dstLowerIndex + 1;
+      }
+
+      cells[&#39;${cellName}_$structName&#39;] = NetlistCell(
+        type: r&#39;$struct_pack&#39;,
+        origin: NetlistCellOrigin.structurePack,
+        parameters: params,
+        portDirections: portDirs,
+        connections: conns,
+      ).toJson();
+    }
+  }
+
+  final preservedNameBits = translation.preservedNameBits(applyAlias);
+  translation
+    ..processCellCleanup(
+      enableDce: configuration.enableDeadCellElimination,
+      preservedNameBits: preservedNameBits,
+    )
+    ..processConstants(
+      applyAlias: applyAlias,
+      pruneFloating: configuration.enableDeadCellElimination,
+      preservedNameBits: preservedNameBits,
+    );
+
+  &#47;&#47; -- Break shared wire IDs for array_concat cells --------------------
+  &#47;&#47; After aliasing, concat Y can share wire IDs with the independently
+  &#47;&#47; driven element inputs (because LogicArray elements share the parent&#39;s
+  &#47;&#47; bit storage).  This makes concat Y a second driver of the element wires.
+  &#47;&#47;
+  &#47;&#47; Allocate fresh IDs for concat Y and redirect downstream consumers to
+  &#47;&#47; those fresh IDs. The concat inputs keep the original element IDs, so
+  &#47;&#47; data flow is:
+  &#47;&#47;   element drivers → concat input → concat Y (fresh IDs) → consumer
+  final arrayConcatOldToNew = &lt;int, int&gt;{};
+  final arrayConcatReplacements =
+      &lt;({String cellKey, List&lt;Object&gt; oldBits, List&lt;Object&gt; newBits})&gt;[];
+  final outputPortBitSets = [
+    for (final port in ports.values)
+      if ((port as Map&lt;String, dynamic&gt;)[&#39;direction&#39;] == &#39;output&#39;)
+        (port[&#39;bits&#39;] as List).whereType&lt;int&gt;().toSet(),
+  ];
+
+  for (final cellEntry in cells.entries) {
+    if (!NetlistCell.hasOrigin(
+      cellEntry.value,
+      NetlistCellOrigin.arrayConcat,
+    )) {
+      continue;
+    }
+    final cell = cellEntry.value as Map&lt;String, dynamic&gt;;
+    final conns = cell[&#39;connections&#39;] as Map&lt;String, dynamic&gt;;
+    final dirs = cell[&#39;port_directions&#39;] as Map&lt;String, dynamic&gt;;
+
+    for (final portEntry in conns.entries.toList()) {
+      if (dirs[portEntry.key] != &#39;output&#39;) {
+        continue;
+      }
+      final oldBits = (portEntry.value as List).cast&lt;Object&gt;();
+      final oldBitSet = oldBits.whereType&lt;int&gt;().toSet();
+      if (outputPortBitSets.any((outputBits) =&gt;
+          outputBits.length == oldBitSet.length &amp;&amp;
+          outputBits.containsAll(oldBitSet))) {
+        continue;
+      }
+      final newBits = [
+        for (final b in oldBits)
+          if (b is int) translation.allocateWireId() else b,
+      ];
+      conns[portEntry.key] = newBits;
+      arrayConcatReplacements
+          .add((cellKey: cellEntry.key, oldBits: oldBits, newBits: newBits));
+    }
+  }
+
+  final arrayConcatOutputProducers = &lt;int, List&lt;int&gt;&gt;{};
+  for (final (index, replacement) in arrayConcatReplacements.indexed) {
+    for (final bit in replacement.oldBits) {
+      if (bit is int) {
+        (arrayConcatOutputProducers[bit] ??= []).add(index);
+      }
+    }
+  }
+
+  List&lt;Object&gt; rewriteArrayConcatConsumerBits(
+    List&lt;Object&gt; bits, {
+    String? consumingCellKey,
+  }) {
+    for (final replacement in arrayConcatReplacements) {
+      if (replacement.cellKey == consumingCellKey ||
+          replacement.oldBits.length != bits.length) {
+        continue;
+      }
+      if (bits.indexed
+          .every((entry) =&gt; entry.$2 == replacement.oldBits[entry.$1])) {
+        return replacement.newBits;
+      }
+    }
+
+    final newBits = &lt;Object&gt;[];
+    var changed = false;
+    for (final bit in bits) {
+      if (bit is! int) {
+        newBits.add(bit);
+        continue;
+      }
+      final producerIndices = arrayConcatOutputProducers[bit]
+          ?.where((index) =&gt;
+              arrayConcatReplacements[index].cellKey != consumingCellKey)
+          .toList();
+      if (producerIndices == null || producerIndices.length != 1) {
+        newBits.add(bit);
+        continue;
+      }
+      final producer = arrayConcatReplacements[producerIndices.single];
+      final bitIndex = producer.oldBits.indexOf(bit);
+      if (bitIndex &lt; 0) {
+        newBits.add(bit);
+        continue;
+      }
+      newBits.add(producer.newBits[bitIndex]);
+      changed = true;
+    }
+    return changed ? newBits : bits;
+  }
+
+  &#47;&#47; Redirect downstream consumers: any input port or module output bit that
+  &#47;&#47; matches an old concat Y ID gets replaced with the corresponding fresh ID.
+  if (arrayConcatReplacements.isNotEmpty) {
+    for (final portEntry in ports.values) {
+      final port = portEntry as Map&lt;String, dynamic&gt;;
+      if (port[&#39;direction&#39;] != &#39;output&#39;) {
+        continue;
+      }
+      final bits = (port[&#39;bits&#39;] as List).cast&lt;Object&gt;();
+      final newBits = rewriteArrayConcatConsumerBits(bits);
+      if (bits.indexed.any((e) =&gt; e.$2 != newBits[e.$1])) {
+        port[&#39;bits&#39;] = newBits;
+      }
+    }
+
+    for (final cellEntry in cells.entries) {
+      final cell = cellEntry.value as Map&lt;String, dynamic&gt;;
+      final conns = cell[&#39;connections&#39;] as Map&lt;String, dynamic&gt;;
+      final dirs = cell[&#39;port_directions&#39;] as Map&lt;String, dynamic&gt;;
+
+      for (final portEntry in conns.entries.toList()) {
+        if (dirs[portEntry.key] != &#39;input&#39;) {
+          continue;
+        }
+        final bits = (portEntry.value as List).cast&lt;Object&gt;();
+        final newBits = rewriteArrayConcatConsumerBits(bits,
+            consumingCellKey: cellEntry.key);
+        if (bits.indexed.any((e) =&gt; e.$2 != newBits[e.$1])) {
+          conns[portEntry.key] = newBits;
+        }
+      }
+    }
+  }
+
+  translation.processNetnames(
+      applyAlias: applyAlias,
+      arraySliceOldToNew: arraySliceOldToNew,
+      arrayConcatOldToNew: arrayConcatOldToNew,
+      pruneUndriven: configuration.enableDeadCellElimination,
+      drivenBits: configuration.enableDeadCellElimination
+          ? NetlistValidation.connectedBits(ports, cells,
+              portDirections: const {&#39;input&#39;, &#39;inout&#39;},
+              cellDirection: &#39;output&#39;)
+          : const {});
+  final netnames = translation.netnames;
+
+  &#47;&#47; -- Structural validation -------------------------------------------
+  NetlistValidation.validate(ports, cells, module.name, netnames: netnames);
+
+  return NetlistSynthesisResult(module, getInstanceTypeOfModule,
+      ports: ports, cells: cells, netnames: netnames, attributes: attr);
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">rohd</a></li>
+    <li><a href="../../rohd/">rohd</a></li>
+    <li><a href="../../rohd/NetlistSynthesizer-class.html">NetlistSynthesizer</a></li>
+    <li class="self-crumb">synthesize method</li>
+</ol>
+
+    <h5>NetlistSynthesizer class</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    rohd
+      0.6.10
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

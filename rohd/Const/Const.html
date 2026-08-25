@@ -55,9 +55,9 @@
     <section class="multi-line-signature">
       
       <span class="name ">Const</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="param-val"><span class="type-annotation">dynamic</span> <span class="parameter-name">val</span>, {</span></li>
-<li><span class="parameter" id="param-width"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.1/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">width</span>, </span></li>
-<li><span class="parameter" id="param-fill"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.1/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">fill</span> = <span class="default-value">false</span>, </span></li>
-<li><span class="parameter" id="param-preferredRadix"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.1/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">preferredRadix</span>, </span></li>
+<li><span class="parameter" id="param-width"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.2/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">width</span>, </span></li>
+<li><span class="parameter" id="param-fill"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.2/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">fill</span> = <span class="default-value">false</span>, </span></li>
+<li><span class="parameter" id="param-preferredRadix"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.2/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">preferredRadix</span>, </span></li>
 </ol>})
     </section>
     
@@ -77,19 +77,12 @@ uses decimal. Values containing <code>x</code> or <code>z</code> may fall back t
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">Const(
-  dynamic val, {
-  int? width,
-  bool fill = false,
-  int? preferredRadix,
-}) : this._(
-        LogicValue.of(
-          val,
-          width: width ?? (val is LogicValue ? val.width : 1),
-          fill: fill,
-        ),
-        preferredRadix: _validatePreferredRadix(preferredRadix),
-      );</code></pre>
+  <pre class="language-dart"><code class="language-dart">Const(dynamic val, {int? width, bool fill = false, int? preferredRadix})
+    : this._(
+          LogicValue.of(val,
+              width: width ?? (val is LogicValue ? val.width : 1),
+              fill: fill),
+          preferredRadix: _validatePreferredRadix(preferredRadix));</code></pre>
 </section>
 
 
