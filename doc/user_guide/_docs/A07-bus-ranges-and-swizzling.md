@@ -16,10 +16,10 @@ var a = Logic(width:8),
     e = Logic(width: 9);
 
 
-// assign b to the bottom 3 bits of a
+// assign b to be driven by the bottom 3 bits of a
 b <= a.slice(2,0);
 
-// assign d to the top bit of a
+// assign d to be driven by the top bit of a
 d <= a[7];
 
 // construct e by swizzling bits from b, c, and d
