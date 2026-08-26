@@ -45,6 +45,9 @@ class LogicStructure implements Logic {
   @override
   Naming get naming => Naming.unnamed;
 
+  @override
+  ParameterExpression? get widthExpression => null;
+
   /// Creates a new [LogicStructure] with [elements] as elements.
   ///
   /// None of the [elements] can already be members of another [LogicStructure].

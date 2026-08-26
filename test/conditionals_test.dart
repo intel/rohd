@@ -17,7 +17,8 @@ class ShorthandAssignModule extends Module {
   final bool useArrays;
 
   @override
-  Logic addInput(String name, Logic x, {int width = 1}) {
+  Logic addInput(String name, Logic x,
+      {int width = 1, ParameterExpression? widthExpression}) {
     assert(width.isEven, 'if arrays, split width in 2');
     if (useArrays) {
       return super
@@ -28,7 +29,8 @@ class ShorthandAssignModule extends Module {
   }
 
   @override
-  Logic addOutput(String name, {int width = 1}) {
+  Logic addOutput(String name,
+      {int width = 1, ParameterExpression? widthExpression}) {
     assert(width.isEven, 'if arrays, split width in 2');
     if (useArrays) {
       return super
