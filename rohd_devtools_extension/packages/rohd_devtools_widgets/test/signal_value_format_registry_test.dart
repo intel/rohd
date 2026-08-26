@@ -57,6 +57,25 @@ void main() {
     );
   });
 
+  test('canonicalizes bare waveform values with unknown bits', () {
+    expect(
+      SignalValueFormatRegistry.formatValue(
+        '10x0',
+        SignalValueFormat.waveform,
+        4,
+      ),
+      "4'b10x0",
+    );
+    expect(
+      SignalValueFormatRegistry.formatValue(
+        'f0xz',
+        SignalValueFormat.hexadecimal,
+        16,
+      ),
+      "16'hf0XZ",
+    );
+  });
+
   test('uses ROHD radix literals for typed format conversions', () {
     expect(
       SignalValueFormatRegistry.formatValue(
@@ -89,6 +108,17 @@ void main() {
         264,
       ),
       List<String>.filled(33, 'A').join(),
+    );
+  });
+
+  test('returns invalid radix literals unchanged', () {
+    expect(
+      SignalValueFormatRegistry.formatValue(
+        "8'b2",
+        SignalValueFormat.waveform,
+        8,
+      ),
+      "8'b2",
     );
   });
 

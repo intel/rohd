@@ -16,9 +16,9 @@ void main() {
     const first = OccurrenceAddress([0, 2, 4]);
     const second = OccurrenceAddress([0, 2, 5]);
 
-    expect(trie.set(first, 'first'), isNull);
+    trie[first] = 'first';
     trie[OccurrenceAddress.root] = 'root';
-    expect(trie.set(second, 'second'), isNull);
+    trie[second] = 'second';
 
     expect(trie[OccurrenceAddress.root], 'root');
     expect(trie[first], 'first');
@@ -30,9 +30,8 @@ void main() {
     final trie = OccurrenceTrie<String>();
     const first = OccurrenceAddress([0, 2, 4]);
     const second = OccurrenceAddress([0, 2, 5]);
-    trie
-      ..set(first, 'first')
-      ..set(second, 'second');
+    trie[first] = 'first';
+    trie[second] = 'second';
 
     expect(trie.remove(first), 'first');
     expect(trie[first], isNull);

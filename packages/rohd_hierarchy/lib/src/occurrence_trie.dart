@@ -34,23 +34,12 @@ class OccurrenceTrie<T extends Object> {
   }
 
   /// Associates [value] with [address].
-  ///
-  /// This is equivalent to [set], without returning the previous value.
   void operator []=(OccurrenceAddress address, T value) {
-    set(address, value);
-  }
-
-  /// Associates [value] with [address].
-  ///
-  /// Returns the value previously stored at [address], if any.
-  T? set(OccurrenceAddress address, T value) {
     var node = _root;
     for (final index in _validatedPath(address)) {
       node = node.children.putIfAbsent(index, _OccurrenceTrieNode<T>.new);
     }
-    final previous = node.value;
     node.value = value;
-    return previous;
   }
 
   /// Removes and returns the value stored at [address], if any.

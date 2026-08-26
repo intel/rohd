@@ -102,7 +102,9 @@ class SignalValueFormatRegistry {
 
     var changed = false;
     for (final address in requestedAddresses) {
-      changed = (_formatTrie.set(address, format) != format) || changed;
+      final previous = _formatTrie[address];
+      _formatTrie[address] = format;
+      changed = (previous != format) || changed;
     }
     if (changed) {
       _notifyListeners();
@@ -225,7 +227,7 @@ class SignalValueFormatRegistry {
   /// waveform representation.
   static (LogicValue, String)? _waveformValue(String value, int width) {
     final trimmed = value.trim().replaceAll('\u0000', '');
-    if (trimmed.isEmpty || _containsUnknownDigits(trimmed)) {
+    if (trimmed.isEmpty) {
       return null;
     }
     final lower = trimmed.toLowerCase();
@@ -241,7 +243,11 @@ class SignalValueFormatRegistry {
             : isRadixLiteral
                 ? lower[lower.indexOf("'") + 1]
                 : digits.codeUnits.every(
-                    (codeUnit) => codeUnit == 0x30 || codeUnit == 0x31,
+                    (codeUnit) =>
+                        codeUnit == 0x30 ||
+                        codeUnit == 0x31 ||
+                        codeUnit == 0x78 ||
+                        codeUnit == 0x7a,
                   )
                     ? 'b'
                     : digits.codeUnits.any(
@@ -256,9 +262,25 @@ class SignalValueFormatRegistry {
       final logicValue = LogicValue.ofRadixString(radixLiteral);
       return (
         logicValue,
-        isRadixLiteral ? trimmed : logicValue.toString(),
+        _containsUnknownDigits(trimmed)
+            ? logicValue.toRadixString(
+                radix: switch (radix) {
+                  'b' => 2,
+                  'q' => 4,
+                  'o' => 8,
+                  'd' => 10,
+                  'h' => 16,
+                  _ => throw StateError('Unsupported radix: $radix'),
+                },
+                sepChar: '',
+              )
+            : isRadixLiteral
+                ? trimmed
+                : logicValue.toString(),
       );
     } on LogicValueConstructionException {
+      return null;
+    } on FormatException {
       return null;
     }
   }
