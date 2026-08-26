@@ -49,6 +49,14 @@ void main() {
     );
     expect(
       SignalValueFormatRegistry.formatValue(
+        '255',
+        SignalValueFormat.unsignedDecimal,
+        8,
+      ),
+      '255',
+    );
+    expect(
+      SignalValueFormatRegistry.formatValue(
         '0x0',
         SignalValueFormat.unsignedDecimal,
         4,

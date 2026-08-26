@@ -60,6 +60,15 @@ class SignalValueFormatRegistry {
   /// Prevents instantiation.
   SignalValueFormatRegistry._();
 
+  /// Matches binary digits, including unknown values.
+  static final RegExp _binaryDigits = RegExp(r'^[01xz]+$');
+
+  /// Matches hexadecimal digits, including unknown values.
+  static final RegExp _hexadecimalDigits = RegExp(r'^[0-9a-fxz]+$');
+
+  /// Matches a character that distinguishes hexadecimal from decimal.
+  static final RegExp _hexadecimalMarker = RegExp(r'[a-fxz]');
+
   /// Stores the registered preference for each signal occurrence.
   static OccurrenceTrie<SignalValueFormat> _formatTrie =
       OccurrenceTrie<SignalValueFormat>();
@@ -242,19 +251,10 @@ class SignalValueFormatRegistry {
             ? 'b'
             : isRadixLiteral
                 ? lower[lower.indexOf("'") + 1]
-                : digits.codeUnits.every(
-                    (codeUnit) =>
-                        codeUnit == 0x30 ||
-                        codeUnit == 0x31 ||
-                        codeUnit == 0x78 ||
-                        codeUnit == 0x7a,
-                  )
+                : _binaryDigits.hasMatch(digits)
                     ? 'b'
-                    : digits.codeUnits.any(
-                        (codeUnit) =>
-                            (codeUnit >= 0x61 && codeUnit <= 0x66) ||
-                            (codeUnit >= 0x41 && codeUnit <= 0x46),
-                      )
+                    : _hexadecimalDigits.hasMatch(digits) &&
+                            _hexadecimalMarker.hasMatch(digits)
                         ? 'h'
                         : 'd';
     final radixLiteral = isRadixLiteral ? lower : "$displayWidth'$radix$digits";
