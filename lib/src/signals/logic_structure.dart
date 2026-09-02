@@ -9,6 +9,108 @@
 
 part of 'signals.dart';
 
+String _logicShapeSignature(Logic logic) {
+  if (logic is BaseLogicArray) {
+    final signatures =
+        logic.arrayElements.map(_logicShapeSignature).toList(growable: false);
+    final elementSignature = signatures.isEmpty
+        ? 'E'
+        : signatures.every((signature) => signature == signatures.first)
+            ? 'R${signatures.length}_${signatures.first}'
+            : 'H${signatures.join('_')}';
+    return 'A${logic.dimensions.join('x')}_W${logic.elementWidth}_'
+        'U${logic.numUnpackedDimensions}_${logic.isNet ? 'N' : 'L'}_'
+        '$elementSignature';
+  }
+  if (logic is LogicStructure) {
+    return 'S${logic.elements.length}_'
+        '${logic.elements.map(_logicShapeSignature).join('_')}';
+  }
+  return '${logic is Const ? 'C' : logic.isNet ? 'N' : 'L'}${logic.width}';
+}
+
+/// Returns a deterministic signature of [structure]'s recursive geometry.
+///
+/// The signature includes field counts and widths plus array dimensions,
+/// packing hints, leaf geometry, and net or constant distinctions. Signal
+/// instance names are intentionally excluded. It can be embedded in a module
+/// definition name when generated hardware depends on structure shape.
+String logicStructureShapeSignature(LogicStructure structure) =>
+    _logicShapeSignature(structure);
+
+void _validateMatchingStructure(
+    Logic first, Logic second, String operation, String path) {
+  if (first.width != second.width) {
+    throw LogicConstructionException(
+        '$operation operands differ in width at $path.');
+  }
+
+  if (first is LogicStructure || second is LogicStructure) {
+    if (first is! LogicStructure ||
+        second is! LogicStructure ||
+        first.runtimeType != second.runtimeType ||
+        first.elements.length != second.elements.length) {
+      throw LogicConstructionException(
+          '$operation operands differ in structure at $path.');
+    }
+
+    if (first is BaseLogicArray && second is BaseLogicArray) {
+      if (!_sameDimensions(first.dimensions, second.dimensions) ||
+          first.elementWidth != second.elementWidth ||
+          first.numUnpackedDimensions != second.numUnpackedDimensions ||
+          first.isNet != second.isNet) {
+        throw LogicConstructionException(
+            '$operation array operands differ in shape at $path.');
+      }
+    }
+
+    for (var index = 0; index < first.elements.length; index++) {
+      _validateMatchingStructure(first.elements[index], second.elements[index],
+          operation, '$path[$index]');
+    }
+  }
+}
+
+/// Verifies that [first] and [second] have identical recursive structure.
+///
+/// Compatibility requires matching concrete structure types, element counts,
+/// leaf widths, and array geometry. Field names may differ because separately
+/// constructed instances of one structure type can use different root names.
+///
+/// Throws a [LogicConstructionException] when the structures do not match.
+void validateMatchingLogicStructure(LogicStructure first, LogicStructure second,
+        {String operation = 'Typed operation'}) =>
+    _validateMatchingStructure(first, second, operation, 'root');
+
+/// Clones [source] while preserving its concrete [LogicStructure] type.
+///
+/// Throws a [LogicConstructionException] when [LogicStructure.clone] is not
+/// implemented covariantly by the concrete type.
+LogicType typedClone<LogicType extends LogicStructure>(LogicType source,
+    {String? name}) {
+  final cloned = source.clone(name: name);
+  if (cloned is! LogicType) {
+    throw LogicConstructionException(
+        'Structure clone did not preserve its concrete type.');
+  }
+  return cloned;
+}
+
+/// Creates a named, connected alias while preserving [source]'s concrete type.
+LogicType typedNamed<LogicType extends LogicStructure>(
+        LogicType source, String name) =>
+    typedClone(source, name: name)..gets(source);
+
+/// Type-preserving conveniences for concrete [LogicStructure] values.
+extension TypedLogicStructureUtilities<LogicType extends LogicStructure>
+    on LogicType {
+  /// Equivalent to [LogicStructure.clone], with a concrete return type.
+  LogicType cloneTyped({String? name}) => typedClone(this, name: name);
+
+  /// Equivalent to [LogicStructure.named], with a concrete return type.
+  LogicType namedTyped(String name) => typedNamed(this, name);
+}
+
 /// Collects a group of [Logic] signals into one entity which can be manipulated
 /// in a similar way as an individual [Logic].
 class LogicStructure implements Logic {

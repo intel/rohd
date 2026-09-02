@@ -823,14 +823,52 @@ Logic mux(Logic control, Logic d1, Logic d0) {
     return control.value == LogicValue.one ? d1 : d0;
   }
 
-  return Mux(control, d1, d0).out;
+  return Mux<Logic>(control, d1, d0).out;
 }
 
-/// A mux (multiplexer) module.
+/// A multiplexer with an output represented by [LogicType].
+///
+/// For [Mux]<[Logic]>, inputs can be any width-compatible [Logic], including
+/// constants and nets, and the output is normalized to an ordinary [Logic].
+/// For a concrete [LogicStructure] type, both inputs must have that type and
+/// matching recursive geometry.
+abstract class Mux<LogicType extends Logic> extends TypedOp<LogicType> {
+  /// Output selected by the control input.
+  @override
+  LogicType get out;
+
+  /// Creates a multiplexer with an output represented by [LogicType].
+  ///
+  /// A scalar output is selected with `Mux<Logic>`. Concrete
+  /// [LogicStructure] outputs are inferred from ordinary structure operands.
+  /// Constants and nets cannot be used as [LogicType] because they cannot
+  /// represent a driveable mux output; request `Mux<Logic>` for them.
+  factory Mux(Logic control, LogicType d1, LogicType d0,
+      {String name = 'mux'}) {
+    if (LogicType == Logic) {
+      return _LogicMux(control, d1, d0, name: name) as Mux<LogicType>;
+    }
+    if (d1 is! LogicStructure || d0 is! LogicStructure) {
+      throw LogicConstructionException(
+          'Mux<$LogicType> requires LogicType to be Logic or a '
+          'concrete LogicStructure.');
+    }
+    return _StructureMux<LogicType>(control, d1, d0, name: name);
+  }
+
+  Mux._({
+    super.name,
+    super.reserveName,
+    super.definitionName,
+    super.reserveDefinitionName,
+  });
+}
+
+/// Scalar implementation of [Mux].
 ///
 /// If [_control] has value `1`, then [out] gets [_d1].
 /// If [_control] has value `0`, then [out] gets [_d0].
-class Mux extends Module with InlineSystemVerilog {
+class _LogicMux extends Mux<Logic> with InlineSystemVerilog {
   /// Name for the control signal of this mux.
   late final String _controlName;
 
@@ -843,16 +881,17 @@ class Mux extends Module with InlineSystemVerilog {
   /// Name for the output port of this mux.
   late final String _outName;
 
-  /// The control signal for this [Mux].
+  /// The control signal for this mux.
   late final Logic _control = input(_controlName);
 
-  /// [Mux] input propagated when [out] is `0`.
+  /// Input propagated when [out] is `0`.
   late final Logic _d0 = input(_d0Name);
 
-  /// [Mux] input propagated when [out] is `1`.
+  /// Input propagated when [out] is `1`.
   late final Logic _d1 = input(_d1Name);
 
   /// Output port of the [Mux].
+  @override
   late final Logic out = output(_outName);
 
   /// Output port of the [Mux].
@@ -863,7 +902,8 @@ class Mux extends Module with InlineSystemVerilog {
 
   /// Constructs a multiplexer which passes [d0] or [d1] to [out] depending
   /// on if [control] is 0 or 1, respectively.
-  Mux(Logic control, Logic d1, Logic d0, {super.name = 'mux'}) {
+  _LogicMux(Logic control, Logic d1, Logic d0, {super.name = 'mux'})
+      : super._() {
     if (control.width != 1) {
       throw PortWidthMismatchException(control, 1);
     }
@@ -919,6 +959,59 @@ class Mux extends Module with InlineSystemVerilog {
     final d1 = inputs[_d1Name]!;
     final control = inputs[_controlName]!;
     return '$control ? $d1 : $d0';
+  }
+}
+
+String _structureMuxDefinitionName(LogicStructure structure) =>
+    'StructureMux_${logicStructureShapeSignature(structure)}';
+
+/// Structure-preserving implementation of [Mux].
+///
+/// Both operands must have identical recursive structure and legal typed-port
+/// clones. Each corresponding leaf is selected independently, preserving
+/// nested [LogicArray] and [LogicArrayOf] boundaries at the output.
+class _StructureMux<LogicType extends Logic> extends Mux<LogicType> {
+  late final Logic _control;
+  late final LogicType _d0;
+  late final LogicType _d1;
+
+  @override
+  late final LogicType out;
+
+  /// Creates a structure-preserving multiplexer.
+  _StructureMux(Logic control, LogicType d1, LogicType d0,
+      {super.name = 'structure_mux'})
+      : super._(
+            definitionName: _structureMuxDefinitionName(d0 as LogicStructure)) {
+    if (control.width != 1) {
+      throw PortWidthMismatchException(control, 1);
+    }
+    final structuredD0 = d0 as LogicStructure;
+    final structuredD1 = d1 as LogicStructure;
+    validateMatchingLogicStructure(structuredD1, structuredD0,
+        operation: 'Mux');
+
+    LogicType cloneOutput({String name = 'out'}) {
+      final cloned = structuredD0.clone(name: name);
+      if (cloned is! LogicType) {
+        throw LogicConstructionException(
+            'Mux output clone did not preserve its concrete type.');
+      }
+      return cloned as LogicType;
+    }
+
+    _control = addInput('control', control);
+    _d0 = addTypedInput('d0', d0);
+    _d1 = addTypedInput('d1', d1);
+    out = addTypedOutput('out', cloneOutput);
+    final structuredOut = out as LogicStructure;
+    final structuredInput0 = _d0 as LogicStructure;
+    final structuredInput1 = _d1 as LogicStructure;
+    for (var index = 0; index < structuredOut.leafElements.length; index++) {
+      structuredOut.leafElements[index] <=
+          mux(_control, structuredInput1.leafElements[index],
+              structuredInput0.leafElements[index]);
+    }
   }
 }
 

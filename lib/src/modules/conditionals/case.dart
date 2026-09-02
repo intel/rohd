@@ -100,6 +100,61 @@ Logic cases(Logic expression, Map<dynamic, dynamic> conditions,
   return result;
 }
 
+/// Selects a matching [LogicStructure] value using a hardware case expression.
+///
+/// Every condition value must have the same concrete type and recursive shape.
+/// [defaultValue] may be another matching structure or any packed value
+/// accepted by [LogicStructure.operator <]. If omitted, unmatched expression
+/// values follow the same incomplete-assignment and latch semantics as [cases].
+/// [ConditionalType.unique] and [ConditionalType.priority] do not make an
+/// otherwise incomplete case exhaustive.
+LogicType typedCases<LogicType extends LogicStructure>(
+    Logic expression, Map<dynamic, LogicType> conditions,
+    {ConditionalType conditionalType = ConditionalType.none,
+    dynamic defaultValue,
+    String name = 'result'}) {
+  if (conditions.isEmpty) {
+    throw LogicConstructionException(
+        'typedCases requires at least one typed condition value.');
+  }
+
+  final prototype = conditions.values.first;
+  for (final value in conditions.values.skip(1)) {
+    validateMatchingLogicStructure(value, prototype, operation: 'typedCases');
+  }
+  if (defaultValue is LogicStructure) {
+    validateMatchingLogicStructure(defaultValue, prototype,
+        operation: 'typedCases default');
+  } else if (defaultValue is Logic && defaultValue.width != prototype.width) {
+    throw PortWidthMismatchException.equalWidth(defaultValue, prototype);
+  }
+
+  final result = typedClone(prototype, name: name);
+  if (result.hasConsts || result.hasNets) {
+    throw LogicConstructionException(
+        'typedCases result clones cannot contain constants or nets.');
+  }
+
+  Combinational([
+    Case(
+      expression,
+      [
+        for (final condition in conditions.entries)
+          CaseItem(
+            condition.key is Logic
+                ? condition.key as Logic
+                : Const(condition.key, width: expression.width),
+            [result < condition.value],
+          ),
+      ],
+      conditionalType: conditionalType,
+      defaultItem: defaultValue != null ? [result < defaultValue] : null,
+    ),
+  ]);
+
+  return result;
+}
+
 /// A block of [CaseItem]s where only the one with a matching [CaseItem.value]
 /// is executed.
 ///
