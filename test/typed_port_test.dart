@@ -162,6 +162,19 @@ class StructWithConst extends LogicStructure {
   StructWithConst clone({String? name}) => StructWithConst(name: name);
 }
 
+class StructWithConstAndDriveableClone extends LogicStructure {
+  Logic get data => elements.single;
+
+  StructWithConstAndDriveableClone.constant({String? name})
+      : this._(Const(1), name: name);
+
+  StructWithConstAndDriveableClone._(Logic data, {super.name}) : super([data]);
+
+  @override
+  StructWithConstAndDriveableClone clone({String? name}) =>
+      StructWithConstAndDriveableClone._(Logic(), name: name);
+}
+
 class ModuleWithPartialAssignInlineAndOutReuseModule extends Module {
   ModuleWithPartialAssignInlineAndOutReuseModule(MyStruct inp) {
     inp = addTypedInput('inp', inp);
@@ -347,6 +360,15 @@ void main() {
         expect(failed, portType == 'inOut');
       });
     }
+
+    test('input with const structure and driveable clone', () {
+      final source = StructWithConstAndDriveableClone.constant();
+      final input = DummyModule().addTypedInput('p', source);
+
+      expect(input, isA<StructWithConstAndDriveableClone>());
+      expect(input.hasConsts, isFalse);
+      expect(input.data.value, LogicValue.one);
+    });
   });
 
   group('simple struct module with nets', () {
