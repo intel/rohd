@@ -716,9 +716,10 @@ abstract class Module {
   /// [input]. You can use this on a [Logic], [LogicArray], or [LogicStructure].
   ///
   /// The [source] cannot be or contain any [LogicNet]s. If [source] is a
-  /// [Const] (or is a [LogicStructure] that includes a [Const]), the
-  /// [LogicType] must be set to [Logic], since [Const]s cannot be driven and
-  /// are not suitable as ports.
+  /// [Const], the [LogicType] must be set to [Logic], since [Const]s cannot be
+  /// driven and are not suitable as ports. A [LogicStructure] containing
+  /// [Const]s is accepted when its [Logic.clone] implementation creates a
+  /// matching structure with only driveable elements.
   ///
   /// The return value is the same as what is returned by [input] and should
   /// only be used within this [Module]. The provided [source] is accessible via
@@ -727,13 +728,26 @@ abstract class Module {
       String name, LogicType source) {
     _checkForSafePortName(name);
 
-    source = _validateType<LogicType>(source, isOutput: false, name: name);
+    final hasTypedStructuredConstants =
+        LogicType != Logic && source is LogicStructure && source.hasConsts;
+    if (!hasTypedStructuredConstants) {
+      source = _validateType<LogicType>(source, isOutput: false, name: name);
+    }
 
     if (source.isNet || (source is LogicStructure && source.hasNets)) {
       throw PortTypeException(source, 'Typed inputs cannot have nets in them.');
     }
 
-    final inPort = (source.clone(name: name) as LogicType)..gets(source);
+    final cloned = source.clone(name: name);
+    if (cloned is! LogicType) {
+      throw PortTypeException(source,
+          'The `clone` method did not preserve the requested port type.');
+    }
+    final inPort = _validateType<LogicType>(
+      cloned,
+      isOutput: true,
+      name: name,
+    )..gets(source);
 
     if (inPort.name != name) {
       throw PortTypeException.forIntendedName(name,

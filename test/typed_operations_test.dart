@@ -55,11 +55,19 @@ class _BadClonePacket extends LogicStructure {
 }
 
 class _ConstPacket extends LogicStructure {
-  _ConstPacket({String? name})
-      : super([Const(1)], name: name ?? 'const_packet');
+  Logic get data => elements.single;
+
+  _ConstPacket({int? value = 1, String? name})
+      : super([
+          if (value == null)
+            Logic(name: 'data', width: 4)
+          else
+            Const(value, width: 4)
+        ], name: name ?? 'const_packet');
 
   @override
-  _ConstPacket clone({String? name}) => _ConstPacket(name: name ?? this.name);
+  _ConstPacket clone({String? name}) =>
+      _ConstPacket(value: null, name: name ?? this.name);
 }
 
 class _NetPacket extends LogicStructure {
@@ -290,12 +298,49 @@ void main() {
         throwsA(isA<LogicConstructionException>()));
   });
 
-  test('typed operations reject clones, constants, nets, and reset mismatches',
-      () {
+  test('typed operations consume structures with constant leaves', () async {
+    final clk = SimpleClockGenerator(10).clk;
+    final control = Logic();
+    final constant = _ConstPacket(value: 0xa, name: 'constant');
+    final variable = _ConstPacket(value: null, name: 'variable');
+    final muxModule = Mux(control, constant, variable);
+    final passthrough = Passthrough(constant);
+    final flipFlop = FlipFlop(clk, constant);
+    await Future.wait([
+      muxModule.build(),
+      passthrough.build(),
+      flipFlop.build(),
+    ]);
+    for (final module in [muxModule, passthrough, flipFlop]) {
+      SimCompare.checkIverilogVector(module, const [], buildOnly: true);
+    }
+
+    expect(muxModule.out, isA<_ConstPacket>());
+    expect(muxModule.out.hasConsts, isFalse);
+    expect(passthrough.out, isA<_ConstPacket>());
+    expect(passthrough.out.hasConsts, isFalse);
+    expect(flipFlop.q, isA<_ConstPacket>());
+    expect(flipFlop.q.hasConsts, isFalse);
+
+    variable.data.inject(3);
+    control.inject(0);
+    await Simulator.tick();
+    expect(muxModule.out.data.value.toInt(), 3);
+    expect(passthrough.out.data.value.toInt(), 0xa);
+
+    control.inject(1);
+    await Simulator.tick();
+    expect(muxModule.out.data.value.toInt(), 0xa);
+
+    unawaited(Simulator.run());
+    await clk.nextPosedge;
+    expect(flipFlop.q.data.value.toInt(), 0xa);
+    await Simulator.endSimulation();
+  });
+
+  test('typed operations reject clones, nets, and reset mismatches', () {
     expect(() => typedClone(_BadClonePacket()),
         throwsA(isA<LogicConstructionException>()));
-    expect(() => Mux<_ConstPacket>(Logic(), _ConstPacket(), _ConstPacket()),
-        throwsA(isA<PortTypeException>()));
     expect(() => Passthrough<_NetPacket>(_NetPacket()),
         throwsA(isA<PortTypeException>()));
     expect(
