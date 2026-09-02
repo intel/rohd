@@ -391,6 +391,13 @@ class NetlistCellMapper {
           parameters: <String, Object?>{'WIDTH': ctx.width(d0)},
         );
       })
+      // ── Passthrough ────────────────────────────────────────────────────
+      ..register((ctx) {
+        if (ctx.module is! Passthrough) {
+          return null;
+        }
+        return unaryAY(ctx, r'$buf');
+      })
       // ── Add ───────────────────────────────────────────────────────────
       ..register((ctx) {
         if (ctx.module is! Add) {
