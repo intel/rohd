@@ -98,8 +98,8 @@ class FlopModule extends Module {
   }
 }
 
-/// A custom [FlipFlop] used to verify inheritance-aware leaf matching.
-class CustomFlipFlop extends FlipFlop {
+/// A custom [ScalarFlipFlop] used to verify inheritance-aware leaf matching.
+class CustomFlipFlop extends ScalarFlipFlop {
   CustomFlipFlop(super.clk, super.d);
 }
 
@@ -402,6 +402,26 @@ class StructOutputProducerModule extends Module {
     pair.low <= low;
     pair.high <= high ^ Const(1, width: 4);
     addTypedOutput('pair', pair.clone).gets(pair);
+  }
+}
+
+/// Applies structure-preserving primitive operations to an aggregate port.
+class TypedStructOperationModule extends Module {
+  TypedStructOperationModule(
+    Logic clk,
+    Logic control,
+    NetlistPairStruct first,
+    NetlistPairStruct second,
+  ) : super(name: 'typedstructoperation') {
+    clk = addInput('clk', clk);
+    control = addInput('control', control);
+    first = addTypedInput('first', first);
+    second = addTypedInput('second', second);
+
+    final selected = Mux(control, second, first).out;
+    final forwarded = Passthrough(selected).out;
+    final registered = FlipFlop(clk, forwarded);
+    addTypedOutput('out', first.clone) <= registered.q;
   }
 }
 
@@ -804,6 +824,45 @@ void main() {
       final clk = SimpleClockGenerator(10).clk;
       final json = await _synthToMap(FlopModule(clk, Logic(width: 8)));
       expect(_hasCellType(json, r'$dff'), isTrue);
+    });
+
+    test('typed structure operations map to aggregate primitive cells',
+        () async {
+      final module = TypedStructOperationModule(
+        SimpleClockGenerator(10).clk,
+        Logic(),
+        NetlistPairStruct(name: 'first'),
+        NetlistPairStruct(name: 'second'),
+      );
+      final json = await _synthToMap(module);
+      final moduleDef =
+          _modules(json)[module.definitionName] as Map<String, dynamic>;
+      final cells = _cells(moduleDef).values.cast<Map<String, dynamic>>();
+
+      for (final cellType in [r'$mux', r'$buf', r'$dff']) {
+        final matchingCells =
+            cells.where((candidate) => candidate['type'] == cellType).toList();
+        expect(
+          matchingCells,
+          hasLength(1),
+          reason: cells.map((candidate) => candidate['type']).join(', '),
+        );
+        final cell = matchingCells.single;
+        final parameters = cell['parameters'] as Map<String, dynamic>;
+        final connections = cell['connections'] as Map<String, dynamic>;
+        if (cellType == r'$buf') {
+          expect(parameters['A_WIDTH'], 8);
+          expect(parameters['Y_WIDTH'], 8);
+          expect(connections['A'] as List, hasLength(8));
+          expect(connections['Y'] as List, hasLength(8));
+        } else {
+          expect(parameters['WIDTH'], 8);
+          final dataPorts = cellType == r'$mux' ? ['A', 'B', 'Y'] : ['D', 'Q'];
+          for (final port in dataPorts) {
+            expect(connections[port] as List, hasLength(8));
+          }
+        }
+      }
     });
 
     test('FlipFlop controls map to standard Yosys register cells', () async {

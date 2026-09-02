@@ -1,7 +1,7 @@
 ---
 title: "Logic Arrays"
 permalink: /docs/logic-arrays/
-last_modified_at: 2026-7-21
+last_modified_at: 2026-9-2
 toc: true
 ---
 
@@ -88,6 +88,20 @@ You can declare ports of `Module`s as being arrays (including with some dimensio
 Array ports in generated SystemVerilog will match dimensions (including unpacked) as specified when the port is created.
 
 Use `addTypedInput` and `addTypedOutput` for `LogicArrayOf` ports. These methods preserve the array's specialized leaf type, allowing the module to access fields such as `samples.elementAt([1, 2]).data` directly.
+
+## Type-preserving operations
+
+`LogicArray` and `LogicArrayOf<T>` can be used with `Mux`, `FlipFlop`, and `Passthrough`. The output retains the array's concrete type, dimensions, and specialized leaf type:
+
+```dart
+final selected = Mux(select, samplesA, samplesB).out;
+final delayed = FlipFlop(clk, selected, reset: reset).q;
+final forwarded = Passthrough(delayed).out;
+
+final bottomRightData = forwarded.elementAt([1, 2]).data;
+```
+
+The mux inputs must have matching concrete array types and geometry, including dimensions, leaf widths, packed/unpacked configuration, and leaf structure. Use `typedCases`, `selectIndexTyped`, or `selectFromTyped` when selecting one complete typed array from multiple choices. Specify the array type parameter on `StructurePipeline<T>` when its stages use inline transforms.
 
 ## Elements of arrays
 
