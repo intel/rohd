@@ -194,6 +194,20 @@ Array ports in generated SystemVerilog will match dimensions (including unpacked
 
 Use the existing `addTypedInput`, `addTypedOutput`, and `addTypedInOut` methods for `TypedLogicArray` ports. Their generic `LogicType` preserves the complete array subtype, including its hardware element type, semantic value type, codec, net kind, dimensions, and unpacked-dimension configuration. This allows the module to access fields such as `samples.at([1, 2]).data` directly. The established `addInputArray`, `addOutputArray`, and `addInOutArray` APIs remain the concrete `LogicArray` helpers.
 
+## Type-preserving operations
+
+`LogicArray` and `LogicArrayOf<T>` can be used with `Mux`, `FlipFlop`, and `Passthrough`. The output retains the array's concrete type, dimensions, and specialized leaf type:
+
+```dart
+final selected = Mux(select, samplesA, samplesB).out;
+final delayed = FlipFlop(clk, selected, reset: reset).q;
+final forwarded = Passthrough(delayed).out;
+
+final bottomRightData = forwarded.elementAt([1, 2]).data;
+```
+
+The mux inputs must have matching concrete array types and geometry, including dimensions, leaf widths, packed/unpacked configuration, and leaf structure. Use `typedCases`, `selectIndexTyped`, or `selectFromTyped` when selecting one complete typed array from multiple choices. Specify the array type parameter on `StructurePipeline<T>` when its stages use inline transforms.
+
 ## Elements of arrays
 
 Use `elements` to inspect immediate children, `arrayElements` or `indexedElements` to traverse declared array positions, and `leafElements` only when fully recursive traversal is intended. The normal `[n]` operator selects the `n`th packed bit for both `LogicArray` and `Logic`; use `at` for multidimensional typed element indexing.

@@ -1,7 +1,7 @@
 ---
 title: "Logic Structures"
 permalink: /docs/logic-structures/
-last_modified_at: 2025-7-23
+last_modified_at: 2026-9-2
 toc: true
 ---
 
@@ -16,6 +16,30 @@ A [`LogicStructure`](https://intel.github.io/rohd/rohd/LogicStructure-class.html
 Ports with matching types to the original `LogicStructure` can be created using `addTypedInput`, `addTypedOutput`, and `addTypedInOut`.  Note that these functions rely on a proper implementation of the `clone` function.
 
 `LogicArray`s are a type of `LogicStructure` and thus inherit these behavioral traits.
+
+## Type-preserving operations
+
+`Mux`, `FlipFlop`, and `Passthrough` preserve a concrete `LogicStructure` type when their structure operands match. Dart infers the type from an ordinary structure input, so named fields remain available on the result:
+
+```dart
+final selected = Mux(select, packet1, packet0).out;
+final registered = FlipFlop(clk, selected, reset: reset).q;
+final forwarded = Passthrough(registered).out;
+
+// All three values have type Packet.
+forwarded.valid <= selected.valid;
+```
+
+The same behavior applies to `LogicArray` and `LogicArrayOf<T>`, including nested typed arrays. Both mux operands must have the same concrete type and recursive shape: field widths, array dimensions, packing hints, and net/constant layout must match.
+
+For ordinary scalar operations, infer or explicitly request `Logic`. When a source is a `Const` or `LogicNet`, request `Logic` explicitly because the operation output is normalized to driveable logic:
+
+```dart
+final selected = Mux<Logic>(select, Const(0, width: 8), data).out;
+final registered = FlipFlop<Logic>(clk, selected).q;
+```
+
+Use `typedCases`, `selectIndexTyped`, and `selectFromTyped` for structure-preserving multi-way selection. `StructurePipeline<T>` preserves the same concrete type at every registered pipeline boundary. Specify `T` when creating a pipeline with inline stage transforms so Dart can type the transform parameter.
 
 ## Using `LogicStructure` to group signals
 
