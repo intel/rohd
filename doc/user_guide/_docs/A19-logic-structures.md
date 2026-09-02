@@ -30,7 +30,9 @@ final forwarded = Passthrough(registered).out;
 forwarded.valid <= selected.valid;
 ```
 
-The same behavior applies to `LogicArray` and `LogicArrayOf<T>`, including nested typed arrays. Both mux operands must have the same concrete type and recursive shape: field widths, array dimensions, packing hints, and net/constant layout must match.
+The same behavior applies to `LogicArray` and `LogicArrayOf<T>`, including nested typed arrays. Both mux operands must have the same concrete type and recursive shape: field widths, array dimensions, and packing hints must match.
+
+Typed operations can consume a structure containing `Const` leaves when its `clone()` implementation returns the same concrete structure type with driveable `Logic` leaves. The operation preserves the structure type while normalizing its input port and output to driveable logic. This supports domain-specific constant structures, such as a floating-point structure assembled from constant sign, exponent, and mantissa fields.
 
 For ordinary scalar operations, infer or explicitly request `Logic`. When a source is a `Const` or `LogicNet`, request `Logic` explicitly because the operation output is normalized to driveable logic:
 
