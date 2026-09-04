@@ -248,6 +248,42 @@ void main() {
       expect(orig.clone(name: 'newName').name, 'newName');
     });
 
+    test('flatten outer clones and connects promoted fields', () {
+      final config = LogicStructure([
+        Logic(name: 'mode', width: 2),
+        Logic(name: 'valid'),
+      ], name: 'config');
+      final control = LogicStructure([
+        Logic(name: 'enable'),
+        config,
+      ], name: 'control');
+
+      final flattened = control.flattenOuter(name: 'flatControl');
+
+      expect(flattened.name, 'flatControl');
+      expect(flattened.elements.map((element) => element.name),
+          ['enable', 'config_mode', 'config_valid']);
+      expect(flattened.elements[1].width, 2);
+      expect(
+          flattened.elements[0].srcConnections, contains(control.elements[0]));
+      expect(
+          flattened.elements[1].srcConnections, contains(config.elements[0]));
+      expect(
+          flattened.elements[2].srcConnections, contains(config.elements[1]));
+    });
+
+    test('flatten outer rejects duplicate promoted field names', () {
+      final control = LogicStructure([
+        Logic(name: 'mode'),
+        LogicStructure([
+          Logic(name: 'mode'),
+        ], name: 'config'),
+      ], name: 'control');
+
+      expect(() => control.flattenOuter(prefixFieldNames: false),
+          throwsA(isA<LogicConstructionException>()));
+    });
+
     test('tricky withSet', () {
       // first field has width of 72 so this is the starting point
       // second field has a width of 12
