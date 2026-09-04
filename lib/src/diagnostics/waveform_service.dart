@@ -92,6 +92,9 @@ class WaveformService extends ArtifactProducingService {
   /// The retained VCD waveform, or `null` when retention is disabled.
   String? get inMemoryOutput => _writer.inMemoryOutput;
 
+  /// Whether to expose captured values to DevTools.
+  final bool enableDevToolsStreaming;
+
   late final WaveformWriter _writer;
   final FstWriterConfig? _fstWriterConfig;
 
@@ -108,6 +111,8 @@ class WaveformService extends ArtifactProducingService {
     }
     return query;
   }
+
+  WaveformDataService? _dataService;
 
   /// Maps each captured [Logic] to its writer-specific signal handle.
   final Map<Logic, Object> _signalHandles = <Logic, Object>{};
@@ -143,6 +148,7 @@ class WaveformService extends ArtifactProducingService {
     bool register = true,
     bool writeToFile = false,
     bool? retainInMemory,
+    bool enableDevToolsStreaming = true,
   }) : this._(
           module,
           outputDirectory: outputDirectory ?? '.',
@@ -158,6 +164,7 @@ class WaveformService extends ArtifactProducingService {
           register: register,
           writeToFile: writeToFile,
           retainInMemory: retainInMemory,
+          enableDevToolsStreaming: enableDevToolsStreaming,
         );
 
   /// Creates an FST capture with backend-specific [config] tuning.
@@ -177,6 +184,7 @@ class WaveformService extends ArtifactProducingService {
     bool register = true,
     bool writeToFile = true,
     FstWriterConfig config = const FstWriterConfig(),
+    bool enableDevToolsStreaming = true,
   }) : this._(
           module,
           outputDirectory: outputDirectory ?? '.',
@@ -192,6 +200,7 @@ class WaveformService extends ArtifactProducingService {
           writeToFile: writeToFile,
           retainInMemory: false,
           fstWriterConfig: config,
+          enableDevToolsStreaming: enableDevToolsStreaming,
         );
 
   WaveformService._(
@@ -209,6 +218,7 @@ class WaveformService extends ArtifactProducingService {
     this.register = true,
     this.writeToFile = false,
     bool? retainInMemory,
+    this.enableDevToolsStreaming = true,
     FstWriterConfig? fstWriterConfig,
   })  : retainInMemory = retainInMemory ?? !writeToFile,
         _fstWriterConfig = fstWriterConfig,
@@ -236,10 +246,28 @@ class WaveformService extends ArtifactProducingService {
     _writer = _createWriter();
     _collectSignals(module);
     _writer.finishDeclarations(
-        _signalHandles.entries.map((entry) =>
-            WaveformInitialValue(entry.value, _binaryValue(entry.key))),
-        timestamp: Simulator.time);
+      _signalHandles.entries.map(
+        (entry) => WaveformInitialValue(entry.value, _binaryValue(entry.key)),
+      ),
+      timestamp: Simulator.time,
+    );
     _hasWrittenWindowSnapshot = startTime == null || startTime == 0;
+    if (enableDevToolsStreaming) {
+      WaveformDataService.init(module);
+      _dataService = WaveformDataService.instance;
+      if (_writer case final FstWaveformWriter fstWriter) {
+        _dataService!.attachFstWriter(
+          fstWriter.writer,
+          <Logic, FstSignalHandle>{
+            for (final entry in _signalHandles.entries)
+              entry.key: entry.value as FstSignalHandle,
+          },
+        );
+      }
+      for (final signal in _signalHandles.keys) {
+        _dataService!.recordLogicChange(signal, Simulator.time);
+      }
+    }
 
     Simulator.preTick.listen((_) {
       if (Simulator.time != _currentDumpingTimestamp) {
@@ -256,7 +284,6 @@ class WaveformService extends ArtifactProducingService {
       await _terminate();
       onSimulationEnd();
     });
-
     if (register) {
       ModuleServices.instance.register<WaveformService>(this);
     }
@@ -268,35 +295,41 @@ class WaveformService extends ArtifactProducingService {
   /// delegates to the main constructor. Provided so that pre-services-API
   /// callers of the form `WaveformService(module, outputPath: '/tmp/foo.vcd')`
   /// still compile.
-  factory WaveformService.fromOutputPath(Module module,
-      {required String outputPath,
-      WaveOutputFormat format = WaveOutputFormat.vcd,
-      bool Function(Logic signal)? signalFilter,
-      WaveformTimeScale timescale = WaveformTimeScale.onePicosecond,
-      int? startTime,
-      int? stopTime,
-      int flushBufferSize = 100000,
-      OverwritePolicy overwritePolicy = OverwritePolicy.overwrite,
-      bool register = true,
-      bool? retainInMemory}) {
+  factory WaveformService.fromOutputPath(
+    Module module, {
+    required String outputPath,
+    WaveOutputFormat format = WaveOutputFormat.vcd,
+    bool Function(Logic signal)? signalFilter,
+    WaveformTimeScale timescale = WaveformTimeScale.onePicosecond,
+    int? startTime,
+    int? stopTime,
+    int flushBufferSize = 100000,
+    OverwritePolicy overwritePolicy = OverwritePolicy.overwrite,
+    bool register = true,
+    bool? retainInMemory,
+    bool enableDevToolsStreaming = true,
+  }) {
     final normalized = outputPath.replaceAll(r'\', '/');
     final sep = normalized.lastIndexOf('/');
     final directory =
         switch (sep) { -1 => '.', 0 => '/', _ => normalized.substring(0, sep) };
     final filename = normalized.substring(sep + 1);
-    return WaveformService(module,
-        outputDirectory: directory,
-        outputFileName: filename,
-        format: format,
-        signalFilter: signalFilter,
-        timescale: timescale,
-        startTime: startTime,
-        stopTime: stopTime,
-        flushBufferSize: flushBufferSize,
-        overwritePolicy: overwritePolicy,
-        register: register,
-        writeToFile: true,
-        retainInMemory: retainInMemory);
+    return WaveformService(
+      module,
+      outputDirectory: directory,
+      outputFileName: filename,
+      format: format,
+      signalFilter: signalFilter,
+      timescale: timescale,
+      startTime: startTime,
+      stopTime: stopTime,
+      flushBufferSize: flushBufferSize,
+      overwritePolicy: overwritePolicy,
+      register: register,
+      writeToFile: true,
+      retainInMemory: retainInMemory,
+      enableDevToolsStreaming: enableDevToolsStreaming,
+    );
   }
 
   /// The concrete output writer used by this service.
@@ -429,6 +462,7 @@ class WaveformService extends ArtifactProducingService {
     }
 
     for (final sig in snapshot) {
+      _dataService?.recordLogicChange(sig, timestamp);
       onValueChange(sig, timestamp);
     }
     _changedThisTimestamp.clear();
@@ -452,6 +486,7 @@ class WaveformService extends ArtifactProducingService {
     _hasWrittenWindowSnapshot = true;
 
     for (final signal in snapshot) {
+      _dataService?.recordLogicChange(signal, startTime!);
       onValueChange(signal, startTime!);
     }
     onTimestampCapture(startTime!, snapshot);
@@ -496,6 +531,7 @@ class WaveformService extends ArtifactProducingService {
         'timescale': timescale.vcdValue,
         if (startTime != null) 'startTime': startTime,
         if (stopTime != null) 'stopTime': stopTime,
+        'enableDevToolsStreaming': enableDevToolsStreaming,
         'writer': _writer.toJson(),
       };
 }

@@ -8,9 +8,13 @@ environment:
 
 # Add regular dependencies here.
 dependencies:
-  rohd: ^0.4.2
-  rohd_vf: ^0.4.1
+  rohd: ^0.6.0
+  rohd_vf: ^0.6.0
   logging: ^1.0.1
+
+dependency_overrides:
+  rohd:
+    path: ../../../../
 
 dev_dependencies:
   lints: ^2.0.0
