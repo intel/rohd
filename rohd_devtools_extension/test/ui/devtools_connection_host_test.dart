@@ -8,6 +8,7 @@
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:rohd_devtools_extension/rohd_devtools/services/vm_connection_strategy.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/ui/devtools_connection_host.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/ui/vm_connection_form.dart';
 

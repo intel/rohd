@@ -43,7 +43,11 @@ required_files=(
   build/web/index.html
   build/web/flutter_bootstrap.js
   build/web/main.dart.js
-  build/web/assets/AssetManifest.bin.json
+  build/web/assets/AssetManifest.bin
+  build/web/assets/layout_bridge/elk_layout_only.js
+  build/web/assets/third_party/elkjs/elk.bundled.js
+  build/web/pkg/wellen_bridge.js
+  build/web/pkg/wellen_bridge_bg.wasm
 )
 
 for required_file in "${required_files[@]}"; do
@@ -52,6 +56,17 @@ for required_file in "${required_files[@]}"; do
     exit 1
   fi
 done
+
+if [[ ! -f build/web/assets/AssetManifest.bin.json &&
+      ! -f build/web/assets/AssetManifest.bin ]]; then
+  echo "error: expected Flutter asset manifest not found" >&2
+  exit 1
+fi
+
+if [[ "$(od -An -t x1 -N4 build/web/pkg/wellen_bridge_bg.wasm | tr -d ' \n')" != "0061736d" ]]; then
+  echo "error: Wellen artifact does not have the WebAssembly magic bytes." >&2
+  exit 1
+fi
 
 if grep -Fq 'serviceWorkerSettings: {' build/web/flutter_bootstrap.js; then
   echo "error: Flutter bootstrap unexpectedly registers a service worker." >&2

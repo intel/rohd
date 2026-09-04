@@ -83,7 +83,8 @@ Future<void> main(List<String> args) async {
 Future<_ResolvedTarget> _resolveTarget(String target) async {
   final githubTree = _parseGithubTreeTarget(target);
   if (githubTree != null) {
-    return _downloadGithubTree(githubTree);
+    final resolved = await _downloadGithubTree(githubTree);
+    return resolved;
   }
 
   if (target.startsWith('http://') || target.startsWith('https://')) {
