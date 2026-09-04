@@ -14,7 +14,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/diagnostics/inspector_service.dart';
 import 'package:test/test.dart';
 
 class SimpleModule extends Module {
@@ -76,18 +75,6 @@ void main() {
       await mod.build();
       final json = ModuleServices.instance.hierarchyJson;
       expect(() => jsonDecode(json), returnsNormally);
-    });
-
-    test('legacy hierarchyJSON returns the current hierarchy JSON', () async {
-      final mod = SimpleModule(Logic());
-      await mod.build();
-
-      expect(
-        // This verifies that the deprecated compatibility alias still works.
-        // ignore: deprecated_member_use_from_same_package
-        ModuleTree.instance.hierarchyJSON,
-        equals(ModuleTree.instance.hierarchyJson),
-      );
     });
 
     test('register and lookup round-trips a service', () async {

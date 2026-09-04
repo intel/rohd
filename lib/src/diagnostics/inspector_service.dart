@@ -10,6 +10,12 @@
 import 'dart:convert';
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
+// Imported for terminal shell VM evaluation expressions.
+// ignore: unused_import
+import 'package:rohd/src/diagnostics/shell_service.dart';
+// Imported for DevTools VM eval fallback expressions.
+// ignore: unused_import
+import 'package:rohd/src/diagnostics/waveform_data_service.dart';
 
 extension _LogicDevToolUtils on Logic {
   /// Converts the current object instance into a JSON string.
@@ -118,8 +124,4 @@ class ModuleTree {
           'reason': 'module not yet build',
         });
   }
-
-  /// Returns the built module hierarchy as JSON.
-  @Deprecated('Use hierarchyJson instead.')
-  String get hierarchyJSON => hierarchyJson;
 }

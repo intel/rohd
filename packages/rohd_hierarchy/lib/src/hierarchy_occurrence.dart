@@ -69,15 +69,72 @@ class HierarchyOccurrence {
     List<SignalOccurrence>? signals,
     List<HierarchyOccurrence>? children,
     int? portCount,
+    List<SignalOccurrence>? inputs,
+    List<SignalOccurrence>? outputs,
+    List<SignalOccurrence>? inouts,
+    List<HierarchyOccurrence>? subModules,
   })  : assert(
           portCount == null ||
               (portCount >= 0 && portCount <= (signals?.length ?? 0)),
           'portCount must be non-negative and no greater than the signal '
           'count.',
         ),
-        signals = signals ?? [],
+        assert(
+          signals == null ||
+              (inputs == null && outputs == null && inouts == null),
+          'Provide either signals or directional port lists, not both.',
+        ),
+        assert(
+          children == null || subModules == null,
+          'Provide either children or subModules, not both.',
+        ),
+        assert(
+          portCount == null ||
+              (portCount >= 0 &&
+                  portCount <=
+                      (signals?.length ??
+                          _legacySignals(inputs, outputs, inouts).length)),
+          'portCount must be within the available signal range.',
+        ),
+        signals = signals ?? _legacySignals(inputs, outputs, inouts),
         _explicitPortCount = portCount,
-        children = children ?? [];
+        children = children ?? subModules ?? [];
+
+  /// Creates an occurrence from the legacy DevTools module-tree JSON format.
+  factory HierarchyOccurrence.fromJson(Map<String, dynamic> json) {
+    List<SignalOccurrence> parsePorts(String key, String direction) {
+      final rawPorts = json[key] as Map<String, dynamic>? ?? {};
+      return rawPorts.entries.map((entry) {
+        final value = entry.value as Map<String, dynamic>;
+        return SignalOccurrence.fromMap({
+          'name': entry.key,
+          'direction': direction,
+          'value': value['value'],
+          'width': value['width'],
+        });
+      }).toList();
+    }
+
+    return HierarchyOccurrence(
+      name: json['name'] as String,
+      inputs: parsePorts('inputs', 'Input'),
+      outputs: parsePorts('outputs', 'Output'),
+      inouts: parsePorts('inouts', 'Inout'),
+      subModules: (json['subModules'] as List)
+          .map(
+            (subModule) =>
+                HierarchyOccurrence.fromJson(subModule as Map<String, dynamic>),
+          )
+          .toList(),
+    );
+  }
+
+  static List<SignalOccurrence> _legacySignals(
+    List<SignalOccurrence>? inputs,
+    List<SignalOccurrence>? outputs,
+    List<SignalOccurrence>? inouts,
+  ) =>
+      [...?inputs, ...?outputs, ...?inouts];
 
   /// Compute the full hierarchical path by walking up the parent chain.
   ///
@@ -175,15 +232,18 @@ class HierarchyOccurrence {
 
   /// Returns only input signals.
   List<SignalOccurrence> get inputs =>
-      signals.where((s) => s.direction == 'input').toList();
+      signals.where((signal) => signal.isInput).toList();
 
   /// Returns only output signals.
   List<SignalOccurrence> get outputs =>
-      signals.where((s) => s.direction == 'output').toList();
+      signals.where((signal) => signal.isOutput).toList();
 
   /// Returns only inout signals.
   List<SignalOccurrence> get inouts =>
-      signals.where((s) => s.direction == 'inout').toList();
+      signals.where((signal) => signal.isInout).toList();
+
+  /// Child occurrences under the legacy DevTools property name.
+  List<HierarchyOccurrence> get subModules => children;
 
   /// Number of port signals in the prefix of [signals].
   ///

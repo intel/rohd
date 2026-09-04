@@ -10,6 +10,7 @@
 import 'dart:convert';
 
 import 'package:rohd/rohd.dart';
+import 'package:rohd_hierarchy/rohd_hierarchy.dart';
 import 'package:rohd/src/diagnostics/output_file_writer.dart'
     if (dart.library.io) 'package:rohd/src/diagnostics/output_file_writer_io.dart';
 
@@ -305,6 +306,197 @@ class NetlistService extends ArtifactProducingService {
   /// Cached slim JSON (lazy).
   String? _slimJsonCache;
 
+  /// Cached hierarchy over [slimJson].
+  ///
+  /// This is shared by target-side clients so occurrence identity remains
+  /// stable across shell queries and schematic attachment.
+  NetlistHierarchyAdapter? _hierarchyCache;
+
+  /// Returns the shared hierarchy constructed from [slimJson].
+  ///
+  /// The public slim transport document wraps the adapter's canonical
+  /// `modules` map in a `netlist` envelope.
+  NetlistHierarchyAdapter get hierarchy => _hierarchyCache ??= () {
+        final document = jsonDecode(slimJson) as Map<String, dynamic>;
+        final netlist = document['netlist'] as Map<String, dynamic>?;
+        if (netlist == null) {
+          throw const FormatException(
+              'Slim netlist JSON contained no netlist.');
+        }
+        return NetlistHierarchyAdapter.fromMap(
+          netlist,
+          rootNameOverride: netlist['rootInstanceName'] as String?,
+        );
+      }();
+
+  /// Returns the directly connected driving signals for [signal].
+  ///
+  /// When [transparent] is true, crosses hierarchical output ports until it
+  /// reaches leaf occurrences. Primitive and arbitrary logic boundaries are
+  /// never inferred through.
+  List<SignalOccurrence> fanin(
+    SignalOccurrence signal, {
+    bool transparent = false,
+  }) =>
+      _traverseConnectivity(
+        signal,
+        selectTargets: false,
+        transparent: transparent,
+      );
+
+  /// Returns the directly connected consuming signals for [signal].
+  ///
+  /// When [transparent] is true, crosses hierarchical input ports until it
+  /// reaches leaf occurrences. Primitive and arbitrary logic boundaries are
+  /// never inferred through.
+  List<SignalOccurrence> fanout(
+    SignalOccurrence signal, {
+    bool transparent = false,
+  }) =>
+      _traverseConnectivity(
+        signal,
+        selectTargets: true,
+        transparent: transparent,
+      );
+
+  List<SignalOccurrence> _traverseConnectivity(
+    SignalOccurrence signal, {
+    required bool selectTargets,
+    required bool transparent,
+  }) {
+    final endpoints = <SignalOccurrence>[];
+    final visited = <SignalOccurrence>{};
+    void collect(SignalOccurrence current) {
+      if (!visited.add(current)) {
+        return;
+      }
+      for (final endpoint in _directConnectivity(
+        current,
+        selectTargets: selectTargets,
+      )) {
+        final owner = endpoint.parent;
+        if (!transparent || owner == null || owner.children.isEmpty) {
+          endpoints.add(endpoint);
+        } else {
+          collect(endpoint);
+        }
+      }
+    }
+
+    collect(signal);
+    endpoints.sort((left, right) => left.path().compareTo(right.path()));
+    return endpoints;
+  }
+
+  List<SignalOccurrence> _directConnectivity(
+    SignalOccurrence signal, {
+    required bool selectTargets,
+  }) {
+    final owner = signal.parent;
+    final definition = owner?.definition;
+    if (owner == null || definition == null) {
+      return const [];
+    }
+    final moduleData = _modulesMap[definition] as Map<String, dynamic>?;
+    if (moduleData == null) {
+      return const [];
+    }
+    final bits = _bitsForSignal(moduleData, signal.name);
+    if (bits == null) {
+      return const [];
+    }
+
+    final endpoints = <SignalOccurrence>{};
+    for (final bit in bits.whereType<int>()) {
+      for (final connection in _connectionsForBit(owner, moduleData, bit)) {
+        if (connection.isSource == selectTargets ||
+            identical(connection.signal, signal)) {
+          continue;
+        }
+        endpoints.add(connection.signal);
+      }
+    }
+    return endpoints.toList();
+  }
+
+  List<Object?>? _bitsForSignal(Map<String, dynamic> moduleData, String name) {
+    final ports = moduleData['ports'] as Map<String, dynamic>?;
+    final port = ports?[name] as Map<String, dynamic>?;
+    if (port?['bits'] case final List<Object?> bits) {
+      return bits;
+    }
+    final netnames = moduleData['netnames'] as Map<String, dynamic>?;
+    final net = netnames?[name] as Map<String, dynamic>?;
+    return net?['bits'] as List<Object?>?;
+  }
+
+  List<_NetConnection> _connectionsForBit(
+    HierarchyOccurrence owner,
+    Map<String, dynamic> moduleData,
+    int bit,
+  ) {
+    final connections = <_NetConnection>[];
+    final ports = moduleData['ports'] as Map<String, dynamic>? ?? {};
+    for (final entry in ports.entries) {
+      final portData = entry.value as Map<String, dynamic>;
+      final portBits = portData['bits'] as List?;
+      if (portBits == null || !portBits.contains(bit)) {
+        continue;
+      }
+      final signalIndex = owner.signalIndexByName(entry.key);
+      if (signalIndex < 0) {
+        continue;
+      }
+      final direction = portData['direction']?.toString() ?? 'inout';
+      connections.add(
+        _NetConnection(
+          signal: owner.signals[signalIndex],
+          isSource: direction == 'input' || direction == 'inout',
+        ),
+      );
+    }
+
+    final cells = moduleData['cells'] as Map<String, dynamic>? ?? {};
+    for (final entry in cells.entries) {
+      final cellData = entry.value as Map<String, dynamic>;
+      final portDirections =
+          cellData['port_directions'] as Map<String, dynamic>? ?? {};
+      final cellConnections =
+          cellData['connections'] as Map<String, dynamic>? ?? {};
+      final child = _childNamed(owner, entry.key);
+      if (child == null) {
+        continue;
+      }
+      for (final port in cellConnections.entries) {
+        final portBits = port.value as List?;
+        if (portBits == null || !portBits.contains(bit)) {
+          continue;
+        }
+        final signalIndex = child.signalIndexByName(port.key);
+        if (signalIndex < 0) {
+          continue;
+        }
+        final direction = portDirections[port.key]?.toString() ?? 'inout';
+        connections.add(
+          _NetConnection(
+            signal: child.signals[signalIndex],
+            isSource: direction == 'output',
+          ),
+        );
+      }
+    }
+    return connections;
+  }
+
+  HierarchyOccurrence? _childNamed(HierarchyOccurrence owner, String name) {
+    for (final child in owner.children) {
+      if (child.name == name) {
+        return child;
+      }
+    }
+    return null;
+  }
+
   /// Returns a slim netlist JSON string — same structure as [toJson] but
   /// with cell `connections` stripped.
   ///
@@ -411,4 +603,11 @@ class NetlistService extends ArtifactProducingService {
       },
     });
   }
+}
+
+class _NetConnection {
+  const _NetConnection({required this.signal, required this.isSource});
+
+  final SignalOccurrence signal;
+  final bool isSource;
 }

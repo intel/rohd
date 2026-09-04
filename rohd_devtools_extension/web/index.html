@@ -19,15 +19,48 @@
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
+  <meta name="description" content="ROHD Debugger (DevTools Extension)">
 
   <!-- Favicon -->
-  <link rel="icon" type="image/png" href="favicon.png" />
+  <link rel="icon" type="image/png" href="debugger.png" />
 
-  <title>rohd_devtools_extension</title>
+  <title>ROHD Debugger</title>
+
+  <!-- Preload Material Icons font so glyphs render on the first Flutter frame
+       instead of showing tofu boxes while the font downloads. -->
+  <link rel="preload" href="assets/fonts/MaterialIcons-Regular.otf" as="font" type="font/otf" crossorigin>
+
+  <!-- Schematic viewer dependencies - ELK layout engine for Dart-first path -->
+  <script src="assets/third_party/elkjs/elk.bundled.js"></script>
+  <!-- Standalone ELK wrapper for layout computation -->
+  <script src="assets/layout_bridge/elk_layout_only.js"></script>
+
+  <!-- Wellen WASM bindings (flutter_rust_bridge) for VCD/FST/GHW waveform parsing -->
+  <script src="pkg/wellen_bridge.js"></script>
 </head>
 
 <body>
+  <script>
+    // Initialize wellen_bridge WASM before Flutter starts.
+    // wasm_bindgen (from pkg/wellen_bridge.js) must be called to fetch+compile
+    // the .wasm binary and expose frb_* functions that Dart's @JS interop needs.
+    (async function() {
+      try {
+        var base = document.querySelector('base');
+        var baseHref = base ? base.getAttribute('href') : '/';
+        if (!baseHref.endsWith('/')) baseHref += '/';
+
+        var wasmPath = baseHref + 'pkg/wellen_bridge_bg.wasm';
+        await wasm_bindgen({ module_or_path: wasmPath });
+
+        // Dart's @JS("wasm_bindgen.frb_*") expects window.wasm_bindgen
+        window.wasm_bindgen = wasm_bindgen;
+        console.log('wellen_bridge WASM initialized');
+      } catch (e) {
+        console.warn('wellen_bridge WASM init failed (VCD loading will be unavailable):', e);
+      }
+    })();
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 

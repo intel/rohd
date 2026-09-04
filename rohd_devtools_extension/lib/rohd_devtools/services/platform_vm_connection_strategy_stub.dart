@@ -10,7 +10,7 @@
 // 2026 June
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
-import 'package:rohd_devtools_extension/rohd_devtools/ui/ui.dart';
+import 'package:rohd_devtools_extension/rohd_devtools/services/vm_connection_strategy.dart';
 
 /// Stub that throws when neither `dart:io` nor `dart:js_interop` is available.
 /// Returns the platform VM connection strategy, or throws on unsupported
