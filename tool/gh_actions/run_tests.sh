@@ -21,10 +21,10 @@ if [[ $# -gt 1 || ( "$platform" != all && "$platform" != vm && "$platform" != no
 fi
 
 if [[ "$platform" != node ]]; then
-	dart test
+	dart test --preset no-ffi
 fi
 
 if [[ "$platform" != vm ]]; then
 	export NODE_OPTIONS="--max-old-space-size=8192"
-	dart test --platform node
+	dart test --platform node --preset no-ffi
 fi

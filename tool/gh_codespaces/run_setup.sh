@@ -22,5 +22,8 @@ tool/gh_actions/install_iverilog.sh
 
 bash tool/gh_actions/install_verilator.sh
 
+# Install SystemC.
+tool/gh_codespaces/install_systemc.sh
+
 # Install Node
 tool/gh_actions/install_node.sh
