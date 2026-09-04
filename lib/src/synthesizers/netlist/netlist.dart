@@ -7,5 +7,6 @@
 // 2026 February 11
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
+export 'netlist_service.dart';
 export 'netlist_synthesizer.dart';
 export 'netlist_synthesizer_configuration.dart';

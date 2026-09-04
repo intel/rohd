@@ -83,7 +83,7 @@ completions below narrow the ROHD-specific options by cursor location.
 | Prefix | Expands to | Description |
 |--------|-----------|-------------|
 | `mod`, `Module` | `class … extends Module { … }` | Module scaffold with `clk`, `reset`, `a`/`b` inputs, `depth`, `latchData`, `addInput`/`addOutput`, `definitionName`, and instance naming parameters |
-| `sim`, `Simulator` | Clock, reset, `WaveDumper`, `Simulator.run()` | Simulation / testbench boilerplate |
+| `sim`, `Simulator` | Clock, reset, `dumpWaves`, `Simulator.run()` | Simulation / testbench boilerplate |
 | `fsmModule`, `FSMModule` | enum + `class extends Module` + `FiniteStateMachine` | Full standalone FSM module scaffold |
 | `vf`, `tb`, `testbench` | `rohd_vf` testbench | Agent / Driver / Monitor / Sequencer template |
 

@@ -2670,7 +2670,7 @@ void main() {
   test('simple 1d collapse', () async {
     final mod = SimpleLAPassthrough(LogicArray([4], 1));
     await mod.build();
-    final sv = mod.generateSynth();
+    final sv = mod.dumpSystemVerilog();
 
     expect(sv, contains('assign laOut = laIn;'));
   });
@@ -2678,7 +2678,7 @@ void main() {
   test('array collapse for cross-module connection', () async {
     final mod = ArrayTopMod(Logic());
     await mod.build();
-    final sv = mod.generateSynth();
+    final sv = mod.dumpSystemVerilog();
 
     expect(sv, contains(RegExp(r'ArraySubModIn.*\.inp\(arrOut\)')));
     expect(sv, contains(RegExp(r'ArraySubModOut.*\.arrOut\(arrOut\)')));
@@ -2689,7 +2689,7 @@ void main() {
         LogicArray([3, 3], 1), LogicArray([3, 3], 1));
     await mod.build();
 
-    final sv = mod.generateSynth();
+    final sv = mod.dumpSystemVerilog();
     expect(sv,
         contains('net_connect #(.WIDTH(9)) net_connect (intermediate, a);'));
     expect(sv,
@@ -2706,7 +2706,7 @@ void main() {
   test('partial array assignments collapse into range assignment', () async {
     final mod = PartialArrayRangeAssignment();
     await mod.build();
-    final sv = mod.generateSynth();
+    final sv = mod.dumpSystemVerilog();
     final topBody = _topModuleBody(sv);
 
     expect(topBody, contains('assign dst[4:2] = src[4:2];'));
@@ -2728,7 +2728,7 @@ void main() {
       () async {
     final mod = ChainedPartialArrayRangeAssignment();
     await mod.build();
-    final sv = mod.generateSynth();
+    final sv = mod.dumpSystemVerilog();
     final topBody = _topModuleBody(sv);
 
     expect(topBody, contains('assign dst[4:2] = src[4:2];'));
@@ -2750,7 +2750,7 @@ void main() {
       () async {
     final mod = ChainedSubrangeArrayRangeAssignment();
     await mod.build();
-    final sv = mod.generateSynth();
+    final sv = mod.dumpSystemVerilog();
     final topBody = _topModuleBody(sv);
 
     expect(topBody, contains('assign dst[3:2] = src[6:5];'));
@@ -2775,7 +2775,7 @@ void main() {
   test('three-deep chained range assignments collapse iteratively', () async {
     final mod = ThreeDeepChainedPartialArrayRangeAssignment();
     await mod.build();
-    final sv = mod.generateSynth();
+    final sv = mod.dumpSystemVerilog();
     final topBody = _topModuleBody(sv);
 
     expect(topBody, contains('assign dst[4:2] = src[4:2];'));
@@ -2798,7 +2798,7 @@ void main() {
       () async {
     final mod = LongChainedPartialArrayRangeAssignment();
     await mod.build();
-    final topBody = _topModuleBody(mod.generateSynth());
+    final topBody = _topModuleBody(mod.dumpSystemVerilog());
 
     expect(topBody, contains('assign dst[4:2] = src[4:2];'));
     expect(topBody, isNot(contains('intermediate')));
@@ -2818,7 +2818,7 @@ void main() {
   test('multi-use chained range intermediate stays expanded', () async {
     final mod = ChainedPartialArrayRangeAssignment(exposeIntermediate: true);
     await mod.build();
-    final sv = mod.generateSynth();
+    final sv = mod.dumpSystemVerilog();
     final topBody = _topModuleBody(sv);
 
     expect(topBody, isNot(contains('assign dst[4:2] = src[4:2];')));
@@ -2841,7 +2841,7 @@ void main() {
   test('renameable chained range intermediate stays expanded', () async {
     final mod = ChainedPartialArrayRangeAssignment(intermediateNaming: null);
     await mod.build();
-    final sv = mod.generateSynth();
+    final sv = mod.dumpSystemVerilog();
     final topBody = _topModuleBody(sv);
 
     expect(topBody, isNot(contains('assign dst[4:2] = src[4:2];')));
@@ -2864,7 +2864,7 @@ void main() {
       () async {
     final mod = PartialBusToArrayRangeAssignment();
     await mod.build();
-    final sv = mod.generateSynth();
+    final sv = mod.dumpSystemVerilog();
     final topBody = _topModuleBody(sv);
 
     expect(topBody, contains('assign dst[5:2] = src[5:2];'));
@@ -2889,7 +2889,7 @@ void main() {
   test('full array-to-bus assignSubset has no subset intermediate', () async {
     final mod = ArrayToBusAssignSubsetRangeAssignment();
     await mod.build();
-    final sv = mod.generateSynth();
+    final sv = mod.dumpSystemVerilog();
     final topBody = _topModuleBody(sv);
 
     expect(topBody, isNot(contains('_subset')));
@@ -2908,7 +2908,7 @@ void main() {
       () async {
     final mod = ArrayToBusAssignSubsetRangeAssignment(partial: true);
     await mod.build();
-    final sv = mod.generateSynth();
+    final sv = mod.dumpSystemVerilog();
     final topBody = _topModuleBody(sv);
 
     expect(topBody, contains('assign dst[5:2] = src[5:2];'));
@@ -2945,7 +2945,7 @@ void main() {
         driveLowBits: config.driveLowBits,
       );
       await mod.build();
-      final sv = mod.generateSynth();
+      final sv = mod.dumpSystemVerilog();
       final topBody = _topModuleBody(sv);
 
       if (config.driveLowBits) {
@@ -2982,7 +2982,7 @@ void main() {
   test('bus subset helpers with extra consumers are preserved', () async {
     final mod = BusSubsetBitsWithExtraConsumers();
     await mod.build();
-    final sv = mod.generateSynth();
+    final sv = mod.dumpSystemVerilog();
     final topBody = _topModuleBody(sv);
 
     expect(topBody, contains('assign dst[3:0] = src[5:2];'));
@@ -3004,7 +3004,7 @@ void main() {
   test('partial slice helper with extra consumer is preserved', () async {
     final mod = PartialSliceWithExtraConsumer();
     await mod.build();
-    final sv = mod.generateSynth();
+    final sv = mod.dumpSystemVerilog();
     final topBody = _topModuleBody(sv);
 
     expect(topBody, contains('assign dst[8:5] = src[9:6];'));
@@ -3035,7 +3035,7 @@ void main() {
   test('sparse bus runs feeding assignSubset collapse independently', () async {
     final mod = SparseBusRunsToAssignSubsetRangeAssignment();
     await mod.build();
-    final sv = mod.generateSynth();
+    final sv = mod.dumpSystemVerilog();
     final topBody = _topModuleBody(sv);
 
     expect(topBody, contains('assign dst[31:20] = srcA[15:4];'));
@@ -3068,7 +3068,7 @@ void main() {
   test('constant-backed upper range remains tied off after collapse', () async {
     final mod = TiedRangeToAssignSubsetRangeAssignment();
     await mod.build();
-    final sv = mod.generateSynth();
+    final sv = mod.dumpSystemVerilog();
     final topBody = _topModuleBody(sv);
 
     expect(topBody, contains('.data(({'));
@@ -3093,7 +3093,7 @@ void main() {
         tieNaming: tieNaming,
       );
       await mod.build();
-      final topBody = _topModuleBody(mod.generateSynth());
+      final topBody = _topModuleBody(mod.dumpSystemVerilog());
 
       expect(topBody, contains('logic [7:0] tie;'));
       expect(topBody, contains("assign tie = 8'h0;"));
@@ -3112,7 +3112,7 @@ void main() {
       busNaming: Naming.renameable,
     );
     await mod.build();
-    final topBody = _topModuleBody(mod.generateSynth());
+    final topBody = _topModuleBody(mod.dumpSystemVerilog());
 
     expect(topBody, contains('logic [31:0] bus;'));
     expect(topBody, contains('.data(bus)'));
@@ -3128,7 +3128,7 @@ void main() {
   test('constant-backed range concatenates with sibling output', () async {
     final mod = TiedSiblingRangeToAssignSubsetAssignment();
     await mod.build();
-    final sv = mod.generateSynth();
+    final sv = mod.dumpSystemVerilog();
     final topBody = _topModuleBody(sv);
 
     expect(topBody, contains('.data(({'));
@@ -3149,7 +3149,7 @@ void main() {
   test('constant-backed range concatenates into late child input', () async {
     final mod = TiedSiblingRangeToLateInputSource();
     await mod.build();
-    final sv = mod.generateSynth();
+    final sv = mod.dumpSystemVerilog();
     final topBody = _topModuleBody(sv);
 
     expect(topBody, contains('.data(({'));
@@ -3169,7 +3169,7 @@ void main() {
   test('named constant subsets survive scalar output collapse', () async {
     final mod = ScalarSiblingOutputsWithNamedTieTop();
     await mod.build();
-    final sv = mod.generateSynth();
+    final sv = mod.dumpSystemVerilog();
     final topBody = _topModuleBody(sv);
 
     expect(topBody, contains('.data(({'));
@@ -3198,7 +3198,7 @@ void main() {
       () async {
     final mod = InteriorNamedTieWithMappedOutputTop();
     await mod.build();
-    final sv = mod.generateSynth();
+    final sv = mod.dumpSystemVerilog();
     final topBody = _topModuleBody(sv);
 
     expect(topBody, contains("assign bus[6:4] = 3'h0;"));
@@ -3233,7 +3233,7 @@ void main() {
           fanout: fanout,
         );
         await mod.build();
-        final sv = mod.generateSynth();
+        final sv = mod.dumpSystemVerilog();
         final topBody = _topModuleBody(sv);
 
         expect(topBody, contains('.data(({'));
@@ -3271,7 +3271,7 @@ void main() {
       () async {
     final mod = InvalidConstantsToAssignSubsetTop();
     await mod.build();
-    final topBody = _topModuleBody(mod.generateSynth());
+    final topBody = _topModuleBody(mod.dumpSystemVerilog());
 
     expect(topBody, contains("2'bxx"));
     expect(topBody, isNot(contains("2'bzz")));
@@ -3297,7 +3297,7 @@ void main() {
       () async {
     final mod = InternalBusRunsToAssignSubsetRangeAssignment();
     await mod.build();
-    final sv = mod.generateSynth();
+    final sv = mod.dumpSystemVerilog();
     final topBody = _topModuleBody(sv);
 
     expect(topBody, contains('assign dst[44:13] = src;'));
@@ -3331,7 +3331,7 @@ void main() {
       computedSource: true,
     );
     await mod.build();
-    final sv = mod.generateSynth();
+    final sv = mod.dumpSystemVerilog();
     final topBody = _topModuleBody(sv);
 
     expect(topBody, contains('assign dst[44:13] = srcStage;'));
@@ -3361,7 +3361,7 @@ void main() {
       () async {
     final mod = WideTemporarySliceToArrayWords();
     await mod.build();
-    final sv = mod.generateSynth();
+    final sv = mod.dumpSystemVerilog();
     final topBody = _topModuleBody(sv);
 
     expect(topBody, contains('assign y[0][15:0] = src[47:32];'));
@@ -3390,7 +3390,7 @@ void main() {
       () async {
     final mod = WideTemporarySliceToArrayWords(extraConsumers: true);
     await mod.build();
-    final sv = mod.generateSynth();
+    final sv = mod.dumpSystemVerilog();
     final topBody = _topModuleBody(sv);
 
     expect(topBody, contains('assign y[0][15:0] = src[47:32];'));
@@ -3418,7 +3418,7 @@ void main() {
       () async {
     final mod = ManualSubsetNamedArrayRangeAssignment();
     await mod.build();
-    final sv = mod.generateSynth();
+    final sv = mod.dumpSystemVerilog();
     final topBody = _topModuleBody(sv);
 
     expect(topBody, contains('manual_subset'));
@@ -3440,7 +3440,7 @@ void main() {
   test('reordered bus-to-array assignments stay expanded', () async {
     final mod = PartialBusToArrayRangeAssignment(reversed: true);
     await mod.build();
-    final sv = mod.generateSynth();
+    final sv = mod.dumpSystemVerilog();
     final topBody = _topModuleBody(sv);
 
     expect(topBody, isNot(contains('assign dst[5:2] = src[5:2];')));
@@ -3468,7 +3468,7 @@ void main() {
   test('bus-to-unpacked-array assignments stay expanded', () async {
     final mod = PartialBusToArrayRangeAssignment(numUnpackedDimensions: 1);
     await mod.build();
-    final sv = mod.generateSynth();
+    final sv = mod.dumpSystemVerilog();
     final topBody = _topModuleBody(sv);
 
     expect(topBody, isNot(contains('assign dst[5:2] = src[5:2];')));
@@ -3495,7 +3495,7 @@ void main() {
   test('non-contiguous partial array assignments stay expanded', () async {
     final mod = PartialArrayRangeAssignment(reversed: true);
     await mod.build();
-    final sv = mod.generateSynth();
+    final sv = mod.dumpSystemVerilog();
     final topBody = _topModuleBody(sv);
 
     expect(topBody, isNot(contains('assign dst[4:2]')));
@@ -3519,7 +3519,7 @@ void main() {
       () async {
     final mod = PartialInnerArrayRangeAssignment();
     await mod.build();
-    final sv = mod.generateSynth();
+    final sv = mod.dumpSystemVerilog();
     final topBody = _topModuleBody(sv);
 
     expect(topBody, contains('assign dst[1][3:1] = src[1][3:1];'));
@@ -3544,7 +3544,7 @@ void main() {
   test('unpacked outer dimension still collapses inner packed range', () async {
     final mod = PartialInnerArrayRangeAssignment(numUnpackedDimensions: 1);
     await mod.build();
-    final sv = mod.generateSynth();
+    final sv = mod.dumpSystemVerilog();
     final topBody = _topModuleBody(sv);
 
     expect(topBody, contains('assign dst[1][3:1] = src[1][3:1];'));
@@ -3568,7 +3568,7 @@ void main() {
   test('unpacked one-dimensional partial assignments stay expanded', () async {
     final mod = PartialUnpackedArrayRangeAssignment();
     await mod.build();
-    final sv = mod.generateSynth();
+    final sv = mod.dumpSystemVerilog();
     final topBody = _topModuleBody(sv);
 
     expect(topBody, isNot(contains('assign dst[4:2] = src[4:2];')));
@@ -3590,7 +3590,7 @@ void main() {
   test('wide element partial array assignments stay expanded', () async {
     final mod = PartialWideArrayRangeAssignment();
     await mod.build();
-    final sv = mod.generateSynth();
+    final sv = mod.dumpSystemVerilog();
     final topBody = _topModuleBody(sv);
 
     expect(topBody, isNot(contains('assign dst[2:1] = src[2:1];')));
@@ -3616,7 +3616,7 @@ void main() {
   test('net array partial assignments stay in net connection flow', () async {
     final mod = PartialNetArrayRangeAssignment();
     await mod.build();
-    final sv = mod.generateSynth();
+    final sv = mod.dumpSystemVerilog();
     final topBody = _topModuleBody(sv);
 
     expect(topBody, isNot(contains('assign dst[4:2] = src[4:2];')));
@@ -3639,7 +3639,7 @@ void main() {
       () async {
     final mod = PartialLogicNetRangeAssignment();
     await mod.build();
-    final sv = mod.generateSynth();
+    final sv = mod.dumpSystemVerilog();
     final topBody = _topModuleBody(sv);
 
     expect(topBody, isNot(contains('assign dst[4:2] = src[4:2];')));
@@ -3661,7 +3661,7 @@ void main() {
     final mod = ArrayWithShuffledAssignment(LogicArray([4], 1));
     await mod.build();
 
-    final sv = mod.generateSynth();
+    final sv = mod.dumpSystemVerilog();
     expect(sv, contains('assign b[0] = a[3];'));
     expect(sv, contains('assign b[3] = a[0];'));
 
@@ -3678,7 +3678,7 @@ void main() {
         LogicArray([3, 3], 1, numUnpackedDimensions: 2));
     await mod.build();
 
-    final sv = mod.generateSynth();
+    final sv = mod.dumpSystemVerilog();
     expect(sv,
         contains('net_connect #(.WIDTH(9)) net_connect (intermediate, a);'));
     expect(sv,
@@ -3695,7 +3695,7 @@ void main() {
     final mod = ArrayModule(LogicArray([4, 4], 1));
     await mod.build();
 
-    final sv = mod.generateSynth();
+    final sv = mod.dumpSystemVerilog();
 
     expect(sv, contains('assign d = c[0];'));
     expect(sv, contains('assign b = a;'));
@@ -3722,7 +3722,7 @@ void main() {
         name: 'constant_leaf_array_assignment_${cfg.name.replaceAll(' ', '_')}',
       );
       await mod.build();
-      final sv = mod.generateSynth();
+      final sv = mod.dumpSystemVerilog();
       final topBody = _topModuleBody(sv);
 
       for (final row in [0, 1]) {
@@ -3788,7 +3788,7 @@ void main() {
             elementWidth: cfg.elementWidth,
             reversed: cfg.reversed);
         await mod.build();
-        final sv = mod.generateSynth();
+        final sv = mod.dumpSystemVerilog();
 
         // the intermediate array (and every declaration of it) must be gone
         expect(sv, isNot(contains('arr')));
@@ -3823,7 +3823,7 @@ void main() {
             LogicNet(width: total), LogicNet(width: total),
             dimensions: cfg.dimensions, elementWidth: cfg.elementWidth);
         await mod.build();
-        final sv = mod.generateSynth();
+        final sv = mod.dumpSystemVerilog();
 
         // the intermediate array and its net_connects must be gone
         expect(sv, isNot(contains('arr')));
@@ -3847,7 +3847,7 @@ void main() {
         final mod = PartiallyDrivenArray(Logic(width: total - 2),
             dimensions: dimensions);
         await mod.build();
-        final sv = mod.generateSynth();
+        final sv = mod.dumpSystemVerilog();
 
         // the array must remain declared since undriven bits must stay `z`
         expect(sv, contains('arr'));
@@ -3864,7 +3864,7 @@ void main() {
     test('aggregate-used array is not inlined', () async {
       final mod = ArrayElementsWithAggregateUse(Logic(width: 4));
       await mod.build();
-      final sv = mod.generateSynth();
+      final sv = mod.dumpSystemVerilog();
 
       // the array stays (aggregate use), so elements are not inlined into ports
       expect(sv, contains('arr'));
@@ -3881,7 +3881,7 @@ void main() {
     test('input-array port elements are not inlined away', () async {
       final mod = ArrayPortElementsToSubmodules(LogicArray([2, 2], 2));
       await mod.build();
-      final sv = mod.generateSynth();
+      final sv = mod.dumpSystemVerilog();
 
       // the array port must remain declared
       expect(sv, contains('a'));
@@ -3914,7 +3914,7 @@ void main() {
         () async {
       final mod = ConstantToSingleElementArrayInputTop();
       await mod.build();
-      final sv = mod.generateSynth();
+      final sv = mod.dumpSystemVerilog();
       final topBody = _topModuleBody(sv);
 
       expect(topBody, contains(".data((8'h0))"));
@@ -3931,7 +3931,7 @@ void main() {
         () async {
       final mod = ConstantToSingleElementArrayInputTop(value: 0xa5);
       await mod.build();
-      final sv = mod.generateSynth();
+      final sv = mod.dumpSystemVerilog();
       final topBody = _topModuleBody(sv);
 
       expect(topBody, contains(".data((8'ha5))"));
@@ -3965,7 +3965,7 @@ void main() {
             elementWidth: cfg.elementWidth,
             perm: cfg.perm);
         await mod.build();
-        final sv = mod.generateSynth();
+        final sv = mod.dumpSystemVerilog();
         final topBody = _topModuleBody(sv);
 
         // the intermediate array (and every per-element assignment) is gone,
@@ -4002,7 +4002,7 @@ void main() {
       const n = 4;
       final mod = MergedSourcesToArrayPort(List.generate(n, (_) => Logic()));
       await mod.build();
-      final sv = mod.generateSynth();
+      final sv = mod.dumpSystemVerilog();
       final topBody = _topModuleBody(sv);
 
       expect(topBody, isNot(contains('intermediate')));
@@ -4028,7 +4028,7 @@ void main() {
         () async {
       final mod = RangeSourcesToArrayPort();
       await mod.build();
-      final sv = mod.generateSynth();
+      final sv = mod.dumpSystemVerilog();
       final topBody = _topModuleBody(sv);
 
       expect(topBody, isNot(contains(RegExp(r'\.a\(\(\{\s*src,'))));
@@ -4071,7 +4071,7 @@ void main() {
             List.generate(cfg.n, (_) => LogicNet()), LogicNet(width: cfg.n),
             perm: cfg.perm);
         await mod.build();
-        final sv = mod.generateSynth();
+        final sv = mod.dumpSystemVerilog();
         final topBody = _topModuleBody(sv);
 
         // the intermediate array and its net_connects are gone, replaced by a
@@ -4102,7 +4102,7 @@ void main() {
       // restriction prevents collapsing and the array stays declared
       final mod = MultiUseAggregate(List.generate(4, (_) => Logic()));
       await mod.build();
-      final sv = mod.generateSynth();
+      final sv = mod.dumpSystemVerilog();
       final topBody = _topModuleBody(sv);
 
       // with two whole-array uses, the array stays declared and its per-element
@@ -4147,7 +4147,7 @@ void main() {
       final mod = ArrayPortToIndividualNets(
           List.generate(4, (_) => LogicNet()), LogicNet(width: 4));
       await mod.build();
-      final sv = mod.generateSynth();
+      final sv = mod.dumpSystemVerilog();
       final topBody = _topModuleBody(sv);
 
       // the intermediate array and its net_connects collapse into a single
@@ -4174,7 +4174,7 @@ void main() {
       // result must still be correct.
       final mod = RearrangeOneArray(LogicArray([4], 1));
       await mod.build();
-      final sv = mod.generateSynth();
+      final sv = mod.dumpSystemVerilog();
       final topBody = _topModuleBody(sv);
 
       // this pass did not fabricate a consolidating concatenation on the port
@@ -4202,7 +4202,7 @@ void main() {
       final mod = IndividualSignalsToExpressionlessPort(
           List.generate(4, (_) => Logic()));
       await mod.build();
-      final sv = mod.generateSynth();
+      final sv = mod.dumpSystemVerilog();
       final topBody = _topModuleBody(sv);
 
       // no inline concatenation on the expressionless port; per-element
@@ -4228,7 +4228,7 @@ void main() {
         () async {
       final mod = WholeNetBusCollapseNamingCollision();
       await mod.build();
-      final sv = mod.generateSynth();
+      final sv = mod.dumpSystemVerilog();
       final topBody = _topModuleBody(sv);
 
       expect(topBody, isNot(contains('bussubset (')));
@@ -4250,7 +4250,7 @@ void main() {
             List.generate(n, (_) => LogicNet()), LogicNet(width: n),
             busNaming: busNaming);
         await mod.build();
-        final sv = mod.generateSynth();
+        final sv = mod.dumpSystemVerilog();
         final topBody = _topModuleBody(sv);
 
         if (busNaming == Naming.mergeable) {
@@ -4283,7 +4283,7 @@ void main() {
       final mod = WholeNetBusToPortWithInlineSubsetConsumer(
           List.generate(n, (_) => LogicNet()), LogicNet(width: n));
       await mod.build();
-      final sv = mod.generateSynth();
+      final sv = mod.dumpSystemVerilog();
       final topBody = _topModuleBody(sv);
 
       expect(topBody, contains('.data'));
@@ -4309,7 +4309,7 @@ void main() {
       final mod =
           WholeNetBusToPortWithReadOnlyInlineSubsetConsumer(LogicNet(width: n));
       await mod.build();
-      final topBody = _topModuleBody(mod.generateSynth());
+      final topBody = _topModuleBody(mod.dumpSystemVerilog());
 
       expect(topBody, contains('wire [3:0] bus'));
       expect(topBody, contains(RegExp('net_connect.*_subset_0_0_bus')));
@@ -4322,7 +4322,7 @@ void main() {
           List.generate(n, (_) => LogicNet()), LogicNet(width: n),
           busNaming: Naming.reserved);
       await mod.build();
-      final sv = mod.generateSynth();
+      final sv = mod.dumpSystemVerilog();
       final topBody = _topModuleBody(sv);
 
       // a reserved name must be preserved, so the bus and its net_connects stay
@@ -4347,7 +4347,7 @@ void main() {
       final mod = WholeNetBusMultiUse(List.generate(n, (_) => LogicNet()),
           LogicNet(width: n), LogicNet(width: n));
       await mod.build();
-      final sv = mod.generateSynth();
+      final sv = mod.dumpSystemVerilog();
       final topBody = _topModuleBody(sv);
 
       // used as a whole twice, so the single-use restriction keeps the bus
@@ -4379,7 +4379,7 @@ void main() {
             List.generate(n, (_) => LogicNet()), LogicNet(width: n),
             busNaming: busNaming);
         await mod.build();
-        final sv = mod.generateSynth();
+        final sv = mod.dumpSystemVerilog();
         final topBody = _topModuleBody(sv);
 
         if (busNaming == Naming.mergeable) {
@@ -4413,7 +4413,7 @@ void main() {
       final mod = BitwiseNetBusToArrayPortWithInlineSubsetConsumer(
           List.generate(n, (_) => LogicNet()), LogicNet(width: n));
       await mod.build();
-      final sv = mod.generateSynth();
+      final sv = mod.dumpSystemVerilog();
       final topBody = _topModuleBody(sv);
 
       expect(topBody, contains('.data'));
@@ -4441,7 +4441,7 @@ void main() {
           List.generate(n, (_) => LogicNet()), LogicNet(width: n),
           busNaming: Naming.reserved);
       await mod.build();
-      final sv = mod.generateSynth();
+      final sv = mod.dumpSystemVerilog();
 
       // a reserved bus name must be preserved, so it is not traced away
       expect(sv, contains('bus'));
@@ -4469,7 +4469,7 @@ void main() {
             List.generate(n, (_) => LogicNet()), LogicNet(width: n),
             toArray: toArray);
         await mod.build();
-        final sv = mod.generateSynth();
+        final sv = mod.dumpSystemVerilog();
         final topBody = _topModuleBody(sv);
 
         // the self-connection leaves a per-bit net_connect structure intact
@@ -4500,7 +4500,7 @@ void main() {
           () async {
         final mod = PureSelfLoopNetBus(LogicNet(width: 2), toArray: toArray);
         await mod.build();
-        final sv = mod.generateSynth();
+        final sv = mod.dumpSystemVerilog();
         final topBody = _topModuleBody(sv);
 
         // the bus collapses into an inline concatenation of the merged net, and
@@ -4523,7 +4523,7 @@ void main() {
       final mod = AssignSubsetReceiver(
           List.generate(n, (_) => LogicNet()), LogicNet(width: n));
       await mod.build();
-      final sv = mod.generateSynth();
+      final sv = mod.dumpSystemVerilog();
       final topBody = _topModuleBody(sv);
 
       // no intermediate subset array, and no per-bit net_connects remain
@@ -4548,7 +4548,7 @@ void main() {
       final mod = AssignSubsetReceiverScrambled(
           List.generate(n, (_) => LogicNet()), LogicNet(width: n));
       await mod.build();
-      final sv = mod.generateSynth();
+      final sv = mod.dumpSystemVerilog();
       final topBody = _topModuleBody(sv);
 
       expect(topBody, isNot(contains('_subset')));
@@ -4574,7 +4574,7 @@ void main() {
           List.generate(n, (_) => LogicNet()), LogicNet(width: n),
           busNaming: Naming.renameable);
       await mod.build();
-      final sv = mod.generateSynth();
+      final sv = mod.dumpSystemVerilog();
       final topBody = _topModuleBody(sv);
 
       // the named bus is preserved, but the per-bit `*_subset` pass-through and
@@ -4602,7 +4602,7 @@ void main() {
       final mod = AssignSubsetDriver(
           List.generate(n, (_) => LogicNet()), LogicNet(width: n));
       await mod.build();
-      final sv = mod.generateSynth();
+      final sv = mod.dumpSystemVerilog();
       final topBody = _topModuleBody(sv);
 
       // the per-bit `*_subset` pass-throughs and per-bit `net_connect`s are
@@ -4627,7 +4627,7 @@ void main() {
       const n = 4;
       final mod = AssignSubsetLogicDriver(List.generate(n, (_) => Logic()));
       await mod.build();
-      final sv = mod.generateSynth();
+      final sv = mod.dumpSystemVerilog();
       final topBody = _topModuleBody(sv);
 
       // the intermediate `sig_subset` array is forwarded straight into the
@@ -4652,7 +4652,7 @@ void main() {
         () async {
       final mod = LateSubsetInputTop();
       await mod.build();
-      final sv = mod.generateSynth();
+      final sv = mod.dumpSystemVerilog();
       final topBody = _topModuleBody(sv);
 
       expect(topBody, isNot(contains('.data()')));
@@ -4670,7 +4670,7 @@ void main() {
         () async {
       final mod = LateSlicedSubsetInputTop();
       await mod.build();
-      final sv = mod.generateSynth();
+      final sv = mod.dumpSystemVerilog();
       final topBody = _topModuleBody(sv);
 
       expect(topBody, isNot(contains('.data()')));
@@ -4778,7 +4778,7 @@ void main() {
     test('sibling output can drive subset of sibling input source', () async {
       final mod = SiblingOutputToInputSubsetTop();
       await mod.build();
-      final sv = mod.generateSynth();
+      final sv = mod.dumpSystemVerilog();
       final topBody = _topModuleBody(sv);
 
       expect(topBody, isNot(contains('.data()')));
@@ -4795,7 +4795,7 @@ void main() {
     test('sibling full output can drive sibling full input source', () async {
       final mod = SiblingFullOutputToInputSubsetTop();
       await mod.build();
-      final sv = mod.generateSynth();
+      final sv = mod.dumpSystemVerilog();
       final topBody = _topModuleBody(sv);
 
       expect(topBody, isNot(contains('.data()')));
@@ -4812,7 +4812,7 @@ void main() {
     test('sibling output stays connected beside range assignments', () async {
       final mod = SiblingOutputWithRangeAssignmentsTop();
       await mod.build();
-      final sv = mod.generateSynth();
+      final sv = mod.dumpSystemVerilog();
       final topBody = _topModuleBody(sv);
 
       expect(topBody, contains('.result(bus[7])'));
@@ -4838,7 +4838,7 @@ void main() {
           () async {
         final mod = IndexedSiblingOutputWithRangeAssignmentsTop(outputIndex);
         await mod.build();
-        final sv = mod.generateSynth();
+        final sv = mod.dumpSystemVerilog();
         final topBody = _topModuleBody(sv);
 
         expect(topBody, contains('.result(bus[$outputIndex])'));
@@ -4865,7 +4865,7 @@ void main() {
     test('multiple sibling outputs stay connected in packed concat', () async {
       final mod = MultipleSiblingOutputsWithRangeAssignmentsTop();
       await mod.build();
-      final sv = mod.generateSynth();
+      final sv = mod.dumpSystemVerilog();
       final topBody = _topModuleBody(sv);
 
       expect(topBody, isNot(contains('.result()')));
@@ -4897,7 +4897,7 @@ void main() {
         () async {
       final mod = FanoutSiblingOutputWithRangeAssignmentsTop();
       await mod.build();
-      final sv = mod.generateSynth();
+      final sv = mod.dumpSystemVerilog();
       final topBody = _topModuleBody(sv);
 
       expect(topBody, isNot(contains('.result()')));
@@ -4923,7 +4923,7 @@ void main() {
     test('wide sibling output stays connected after range collapse', () async {
       final mod = WideSiblingOutputWithRangeAssignmentsTop();
       await mod.build();
-      final sv = mod.generateSynth();
+      final sv = mod.dumpSystemVerilog();
       final topBody = _topModuleBody(sv);
 
       expect(topBody, isNot(contains('.result()')));
@@ -4948,7 +4948,7 @@ void main() {
     test('wide sibling output keeps fanout between constant ranges', () async {
       final mod = WideSiblingOutputWithConstantsAndFanoutTop();
       await mod.build();
-      final sv = mod.generateSynth();
+      final sv = mod.dumpSystemVerilog();
       final topBody = _topModuleBody(sv);
 
       expect(topBody, isNot(contains('.result()')));
@@ -4975,7 +4975,7 @@ void main() {
         () async {
       final mod = SiblingArrayOutputToInputSubsetTop();
       await mod.build();
-      final sv = mod.generateSynth();
+      final sv = mod.dumpSystemVerilog();
       final topBody = _topModuleBody(sv);
 
       expect(topBody, isNot(contains('.data()')));
@@ -4993,7 +4993,7 @@ void main() {
         () async {
       final mod = SiblingStructOutputToInputSubsetTop();
       await mod.build();
-      final sv = mod.generateSynth();
+      final sv = mod.dumpSystemVerilog();
       final topBody = _topModuleBody(sv);
 
       expect(topBody, isNot(contains('.data()')));
@@ -5010,7 +5010,7 @@ void main() {
     test('sibling inout can drive subset of sibling inout source', () async {
       final mod = SiblingInOutToInOutSubsetTop();
       await mod.build();
-      final sv = mod.generateSynth();
+      final sv = mod.dumpSystemVerilog();
       final topBody = _topModuleBody(sv);
 
       expect(topBody, isNot(contains('.data()')));
@@ -5027,7 +5027,7 @@ void main() {
     test('sibling boundary kitchen sink keeps mixed source mappings', () async {
       final mod = SiblingBoundaryProductTop();
       await mod.build();
-      final sv = mod.generateSynth();
+      final sv = mod.dumpSystemVerilog();
       final topBody = _topModuleBody(sv);
 
       for (final portName in [
@@ -5068,7 +5068,7 @@ void main() {
       final mod = AssignSubsetPartial(
           List.generate(n ~/ 2, (_) => LogicNet()), LogicNet(width: n));
       await mod.build();
-      final sv = mod.generateSynth();
+      final sv = mod.dumpSystemVerilog();
       final topBody = _topModuleBody(sv);
 
       // not every element is a pass-through, so the subset array is preserved
@@ -5172,7 +5172,7 @@ void main() {
         }
 
         await mod.build();
-        final topBody = _topModuleBody(mod.generateSynth());
+        final topBody = _topModuleBody(mod.dumpSystemVerilog());
 
         // --- structural expectations (only where confidently predictable) ---
         if (config.noSubset) {

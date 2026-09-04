@@ -10,6 +10,8 @@
 import 'package:meta/meta.dart';
 import 'package:rohd/src/exceptions/synth_exception.dart';
 
+typedef _NetlistDriver = ({String description, bool isTriState});
+
 /// Graph queries and structural checks for an emitted module netlist.
 @internal
 class NetlistValidation {
@@ -58,14 +60,15 @@ class NetlistValidation {
     final driversByBit = _driversByBit(ports, cells);
 
     for (final entry in driversByBit.entries) {
-      if (entry.value.length <= 1) {
+      if (!_hasConflictingDrivers(entry.value)) {
         continue;
       }
+      final drivers = entry.value.map((driver) => driver.description).toList();
       issues.add(NetlistValidationIssue(
         'wire bit ${entry.key} has multiple drivers: '
-        '${entry.value.join(', ')}',
+        '${drivers.join(', ')}',
         wireBit: entry.key,
-        drivers: entry.value,
+        drivers: drivers,
       ));
     }
 
@@ -75,14 +78,15 @@ class NetlistValidation {
   }
 
   /// Collects the port and cell output drivers for each integer bit ID.
-  static Map<int, List<String>> _driversByBit(
+  static Map<int, List<_NetlistDriver>> _driversByBit(
     Map<String, Map<String, Object?>> ports,
     Map<String, Map<String, Object?>> cells,
   ) {
-    final drivers = <int, List<String>>{};
+    final drivers = <int, List<_NetlistDriver>>{};
 
-    void addDriver(int bit, String driver) =>
-        (drivers[bit] ??= <String>[]).add(driver);
+    void addDriver(int bit, String description, {bool isTriState = false}) =>
+        (drivers[bit] ??= <_NetlistDriver>[])
+            .add((description: description, isTriState: isTriState));
 
     for (final entry in ports.entries) {
       final direction = entry.value['direction'] as String?;
@@ -109,19 +113,34 @@ class NetlistValidation {
       }
       for (final port in connections.entries) {
         final direction = directions[port.key] as String?;
-        final isTriStateOutput = type == r'$tribuf' && direction == 'inout';
+        final isTriStateOutput = type == r'$tribuf' &&
+            (direction == 'output' || direction == 'inout');
         if (direction != 'output' && !isTriStateOutput) {
           continue;
         }
         for (final bit in (port.value as List?) ?? const []) {
           if (bit is int) {
-            addDriver(bit, 'cell ${entry.key}.${port.key} ($type)');
+            addDriver(
+              bit,
+              'cell ${entry.key}.${port.key} ($type)',
+              isTriState: isTriStateOutput,
+            );
           }
         }
       }
     }
 
     return drivers;
+  }
+
+  static bool _hasConflictingDrivers(Iterable<_NetlistDriver> drivers) {
+    var count = 0;
+    var allTriState = true;
+    for (final driver in drivers) {
+      count++;
+      allTriState &= driver.isTriState;
+    }
+    return count > 1 && !allTriState;
   }
 }
 

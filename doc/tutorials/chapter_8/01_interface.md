@@ -168,9 +168,9 @@ Future<void> main() async {
   counterInterface.en.inject(0);
   counterInterface.reset.inject(1);
 
-  print(counter.generateSynth());
+  print(counter.dumpSystemVerilog().output);
 
-  WaveDumper(counter,
+  counter.dumpWaves(
       outputPath: 'doc/tutorials/chapter_8/counter_interface.vcd');
   Simulator.registerAction(25, () {
     counterInterface.en.put(1);
