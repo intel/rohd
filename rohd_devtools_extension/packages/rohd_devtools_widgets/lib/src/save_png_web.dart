@@ -25,8 +25,9 @@ Future<String?> savePngBytes(Uint8List pngBytes, String fileName) async {
     ..download = fileName
     ..style.display = 'none';
   web.document.body!.append(anchor);
-  anchor.click();
-  anchor.remove();
+  anchor
+    ..click()
+    ..remove();
   web.URL.revokeObjectURL(url);
   return null;
 }

@@ -33,14 +33,13 @@ abstract class SignalWaveformApi {
     required List<String> signalIds,
     int? startTime,
     int? endTime,
-  }) async {
-    // Base implementation: must be overridden by concrete implementations
-    // Port no longer contains data - implementations must fetch from
-    // their source.
-    throw UnimplementedError(
-      'getWaveformData must be implemented by subclasses',
-    );
-  }
+  }) =>
+      Future.error(
+        // Base implementation: must be overridden by concrete implementations
+        // Port no longer contains data - implementations must fetch from
+        // their source.
+        UnimplementedError('getWaveformData must be implemented by subclasses'),
+      );
 
   /// Streams waveform data incrementally for specific signals.
   ///
@@ -71,12 +70,11 @@ abstract class SignalWaveformApi {
   ///
   /// Returns a [Future] that completes with the current time as an integer,
   /// or null if the time cannot be determined.
-  Future<int?> getCurrentTime() async {
-    // Default implementation: must be overridden by concrete implementations
-    throw UnimplementedError(
-      'getCurrentTime must be implemented by subclasses',
-    );
-  }
+  Future<int?> getCurrentTime() =>
+      // Default implementation: must be overridden by concrete implementations
+      Future.error(
+        UnimplementedError('getCurrentTime must be implemented by subclasses'),
+      );
 
   /// Retrieves a snapshot of all signal values at the given [time].
   ///
@@ -87,9 +85,10 @@ abstract class SignalWaveformApi {
   /// - `direction`: signal direction (if port)
   ///
   /// Returns null if the snapshot could not be retrieved.
-  Future<Map<String, Map<String, dynamic>>?> getSnapshot(int time) async {
-    throw UnimplementedError('getSnapshot must be implemented by subclasses');
-  }
+  Future<Map<String, Map<String, dynamic>>?> getSnapshot(int time) =>
+      Future.error(
+        UnimplementedError('getSnapshot must be implemented by subclasses'),
+      );
 
   /// Proactively expand all slim module definitions so the client-side
   /// evaluator can compute internal signals immediately.
@@ -97,5 +96,5 @@ abstract class SignalWaveformApi {
   /// Called when the user enables "internal signals" in the wave viewer.
   /// Default implementation is a no-op; overridden by implementations
   /// that support client-side synthesis.
-  Future<void> expandAllSlimModules() async {}
+  Future<void> expandAllSlimModules() => Future.value();
 }

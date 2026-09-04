@@ -34,6 +34,8 @@ jobs:
 
       - name: Setup Dart
         uses: dart-lang/setup-dart@v1
+        with:
+          sdk: 3.13.0
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -61,8 +63,17 @@ jobs:
       - name: Install software - Icarus Verilog
         run: tool/gh_actions/install_iverilog.sh
 
+      - name: Install software - Accellera SystemC
+        run: tool/gh_actions/install_systemc.sh
+
+      - name: Pre-build SystemC PCH and Makefile
+        run: tool/gh_actions/setup_systemc_pch.sh
+
       - name: Run project tests
         run: tool/gh_actions/run_tests.sh
+
+      - name: Clean SystemC temporary files
+        run: tool/gh_actions/cleanup_systemc_tmp.sh
 
       - name: Check temporary test files
         run: tool/gh_actions/check_tmp_test.sh
@@ -71,11 +82,16 @@ jobs:
       - name: Build dev container and run tests in it
         uses: devcontainers/ci@v0.3
         with:
-          runCmd: tool/gh_actions/run_tests.sh
+          runCmd: |
+            tool/gh_actions/run_tests.sh
+            tool/gh_actions/cleanup_systemc_tmp.sh
+            tool/gh_actions/check_tmp_test.sh
 
   deploy-documentation:
     name: Deploy Documentation
-    needs: run-checks
+    needs:
+      - run-checks
+      - build-devtool
     if: github.event_name == 'push'
     permissions:
       contents: write # required for "JamesIves/github-pages-deploy-action"
@@ -94,6 +110,12 @@ jobs:
       - name: Generate project documentation
         run: tool/gh_actions/generate_documentation.sh
 
+      - name: Add standalone DevTools application
+        uses: actions/download-artifact@v4
+        with:
+          name: rohd-devtools-standalone
+          path: doc/api/rohd_devtools_extension
+
       - name: Deploy generated documentation
         uses: JamesIves/github-pages-deploy-action@v4
         with:
@@ -111,7 +133,7 @@ jobs:
         uses: flutter-actions/setup-flutter@v2
         with:
           channel: stable
-          version: 3.29.0
+          version: 3.44.0
 
       - name: Run Flutter Test
         run: tool/gh_actions/devtool/run_devtool_test.sh
@@ -122,3 +144,13 @@ jobs:
       - name: Test DevTools Installation
         run: tool/gh_actions/devtool/test_devtools_install.sh extension/devtools
 
+      - name: Build standalone DevTools application
+        run: rohd_devtools_extension/tool/gh_actions/build_app.sh /rohd_devtools_extension/
+
+      - name: Upload standalone DevTools application
+        uses: actions/upload-artifact@v4
+        with:
+          name: rohd-devtools-standalone
+          path: rohd_devtools_extension/build/web
+          if-no-files-found: error
+          include-hidden-files: true

@@ -37,6 +37,19 @@ cd rohd_devtools_extension
 flutter run --release -d web-server --web-port=9099 --web-hostname=0.0.0.0 lib/main_standalone.dart
 ```
 
+Build a static bundle for a repository-scoped web path:
+
+```sh
+cd rohd_devtools_extension
+tool/gh_actions/build_app.sh /rohd_devtools_extension/
+```
+
+The bundle is written to `build/web/`. The optional argument must start and end
+with `/`; it becomes the Flutter base href used when the app is hosted below a
+site root. Local builds default to `/rohd_devtools_extension/`. On pushes to
+`main`, the `General` workflow includes this bundle in the existing ROHD
+documentation deployment at `/rohd_devtools_extension/`.
+
 Run the release Linux standalone form:
 
 ```sh
