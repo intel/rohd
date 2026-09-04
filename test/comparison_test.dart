@@ -69,73 +69,74 @@ void main() {
       final gtm = ComparisonTestModule(Logic(width: 8), Logic(width: 8));
       await gtm.build();
       final vectors = [
-        Vector({
-          'a': 0,
-          'b': 0
-        }, {
-          'a_eq_b': 1,
-          'a_neq_b': 0,
-          'a_lt_b': 0,
-          'a_lte_b': 1,
-          'a_gt_b': 0,
-          'a_gte_b': 1,
-          'a_gt_operator_b': 0,
-          'a_gte_operator_b': 1,
-          'a_eq_c': 0,
-          'a_neq_c': 1,
-          'a_lt_c': 1,
-          'a_lte_c': 1,
-          'a_gt_c': 0,
-          'a_gte_c': 0,
-          'a_gt_operator_c': 0,
-          'a_gte_operator_c': 0,
-        }),
-        Vector({
-          'a': 5,
-          'b': 6
-        }, {
-          'a_eq_b': 0,
-          'a_neq_b': 1,
-          'a_lt_b': 1,
-          'a_lte_b': 1,
-          'a_gt_b': 0,
-          'a_gte_b': 0,
-          'a_gt_operator_b': 0,
-          'a_gte_operator_b': 0,
-          'a_eq_c': 1,
-          'a_neq_c': 0,
-          'a_lt_c': 0,
-          'a_lte_c': 1,
-          'a_gt_c': 0,
-          'a_gte_c': 1,
-          'a_gt_operator_c': 0,
-          'a_gte_operator_c': 1,
-        }),
-        Vector({
-          'a': 9,
-          'b': 7
-        }, {
-          'a_eq_b': 0,
-          'a_neq_b': 1,
-          'a_lt_b': 0,
-          'a_lte_b': 0,
-          'a_gt_b': 1,
-          'a_gte_b': 1,
-          'a_gt_operator_b': 1,
-          'a_gte_operator_b': 1,
-          'a_eq_c': 0,
-          'a_neq_c': 1,
-          'a_lt_c': 0,
-          'a_lte_c': 0,
-          'a_gt_c': 1,
-          'a_gte_c': 1,
-          'a_gt_operator_c': 1,
-          'a_gte_operator_c': 1,
-        }),
+        Vector(
+          {'a': 0, 'b': 0},
+          {
+            'a_eq_b': 1,
+            'a_neq_b': 0,
+            'a_lt_b': 0,
+            'a_lte_b': 1,
+            'a_gt_b': 0,
+            'a_gte_b': 1,
+            'a_gt_operator_b': 0,
+            'a_gte_operator_b': 1,
+            'a_eq_c': 0,
+            'a_neq_c': 1,
+            'a_lt_c': 1,
+            'a_lte_c': 1,
+            'a_gt_c': 0,
+            'a_gte_c': 0,
+            'a_gt_operator_c': 0,
+            'a_gte_operator_c': 0,
+          },
+        ),
+        Vector(
+          {'a': 5, 'b': 6},
+          {
+            'a_eq_b': 0,
+            'a_neq_b': 1,
+            'a_lt_b': 1,
+            'a_lte_b': 1,
+            'a_gt_b': 0,
+            'a_gte_b': 0,
+            'a_gt_operator_b': 0,
+            'a_gte_operator_b': 0,
+            'a_eq_c': 1,
+            'a_neq_c': 0,
+            'a_lt_c': 0,
+            'a_lte_c': 1,
+            'a_gt_c': 0,
+            'a_gte_c': 1,
+            'a_gt_operator_c': 0,
+            'a_gte_operator_c': 1,
+          },
+        ),
+        Vector(
+          {'a': 9, 'b': 7},
+          {
+            'a_eq_b': 0,
+            'a_neq_b': 1,
+            'a_lt_b': 0,
+            'a_lte_b': 0,
+            'a_gt_b': 1,
+            'a_gte_b': 1,
+            'a_gt_operator_b': 1,
+            'a_gte_operator_b': 1,
+            'a_eq_c': 0,
+            'a_neq_c': 1,
+            'a_lt_c': 0,
+            'a_lte_c': 0,
+            'a_gt_c': 1,
+            'a_gte_c': 1,
+            'a_gt_operator_c': 1,
+            'a_gte_operator_c': 1,
+          },
+        ),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
       final simResult = SimCompare.iverilogVector(gtm, vectors);
       expect(simResult, equals(true));
+      SimCompare.checkSystemCVector(gtm, vectors);
     });
   });
 }
