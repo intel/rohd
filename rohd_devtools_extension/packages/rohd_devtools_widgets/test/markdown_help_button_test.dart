@@ -9,9 +9,9 @@
 
 import 'dart:convert';
 
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:rohd_devtools_widgets/rohd_devtools_widgets.dart';
 
 void main() {
@@ -50,8 +50,9 @@ second line
     expect(tester.widget<Tooltip>(find.byType(Tooltip)).message, expected);
   }
 
-  testWidgets('loads markdown, applies substitutions, and renders dialog',
-      (tester) async {
+  testWidgets('loads markdown, applies substitutions, and renders dialog', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       MaterialApp(
         home: DefaultAssetBundle(
@@ -83,30 +84,32 @@ second line
     expect(find.text('First line second line'), findsOneWidget);
   });
 
-  testWidgets('falls back to bare asset path when package asset is unavailable',
-      (tester) async {
-    await tester.pumpWidget(
-      MaterialApp(
-        home: DefaultAssetBundle(
-          bundle: _MapAssetBundle({assetPath: markdown}),
-          child: const MarkdownHelpButton(
-            assetPath: assetPath,
-            package: 'rohd_devtools_widgets',
-            isDark: true,
-            labelIcon: Icon(Icons.help_outline),
-            substitutions: {'VERSION': '2.0.0', 'THING': 'signals'},
+  testWidgets(
+    'falls back to bare asset path when package asset is unavailable',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: DefaultAssetBundle(
+            bundle: _MapAssetBundle({assetPath: markdown}),
+            child: const MarkdownHelpButton(
+              assetPath: assetPath,
+              package: 'rohd_devtools_widgets',
+              isDark: true,
+              labelIcon: Icon(Icons.help_outline),
+              substitutions: {'VERSION': '2.0.0', 'THING': 'signals'},
+            ),
           ),
         ),
-      ),
-    );
-    await pumpUntilTooltipMessage(tester, 'Quick help for signals');
+      );
+      await pumpUntilTooltipMessage(tester, 'Quick help for signals');
 
-    expect(find.byIcon(Icons.help_outline), findsOneWidget);
-    expect(
-      tester.widget<Tooltip>(find.byType(Tooltip)).message,
-      'Quick help for signals',
-    );
-  });
+      expect(find.byIcon(Icons.help_outline), findsOneWidget);
+      expect(
+        tester.widget<Tooltip>(find.byType(Tooltip)).message,
+        'Quick help for signals',
+      );
+    },
+  );
 }
 
 class _MapAssetBundle extends CachingAssetBundle {
