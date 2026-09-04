@@ -50,7 +50,7 @@ class WaveDumper {
   Module get module => _service.module;
 
   /// The output filepath of the generated waveforms.
-  String get outputPath => _service.outputFilePath;
+  String get outputPath => _service.outputPath;
 
   /// Attaches a [WaveDumper] to record all signal changes in a simulation of
   /// [module] in a VCD file at [outputPath].
