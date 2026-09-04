@@ -10,3 +10,4 @@
 export 'module_service.dart';
 export 'module_services.dart';
 export 'waveform_service.dart';
+export 'waveform_writer.dart';

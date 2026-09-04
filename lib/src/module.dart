@@ -1165,7 +1165,6 @@ abstract class Module {
       this,
       outputDirectory: outputDirectory,
       outputFileName: outputFileName,
-      writeToFile: true,
     );
   }
 
