@@ -9,8 +9,8 @@
 
 import 'dart:ui' show PointerDeviceKind;
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:rohd_devtools_widgets/rohd_devtools_widgets.dart';
 
 void main() {
@@ -19,14 +19,12 @@ void main() {
         child: Material(child: Text('Toolbar')),
       );
 
-  testWidgets('lays out app bar above body when auto-hide is disabled',
-      (tester) async {
+  testWidgets('lays out app bar above body when auto-hide is disabled', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       MaterialApp(
-        home: AppBarOverlay(
-          appBar: testAppBar(),
-          body: const Text('Body'),
-        ),
+        home: AppBarOverlay(appBar: testAppBar(), body: const Text('Body')),
       ),
     );
 
@@ -36,8 +34,9 @@ void main() {
     expect(find.byType(Stack), findsNothing);
   });
 
-  testWidgets('slides overlay app bar in when pointer enters trigger zone',
-      (tester) async {
+  testWidgets('slides overlay app bar in when pointer enters trigger zone', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       MaterialApp(
         home: AppBarOverlay(

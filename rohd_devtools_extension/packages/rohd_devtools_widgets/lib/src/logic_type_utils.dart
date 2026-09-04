@@ -271,9 +271,9 @@ String _extractContiguousBits(String binaryValue, int startBit, int width) {
   final totalWidth = binaryValue.length;
   final endBit = startBit + width; // exclusive
   if (startBit >= 0 && endBit <= totalWidth) {
-    return LogicValue.ofString(binaryValue)
-        .slice(endBit - 1, startBit)
-        .toString(includeWidth: false);
+    return LogicValue.ofString(
+      binaryValue,
+    ).slice(endBit - 1, startBit).toString(includeWidth: false);
   }
 
   final result = StringBuffer();
@@ -309,9 +309,9 @@ String? hexToBinary(String hexValue, int width) {
   final sourceWidth = cleaned.length * 4;
   final parseWidth = sourceWidth > width ? sourceWidth : width;
   try {
-    return LogicValue.ofRadixString("$parseWidth'h$cleaned")
-        .slice(width - 1, 0)
-        .toString(includeWidth: false);
+    return LogicValue.ofRadixString(
+      "$parseWidth'h$cleaned",
+    ).slice(width - 1, 0).toString(includeWidth: false);
   } on Exception {
     return null;
   }

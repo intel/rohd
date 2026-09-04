@@ -233,7 +233,7 @@ void main() {
       final mod = _Counter(Logic(), Logic());
       await mod.build();
 
-      mod.generateSynth();
+      mod.dumpSystemVerilog();
 
       expect(mod.namer.signalNameOfBest([mod.input('en')]), equals('en'));
       expect(mod.namer.signalNameOfBest([mod.input('reset')]), equals('reset'));
@@ -251,7 +251,7 @@ void main() {
 
         final modSv = _Counter(Logic(), Logic());
         await modSv.build();
-        modSv.generateSynth();
+        modSv.dumpSystemVerilog();
 
         // Both paths use the same Namer, so names must match.
         final enNetlist = modNetlist.namer.signalNameOfBest([
@@ -271,7 +271,7 @@ void main() {
       'colliding mergeable names remain stable across synthesis order',
       () async {
         void runNetlist(_CollidingNames mod) => mod.generateNetlist();
-        void runSv(_CollidingNames mod) => mod.generateSynth();
+        void runSv(_CollidingNames mod) => mod.dumpSystemVerilog();
 
         final netlistOnly = await _collisionNamesAfter([runNetlist]);
         await Simulator.reset();
@@ -316,7 +316,7 @@ void main() {
     test('colliding names stay stable when SV inlines one signal', () async {
       void runNetlist(_PartiallyInlineCollidingNames mod) =>
           mod.generateNetlist();
-      void runSv(_PartiallyInlineCollidingNames mod) => mod.generateSynth();
+      void runSv(_PartiallyInlineCollidingNames mod) => mod.dumpSystemVerilog();
 
       final netlistOnly = await _partialInlineCollisionNamesAfter([runNetlist]);
       await Simulator.reset();
@@ -347,7 +347,8 @@ void main() {
       () async {
         void runNetlist(_CollapsedInstanceCollidingNames mod) =>
             mod.generateNetlist();
-        void runSv(_CollapsedInstanceCollidingNames mod) => mod.generateSynth();
+        void runSv(_CollapsedInstanceCollidingNames mod) =>
+            mod.dumpSystemVerilog();
 
         final netlistOnly = await _collapsedInstanceCollisionNamesAfter([
           runNetlist,

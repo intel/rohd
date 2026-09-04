@@ -9,14 +9,15 @@
 
 import 'dart:typed_data';
 
-import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show RenderRepaintBoundary;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:rohd_devtools_widgets/rohd_devtools_widgets.dart';
 
 void main() {
-  testWidgets('returns false when no repaint boundary is found',
-      (tester) async {
+  testWidgets('returns false when no repaint boundary is found', (
+    tester,
+  ) async {
     final key = GlobalKey();
     late BuildContext captureContext;
 
@@ -37,8 +38,9 @@ void main() {
     );
   });
 
-  testWidgets('returns false when the key has no mounted context',
-      (tester) async {
+  testWidgets('returns false when the key has no mounted context', (
+    tester,
+  ) async {
     final key = GlobalKey();
     late BuildContext captureContext;
 
@@ -59,8 +61,9 @@ void main() {
     );
   });
 
-  testWidgets('saves injected PNG bytes and shows saved path toast',
-      (tester) async {
+  testWidgets('saves injected PNG bytes and shows saved path toast', (
+    tester,
+  ) async {
     final key = GlobalKey();
     late BuildContext captureContext;
     Uint8List? savedBytes;
@@ -100,15 +103,16 @@ void main() {
       find.byWidgetPredicate(
         (widget) =>
             widget is Text &&
-            widget.data?.startsWith('Saved: /tmp/wave_') == true,
+            (widget.data?.startsWith('Saved: /tmp/wave_') ?? false),
       ),
       findsOneWidget,
     );
     await _letExportToastExpire(tester);
   });
 
-  testWidgets('shows downloaded toast when save function returns no path',
-      (tester) async {
+  testWidgets('shows downloaded toast when save function returns no path', (
+    tester,
+  ) async {
     final key = GlobalKey();
     late BuildContext captureContext;
 
@@ -132,15 +136,16 @@ void main() {
       find.byWidgetPredicate(
         (widget) =>
             widget is Text &&
-            widget.data?.startsWith('Downloaded capture_') == true,
+            (widget.data?.startsWith('Downloaded capture_') ?? false),
       ),
       findsOneWidget,
     );
     await _letExportToastExpire(tester);
   });
 
-  testWidgets('skips saved toast when context unmounts during save',
-      (tester) async {
+  testWidgets('skips saved toast when context unmounts during save', (
+    tester,
+  ) async {
     final key = GlobalKey();
     late BuildContext captureContext;
 
@@ -166,8 +171,9 @@ void main() {
     expect(find.textContaining('Saved:'), findsNothing);
   });
 
-  testWidgets('returns false and shows failure toast when save throws',
-      (tester) async {
+  testWidgets('returns false and shows failure toast when save throws', (
+    tester,
+  ) async {
     final key = GlobalKey();
     late BuildContext captureContext;
 
@@ -186,13 +192,16 @@ void main() {
     await tester.pump();
 
     expect(succeeded, isFalse);
-    expect(find.textContaining('Export failed: Bad state: disk full'),
-        findsOneWidget);
+    expect(
+      find.textContaining('Export failed: Bad state: disk full'),
+      findsOneWidget,
+    );
     await _letExportToastExpire(tester);
   });
 
-  testWidgets('returns false when injected encoder returns null',
-      (tester) async {
+  testWidgets('returns false when injected encoder returns null', (
+    tester,
+  ) async {
     final key = GlobalKey();
     late BuildContext captureContext;
 

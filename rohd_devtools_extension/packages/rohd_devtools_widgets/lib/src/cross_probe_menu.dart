@@ -15,9 +15,9 @@
 // 2026 June
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
-import 'rohd_extension_status.dart';
+import 'package:rohd_devtools_widgets/src/rohd_extension_status.dart';
 
 /// Returns the source formats currently navigable for the active module.
 ///
@@ -30,22 +30,13 @@ typedef GoToSourceCallback = void Function(
     RohdSourceFormat format, List<String> signalPaths);
 
 /// Builds an icon for a source/output [format].
-typedef SourceFormatIconBuilder = Widget Function(
-  RohdSourceFormat format, {
-  double size,
-});
+typedef SourceFormatIconBuilder = Widget Function(RohdSourceFormat format,
+    {double size});
 
 /// Prefix used to encode source-navigation entries in a `String`-valued popup
 /// menu (e.g. `'goto_source:rohd'`).  Allows the shared items to coexist with
 /// each viewer's other `String` menu values.
 const String _gotoSourceValuePrefix = 'goto_source:';
-
-/// Formats shown when source availability is unknown (module info not yet
-/// loaded, the extension is unreachable, or the query errored).
-const List<RohdSourceFormat> kDefaultNavigableFormats = [
-  RohdSourceFormat.rohd,
-  RohdSourceFormat.sv,
-];
 
 /// Encode a popup-menu value for navigating to [format].
 String gotoSourceMenuValue(RohdSourceFormat format) =>
@@ -139,7 +130,9 @@ Widget _sourceFormatAssetIcon(
           ),
         );
 
-        if (!isDark) return image;
+        if (!isDark) {
+          return image;
+        }
 
         return Container(
           width: size + 4,
@@ -189,11 +182,7 @@ PopupMenuItem<T> buildRohdPopupMenuItem<T>({
       value: value,
       height: height,
       enabled: enabled,
-      child: sourcePopupMenuRow(
-        icon: icon,
-        label: label,
-        textStyle: textStyle,
-      ),
+      child: sourcePopupMenuRow(icon: icon, label: label, textStyle: textStyle),
     );
 
 /// Compact strip of source/output format icons for trace-picker menu rows.
@@ -218,13 +207,11 @@ Widget sourceFormatIconStrip({
 /// Resolve which navigable source formats to display for [info].
 ///
 /// When [info] is `null`, the extension is unavailable, or the query errored,
-/// availability is treated as *unknown* and [kDefaultNavigableFormats] is
-/// returned so the actions stay available while metadata converges.
-/// Otherwise the exact set of usable navigable formats is returned (which may
-/// be empty when the module genuinely has no source).
+/// no formats are returned because availability has not been confirmed.
+/// Otherwise the exact set of usable navigable formats is returned.
 List<RohdSourceFormat> resolveNavigableFormats(RohdModuleInfo? info) {
   if (info == null || !info.extensionAvailable || info.error != null) {
-    return kDefaultNavigableFormats;
+    return const [];
   }
   return info.navigableSourceFormats;
 }

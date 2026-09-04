@@ -975,10 +975,8 @@ class NetlistSynthesizer extends Synthesizer {
 
   /// Apply all post-processing passes to the modules map.
   ///
-  /// This is the canonical pass ordering used by both netlist flows:
-  /// **Flow 1** (slim batch via `_synthesizeSlimModules`) and
-  /// **Flow 2** (incremental full via `moduleNetlistJson`).
-  /// Also used internally by [buildModulesMap] / [synthesizeToJson].
+  /// This is the canonical pass ordering used by both the slim and full JSON
+  /// projections produced by [buildModulesMap] and [synthesizeToJson].
   void applyPostProcessingPasses(Map<String, Map<String, Object?>> modules) {
     if (configuration.collapseTransparentClusters) {
       NetlistPasses.collapseConcatOfAdjacentSlices(modules);
@@ -1128,7 +1126,6 @@ class NetlistSynthesizer extends Synthesizer {
   /// The [packageRoot] parameter is accepted for API compatibility with
   /// downstream trace-enabled branches. [slimMode] overrides the configured
   /// output mode for this call, allowing expansion after a slim request.
-  @visibleForTesting
   String synthesizeToJson(Module top, {String? packageRoot, bool? slimMode}) {
     final sb = SynthBuilder(top, this);
     return generateCombinedJson(sb, top, slimMode: slimMode);
