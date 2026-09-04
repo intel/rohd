@@ -8,8 +8,8 @@
 // Author: Yao Jing Quek <yao.jing.quek@intel.com>
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/cubit/cubits.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/ui/details_help_button.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/ui/platform_icon.dart';

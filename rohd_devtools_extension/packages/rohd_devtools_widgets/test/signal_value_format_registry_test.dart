@@ -190,7 +190,7 @@ void main() {
   test('rejects an invalid signal occurrence address', () {
     expect(
       () => SignalValueFormatRegistry.setFormatFor(
-        const [OccurrenceAddress([])],
+        const [OccurrenceAddress.root],
         SignalValueFormat.unsignedDecimal,
       ),
       throwsArgumentError,

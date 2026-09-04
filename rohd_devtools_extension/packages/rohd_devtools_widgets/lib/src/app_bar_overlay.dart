@@ -14,7 +14,8 @@
 // 2026 April
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Wraps a [body] widget and an [appBar] widget, where the AppBar
 /// auto-hides by sliding up when [autoHide] is true.
@@ -41,10 +42,11 @@ class AppBarOverlay extends StatefulWidget {
   /// Duration of the slide animation.
   final Duration animationDuration;
 
+  /// Creates an app bar overlay around [body].
   const AppBarOverlay({
-    super.key,
     required this.appBar,
     required this.body,
+    super.key,
     this.autoHide = false,
     this.triggerHeight = 12,
     this.panelOpacity = 0.92,
@@ -53,6 +55,18 @@ class AppBarOverlay extends StatefulWidget {
 
   @override
   State<AppBarOverlay> createState() => _AppBarOverlayState();
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties
+      ..add(DiagnosticsProperty<bool>('autoHide', autoHide))
+      ..add(DoubleProperty('triggerHeight', triggerHeight))
+      ..add(DoubleProperty('panelOpacity', panelOpacity))
+      ..add(
+        DiagnosticsProperty<Duration>('animationDuration', animationDuration),
+      );
+  }
 }
 
 class _AppBarOverlayState extends State<AppBarOverlay>
@@ -70,11 +84,13 @@ class _AppBarOverlayState extends State<AppBarOverlay>
     _slideAnimation = Tween<Offset>(
       begin: const Offset(0, -1), // fully off-screen above
       end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOutCubic,
-      reverseCurve: Curves.easeInCubic,
-    ));
+    ).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: Curves.easeOutCubic,
+        reverseCurve: Curves.easeInCubic,
+      ),
+    );
 
     // If not auto-hiding, snap open.
     if (!widget.autoHide) {
@@ -105,7 +121,9 @@ class _AppBarOverlayState extends State<AppBarOverlay>
   }
 
   void _hide() {
-    if (!widget.autoHide) return;
+    if (!widget.autoHide) {
+      return;
+    }
     _controller.reverse();
   }
 
