@@ -13,7 +13,6 @@ import 'dart:collection';
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/collections/traverseable_collection.dart';
-import 'package:rohd/src/synthesizers/systemc/systemc.dart';
 import 'package:rohd/src/utilities/config.dart';
 import 'package:rohd/src/utilities/namer.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
@@ -272,7 +271,9 @@ abstract class Module {
         _definitionName = Naming.validatedName(
           definitionName,
           reserveName: reserveDefinitionName,
-        );
+        ) {
+    SourceTracer.recordModule(this);
+  }
 
   /// Returns an [Iterable] of [Module]s representing the hierarchical path to
   /// this [Module].

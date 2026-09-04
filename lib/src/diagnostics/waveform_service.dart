@@ -63,11 +63,15 @@ class WaveformService extends ArtifactProducingService {
   /// Whether to register this service with [ModuleServices] for inspection.
   final bool register;
 
+  /// Whether to expose captured values to DevTools.
+  final bool enableDevToolsStreaming;
+
   /// The FST writer configuration (only used when [format] is
   /// [WaveOutputFormat.fst]).
   final FstWriterConfig? fstConfig;
 
   late final WaveformWriter _writer;
+  WaveformDataService? _dataService;
 
   /// Maps each captured [Logic] to its writer-specific signal handle.
   final Map<Logic, Object> _signalHandles = <Logic, Object>{};
@@ -98,6 +102,7 @@ class WaveformService extends ArtifactProducingService {
     this.flushBufferSize = 100000,
     this.overwritePolicy = OverwritePolicy.overwrite,
     this.register = true,
+    this.enableDevToolsStreaming = true,
     this.fstConfig,
   }) : super(module) {
     if (!module.hasBuilt) {
@@ -115,6 +120,22 @@ class WaveformService extends ArtifactProducingService {
       ),
       timestamp: Simulator.time,
     );
+    if (enableDevToolsStreaming) {
+      WaveformDataService.init(module);
+      _dataService = WaveformDataService.instance;
+      if (_writer case final FstWaveformWriter fstWriter) {
+        _dataService!.attachFstWriter(
+          fstWriter.writer,
+          <Logic, FstSignalHandle>{
+            for (final entry in _signalHandles.entries)
+              entry.key: entry.value as FstSignalHandle,
+          },
+        );
+      }
+      for (final signal in _signalHandles.keys) {
+        _dataService!.recordLogicChange(signal, Simulator.time);
+      }
+    }
 
     Simulator.preTick.listen((_) {
       if (Simulator.time != _currentDumpingTimestamp) {
@@ -154,6 +175,7 @@ class WaveformService extends ArtifactProducingService {
     int flushBufferSize = 100000,
     OverwritePolicy overwritePolicy = OverwritePolicy.overwrite,
     bool register = true,
+    bool enableDevToolsStreaming = true,
     FstWriterConfig? fstConfig,
   }) {
     final normalized = outputPath.replaceAll(r'\', '/');
@@ -176,6 +198,7 @@ class WaveformService extends ArtifactProducingService {
       flushBufferSize: flushBufferSize,
       overwritePolicy: overwritePolicy,
       register: register,
+      enableDevToolsStreaming: enableDevToolsStreaming,
       fstConfig: fstConfig,
     );
   }
@@ -297,6 +320,7 @@ class WaveformService extends ArtifactProducingService {
     }
 
     for (final sig in snapshot) {
+      _dataService?.recordLogicChange(sig, timestamp);
       onValueChange(sig, timestamp);
     }
     _changedThisTimestamp.clear();
@@ -329,6 +353,7 @@ class WaveformService extends ArtifactProducingService {
         'timescale': timescale,
         if (startTime != null) 'startTime': startTime,
         if (stopTime != null) 'stopTime': stopTime,
+        'enableDevToolsStreaming': enableDevToolsStreaming,
         'writer': _writer.toJson(),
       };
 }
