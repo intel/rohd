@@ -7,13 +7,14 @@
 // 2026 July
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:rohd_devtools_widgets/rohd_devtools_widgets.dart';
 
 void main() {
-  testWidgets('buildBitExpansionMenuItems creates divider and actions',
-      (tester) async {
+  testWidgets('buildBitExpansionMenuItems creates divider and actions', (
+    tester,
+  ) async {
     final items = buildBitExpansionMenuItems(
       width: 16,
       includeDivider: true,
@@ -43,8 +44,9 @@ void main() {
     expect(find.text('Define Bit Fields [16]...'), findsOneWidget);
   });
 
-  testWidgets('resolveBitExpansionMenuValue expands small widths immediately',
-      (tester) async {
+  testWidgets('resolveBitExpansionMenuValue expands small widths immediately', (
+    tester,
+  ) async {
     late BuildContext context;
     await tester.pumpWidget(
       MaterialApp(
@@ -83,8 +85,9 @@ void main() {
     );
   });
 
-  testWidgets('resolveBitExpansionMenuValue uses dialogs for large ranges',
-      (tester) async {
+  testWidgets('resolveBitExpansionMenuValue uses dialogs for large ranges', (
+    tester,
+  ) async {
     late BuildContext context;
     await tester.pumpWidget(
       MaterialApp(
@@ -112,7 +115,7 @@ void main() {
     await tester.tap(find.text('OK'));
     await tester.pumpAndSettle();
 
-    final range = await rangeFuture as BitExpandRangeAction;
+    final range = (await rangeFuture)! as BitExpandRangeAction;
     expect(range.bitStart, 3);
     expect(range.bitEnd, 6);
 
@@ -127,7 +130,7 @@ void main() {
     await tester.tap(find.text('OK'));
     await tester.pumpAndSettle();
 
-    final fields = await fieldsFuture as BitDefineFieldsAction;
+    final fields = (await fieldsFuture)! as BitDefineFieldsAction;
     expect(fields.fields.map((field) => field.name), ['upper', 'lower']);
   });
 }

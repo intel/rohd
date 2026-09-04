@@ -36,13 +36,10 @@ void main() {
   });
 
   test('expandLogicType slices contiguous array elements with LogicValue', () {
-    final nodes = expandLogicType(
-      {
-        'arrayDims': [2],
-        'elementWidth': 4,
-      },
-      parentBinaryValue: '10101100',
-    );
+    final nodes = expandLogicType({
+      'arrayDims': [2],
+      'elementWidth': 4,
+    }, parentBinaryValue: '10101100');
 
     expect(nodes, hasLength(2));
     expect(nodes[0].value, '1100');
@@ -50,38 +47,35 @@ void main() {
   });
 
   test('expandLogicType normalizes absolute struct bits and nested fields', () {
-    final nodes = expandLogicType(
-      {
-        'typeName': 'Packet',
-        'fields': [
-          {
-            'name': 'payload',
-            'width': 4,
-            'bits': [100, 101, 102, 103],
-            'type': {
-              'fields': [
-                {
-                  'name': 'low',
-                  'width': 2,
-                  'bits': [0, 1],
-                },
-                {
-                  'name': 'high',
-                  'width': 2,
-                  'bits': [2, 3],
-                },
-              ],
-            },
+    final nodes = expandLogicType({
+      'typeName': 'Packet',
+      'fields': [
+        {
+          'name': 'payload',
+          'width': 4,
+          'bits': [100, 101, 102, 103],
+          'type': {
+            'fields': [
+              {
+                'name': 'low',
+                'width': 2,
+                'bits': [0, 1],
+              },
+              {
+                'name': 'high',
+                'width': 2,
+                'bits': [2, 3],
+              },
+            ],
           },
-          {
-            'name': 'valid',
-            'width': 1,
-            'bits': [104],
-          },
-        ],
-      },
-      parentBinaryValue: '11010',
-    );
+        },
+        {
+          'name': 'valid',
+          'width': 1,
+          'bits': [104],
+        },
+      ],
+    }, parentBinaryValue: '11010');
 
     expect(nodes, hasLength(2));
     expect(nodes[0].name, 'payload');
@@ -96,13 +90,10 @@ void main() {
   });
 
   test('expandLogicType expands multidimensional arrays', () {
-    final nodes = expandLogicType(
-      {
-        'arrayDims': [2, 2],
-        'elementWidth': 2,
-      },
-      parentBinaryValue: '11100100',
-    );
+    final nodes = expandLogicType({
+      'arrayDims': [2, 2],
+      'elementWidth': 2,
+    }, parentBinaryValue: '11100100');
 
     expect(nodes, hasLength(2));
     expect(nodes[0].name, '[0]');
@@ -113,48 +104,48 @@ void main() {
     expect(nodes[1].children.map((child) => child.value), ['10', '11']);
   });
 
-  test('formatTypeTooltip includes signal name, type, values, and depth limit',
-      () {
-    final tooltip = formatTypeTooltip(
-      {
-        'typeName': 'Packet',
-        'fields': [
-          {
-            'name': 'payload',
-            'width': 4,
-            'bits': [0, 1, 2, 3],
-            'type': {
-              'fields': [
-                {
-                  'name': 'nibble',
-                  'width': 4,
-                  'bits': [0, 1, 2, 3],
-                  'type': {
-                    'fields': [
-                      {
-                        'name': 'bit0',
-                        'width': 1,
-                        'bits': [0],
-                      },
-                    ],
+  test(
+    'formatTypeTooltip includes signal name, type, values, and depth limit',
+    () {
+      final tooltip = formatTypeTooltip(
+        {
+          'typeName': 'Packet',
+          'fields': [
+            {
+              'name': 'payload',
+              'width': 4,
+              'bits': [0, 1, 2, 3],
+              'type': {
+                'fields': [
+                  {
+                    'name': 'nibble',
+                    'width': 4,
+                    'bits': [0, 1, 2, 3],
+                    'type': {
+                      'fields': [
+                        {
+                          'name': 'bit0',
+                          'width': 1,
+                          'bits': [0],
+                        },
+                      ],
+                    },
                   },
-                },
-              ],
+                ],
+              },
             },
-          },
-        ],
-      },
-      parentBinaryValue: '1010',
-      signalName: 'packet',
-      maxDepth: 2,
-    );
+          ],
+        },
+        parentBinaryValue: '1010',
+        signalName: 'packet',
+        maxDepth: 2,
+      );
 
-    expect(
-      tooltip,
-      '''packet (Packet)
+      expect(tooltip, '''
+packet (Packet)
   payload: 4'b1010
     nibble: 4'b1010
-      ...''',
-    );
-  });
+      ...''');
+    },
+  );
 }

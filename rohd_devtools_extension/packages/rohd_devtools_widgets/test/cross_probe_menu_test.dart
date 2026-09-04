@@ -7,17 +7,14 @@
 // 2026 July
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:rohd_devtools_widgets/rohd_devtools_widgets.dart';
 
 void main() {
   test('encodes, decodes, and labels source menu values', () {
     expect(gotoSourceMenuValue(RohdSourceFormat.rohd), 'goto_source:rohd');
-    expect(
-      gotoSourceFormatFromValue('goto_source:sv'),
-      RohdSourceFormat.sv,
-    );
+    expect(gotoSourceFormatFromValue('goto_source:sv'), RohdSourceFormat.sv);
     expect(gotoSourceFormatFromValue(null), isNull);
     expect(gotoSourceFormatFromValue('other'), isNull);
     expect(gotoSourceFormatFromValue('goto_source:missing'), isNull);
@@ -26,37 +23,28 @@ void main() {
     expect(gotoSourceShortName(RohdSourceFormat.sv), 'SV');
     expect(gotoSourceShortName(RohdSourceFormat.sc), 'SystemC');
     expect(gotoSourceShortName(RohdSourceFormat.fst), 'Waveform');
-    expect(
-      gotoSourceMenuLabel(RohdSourceFormat.rohd),
-      'Go to ROHD Source',
-    );
+    expect(gotoSourceMenuLabel(RohdSourceFormat.rohd), 'Go to ROHD Source');
     expect(
       gotoSourceMenuLabel(RohdSourceFormat.sv, count: 3),
       'Go to SV Source (3)',
     );
   });
 
-  test('resolves default and exact navigable formats', () {
-    expect(resolveNavigableFormats(null), kDefaultNavigableFormats);
-    expect(
-      resolveNavigableFormats(const RohdModuleInfo(extensionAvailable: false)),
-      kDefaultNavigableFormats,
-    );
+  test('resolves only confirmed navigable formats', () {
+    expect(resolveNavigableFormats(null), isEmpty);
+    expect(resolveNavigableFormats(RohdModuleInfo.unavailable), isEmpty);
     expect(
       resolveNavigableFormats(
         const RohdModuleInfo(extensionAvailable: true, error: 'not ready'),
       ),
-      kDefaultNavigableFormats,
+      isEmpty,
     );
     expect(
       resolveNavigableFormats(
         const RohdModuleInfo(
           extensionAvailable: true,
           formats: {
-            RohdSourceFormat.rohd: RohdFormatInfo(
-              available: true,
-              fileFound: false,
-            ),
+            RohdSourceFormat.rohd: RohdFormatInfo(available: true),
             RohdSourceFormat.sv: RohdFormatInfo(
               available: false,
               fileFound: true,
@@ -67,53 +55,40 @@ void main() {
       isEmpty,
     );
 
-    final info = RohdModuleInfo(
+    const info = RohdModuleInfo(
       extensionAvailable: true,
       formats: {
-        RohdSourceFormat.rohd: const RohdFormatInfo(
-          available: true,
-          fileFound: true,
-        ),
-        RohdSourceFormat.sc: const RohdFormatInfo(
-          available: true,
-          fileFound: true,
-        ),
-        RohdSourceFormat.fst: const RohdFormatInfo(
-          available: true,
-          fileFound: true,
-        ),
+        RohdSourceFormat.rohd: RohdFormatInfo(available: true, fileFound: true),
+        RohdSourceFormat.sc: RohdFormatInfo(available: true, fileFound: true),
+        RohdSourceFormat.fst: RohdFormatInfo(available: true, fileFound: true),
       },
     );
 
-    expect(
-      resolveNavigableFormats(info),
-      [RohdSourceFormat.rohd, RohdSourceFormat.sc],
-    );
+    expect(resolveNavigableFormats(info), [
+      RohdSourceFormat.rohd,
+      RohdSourceFormat.sc,
+    ]);
   });
 
-  testWidgets('builds popup menu items with encoded values and custom icons',
-      (tester) async {
+  testWidgets('builds popup menu items with encoded values and custom icons', (
+    tester,
+  ) async {
     final items = buildGotoSourceMenuItems(
       formats: [RohdSourceFormat.rohd, RohdSourceFormat.sv],
       count: 2,
-      showIcons: true,
-      iconBuilder: (format, {double size = 18}) => Icon(
-        Icons.code,
-        key: ValueKey(format),
-        size: size,
-      ),
+      iconBuilder: (format, {size = 18}) =>
+          Icon(Icons.code, key: ValueKey(format), size: size),
     );
 
     expect(items, hasLength(2));
+    expect(items, everyElement(isA<PopupMenuItem<String>>()));
     expect(items[0].value, 'goto_source:rohd');
     expect(items[1].value, 'goto_source:sv');
 
     await tester.pumpWidget(
       MaterialApp(
         home: Material(
-          child: Column(
-            children: [for (final item in items) item.child!],
-          ),
+          child: Column(children: [for (final item in items) item.child!]),
         ),
       ),
     );
@@ -124,8 +99,9 @@ void main() {
     expect(find.byKey(const ValueKey(RohdSourceFormat.sv)), findsOneWidget);
   });
 
-  testWidgets('builds rows, disabled menu items, and no-icon source items',
-      (tester) async {
+  testWidgets('builds rows, disabled menu items, and no-icon source items', (
+    tester,
+  ) async {
     final disabled = buildRohdPopupMenuItem<String>(
       value: 'disabled',
       icon: const Icon(Icons.block),
@@ -168,8 +144,9 @@ void main() {
     expect(find.byIcon(Icons.timeline), findsOneWidget);
   });
 
-  testWidgets('source format icons cover strips, aliases, and waveform icon',
-      (tester) async {
+  testWidgets('source format icons cover strips, aliases, and waveform icon', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       MaterialApp(
         home: Material(
@@ -185,7 +162,7 @@ void main() {
                 ],
                 size: 13,
                 gap: 5,
-                iconBuilder: (format, {double size = 16}) => Icon(
+                iconBuilder: (format, {size = 16}) => Icon(
                   Icons.code,
                   key: ValueKey('strip-${format.name}'),
                   size: size,

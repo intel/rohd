@@ -53,8 +53,6 @@ Future<void> main(List<String> arguments) async {
   await catalog.build();
 
   final synth = NetlistSynthesizer();
-  // We will migrate to a new public API in a future PR
-  // ignore: invalid_use_of_visible_for_testing_member
   final json = synth.synthesizeToJson(catalog);
 
   final outputFile = File(outputPath);
