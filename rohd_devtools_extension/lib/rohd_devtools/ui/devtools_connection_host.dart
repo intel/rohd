@@ -23,10 +23,8 @@ import 'package:vm_service/vm_service.dart' hide Stack;
 /// If [onRegisteredServices] is provided, it is invoked with the set of
 /// currently registered DTD client service names before VM service discovery
 /// completes.
-Future<List<DiscoveredVmService>> discoverVmServicesViaDtd(
-  String dtdUri, {
-  void Function(Set<String> serviceNames)? onRegisteredServices,
-}) async {
+Future<List<DiscoveredVmService>> discoverVmServicesViaDtd(String dtdUri,
+    {void Function(Set<String> serviceNames)? onRegisteredServices}) async {
   debugPrint('[ConnectionHost] Connecting to DTD at: $dtdUri');
   final dtd = await DartToolingDaemon.connect(Uri.parse(dtdUri));
 
@@ -35,7 +33,7 @@ Future<List<DiscoveredVmService>> discoverVmServicesViaDtd(
       try {
         final registered = await dtd.getRegisteredServices();
         final serviceNames = <String>{
-          for (final svc in registered.clientServices) svc.name,
+          for (final svc in registered.clientServices) svc.name
         };
         onRegisteredServices(serviceNames);
         debugPrint('[ConnectionHost] Registered services: $serviceNames');
@@ -49,20 +47,13 @@ Future<List<DiscoveredVmService>> discoverVmServicesViaDtd(
 
     debugPrint('[ConnectionHost] Found ${services.length} VM service(s)');
     for (final svc in services) {
-      debugPrint(
-        '[ConnectionHost]   ${svc.name ?? "(unnamed)"}: '
-        'uri=${svc.uri}, exposedUri=${svc.exposedUri}',
-      );
+      debugPrint('[ConnectionHost]   ${svc.name ?? "(unnamed)"}: '
+          'uri=${svc.uri}, exposedUri=${svc.exposedUri}');
     }
 
     return services
-        .map(
-          (svc) => DiscoveredVmService(
-            name: svc.name,
-            uri: svc.uri,
-            exposedUri: svc.exposedUri,
-          ),
-        )
+        .map((svc) => DiscoveredVmService(
+            name: svc.name, uri: svc.uri, exposedUri: svc.exposedUri))
         .toList();
   } finally {
     await dtd.close();
@@ -87,12 +78,11 @@ class VmConnectionAttemptResolution {
   final String? error;
 
   /// Creates a resolved connection-attempt payload.
-  const VmConnectionAttemptResolution({
-    required this.vmServiceUri,
-    required this.cleanedVmServiceUri,
-    required this.cleanedDtdUri,
-    this.error,
-  });
+  const VmConnectionAttemptResolution(
+      {required this.vmServiceUri,
+      required this.cleanedVmServiceUri,
+      required this.cleanedDtdUri,
+      this.error});
 }
 
 /// Resolve a connection attempt from raw VM service and DTD URI inputs.
@@ -100,15 +90,13 @@ class VmConnectionAttemptResolution {
 /// If the VM service URI is already valid, it is used directly. Otherwise the
 /// DTD endpoint is queried via [discoverVmServices] and the first advertised VM
 /// service is selected.
-Future<VmConnectionAttemptResolution> resolveVmConnectionAttempt({
-  required String rawVmServiceUri,
-  required String rawDtdUri,
-  required Future<List<DiscoveredVmService>> Function(String dtdUri)
-      discoverVmServices,
-}) async {
-  final vmServiceUri = DevToolsConnectionHostState.cleanVmServiceUri(
-    rawVmServiceUri,
-  );
+Future<VmConnectionAttemptResolution> resolveVmConnectionAttempt(
+    {required String rawVmServiceUri,
+    required String rawDtdUri,
+    required Future<List<DiscoveredVmService>> Function(String dtdUri)
+        discoverVmServices}) async {
+  final vmServiceUri =
+      DevToolsConnectionHostState.cleanVmServiceUri(rawVmServiceUri);
   var dtdUri = '';
   if (rawDtdUri.isNotEmpty) {
     dtdUri = DevToolsConnectionHostState.cleanDtdUri(rawDtdUri);
@@ -121,47 +109,42 @@ Future<VmConnectionAttemptResolution> resolveVmConnectionAttempt({
 
   if (!hasVmUri && !hasDtdUri) {
     return VmConnectionAttemptResolution(
-      vmServiceUri: null,
-      cleanedVmServiceUri: vmServiceUri,
-      cleanedDtdUri: dtdUri,
-      error: 'Please enter a VM Service URI or DTD URI',
-    );
+        vmServiceUri: null,
+        cleanedVmServiceUri: vmServiceUri,
+        cleanedDtdUri: dtdUri,
+        error: 'Please enter a VM Service URI or DTD URI');
   }
 
   if (hasVmUri) {
     return VmConnectionAttemptResolution(
-      vmServiceUri: vmServiceUri,
-      cleanedVmServiceUri: vmServiceUri,
-      cleanedDtdUri: dtdUri,
-    );
+        vmServiceUri: vmServiceUri,
+        cleanedVmServiceUri: vmServiceUri,
+        cleanedDtdUri: dtdUri);
   }
 
   final services = await discoverVmServices(dtdUri);
   if (services.isEmpty) {
     return VmConnectionAttemptResolution(
-      vmServiceUri: null,
-      cleanedVmServiceUri: vmServiceUri,
-      cleanedDtdUri: dtdUri,
-      error: 'No VM services found via DTD. Is your ROHD app running?',
-    );
+        vmServiceUri: null,
+        cleanedVmServiceUri: vmServiceUri,
+        cleanedDtdUri: dtdUri,
+        error: 'No VM services found via DTD. Is your ROHD app running?');
   }
 
   return VmConnectionAttemptResolution(
-    vmServiceUri: services.first.connectionUri,
-    cleanedVmServiceUri: vmServiceUri,
-    cleanedDtdUri: dtdUri,
-  );
+      vmServiceUri: services.first.connectionUri,
+      cleanedVmServiceUri: vmServiceUri,
+      cleanedDtdUri: dtdUri);
 }
 
 /// Whether a DTD VM lifecycle event refers to the VM currently tracked by the
 /// host.
 ///
 /// Matches against either the direct URI or the exposed URI reported by DTD.
-bool dtdEventMatchesTrackedVm({
-  required String? trackedVmUri,
-  required String? eventUri,
-  required String? eventExposedUri,
-}) {
+bool dtdEventMatchesTrackedVm(
+    {required String? trackedVmUri,
+    required String? eventUri,
+    required String? eventExposedUri}) {
   bool matchesCandidate(String? candidate) {
     if (candidate == null || candidate.isEmpty) {
       return false;
@@ -195,51 +178,6 @@ String? preferredVmServiceUriFromDtdEvent(DTDEvent event) {
   return null;
 }
 
-// ---------------------------------------------------------------------------
-// VM Connection Strategy
-// ---------------------------------------------------------------------------
-
-/// Abstract base for VM connection strategies.
-/// Linux uses vm_service_io, Web uses package:web WebSocket.
-abstract class VmConnectionStrategy {
-  /// Connect to VM service at the given URI.
-  /// Returns the VmService and isolateId for the main isolate.
-  Future<VmConnectionResult> connect(String uri);
-
-  /// Normalize URI to websocket format.
-  Uri? normalizeUri(String value) {
-    try {
-      var uri = Uri.parse(value.trim());
-
-      if (uri.scheme == 'http') {
-        uri = uri.replace(scheme: 'ws');
-      } else if (uri.scheme == 'https') {
-        uri = uri.replace(scheme: 'wss');
-      }
-
-      if (!uri.path.endsWith('/ws')) {
-        uri = uri.replace(path: '${uri.path}ws');
-      }
-
-      return uri;
-    } on Exception {
-      return null;
-    }
-  }
-}
-
-/// Result of a VM connection attempt.
-class VmConnectionResult {
-  /// The connected VM service.
-  final VmService vmService;
-
-  /// The isolate ID of the main isolate.
-  final String isolateId;
-
-  /// Constructor for [VmConnectionResult].
-  VmConnectionResult({required this.vmService, required this.isolateId});
-}
-
 /// Describes whether an attach is brand-new, a same-VM restart, or a
 /// teardown for disconnect.
 enum VmConnectionTransitionKind {
@@ -250,7 +188,7 @@ enum VmConnectionTransitionKind {
   sameVmRestart,
 
   /// A teardown transition driven by explicit disconnect.
-  disconnect,
+  disconnect
 }
 
 /// Carries the previous VM identity into reconnect hooks so subclasses can
@@ -269,12 +207,11 @@ class VmConnectionTransition {
   final String? previousVmName;
 
   /// Creates a transition with the given classification and prior identity.
-  const VmConnectionTransition({
-    required this.kind,
-    this.previousUri,
-    this.previousIsolateId,
-    this.previousVmName,
-  });
+  const VmConnectionTransition(
+      {required this.kind,
+      this.previousUri,
+      this.previousIsolateId,
+      this.previousVmName});
 
   /// Creates a fresh attach transition.
   const VmConnectionTransition.fresh()
@@ -297,27 +234,23 @@ class VmConnectionTransition {
 
   /// Returns a copy populated with the previous VM identity captured by the
   /// host at reconnect time.
-  VmConnectionTransition withPrevious({
-    String? previousUri,
-    String? previousIsolateId,
-    String? previousVmName,
-  }) =>
+  VmConnectionTransition withPrevious(
+          {String? previousUri,
+          String? previousIsolateId,
+          String? previousVmName}) =>
       VmConnectionTransition(
-        kind: kind,
-        previousUri: previousUri ?? this.previousUri,
-        previousIsolateId: previousIsolateId ?? this.previousIsolateId,
-        previousVmName: previousVmName ?? this.previousVmName,
-      );
+          kind: kind,
+          previousUri: previousUri ?? this.previousUri,
+          previousIsolateId: previousIsolateId ?? this.previousIsolateId,
+          previousVmName: previousVmName ?? this.previousVmName);
 }
 
 class _ReconnectState {
   final String? connectedVmName;
   final bool autoReconnect;
 
-  const _ReconnectState({
-    required this.connectedVmName,
-    required this.autoReconnect,
-  });
+  const _ReconnectState(
+      {required this.connectedVmName, required this.autoReconnect});
 }
 
 // ---------------------------------------------------------------------------
@@ -462,9 +395,8 @@ abstract class DevToolsConnectionHostState<T extends StatefulWidget>
   // ── URI controllers (for connection dialog) ──
 
   /// Controller for the VM service URI field.
-  final TextEditingController vmServiceUriController = TextEditingController(
-    text: 'ws://127.0.0.1:8181/xxxx=/ws',
-  );
+  final TextEditingController vmServiceUriController =
+      TextEditingController(text: 'ws://127.0.0.1:8181/xxxx=/ws');
 
   /// Controller for the DTD URI field.
   final TextEditingController dtdUriController = TextEditingController();
@@ -491,20 +423,16 @@ abstract class DevToolsConnectionHostState<T extends StatefulWidget>
   ///
   /// [transition] tells the subclass whether this is a fresh attach or a
   /// same-VM restart, so app state can be preserved only when appropriate.
-  Future<void> onBeforeVmConnected(
-    VmConnectionResult result,
-    String uri, {
-    required VmConnectionTransition transition,
-  }) async {}
+  Future<void> onBeforeVmConnected(VmConnectionResult result, String uri,
+      {required VmConnectionTransition transition}) async {}
 
   /// Tear down all state from a previous VM connection.
   ///
   /// Called during disconnect and before reconnect.  The subclass should
   /// dispose data sources, clear caches, reset cubits, etc.
   /// Must be resilient (each step individually guarded).
-  Future<void> tearDownOldConnection({
-    required VmConnectionTransition transition,
-  });
+  Future<void> tearDownOldConnection(
+      {required VmConnectionTransition transition});
 
   /// Called when a full disconnect completes (before showing dialog).
   ///
@@ -543,9 +471,7 @@ abstract class DevToolsConnectionHostState<T extends StatefulWidget>
   /// The subclass should swap the VM service in existing transports
   /// without tearing down tree/schematic/waveform state.
   Future<void> onLightweightReconnectSuccess(
-    VmConnectionResult result,
-    String uri,
-  );
+      VmConnectionResult result, String uri);
 
   /// Called when a DTD service becomes available.
   ///
@@ -573,39 +499,18 @@ abstract class DevToolsConnectionHostState<T extends StatefulWidget>
       ..add(DiagnosticsProperty<bool>('autoReconnect', autoReconnect))
       ..add(DiagnosticsProperty<bool>('isVmConnected', isVmConnected))
       ..add(IntProperty('connectionGeneration', connectionGeneration))
-      ..add(
-        DiagnosticsProperty<VmConnectionStrategy?>(
-          'connectionStrategy',
-          connectionStrategy,
-        ),
-      )
-      ..add(
-        DiagnosticsProperty<ConnectionStateMachine>(
-          'connectionStateMachine',
-          connectionStateMachine,
-        ),
-      )
-      ..add(
-        DiagnosticsProperty<DartToolingDaemon?>('persistentDtd', persistentDtd),
-      )
-      ..add(
-        DiagnosticsProperty<List<DtdVmServiceInfo>?>(
-          'rememberedServices',
-          rememberedServices,
-        ),
-      )
-      ..add(
-        DiagnosticsProperty<TextEditingController>(
-          'vmServiceUriController',
-          vmServiceUriController,
-        ),
-      )
-      ..add(
-        DiagnosticsProperty<TextEditingController>(
-          'dtdUriController',
-          dtdUriController,
-        ),
-      )
+      ..add(DiagnosticsProperty<VmConnectionStrategy?>(
+          'connectionStrategy', connectionStrategy))
+      ..add(DiagnosticsProperty<ConnectionStateMachine>(
+          'connectionStateMachine', connectionStateMachine))
+      ..add(DiagnosticsProperty<DartToolingDaemon?>(
+          'persistentDtd', persistentDtd))
+      ..add(DiagnosticsProperty<List<DtdVmServiceInfo>?>(
+          'rememberedServices', rememberedServices))
+      ..add(DiagnosticsProperty<TextEditingController>(
+          'vmServiceUriController', vmServiceUriController))
+      ..add(DiagnosticsProperty<TextEditingController>(
+          'dtdUriController', dtdUriController))
       ..add(StringProperty('connectionError', connectionError));
   }
 
@@ -717,10 +622,9 @@ abstract class DevToolsConnectionHostState<T extends StatefulWidget>
     final previousUri = _lastVmServiceUri;
     final previousIsolateId = _lastIsolateId;
     final effectiveTransition = transition.withPrevious(
-      previousUri: previousUri,
-      previousIsolateId: previousIsolateId,
-      previousVmName: _connectedVmName,
-    );
+        previousUri: previousUri,
+        previousIsolateId: previousIsolateId,
+        previousVmName: _connectedVmName);
 
     _csm.handleEvent(ConnectRequested(vmServiceUri));
 
@@ -728,8 +632,7 @@ abstract class DevToolsConnectionHostState<T extends StatefulWidget>
       await tearDownOldConnection(transition: effectiveTransition);
     } on Exception catch (e) {
       debugPrint(
-        '[ConnectionHost] tearDownOldConnection failed (non-fatal): $e',
-      );
+          '[ConnectionHost] tearDownOldConnection failed (non-fatal): $e');
       _connectionGeneration++;
     }
 
@@ -737,18 +640,14 @@ abstract class DevToolsConnectionHostState<T extends StatefulWidget>
     final result = await strategy.connect(vmServiceUri);
     debugPrint('[ConnectionHost] Connected! isolateId: ${result.isolateId}');
 
-    await onBeforeVmConnected(
-      result,
-      vmServiceUri,
-      transition: effectiveTransition,
-    );
+    await onBeforeVmConnected(result, vmServiceUri,
+        transition: effectiveTransition);
 
     // Notify the state machine.
     final identity = VmIdentity(
-      uri: vmServiceUri,
-      isolateId: result.isolateId,
-      vmName: _connectedVmName,
-    );
+        uri: vmServiceUri,
+        isolateId: result.isolateId,
+        vmName: _connectedVmName);
     _csm.handleEvent(ConnectionEstablished(result.vmService, identity));
 
     setState(() {
@@ -772,9 +671,7 @@ abstract class DevToolsConnectionHostState<T extends StatefulWidget>
     // Start VM liveness polling.
     _vmLivenessTimer?.cancel();
     _vmLivenessTimer = Timer.periodic(
-      const Duration(seconds: 10),
-      (_) => unawaited(_checkVmLiveness()),
-    );
+        const Duration(seconds: 10), (_) => unawaited(_checkVmLiveness()));
     debugPrint('[ConnectionHost] Started VM liveness polling (10 s)');
 
     // Start persistent DTD listener.
@@ -790,12 +687,10 @@ abstract class DevToolsConnectionHostState<T extends StatefulWidget>
     _vmLivenessTimer = null;
     stopDtdListener();
     await tearDownOldConnection(
-      transition: const VmConnectionTransition.disconnect().withPrevious(
-        previousUri: _lastVmServiceUri,
-        previousIsolateId: _lastIsolateId,
-        previousVmName: _connectedVmName,
-      ),
-    );
+        transition: const VmConnectionTransition.disconnect().withPrevious(
+            previousUri: _lastVmServiceUri,
+            previousIsolateId: _lastIsolateId,
+            previousVmName: _connectedVmName));
 
     setState(() {
       _vmService = null;
@@ -856,24 +751,18 @@ abstract class DevToolsConnectionHostState<T extends StatefulWidget>
       final result = await strategy.connect(uri);
 
       if (!onLightweightReconnectCheck(result)) {
-        debugPrint(
-          '[ConnectionHost] Lightweight check failed — '
-          'need full reconnect',
-        );
+        debugPrint('[ConnectionHost] Lightweight check failed — '
+            'need full reconnect');
         unawaited(result.vmService.dispose());
         return false;
       }
 
       debugPrint(
-        '[ConnectionHost] Same process — swapping VM service in-place',
-      );
+          '[ConnectionHost] Same process — swapping VM service in-place');
 
       // Notify the state machine.
       final identity = VmIdentity(
-        uri: uri,
-        isolateId: result.isolateId,
-        vmName: _connectedVmName,
-      );
+          uri: uri, isolateId: result.isolateId, vmName: _connectedVmName);
       _csm.handleEvent(ConnectionEstablished(result.vmService, identity));
 
       // Let the subclass swap the transport (this re-runs vmServiceOpened
@@ -894,9 +783,7 @@ abstract class DevToolsConnectionHostState<T extends StatefulWidget>
       // Restart liveness timer.
       _vmLivenessTimer?.cancel();
       _vmLivenessTimer = Timer.periodic(
-        const Duration(seconds: 10),
-        (_) => unawaited(_checkVmLiveness()),
-      );
+          const Duration(seconds: 10), (_) => unawaited(_checkVmLiveness()));
 
       // Restart DTD listener.
       unawaited(startDtdListener());
@@ -920,32 +807,25 @@ abstract class DevToolsConnectionHostState<T extends StatefulWidget>
     final strategy = connectionStrategy;
     if (strategy == null) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('VM connection not available on this platform'),
-          ),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('VM connection not available on this platform')));
       }
       return;
     }
 
     await showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Connect to VM Service'),
-        content: SizedBox(
-          width: 400,
-          child: buildConnectionDialogContent(dialogContext),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Cancel'),
-          ),
-        ],
-      ),
-    );
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogContext) => AlertDialog(
+                title: const Text('Connect to VM Service'),
+                content: SizedBox(
+                    width: 400,
+                    child: buildConnectionDialogContent(dialogContext)),
+                actions: [
+                  TextButton(
+                      onPressed: () => Navigator.of(dialogContext).pop(),
+                      child: const Text('Cancel'))
+                ]));
   }
 
   /// Build the connection dialog content.
@@ -954,54 +834,47 @@ abstract class DevToolsConnectionHostState<T extends StatefulWidget>
   @protected
   Widget buildConnectionDialogContent(BuildContext dialogContext) =>
       VmConnectionForm(
-        vmServiceUriController: vmServiceUriController,
-        dtdUriController: dtdUriController,
-        connectionError: connectionError,
-        onConnect: () async {
-          try {
-            await attemptConnection();
-            if (mounted && dialogContext.mounted && _isConnected) {
-              Navigator.of(dialogContext).pop();
+          vmServiceUriController: vmServiceUriController,
+          dtdUriController: dtdUriController,
+          connectionError: connectionError,
+          onConnect: () async {
+            try {
+              await attemptConnection();
+              if (mounted && dialogContext.mounted && _isConnected) {
+                Navigator.of(dialogContext).pop();
+              }
+            } on Exception catch (e) {
+              setState(() {
+                connectionError = 'Connection failed: $e';
+              });
             }
-          } on Exception catch (e) {
-            setState(() {
-              connectionError = 'Connection failed: $e';
-            });
-          }
-        },
-        onDemoMode: () {
-          Navigator.of(dialogContext).pop();
-          onDemoModeRequested();
-        },
-        showDemoButton: true,
-        cleanVmServiceUri: cleanVmServiceUri,
-        cleanDtdUri: cleanDtdUri,
-        discoverVmServices: discoverVmServices,
-        initialDiscoveredServices: _rememberedServices
-            ?.map(
-              (s) => DiscoveredVmService(
-                name: s.name,
-                uri: s.uri,
-                exposedUri: s.exposedUri,
-                isAlive: s.isAlive,
-                autoReconnect: s.autoReconnect,
-              ),
-            )
-            .toList(),
-        onServicesDiscovered: (services) {
-          _rememberedServices = services
-              .map(
-                (s) => DtdVmServiceInfo.fromFields(
+          },
+          onDemoMode: () {
+            Navigator.of(dialogContext).pop();
+            onDemoModeRequested();
+          },
+          showDemoButton: true,
+          cleanVmServiceUri: cleanVmServiceUri,
+          cleanDtdUri: cleanDtdUri,
+          discoverVmServices: discoverVmServices,
+          initialDiscoveredServices: _rememberedServices
+              ?.map((s) => DiscoveredVmService(
                   name: s.name,
                   uri: s.uri,
                   exposedUri: s.exposedUri,
                   isAlive: s.isAlive,
-                  autoReconnect: s.autoReconnect,
-                ),
-              )
-              .toList();
-        },
-      );
+                  autoReconnect: s.autoReconnect))
+              .toList(),
+          onServicesDiscovered: (services) {
+            _rememberedServices = services
+                .map((s) => DtdVmServiceInfo.fromFields(
+                    name: s.name,
+                    uri: s.uri,
+                    exposedUri: s.exposedUri,
+                    isAlive: s.isAlive,
+                    autoReconnect: s.autoReconnect))
+                .toList();
+          });
 
   /// Called when demo mode is selected from the connection dialog.
   /// Override in subclass.
@@ -1022,10 +895,9 @@ abstract class DevToolsConnectionHostState<T extends StatefulWidget>
 
     try {
       final resolution = await resolveVmConnectionAttempt(
-        rawVmServiceUri: vmServiceUriController.text,
-        rawDtdUri: dtdUriController.text,
-        discoverVmServices: discoverVmServices,
-      );
+          rawVmServiceUri: vmServiceUriController.text,
+          rawDtdUri: dtdUriController.text,
+          discoverVmServices: discoverVmServices);
 
       if (resolution.cleanedVmServiceUri != vmServiceUriController.text &&
           resolution.cleanedVmServiceUri.isNotEmpty) {
@@ -1052,20 +924,17 @@ abstract class DevToolsConnectionHostState<T extends StatefulWidget>
       });
 
       // Capture VM name and auto-reconnect from discovery list.
-      final matchedService =
-          _rememberedServices?.cast<DtdVmServiceInfo?>().firstWhere(
-                (s) => s!.connectionUri == vmServiceUri,
-                orElse: () => null,
-              );
+      final matchedService = _rememberedServices
+          ?.cast<DtdVmServiceInfo?>()
+          .firstWhere((s) => s!.connectionUri == vmServiceUri,
+              orElse: () => null);
       _connectedVmName = matchedService?.name;
       _autoReconnect = matchedService?.autoReconnect ?? false;
 
       await connectToVmService(vmServiceUri);
     } on Exception catch (e) {
-      debugPrint(
-        '[ConnectionHost] attemptConnection failed: '
-        '${e.runtimeType}: $e',
-      );
+      debugPrint('[ConnectionHost] attemptConnection failed: '
+          '${e.runtimeType}: $e');
       if (mounted) {
         setState(() {
           _isConnected = false;
@@ -1084,15 +953,12 @@ abstract class DevToolsConnectionHostState<T extends StatefulWidget>
   ///
   /// Connects to DTD, calls getVmServices(), returns the list.
   /// Also probes for registered services (new DTD 4.0 API).
-  Future<List<DiscoveredVmService>> discoverVmServices(String dtdUri) async =>
-      discoverVmServicesViaDtd(
-        dtdUri,
-        onRegisteredServices: (serviceNames) {
-          _availableServices
-            ..clear()
-            ..addAll(serviceNames);
-        },
-      );
+  Future<List<DiscoveredVmService>> discoverVmServices(String dtdUri) =>
+      discoverVmServicesViaDtd(dtdUri, onRegisteredServices: (serviceNames) {
+        _availableServices
+          ..clear()
+          ..addAll(serviceNames);
+      });
 
   /// Check whether a named service is currently available on DTD.
   bool isServiceAvailable(String serviceName) =>
@@ -1123,18 +989,15 @@ abstract class DevToolsConnectionHostState<T extends StatefulWidget>
       onDtdConnected(dtd);
 
       // Listen for VM service register/unregister events.
-      _dtdEventSubscription = dtd.onVmServiceUpdate().listen(
-        handleDtdVmEvent,
-        onError: (Object e) {
-          debugPrint('[ConnectionHost] DTD event stream error: $e');
-        },
-        onDone: () {
-          debugPrint('[ConnectionHost] DTD event stream closed');
-          _persistentDtd = null;
-          _dtdEventSubscription = null;
-          onDtdDisconnected();
-        },
-      );
+      _dtdEventSubscription =
+          dtd.onVmServiceUpdate().listen(handleDtdVmEvent, onError: (Object e) {
+        debugPrint('[ConnectionHost] DTD event stream error: $e');
+      }, onDone: () {
+        debugPrint('[ConnectionHost] DTD event stream closed');
+        _persistentDtd = null;
+        _dtdEventSubscription = null;
+        onDtdDisconnected();
+      });
 
       await dtd.streamListen(ConnectedAppServiceConstants.serviceName);
       debugPrint('[ConnectionHost] Listening for VM lifecycle events');
@@ -1163,19 +1026,17 @@ abstract class DevToolsConnectionHostState<T extends StatefulWidget>
       }
 
       // Use dtd.done as a backup death detector.
-      unawaited(
-        dtd.done.then((_) {
-          if (_persistentDtd == dtd) {
-            debugPrint('[ConnectionHost] dtd.done fired — DTD connection lost');
-            _persistentDtd = null;
-            unawaited(_dtdEventSubscription?.cancel());
-            _dtdEventSubscription = null;
-            unawaited(_serviceStreamSubscription?.cancel());
-            _serviceStreamSubscription = null;
-            onDtdDisconnected();
-          }
-        }),
-      );
+      unawaited(dtd.done.then((_) {
+        if (_persistentDtd == dtd) {
+          debugPrint('[ConnectionHost] dtd.done fired — DTD connection lost');
+          _persistentDtd = null;
+          unawaited(_dtdEventSubscription?.cancel());
+          _dtdEventSubscription = null;
+          unawaited(_serviceStreamSubscription?.cancel());
+          _serviceStreamSubscription = null;
+          onDtdDisconnected();
+        }
+      }));
     } on Exception catch (e) {
       debugPrint('[ConnectionHost] Could not start DTD listener: $e');
     }
@@ -1252,20 +1113,16 @@ abstract class DevToolsConnectionHostState<T extends StatefulWidget>
       final ourUri = _lastVmServiceUri;
 
       if (!dtdEventMatchesTrackedVm(
-        trackedVmUri: ourUri,
-        eventUri: eventUri,
-        eventExposedUri: eventExposedUri,
-      )) {
-        debugPrint(
-          '[ConnectionHost] Ignoring unregister for different VM: '
-          'uri=$eventUri, exposedUri=$eventExposedUri (ours: $ourUri)',
-        );
+          trackedVmUri: ourUri,
+          eventUri: eventUri,
+          eventExposedUri: eventExposedUri)) {
+        debugPrint('[ConnectionHost] Ignoring unregister for different VM: '
+            'uri=$eventUri, exposedUri=$eventExposedUri (ours: $ourUri)');
         return;
       }
 
       debugPrint(
-        '[ConnectionHost] Our VM service was unregistered — marking dead',
-      );
+          '[ConnectionHost] Our VM service was unregistered — marking dead');
       _csm.handleEvent(const DtdVmUnregistered());
       _vmLivenessTimer?.cancel();
       _vmLivenessTimer = null;
@@ -1286,33 +1143,26 @@ abstract class DevToolsConnectionHostState<T extends StatefulWidget>
       if (eventName == null ||
           eventName.isEmpty ||
           eventName != _connectedVmName) {
-        debugPrint(
-          '[ConnectionHost] vmServiceRegistered for "$eventName" — '
-          'not our target "$_connectedVmName", ignoring',
-        );
+        debugPrint('[ConnectionHost] vmServiceRegistered for "$eventName" — '
+            'not our target "$_connectedVmName", ignoring');
         return;
       }
 
       final newUri = preferredVmServiceUriFromDtdEvent(event);
       if (newUri == null || newUri.isEmpty) {
         debugPrint(
-          '[ConnectionHost] vmServiceRegistered — no URI in event data',
-        );
+            '[ConnectionHost] vmServiceRegistered — no URI in event data');
         return;
       }
 
       if (_isVmDead || _isPaused) {
         _csm.handleEvent(DtdVmRegistered(newUri, name: eventName));
-        debugPrint(
-          '[ConnectionHost] vmServiceRegistered for "$eventName" at '
-          '$newUri — auto-reconnecting',
-        );
+        debugPrint('[ConnectionHost] vmServiceRegistered for "$eventName" at '
+            '$newUri — auto-reconnecting');
         unawaited(reconnectFromDtdEvent(newUri));
       } else if (_isConnected) {
-        debugPrint(
-          '[ConnectionHost] vmServiceRegistered for "$eventName" at '
-          '$newUri — reconnecting (sameUri=${newUri == _lastVmServiceUri})',
-        );
+        debugPrint('[ConnectionHost] vmServiceRegistered for "$eventName" at '
+            '$newUri — reconnecting (sameUri=${newUri == _lastVmServiceUri})');
         setState(() {
           _isVmDead = true;
         });
@@ -1403,10 +1253,8 @@ abstract class DevToolsConnectionHostState<T extends StatefulWidget>
       }
     } else {
       _vmLivenessFailCount++;
-      debugPrint(
-        '[ConnectionHost] VM check failed '
-        '($_vmLivenessFailCount/$_vmDeadThreshold)',
-      );
+      debugPrint('[ConnectionHost] VM check failed '
+          '($_vmLivenessFailCount/$_vmDeadThreshold)');
       if (_vmLivenessFailCount >= _vmDeadThreshold && !_isVmDead && mounted) {
         debugPrint('[ConnectionHost] VM is dead');
         _csm.handleEvent(const VmDied());
@@ -1453,35 +1301,27 @@ abstract class DevToolsConnectionHostState<T extends StatefulWidget>
         return;
       }
 
-      debugPrint(
-        '[ConnectionHost] Auto-reconnect attempt '
-        '$attempt/$maxAttempts',
-      );
+      debugPrint('[ConnectionHost] Auto-reconnect attempt '
+          '$attempt/$maxAttempts');
       try {
         final cleaned = cleanDtdUri(dtdUri);
         final services = await discoverVmServices(cleaned);
-        final match = services.cast<DiscoveredVmService?>().firstWhere(
-              (s) => s!.name == targetName,
-              orElse: () => null,
-            );
+        final match = services
+            .cast<DiscoveredVmService?>()
+            .firstWhere((s) => s!.name == targetName, orElse: () => null);
 
         if (match != null) {
           final sameUri = match.connectionUri == _lastVmServiceUri;
-          debugPrint(
-            '[ConnectionHost] Found "$targetName" at '
-            '${match.connectionUri} '
-            '(${sameUri ? "same" : "different"} URI)',
-          );
+          debugPrint('[ConnectionHost] Found "$targetName" at '
+              '${match.connectionUri} '
+              '(${sameUri ? "same" : "different"} URI)');
 
           _rememberedServices = services
-              .map(
-                (s) => DtdVmServiceInfo.fromFields(
+              .map((s) => DtdVmServiceInfo.fromFields(
                   name: s.name,
                   uri: s.uri,
                   exposedUri: s.exposedUri,
-                  autoReconnect: s.connectionUri == match.connectionUri,
-                ),
-              )
+                  autoReconnect: s.connectionUri == match.connectionUri))
               .toList();
 
           if (sameUri) {
@@ -1489,8 +1329,7 @@ abstract class DevToolsConnectionHostState<T extends StatefulWidget>
             final success = await lightweightReconnect(match.connectionUri);
             if (success) {
               debugPrint(
-                '[ConnectionHost] Auto lightweight reconnect succeeded',
-              );
+                  '[ConnectionHost] Auto lightweight reconnect succeeded');
               _autoReconnectInProgress = false;
               return;
             }
@@ -1523,10 +1362,8 @@ abstract class DevToolsConnectionHostState<T extends StatefulWidget>
   Future<void> performFullReconnect(String newUri) async {
     final reconnectState = _prepareForFullReconnect(newUri);
 
-    await connectToVmService(
-      newUri,
-      transition: const VmConnectionTransition.sameVmRestart(),
-    );
+    await connectToVmService(newUri,
+        transition: const VmConnectionTransition.sameVmRestart());
     if (mounted) {
       setState(() {});
     }
@@ -1541,9 +1378,7 @@ abstract class DevToolsConnectionHostState<T extends StatefulWidget>
     vmServiceUriController.text = newUri;
 
     final reconnectState = _ReconnectState(
-      connectedVmName: _connectedVmName,
-      autoReconnect: _autoReconnect,
-    );
+        connectedVmName: _connectedVmName, autoReconnect: _autoReconnect);
 
     stopDtdListener();
     setState(() {

@@ -1,7 +1,7 @@
 // Copyright (C) 2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
-// waveform_service.dart
+// waveform_data_service.dart
 // Service for exposing waveform data to DevTools via VM Service protocol.
 // Parallel to ModuleTree for hierarchy data.
 //
@@ -13,9 +13,9 @@ import 'dart:convert';
 import 'dart:developer' as developer;
 
 import 'package:rohd/rohd.dart';
+import 'package:rohd_hierarchy/rohd_hierarchy.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
-import 'package:rohd_hierarchy/rohd_hierarchy.dart';
 
 /// Represents a single value change for a signal.
 class ValueChange {
@@ -30,6 +30,25 @@ class ValueChange {
 
   /// Converts to JSON map.
   Map<String, dynamic> toJson() => {'time': time, 'value': value};
+}
+
+/// A waveform value sampled at or immediately before a requested time.
+class WaveformSignalValue {
+  /// Creates a sampled waveform value.
+  const WaveformSignalValue({
+    required this.time,
+    required this.value,
+    this.sampleTime,
+  });
+
+  /// Simulation time requested for the lookup.
+  final int time;
+
+  /// Packed signal value at [time].
+  final String value;
+
+  /// Simulation time of the matching recorded value change, if any.
+  final int? sampleTime;
 }
 
 /// Represents metadata for a signal being tracked.
@@ -83,9 +102,9 @@ class TrackedSignal {
 ///
 /// ## Usage
 ///
-/// The service is automatically populated when a legacy `WaveDumper` is
-/// created with `enableDevTools: true`. Alternatively, you can manually record
-/// value changes:
+/// The service is automatically populated when a [WaveDumper] is created with
+/// `enableDevTools: true`. Alternatively, you can manually record value
+/// changes:
 ///
 /// ```dart
 /// // Initialize with a module
@@ -221,6 +240,60 @@ class WaveformDataService {
   Map<String, String> get signalAddressMap =>
       Map.unmodifiable(_signalIdToAddress);
 
+  /// Returns the signal value for [address] at or immediately before [time].
+  ///
+  /// When [time] is omitted, the latest recorded simulation time is used.
+  /// The value and matching change time follow the same semantics as the
+  /// snapshot VM-service extensions.
+  WaveformSignalValue valueAtAddress(OccurrenceAddress address, {int? time}) {
+    if (!isInitialized) {
+      throw StateError('Waveform data is not initialized.');
+    }
+    final requestedTime = time ?? _currentTime;
+    if (requestedTime < 0) {
+      throw ArgumentError.value(time, 'time', 'Must be non-negative.');
+    }
+    final signalId = _addressToSignalId[address.toDotString()];
+    if (signalId == null) {
+      throw StateError('Signal is not tracked by waveform data.');
+    }
+    if (isFstBacked) {
+      return WaveformSignalValue(
+        time: requestedTime,
+        value: _getValueAtTimeFst(signalId, requestedTime) ?? 'x',
+      );
+    }
+    final changes = _signalData[signalId] ?? const <ValueChange>[];
+    if (changes.isEmpty) {
+      final logic = _idToLogicMap[signalId];
+      return WaveformSignalValue(
+        time: requestedTime,
+        value: logic == null ? 'x' : _formatLogicValue(logic),
+      );
+    }
+    var lower = 0;
+    var upper = changes.length - 1;
+    var result = -1;
+    while (lower <= upper) {
+      final middle = (lower + upper) >> 1;
+      if (changes[middle].time <= requestedTime) {
+        result = middle;
+        lower = middle + 1;
+      } else {
+        upper = middle - 1;
+      }
+    }
+    if (result == -1) {
+      return WaveformSignalValue(time: requestedTime, value: 'x');
+    }
+    final change = changes[result];
+    return WaveformSignalValue(
+      time: requestedTime,
+      value: change.value,
+      sampleTime: change.time,
+    );
+  }
+
   /// Debug accessor for signal data (for diagnostics only).
   ///
   /// Returns an unmodifiable path-keyed map of recorded value changes.
@@ -263,7 +336,7 @@ class WaveformDataService {
   /// future changes, populating the in-memory store for DevTools queries.
   ///
   /// [init] builds the Logic→id map and registers the service extensions but
-  /// deliberately does *not* attach change listeners: the legacy `WaveDumper`
+  /// deliberately does *not* attach change listeners: the [WaveDumper]
   /// integration attaches its own as it writes the VCD/FST file.  A
   /// standalone producer such as `WaveformService` instead calls this once
   /// after [init], so the live DevTools data is populated without
@@ -325,7 +398,6 @@ class WaveformDataService {
       developer.Service.getInfo().then((info) {
         final uri = info.serverUri;
         if (uri != null) {
-          // Surface the URI for users connecting DevTools to this process.
           // ignore: avoid_print
           print('ROHD VM Service URI: $uri');
         }
@@ -1371,8 +1443,7 @@ class WaveformDataService {
 
     developer.log(
       '[$requestId] getWaveformsCompactJSON: '
-      'requested=${addresses.length} addresses, '
-      'timeRange=[$startTime..$end], '
+      'requested=${addresses.length} addresses, timeRange=[$startTime..$end], '
       'currentTime=$_currentTime, fstBacked=$isFstBacked, '
       'knownAddresses=${_addressToSignalId.length}, '
       'knownSignals=$knownSignals, '

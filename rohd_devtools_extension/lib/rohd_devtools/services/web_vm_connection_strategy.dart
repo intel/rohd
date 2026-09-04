@@ -11,7 +11,7 @@
 import 'dart:async';
 
 import 'package:logging/logging.dart';
-import 'package:rohd_devtools_extension/rohd_devtools/ui/ui.dart';
+import 'package:rohd_devtools_extension/rohd_devtools/services/vm_connection_strategy.dart';
 import 'package:vm_service/vm_service.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 

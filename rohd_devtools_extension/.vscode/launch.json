@@ -1,45 +1,71 @@
 {
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+        // ============================================================
+        // Web (DevTools Extension)
+        // ============================================================
         {
-            "name": "rohd_devtools_extension",
-            "request": "launch",
-            "type": "dart"
-        },
-        {
-            "name": "rohd_devtools_extension (profile mode)",
-            "request": "launch",
-            "type": "dart",
-            "flutterMode": "profile"
-        },
-        {
-            "name": "rohd_devtools_extension (release mode)",
-            "request": "launch",
-            "type": "dart",
-            "flutterMode": "release"
-        },
-        {
-            "name": "rohd_devtools_extension + simulated environment",
+            "name": "Web: DevTools",
             "program": "lib/main.dart",
             "request": "launch",
             "type": "dart",
-            "args": [
-                "--dart-define=use_simulated_environment=true"
-            ],
+            "deviceId": "web-server",
+            "args": ["--web-port=9099", "--web-hostname=localhost"]
         },
         {
-            "name": "Run: Web Standalone (port 9099)",
+            "name": "Web: DevTools + Simulated",
+            "program": "lib/main.dart",
             "request": "launch",
             "type": "dart",
-            "program": "lib/main_standalone.dart",
             "deviceId": "web-server",
             "args": [
                 "--web-port=9099",
-                "--web-hostname=0.0.0.0"
+                "--web-hostname=localhost",
+                "--dart-define=use_simulated_environment=true"
             ]
+        },
+        {
+            "name": "Web: Standalone",
+            "program": "lib/main_standalone.dart",
+            "request": "launch",
+            "type": "dart",
+            "deviceId": "web-server",
+            "args": ["--web-port=9099", "--web-hostname=localhost"]
+        },
+        {
+            "name": "Web: Chrome",
+            "program": "lib/main.dart",
+            "request": "launch",
+            "type": "dart",
+            "deviceId": "chrome"
+        },
+        // ============================================================
+        // Linux Native
+        // ============================================================
+        {
+            "name": "Linux: DevTools",
+            "program": "lib/main_standalone.dart",
+            "request": "launch",
+            "type": "dart",
+            "deviceId": "linux",
+            "args": ["--enable-software-rendering"]
+        },
+        {
+            "name": "Linux: Standalone",
+            "program": "lib/main_standalone.dart",
+            "request": "launch",
+            "type": "dart",
+            "deviceId": "linux",
+            "args": ["--enable-software-rendering"]
+        },
+        {
+            "name": "Linux: Profile",
+            "program": "lib/main_standalone.dart",
+            "request": "launch",
+            "type": "dart",
+            "deviceId": "linux",
+            "flutterMode": "profile",
+            "args": ["--enable-software-rendering"]
         }
     ]
 }
