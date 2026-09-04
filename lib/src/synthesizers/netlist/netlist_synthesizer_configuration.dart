@@ -7,6 +7,8 @@
 // 2026 March 12
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
+import 'dart:io';
+
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_cell_mapper.dart';
@@ -102,6 +104,12 @@ class NetlistSynthesizerConfiguration {
   /// indentation.
   final bool compactJson;
 
+  /// Whether to embed `rohd.src_trace` attributes in generated modules.
+  final bool trace;
+
+  /// The package root used to make trace source paths relative.
+  final String? packageRoot;
+
   /// Creates a configuration for netlist synthesis.
   const NetlistSynthesizerConfiguration({
     this.moduleStopPolicy,
@@ -112,7 +120,13 @@ class NetlistSynthesizerConfiguration {
     this.slimMode = false,
     @visibleForTesting this.compressBitRanges = false,
     this.compactJson = false,
+    this.trace = false,
+    this.packageRoot,
   });
+
+  /// The package root used for trace emission, or `null` when disabled.
+  String? get effectivePackageRoot =>
+      trace ? (packageRoot ?? Directory.current.path) : null;
 }
 
 bool _isFlipFlop(Module module) => module is FlipFlop;

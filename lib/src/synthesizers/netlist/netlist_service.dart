@@ -55,13 +55,24 @@ class NetlistService extends ArtifactProducingService {
   /// Cached per-module JSON, keyed by definition name.
   final Map<String, String> _moduleJsonCache = {};
 
-  /// The service-owned parsed modules map from the combined JSON.
+  /// Cached per-module FLC JSON, keyed by definition name.
+  final Map<String, String> _flcModuleJsonCache = {};
+
+  /// The parsed modules map from the combined JSON.
   late final Map<String, dynamic> _modulesMap;
 
-  /// The package root directory used for FLC trace injection.
+  /// The shared `rohd.src_trace` file dictionary from the combined JSON's
+  /// top-level `"files"` array, or `null` when tracing wasn't enabled.
   ///
-  /// When non-null, downstream trace-enabled branches use this path to embed
-  /// `rohd.src_trace` attributes in the netlist JSON.
+  /// Every module's `rohd.src_trace` attribute references this same list
+  /// by index; it is re-embedded by [moduleJson] and [slimJson] so each
+  /// standalone document remains self-contained.
+  late final List<String>? _srcTraceFiles;
+
+  /// The package root directory used for FLC output, when explicitly provided.
+  ///
+  /// Netlist JSON generation does not require filesystem access. Source/FLC
+  /// data is only available when [packageRoot] is explicitly provided.
   late final String? packageRoot;
 
   /// Creates a netlist service for a built [module].
@@ -80,22 +91,31 @@ class NetlistService extends ArtifactProducingService {
     super.outputBaseName,
   }) : super(module) {
     if (!module.hasBuilt) {
-      throw ModuleNotBuiltException(module);
+      throw Exception(
+        'Module must be built before creating NetlistService. '
+        'Call build() first.',
+      );
     }
 
-    final effectiveRoot = packageRoot;
+    final effectiveRoot = packageRoot ?? configuration.effectivePackageRoot;
     synthesizer = NetlistSynthesizer(configuration: configuration);
     this.packageRoot = effectiveRoot;
     synthBuilder = SynthBuilder(module, synthesizer);
-    _fullJson = synthesizer.generateCombinedJson(synthBuilder, module);
+    _fullJson = synthesizer.synthesizeToJson(
+      module,
+      packageRoot: effectiveRoot,
+    );
 
     final decoded = jsonDecode(_fullJson) as Map<String, dynamic>;
     _modulesMap =
         (decoded['modules'] as Map<String, dynamic>?) ?? <String, dynamic>{};
     _loadedVersion = decoded['version'] as String?;
+    _srcTraceFiles = (decoded['files'] as List<dynamic>?)?.cast<String>();
 
     if (register) {
       ModuleServices.instance.register<NetlistService>(this);
+      WaveformDataService.init(module);
+      WaveformDataService.instance.startRecording();
     }
   }
 
@@ -121,7 +141,7 @@ class NetlistService extends ArtifactProducingService {
   /// Checks whether [version] is compatible with the current
   /// [formatVersion].
   ///
-  /// Compatible means both major and minor versions match. Returns `true` if
+  /// Compatible means the major version matches. Returns `true` if
   /// the loaded JSON can be consumed by this version of the service.
   static bool isCompatibleVersion(String version) {
     final current = formatVersion.split('.');
@@ -157,21 +177,15 @@ class NetlistService extends ArtifactProducingService {
         'modules': moduleNames.toList(),
       };
 
-  /// Returns the netlist JSON for the module named [definitionName].
+  /// Returns the netlist JSON for a single module [definitionName].
   ///
-  /// [definitionName] must be one of the generated definition names returned
-  /// by [moduleNames]. The returned JSON has this shape:
-  /// ```json
-  /// {
-  ///   "creator": "ROHD netlist synthesizer",
-  ///   "version": "...",
-  ///   "modules": {
-  ///     "DefinitionName": {"ports": {}, "cells": {}, "netnames": {}}
-  ///   }
-  /// }
-  /// ```
+  /// The returned JSON is keyed by definition name:
+  /// `{"DefinitionName": { ports, cells, netnames }}`.
   /// This matches the format expected by the DevTools schematic viewer
   /// for incremental module fetches.
+  ///
+  /// When source tracing is enabled, the netlist-wide file dictionary is
+  /// re-embedded as a top-level `"files"` array.
   ///
   /// If the module is not found, returns a JSON error object.
   String moduleJson(String definitionName) =>
@@ -185,7 +199,9 @@ class NetlistService extends ArtifactProducingService {
         }
         return jsonEncode(<String, Object?>{
           'creator': 'ROHD netlist synthesizer',
-          'version': version,
+          'version': formatVersion,
+          if (_srcTraceFiles case final files? when files.isNotEmpty)
+            'files': files,
           'modules': <String, Object?>{definitionName: modData},
         });
       });
@@ -193,44 +209,113 @@ class NetlistService extends ArtifactProducingService {
   /// Returns the set of module definition names in the netlist.
   Set<String> get moduleNames => _modulesMap.keys.toSet();
 
-  /// Read-only, zero-copy access to the parsed modules map.
+  // ─── FLC (File-Line-Column) output ────────────────
+
+  /// Returns the FLC hierarchy JSON map for the module hierarchy,
+  /// or `null` if no traces were recorded.
+  ///
+  /// Requires [packageRoot] to have been set at construction.
+  /// Unlike the inline `rohd.src_trace` attributes embedded in the
+  /// netlist, this produces the standalone FLC format (with a shared
+  /// `"files"` table) suitable for writing to `.flc.json` files.
+  @Deprecated('Use TraceService for FLC output and lookup.')
+  Map<String, Object>? get flcHierarchy {
+    if (packageRoot == null || !SourceTracer.hasTraces) {
+      return null;
+    }
+    return SourceTracer.traceJsonForHierarchy(
+      module,
+      packageRoot: packageRoot!,
+    );
+  }
+
+  /// Returns the FLC hierarchy as a JSON string, or an unavailable status.
+  @Deprecated('Use TraceService for FLC output and lookup.')
+  String get flcJson {
+    final hierarchy = flcHierarchy;
+    return hierarchy != null
+        ? jsonEncode(hierarchy)
+        : '{"status":"unavailable","reason":"no traces or packageRoot"}';
+  }
+
+  /// Returns the FLC JSON for a single module as a JSON string.
+  @Deprecated('Use TraceService for FLC output and lookup.')
+  String flcModuleJson(String definitionName) =>
+      _flcModuleJsonCache.putIfAbsent(definitionName, () {
+        final hierarchy = flcHierarchy;
+        if (hierarchy == null) {
+          return '{"status":"unavailable","reason":"no traces or packageRoot"}';
+        }
+        final modules = hierarchy['modules'] as Map<String, Object>?;
+        if (modules == null || !modules.containsKey(definitionName)) {
+          return jsonEncode(<String, String>{
+            'status': 'unavailable',
+            'reason': 'module "$definitionName" not in FLC hierarchy',
+          });
+        }
+        return jsonEncode(<String, Object>{
+          'version': hierarchy['version'] ?? 6,
+          'files': hierarchy['files'] ?? <Object>[],
+          'modules': <String, Object>{definitionName: modules[definitionName]!},
+        });
+      });
+
+  /// Returns a self-contained HTML viewer for the FLC data, or `null`
+  /// if no traces were recorded.
+  @Deprecated('Use TraceService for FLC output and lookup.')
+  String? get flcHtml {
+    final hierarchy = flcHierarchy;
+    if (hierarchy == null) {
+      return null;
+    }
+    return SourceTracer.flcHtmlViewer(
+      jsonEncode(hierarchy),
+      title: '${module.definitionName} Netlist FLC Viewer',
+      packageRoot: packageRoot ?? '',
+    );
+  }
+
+  /// Writes the FLC hierarchy JSON to [directory] as
+  /// `<definitionName>.flc.json`.
+  @Deprecated('Use TraceService.write for FLC output.')
+  void writeFlcFiles(String directory) {
+    final hierarchy = flcHierarchy;
+    if (hierarchy == null) {
+      return;
+    }
+    writeOutputTextFile(
+      '$directory/${module.definitionName}.flc.json',
+      const JsonEncoder.withIndent('  ').convert(hierarchy),
+    );
+  }
+
+  /// Writes the HTML viewer to [directory].
+  @Deprecated('Use TraceService.writeHtml for FLC HTML output.')
+  void writeFlcHtml(String directory) {
+    final html = flcHtml;
+    if (html != null) {
+      writeOutputTextFile('$directory/${module.definitionName}.flc.html', html);
+    }
+  }
+
+  /// Read-only access to the parsed modules map.
   ///
   /// Each key is a definition name and each value is the Yosys-style
-  /// module descriptor containing `ports`, `cells`, and `netnames`. The
-  /// outer map is unmodifiable, but its nested module/cell maps and bit lists
-  /// are shared with this service's internal representation.
-  ///
-  /// Callers must treat the complete returned object graph as immutable.
-  /// Mutating nested values is unsupported and can make uncached [moduleJson]
-  /// or [slimJson] results disagree with previously serialized or cached
-  /// service views. Create a caller-owned copy before making modifications.
+  /// module descriptor containing `ports`, `cells`, and `netnames`.
   Map<String, dynamic> get synthesizedModules =>
       Map<String, dynamic>.unmodifiable(_modulesMap);
 
   /// Cached slim JSON (lazy).
   String? _slimJsonCache;
 
-  /// Returns a slim netlist JSON string with cell `connections` stripped.
-  ///
-  /// The returned JSON has this shape:
-  /// ```json
-  /// {
-  ///   "netlist": {
-  ///     "creator": "ROHD NetlistService (slim)",
-  ///     "version": "...",
-  ///     "rootInstanceName": "...",
-  ///     "modules": {
-  ///       "DefinitionName": {"ports": {}, "cells": {}, "netnames": {}}
-  ///     }
-  ///   }
-  /// }
-  /// ```
-  /// Module lookup keys are the generated definition names in [moduleNames].
+  /// Returns a slim netlist JSON string — same structure as [toJson] but
+  /// with cell `connections` stripped.
   ///
   /// The slim representation preserves ports, cells (type + port_directions
   /// + port_widths), and netnames so the DevTools extension can render the
   /// hierarchy and signal tree without the full connectivity payload.
   /// Full per-module connectivity is fetched on demand via [moduleJson].
+  /// The source-trace file dictionary is retained when present.
   String get slimJson => _slimJsonCache ??= _buildSlimJson();
 
   /// Builds the slim hierarchy JSON with per-cell connections omitted.
@@ -321,7 +406,9 @@ class NetlistService extends ArtifactProducingService {
     return jsonEncode(<String, dynamic>{
       'netlist': <String, dynamic>{
         'creator': 'ROHD NetlistService (slim)',
-        'version': version,
+        'version': formatVersion,
+        if (_srcTraceFiles case final files? when files.isNotEmpty)
+          'files': files,
         'rootInstanceName': rootName,
         'modules': slimModules,
       },

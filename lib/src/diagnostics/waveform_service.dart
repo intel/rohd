@@ -22,11 +22,7 @@ import 'package:rohd/src/utilities/uniquifier.dart';
 /// [WaveOutputFormat.vcd], [FstWaveformWriter] for [WaveOutputFormat.fst]).
 class WaveformService extends ArtifactProducingService {
   /// The most recently registered [WaveformService], or `null`.
-  ///
-  /// This is backed by [ModuleServices], so it is cleared by unregistering
-  /// this service type or resetting the registry.
-  static WaveformService? get current =>
-      ModuleServices.instance.lookup<WaveformService>();
+  static WaveformService? current;
 
   /// Exact output filename override.
   ///
@@ -75,21 +71,15 @@ class WaveformService extends ArtifactProducingService {
 
   /// The retained VCD waveform, or `null` when retention is disabled.
   String? get inMemoryOutput => _writer.inMemoryOutput;
+  /// Whether to expose captured values to DevTools.
+  final bool enableDevToolsStreaming;
 
   /// The FST writer configuration (only used when [format] is
   /// [WaveOutputFormat.fst]).
   final FstWriterConfig? fstConfig;
 
   late final WaveformWriter _writer;
-
-  /// Creates a bounded-memory query provider for an FST capture.
-  ///
-  /// Returns `null` for VCD captures, whose text output is not indexed for
-  /// time-range queries.
-  FstWaveformQuery? createFstQuery() => switch (_writer) {
-        FstWaveformWriter() => (_writer as FstWaveformWriter).createQuery(),
-        _ => null,
-      };
+  WaveformDataService? _dataService;
 
   /// Maps each captured [Logic] to its writer-specific signal handle.
   final Map<Logic, Object> _signalHandles = <Logic, Object>{};
@@ -99,9 +89,6 @@ class WaveformService extends ArtifactProducingService {
 
   /// The timestamp currently being accumulated.
   int _currentDumpingTimestamp = Simulator.time;
-
-  /// Whether the recording window's initial signal snapshot was emitted.
-  bool _hasWrittenWindowSnapshot = false;
 
   /// Creates a [WaveformService] for [module].
   ///
@@ -124,6 +111,7 @@ class WaveformService extends ArtifactProducingService {
     this.overwritePolicy = OverwritePolicy.overwrite,
     this.register = true,
     this.retainInMemory = false,
+    this.enableDevToolsStreaming = true,
     this.fstConfig,
   }) : super(module) {
     if (!module.hasBuilt) {
@@ -141,7 +129,22 @@ class WaveformService extends ArtifactProducingService {
       ),
       timestamp: Simulator.time,
     );
-    _hasWrittenWindowSnapshot = startTime == null || startTime == 0;
+    if (enableDevToolsStreaming) {
+      WaveformDataService.init(module);
+      _dataService = WaveformDataService.instance;
+      if (_writer case final FstWaveformWriter fstWriter) {
+        _dataService!.attachFstWriter(
+          fstWriter.writer,
+          <Logic, FstSignalHandle>{
+            for (final entry in _signalHandles.entries)
+              entry.key: entry.value as FstSignalHandle,
+          },
+        );
+      }
+      for (final signal in _signalHandles.keys) {
+        _dataService!.recordLogicChange(signal, Simulator.time);
+      }
+    }
 
     Simulator.preTick.listen((_) {
       if (Simulator.time != _currentDumpingTimestamp) {
@@ -149,7 +152,6 @@ class WaveformService extends ArtifactProducingService {
           _captureTimestamp(_currentDumpingTimestamp);
         }
         _currentDumpingTimestamp = Simulator.time;
-        _writeWindowSnapshotIfNeeded(Simulator.time);
       }
     });
 
@@ -160,6 +162,7 @@ class WaveformService extends ArtifactProducingService {
     });
 
     if (register) {
+      current = this;
       ModuleServices.instance.register<WaveformService>(this);
     }
   }
@@ -182,6 +185,7 @@ class WaveformService extends ArtifactProducingService {
     OverwritePolicy overwritePolicy = OverwritePolicy.overwrite,
     bool register = true,
     bool retainInMemory = false,
+    bool enableDevToolsStreaming = true,
     FstWriterConfig? fstConfig,
   }) {
     final normalized = outputPath.replaceAll(r'\', '/');
@@ -205,6 +209,7 @@ class WaveformService extends ArtifactProducingService {
       overwritePolicy: overwritePolicy,
       register: register,
       retainInMemory: retainInMemory,
+      enableDevToolsStreaming: enableDevToolsStreaming,
       fstConfig: fstConfig,
     );
   }
@@ -217,18 +222,11 @@ class WaveformService extends ArtifactProducingService {
   @protected
   void onSignalCollected(Logic signal) {}
 
-  /// Called for every captured value on [signal] at [timestamp].
-  ///
-  /// When [startTime] is set, this includes one window-entry value for every
-  /// tracked signal at [startTime]. Those calls describe the state entering
-  /// the recording window, rather than physical transitions.
+  /// Called for every value-change event on [signal] at [timestamp].
   @protected
   void onValueChange(Logic signal, int timestamp) {}
 
-  /// Called once after each batch of captured values at [timestamp].
-  ///
-  /// When [startTime] is set, the complete window-entry signal snapshot is
-  /// delivered as a batch at [startTime] before later value-change batches.
+  /// Called once per simulation timestamp that contains at least one change.
   @protected
   void onTimestampCapture(int timestamp, Set<Logic> changed) {}
 
@@ -323,7 +321,6 @@ class WaveformService extends ArtifactProducingService {
       return;
     }
 
-    _writeWindowSnapshotIfNeeded(timestamp);
     final snapshot = Set<Logic>.of(_changedThisTimestamp);
     final changes = <WaveformValueChange>[
       for (final sig in snapshot)
@@ -335,38 +332,13 @@ class WaveformService extends ArtifactProducingService {
     }
 
     for (final sig in snapshot) {
+      _dataService?.recordLogicChange(sig, timestamp);
       onValueChange(sig, timestamp);
     }
     _changedThisTimestamp.clear();
 
     if (snapshot.isNotEmpty) {
       onTimestampCapture(timestamp, snapshot);
-    }
-  }
-
-  void _writeWindowSnapshotIfNeeded(int timestamp) {
-    if (_hasWrittenWindowSnapshot ||
-        startTime == null ||
-        timestamp < startTime! ||
-        !_isInRecordingWindow(startTime!)) {
-      return;
-    }
-
-    final snapshot = Set<Logic>.of(_signalHandles.keys);
-    _writer.emitValueChanges(
-      startTime!,
-      [
-        for (final signal in snapshot)
-          WaveformValueChange(_signalHandles[signal]!, _binaryValue(signal)),
-      ],
-    );
-    _hasWrittenWindowSnapshot = true;
-
-    for (final signal in snapshot) {
-      onValueChange(signal, startTime!);
-    }
-    if (snapshot.isNotEmpty) {
-      onTimestampCapture(startTime!, snapshot);
     }
   }
 
@@ -393,6 +365,7 @@ class WaveformService extends ArtifactProducingService {
         'timescale': timescale,
         if (startTime != null) 'startTime': startTime,
         if (stopTime != null) 'stopTime': stopTime,
+        'enableDevToolsStreaming': enableDevToolsStreaming,
         'writer': _writer.toJson(),
       };
 }

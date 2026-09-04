@@ -271,7 +271,9 @@ abstract class Module {
         _definitionName = Naming.validatedName(
           definitionName,
           reserveName: reserveDefinitionName,
-        );
+        ) {
+    SourceTracer.recordModule(this);
+  }
 
   /// Returns an [Iterable] of [Module]s representing the hierarchical path to
   /// this [Module].

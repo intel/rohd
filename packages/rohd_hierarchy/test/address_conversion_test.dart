@@ -28,32 +28,17 @@ void main() {
       final alu = HierarchyOccurrence(
         name: 'alu',
         signals: [
-          SignalOccurrence(
-            name: 'a',
-            width: 1,
-          ),
-          SignalOccurrence(
-            name: 'b',
-            width: 1,
-          ),
-          SignalOccurrence(
-            name: 'out',
-            width: 1,
-          ),
+          SignalOccurrence(name: 'a', width: 1),
+          SignalOccurrence(name: 'b', width: 1),
+          SignalOccurrence(name: 'out', width: 1),
         ],
       );
 
       final cpu = HierarchyOccurrence(
         name: 'cpu',
         signals: [
-          SignalOccurrence(
-            name: 'clk',
-            width: 1,
-          ),
-          SignalOccurrence(
-            name: 'rst',
-            width: 1,
-          ),
+          SignalOccurrence(name: 'clk', width: 1),
+          SignalOccurrence(name: 'rst', width: 1),
         ],
         children: [alu],
       );
@@ -61,19 +46,14 @@ void main() {
       final mem = HierarchyOccurrence(
         name: 'mem',
         signals: [
-          SignalOccurrence(
-            name: 'addr',
-            width: 1,
-          ),
-          SignalOccurrence(
-            name: 'data',
-            width: 1,
-          ),
+          SignalOccurrence(name: 'addr', width: 1),
+          SignalOccurrence(name: 'data', width: 1),
         ],
       );
 
       root = HierarchyOccurrence(
         name: 'Top',
+        definition: 'TopDefinition',
         children: [cpu, mem],
       )..buildAddresses();
 
@@ -89,6 +69,12 @@ void main() {
 
       test('module path resolves correctly', () {
         final addr = service.pathnameToAddress('Top/cpu');
+        expect(addr, isNotNull);
+        expect(addr!.path, equals([0]));
+      });
+
+      test('top definition name is accepted as a root prefix', () {
+        final addr = service.pathnameToAddress('TopDefinition/cpu');
         expect(addr, isNotNull);
         expect(addr!.path, equals([0]));
       });
@@ -187,10 +173,7 @@ void main() {
       });
 
       test('out-of-bounds child returns null', () {
-        expect(
-          service.addressToPathname(const OccurrenceAddress([5])),
-          isNull,
-        );
+        expect(service.addressToPathname(const OccurrenceAddress([5])), isNull);
       });
 
       test('out-of-bounds signal returns null', () {
@@ -216,8 +199,9 @@ void main() {
       });
 
       test('nested address returns correct node', () {
-        final node =
-            service.occurrenceByAddress(const OccurrenceAddress([0, 0]));
+        final node = service.occurrenceByAddress(
+          const OccurrenceAddress([0, 0]),
+        );
         expect(node?.name, equals('alu'));
       });
 
