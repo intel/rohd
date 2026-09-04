@@ -48,8 +48,10 @@ class Logic {
   /// a [LogicValue].
   ///
   /// Throws an Exception if width is not 1.
-  @Deprecated('Use `value` instead.'
-      '  Check `width` separately to confirm single-bit.')
+  @Deprecated(
+    'Use `value` instead.'
+    '  Check `width` separately to confirm single-bit.',
+  )
   LogicValue get bit => value.bit;
 
   /// The current valid active value of this signal as an [int].
@@ -83,8 +85,9 @@ class Logic {
   Logic? _srcConnection;
 
   /// An [Iterable] of all [Logic]s that are being directly driven by `this`.
-  late final Iterable<Logic> dstConnections =
-      UnmodifiableSetView(_dstConnections);
+  late final Iterable<Logic> dstConnections = UnmodifiableSetView(
+    _dstConnections,
+  );
   late final Set<Logic> _dstConnections = {};
 
   /// Notifies `this` that [dstConnection] is now directly connected to the
@@ -194,8 +197,10 @@ class Logic {
   /// optimize search.
   @internal
   set parentModule(Module? newParentModule) {
-    assert(_parentModule == null || _parentModule == newParentModule,
-        'Should only set parent module once.');
+    assert(
+      _parentModule == null || _parentModule == newParentModule,
+      'Should only set parent module once.',
+    );
 
     _parentModule = newParentModule;
   }
@@ -225,8 +230,9 @@ class Logic {
   /// nothing (if no driver), or one element equal to [srcConnection]. If there
   /// are multiple drivers (e.g. this is an instance of a special type/subclass
   /// of [Logic]), then there may be multiple drivers.
-  late final Iterable<Logic> srcConnections =
-      UnmodifiableListView(_srcConnections);
+  late final Iterable<Logic> srcConnections = UnmodifiableListView(
+    _srcConnections,
+  );
   // [if (srcConnection != null) srcConnection!];
   late final List<Logic> _srcConnections = [];
 
@@ -245,26 +251,21 @@ class Logic {
   ///
   /// The [naming] and [name], if unspecified, are chosen based on the rules in
   /// [Naming.chooseNaming] and [Naming.chooseName], respectively.
-  Logic({
-    String? name,
-    int width = 1,
-    Naming? naming,
-  }) : this._(
-          name: name,
-          width: width,
-          naming: naming,
-        );
+  Logic({String? name, int width = 1, Naming? naming})
+      : this._(name: name, width: width, naming: naming);
 
   /// A cloning utility for [clone] and [named].
   Logic _clone({String? name, Naming? naming}) =>
       (isNet ? LogicNet.new : Logic.new)(
-          name: name ?? this.name,
-          naming: Naming.chooseCloneNaming(
-              originalName: this.name,
-              newName: name,
-              originalNaming: this.naming,
-              newNaming: naming),
-          width: width);
+        name: name ?? this.name,
+        naming: Naming.chooseCloneNaming(
+          originalName: this.name,
+          newName: name,
+          originalNaming: this.naming,
+          newNaming: naming,
+        ),
+        width: width,
+      );
 
   /// Makes a copy of `this`, optionally with the specified [name], but the same
   /// [width].
@@ -290,18 +291,16 @@ class Logic {
 
   /// An internal constructor for [Logic] which additional provides access to
   /// setting the [wire].
-  Logic._({
-    String? name,
-    int width = 1,
-    Naming? naming,
-    _Wire? wire,
-  })  : naming = Naming.chooseNaming(name, naming),
+  Logic._({String? name, int width = 1, Naming? naming, _Wire? wire})
+      : naming = Naming.chooseNaming(name, naming),
         name = Naming.chooseName(name, naming),
         _wire = wire ?? _Wire(width: width) {
     if (width < 0) {
       throw LogicConstructionException(
-          'Logic width must be greater than or equal to 0.');
+        'Logic width must be greater than or equal to 0.',
+      );
     }
+    SourceTracer.recordSignal(this);
   }
 
   /// Constructs a [Logic] with some additional validation for ports of
@@ -326,15 +325,16 @@ class Logic {
   @override
   String toString() => [
         'Logic($width): $name',
-        if (isArrayMember) 'index $arrayIndex of ($parentStructure)'
+        if (isArrayMember) 'index $arrayIndex of ($parentStructure)',
       ].join(', ');
 
   /// Throws an exception if this [Logic] cannot be connected to another signal.
   void _assertConnectable(Logic other) {
     if (_srcConnection != null) {
       throw Exception(
-          'This signal "$this" is already connected to "$srcConnection",'
-          ' so it cannot be connected to "$other".');
+        'This signal "$this" is already connected to "$srcConnection",'
+        ' so it cannot be connected to "$other".',
+      );
     }
 
     if (_unassignable) {
@@ -405,8 +405,10 @@ class Logic {
   /// Updates the current active [_Wire] for this [Logic] and also
   /// notifies all downstream [Logic]s of the new source [_Wire].
   void _updateWire(_Wire newWire) {
-    assert((_wire is _WireNet) == (newWire is _WireNet),
-        'Should not merge nets of different types.');
+    assert(
+      (_wire is _WireNet) == (newWire is _WireNet),
+      'Should not merge nets of different types.',
+    );
 
     if (newWire == _wire) {
       // no need to do any work if we're already on the same wire!
@@ -422,11 +424,9 @@ class Logic {
     // tell all downstream signals to update to the new wire as well
     final Iterable<Logic> toUpdateWire;
     if (this is LogicNet) {
-      toUpdateWire = [
-        ...dstConnections,
-        ...srcConnections,
-      ].where(
-          (connection) => connection._wire != _wire && connection is LogicNet);
+      toUpdateWire = [...dstConnections, ...srcConnections].where(
+        (connection) => connection._wire != _wire && connection is LogicNet,
+      );
     } else {
       toUpdateWire = dstConnections.where((element) => element is! LogicNet);
     }
@@ -498,10 +498,7 @@ class Logic {
       // many SV simulators don't support shifting of nets, so default this
       final shamt = _constShiftAmount(other);
       if (shamt != null) {
-        return [
-          this[-1].replicate(shamt),
-          getRange(shamt),
-        ].swizzle();
+        return [this[-1].replicate(shamt), getRange(shamt)].swizzle();
       }
     }
 
@@ -522,10 +519,7 @@ class Logic {
       // many SV simulators don't support shifting of nets, so default this
       final shamt = _constShiftAmount(other);
       if (shamt != null) {
-        return [
-          getRange(0, -shamt),
-          Const(0, width: shamt),
-        ].swizzle();
+        return [getRange(0, -shamt), Const(0, width: shamt)].swizzle();
       }
     }
 
@@ -546,10 +540,7 @@ class Logic {
       // many SV simulators don't support shifting of nets, so default this
       final shamt = _constShiftAmount(other);
       if (shamt != null) {
-        return [
-          Const(0, width: shamt),
-          getRange(shamt),
-        ].swizzle();
+        return [Const(0, width: shamt), getRange(shamt)].swizzle();
       }
     }
 
@@ -708,9 +699,11 @@ class Logic {
   /// [Conditional].
   Conditional operator <(dynamic other) {
     if (_unassignable) {
-      throw Exception('This signal "$this" has been marked as unassignable.  '
-          'It may be a constant expression or otherwise'
-          ' should not be assigned.');
+      throw Exception(
+        'This signal "$this" has been marked as unassignable.  '
+        'It may be a constant expression or otherwise'
+        ' should not be assigned.',
+      );
     }
 
     if (other is Logic) {
@@ -766,7 +759,8 @@ class Logic {
   /// However, for derivatives of [Logic] like [LogicStructure] or [LogicArray],
   /// each element may be any positive number of bits.
   late final List<Logic> elements = UnmodifiableListView(
-      List.generate(width, (index) => this[index], growable: false));
+    List.generate(width, (index) => this[index], growable: false),
+  );
 
   /// Returns a simple flattened [Logic].
   ///
@@ -830,8 +824,10 @@ class Logic {
 
   /// Returns a version of this [Logic] with the bit order reversed.
   late final Logic reversed = (isNet ? LogicNet.new : Logic.new)(
-      name: 'reversed_$name', naming: Naming.unnamed, width: width)
-    ..gets(slice(0, width - 1));
+    name: 'reversed_$name',
+    naming: Naming.unnamed,
+    width: width,
+  )..gets(slice(0, width - 1));
 
   /// Returns a subset [Logic].  It is inclusive of [startIndex], exclusive of
   /// [endIndex].
@@ -865,10 +861,16 @@ class Logic {
 
     // Given start and end index, if either of them are seen to be -ve index
     // value(s) then conver them to a +ve index value(s)
-    final modifiedStartIndex =
-        IndexUtilities.wrapIndex(startIndex, width, allowWidth: true);
-    final modifiedEndIndex =
-        IndexUtilities.wrapIndex(endIndex, width, allowWidth: true);
+    final modifiedStartIndex = IndexUtilities.wrapIndex(
+      startIndex,
+      width,
+      allowWidth: true,
+    );
+    final modifiedEndIndex = IndexUtilities.wrapIndex(
+      endIndex,
+      width,
+      allowWidth: true,
+    );
 
     IndexUtilities.validateRange(modifiedStartIndex, modifiedEndIndex);
 
@@ -885,12 +887,10 @@ class Logic {
   Logic zeroExtend(int newWidth) {
     if (newWidth < width) {
       throw Exception(
-          'New width $newWidth must be greater than or equal to width $width.');
+        'New width $newWidth must be greater than or equal to width $width.',
+      );
     }
-    return [
-      Const(0, width: newWidth - width),
-      this,
-    ].swizzle();
+    return [Const(0, width: newWidth - width), this].swizzle();
   }
 
   /// Calculates the absolute value of a signal, assuming that the
@@ -915,16 +915,14 @@ class Logic {
     if (width == 1) {
       return replicate(newWidth);
     } else if (newWidth > width) {
-      return [
-        this[-1].replicate(newWidth - width),
-        this,
-      ].swizzle();
+      return [this[-1].replicate(newWidth - width), this].swizzle();
     } else if (newWidth == width) {
       return this;
     }
 
     throw Exception(
-        'New width $newWidth must be greater than or equal to width $width.');
+      'New width $newWidth must be greater than or equal to width $width.',
+    );
   }
 
   /// Returns a copy of this [Logic] with the bits starting from [startIndex]
@@ -935,13 +933,16 @@ class Logic {
   /// if the position of the [update] would cause an overrun past the [width].
   Logic withSet(int startIndex, Logic update) {
     if (startIndex + update.width > width) {
-      throw RangeError('Width of update $update at startIndex $startIndex would'
-          ' overrun the width of the original ($width).');
+      throw RangeError(
+        'Width of update $update at startIndex $startIndex would'
+        ' overrun the width of the original ($width).',
+      );
     }
 
     if (startIndex < 0) {
       throw RangeError(
-          'Start index must be greater than zero but was $startIndex');
+        'Start index must be greater than zero but was $startIndex',
+      );
     }
 
     if (startIndex == 0 && update.width == width) {
@@ -1013,22 +1014,22 @@ class Logic {
   /// ```
   Logic selectFrom(List<Logic> busList, {Logic? defaultValue}) {
     final selected = Logic(
-        name: 'selectFrom',
-        width: busList.first.width,
-        naming: Naming.mergeable);
-
-    Combinational(
-      [
-        Case(
-            this,
-            [
-              for (var i = 0; i < busList.length; i++)
-                CaseItem(Const(i, width: width), [selected < busList[i]])
-            ],
-            conditionalType: ConditionalType.unique,
-            defaultItem: [selected < (defaultValue ?? 0)])
-      ],
+      name: 'selectFrom',
+      width: busList.first.width,
+      naming: Naming.mergeable,
     );
+
+    Combinational([
+      Case(
+        this,
+        [
+          for (var i = 0; i < busList.length; i++)
+            CaseItem(Const(i, width: width), [selected < busList[i]]),
+        ],
+        conditionalType: ConditionalType.unique,
+        defaultItem: [selected < (defaultValue ?? 0)],
+      ),
+    ]);
 
     return selected;
   }
@@ -1052,7 +1053,9 @@ class Logic {
   void assignSubset(List<Logic> updatedSubset, {int start = 0}) {
     if (updatedSubset.length > width - start) {
       throw SignalWidthMismatchException.forWidthOverflow(
-          updatedSubset.length, width - start);
+        updatedSubset.length,
+        width - start,
+      );
     }
 
     if (_subsetDriver == null) {

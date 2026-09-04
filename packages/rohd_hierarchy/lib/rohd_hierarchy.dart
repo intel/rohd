@@ -44,8 +44,11 @@ library;
 
 export 'src/base_hierarchy_adapter.dart';
 export 'src/hierarchy_models.dart';
+export 'src/hierarchy_occurrence.dart';
 export 'src/hierarchy_occurrence_traversal.dart';
 export 'src/hierarchy_query.dart';
 export 'src/hierarchy_search_controller.dart';
 export 'src/hierarchy_service.dart';
 export 'src/netlist_hierarchy_adapter.dart';
+export 'src/occurrence_address.dart';
+export 'src/signal_occurrence.dart';

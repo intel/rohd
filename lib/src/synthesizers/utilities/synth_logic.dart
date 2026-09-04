@@ -435,7 +435,9 @@ class SynthLogicPackedBitReference extends SynthLogic {
     this.bitIndex, {
     required super.parentSynthModuleDefinition,
   })  : assert(
-            !packedBase.isArray, 'Packed reference base must not be an array.'),
+          !packedBase.isArray,
+          'Packed reference base must not be an array.',
+        ),
         assert(!packedBase.isNet, 'Packed reference base must not be a net.'),
         assert(
           !packedBase.isConstant,
@@ -551,6 +553,15 @@ class SynthLogicArrayElement extends SynthLogic {
       'Array name should be sanitary, but found $n',
     );
     return n;
+  }
+
+  @override
+  String? get nameOrNull {
+    final resolvedParent = parentArray.replacement ?? parentArray;
+    final parentArrayName = resolvedParent.nameOrNull;
+    return parentArrayName == null
+        ? null
+        : '$parentArrayName[${logic.arrayIndex!}]';
   }
 
   /// The element of the [parentArray].

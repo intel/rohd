@@ -134,9 +134,7 @@ class FlcData {
       // Falls back to legacy "svFile" field. For lookup we use the first
       // file in each language list (the canonical output).
       final rawOutputFiles = modMap['outputFiles'];
-      final outputFiles = <String, String>{
-        if (svFile != null) 'sv': svFile,
-      };
+      final outputFiles = <String, String>{if (svFile != null) 'sv': svFile};
       if (rawOutputFiles is Map) {
         for (final e in rawOutputFiles.entries) {
           final v = e.value;
@@ -246,6 +244,109 @@ class FlcData {
     return FlcData._(files: files, signals: signals, instances: instances);
   }
 
+  /// Parse embedded `rohd.src_trace` attributes from a Yosys netlist.
+  ///
+  /// Embedded traces use the same file-indexed frame representation as FLC
+  /// data, but store signal and instance maps directly on each module:
+  /// `modules.<module>.attributes.rohd.src_trace`.
+  factory FlcData.fromNetlistJson(Map<String, dynamic> json) {
+    final files =
+        (json['files'] as List<dynamic>?)?.whereType<String>().toList() ??
+            <String>[];
+    final rawModules = json['modules'];
+    if (rawModules is! Map) {
+      return FlcData.empty();
+    }
+
+    final signals = <String, Map<String, FlcEntry>>{};
+    final instances = <String, Map<String, FlcEntry>>{};
+    for (final moduleEntry in rawModules.entries) {
+      final module = moduleEntry.value;
+      if (module is! Map) {
+        continue;
+      }
+      final attributes = module['attributes'];
+      if (attributes is! Map) {
+        continue;
+      }
+      final trace = attributes['rohd.src_trace'];
+      if (trace is! Map) {
+        continue;
+      }
+      final parsed = _parseEmbeddedModule(
+        trace.cast<Object?, Object?>(),
+        files,
+      );
+      if (parsed.signals.isNotEmpty) {
+        signals[moduleEntry.key.toString()] = parsed.signals;
+      }
+      if (parsed.instances.isNotEmpty) {
+        instances[moduleEntry.key.toString()] = parsed.instances;
+      }
+    }
+    return FlcData._(files: files, signals: signals, instances: instances);
+  }
+
+  /// Parse one module's embedded `rohd.src_trace` attribute.
+  ///
+  /// This is useful for schematic adapters that have already separated module
+  /// attributes from the enclosing netlist document.
+  factory FlcData.fromEmbeddedAttributes({
+    required List<String> files,
+    required Map<String, dynamic> modules,
+  }) =>
+      FlcData.fromNetlistJson({'files': files, 'modules': modules});
+
+  static _EmbeddedModule _parseEmbeddedModule(
+    Map<Object?, Object?> trace,
+    List<String> files,
+  ) {
+    Map<String, FlcEntry> parseEntries(Object? value) {
+      if (value is! Map) {
+        return <String, FlcEntry>{};
+      }
+      final result = <String, FlcEntry>{};
+      for (final entry in value.entries) {
+        final name = entry.key.toString();
+        final rawFrames = entry.value;
+        if (rawFrames is! List) {
+          continue;
+        }
+        final frames = <FlcFrame>[];
+        for (final rawFrame in rawFrames) {
+          if (rawFrame is! String) {
+            continue;
+          }
+          final parts = rawFrame.split(':');
+          if (parts.length < 2) {
+            continue;
+          }
+          final fileIndex = int.tryParse(parts[0]);
+          final line = int.tryParse(parts[1]);
+          if (fileIndex == null ||
+              line == null ||
+              fileIndex < 0 ||
+              fileIndex >= files.length) {
+            continue;
+          }
+          final column = parts.length > 2 ? (int.tryParse(parts[2]) ?? 1) : 1;
+          frames.add(
+            FlcFrame(file: files[fileIndex], line: line, column: column),
+          );
+        }
+        if (frames.isNotEmpty) {
+          result[name] = FlcEntry(frames: frames);
+        }
+      }
+      return result;
+    }
+
+    return _EmbeddedModule(
+      signals: parseEntries(trace['signals']),
+      instances: parseEntries(trace['instances']),
+    );
+  }
+
   /// Parse a v5 string-encoded symbol.
   ///
   /// Format: `[*]name[@positions][~origName]`
@@ -310,8 +411,9 @@ class FlcData {
               segments.length >= 2 ? segments[segments.length - 1] : null;
           final line = int.tryParse(lineStr) ?? 1;
           final column = colStr != null ? (int.tryParse(colStr) ?? 1) : 1;
-          outputPositions
-              .add(_OutputPos(type: type, line: line, column: column));
+          outputPositions.add(
+            _OutputPos(type: type, line: line, column: column),
+          );
         }
       }
     }
@@ -460,4 +562,11 @@ class _OutputPos {
   final int column;
 
   const _OutputPos({required this.type, required this.line, this.column = 1});
+}
+
+class _EmbeddedModule {
+  final Map<String, FlcEntry> signals;
+  final Map<String, FlcEntry> instances;
+
+  const _EmbeddedModule({required this.signals, required this.instances});
 }

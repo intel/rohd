@@ -20,5 +20,8 @@ tool/gh_actions/install_dependencies.sh
 # Install Icarus Verilog.
 tool/gh_actions/install_iverilog.sh
 
+# Install SystemC.
+tool/gh_codespaces/install_systemc.sh
+
 # Install Node
 tool/gh_actions/install_node.sh

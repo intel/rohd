@@ -1,3 +1,9 @@
 tags:
   benchmark:
     timeout: 2x
+  ffi:
+    # Tests requiring dart:ffi and native shared libraries.
+
+presets:
+  no-ffi:
+    exclude_tags: ffi

@@ -17,9 +17,7 @@ class ExampleModule extends Module {
     final val = Logic(name: 'val');
     val <= Const(1);
 
-    Combinational([
-      out < val,
-    ]);
+    Combinational([out < val]);
   }
 
   Logic get out => output('out');
@@ -29,8 +27,10 @@ class LogicSubsetModule extends Module {
   LogicSubsetModule(int offset, int resultWidth, Logic subset) {
     subset = addInput('subset', subset, width: subset.width);
 
-    addOutput('result', width: resultWidth)
-        .assignSubset(subset.elements, start: offset);
+    addOutput(
+      'result',
+      width: resultWidth,
+    ).assignSubset(subset.elements, start: offset);
   }
 }
 
@@ -63,8 +63,13 @@ class LogicStructSubsetModule extends Module {
 }
 
 class LogicNetSubsetModule extends Module {
-  LogicNetSubsetModule(int offset1, int offset2, LogicNet subset1,
-      LogicNet subset2, LogicNet result) {
+  LogicNetSubsetModule(
+    int offset1,
+    int offset2,
+    LogicNet subset1,
+    LogicNet subset2,
+    LogicNet result,
+  ) {
     subset1 = addInOut('subset1', subset1, width: subset1.width);
     subset2 = addInOut('subset2', subset2, width: subset2.width);
 
@@ -95,6 +100,7 @@ void main() {
       allowWarnings: true, // since always_comb has no sensitivities
     );
     expect(simResult, equals(true));
+    SimCompare.checkSystemCVector(exampleModule, vectors);
   });
 
   group('assign subset', () {
@@ -104,12 +110,15 @@ void main() {
         await mod.build();
 
         final vectors = [
-          Vector({'subset': bin('1')},
-              {'result': LogicValue.ofString('zzzz1zzz')}),
+          Vector(
+            {'subset': bin('1')},
+            {'result': LogicValue.ofString('zzzz1zzz')},
+          ),
         ];
 
         await SimCompare.checkFunctionalVector(mod, vectors);
         SimCompare.checkIverilogVector(mod, vectors);
+        SimCompare.checkSystemCVector(mod, vectors);
       });
 
       test('multiple bits', () async {
@@ -117,8 +126,10 @@ void main() {
         await mod.build();
 
         final vectors = [
-          Vector({'subset': bin('0110')},
-              {'result': LogicValue.ofString('zz0110zz')}),
+          Vector(
+            {'subset': bin('0110')},
+            {'result': LogicValue.ofString('zz0110zz')},
+          ),
         ];
 
         await SimCompare.checkFunctionalVector(mod, vectors);
@@ -126,13 +137,17 @@ void main() {
       });
 
       test('width mismatch fails', () {
-        expect(() => Logic(width: 8).assignSubset([Logic(width: 4)]),
-            throwsA(isA<SignalWidthMismatchException>()));
+        expect(
+          () => Logic(width: 8).assignSubset([Logic(width: 4)]),
+          throwsA(isA<SignalWidthMismatchException>()),
+        );
       });
 
       test('out of bounds fails', () {
-        expect(() => Logic(width: 8).assignSubset([Logic(), Logic()], start: 7),
-            throwsA(isA<SignalWidthMismatchException>()));
+        expect(
+          () => Logic(width: 8).assignSubset([Logic(), Logic()], start: 7),
+          throwsA(isA<SignalWidthMismatchException>()),
+        );
       });
     });
 
@@ -142,7 +157,9 @@ void main() {
 
       final vectors = [
         Vector(
-            {'smaller': bin('1'), 'big': bin('1010')}, {'result': bin('10101')})
+          {'smaller': bin('1'), 'big': bin('1010')},
+          {'result': bin('10101')},
+        ),
       ];
 
       await SimCompare.checkFunctionalVector(mod, vectors);
@@ -161,8 +178,10 @@ void main() {
         await mod.build();
 
         final vectors = [
-          Vector({'subset1': bin('0000'), 'subset2': bin('1111')},
-              {'result': LogicValue.ofString('11xx00zz')}),
+          Vector(
+            {'subset1': bin('0000'), 'subset2': bin('1111')},
+            {'result': LogicValue.ofString('11xx00zz')},
+          ),
         ];
 
         await SimCompare.checkFunctionalVector(mod, vectors);
@@ -180,12 +199,13 @@ void main() {
         await mod.build();
 
         final vectors = [
-          Vector({
-            'result': LogicValue.ofString('110100xx')
-          }, {
-            'subset1': LogicValue.ofString('0100'),
-            'subset2': LogicValue.ofString('1101')
-          }),
+          Vector(
+            {'result': LogicValue.ofString('110100xx')},
+            {
+              'subset1': LogicValue.ofString('0100'),
+              'subset2': LogicValue.ofString('1101'),
+            },
+          ),
         ];
 
         await SimCompare.checkFunctionalVector(mod, vectors);
