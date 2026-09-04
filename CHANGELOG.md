@@ -5,6 +5,11 @@
 - Refined the typed-array hierarchy so `LogicArray` directly specializes `TypedLogicArray<Logic, LogicValue>`, and strengthened custom `TypedLogicArray` cloning to preserve runtime types, codecs, unpacked dimensions, and constructor-only naming prefixes without exposing them as public axis metadata (<https://github.com/intel/rohd/pull/686>).
 - Expanded `TypedLogicArray` support for recursively nested typed and ordinary arrays, structures containing array fields, mixed packed/unpacked dimensions, structured net and inout ports, and recursive netlist type metadata. Fixed generated SystemVerilog for array-valued elements to use packed offsets consistent with declarations and module-port connections, avoiding invalid chained selections in Icarus and Verilator (<https://github.com/intel/rohd/pull/686>).
 - Preserved configured SystemVerilog output object types for nested arrays and added the opt-in `iverilogWorkaroundForUnpackedArrayVariables` setting for child-driven unpacked array variables that remain unknown in Icarus Verilog 12.0 (<https://github.com/intel/rohd/pull/686>).
+- Added structure-preserving typed operations for multiplexing, flip-flops,
+  case and indexed selection, pipelines, naming, cloning, and pass-through
+  modules. Nested `LogicArray` and `TypedLogicArray` boundaries remain
+  available through the concrete output type while existing scalar operations
+  retain their `Logic` APIs.
 
 ## 0.6.11
 

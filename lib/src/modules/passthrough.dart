@@ -10,7 +10,8 @@
 import 'package:rohd/rohd.dart';
 
 /// A pass-through module with an input and output represented by [LogicType].
-abstract class Passthrough<LogicType extends Logic> extends TypedOp<LogicType> {
+abstract class TypedPassthrough<LogicType extends Logic>
+    extends TypedOp<LogicType> {
   /// Input port.
   LogicType get in_;
 
@@ -18,32 +19,17 @@ abstract class Passthrough<LogicType extends Logic> extends TypedOp<LogicType> {
   @override
   LogicType get out;
 
-  /// Creates a pass-through with an output represented by [LogicType].
-  ///
-  /// Concrete [LogicStructure] inputs infer their output type. Constants and
-  /// nets require `Passthrough<Logic>` because the result is driveable logic.
-  factory Passthrough(LogicType input, [String name = 'passthrough']) {
-    if (LogicType == Logic) {
-      return _LogicPassthrough(input, name) as Passthrough<LogicType>;
-    }
-    if (input is! LogicStructure) {
-      throw LogicConstructionException(
-          'Passthrough<$LogicType> requires LogicType to be Logic or a '
-          'concrete LogicStructure.');
-    }
-    return _StructurePassthrough<LogicType>(input, name: name);
-  }
-
-  Passthrough._({
-    super.name,
+  /// Creates a typed pass-through implementation.
+  TypedPassthrough({
+    super.name = 'typed_passthrough',
     super.reserveName,
     super.definitionName,
     super.reserveDefinitionName,
   });
 }
 
-/// Scalar implementation of [Passthrough].
-class _LogicPassthrough extends Passthrough<Logic> {
+/// A very simple noop module that just passes a signal through.
+class Passthrough extends TypedPassthrough<Logic> {
   /// The input port.
   @override
   Logic get in_ => input('in');
@@ -54,8 +40,7 @@ class _LogicPassthrough extends Passthrough<Logic> {
 
   /// Constructs a simple pass-through module that performs no operations
   /// between [a] and [out].
-  _LogicPassthrough(Logic a, [String name = 'passthrough'])
-      : super._(name: name) {
+  Passthrough(Logic a, [String name = 'passthrough']) : super(name: name) {
     addInput('in', a, width: a.width);
     addOutput('out', width: a.width);
     _setup();
@@ -71,12 +56,12 @@ class _LogicPassthrough extends Passthrough<Logic> {
 String _structurePassthroughDefinitionName(LogicStructure structure) =>
     'StructurePassthrough_${logicStructureShapeSignature(structure)}';
 
-/// Structure-preserving implementation of [Passthrough].
+/// A no-op module that preserves a concrete [LogicStructure] type.
 ///
 /// The input and output retain all nested [LogicArray] and [LogicArrayOf]
 /// boundaries. Typed ports reject structures containing constants or nets.
-class _StructurePassthrough<LogicType extends Logic>
-    extends Passthrough<LogicType> {
+class StructurePassthrough<LogicType extends LogicStructure>
+    extends TypedPassthrough<LogicType> {
   @override
   late final LogicType in_;
 
@@ -84,27 +69,15 @@ class _StructurePassthrough<LogicType extends Logic>
   late final LogicType out;
 
   /// Creates a structure-preserving pass-through module.
-  _StructurePassthrough(LogicType input, {super.name = 'structure_passthrough'})
-      : super._(
-          definitionName:
-              _structurePassthroughDefinitionName(input as LogicStructure),
-        ) {
-    final structuredInput = input as LogicStructure;
-    LogicType cloneOutput({String name = 'out'}) {
-      final cloned = structuredInput.clone(name: name);
-      if (cloned is! LogicType) {
-        throw LogicConstructionException(
-            'Passthrough output clone did not preserve its concrete type.');
-      }
-      return cloned as LogicType;
-    }
+  StructurePassthrough(LogicType input, {super.name = 'structure_passthrough'})
+      : super(definitionName: _structurePassthroughDefinitionName(input)) {
+    LogicType cloneOutput({String name = 'out'}) =>
+        typedClone(input, name: name);
 
     in_ = addTypedInput('in', input);
     out = addTypedOutput('out', cloneOutput);
-    final structuredOut = out as LogicStructure;
-    final structuredIn = in_ as LogicStructure;
-    for (var index = 0; index < structuredOut.leafElements.length; index++) {
-      structuredOut.leafElements[index] <= structuredIn.leafElements[index];
+    for (var index = 0; index < out.leafElements.length; index++) {
+      out.leafElements[index] <= in_.leafElements[index];
     }
   }
 }

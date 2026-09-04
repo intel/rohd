@@ -31,8 +31,10 @@ class NotGate extends Module with InlineSystemVerilog {
     _inName = Naming.unpreferredName(in_.name);
     _outName = Naming.unpreferredName('${in_.name}_b');
     addInput(_inName, in_, width: in_.width);
-    addOutput(_outName, width: in_.width)
-        .makeUnassignable(reason: 'Output of a gate $this cannot be assigned.');
+    addOutput(
+      _outName,
+      width: in_.width,
+    ).makeUnassignable(reason: 'Output of a gate $this cannot be assigned.');
     _setup();
   }
 
@@ -178,11 +180,15 @@ abstract class _TwoInputBitwiseGate extends Module with InlineSystemVerilog {
   /// this [Module] is in-lined as SystemVerilog, it will use [_opStr] as a
   /// String between the two input signal names (e.g. if [_opStr] was "&",
   /// generated SystemVerilog may look like "a & b").
-  _TwoInputBitwiseGate(this._op, this._opStr, Logic in0, dynamic in1,
-      {String name = 'gate2',
-      int outputSvWidthExpansion = 0,
-      bool makeSelfDetermined = false})
-      : width = in0.width,
+  _TwoInputBitwiseGate(
+    this._op,
+    this._opStr,
+    Logic in0,
+    dynamic in1, {
+    String name = 'gate2',
+    int outputSvWidthExpansion = 0,
+    bool makeSelfDetermined = false,
+  })  : width = in0.width,
         assert(!outputSvWidthExpansion.isNegative, 'Should not be negative.'),
         _outputSvWidthExpansion = outputSvWidthExpansion,
         _makeSelfDetermined = makeSelfDetermined,
@@ -199,8 +205,10 @@ abstract class _TwoInputBitwiseGate extends Module with InlineSystemVerilog {
 
     addInput(_in0Name, in0, width: width);
     addInput(_in1Name, in1Logic, width: width);
-    addOutput(_outName, width: width + _outputSvWidthExpansion)
-        .makeUnassignable(reason: 'Output of a gate $this cannot be assigned.');
+    addOutput(
+      _outName,
+      width: width + _outputSvWidthExpansion,
+    ).makeUnassignable(reason: 'Output of a gate $this cannot be assigned.');
 
     _setup();
   }
@@ -276,9 +284,13 @@ abstract class _TwoInputComparisonGate extends Module with InlineSystemVerilog {
   /// this [Module] is in-lined as SystemVerilog, it will use [_opStr] as a
   /// String between the two input signal names (e.g. if [_opStr] was ">",
   /// generated SystemVerilog may look like "a > b").
-  _TwoInputComparisonGate(this._op, this._opStr, Logic in0, dynamic in1,
-      {String name = 'cmp2'})
-      : super(name: name) {
+  _TwoInputComparisonGate(
+    this._op,
+    this._opStr,
+    Logic in0,
+    dynamic in1, {
+    String name = 'cmp2',
+  }) : super(name: name) {
     if (in1 is Logic && in0.width != in1.width) {
       throw PortWidthMismatchException.equalWidth(in0, in1);
     }
@@ -383,11 +395,15 @@ abstract class _ShiftGate extends Module with InlineSystemVerilog {
   /// this [Module] is in-lined as SystemVerilog, it will use [_opStr] as a
   /// String between the two input signal names (e.g. if [_opStr] was ">>",
   /// generated SystemVerilog may look like "a >> b").
-  _ShiftGate(this._op, this._opStr, Logic in_, dynamic shiftAmount,
-      {String name = 'gate2',
-      this.signed = false,
-      bool outputSvWidthExpansion = false})
-      : width = in_.width,
+  _ShiftGate(
+    this._op,
+    this._opStr,
+    Logic in_,
+    dynamic shiftAmount, {
+    String name = 'gate2',
+    this.signed = false,
+    bool outputSvWidthExpansion = false,
+  })  : width = in_.width,
         _outputSvWidthExpansion = outputSvWidthExpansion,
         _isNet = in_.isNet &&
             // if it's a Logic, then we can't treat this like a net
@@ -416,17 +432,22 @@ abstract class _ShiftGate extends Module with InlineSystemVerilog {
 
     _inName = Naming.unpreferredName('in_${in_.name}');
 
-    _shiftAmountName =
-        Naming.unpreferredName('shiftAmount_${shiftAmountLogic.name}');
+    _shiftAmountName = Naming.unpreferredName(
+      'shiftAmount_${shiftAmountLogic.name}',
+    );
 
-    _outName =
-        Naming.unpreferredName('${in_.name}_${name}_${shiftAmountLogic.name}');
+    _outName = Naming.unpreferredName(
+      '${in_.name}_${name}_${shiftAmountLogic.name}',
+    );
 
     final inputCreator = _isNet ? addInOut : addInput;
 
     _in = inputCreator(_inName, in_, width: in_.width);
-    _shiftAmount = inputCreator(_shiftAmountName, shiftAmountLogic,
-        width: shiftAmountLogic.width);
+    _shiftAmount = inputCreator(
+      _shiftAmountName,
+      shiftAmountLogic,
+      width: shiftAmountLogic.width,
+    );
 
     if (_isNet) {
       out = LogicNet(name: _outName, width: width, naming: Naming.unnamed);
@@ -434,9 +455,10 @@ abstract class _ShiftGate extends Module with InlineSystemVerilog {
 
       _netSetup(internalOut);
     } else {
-      out = addOutput(_outName, width: width)
-        ..makeUnassignable(
-            reason: 'Output of a gate $this cannot be assigned.');
+      out = addOutput(
+        _outName,
+        width: width,
+      )..makeUnassignable(reason: 'Output of a gate $this cannot be assigned.');
 
       _setup();
     }
@@ -606,7 +628,10 @@ class Add extends Module with SystemVerilog {
 
   @override
   String instantiationVerilog(
-      String instanceType, String instanceName, Map<String, String> ports) {
+    String instanceType,
+    String instanceName,
+    Map<String, String> ports,
+  ) {
     assert(inputs.length == 2, 'Gate has exactly two inputs');
     assert(outputs.length == 2, 'Gate has exactly two outputs');
 
@@ -715,9 +740,11 @@ class GreaterThanOrEqual extends _TwoInputComparisonGate {
   ///
   /// [in1] can be either a [Logic] or a constant be processable by
   /// [LogicValue.of].
-  GreaterThanOrEqual(Logic in0, dynamic in1,
-      {super.name = 'greaterThanOrEqual'})
-      : super((a, b) => a >= b, '>=', in0, in1);
+  GreaterThanOrEqual(
+    Logic in0,
+    dynamic in1, {
+    super.name = 'greaterThanOrEqual',
+  }) : super((a, b) => a >= b, '>=', in0, in1);
 }
 
 /// A unary AND gate.
@@ -793,8 +820,13 @@ class LShift extends _ShiftGate {
   /// [shiftAmount] can be either a [Logic] or a constant be processable by
   /// [LogicValue.of].
   LShift(Logic in_, dynamic shiftAmount, {super.name = 'lshift'})
-      : super((a, shamt) => a << shamt, '<<', in_, shiftAmount,
-            outputSvWidthExpansion: true);
+      : super(
+          (a, shamt) => a << shamt,
+          '<<',
+          in_,
+          shiftAmount,
+          outputSvWidthExpansion: true,
+        );
 
   @override
   void _netSetup(LogicNet internalOut) {
@@ -823,52 +855,34 @@ Logic mux(Logic control, Logic d1, Logic d0) {
     return control.value == LogicValue.one ? d1 : d0;
   }
 
-  return Mux<Logic>(control, d1, d0).out;
+  return Mux(control, d1, d0).out;
 }
 
 /// A multiplexer with an output represented by [LogicType].
 ///
-/// For [Mux]<[Logic]>, inputs can be any width-compatible [Logic], including
-/// constants and nets, and the output is normalized to an ordinary [Logic].
-/// For a concrete [LogicStructure] type, both inputs must have that type and
-/// matching recursive geometry.
-abstract class Mux<LogicType extends Logic> extends TypedOp<LogicType> {
+/// Implementations decide how inputs are normalized into an output of the
+/// promised type. For example, [Mux] accepts constants and nets as sources but
+/// produces an ordinary single-driver [Logic], while [StructureMux] preserves
+/// the concrete structure type and recursively selects corresponding leaves.
+abstract class TypedMux<LogicType extends Logic> extends TypedOp<LogicType> {
   /// Output selected by the control input.
   @override
   LogicType get out;
 
-  /// Creates a multiplexer with an output represented by [LogicType].
-  ///
-  /// A scalar output is selected with `Mux<Logic>`. Concrete
-  /// [LogicStructure] outputs are inferred from ordinary structure operands.
-  /// Constants and nets cannot be used as [LogicType] because they cannot
-  /// represent a driveable mux output; request `Mux<Logic>` for them.
-  factory Mux(Logic control, LogicType d1, LogicType d0,
-      {String name = 'mux'}) {
-    if (LogicType == Logic) {
-      return _LogicMux(control, d1, d0, name: name) as Mux<LogicType>;
-    }
-    if (d1 is! LogicStructure || d0 is! LogicStructure) {
-      throw LogicConstructionException(
-          'Mux<$LogicType> requires LogicType to be Logic or a '
-          'concrete LogicStructure.');
-    }
-    return _StructureMux<LogicType>(control, d1, d0, name: name);
-  }
-
-  Mux._({
-    super.name,
+  /// Creates a typed multiplexer implementation.
+  TypedMux({
+    super.name = 'typed_mux',
     super.reserveName,
     super.definitionName,
     super.reserveDefinitionName,
   });
 }
 
-/// Scalar implementation of [Mux].
+/// A mux (multiplexer) module.
 ///
 /// If [_control] has value `1`, then [out] gets [_d1].
 /// If [_control] has value `0`, then [out] gets [_d0].
-class _LogicMux extends Mux<Logic> with InlineSystemVerilog {
+class Mux extends TypedMux<Logic> with InlineSystemVerilog {
   /// Name for the control signal of this mux.
   late final String _controlName;
 
@@ -881,13 +895,13 @@ class _LogicMux extends Mux<Logic> with InlineSystemVerilog {
   /// Name for the output port of this mux.
   late final String _outName;
 
-  /// The control signal for this mux.
+  /// The control signal for this [Mux].
   late final Logic _control = input(_controlName);
 
-  /// Input propagated when [out] is `0`.
+  /// [Mux] input propagated when [out] is `0`.
   late final Logic _d0 = input(_d0Name);
 
-  /// Input propagated when [out] is `1`.
+  /// [Mux] input propagated when [out] is `1`.
   late final Logic _d1 = input(_d1Name);
 
   /// Output port of the [Mux].
@@ -902,8 +916,7 @@ class _LogicMux extends Mux<Logic> with InlineSystemVerilog {
 
   /// Constructs a multiplexer which passes [d0] or [d1] to [out] depending
   /// on if [control] is 0 or 1, respectively.
-  _LogicMux(Logic control, Logic d1, Logic d0, {super.name = 'mux'})
-      : super._() {
+  Mux(Logic control, Logic d1, Logic d0, {super.name = 'mux'}) {
     if (control.width != 1) {
       throw PortWidthMismatchException(control, 1);
     }
@@ -919,8 +932,10 @@ class _LogicMux extends Mux<Logic> with InlineSystemVerilog {
     addInput(_controlName, control);
     addInput(_d0Name, d0, width: d0.width);
     addInput(_d1Name, d1, width: d1.width);
-    addOutput(_outName, width: d0.width)
-        .makeUnassignable(reason: 'Output of a gate $this cannot be assigned.');
+    addOutput(
+      _outName,
+      width: d0.width,
+    ).makeUnassignable(reason: 'Output of a gate $this cannot be assigned.');
 
     _setup();
   }
@@ -965,12 +980,13 @@ class _LogicMux extends Mux<Logic> with InlineSystemVerilog {
 String _structureMuxDefinitionName(LogicStructure structure) =>
     'StructureMux_${logicStructureShapeSignature(structure)}';
 
-/// Structure-preserving implementation of [Mux].
+/// A multiplexer that preserves a concrete [LogicStructure] type.
 ///
 /// Both operands must have identical recursive structure and legal typed-port
 /// clones. Each corresponding leaf is selected independently, preserving
 /// nested [LogicArray] and [LogicArrayOf] boundaries at the output.
-class _StructureMux<LogicType extends Logic> extends Mux<LogicType> {
+class StructureMux<LogicType extends LogicStructure>
+    extends TypedMux<LogicType> {
   late final Logic _control;
   late final LogicType _d0;
   late final LogicType _d1;
@@ -979,40 +995,48 @@ class _StructureMux<LogicType extends Logic> extends Mux<LogicType> {
   late final LogicType out;
 
   /// Creates a structure-preserving multiplexer.
-  _StructureMux(Logic control, LogicType d1, LogicType d0,
-      {super.name = 'structure_mux'})
-      : super._(
-            definitionName: _structureMuxDefinitionName(d0 as LogicStructure)) {
+  StructureMux(
+    Logic control,
+    LogicType d1,
+    LogicType d0, {
+    super.name = 'structure_mux',
+  }) : super(definitionName: _structureMuxDefinitionName(d0)) {
     if (control.width != 1) {
       throw PortWidthMismatchException(control, 1);
     }
-    final structuredD0 = d0 as LogicStructure;
-    final structuredD1 = d1 as LogicStructure;
-    validateMatchingLogicStructure(structuredD1, structuredD0,
-        operation: 'Mux');
+    validateMatchingLogicStructure(d1, d0, operation: 'StructureMux');
 
-    LogicType cloneOutput({String name = 'out'}) {
-      final cloned = structuredD0.clone(name: name);
-      if (cloned is! LogicType) {
-        throw LogicConstructionException(
-            'Mux output clone did not preserve its concrete type.');
-      }
-      return cloned as LogicType;
-    }
+    LogicType cloneOutput({String name = 'out'}) => typedClone(d0, name: name);
 
     _control = addInput('control', control);
     _d0 = addTypedInput('d0', d0);
     _d1 = addTypedInput('d1', d1);
     out = addTypedOutput('out', cloneOutput);
-    final structuredOut = out as LogicStructure;
-    final structuredInput0 = _d0 as LogicStructure;
-    final structuredInput1 = _d1 as LogicStructure;
-    for (var index = 0; index < structuredOut.leafElements.length; index++) {
-      structuredOut.leafElements[index] <=
-          mux(_control, structuredInput1.leafElements[index],
-              structuredInput0.leafElements[index]);
+
+    for (var index = 0; index < out.leafElements.length; index++) {
+      out.leafElements[index] <=
+          mux(_control, _d1.leafElements[index], _d0.leafElements[index]);
     }
   }
+}
+
+/// Selects between matching structures while preserving their concrete type.
+///
+/// If [control] is a valid [Const], returns the selected operand directly.
+/// Otherwise, returns [StructureMux.out].
+LogicType typedMux<LogicType extends LogicStructure>(
+  Logic control,
+  LogicType d1,
+  LogicType d0,
+) {
+  if (control.width != 1) {
+    throw PortWidthMismatchException(control, 1);
+  }
+  validateMatchingLogicStructure(d1, d0, operation: 'typedMux');
+  if (control is Const && control.value.isValid) {
+    return control.value == LogicValue.one ? d1 : d0;
+  }
+  return StructureMux<LogicType>(control, d1, d0).out;
 }
 
 /// A two-input bit index gate [Module].
@@ -1043,8 +1067,9 @@ class IndexGate extends Module with InlineSystemVerilog {
   IndexGate(Logic original, Logic index) : super() {
     _originalName = 'original_${original.name}';
     _indexName = Naming.unpreferredName('index_${index.name}');
-    _selectionName =
-        Naming.unpreferredName('${original.name}_indexby_${index.name}');
+    _selectionName = Naming.unpreferredName(
+      '${original.name}_indexby_${index.name}',
+    );
 
     addInput(_originalName, original, width: original.width);
     addInput(_indexName, index, width: index.width);
@@ -1141,19 +1166,25 @@ class ReplicationOp extends Module with InlineSystemVerilog {
     if (_isNet) {
       original = addInOut(_inputName, original, width: original.width);
 
-      replicated =
-          LogicNet(name: _outputName, width: newWidth, naming: Naming.unnamed);
+      replicated = LogicNet(
+        name: _outputName,
+        width: newWidth,
+        naming: Naming.unnamed,
+      );
       final internalOut = addInOut(_outputName, replicated, width: newWidth);
 
       for (var i = 0; i < _multiplier; i++) {
-        internalOut.quietlyMergeSubsetTo(original as LogicNet,
-            start: i * original.width);
+        internalOut.quietlyMergeSubsetTo(
+          original as LogicNet,
+          start: i * original.width,
+        );
       }
     } else {
       addInput(_inputName, original, width: original.width);
-      replicated = addOutput(_outputName, width: original.width * _multiplier)
-        ..makeUnassignable(
-            reason: 'Output of a gate $this cannot be assigned.');
+      replicated = addOutput(
+        _outputName,
+        width: original.width * _multiplier,
+      )..makeUnassignable(reason: 'Output of a gate $this cannot be assigned.');
       _setup();
     }
   }
