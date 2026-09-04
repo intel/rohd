@@ -19,7 +19,7 @@ import 'package:vm_service/vm_service.dart' as vm;
 /// VM-backed [SignalValueSource] that refreshes on debugger pause events.
 class VmServiceSignalValueSource implements SignalValueSource {
   static const _moduleTreeHierarchyExpression =
-      'ModuleTree.instance.hierarchyJSON';
+      'ModuleTree.instance.hierarchyJson';
 
   static const _currentTimeExpressions = <String>[
     'WaveformService.instance.currentTime',
@@ -193,10 +193,10 @@ class VmServiceSignalValueSource implements SignalValueSource {
   }
 
   static String _waveformSnapshotExpression(int time) =>
-      'WaveformService.instance.getSnapshotCompactJSON($time)';
+      'WaveformService.instance.getSnapshotCompactJson($time)';
 
   static const _moduleTreeSignalValuesExpression =
-      'ModuleTree.instance.signalValuesJSON';
+      'ModuleTree.instance.signalValuesJson';
 
   Future<int?> _readCurrentTimeFromExtension() async {
     final response = await _callExtension(_currentTimeExtension);

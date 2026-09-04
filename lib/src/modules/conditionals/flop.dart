@@ -149,8 +149,9 @@ class FlipFlop extends Module with SystemVerilog {
   void _setup() {
     var contents = [q < _d];
 
-    if (_en != null) {
-      contents = [If(_en!, then: contents)];
+    final en = _en;
+    if (en != null) {
+      contents = [If(en, then: contents)];
     }
 
     Sequential(
