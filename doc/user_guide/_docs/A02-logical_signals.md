@@ -2,7 +2,7 @@
 title: "Logical Signals"
 permalink: /docs/logical-signals/
 excerpt: "Logic signals"
-last_modified_at: 2025-7-24 
+last_modified_at: 2026-08-10
 toc: true
 ---
 
@@ -18,7 +18,7 @@ var x = Logic();
 var bus = Logic(name: 'b', width: 8)
 ```
 
-There are other types like [`LogicArray`](https://intel.github.io/rohd/rohd/LogicArray-class.html)s and [`LogicStructure`](https://intel.github.io/rohd/rohd/LogicStructure-class.html)s which extend from `Logic`, as well.
+There are other types which extend `Logic`, including [`LogicArray`](https://intel.github.io/rohd/rohd/LogicArray-class.html), [`LogicStructure`](https://intel.github.io/rohd/rohd/LogicStructure-class.html), and [`LogicEnum`](https://intel.github.io/rohd-website/docs/logic-enums/) for representing Dart enum values as typed hardware signals.
 
 #### The value of a signal
 

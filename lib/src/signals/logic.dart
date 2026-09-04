@@ -389,7 +389,8 @@ class Logic {
 
   /// Handles the actual connection of this [Logic] to be driven by [other].
   void _connect(Logic other) {
-    _unassignable = true;
+    makeUnassignable(reason: '$this is connected to $other.');
+
     if (other is LogicNet) {
       put(other.value);
       other.glitch.listen((args) {
@@ -708,9 +709,15 @@ class Logic {
   /// [Conditional].
   Conditional operator <(dynamic other) {
     if (_unassignable) {
-      throw Exception('This signal "$this" has been marked as unassignable.  '
-          'It may be a constant expression or otherwise'
-          ' should not be assigned.');
+      throw UnassignableException(this, reason: _unassignableReason);
+    }
+
+    if (other is Enum) {
+      throw ArgumentError.value(
+        other,
+        'other',
+        'Enum values require a LogicEnum receiver with an explicit mapping.',
+      );
     }
 
     if (other is Logic) {

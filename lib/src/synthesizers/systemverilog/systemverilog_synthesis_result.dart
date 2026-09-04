@@ -11,12 +11,28 @@ import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/synthesizers/systemverilog/systemverilog_synth_module_definition.dart';
 import 'package:rohd/src/synthesizers/systemverilog/systemverilog_synth_sub_module_instantiation.dart';
+import 'package:rohd/src/synthesizers/utilities/synth_enum_definition.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
 
 /// Extra utilities on [SynthLogic] to help with SystemVerilog synthesis.
 extension on SynthLogic {
   /// Gets the SystemVerilog type for this signal.
-  String definitionType() => isNet ? 'wire' : 'logic';
+  String definitionType({required bool useEnumType}) => isEnum && useEnumType
+      ? enumDefinition!.definitionName
+      : isNet
+          ? 'wire'
+          : 'logic';
+}
+
+extension on SynthEnumDefinition {
+  String toSystemVerilogTypedef() {
+    final enumName = definitionName;
+    final enumType = 'logic [${characteristicEnum.width - 1}:0]';
+    final enumValues = enumToNameMapping.entries
+        .map((e) => '${e.value} = ${characteristicEnum.mapping[e.key]}')
+        .join(', ');
+    return 'typedef enum $enumType { $enumValues } $enumName;';
+  }
 }
 
 /// A [SynthesisResult] representing a [Module] that provides a custom
@@ -82,7 +98,10 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
     super.module,
     super.getInstanceTypeOfModule, {
     this.configuration = const SystemVerilogSynthesizerConfiguration(),
-  }) : _synthModuleDefinition = SystemVerilogSynthModuleDefinition(module) {
+  }) : _synthModuleDefinition = SystemVerilogSynthModuleDefinition(
+          module,
+          generateEnums: configuration.generateEnums,
+        ) {
     _portsString = _verilogPorts();
     _moduleContentsString = _verilogModuleContents(getInstanceTypeOfModule);
     _parameterString = _verilogParameters(module);
@@ -142,7 +161,7 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
         direction,
         if (portType.objectType == SystemVerilogPortType.explicit) objectType,
         if (portType.dataType == SystemVerilogPortType.explicit) 'logic',
-        sig.definitionName(),
+        sig.definitionName(useEnumType: false),
       ].join(' ');
 
   /// Representation of all internal net declarations in generated SV.
@@ -151,7 +170,10 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
     for (final sig in _synthModuleDefinition.internalSignals
         .where((e) => e.needsDeclaration)
         .sorted((a, b) => a.name.compareTo(b.name))) {
-      declarations.add('${sig.definitionType()} ${sig.definitionName()};');
+      declarations.add(
+        '${sig.definitionType(useEnumType: configuration.generateEnums)} '
+        '${sig.definitionName(useEnumType: configuration.generateEnums)};',
+      );
     }
     return declarations.join('\n');
   }
@@ -172,24 +194,52 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
 
       var dstSliceString = '';
       var srcSliceString = '';
+      final assignsWholeDestination = assignment is! PartialSynthAssignment ||
+          (assignment.dstLowerIndex == 0 &&
+              assignment.dstUpperIndex == assignment.dst.width - 1);
+      final normalizesWholeEnumDestination =
+          assignment.dst.isEnum && assignsWholeDestination;
       if (assignment is RangeSynthAssignment) {
-        dstSliceString = rangeString(
-          assignment.dstUpperIndex,
-          assignment.dstLowerIndex,
-        );
+        if (!normalizesWholeEnumDestination) {
+          dstSliceString = rangeString(
+            assignment.dstUpperIndex,
+            assignment.dstLowerIndex,
+          );
+        }
         srcSliceString = rangeString(
           assignment.srcUpperIndex,
           assignment.srcLowerIndex,
         );
-      } else if (assignment is PartialSynthAssignment && assignment.width > 1) {
+      } else if (assignment is PartialSynthAssignment &&
+          assignment.width > 1 &&
+          !normalizesWholeEnumDestination) {
         dstSliceString = rangeString(
           assignment.dstUpperIndex,
           assignment.dstLowerIndex,
         );
       }
 
+      var sourceExpression = '${assignment.src.name}$srcSliceString';
+
+      final sourceIsPackedEnumInput = assignment.src.isEnum &&
+          _synthModuleDefinition.inputs.contains(assignment.src.resolved);
+
+      // Handle enum type casting for assignments where necessary.
+      if (configuration.generateEnums &&
+          normalizesWholeEnumDestination &&
+          (sourceIsPackedEnumInput ||
+              !assignment.src.isEnum ||
+              assignment is RangeSynthAssignment ||
+              !identical(
+                assignment.src.enumDefinition,
+                assignment.dst.enumDefinition,
+              ))) {
+        final enumType = assignment.dst.enumDefinition!.definitionName;
+        sourceExpression = "$enumType'($sourceExpression)";
+      }
+
       assignmentLines.add('assign ${assignment.dst.name}$dstSliceString'
-          ' = ${assignment.src.name}$srcSliceString;');
+          ' = $sourceExpression;');
     }
     return assignmentLines.join('\n');
   }
@@ -205,8 +255,10 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
 
       subModuleInstantiation as SystemVerilogSynthSubModuleInstantiation;
 
-      final instantiationVerilog =
-          subModuleInstantiation.instantiationVerilog(instanceType);
+      final instantiationVerilog = subModuleInstantiation.instantiationVerilog(
+        instanceType,
+        generateEnums: configuration.generateEnums,
+      );
       if (instantiationVerilog != null) {
         subModuleLines.add(instantiationVerilog);
       }
@@ -214,11 +266,20 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
     return subModuleLines.join('\n');
   }
 
+  /// Internal `typedef` definitions for this module.
+  String _verilogTypedefs() =>
+      configuration.generateEnums ? _enumTypeDefs() : '';
+
+  String _enumTypeDefs() => _synthModuleDefinition.enumDefinitions
+      .map((e) => e.toSystemVerilogTypedef())
+      .join('\n');
+
   /// The contents of this module converted to SystemVerilog without module
   /// declaration, ports, etc.
   String _verilogModuleContents(
           String Function(Module module) getInstanceTypeOfModule) =>
       [
+        _verilogTypedefs(),
         _verilogInternalSignals(),
         _verilogAssignments(), // order matters!
         _verilogSubModuleInstantiations(getInstanceTypeOfModule),

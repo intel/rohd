@@ -35,15 +35,27 @@ class CaseItem {
 /// The result is of type [Logic] and it is determined by conditionaly matching
 /// the expression with the values of each item in conditions. If width of the
 /// input is not provided, then the width of  the result is inferred from the
-/// width of the entries.
+/// width of the entries. Bare [Enum] values are not supported as results
+/// because an untyped result has no hardware encoding for them; use explicitly
+/// mapped [LogicEnum] signals instead.
 Logic cases(Logic expression, Map<dynamic, dynamic> conditions,
     {int? width,
     ConditionalType conditionalType = ConditionalType.none,
     dynamic defaultValue}) {
-  for (final conditionValue in [
+  final resultValues = [
     ...conditions.values,
     if (defaultValue != null) defaultValue
-  ]) {
+  ];
+  if (resultValues.any((value) => value is Enum)) {
+    throw ArgumentError.value(
+      resultValues,
+      'conditions',
+      'Bare enum result values have no hardware encoding. Convert each result '
+          'to a LogicEnum signal with an explicit mapping.',
+    );
+  }
+
+  for (final conditionValue in resultValues) {
     int? inferredWidth;
 
     if (conditionValue is Logic) {
@@ -62,6 +74,24 @@ Logic cases(Logic expression, Map<dynamic, dynamic> conditions,
 
   if (width == null) {
     throw SignalWidthMismatchException.forNull(conditions);
+  }
+
+  Logic conditionLogic(dynamic condition) {
+    if (expression is LogicEnum && condition is Enum) {
+      if (!expression.mapping.containsKey(condition)) {
+        throw ArgumentError.value(
+          condition,
+          'conditions',
+          'Not present in the mapping for ${expression.runtimeType}.',
+        );
+      }
+
+      return expression.clone()..gets(Const(expression.mapping[condition]));
+    } else if (condition is Logic) {
+      return condition;
+    } else {
+      return Const(condition, width: expression.width);
+    }
   }
 
   for (final condition in conditions.entries) {
@@ -87,11 +117,7 @@ Logic cases(Logic expression, Map<dynamic, dynamic> conditions,
         expression,
         [
           for (final condition in conditions.entries)
-            CaseItem(
-                condition.key is Logic
-                    ? condition.key as Logic
-                    : Const(condition.key, width: expression.width),
-                [result < condition.value])
+            CaseItem(conditionLogic(condition.key), [result < condition.value])
         ],
         conditionalType: conditionalType,
         defaultItem: defaultValue != null ? [result < defaultValue] : null)
@@ -125,6 +151,15 @@ class Case extends Conditional {
   /// See [ConditionalType] for more details.
   final ConditionalType conditionalType;
 
+  @override
+  Map<Logic, Logic> get portTypePairs => {
+        ...super.portTypePairs,
+        ..._itemTypePortPairs,
+      };
+
+  /// Case-item values whose generated ports must match [expression]'s type.
+  final Map<Logic, Logic> _itemTypePortPairs = {};
+
   /// Whenever an item in [items] matches [expression], it will be executed.
   ///
   /// If none of [items] match, then [defaultItem] is executed.
@@ -136,6 +171,8 @@ class Case extends Conditional {
       if (item.value.width != expression.width) {
         throw PortWidthMismatchException.equalWidth(expression, item.value);
       }
+
+      _itemTypePortPairs[item.value] = expression;
     }
   }
 

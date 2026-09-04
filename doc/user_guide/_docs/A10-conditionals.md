@@ -2,7 +2,7 @@
 title: "Conditionals"
 permalink: /docs/conditionals/
 excerpt: "Conditionals"
-last_modified_at: 2022-12-06
+last_modified_at: 2026-08-10
 toc: true
 ---
 
@@ -91,6 +91,8 @@ Combinational([
   )
 ]);
 ```
+
+The `cases` helper accepts enum members as keys when its selector is a compatible [`LogicEnum`](https://intel.github.io/rohd-website/docs/logic-enums/). It returns an ordinary `Logic`, so enum results must be supplied as explicitly mapped signals rather than bare Dart enum members.
 
 Note that ROHD supports the 'z' syntax, not the '?' syntax (these are equivalent in SystemVerilog).
 
