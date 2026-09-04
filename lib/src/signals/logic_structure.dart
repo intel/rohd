@@ -39,10 +39,15 @@ String logicStructureShapeSignature(LogicStructure structure) =>
     _logicShapeSignature(structure);
 
 void _validateMatchingStructure(
-    Logic first, Logic second, String operation, String path) {
+  Logic first,
+  Logic second,
+  String operation,
+  String path,
+) {
   if (first.width != second.width) {
     throw LogicConstructionException(
-        '$operation operands differ in width at $path.');
+      '$operation operands differ in width at $path.',
+    );
   }
 
   if (first is LogicStructure || second is LogicStructure) {
@@ -51,7 +56,8 @@ void _validateMatchingStructure(
         first.runtimeType != second.runtimeType ||
         first.elements.length != second.elements.length) {
       throw LogicConstructionException(
-          '$operation operands differ in structure at $path.');
+        '$operation operands differ in structure at $path.',
+      );
     }
 
     if (first is BaseLogicArray && second is BaseLogicArray) {
@@ -60,13 +66,18 @@ void _validateMatchingStructure(
           first.numUnpackedDimensions != second.numUnpackedDimensions ||
           first.isNet != second.isNet) {
         throw LogicConstructionException(
-            '$operation array operands differ in shape at $path.');
+          '$operation array operands differ in shape at $path.',
+        );
       }
     }
 
     for (var index = 0; index < first.elements.length; index++) {
-      _validateMatchingStructure(first.elements[index], second.elements[index],
-          operation, '$path[$index]');
+      _validateMatchingStructure(
+        first.elements[index],
+        second.elements[index],
+        operation,
+        '$path[$index]',
+      );
     }
   }
 }
@@ -78,27 +89,35 @@ void _validateMatchingStructure(
 /// constructed instances of one structure type can use different root names.
 ///
 /// Throws a [LogicConstructionException] when the structures do not match.
-void validateMatchingLogicStructure(LogicStructure first, LogicStructure second,
-        {String operation = 'Typed operation'}) =>
+void validateMatchingLogicStructure(
+  LogicStructure first,
+  LogicStructure second, {
+  String operation = 'Typed operation',
+}) =>
     _validateMatchingStructure(first, second, operation, 'root');
 
 /// Clones [source] while preserving its concrete [LogicStructure] type.
 ///
 /// Throws a [LogicConstructionException] when [LogicStructure.clone] is not
 /// implemented covariantly by the concrete type.
-LogicType typedClone<LogicType extends LogicStructure>(LogicType source,
-    {String? name}) {
+LogicType typedClone<LogicType extends LogicStructure>(
+  LogicType source, {
+  String? name,
+}) {
   final cloned = source.clone(name: name);
   if (cloned is! LogicType) {
     throw LogicConstructionException(
-        'Structure clone did not preserve its concrete type.');
+      'Structure clone did not preserve its concrete type.',
+    );
   }
   return cloned;
 }
 
 /// Creates a named, connected alias while preserving [source]'s concrete type.
 LogicType typedNamed<LogicType extends LogicStructure>(
-        LogicType source, String name) =>
+  LogicType source,
+  String name,
+) =>
     typedClone(source, name: name)..gets(source);
 
 /// Type-preserving conveniences for concrete [LogicStructure] values.
