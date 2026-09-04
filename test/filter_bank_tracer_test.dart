@@ -8,6 +8,9 @@
 // 2026 May 6
 // Author: Desmond A. Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
+@TestOn('vm')
+library;
+
 import 'dart:convert';
 import 'dart:io';
 
