@@ -24,5 +24,7 @@ export 'src/swizzle.dart';
 export 'src/synthesizers/synthesizers.dart';
 export 'src/synthesizers/systemverilog/system_verilog_service.dart';
 export 'src/utilities/naming.dart';
+export 'src/utilities/signal_source_tracer.dart';
+export 'src/utilities/source_tracer.dart';
 export 'src/values/values.dart';
 export 'src/wave_dumper.dart';

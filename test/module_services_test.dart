@@ -191,6 +191,17 @@ void main() {
       expect(sv.instanceTypeOutput('DoesNotExist'), isNull);
     });
 
+    test('contentsByDefinitionName returns definition contents', () async {
+      final mod = SimpleModule(Logic());
+      await mod.build();
+      final sv = SystemVerilogService(mod);
+
+      expect(
+        sv.contentsByDefinitionName[mod.definitionName],
+        equals(sv.fileContents.single.contents),
+      );
+    });
+
     test('toJson lists generated modules', () async {
       final mod = SimpleModule(Logic());
       await mod.build();

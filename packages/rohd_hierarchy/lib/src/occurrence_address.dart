@@ -89,8 +89,8 @@ class OccurrenceAddress {
   ///
   /// Supports both `/` hierarchy paths and dot-separated signal identifiers
   /// commonly produced by VCD/FST waveform files. If the first segment matches
-  /// [root]'s name, it is skipped — the root occurrence is always at the empty
-  /// address.
+  /// [root]'s instance name or definition name, it is skipped — the root
+  /// occurrence is always at the empty address.
   ///
   /// The last segment is first tried as a **signal** name within the
   /// current occurrence; if that fails it is tried as a **child**
@@ -117,9 +117,11 @@ class OccurrenceAddress {
         .where((s) => s.isNotEmpty)
         .toList();
 
-    // Skip leading segment that matches the root name.
-    final segments =
-        parts.isNotEmpty && parts.first == root.name ? parts.skip(1) : parts;
+    // The hierarchy root retains the waveform instance name while the
+    // schematic displays the module definition. Accept either as a prefix.
+    final isRootPrefix = parts.isNotEmpty &&
+        (parts.first == root.name || parts.first == root.definition);
+    final segments = isRootPrefix ? parts.skip(1) : parts;
 
     ({HierarchyOccurrence node, OccurrenceAddress addr})? step(
       ({HierarchyOccurrence node, OccurrenceAddress addr})? cur,
@@ -139,6 +141,8 @@ class OccurrenceAddress {
     }
 
     return segments.fold<({HierarchyOccurrence node, OccurrenceAddress addr})?>(
-        (node: root, addr: rootAddr), step)?.addr;
+      (node: root, addr: rootAddr),
+      step,
+    )?.addr;
   }
 }

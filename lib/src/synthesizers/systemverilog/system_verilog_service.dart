@@ -11,6 +11,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/synthesizers/systemverilog/systemverilog_synthesis_result.dart';
 import 'package:rohd/src/utilities/config.dart';
 import 'package:rohd/src/utilities/timestamper.dart';
 
@@ -98,6 +99,105 @@ class SystemVerilogService extends CodeGenService {
     }
   }
 
+  /// Backwards-compatible alias for [output].
+  String get synthOutput => output;
+
+  /// The file path used for single-file output.
+  String get outputPath =>
+      multiFile ? outputDirectory : '$outputDirectory/$outputBaseName.sv';
+
+  /// Number of newlines in [moduleSeparator].
+  static final int _separatorNewlines = '\n'.allMatches(moduleSeparator).length;
+
+  /// The number of newlines in the emitted [header].
+  int get headerLineCount => '\n'.allMatches(header).length;
+
+  /// The 0-based line offset of each module definition within [output].
+  late final Map<String, int> moduleLineOffsets = _computeModuleLineOffsets();
+
+  Map<String, int> _computeModuleLineOffsets() {
+    final offsets = <String, int>{};
+    final definitionNames = {
+      for (final result in synthesisResults)
+        result.instanceTypeName: result.module.definitionName,
+    };
+
+    var offset = headerLineCount;
+    for (var index = 0; index < fileContents.length; index++) {
+      if (index > 0) {
+        offset += _separatorNewlines;
+      }
+      final definitionName = definitionNames[fileContents[index].name];
+      if (definitionName != null) {
+        offsets[definitionName] = offset;
+      }
+      offset += '\n'.allMatches(fileContents[index].contents).length;
+    }
+    return Map.unmodifiable(offsets);
+  }
+
+  /// Returns per-module SystemVerilog line maps keyed by definition name.
+  ///
+  /// Positions include the file-local [header] offset when enabled.
+  Map<String, Map<String, List<String>>> get perModuleSvLineMaps => {
+        for (final result
+            in synthesisResults.whereType<SystemVerilogSynthesisResult>())
+          result.module.definitionName: {
+            for (final entry in result.svLineMap.entries)
+              entry.key: [
+                for (final position in entry.value)
+                  _offsetLineCol(position, headerLineCount),
+              ],
+          },
+      };
+
+  /// Returns line maps adjusted to positions within single-file [output].
+  Map<String, Map<String, List<String>>> get singleFileSvLineMaps => {
+        for (final result
+            in synthesisResults.whereType<SystemVerilogSynthesisResult>())
+          result.module.definitionName: {
+            for (final entry in result.svLineMap.entries)
+              entry.key: [
+                for (final position in entry.value)
+                  _offsetLineCol(
+                    position,
+                    moduleLineOffsets[result.module.definitionName] ?? 0,
+                  ),
+              ],
+          },
+      };
+
+  static String _offsetLineCol(String lineCol, int offset) {
+    if (offset == 0) {
+      return lineCol;
+    }
+    final colon = lineCol.indexOf(':');
+    final line = int.parse(lineCol.substring(0, colon)) + offset;
+    return '$line${lineCol.substring(colon)}';
+  }
+
+  /// Writes concatenated output to [path], or to [outputPath] when omitted.
+  void write([String? path]) {
+    final target = path ?? outputPath;
+    if (multiFile) {
+      writeFiles(target);
+    } else {
+      final file = File(target);
+      file.parent.createSync(recursive: true);
+      file.writeAsStringSync(output);
+    }
+  }
+
+  /// Writes each generated module to its own file.
+  void writeFiles([String? directory]) {
+    final targetDirectory = directory ?? outputDirectory;
+    Directory(targetDirectory).createSync(recursive: true);
+    for (final fileContent in fileContents) {
+      File('$targetDirectory/${fileContent.name}.sv')
+          .writeAsStringSync(header + fileContent.contents);
+    }
+  }
+
   /// All [SynthesisResult]s produced by synthesis.
   Set<SynthesisResult> get synthesisResults => synthBuilder.synthesisResults;
 
@@ -131,6 +231,22 @@ class SystemVerilogService extends CodeGenService {
   /// lifetime of this service.
   @override
   late final String output = header + allContents;
+
+  /// Returns generated SV contents keyed by original module definition name.
+  Map<String, String> get contentsByDefinitionName {
+    final result = <String, String>{};
+    for (final synthesisResult in synthesisResults) {
+      final definitionName = synthesisResult.module.definitionName;
+      final instanceTypeName = synthesisResult.instanceTypeName;
+      for (final fileContent in fileContents) {
+        if (fileContent.name == instanceTypeName) {
+          result[definitionName] = fileContent.contents;
+          break;
+        }
+      }
+    }
+    return result;
+  }
 
   /// Returns SV output for a generated module [instanceTypeName], or `null`
   /// when that instance type was not generated.
