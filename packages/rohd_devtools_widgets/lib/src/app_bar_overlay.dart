@@ -17,7 +17,27 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:flutter/material.dart';
+
+/// Provides an external show/hide trigger for descendant [AppBarOverlay]s.
+///
+/// Place above any [AppBarOverlay] in the widget tree. When [notifier] is
+/// `true`, the overlay stays visible even if the mouse is outside its own
+/// trigger zone. Useful for keeping the overlay open while the mouse is
+/// over an adjacent area such as a tab bar.
+class AppBarOverlayTrigger extends InheritedNotifier<ValueNotifier<bool>> {
+  /// Creates an [AppBarOverlayTrigger] with the given [notifier].
+  const AppBarOverlayTrigger({
+    required ValueNotifier<bool> notifier,
+    required super.child,
+    super.key,
+  }) : super(notifier: notifier);
+
+  /// Returns the trigger notifier from the nearest ancestor, or `null`.
+  static ValueNotifier<bool>? of(BuildContext context) => context
+      .dependOnInheritedWidgetOfExactType<AppBarOverlayTrigger>()
+      ?.notifier;
+}
 
 /// Wraps a [body] widget and an [appBar] widget, where the AppBar
 /// auto-hides by sliding up when [autoHide] is true.
@@ -76,6 +96,9 @@ class _AppBarOverlayState extends State<AppBarOverlay>
   late final AnimationController _controller;
   late final Animation<Offset> _slideAnimation;
 
+  ValueNotifier<bool>? _externalTrigger;
+  bool _mouseInOverlay = false;
+
   @override
   void initState() {
     super.initState();
@@ -101,6 +124,17 @@ class _AppBarOverlayState extends State<AppBarOverlay>
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final trigger = AppBarOverlayTrigger.of(context);
+    if (trigger != _externalTrigger) {
+      _externalTrigger?.removeListener(_onExternalTrigger);
+      _externalTrigger = trigger;
+      _externalTrigger?.addListener(_onExternalTrigger);
+    }
+  }
+
+  @override
   void didUpdateWidget(covariant AppBarOverlay oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (!widget.autoHide && oldWidget.autoHide) {
@@ -114,8 +148,17 @@ class _AppBarOverlayState extends State<AppBarOverlay>
 
   @override
   void dispose() {
+    _externalTrigger?.removeListener(_onExternalTrigger);
     _controller.dispose();
     super.dispose();
+  }
+
+  void _onExternalTrigger() {
+    if (_externalTrigger?.value ?? false) {
+      _show();
+    } else if (!_mouseInOverlay) {
+      _hide();
+    }
   }
 
   void _show() {
@@ -124,6 +167,9 @@ class _AppBarOverlayState extends State<AppBarOverlay>
 
   void _hide() {
     if (!widget.autoHide) {
+      return;
+    }
+    if (_externalTrigger?.value ?? false) {
       return;
     }
     unawaited(_controller.reverse());
@@ -173,8 +219,14 @@ class _AppBarOverlayState extends State<AppBarOverlay>
           child: SlideTransition(
             position: _slideAnimation,
             child: MouseRegion(
-              onEnter: (_) => _show(),
-              onExit: (_) => _hide(),
+              onEnter: (_) {
+                _mouseInOverlay = true;
+                _show();
+              },
+              onExit: (_) {
+                _mouseInOverlay = false;
+                _hide();
+              },
               child: Opacity(
                 opacity: widget.panelOpacity,
                 child: widget.appBar,

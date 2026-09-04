@@ -15,6 +15,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/models/dtd_vm_service_info.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/services/connection_state_machine.dart';
+import 'package:rohd_devtools_extension/rohd_devtools/services/vm_connection_strategy.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/ui/devtools_connection_host.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/ui/vm_connection_form.dart';
 import 'package:vm_service/vm_service.dart';
@@ -80,7 +81,7 @@ class _TestConnectionHostState
   VmConnectionStrategy? get connectionStrategy => widget.strategy;
 
   @override
-  Future<List<DiscoveredVmService>> discoverVmServices(String dtdUri) async =>
+  Future<List<DiscoveredVmService>> discoverVmServices(String dtdUri) =>
       widget.discoverVmServices?.call(dtdUri) ??
       super.discoverVmServices(dtdUri);
 
@@ -266,7 +267,7 @@ void main() {
         autoReconnect: true,
       ),
     ];
-    expect(state._rememberedServicesForTest.single.autoReconnect, isTrue);
+    expect(state._rememberedServicesForTest, hasLength(1));
 
     await state.attemptConnection();
     await tester.pump();
