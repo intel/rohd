@@ -14,9 +14,13 @@ import 'dart:io';
 
 import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/synthesizers/systemc/systemc_synthesis_result.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
 import 'package:rohd/src/utilities/web.dart';
 import 'package:test/test.dart';
+
+part 'systemverilog_simcompare.dart';
+part 'systemc_simcompare.dart';
 
 /// Represents a single test case to check in a single clock cycle.
 ///
@@ -687,4 +691,84 @@ abstract class SimCompare {
     }
     return true;
   }
+
+  static void cleanupSystemCCache({bool keepPch = true}) =>
+      _SystemCSimCompare.cleanupSystemCCache(keepPch: keepPch);
+
+  static SystemCVectorExecutable? buildSystemCVectorExecutable(
+    Module module, {
+    String? moduleName,
+    String? clockName,
+    String? resetName,
+    String? systemcHome,
+    String? systemcLib,
+  }) =>
+      _SystemCSimCompare.buildSystemCVectorExecutable(
+        module,
+        moduleName: moduleName,
+        clockName: clockName,
+        resetName: resetName,
+        systemcHome: systemcHome,
+        systemcLib: systemcLib,
+      );
+
+  static bool runSystemCVectors(
+    SystemCVectorExecutable executable,
+    List<Vector> vectors,
+  ) =>
+      _SystemCSimCompare.runSystemCVectors(executable, vectors);
+
+  static void checkSystemCVectors(
+    SystemCVectorExecutable executable,
+    List<Vector> vectors,
+  ) =>
+      _SystemCSimCompare.checkSystemCVectors(executable, vectors);
+
+  static void checkSystemCVector(
+    Module module,
+    List<Vector> vectors, {
+    String? moduleName,
+    bool dontDeleteTmpFiles = false,
+    String? clockName,
+    String? resetName,
+    String? systemcHome,
+    String? systemcLib,
+    bool buildOnly = false,
+  }) =>
+      _SystemCSimCompare.checkSystemCVector(
+        module,
+        vectors,
+        moduleName: moduleName,
+        dontDeleteTmpFiles: dontDeleteTmpFiles,
+        clockName: clockName,
+        resetName: resetName,
+        systemcHome: systemcHome,
+        systemcLib: systemcLib,
+        buildOnly: buildOnly,
+      );
+
+  static Future<bool> systemcSimCompare(
+    Module module,
+    Logic clk, {
+    required Future<void> Function() stimulus,
+    List<String>? inputNames,
+    List<String>? outputNames,
+    String? clockName,
+    String? resetName,
+    bool dontDeleteTmpFiles = false,
+    String? systemcHome,
+    String? systemcLib,
+  }) =>
+      _SystemCSimCompare.systemcSimCompare(
+        module,
+        clk,
+        stimulus: stimulus,
+        inputNames: inputNames,
+        outputNames: outputNames,
+        clockName: clockName,
+        resetName: resetName,
+        dontDeleteTmpFiles: dontDeleteTmpFiles,
+        systemcHome: systemcHome,
+        systemcLib: systemcLib,
+      );
 }
