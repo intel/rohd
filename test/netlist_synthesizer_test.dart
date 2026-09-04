@@ -98,8 +98,8 @@ class FlopModule extends Module {
   }
 }
 
-/// A custom [ScalarFlipFlop] used to verify inheritance-aware leaf matching.
-class CustomFlipFlop extends ScalarFlipFlop {
+/// A custom [FlipFlop] used to verify inheritance-aware leaf matching.
+class CustomFlipFlop extends FlipFlop {
   CustomFlipFlop(super.clk, super.d);
 }
 

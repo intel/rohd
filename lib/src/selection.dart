@@ -37,17 +37,21 @@ extension TypedIndexedLogic<LogicType extends LogicStructure>
   /// Selects one structure using [index], preserving its concrete type.
   ///
   /// An out-of-range index produces zero unless [defaultValue] is supplied.
-  LogicType selectIndexTyped(Logic index,
-      {LogicType? defaultValue, String name = 'selectFrom'}) {
+  LogicType selectIndexTyped(
+    Logic index, {
+    LogicType? defaultValue,
+    String name = 'selectFrom',
+  }) {
     if (isEmpty) {
       throw LogicConstructionException(
-          'selectIndexTyped requires at least one value.');
+        'selectIndexTyped requires at least one value.',
+      );
     }
     return typedCases(
       index,
       {
         for (var valueIndex = 0; valueIndex < length; valueIndex++)
-          valueIndex: this[valueIndex]
+          valueIndex: this[valueIndex],
       },
       conditionalType: ConditionalType.unique,
       defaultValue: defaultValue ?? 0,
@@ -60,8 +64,9 @@ extension TypedIndexedLogic<LogicType extends LogicStructure>
 extension TypedSelectionLogic on Logic {
   /// Selects one value from [values], preserving its concrete structure type.
   LogicType selectFromTyped<LogicType extends LogicStructure>(
-          List<LogicType> values,
-          {LogicType? defaultValue,
-          String name = 'selectFrom'}) =>
+    List<LogicType> values, {
+    LogicType? defaultValue,
+    String name = 'selectFrom',
+  }) =>
       values.selectIndexTyped(this, defaultValue: defaultValue, name: name);
 }

@@ -87,7 +87,7 @@ class _TypedOperationsSynthesisHarness extends Module {
     first = addTypedInput('first', first);
     second = addTypedInput('second', second);
 
-    final selected = Mux(control, second, first).out;
+    final selected = StructureMux(control, second, first).out;
     final selectedByCase = typedCases(
       selector,
       {0: first, 1: second},
@@ -99,8 +99,8 @@ class _TypedOperationsSynthesisHarness extends Module {
       defaultValue: first,
       name: 'selected_by_index',
     );
-    final passed = Passthrough(selectedByIndex).out;
-    final registered = FlipFlop(
+    final passed = StructurePassthrough(selectedByIndex).out;
+    final registered = StructureFlipFlop(
       clk,
       passed,
       reset: reset,
@@ -145,12 +145,12 @@ void main() {
     final portPrototype = Logic.port('port_data', 4);
     final netDriver = Logic(width: 4);
     final net = LogicNet(width: 4)..gets(netDriver);
-    final constantMux = Mux<Logic>(control, constant, ordinary);
-    final portMux = Mux<Logic>(control, portPrototype, ordinary);
-    final netMux = Mux<Logic>(control, net, ordinary);
-    final constantFlop = FlipFlop<Logic>(clk, constant);
-    final portFlop = FlipFlop<Logic>(clk, portPrototype);
-    final netFlop = FlipFlop<Logic>(clk, net);
+    final constantMux = Mux(control, constant, ordinary);
+    final portMux = Mux(control, portPrototype, ordinary);
+    final netMux = Mux(control, net, ordinary);
+    final constantFlop = FlipFlop(clk, constant);
+    final portFlop = FlipFlop(clk, portPrototype);
+    final netFlop = FlipFlop(clk, net);
     await Future.wait([
       constantMux.build(),
       portMux.build(),
@@ -198,9 +198,9 @@ void main() {
     final typedArray1 =
         LogicArrayOf<_TypedLane>([2], _TypedLane.new, name: 'typed_array1');
 
-    final muxedArray = Mux(selector[0], array1, array0).out;
-    final floppedArray = FlipFlop(clk, array0).q;
-    final passedArray = Passthrough(array0).out;
+    final muxedArray = StructureMux(selector[0], array1, array0).out;
+    final floppedArray = StructureFlipFlop(clk, array0).q;
+    final passedArray = StructurePassthrough(array0).out;
     final casedArray = typedCases(selector, {0: array0, 1: array1});
     final selectedArray = [array0, array1].selectIndexTyped(selector);
     final selectedFromArray = selector.selectFromTyped([array0, array1]);
@@ -212,9 +212,10 @@ void main() {
       stages: [(stage) => stage.value],
     ).output;
 
-    final muxedTypedArray = Mux(selector[0], typedArray1, typedArray0).out;
-    final floppedTypedArray = FlipFlop(clk, typedArray0).q;
-    final passedTypedArray = Passthrough(typedArray0).out;
+    final muxedTypedArray =
+        StructureMux(selector[0], typedArray1, typedArray0).out;
+    final floppedTypedArray = StructureFlipFlop(clk, typedArray0).q;
+    final passedTypedArray = StructurePassthrough(typedArray0).out;
     final casedTypedArray =
         typedCases(selector, {0: typedArray0, 1: typedArray1});
     final selectedTypedArray =
@@ -257,7 +258,7 @@ void main() {
     final control = Logic();
     final d1 = _TypedPacket(name: 'd1');
     final d0 = _TypedPacket(name: 'd0');
-    final muxModule = Mux(control, d1, d0);
+    final muxModule = StructureMux(control, d1, d0);
     await muxModule.build();
 
     expect(muxModule, isA<TypedOp<_TypedPacket>>());
@@ -287,13 +288,13 @@ void main() {
   test('Mux preserves structure type with a constant control', () {
     final d1 = _TypedPacket(name: 'd1');
     final d0 = _TypedPacket(name: 'd0');
-    expect(Mux(Const(0), d1, d0).out, isA<_TypedPacket>());
-    expect(Mux(Const(1), d1, d0).out, isA<_TypedPacket>());
+    expect(typedMux(Const(0), d1, d0), isA<_TypedPacket>());
+    expect(typedMux(Const(1), d1, d0), isA<_TypedPacket>());
   });
 
   test('Mux rejects differently shaped typed arrays', () {
     expect(
-        () => Mux(Logic(), _TypedPacket(laneDimensions: const [2, 2]),
+        () => StructureMux(Logic(), _TypedPacket(laneDimensions: const [2, 2]),
             _TypedPacket(laneDimensions: const [4])),
         throwsA(isA<LogicConstructionException>()));
   });
@@ -303,9 +304,9 @@ void main() {
     final control = Logic();
     final constant = _ConstPacket(value: 0xa, name: 'constant');
     final variable = _ConstPacket(value: null, name: 'variable');
-    final muxModule = Mux(control, constant, variable);
-    final passthrough = Passthrough(constant);
-    final flipFlop = FlipFlop(clk, constant);
+    final muxModule = StructureMux(control, constant, variable);
+    final passthrough = StructurePassthrough(constant);
+    final flipFlop = StructureFlipFlop(clk, constant);
     await Future.wait([
       muxModule.build(),
       passthrough.build(),
@@ -341,10 +342,10 @@ void main() {
   test('typed operations reject clones, nets, and reset mismatches', () {
     expect(() => typedClone(_BadClonePacket()),
         throwsA(isA<LogicConstructionException>()));
-    expect(() => Passthrough<_NetPacket>(_NetPacket()),
+    expect(() => StructurePassthrough<_NetPacket>(_NetPacket()),
         throwsA(isA<PortTypeException>()));
     expect(
-        () => FlipFlop<_TypedPacket>(Logic(), _TypedPacket(),
+        () => StructureFlipFlop<_TypedPacket>(Logic(), _TypedPacket(),
             reset: Logic(),
             resetValue: _TypedPacket(laneDimensions: const [1, 2])),
         throwsA(isA<LogicConstructionException>()));
@@ -360,17 +361,17 @@ void main() {
 
   test('typed module definitions encode structure and constant reset identity',
       () {
-    final sameShapeFirst = Mux<_TypedPacket>(Logic(),
+    final sameShapeFirst = StructureMux<_TypedPacket>(Logic(),
         _TypedPacket(name: 'first_d1'), _TypedPacket(name: 'first_d0'));
-    final sameShapeSecond = Mux<_TypedPacket>(Logic(),
+    final sameShapeSecond = StructureMux<_TypedPacket>(Logic(),
         _TypedPacket(name: 'second_d1'), _TypedPacket(name: 'second_d0'));
-    final differentShape = Mux<_TypedPacket>(
+    final differentShape = StructureMux<_TypedPacket>(
         Logic(),
         _TypedPacket(laneDimensions: const [1, 2], name: 'different_d1'),
         _TypedPacket(laneDimensions: const [1, 2], name: 'different_d0'));
-    final resetZero = FlipFlop<_TypedPacket>(Logic(), _TypedPacket(),
+    final resetZero = StructureFlipFlop<_TypedPacket>(Logic(), _TypedPacket(),
         reset: Logic(), resetValue: 0);
-    final resetOne = FlipFlop<_TypedPacket>(Logic(), _TypedPacket(),
+    final resetOne = StructureFlipFlop<_TypedPacket>(Logic(), _TypedPacket(),
         reset: Logic(), resetValue: 1);
 
     expect(sameShapeFirst.definitionName, sameShapeSecond.definitionName);
@@ -389,7 +390,7 @@ void main() {
     final reset = Logic();
     final enable = Logic();
     final d = _TypedPacket(name: 'd');
-    final flipFlop = FlipFlop(
+    final flipFlop = StructureFlipFlop(
       clk,
       d,
       en: enable,
@@ -434,7 +435,7 @@ void main() {
     final reset = Logic();
     final d = _TypedPacket(name: 'reset_order_d');
     final resetValue = LogicValue.ofString('000111100110100101101');
-    final flipFlop = FlipFlop(
+    final flipFlop = StructureFlipFlop(
       clk,
       d,
       reset: reset,
@@ -472,7 +473,7 @@ void main() {
   test('Passthrough infers typed contracts', () async {
     final scalar = Passthrough(Logic(width: 4));
     final input = _TypedPacket(name: 'passthrough_input');
-    final structured = Passthrough(input);
+    final structured = StructurePassthrough(input);
     await Future.wait([scalar.build(), structured.build()]);
 
     expect(scalar, isA<TypedOp<Logic>>());

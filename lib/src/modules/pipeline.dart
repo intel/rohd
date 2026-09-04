@@ -49,7 +49,7 @@ class StructurePipelineStageInfo<LogicType extends LogicStructure> {
 ///
 /// Every transform receives a [StructurePipelineStageInfo] whose `value` is the
 /// typed value entering that stage. The returned matching structure is
-/// registered through [FlipFlop]. [values] contains the original
+/// registered through [StructureFlipFlop]. [values] contains the original
 /// input followed by every registered stage output, so `stageCount` matches
 /// [Pipeline]'s boundary-count convention and `latency` is one less.
 class StructurePipeline<LogicType extends LogicStructure> {
@@ -80,29 +80,38 @@ class StructurePipeline<LogicType extends LogicStructure> {
     String name = 'structure_pipeline',
   }) {
     if (stalls != null && stalls.length != stages.length) {
-      throw ArgumentError.value(stalls, 'stalls',
-          'Must contain one optional stall signal per transform stage.');
+      throw ArgumentError.value(
+        stalls,
+        'stalls',
+        'Must contain one optional stall signal per transform stage.',
+      );
     }
 
     final generatedValues = <LogicType>[input];
     for (var stage = 0; stage < stages.length; stage++) {
       final transformed = stages[stage](
-          StructurePipelineStageInfo<LogicType>._(stage, generatedValues));
-      validateMatchingLogicStructure(transformed, input,
-          operation: 'StructurePipeline stage $stage');
+        StructurePipelineStageInfo<LogicType>._(stage, generatedValues),
+      );
+      validateMatchingLogicStructure(
+        transformed,
+        input,
+        operation: 'StructurePipeline stage $stage',
+      );
       final stall = stalls?[stage];
       if (stall != null && stall.width != 1) {
         throw PortWidthMismatchException(stall, 1);
       }
-      generatedValues.add(FlipFlop<LogicType>(
-        clk,
-        transformed,
-        en: stall == null ? null : ~stall,
-        reset: reset,
-        resetValue: resetValue,
-        asyncReset: asyncReset,
-        name: '${name}_stage_$stage',
-      ).q);
+      generatedValues.add(
+        StructureFlipFlop<LogicType>(
+          clk,
+          transformed,
+          en: stall == null ? null : ~stall,
+          reset: reset,
+          resetValue: resetValue,
+          asyncReset: asyncReset,
+          name: '${name}_stage_$stage',
+        ).q,
+      );
     }
     values = List.unmodifiable(generatedValues);
   }
@@ -250,30 +259,34 @@ class Pipeline {
   /// Each stage can be stalled independently using [stalls], where every index
   /// of [stalls] corresponds to the index of the stage to be stalled.  When a
   /// stage's stall is asserted, the output of that stage will not change.
-  Pipeline(Logic clk,
-      {List<List<Conditional> Function(PipelineStageInfo p)> stages = const [],
-      List<Logic?>? stalls,
-      List<Logic> signals = const [],
-      Map<Logic, dynamic> resetValues = const {},
-      Logic? reset,
-      bool asyncReset = false})
-      : this.multi([clk],
-            stages: stages,
-            stalls: stalls,
-            signals: signals,
-            resetValues: resetValues,
-            reset: reset,
-            asyncReset: asyncReset);
+  Pipeline(
+    Logic clk, {
+    List<List<Conditional> Function(PipelineStageInfo p)> stages = const [],
+    List<Logic?>? stalls,
+    List<Logic> signals = const [],
+    Map<Logic, dynamic> resetValues = const {},
+    Logic? reset,
+    bool asyncReset = false,
+  }) : this.multi(
+          [clk],
+          stages: stages,
+          stalls: stalls,
+          signals: signals,
+          resetValues: resetValues,
+          reset: reset,
+          asyncReset: asyncReset,
+        );
 
   /// Constructs a [Pipeline] with multiple triggers on any of [_clks].
-  Pipeline.multi(this._clks,
-      {List<List<Conditional> Function(PipelineStageInfo p)> stages = const [],
-      List<Logic?>? stalls,
-      List<Logic> signals = const [],
-      Map<Logic, dynamic>? resetValues,
-      this.reset,
-      this.asyncReset = false})
-      : _resetValues = resetValues == null ? null : Map.from(resetValues) {
+  Pipeline.multi(
+    this._clks, {
+    List<List<Conditional> Function(PipelineStageInfo p)> stages = const [],
+    List<Logic?>? stalls,
+    List<Logic> signals = const [],
+    Map<Logic, dynamic>? resetValues,
+    this.reset,
+    this.asyncReset = false,
+  }) : _resetValues = resetValues == null ? null : Map.from(resetValues) {
     _stages = stages.map(_PipeStage.new).toList();
     _stages.add(_PipeStage((p) => [])); // output stage
 
@@ -323,8 +336,10 @@ class Pipeline {
   void _setStalls(List<Logic?>? stalls) {
     if (stalls != null) {
       if (stalls.length != stageCount - 1) {
-        throw Exception('Stall list length (${stalls.length}) must match '
-            'number of stages (${stageCount - 1}).');
+        throw Exception(
+          'Stall list length (${stalls.length}) must match '
+          'number of stages (${stageCount - 1}).',
+        );
       }
       for (var i = 0; i < stageCount - 1; i++) {
         final stall = stalls[i];
@@ -351,15 +366,17 @@ class Pipeline {
       ffAssigns.add(_i(newLogic, i) < _o(newLogic, i - 1) as ConditionalAssign);
     }
 
-    final ffAssignsWithStall =
-        List<ConditionalAssign>.generate(stageCount - 1, (index) {
-      final stall = _stages[index].stall;
-      final ffAssign = ffAssigns[index];
-      final driver = stall != null
-          ? mux(stall, ffAssign.receiver, ffAssign.driver)
-          : ffAssign.driver;
-      return ffAssign.receiver < driver as ConditionalAssign;
-    });
+    final ffAssignsWithStall = List<ConditionalAssign>.generate(
+      stageCount - 1,
+      (index) {
+        final stall = _stages[index].stall;
+        final ffAssign = ffAssigns[index];
+        final driver = stall != null
+            ? mux(stall, ffAssign.receiver, ffAssign.driver)
+            : ffAssign.driver;
+        return ffAssign.receiver < driver as ConditionalAssign;
+      },
+    );
 
     final stageResetVal = _resetValues?[newLogic];
     final resetValuesForNewLogic = <Logic, dynamic>{};
@@ -370,12 +387,13 @@ class Pipeline {
     }
 
     Sequential.multi(
-        _clks,
-        reset: reset,
-        resetValues: resetValuesForNewLogic,
-        asyncReset: asyncReset,
-        ffAssignsWithStall,
-        name: 'ff_${newLogic.name}');
+      _clks,
+      reset: reset,
+      resetValues: resetValuesForNewLogic,
+      asyncReset: asyncReset,
+      ffAssignsWithStall,
+      name: 'ff_${newLogic.name}',
+    );
   }
 
   /// The stage input for a signal associated with [logic] to [stageIndex].
@@ -415,7 +433,8 @@ class Pipeline {
     if (!_isRegistered(logic)) {
       if (_constructionComplete) {
         throw PortDoesNotExistException(
-            'Signal $logic was not piped through this Pipeline.');
+          'Signal $logic was not piped through this Pipeline.',
+        );
       } else {
         _add(logic);
       }
@@ -498,17 +517,20 @@ class ReadyValidPipeline extends Pipeline {
   }) : super.multi(
           stages: stages,
           signals: [validPipeIn, ...signals],
-          stalls: List.generate(stages.length,
-              (index) => Logic(name: 'stall_$index', naming: Naming.mergeable)),
+          stalls: List.generate(
+            stages.length,
+            (index) => Logic(name: 'stall_$index', naming: Naming.mergeable),
+          ),
         ) {
     final valid = validPipeIn;
 
     final stalls = _stages.map((stage) => stage.stall).toList()
       ..removeLast(); // garbage value at the end
 
-    final readys = List.generate(stages.length,
-        (index) => Logic(name: 'ready_$index', naming: Naming.mergeable))
-      ..add(readyPipeOut);
+    final readys = List.generate(
+      stages.length,
+      (index) => Logic(name: 'ready_$index', naming: Naming.mergeable),
+    )..add(readyPipeOut);
 
     for (var i = 0; i < stalls.length; i++) {
       readys[i] <= ~get(valid, i + 1) | readys[i + 1];
