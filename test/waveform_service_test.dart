@@ -95,6 +95,7 @@ void main() {
   tearDown(() async {
     await Simulator.reset();
     ModuleServices.instance.reset();
+    WaveformDataService.instance.clear();
   });
 
   test('file-backed debugging capture can retain history', () async {
@@ -271,6 +272,68 @@ void main() {
       skip: Process.runSync('which', ['fst2vcd']).exitCode != 0
           ? 'fst2vcd is not installed'
           : false);
+
+  test('streams VCD signal values to WaveformDataService', () async {
+    final a = Logic(name: 'a');
+    final mod = _SimpleWaveModule(a);
+    await mod.build();
+
+    Directory(_tempDumpDir).createSync(recursive: true);
+    final dumpPath = _temporaryVcdPath('dataService');
+    WaveformService.fromOutputPath(mod, outputPath: dumpPath, register: false);
+
+    a.inject(1);
+    Simulator.registerAction(10, () => a.put(0));
+    await Simulator.run();
+
+    final dataService = WaveformDataService.instance;
+    final signalId = dataService.signalAddressMap.keys.firstWhere(
+      (id) => id.endsWith('/a'),
+    );
+    final snapshot =
+        jsonDecode(dataService.getSnapshotJSON(10)) as Map<String, dynamic>;
+    final signals = snapshot['signals'] as Map<String, dynamic>;
+
+    expect(dataService.isInitialized, isTrue);
+    expect(dataService.isFstBacked, isFalse);
+    expect(dataService.currentTime, equals(10));
+    expect(signals[signalId], isNotNull);
+
+    File(dumpPath).deleteSync();
+  });
+
+  test('queries FST values through WaveformDataService', () async {
+    final a = Logic(name: 'a');
+    final mod = _SimpleWaveModule(a);
+    await mod.build();
+
+    Directory(_tempDumpDir).createSync(recursive: true);
+    final dumpPath = _temporaryFstPath('dataService');
+    WaveformService.fromOutputPath(
+      mod,
+      outputPath: dumpPath,
+      format: WaveOutputFormat.fst,
+      register: false,
+    );
+
+    a.inject(1);
+    Simulator.registerAction(10, () => a.put(0));
+    await Simulator.run();
+
+    final dataService = WaveformDataService.instance;
+    final signalId = dataService.signalAddressMap.keys.firstWhere(
+      (id) => id.endsWith('/a'),
+    );
+    final waveform = jsonDecode(
+      dataService.getWaveformsJSON(jsonEncode([signalId]), 0, 10),
+    ) as List<dynamic>;
+    final signalData = waveform.single as Map<String, dynamic>;
+
+    expect(dataService.isFstBacked, isTrue);
+    expect(signalData['signalId'], equals(signalId));
+    expect(signalData['data'], isNotEmpty);
+    File(dumpPath).deleteSync();
+  });
 
   test('VCD and FST contain matching value-change events', () async {
     final vcdPath = _temporaryVcdPath('parity');

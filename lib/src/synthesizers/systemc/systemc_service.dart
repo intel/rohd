@@ -155,6 +155,66 @@ class SystemCService extends CodeGenService {
   @override
   late final String output = scHeader + allContents;
 
+  /// The number of newlines in [scHeader].
+  int get headerLineCount => '\n'.allMatches(scHeader).length;
+
+  /// Number of newlines inserted between generated SystemC modules.
+  static const int _separatorNewlines = 1;
+
+  /// The 0-based line offset of each module definition within [output].
+  late final Map<String, int> moduleLineOffsets = _computeModuleLineOffsets();
+
+  Map<String, int> _computeModuleLineOffsets() {
+    final offsets = <String, int>{};
+    final definitionNames = {
+      for (final result in systemCResults)
+        result.instanceTypeName: result.module.definitionName,
+    };
+
+    var offset = headerLineCount;
+    for (var index = 0; index < fileContents.length; index++) {
+      if (index > 0) {
+        offset += _separatorNewlines;
+      }
+      final definitionName = definitionNames[fileContents[index].name];
+      if (definitionName != null) {
+        offsets[definitionName] = offset;
+      }
+      offset += '\n'.allMatches(fileContents[index].contents).length;
+    }
+    return Map.unmodifiable(offsets);
+  }
+
+  /// Returns SystemC line maps adjusted to positions in [output].
+  late final Map<String, Map<String, List<String>>> singleFileScLineMaps = {
+    for (final result in systemCResults)
+      result.module.definitionName: {
+        for (final entry in result.scLineMap.entries)
+          entry.key: [
+            for (final position in entry.value)
+              _offsetLineCol(
+                position,
+                moduleLineOffsets[result.module.definitionName] ?? 0,
+              ),
+          ],
+      },
+  };
+
+  /// Returns a single-file map using [filename] for every generated module.
+  Map<String, List<String>> singleFileScFileMap(String filename) => {
+        for (final result in systemCResults)
+          result.module.definitionName: [filename],
+      };
+
+  static String _offsetLineCol(String lineCol, int offset) {
+    if (offset == 0) {
+      return lineCol;
+    }
+    final colon = lineCol.indexOf(':');
+    final line = int.parse(lineCol.substring(0, colon)) + offset;
+    return '$line${lineCol.substring(colon)}';
+  }
+
   /// Writes each module's SystemC source to a separate file in [directory].
   ///
   /// Files are named `<instanceTypeName>.sc`.

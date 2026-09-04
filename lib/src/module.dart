@@ -254,15 +254,19 @@ abstract class Module {
   ///
   /// If [reserveDefinitionName] is set, then code generation will fail if
   /// it is unable to keep from uniquifying [definitionName] to avoid conflicts.
-  Module(
-      {this.name = 'unnamed_module',
-      this.reserveName = false,
-      String? definitionName,
-      this.reserveDefinitionName = false})
-      : _uniqueInstanceName =
+  Module({
+    this.name = 'unnamed_module',
+    this.reserveName = false,
+    String? definitionName,
+    this.reserveDefinitionName = false,
+  })  : _uniqueInstanceName =
             Naming.validatedName(name, reserveName: reserveName) ?? name,
-        _definitionName = Naming.validatedName(definitionName,
-            reserveName: reserveDefinitionName);
+        _definitionName = Naming.validatedName(
+          definitionName,
+          reserveName: reserveDefinitionName,
+        ) {
+    SourceTracer.recordModule(this);
+  }
 
   /// Returns an [Iterable] of [Module]s representing the hierarchical path to
   /// this [Module].
