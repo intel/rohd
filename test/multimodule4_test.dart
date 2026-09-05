@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2023 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // multimodule4_test.dart
@@ -9,7 +9,6 @@
 // Author: Max Korbel <max.korbel@intel.com>
 
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/modules/passthrough.dart';
 import 'package:test/test.dart';
 
 // mostly all inputs
@@ -47,17 +46,22 @@ void main() {
 
     // find a module with 'z' output 2 levels deep
     assert(
-        ftm.subModules
-            .where((pIn1) => pIn1.subModules
+      ftm.subModules
+          .where(
+            (pIn1) => pIn1.subModules
                 .where((pIn2) => pIn2.outputs.containsKey('z'))
-                .isNotEmpty)
-            .isNotEmpty,
-        'Should find a z two levels deep');
+                .isNotEmpty,
+          )
+          .isNotEmpty,
+      'Should find a z two levels deep',
+    );
 
     final synth = ftm.generateSynth();
 
     // "z = 1" means it correctly traversed down from inputs
-    assert(synth.contains('z = 1'),
-        'Should correctly traverse from inputs to z=1');
+    assert(
+      synth.contains('z = 1'),
+      'Should correctly traverse from inputs to z=1',
+    );
   });
 }

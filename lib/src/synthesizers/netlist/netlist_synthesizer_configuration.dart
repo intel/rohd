@@ -52,8 +52,8 @@ class NetlistSynthesizerConfiguration {
   /// Determines which modules should stop netlist hierarchy traversal and be
   /// emitted as cells in their parent.
   ///
-  /// Defaults to matching [FlipFlop] and its subclasses, which contain internal
-  /// sequential submodules but should be emitted as `$dff` netlist cells.
+  /// Defaults to matching [Mux], [FlipFlop], and [Passthrough] and their
+  /// subclasses, which should be emitted as aggregate primitive netlist cells.
   final SynthModuleLeafPredicate leafModulePredicate;
 
   /// The netlist-internal mapper used to convert selected leaf modules to
@@ -101,7 +101,7 @@ class NetlistSynthesizerConfiguration {
   /// Creates a configuration for netlist synthesis.
   const NetlistSynthesizerConfiguration({
     this.moduleStopPolicy,
-    this.leafModulePredicate = _isFlipFlop,
+    this.leafModulePredicate = _isNetlistPrimitive,
     this.netlistCellMapper,
     @visibleForTesting this.collapseTransparentClusters = false,
     @visibleForTesting this.enableDeadCellElimination = true,
@@ -111,4 +111,5 @@ class NetlistSynthesizerConfiguration {
   });
 }
 
-bool _isFlipFlop(Module module) => module is FlipFlop;
+bool _isNetlistPrimitive(Module module) =>
+    module is Mux || module is FlipFlop || module is Passthrough;

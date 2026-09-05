@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2024 Intel Corporation
+// Copyright (C) 2023-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // selection.dart
@@ -29,4 +29,44 @@ extension IndexedLogic on List<Logic> {
   ///
   Logic selectIndex(Logic index, {Logic? defaultValue}) =>
       index.selectFrom(this, defaultValue: defaultValue);
+}
+
+/// Allows lists of matching structures to retain their type when selected.
+extension TypedIndexedLogic<LogicType extends LogicStructure>
+    on List<LogicType> {
+  /// Selects one structure using [index], preserving its concrete type.
+  ///
+  /// An out-of-range index produces zero unless [defaultValue] is supplied.
+  LogicType selectIndexTyped(
+    Logic index, {
+    LogicType? defaultValue,
+    String name = 'selectFrom',
+  }) {
+    if (isEmpty) {
+      throw LogicConstructionException(
+        'selectIndexTyped requires at least one value.',
+      );
+    }
+    return typedCases(
+      index,
+      {
+        for (var valueIndex = 0; valueIndex < length; valueIndex++)
+          valueIndex: this[valueIndex],
+      },
+      conditionalType: ConditionalType.unique,
+      defaultValue: defaultValue ?? 0,
+      name: name,
+    );
+  }
+}
+
+/// Allows a hardware index to select from a typed structure list.
+extension TypedSelectionLogic on Logic {
+  /// Selects one value from [values], preserving its concrete structure type.
+  LogicType selectFromTyped<LogicType extends LogicStructure>(
+    List<LogicType> values, {
+    LogicType? defaultValue,
+    String name = 'selectFrom',
+  }) =>
+      values.selectIndexTyped(this, defaultValue: defaultValue, name: name);
 }

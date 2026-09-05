@@ -41,8 +41,30 @@ Logic flop(
       asyncReset: asyncReset,
     ).q;
 
+/// A flip-flop with an output represented by [LogicType].
+///
+/// Implementations decide how an input is normalized into the promised output
+/// type. [FlipFlop] produces an ordinary [Logic], while
+/// [StructureFlipFlop] preserves matching structure and array boundaries.
+abstract class TypedFlipFlop<LogicType extends Logic>
+    extends TypedOp<LogicType> {
+  /// Registered output.
+  LogicType get q;
+
+  @override
+  LogicType get out => q;
+
+  /// Creates a typed flip-flop implementation.
+  TypedFlipFlop({
+    super.name = 'typed_flip_flop',
+    super.reserveName,
+    super.definitionName,
+    super.reserveDefinitionName,
+  });
+}
+
 /// Represents a single flip-flop with no reset.
-class FlipFlop extends Module with SystemVerilog {
+class FlipFlop extends TypedFlipFlop<Logic> with SystemVerilog {
   /// Name for the enable input of this flop
   final String _enName = Naming.unpreferredName('en');
 
@@ -78,6 +100,7 @@ class FlipFlop extends Module with SystemVerilog {
   late final Logic _d = input(_dName);
 
   /// The output of the flop.
+  @override
   late final Logic q = output(_qName);
 
   /// The reset value for this flop, if it was a port.
@@ -149,8 +172,9 @@ class FlipFlop extends Module with SystemVerilog {
   void _setup() {
     var contents = [q < _d];
 
-    if (_en != null) {
-      contents = [If(_en!, then: contents)];
+    final en = _en;
+    if (en != null) {
+      contents = [If(en, then: contents)];
     }
 
     Sequential(
@@ -165,7 +189,10 @@ class FlipFlop extends Module with SystemVerilog {
 
   @override
   String instantiationVerilog(
-      String instanceType, String instanceName, Map<String, String> ports) {
+    String instanceType,
+    String instanceName,
+    Map<String, String> ports,
+  ) {
     var expectedInputs = 2;
     if (_en != null) {
       expectedInputs++;
@@ -177,8 +204,10 @@ class FlipFlop extends Module with SystemVerilog {
       expectedInputs++;
     }
 
-    assert(ports.length == expectedInputs + 1,
-        'FlipFlop has exactly $expectedInputs inputs and one output.');
+    assert(
+      ports.length == expectedInputs + 1,
+      'FlipFlop has exactly $expectedInputs inputs and one output.',
+    );
 
     final clk = ports[_clkName]!;
     final d = ports[_dName]!;
@@ -209,3 +238,148 @@ class FlipFlop extends Module with SystemVerilog {
     return svBuffer.toString();
   }
 }
+
+String _structureFlipFlopResetIdentity(
+  LogicStructure structure,
+  bool hasReset,
+  bool hasResetPort,
+  dynamic resetValue,
+) {
+  if (!hasReset) {
+    return 'N';
+  }
+  if (hasResetPort) {
+    return 'RP';
+  }
+  final value = LogicValue.of(resetValue ?? 0, width: structure.width);
+  return 'RC${value.toRadixString(includeWidth: false, sepChar: '')}';
+}
+
+String _structureFlipFlopDefinitionName(
+  LogicStructure structure, {
+  required bool hasEnable,
+  required bool hasReset,
+  required bool hasResetPort,
+  required dynamic resetValue,
+  required bool asyncReset,
+}) =>
+    'StructureFlipFlop_${logicStructureShapeSignature(structure)}_'
+    '${hasEnable ? 'E' : 'N'}_'
+    '${_structureFlipFlopResetIdentity(
+      structure,
+      hasReset,
+      hasResetPort,
+      resetValue,
+    )}_'
+    '${asyncReset ? 'A' : 'S'}';
+
+/// A flip-flop that preserves a concrete [LogicStructure] type.
+///
+/// Each structure leaf is registered independently with common clock, enable,
+/// and reset controls. A [Logic] reset value is interpreted in the same packed
+/// leaf order as [LogicStructure.packed]. A structured reset value must match
+/// the input structure's recursive shape.
+class StructureFlipFlop<LogicType extends LogicStructure>
+    extends TypedFlipFlop<LogicType> {
+  /// Indicates whether the reset is asynchronous.
+  final bool asyncReset;
+
+  /// Constant packed reset value, or `null` when reset is absent or driven by
+  /// a [Logic] input.
+  final LogicValue? constantResetValue;
+
+  @override
+  late final LogicType q;
+
+  /// Creates a structure-preserving flip-flop.
+  StructureFlipFlop(
+    Logic clk,
+    LogicType d, {
+    Logic? en,
+    Logic? reset,
+    dynamic resetValue,
+    this.asyncReset = false,
+    super.name = 'structure_flip_flop',
+  })  : constantResetValue = reset != null && resetValue is! Logic
+            ? LogicValue.of(resetValue ?? 0, width: d.width)
+            : null,
+        super(
+          definitionName: _structureFlipFlopDefinitionName(
+            d,
+            hasEnable: en != null,
+            hasReset: reset != null,
+            hasResetPort: reset != null && resetValue is Logic,
+            resetValue: resetValue,
+            asyncReset: asyncReset,
+          ),
+        ) {
+    if (clk.width != 1) {
+      throw PortWidthMismatchException(clk, 1);
+    }
+    if (en != null && en.width != 1) {
+      throw PortWidthMismatchException(en, 1);
+    }
+    if (reset != null && reset.width != 1) {
+      throw PortWidthMismatchException(reset, 1);
+    }
+    if (resetValue is Logic) {
+      if (resetValue.width != d.width) {
+        throw PortWidthMismatchException.equalWidth(resetValue, d);
+      }
+      if (resetValue is LogicStructure) {
+        validateMatchingLogicStructure(
+          resetValue,
+          d,
+          operation: 'StructureFlipFlop reset',
+        );
+      }
+    }
+
+    LogicType cloneOutput({String name = 'q'}) => typedClone(d, name: name);
+
+    final localClk = addInput('clk', clk);
+    final localD = addTypedInput('d', d);
+    final localEnable = en == null ? null : addInput('en', en);
+    final localReset = reset == null ? null : addInput('reset', reset);
+    final localResetValue = reset != null && resetValue is Logic
+        ? addInput('resetValue', resetValue, width: d.width)
+        : null;
+    q = addTypedOutput('q', cloneOutput);
+
+    var offset = 0;
+    for (var index = 0; index < q.leafElements.length; index++) {
+      final width = q.leafElements[index].width;
+      final dynamic leafResetValue = localResetValue != null
+          ? localResetValue.getRange(offset, offset + width)
+          : constantResetValue?.getRange(offset, offset + width);
+      q.leafElements[index] <=
+          flop(
+            localClk,
+            localD.leafElements[index],
+            en: localEnable,
+            reset: localReset,
+            resetValue: leafResetValue,
+            asyncReset: asyncReset,
+          );
+      offset += width;
+    }
+  }
+}
+
+/// Constructs a positive-edge-triggered structure-preserving flip-flop.
+LogicType typedFlop<LogicType extends LogicStructure>(
+  Logic clk,
+  LogicType d, {
+  Logic? en,
+  Logic? reset,
+  dynamic resetValue,
+  bool asyncReset = false,
+}) =>
+    StructureFlipFlop<LogicType>(
+      clk,
+      d,
+      en: en,
+      reset: reset,
+      resetValue: resetValue,
+      asyncReset: asyncReset,
+    ).q;
