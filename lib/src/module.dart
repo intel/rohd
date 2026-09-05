@@ -788,7 +788,7 @@ abstract class Module {
     _inOutDrivers.add(source);
 
     // we need to properly detect all inout sources, even for arrays
-    if (source.isArrayMember || source is LogicArray) {
+    if (source.isArrayMember || source is BaseLogicArray) {
       final sourceElems = TraverseableCollection<Logic>()..add(source);
       for (var i = 0; i < sourceElems.length; i++) {
         final sei = sourceElems[i];
@@ -798,7 +798,7 @@ abstract class Module {
           sourceElems.add(sei.parentStructure!);
         }
 
-        if (sei is LogicArray) {
+        if (sei is BaseLogicArray) {
           sourceElems.addAll(sei.elements);
         }
       }
@@ -1073,7 +1073,7 @@ abstract class Module {
         sourceElems.add(sei.parentStructure!);
       }
 
-      if (sei is LogicArray) {
+      if (sei is BaseLogicArray) {
         sourceElems.addAll(sei.elements);
       }
     }

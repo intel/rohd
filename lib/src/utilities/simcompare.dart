@@ -80,15 +80,15 @@ class Vector {
     final assignments = inputValues.keys.map((signalName) {
       final signal = module.tryInOut(signalName) ?? module.input(signalName);
 
-      if (signal is LogicArray) {
+      if (signal is BaseLogicArray) {
         final arrAssigns = StringBuffer();
         var index = 0;
         final fullVal =
             LogicValue.of(inputValues[signalName], width: signal.width);
-        for (final leaf in signal.leafElements) {
-          final subVal = fullVal.getRange(index, index + leaf.width);
-          arrAssigns.writeln('${leaf.structureName} = $subVal;');
-          index += leaf.width;
+        for (final element in signal.arrayElements) {
+          final subVal = fullVal.getRange(index, index + element.width);
+          arrAssigns.writeln('${element.structureName} = $subVal;');
+          index += element.width;
         }
         return arrAssigns.toString();
       } else {
@@ -110,13 +110,13 @@ class Vector {
       );
       final inputStimulus = inputValues.toString();
 
-      if (outputPort is LogicArray) {
+      if (outputPort is BaseLogicArray) {
         var index = 0;
-        for (final leaf in outputPort.leafElements) {
-          final subVal = expectedValue.getRange(index, index + leaf.width);
+        for (final element in outputPort.arrayElements) {
+          final subVal = expectedValue.getRange(index, index + element.width);
           checksList.add(_errorCheckString(
-              leaf.structureName, subVal, subVal, inputStimulus));
-          index += leaf.width;
+              element.structureName, subVal, subVal, inputStimulus));
+          index += element.width;
         }
       } else {
         checksList.add(_errorCheckString(
@@ -282,7 +282,7 @@ abstract class SimCompare {
       final signal = module.signals.firstWhere((e) => e.name == signalName);
 
       final signalType = signalTypeOverride ??
-          ((signal is LogicNet || (signal is LogicArray && signal.isNet))
+          ((signal is LogicNet || (signal is BaseLogicArray && signal.isNet))
               ? 'wire'
               : 'logic');
 
@@ -290,7 +290,7 @@ abstract class SimCompare {
         signalName = adjust(signalName);
       }
 
-      if (signal is LogicArray) {
+      if (signal is BaseLogicArray) {
         final unpackedDims =
             signal.dimensions.getRange(0, signal.numUnpackedDimensions);
         final packedDims = signal.dimensions

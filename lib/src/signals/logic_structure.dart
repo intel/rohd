@@ -235,7 +235,7 @@ class LogicStructure implements Logic {
   int? _arrayIndex;
 
   @override
-  bool get isArrayMember => parentStructure is LogicArray;
+  bool get isArrayMember => parentStructure is BaseLogicArray;
 
   @override
   void put(dynamic val, {bool fill = false}) {
