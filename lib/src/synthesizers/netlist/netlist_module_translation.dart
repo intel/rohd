@@ -131,7 +131,7 @@ class NetlistModuleTranslation {
             final portLogic = modulePorts[portName];
             final emitOutputArrayConcat =
                 direction == NetlistPortDirection.output &&
-                    portLogic is LogicArray &&
+                    portLogic is BaseLogicArray &&
                     !_hasExistingOutputArrayConcat(synthLogic) &&
                     !_hasDirectSubmoduleOutputDriver(synthLogic);
             final originalIds = getIds(synthLogic);
@@ -168,7 +168,7 @@ class NetlistModuleTranslation {
   /// Emits a concat cell that assembles a LogicArray output port.
   void _emitOutputArrayConcat(
     String portName,
-    LogicArray array,
+    BaseLogicArray array,
     List<int> outputIds,
   ) {
     _emitOutputArrayConcatForArray(portName, array, outputIds);
@@ -177,7 +177,7 @@ class NetlistModuleTranslation {
   /// Recursively emits concat cells for nested LogicArray output elements.
   bool _emitOutputArrayConcatForArray(
     String concatName,
-    LogicArray array,
+    BaseLogicArray array,
     List<int> outputIds,
   ) {
     final definition = synthDef;
@@ -195,7 +195,7 @@ class NetlistModuleTranslation {
         return false;
       }
       var elementIds = getIds(synthLogic);
-      if (element is LogicArray &&
+      if (element is BaseLogicArray &&
           !_hasExistingOutputArrayConcat(synthLogic) &&
           !_hasDirectSubmoduleOutputDriver(synthLogic)) {
         final aggregateIds = List<int>.generate(
@@ -362,7 +362,7 @@ class NetlistModuleTranslation {
         for (final portEntry in submodule.inputs.entries) {
           final portName = portEntry.key;
           final port = portEntry.value;
-          if (port is! LogicArray ||
+          if (port is! BaseLogicArray ||
               cellPortDirs[portName] != NetlistPortDirection.input) {
             continue;
           }

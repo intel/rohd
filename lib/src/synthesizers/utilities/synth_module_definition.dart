@@ -337,6 +337,11 @@ class SynthModuleDefinition {
           logic,
           parentSynthModuleDefinition: this,
         );
+      } else if (logic is! LogicStructure && _hasTopLevelArrayAncestor(logic)) {
+        newSynth = SynthLogicArrayStructureElement(
+          logic,
+          parentSynthModuleDefinition: this,
+        );
       } else {
         final parentModule = logic.parentModule;
         final disallowConstName = (logic.isInput || logic.isInOut) &&
@@ -378,13 +383,28 @@ class SynthModuleDefinition {
 
       logicToSynthMap[logic] = newSynth;
 
-      if (logic is LogicArray) {
+      if (logic is BaseLogicArray) {
         // if we are an array, make sure we go down the stack of elements too
         logic.elements.forEach(getSynthLogic);
       }
 
       return newSynth;
     }
+  }
+
+  /// Whether [logic] belongs to an array that is represented directly.
+  static bool _hasTopLevelArrayAncestor(Logic logic) {
+    var current = logic;
+    var parent = current.parentStructure;
+    BaseLogicArray? rootArray;
+    while (parent != null) {
+      if (parent is BaseLogicArray) {
+        rootArray = parent;
+      }
+      current = parent;
+      parent = current.parentStructure;
+    }
+    return rootArray != null && rootArray.parentStructure == null;
   }
 
   /// A [List] of supporting modules that need to be instantiated within this
@@ -394,8 +414,13 @@ class SynthModuleDefinition {
   /// Retains [signal] and every array ancestor needed to name and declare it.
   void _retainInternalSignal(SynthLogic signal) {
     final signalAndAncestors = <SynthLogic>[signal];
-    while (signal is SynthLogicArrayElement) {
-      signal = signal.parentArray.resolved;
+    while (signal is SynthLogicArrayElement ||
+        signal is SynthLogicArrayStructureElement) {
+      signal = switch (signal) {
+        SynthLogicArrayElement() => signal.parentArray.resolved,
+        SynthLogicArrayStructureElement() => signal.rootArray.resolved,
+        _ => throw StateError('Unexpected synthesized array signal'),
+      };
       signalAndAncestors.add(signal);
     }
 
@@ -415,7 +440,7 @@ class SynthModuleDefinition {
   /// the module, or for driving the input of a sub-module.
   @protected
   void _partialAssignStructPort(LogicStructure port) {
-    assert(port is! LogicArray, 'Should only be used on non-array structs');
+    assert(port is! BaseLogicArray, 'Should only be used on non-array structs');
 
     final portSynth = getSynthLogic(port)!;
 
@@ -492,7 +517,7 @@ class SynthModuleDefinition {
       final outputSynth = getSynthLogic(output)!;
       outputs.add(outputSynth);
 
-      if (output is LogicStructure && output is! LogicArray) {
+      if (output is LogicStructure && output is! BaseLogicArray) {
         _partialAssignStructPort(output);
       }
     }
@@ -502,7 +527,7 @@ class SynthModuleDefinition {
       final inputSynth = getSynthLogic(input)!;
       inputs.add(inputSynth);
 
-      if (input is LogicStructure && input is! LogicArray) {
+      if (input is LogicStructure && input is! BaseLogicArray) {
         _subsetReceiveStructPort(input);
       }
     }
@@ -511,7 +536,7 @@ class SynthModuleDefinition {
     for (final inOut in module.inOuts.values) {
       inOuts.add(getSynthLogic(inOut)!);
 
-      if (inOut is LogicStructure && inOut is! LogicArray) {
+      if (inOut is LogicStructure && inOut is! BaseLogicArray) {
         // for nets, we can just use the normal bus subset here in either
         // direction!
         _subsetReceiveStructPort(inOut);
@@ -536,17 +561,17 @@ class SynthModuleDefinition {
 
       subModule.inputs.values
           .whereType<LogicStructure>()
-          .where((e) => e is! LogicArray)
+          .where((e) => e is! BaseLogicArray)
           .forEach(_partialAssignStructPort);
 
       subModule.outputs.values
           .whereType<LogicStructure>()
-          .where((e) => e is! LogicArray)
+          .where((e) => e is! BaseLogicArray)
           .forEach(_subsetReceiveStructPort);
 
       subModule.inOuts.values
           .whereType<LogicStructure>()
-          .where((e) => e is! LogicArray)
+          .where((e) => e is! BaseLogicArray)
           .forEach(_subsetReceiveStructPort);
     }
 
@@ -1130,7 +1155,7 @@ class SynthModuleDefinition {
     }
     candidatesByArray.forEach((parentArray, arrayCandidates) {
       final allElementSynthLogics = parentArray.logics
-          .whereType<LogicArray>()
+          .whereType<BaseLogicArray>()
           .expand((logicArray) => logicArray.elements)
           .map(getSynthLogic)
           .nonNulls
@@ -1804,7 +1829,7 @@ class SynthModuleDefinition {
       return false;
     }
     final parentLogic = signal.parentArray.resolved.logics.singleOrNull;
-    return parentLogic is LogicArray &&
+    return parentLogic is BaseLogicArray &&
         parentLogic.dimensions.length == 1 &&
         parentLogic.elementWidth == 1 &&
         parentLogic.numUnpackedDimensions == 0;
@@ -2062,7 +2087,7 @@ class SynthModuleDefinition {
     }
     final srcLogic = srcArray.logics.first;
     final dstLogic = dstArray.logics.first;
-    if (srcLogic is! LogicArray || dstLogic is! LogicArray) {
+    if (srcLogic is! BaseLogicArray || dstLogic is! BaseLogicArray) {
       return false;
     }
 
@@ -2453,7 +2478,8 @@ class SynthModuleDefinition {
       }
 
       final dst = assignment.dst.resolved;
-      if (dst.width <= 1 || dst.logics.any((logic) => logic is LogicArray)) {
+      if (dst.width <= 1 ||
+          dst.logics.any((logic) => logic is BaseLogicArray)) {
         updatedAssignments.add(assignment);
         continue;
       }
@@ -2718,7 +2744,7 @@ class SynthModuleDefinition {
       return false;
     }
     final logic = base.logics.first;
-    return logic is LogicArray &&
+    return logic is BaseLogicArray &&
         logic.dimensions.length == 1 &&
         logic.elementWidth == 1 &&
         logic.numUnpackedDimensions == 0;
@@ -3827,7 +3853,7 @@ class SynthModuleDefinition {
       }
 
       final arrayLogic = parentArray.logics.first;
-      if (arrayLogic is! LogicArray ||
+      if (arrayLogic is! BaseLogicArray ||
           indexedInputs.length != arrayLogic.elements.length) {
         continue;
       }
@@ -3888,7 +3914,7 @@ class SynthModuleDefinition {
     }
 
     final logic = intermediate.logics.firstOrNull;
-    return logic is! LogicArray || logic.numUnpackedDimensions == 0;
+    return logic is! BaseLogicArray || logic.numUnpackedDimensions == 0;
   }
 
   /// Whether [intermediate] has the unnamed packed-array shape generated by
@@ -3903,7 +3929,7 @@ class SynthModuleDefinition {
     }
 
     final arrayLogic = intermediate.logics.singleOrNull;
-    return arrayLogic is LogicArray && arrayLogic.naming == Naming.unnamed;
+    return arrayLogic is BaseLogicArray && arrayLogic.naming == Naming.unnamed;
   }
 
   /// Whether [swizzleOutput] feeds a full-width disposable internal signal.
@@ -3929,7 +3955,7 @@ class SynthModuleDefinition {
         return false;
       }
 
-      return dst.logics.singleOrNull is! LogicArray;
+      return dst.logics.singleOrNull is! BaseLogicArray;
     });
   }
 
@@ -4123,12 +4149,13 @@ class SynthModuleDefinition {
 
     if (mergedAway.isArray) {
       for (final (keptElementIndex, keptElementLogic)
-          in (kept.logics.first as LogicArray).elements.indexed) {
+          in (kept.logics.first as BaseLogicArray).elements.indexed) {
         // should be safe to just check the first logic's elements since they
         // should all be the same synth, and arrays only merge with arrays
         final keptElement = getSynthLogic(keptElementLogic)!;
         final mergedAwayElement = getSynthLogic(
-          (mergedAway.logics.first as LogicArray).elements[keptElementIndex],
+          (mergedAway.logics.first as BaseLogicArray)
+              .elements[keptElementIndex],
         )!;
 
         if (keptElement == mergedAwayElement) {

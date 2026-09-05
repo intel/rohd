@@ -11,7 +11,7 @@ import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 
 /// A [BusSubset] used by synthesis backends to explicitly extract a
-/// [LogicArray] element from its packed parent representation.
+/// [BaseLogicArray] element from its packed parent representation.
 @internal
 class SynthArraySlice extends BusSubset {
   /// The canonical base name for synthesized array slice operations.
