@@ -139,6 +139,22 @@ LogicType typedCases<LogicType extends LogicStructure>(
   for (final value in conditions.values.skip(1)) {
     validateMatchingLogicStructure(value, prototype, operation: 'typedCases');
   }
+  for (final condition in conditions.keys) {
+    if (condition is Logic && condition.width != expression.width) {
+      throw SignalWidthMismatchException.forDynamic(
+        condition,
+        expression.width,
+        condition.width,
+      );
+    }
+    if (condition is LogicValue && condition.width != expression.width) {
+      throw SignalWidthMismatchException.forDynamic(
+        condition,
+        expression.width,
+        condition.width,
+      );
+    }
+  }
   if (defaultValue is LogicStructure) {
     validateMatchingLogicStructure(
       defaultValue,
@@ -147,6 +163,13 @@ LogicType typedCases<LogicType extends LogicStructure>(
     );
   } else if (defaultValue is Logic && defaultValue.width != prototype.width) {
     throw PortWidthMismatchException.equalWidth(defaultValue, prototype);
+  } else if (defaultValue is LogicValue &&
+      defaultValue.width != prototype.width) {
+    throw SignalWidthMismatchException.forDynamic(
+      defaultValue,
+      prototype.width,
+      defaultValue.width,
+    );
   }
 
   final result = typedClone(prototype, name: name);

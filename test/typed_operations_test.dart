@@ -359,6 +359,28 @@ void main() {
         throwsA(isA<LogicConstructionException>()));
   });
 
+  test('typedCases rejects mismatched LogicValue widths', () {
+    final selector = Logic(width: 2);
+    final first = _TypedPacket(name: 'first');
+    final second = _TypedPacket(name: 'second');
+
+    expect(
+      () => typedCases(selector, {
+        LogicValue.ofInt(4, 3): first,
+        1: second,
+      }),
+      throwsA(isA<SignalWidthMismatchException>()),
+    );
+    expect(
+      () => typedCases(
+        selector,
+        {0: first, 1: second},
+        defaultValue: LogicValue.ofInt(0, first.width + 1),
+      ),
+      throwsA(isA<SignalWidthMismatchException>()),
+    );
+  });
+
   test('typed module definitions encode structure and constant reset identity',
       () {
     final sameShapeFirst = StructureMux<_TypedPacket>(Logic(),
