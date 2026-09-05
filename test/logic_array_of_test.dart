@@ -7,7 +7,10 @@
 // 2026 July 21
 // Author: Desmond A. Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
+import 'dart:convert';
+
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
 
 class _TwoBitStructure extends LogicStructure {
@@ -34,7 +37,41 @@ class _TypedArrayPortModule extends Module {
 
   _TypedArrayPortModule(LogicArrayOf<_TwoBitStructure> valuesIn) {
     valuesIn = addTypedInput('valuesIn', valuesIn);
-    addTypedOutput('valuesOut', valuesIn.clone) <= valuesIn;
+    final valuesOut = addTypedOutput('valuesOut', valuesIn.clone);
+    for (final (index, source) in valuesIn.typedLeafElements.indexed) {
+      final destination = valuesOut.typedLeafElements[index];
+      destination.low <= source.low;
+      destination.high <= ~source.high;
+    }
+  }
+}
+
+class _TypedArrayInterface extends Interface<_TypedArrayDirection> {
+  _TypedArrayInterface() {
+    setPorts([
+      LogicArrayOf<_TwoBitStructure>(
+        [2],
+        _TwoBitStructure.new,
+        name: 'values',
+      ),
+    ], [
+      _TypedArrayDirection.data
+    ]);
+  }
+
+  @override
+  _TypedArrayInterface clone() => _TypedArrayInterface();
+}
+
+enum _TypedArrayDirection { data }
+
+class _TypedArrayInterfaceModule extends Module {
+  _TypedArrayInterfaceModule(_TypedArrayInterface values) {
+    _TypedArrayInterface().connectIO(
+      this,
+      values,
+      inputTags: [_TypedArrayDirection.data],
+    );
   }
 }
 
@@ -185,6 +222,35 @@ void main() {
       expect(valuesIn.elementAt([1, 2]), isA<_TwoBitStructure>());
       expect(module.valuesOut, isA<LogicArrayOf<_TwoBitStructure>>());
       expect(module.valuesOut.elementAt([1, 2]).low.width, 1);
+    });
+
+    test('preserves typed arrays through interfaces and synthesis', () async {
+      final source = LogicArrayOf<_TwoBitStructure>(
+        [2],
+        _TwoBitStructure.new,
+        name: 'valuesIn',
+      );
+      final module = _TypedArrayPortModule(source);
+      await module.build();
+
+      final vectors = [
+        Vector({'valuesIn': 0x9}, {'valuesOut': 0x3}),
+        Vector({'valuesIn': 0x6}, {'valuesOut': 0xc}),
+      ];
+      await SimCompare.checkFunctionalVector(module, vectors);
+      SimCompare.checkIverilogVector(module, vectors);
+
+      final netlist = jsonDecode(NetlistSynthesizer().synthesizeToJson(module))
+          as Map<String, dynamic>;
+      expect(netlist['modules'], isNotEmpty);
+
+      final interfaceModule =
+          _TypedArrayInterfaceModule(_TypedArrayInterface());
+      await interfaceModule.build();
+      expect(
+        interfaceModule.input('values'),
+        isA<LogicArrayOf<_TwoBitStructure>>(),
+      );
     });
   });
 
