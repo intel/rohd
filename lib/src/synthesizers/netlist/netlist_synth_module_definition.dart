@@ -19,14 +19,14 @@ class NetlistSynthModuleDefinition extends SynthModuleDefinition {
     // Create explicit $slice cells for LogicArray input ports so the
     // netlist shows select gates for element extraction rather than
     // flat bit aliasing.
-    module.inputs.values.whereType<LogicArray>().forEach(
+    module.inputs.values.whereType<BaseLogicArray>().forEach(
           _subsetReceiveArrayPort,
         );
 
     // Same for LogicArray outputs on submodules (received into this scope).
     final subModuleOutputArrays = module.subModules
         .expand((sub) => sub.outputs.values)
-        .whereType<LogicArray>()
+        .whereType<BaseLogicArray>()
         .toSet()
       ..forEach(_subsetReceiveArrayPort);
 
@@ -39,25 +39,25 @@ class NetlistSynthModuleDefinition extends SynthModuleDefinition {
     // already structurally decomposed by the $slice cells created above.
     // Also skip submodule output arrays that already received $slice cells.
     final portArrays = {
-      ...module.inputs.values.whereType<LogicArray>(),
-      ...module.outputs.values.whereType<LogicArray>(),
-      ...module.inOuts.values.whereType<LogicArray>(),
+      ...module.inputs.values.whereType<BaseLogicArray>(),
+      ...module.outputs.values.whereType<BaseLogicArray>(),
+      ...module.inOuts.values.whereType<BaseLogicArray>(),
     };
-    final excludedArrays = <LogicArray>{
+    final excludedArrays = <BaseLogicArray>{
       ...portArrays,
       ...subModuleOutputArrays,
     };
 
-    void addNestedArrays(LogicArray array) {
+    void addNestedArrays(BaseLogicArray array) {
       for (final element in array.elements) {
-        if (element is LogicArray) {
+        if (element is BaseLogicArray) {
           excludedArrays.add(element);
           addNestedArrays(element);
         }
       }
     }
 
-    <LogicArray>{
+    <BaseLogicArray>{
       ...portArrays,
       ...subModuleOutputArrays,
     }.forEach(addNestedArrays);
@@ -68,7 +68,7 @@ class NetlistSynthModuleDefinition extends SynthModuleDefinition {
         portArraySynthLogics.add(synthLogic.resolved);
       }
     }
-    module.internalSignals.whereType<LogicArray>().where((signal) {
+    module.internalSignals.whereType<BaseLogicArray>().where((signal) {
       if (excludedArrays.contains(signal)) {
         return false;
       }
@@ -81,7 +81,7 @@ class NetlistSynthModuleDefinition extends SynthModuleDefinition {
   }
 
   /// Adds slice cells that decompose a LogicArray port into element signals.
-  void _subsetReceiveArrayPort(LogicArray port) {
+  void _subsetReceiveArrayPort(BaseLogicArray port) {
     final portSynth = getSynthLogic(port)!;
 
     var index = 0;
@@ -106,7 +106,7 @@ class NetlistSynthModuleDefinition extends SynthModuleDefinition {
   }
 
   /// Adds a concat cell that assembles independent LogicArray element signals.
-  void _concatAssembleArray(LogicArray array) {
+  void _concatAssembleArray(BaseLogicArray array) {
     final arraySynth = getSynthLogic(array)!;
     final dummyElements = [
       for (final element in array.elements)

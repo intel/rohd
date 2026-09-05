@@ -41,6 +41,26 @@ rvStruct.elements[0] <= ready;
 rvStruct.elements[1] <= valid;
 ```
 
+## Promoting nested fields
+
+Use `flattenOuter` to promote fields from direct child structures into a new generic `LogicStructure`. The new fields are clones connected to their original sources, so the original structure remains unchanged. By default, promoted names are prefixed with the direct child structure name to avoid collisions.
+
+```dart
+final config = LogicStructure([
+  Logic(name: 'mode', width: 2),
+  Logic(name: 'valid'),
+], name: 'config');
+final control = LogicStructure([
+  Logic(name: 'enable'),
+  config,
+], name: 'control');
+
+final flattened = control.flattenOuter();
+// Field names: enable, config_mode, config_valid.
+```
+
+Only direct non-array child structures are promoted. Nested grandchildren remain structures, and a duplicate resulting field name throws `LogicConstructionException`.
+
 ## Making your own structure
 
 Referencing elements by index is often not ideal for named signals. We can do better by building our own structure that inherits from `LogicStructure`.
