@@ -494,6 +494,38 @@ class ModWithPartialArrayAssignment extends Module {
   }
 }
 
+class PackedArrayToLogic extends Module {
+  PackedArrayToLogic(LogicArray array) {
+    array = addInputArray(
+      'array',
+      array,
+      dimensions: array.dimensions,
+      elementWidth: array.elementWidth,
+      numUnpackedDimensions: array.numUnpackedDimensions,
+    );
+    addOutput('out', width: array.width) <= array;
+  }
+}
+
+class LogicToPackedArray extends Module {
+  LogicToPackedArray(Logic data) {
+    data = addInput('data', data, width: 8);
+    addOutputArray('out', dimensions: [4], elementWidth: 2) <= data;
+  }
+}
+
+class ReversedPackedArrayToLogic extends Module {
+  ReversedPackedArrayToLogic(LogicArray array) {
+    array = addInputArray(
+      'array',
+      array,
+      dimensions: array.dimensions,
+      elementWidth: array.elementWidth,
+    );
+    addOutput('out', width: array.width) <= array.elements.swizzle();
+  }
+}
+
 class ModWithConstInlineUnaryOp extends Module {
   ModWithConstInlineUnaryOp() {
     addOutput('b', width: 8) <= NotGate(Const(0, width: 8)).out;
@@ -915,6 +947,48 @@ void main() {
     ];
     await SimCompare.checkFunctionalVector(mod, vectors);
     SimCompare.checkIverilogVector(mod, vectors);
+  });
+
+  test('packed one-dimensional array assigns directly to Logic', () async {
+    final mod = PackedArrayToLogic(LogicArray([4], 2, name: 'array'));
+    await mod.build();
+    final sv = mod.generateSynth();
+
+    expect(sv, contains('assign out = array;'), reason: sv);
+    expect(sv, isNot(contains('// swizzle')), reason: sv);
+
+    final vectors = [
+      Vector({'array': 0x00}, {'out': 0x00}),
+      Vector({'array': 0xa5}, {'out': 0xa5}),
+      Vector({'array': 0xff}, {'out': 0xff}),
+    ];
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
+  });
+
+  test('Logic assigns directly to packed one-dimensional array', () async {
+    final mod = LogicToPackedArray(Logic(width: 8));
+    await mod.build();
+    final sv = mod.generateSynth();
+
+    expect(sv, contains('assign out = data;'), reason: sv);
+
+    final vectors = [
+      Vector({'data': 0x00}, {'out': 0x00}),
+      Vector({'data': 0xa5}, {'out': 0xa5}),
+      Vector({'data': 0xff}, {'out': 0xff}),
+    ];
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
+  });
+
+  test('reordered packed array assignment retains its swizzle', () async {
+    final mod = ReversedPackedArrayToLogic(LogicArray([4], 2, name: 'array'));
+    await mod.build();
+    final sv = mod.generateSynth();
+
+    expect(sv, isNot(contains('assign out = array;')), reason: sv);
+    expect(sv, contains('// swizzle'), reason: sv);
   });
 
   group('connected ports and pruning', () {

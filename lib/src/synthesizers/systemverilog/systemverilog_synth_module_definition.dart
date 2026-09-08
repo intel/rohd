@@ -31,6 +31,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
     _expandNestedUnpackedArrayAssignments();
     _inlinePackedRangesIntoSubmoduleInputs();
     _collapseAggregateConnections();
+    _collapsePackedArrayLogicAssignments();
     _collapseWholeNetBuses();
     _forwardPassthroughElementsIntoInlineables();
     _replaceNetConnections();
@@ -96,6 +97,32 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
       logic is BaseLogicArray ||
       (logic is LogicStructure && logic.elements.any(_containsArray));
 
+  /// Collapses a full packed [Logic] split across 1D array elements.
+  void _collapsePackedArrayLogicAssignments() {
+    final subsetsByOutput = _logicSubsetLookups();
+    for (final arraySynth in outputs.where((signal) => signal.isArray)) {
+      final array = arraySynth.logics.whereType<BaseLogicArray>().firstOrNull;
+      if (array == null ||
+          array.dimensions.length != 1 ||
+          array.numUnpackedDimensions != 0) {
+        continue;
+      }
+
+      final packedSource = _packedLogicSubsetSource(
+        array.elements.map(getSynthLogic).toList(growable: false),
+        subsetsByOutput,
+        expectedWidth: array.width,
+      );
+      if (packedSource == null) {
+        continue;
+      }
+
+      assignments.add(SynthAssignment(packedSource.source, arraySynth));
+      for (final subset in packedSource.subsets) {
+        subset.clearInstantiation();
+      }
+    }
+  }
   /// Inlines a fully covered packed bus into its sole submodule input.
   ///
   /// Each driver must cover the next contiguous destination range and supply
