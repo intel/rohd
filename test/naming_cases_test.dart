@@ -12,8 +12,9 @@
 // ════════════════════════════════════════════════════════
 //
 // Axis 1 — Naming enum (set at Logic construction time):
-//   reserved    Exact name required; collision → exception.
-//   renameable  Keeps name, uniquified on collision; never merged.
+//   reserved    Exact name required; unrelated collision → exception.
+//   renameable  Keeps name, uniquified on collision.
+//               Both may share a declaration with same-name equivalent signals.
 //   mergeable   May merge with equivalent signals; any merged name chosen.
 //   unnamed     No user name; system generates one.
 //

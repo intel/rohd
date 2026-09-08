@@ -1,3 +1,7 @@
+## Next Release
+
+- Allowed connected, equivalent `reserved` and `renameable` signals with matching generated base names to share a declaration, including internal signals and port aliases. Separate aliases may disappear and connected same-name reserved signals no longer cause naming errors; unrelated reserved-name collisions still fail.
+
 ## 0.6.10
 
 - Improved `Logic.replicate(1)` and same-width `signExtend` to return the original signal, eliminating redundant replication modules and generated SystemVerilog (<https://github.com/intel/rohd/pull/689>).
