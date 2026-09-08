@@ -27,7 +27,44 @@ LogicArray([5, 5, 5], 128);
 
 As long as the total width of a `LogicArray` and another type of `Logic` (including `Logic`, `LogicStructure`, and another `LogicArray`) are the same, assignments and bitwise operations will work in per-element order.  This means you can assign two `LogicArray`s of different dimensions to each other as long as the total width matches.
 
-## Typed arrays
+## Assigning arrays
+
+Use `<=` for continuous assignments outside conditional blocks. You can assign
+an entire array or an individual element:
+
+```dart
+final source = LogicArray([4], 8, name: 'source');
+final copied = LogicArray([4], 8, name: 'copied');
+final updated = LogicArray([4], 8, name: 'updated');
+final replacement = Logic(name: 'replacement', width: 8);
+
+copied <= source;
+updated.elements[0] <= replacement;
+```
+
+Use `<` for assignments inside `Combinational`, just as with ordinary
+`Logic` signals. Whole-array conditional assignments preserve the array's
+element ordering:
+
+```dart
+final select = Logic(name: 'select');
+final sourceA = LogicArray([4], 8, name: 'sourceA');
+final sourceB = LogicArray([4], 8, name: 'sourceB');
+final selected = LogicArray([4], 8, name: 'selected');
+
+Combinational([
+  If(
+    select,
+    then: [selected < sourceA],
+    orElse: [selected < sourceB],
+  ),
+]);
+```
+
+The `elements` list follows array index order, so `array.elements[0]`
+corresponds to `array[0]` in generated SystemVerilog.
+
+## Typed and value-domain arrays
 
 Use `TypedLogicArray<TLogic, TValue>` when every array position has the same
 specialized hardware type and associated semantic value type. `LogicArray` is
@@ -196,12 +233,14 @@ Use the existing `addTypedInput`, `addTypedOutput`, and `addTypedInOut` methods 
 
 ## Type-preserving operations
 
-`LogicArray` and `LogicArrayOf<T>` can be used with `Mux`, `FlipFlop`, and `Passthrough`. The output retains the array's concrete type, dimensions, and specialized leaf type:
+Use `StructureMux`, `StructureFlipFlop`, and `StructurePassthrough` when the
+output must retain the array's concrete type, dimensions, and specialized leaf
+type:
 
 ```dart
-final selected = Mux(select, samplesA, samplesB).out;
-final delayed = FlipFlop(clk, selected, reset: reset).q;
-final forwarded = Passthrough(delayed).out;
+final selected = StructureMux(select, samplesA, samplesB).out;
+final delayed = StructureFlipFlop(clk, selected, reset: reset).q;
+final forwarded = StructurePassthrough(delayed).out;
 
 final bottomRightData = forwarded.elementAt([1, 2]).data;
 ```
