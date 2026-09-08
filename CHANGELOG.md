@@ -1,3 +1,8 @@
+## Next Release
+
+- Improved generated SystemVerilog to inline packed `Logic.assignSubset` connections into submodule inputs (<https://github.com/intel/rohd/pull/711>).
+- Fixed a bug where isolated bit drivers could be lost beside collapsed ranges (<https://github.com/intel/rohd/pull/711>)
+
 ## 0.6.10
 
 - Improved `Logic.replicate(1)` and same-width `signExtend` to return the original signal, eliminating redundant replication modules and generated SystemVerilog (<https://github.com/intel/rohd/pull/689>).
