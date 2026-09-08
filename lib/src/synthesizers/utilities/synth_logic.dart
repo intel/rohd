@@ -481,6 +481,77 @@ class SynthLogicPackedBitReference extends SynthLogic {
   }
 }
 
+/// A non-owning reference to a range of a packed [SynthLogic].
+///
+/// This exists for port mappings that must render a selected packed range,
+/// such as `.data(dataOut[41:40])`.
+class SynthLogicPackedRangeReference extends SynthLogic {
+  /// The packed signal containing the referenced range.
+  final SynthLogic packedBase;
+
+  /// The least-significant selected bit in [packedBase].
+  final int lowerIndex;
+
+  /// The most-significant selected bit in [packedBase].
+  final int upperIndex;
+
+  /// Creates a reference to `[upperIndex:lowerIndex]` of [packedBase].
+  SynthLogicPackedRangeReference(
+    this.packedBase,
+    this.lowerIndex,
+    this.upperIndex, {
+    required super.parentSynthModuleDefinition,
+  })  : assert(
+            !packedBase.isArray, 'Packed reference base must not be an array.'),
+        assert(!packedBase.isNet, 'Packed reference base must not be a net.'),
+        assert(
+          !packedBase.isConstant,
+          'Packed reference base must not be a constant.',
+        ),
+        assert(lowerIndex >= 0, 'Packed reference index must not be negative.'),
+        assert(
+          upperIndex >= lowerIndex,
+          'Packed reference range must not be reversed.',
+        ),
+        assert(
+          upperIndex < packedBase.width,
+          'Packed reference index must fit within its base.',
+        ),
+        super(Logic(width: upperIndex - lowerIndex + 1));
+
+  @override
+  bool get needsDeclaration => false;
+
+  @override
+  bool get mergeable => false;
+
+  @override
+  bool isPort([Module? module]) => packedBase.resolved.isPort(module);
+
+  @override
+  bool hasSrcConnectionsPresent() =>
+      packedBase.resolved.hasSrcConnectionsPresent();
+
+  @override
+  bool hasDstConnectionsPresent() =>
+      packedBase.resolved.hasDstConnectionsPresent();
+
+  @override
+  String get name {
+    final resolvedBase = packedBase.resolved;
+    assert(
+      upperIndex < resolvedBase.width,
+      'Packed reference index must fit within its resolved base.',
+    );
+    final reference = '${resolvedBase.name}[$upperIndex:$lowerIndex]';
+    assert(
+      Sanitizer.isSanitary(resolvedBase.name),
+      'Packed reference base should be sanitary, but found $reference.',
+    );
+    return reference;
+  }
+}
+
 /// Represents an element of a [LogicArray].
 ///
 /// Does not fully override or properly implement all characteristics of
