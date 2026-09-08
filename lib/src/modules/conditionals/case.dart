@@ -36,13 +36,16 @@ class CaseItem {
 /// the expression with the values of each item in conditions. If width of the
 /// input is not provided, then the width of  the result is inferred from the
 /// width of the entries.
-Logic cases(Logic expression, Map<dynamic, dynamic> conditions,
-    {int? width,
-    ConditionalType conditionalType = ConditionalType.none,
-    dynamic defaultValue}) {
+Logic cases(
+  Logic expression,
+  Map<dynamic, dynamic> conditions, {
+  int? width,
+  ConditionalType conditionalType = ConditionalType.none,
+  dynamic defaultValue,
+}) {
   for (final conditionValue in [
     ...conditions.values,
-    if (defaultValue != null) defaultValue
+    if (defaultValue != null) defaultValue,
   ]) {
     int? inferredWidth;
 
@@ -54,7 +57,10 @@ Logic cases(Logic expression, Map<dynamic, dynamic> conditions,
 
     if (width != inferredWidth && width != null && inferredWidth != null) {
       throw SignalWidthMismatchException.forDynamic(
-          conditionValue, width, inferredWidth);
+        conditionValue,
+        width,
+        inferredWidth,
+      );
     }
 
     width ??= inferredWidth;
@@ -68,14 +74,20 @@ Logic cases(Logic expression, Map<dynamic, dynamic> conditions,
     if (condition.key is Logic) {
       if (expression.width != (condition.key as Logic).width) {
         throw SignalWidthMismatchException.forDynamic(
-            condition.key, expression.width, (condition.key as Logic).width);
+          condition.key,
+          expression.width,
+          (condition.key as Logic).width,
+        );
       }
     }
 
     if (condition.key is LogicValue) {
       if (expression.width != (condition.key as LogicValue).width) {
-        throw SignalWidthMismatchException.forDynamic(condition.key,
-            expression.width, (condition.key as LogicValue).width);
+        throw SignalWidthMismatchException.forDynamic(
+          condition.key,
+          expression.width,
+          (condition.key as LogicValue).width,
+        );
       }
     }
   }
@@ -84,17 +96,104 @@ Logic cases(Logic expression, Map<dynamic, dynamic> conditions,
 
   Combinational([
     Case(
-        expression,
-        [
-          for (final condition in conditions.entries)
-            CaseItem(
-                condition.key is Logic
-                    ? condition.key as Logic
-                    : Const(condition.key, width: expression.width),
-                [result < condition.value])
-        ],
-        conditionalType: conditionalType,
-        defaultItem: defaultValue != null ? [result < defaultValue] : null)
+      expression,
+      [
+        for (final condition in conditions.entries)
+          CaseItem(
+            condition.key is Logic
+                ? condition.key as Logic
+                : Const(condition.key, width: expression.width),
+            [result < condition.value],
+          ),
+      ],
+      conditionalType: conditionalType,
+      defaultItem: defaultValue != null ? [result < defaultValue] : null,
+    ),
+  ]);
+
+  return result;
+}
+
+/// Selects a matching [LogicStructure] value using a hardware case expression.
+///
+/// Every condition value must have the same concrete type and recursive shape.
+/// [defaultValue] may be another matching structure or any packed value
+/// accepted by [LogicStructure.operator <]. If omitted, unmatched expression
+/// values follow the same incomplete-assignment and latch semantics as [cases].
+/// [ConditionalType.unique] and [ConditionalType.priority] do not make an
+/// otherwise incomplete case exhaustive.
+LogicType typedCases<LogicType extends LogicStructure>(
+  Logic expression,
+  Map<dynamic, LogicType> conditions, {
+  ConditionalType conditionalType = ConditionalType.none,
+  dynamic defaultValue,
+  String name = 'result',
+}) {
+  if (conditions.isEmpty) {
+    throw LogicConstructionException(
+      'typedCases requires at least one typed condition value.',
+    );
+  }
+
+  final prototype = conditions.values.first;
+  for (final value in conditions.values.skip(1)) {
+    validateMatchingLogicStructure(value, prototype, operation: 'typedCases');
+  }
+  for (final condition in conditions.keys) {
+    if (condition is Logic && condition.width != expression.width) {
+      throw SignalWidthMismatchException.forDynamic(
+        condition,
+        expression.width,
+        condition.width,
+      );
+    }
+    if (condition is LogicValue && condition.width != expression.width) {
+      throw SignalWidthMismatchException.forDynamic(
+        condition,
+        expression.width,
+        condition.width,
+      );
+    }
+  }
+  if (defaultValue is LogicStructure) {
+    validateMatchingLogicStructure(
+      defaultValue,
+      prototype,
+      operation: 'typedCases default',
+    );
+  } else if (defaultValue is Logic && defaultValue.width != prototype.width) {
+    throw PortWidthMismatchException.equalWidth(defaultValue, prototype);
+  } else if (defaultValue is LogicValue &&
+      defaultValue.width != prototype.width) {
+    throw SignalWidthMismatchException.forDynamic(
+      defaultValue,
+      prototype.width,
+      defaultValue.width,
+    );
+  }
+
+  final result = typedClone(prototype, name: name);
+  if (result.hasConsts || result.hasNets) {
+    throw LogicConstructionException(
+      'typedCases result clones cannot contain constants or nets.',
+    );
+  }
+
+  Combinational([
+    Case(
+      expression,
+      [
+        for (final condition in conditions.entries)
+          CaseItem(
+            condition.key is Logic
+                ? condition.key as Logic
+                : Const(condition.key, width: expression.width),
+            [result < condition.value],
+          ),
+      ],
+      conditionalType: conditionalType,
+      defaultItem: defaultValue != null ? [result < defaultValue] : null,
+    ),
   ]);
 
   return result;
@@ -128,10 +227,12 @@ class Case extends Conditional {
   /// Whenever an item in [items] matches [expression], it will be executed.
   ///
   /// If none of [items] match, then [defaultItem] is executed.
-  Case(this.expression, this.items,
-      {List<Conditional>? defaultItem,
-      this.conditionalType = ConditionalType.none})
-      : _defaultItem = defaultItem {
+  Case(
+    this.expression,
+    this.items, {
+    List<Conditional>? defaultItem,
+    this.conditionalType = ConditionalType.none,
+  }) : _defaultItem = defaultItem {
     for (final item in items) {
       if (item.value.width != expression.width) {
         throw PortWidthMismatchException.equalWidth(expression, item.value);
@@ -199,13 +300,14 @@ class Case extends Conditional {
   }
 
   @override
-  late final List<Conditional> conditionals =
-      UnmodifiableListView(_getConditionals());
+  late final List<Conditional> conditionals = UnmodifiableListView(
+    _getConditionals(),
+  );
 
   /// Calculates the set of conditionals directly within this.
   List<Conditional> _getConditionals() => [
         ...items.map((item) => item.then).expand((conditional) => conditional),
-        if (defaultItem != null) ...defaultItem!
+        if (defaultItem != null) ...defaultItem!,
       ];
 
   @override
@@ -217,16 +319,20 @@ class Case extends Conditional {
     for (final item in items) {
       drivers
         ..add(item.value)
-        ..addAll(item.then
-            .map((conditional) => conditional.drivers)
-            .expand((driver) => driver)
-            .toList(growable: false));
+        ..addAll(
+          item.then
+              .map((conditional) => conditional.drivers)
+              .expand((driver) => driver)
+              .toList(growable: false),
+        );
     }
     if (defaultItem != null) {
-      drivers.addAll(defaultItem!
-          .map((conditional) => conditional.drivers)
-          .expand((driver) => driver)
-          .toList(growable: false));
+      drivers.addAll(
+        defaultItem!
+            .map((conditional) => conditional.drivers)
+            .expand((driver) => driver)
+            .toList(growable: false),
+      );
     }
     return drivers;
   }
@@ -238,23 +344,31 @@ class Case extends Conditional {
   List<Logic> calculateReceivers() {
     final receivers = <Logic>[];
     for (final item in items) {
-      receivers.addAll(item.then
-          .map((conditional) => conditional.receivers)
-          .flattened
-          .toList(growable: false));
+      receivers.addAll(
+        item.then
+            .map((conditional) => conditional.receivers)
+            .flattened
+            .toList(growable: false),
+      );
     }
     if (defaultItem != null) {
-      receivers.addAll(defaultItem!
-          .map((conditional) => conditional.receivers)
-          .flattened
-          .toList(growable: false));
+      receivers.addAll(
+        defaultItem!
+            .map((conditional) => conditional.receivers)
+            .flattened
+            .toList(growable: false),
+      );
     }
     return receivers;
   }
 
   @override
-  String verilogContents(int indent, Map<String, String> inputsNameMap,
-      Map<String, String> outputsNameMap, String assignOperator) {
+  String verilogContents(
+    int indent,
+    Map<String, String> inputsNameMap,
+    Map<String, String> outputsNameMap,
+    String assignOperator,
+  ) {
     final padding = Conditional.calcPadding(indent);
     final expressionName = inputsNameMap[driverInput(expression).name];
     var caseHeader = caseType;
@@ -268,8 +382,14 @@ class Case extends Conditional {
     for (final item in items) {
       final conditionName = inputsNameMap[driverInput(item.value).name];
       final caseContents = item.then
-          .map((conditional) => conditional.verilogContents(
-              indent + 4, inputsNameMap, outputsNameMap, assignOperator))
+          .map(
+            (conditional) => conditional.verilogContents(
+              indent + 4,
+              inputsNameMap,
+              outputsNameMap,
+              assignOperator,
+            ),
+          )
           .join('\n');
       verilog.write('''
 $subPadding$conditionName : begin
@@ -279,8 +399,14 @@ ${subPadding}end
     }
     if (defaultItem != null) {
       final defaultCaseContents = defaultItem!
-          .map((conditional) => conditional.verilogContents(
-              indent + 4, inputsNameMap, outputsNameMap, assignOperator))
+          .map(
+            (conditional) => conditional.verilogContents(
+              indent + 4,
+              inputsNameMap,
+              outputsNameMap,
+              assignOperator,
+            ),
+          )
           .join('\n');
       verilog.write('''
 ${subPadding}default : begin
@@ -294,25 +420,30 @@ ${subPadding}end
   }
 
   @override
-  Map<Logic, Logic> processSsa(Map<Logic, Logic> currentMappings,
-      {required int context}) {
+  Map<Logic, Logic> processSsa(
+    Map<Logic, Logic> currentMappings, {
+    required int context,
+  }) {
     // add an empty default if there isn't already one, since we need it for phi
     _defaultItem ??= [];
 
     // first connect direct drivers into the case statement
-    Conditional.connectSsaDriverFromMappings(expression, currentMappings,
-        context: context);
+    Conditional.connectSsaDriverFromMappings(
+      expression,
+      currentMappings,
+      context: context,
+    );
     for (final itemDriver in items.map((e) => e.value)) {
-      Conditional.connectSsaDriverFromMappings(itemDriver, currentMappings,
-          context: context);
+      Conditional.connectSsaDriverFromMappings(
+        itemDriver,
+        currentMappings,
+        context: context,
+      );
     }
 
     // calculate mappings locally within each item
     final phiMappings = <Logic, Logic>{};
-    for (final conditionals in [
-      ...items.map((e) => e.then),
-      defaultItem!,
-    ]) {
+    for (final conditionals in [...items.map((e) => e.then), defaultItem!]) {
       var localMappings = {...currentMappings};
 
       for (final conditional in conditionals) {
@@ -339,16 +470,13 @@ ${subPadding}end
     // an inferred latch
     final signalsNeedingInit = [
       ...items.map((e) => e.then).flattened,
-      ...defaultItem!,
+      ...defaultItem!
     ]
         .map((e) => e.calculateReceivers())
         .flattened
         .whereType<SsaLogic>()
         .toSet();
-    for (final conditionals in [
-      ...items.map((e) => e.then),
-      defaultItem!,
-    ]) {
+    for (final conditionals in [...items.map((e) => e.then), defaultItem!]) {
       final alreadyDrivenSsaSignals = conditionals
           .map((e) => e.calculateReceivers())
           .flattened
@@ -388,8 +516,12 @@ class CaseZ extends Case {
   /// the definition of matches allows for `z` to be a wildcard.
   ///
   /// If none of [items] match, then [defaultItem] is executed.
-  CaseZ(super.expression, super.items,
-      {super.defaultItem, super.conditionalType});
+  CaseZ(
+    super.expression,
+    super.items, {
+    super.defaultItem,
+    super.conditionalType,
+  });
 
   @override
   String get caseType => 'casez';

@@ -1,7 +1,7 @@
 ---
 title: "Logic Arrays"
 permalink: /docs/logic-arrays/
-last_modified_at: 2022-6-5
+last_modified_at: 2026-9-8
 toc: true
 ---
 
@@ -21,6 +21,87 @@ LogicArray([5, 5, 5], 128);
 ```
 
 As long as the total width of a `LogicArray` and another type of `Logic` (including `Logic`, `LogicStructure`, and another `LogicArray`) are the same, assignments and bitwise operations will work in per-element order.  This means you can assign two `LogicArray`s of different dimensions to each other as long as the total width matches.
+
+## Assigning arrays
+
+Use `<=` for continuous assignments outside conditional blocks. You can assign
+an entire array or an individual element:
+
+```dart
+final source = LogicArray([4], 8, name: 'source');
+final copied = LogicArray([4], 8, name: 'copied');
+final updated = LogicArray([4], 8, name: 'updated');
+final replacement = Logic(name: 'replacement', width: 8);
+
+copied <= source;
+updated.elements[0] <= replacement;
+```
+
+Use `<` for assignments inside `Combinational`, just as with ordinary
+`Logic` signals. Whole-array conditional assignments preserve the array's
+element ordering:
+
+```dart
+final select = Logic(name: 'select');
+final sourceA = LogicArray([4], 8, name: 'sourceA');
+final sourceB = LogicArray([4], 8, name: 'sourceB');
+final selected = LogicArray([4], 8, name: 'selected');
+
+Combinational([
+  If(
+    select,
+    then: [selected < sourceA],
+    orElse: [selected < sourceB],
+  ),
+]);
+```
+
+The `elements` list follows array index order, so `array.elements[0]`
+corresponds to `array[0]` in generated SystemVerilog.
+
+## Typed and value-domain arrays
+
+Use `LogicArrayOf<T>` when every leaf has the same specialized `Logic` type. It preserves the normal array dimensions while exposing typed leaves with `typedLeafElements` and `elementAt`. `LogicArray` is `LogicArrayOf<Logic>`, so it retains its existing construction, port, clone, naming, and array APIs while also identifying its leaves as `Logic`. For example, this creates a two-dimensional array of samples with separate data and valid fields:
+
+```dart
+class Sample extends LogicStructure {
+  final Logic data;
+  final Logic valid;
+
+  factory Sample({String? name}) => Sample._(
+        Logic(name: 'data', width: 8),
+        Logic(name: 'valid'),
+        name: name ?? 'sample',
+      );
+
+  Sample._(this.data, this.valid, {required String name})
+      : super([data, valid], name: name);
+
+  @override
+  Sample clone({String? name}) => Sample(name: name ?? this.name);
+}
+
+final samples = LogicArrayOf<Sample>(
+  [2, 3],
+  Sample.new,
+  dimensionNames: ['row_', 'column_'],
+);
+
+final bottomRightData = samples.elementAt([1, 2]).data;
+```
+
+When typed array leaves are themselves arrays, use `flattenNestedDimensions<U>()` to create one rectangular `LogicArrayOf<U>` with all nested dimensions concatenated. The full address is preserved: `nested.elementAt(outerIndex).elementAt(innerIndex)` maps to `flattened.elementAt([...outerIndex, ...innerIndex])`. Every sibling nested array must have matching dimensions and leaf width.
+
+Use `LogicValueArray` for fixed-width array data outside the hardware graph.  It keeps values in row-major order and supports indexing, reshaping, transposition, and slice operations.  `LogicValueArrayOf` adds a codec so application-level values can use the same operations while converting to and from packed `LogicValue`s.
+
+```dart
+final values = LogicValueArray.fromInts([2, 3], 8, [1, 2, 3, 4, 5, 6]);
+final transposed = values.transpose2D(); // Dimensions: [3, 2]
+
+final signals = values.toLogicArray(name: 'values');
+```
+
+`LogicValueArray.putInto` drives a compatible `LogicArray` or `LogicArrayOf`, while `LogicArrayOf.logicValues` captures its current packed values.  Use `LogicArrayOf.valueArrayOf` and `putValueArrayOf` when a `LogicValueCodec` converts typed value-domain data at the hardware boundary.
 
 ## Unpacked arrays
 
@@ -42,6 +123,24 @@ LogicArray(
 You can declare ports of `Module`s as being arrays (including with some dimensions "unpacked") using `addInputArray` and `addOutputArray`. Note that these do _not_ automatically do validation that the dimensions, element width, number of unpacked dimensions, etc. are equal between the port and the original signal. As long as the overall width matches, the assignment will be clean.
 
 Array ports in generated SystemVerilog will match dimensions (including unpacked) as specified when the port is created.
+
+Use `addTypedInput` and `addTypedOutput` for `LogicArrayOf` ports. These methods preserve the array's specialized leaf type, allowing the module to access fields such as `samples.elementAt([1, 2]).data` directly.
+
+## Type-preserving operations
+
+Use `StructureMux`, `StructureFlipFlop`, and `StructurePassthrough` when the
+output must retain the array's concrete type, dimensions, and specialized leaf
+type:
+
+```dart
+final selected = StructureMux(select, samplesA, samplesB).out;
+final delayed = StructureFlipFlop(clk, selected, reset: reset).q;
+final forwarded = StructurePassthrough(delayed).out;
+
+final bottomRightData = forwarded.elementAt([1, 2]).data;
+```
+
+The mux inputs must have matching concrete array types and geometry, including dimensions, leaf widths, packed/unpacked configuration, and leaf structure. Use `typedCases`, `selectIndexTyped`, or `selectFromTyped` when selecting one complete typed array from multiple choices. Specify the array type parameter on `StructurePipeline<T>` when its stages use inline transforms.
 
 ## Elements of arrays
 

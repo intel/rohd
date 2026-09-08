@@ -2472,7 +2472,7 @@ void main() {
 
     expect(topBody, isNot(contains('_subset')));
     expect(topBody, isNot(contains('assign dst[0]')));
-    expect(topBody, contains('assign dst = src[7:0];'));
+    expect(topBody, contains('assign dst = src;'));
 
     final vectors = [
       for (final pattern in [0x00, 0x5A, 0xA5, 0xFF])
@@ -3001,7 +3001,7 @@ void main() {
 
     expect(topBody, contains('manual_subset'));
     expect(topBody, contains('assign manual_subset[4:2] = src[4:2];'));
-    expect(topBody, contains('assign y = manual_subset[5:0];'));
+    expect(topBody, contains('assign y = manual_subset;'));
 
     final vectors = [
       for (final pattern in [0x00, 0x15, 0x2A, 0x3F])

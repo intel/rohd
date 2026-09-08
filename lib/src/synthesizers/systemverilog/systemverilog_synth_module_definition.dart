@@ -29,11 +29,39 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
   void process() {
     _inlinePackedRangesIntoSubmoduleInputs();
     _collapseAggregateConnections();
+    _collapsePackedArrayLogicAssignments();
     _collapseWholeNetBuses();
     _forwardPassthroughElementsIntoInlineables();
     _replaceNetConnections();
     _collapseMarkedChainableModules();
     _replaceInOutConnectionInlineableModules();
+  }
+
+  /// Collapses a full packed [Logic] split across 1D array elements.
+  void _collapsePackedArrayLogicAssignments() {
+    final subsetsByOutput = _logicSubsetLookups();
+    for (final arraySynth in outputs.where((signal) => signal.isArray)) {
+      final array = arraySynth.logics.whereType<BaseLogicArray>().firstOrNull;
+      if (array == null ||
+          array.dimensions.length != 1 ||
+          array.numUnpackedDimensions != 0) {
+        continue;
+      }
+
+      final packedSource = _packedLogicSubsetSource(
+        array.elements.map(getSynthLogic).toList(growable: false),
+        subsetsByOutput,
+        expectedWidth: array.width,
+      );
+      if (packedSource == null) {
+        continue;
+      }
+
+      assignments.add(SynthAssignment(packedSource.source, arraySynth));
+      for (final subset in packedSource.subsets) {
+        subset.clearInstantiation();
+      }
+    }
   }
 
   /// Inlines a fully covered packed bus into its sole submodule input.
@@ -402,7 +430,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
         // Gather each element's single source (the other end of its single
         // connecting assignment), in element order (index 0 = LSB).
         final elementLogics = agg.logics
-            .whereType<LogicArray>()
+            .whereType<BaseLogicArray>()
             .first
             .elements
             .map(getSynthLogic)
@@ -410,7 +438,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
             .toList();
 
         final aggregateLogic = agg.logics.singleOrNull;
-        final isPackedBitArray = aggregateLogic is LogicArray &&
+        final isPackedBitArray = aggregateLogic is BaseLogicArray &&
             aggregateLogic.dimensions.length == 1 &&
             aggregateLogic.elementWidth == 1 &&
             aggregateLogic.numUnpackedDimensions == 0;
@@ -1204,7 +1232,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
         }
 
         final allElements = parentArray.logics
-            .whereType<LogicArray>()
+            .whereType<BaseLogicArray>()
             .expand((logicArray) => logicArray.elements)
             .map(getSynthLogic)
             .nonNulls
@@ -1367,7 +1395,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
 
     bool elementsAllAbsent(SynthLogic parentArray) =>
         parentArray.logics.every((logic) =>
-            !(logic as LogicArray).elements.any(logicHasPresentSynthLogic));
+            !(logic as BaseLogicArray).elements.any(logicHasPresentSynthLogic));
 
     var droppedAny = true;
     while (droppedAny) {

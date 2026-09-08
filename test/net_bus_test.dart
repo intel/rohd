@@ -787,8 +787,7 @@ void main() {
             expect(
                 sv,
                 contains('assign _swizzled = '
-                    '{({({in0[1][1],in0[1][0]}),({in0[0][1],in0[0][0]})}),'
-                    '(in1[3:0])};'));
+                    '{({(in0[1]),(in0[0])}),(in1)};'));
           });
 
           test('net array 2', () async {

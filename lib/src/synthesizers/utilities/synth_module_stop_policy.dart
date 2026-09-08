@@ -45,7 +45,7 @@ class SynthModuleStopPolicy {
 
   /// Creates the default netlist stopping policy.
   factory SynthModuleStopPolicy.netlist({
-    SynthModuleLeafPredicate leafModulePredicate = _isFlipFlop,
+    SynthModuleLeafPredicate leafModulePredicate = _isNetlistPrimitive,
   }) =>
       SynthModuleStopPolicy(
         generatesDefinitionByDefault: (module) => module.subModules.isNotEmpty,
@@ -62,4 +62,5 @@ class SynthModuleStopPolicy {
   bool generatesDefinition(Module module) => !isLeaf(module);
 }
 
-bool _isFlipFlop(Module module) => module is FlipFlop;
+bool _isNetlistPrimitive(Module module) =>
+    module is Mux || module is FlipFlop || module is Passthrough;

@@ -85,35 +85,45 @@ class Interface<TagType extends Enum> {
     if (inputTags != null) {
       for (final port in getPorts(inputTags).values) {
         port <=
-            (port is LogicArray
-                ? module.addInputArray(
-                    uniquify(port.name),
-                    srcInterface.port(port.name),
-                    dimensions: port.dimensions,
-                    elementWidth: port.elementWidth,
-                    numUnpackedDimensions: port.numUnpackedDimensions,
-                  )
-                : module.addInput(
-                    uniquify(port.name),
-                    srcInterface.port(port.name),
-                    width: port.width,
-                  ));
+            switch (port) {
+              LogicArray() => module.addInputArray(
+                  uniquify(port.name),
+                  srcInterface.port(port.name),
+                  dimensions: port.dimensions,
+                  elementWidth: port.elementWidth,
+                  numUnpackedDimensions: port.numUnpackedDimensions,
+                ),
+              BaseLogicArray() => module.addTypedInput(
+                  uniquify(port.name),
+                  srcInterface.port(port.name) as BaseLogicArray,
+                ),
+              _ => module.addInput(
+                  uniquify(port.name),
+                  srcInterface.port(port.name),
+                  width: port.width,
+                ),
+            };
       }
     }
 
     if (outputTags != null) {
       for (final port in getPorts(outputTags).values) {
-        final output = (port is LogicArray
-            ? module.addOutputArray(
-                uniquify(port.name),
-                dimensions: port.dimensions,
-                elementWidth: port.elementWidth,
-                numUnpackedDimensions: port.numUnpackedDimensions,
-              )
-            : module.addOutput(
-                uniquify(port.name),
-                width: port.width,
-              ));
+        final output = switch (port) {
+          LogicArray() => module.addOutputArray(
+              uniquify(port.name),
+              dimensions: port.dimensions,
+              elementWidth: port.elementWidth,
+              numUnpackedDimensions: port.numUnpackedDimensions,
+            ),
+          BaseLogicArray() => module.addTypedOutput(
+              uniquify(port.name),
+              port.clone,
+            ),
+          _ => module.addOutput(
+              uniquify(port.name),
+              width: port.width,
+            ),
+        };
         output <= port;
         srcInterface.port(port.name) <= output;
       }
@@ -121,7 +131,7 @@ class Interface<TagType extends Enum> {
 
     if (inOutTags != null) {
       for (final port in getPorts(inOutTags).values) {
-        if (port is LogicArray) {
+        if (port is BaseLogicArray) {
           if (!port.isNet) {
             throw PortTypeException(
                 port, 'LogicArray nets must be used for inOut array ports.');
@@ -132,19 +142,24 @@ class Interface<TagType extends Enum> {
         }
 
         port <=
-            (port is LogicArray
-                ? module.addInOutArray(
-                    uniquify(port.name),
-                    srcInterface.port(port.name),
-                    dimensions: port.dimensions,
-                    elementWidth: port.elementWidth,
-                    numUnpackedDimensions: port.numUnpackedDimensions,
-                  )
-                : module.addInOut(
-                    uniquify(port.name),
-                    srcInterface.port(port.name),
-                    width: port.width,
-                  ));
+            switch (port) {
+              LogicArray() => module.addInOutArray(
+                  uniquify(port.name),
+                  srcInterface.port(port.name),
+                  dimensions: port.dimensions,
+                  elementWidth: port.elementWidth,
+                  numUnpackedDimensions: port.numUnpackedDimensions,
+                ),
+              BaseLogicArray() => module.addTypedInOut(
+                  uniquify(port.name),
+                  srcInterface.port(port.name) as BaseLogicArray,
+                ),
+              _ => module.addInOut(
+                  uniquify(port.name),
+                  srcInterface.port(port.name),
+                  width: port.width,
+                ),
+            };
       }
     }
   }
