@@ -182,6 +182,33 @@ class SubInterfaceTestModule extends Module {
   }
 }
 
+class _PairSample extends LogicStructure {
+  final Logic low;
+  final Logic high;
+
+  factory _PairSample({String? name}) => _PairSample._(
+        Logic(name: 'low'),
+        Logic(name: 'high', width: 2),
+        name: name ?? 'sample',
+      );
+
+  _PairSample._(this.low, this.high, {required String name})
+      : super([low, high], name: name);
+
+  @override
+  _PairSample clone({String? name}) => _PairSample(name: name ?? this.name);
+}
+
+class _TypedPairConsumer extends Module {
+  late final LogicArrayOf<_PairSample> samples;
+
+  _TypedPairConsumer(PairInterface source) {
+    final internal = addPairInterfacePorts(source, PairRole.consumer);
+    samples = internal.port('samples') as LogicArrayOf<_PairSample>;
+    addOutput('selected', width: samples.elementWidth) <= samples.at([1, 1]);
+  }
+}
+
 void main() {
   tearDown(() async {
     await Simulator.reset();
@@ -194,6 +221,39 @@ void main() {
     // Make sure the "modify" went through:
     final sv = mod.dumpSystemVerilog();
     expect(sv, contains('input logic simple_clk'));
+  });
+
+  test('clone preserves typed arrays through pair interface ports', () async {
+    final samples = LogicArrayOf<_PairSample>(
+      [2, 2],
+      _PairSample.new,
+      dimensionNames: const ['row_', 'column_'],
+      name: 'samples',
+    );
+    final source = PairInterface(portsFromProvider: [samples]);
+    final clone = source.clone();
+    final clonedSamples = clone.port('samples') as LogicArrayOf<_PairSample>;
+
+    expect(clonedSamples, isNot(same(samples)));
+    expect(clonedSamples.dimensions, [2, 2]);
+    expect(clonedSamples.dimensionNames, ['row_', 'column_']);
+    expect(clonedSamples.arrayElements, everyElement(isA<_PairSample>()));
+    expect(clonedSamples.at([1, 1]).high.width, 2);
+
+    final module = _TypedPairConsumer(source);
+    await module.build();
+
+    expect(module.samples.dimensions, [2, 2]);
+    expect(module.samples.dimensionNames, ['row_', 'column_']);
+    expect(module.samples.at([1, 1]), isA<_PairSample>());
+    expect(module.samples.at([1, 1]).high.width, 2);
+
+    final vectors = [
+      Vector({'samples': 0xabc}, {'selected': 5}),
+      Vector({'samples': 0xe00}, {'selected': 7}),
+    ];
+    await SimCompare.checkFunctionalVector(module, vectors);
+    SimCompare.checkIverilogVector(module, vectors);
   });
 
   group('drive and receive other', () {

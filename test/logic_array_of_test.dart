@@ -33,6 +33,52 @@ class _SampleStructure extends LogicStructure {
       _SampleStructure(name: name ?? this.name);
 }
 
+class _NetSampleStructure extends LogicStructure {
+  final LogicNet low;
+  final LogicNet high;
+
+  factory _NetSampleStructure({String? name}) => _NetSampleStructure._(
+        LogicNet(name: 'low'),
+        LogicNet(name: 'high', width: 2),
+        name: name ?? 'netSample',
+      );
+
+  _NetSampleStructure._(this.low, this.high, {required String name})
+      : super([low, high], name: name);
+
+  @override
+  _NetSampleStructure clone({String? name}) =>
+      _NetSampleStructure(name: name ?? this.name);
+}
+
+class _PartiallyNetSampleStructure extends LogicStructure {
+  factory _PartiallyNetSampleStructure({String? name}) =>
+      _PartiallyNetSampleStructure._(
+        Logic(name: 'low'),
+        LogicNet(name: 'high', width: 2),
+        name: name ?? 'partiallyNetSample',
+      );
+
+  _PartiallyNetSampleStructure._(
+    Logic low,
+    LogicNet high, {
+    required String name,
+  }) : super([low, high], name: name);
+
+  @override
+  _PartiallyNetSampleStructure clone({String? name}) =>
+      _PartiallyNetSampleStructure(name: name ?? this.name);
+}
+
+class _EmptyStructure extends LogicStructure {
+  _EmptyStructure({String? name})
+      : super(const <Logic>[], name: name ?? 'empty');
+
+  @override
+  _EmptyStructure clone({String? name}) =>
+      _EmptyStructure(name: name ?? this.name);
+}
+
 class _SpecialLogic extends Logic {
   _SpecialLogic({super.name}) : super(width: 2);
 
@@ -195,6 +241,66 @@ void main() {
       expect(
         _TypedInputModule(logicValues).values,
         isA<LogicArrayOf<Logic>>(),
+      );
+    });
+
+    test('requires a uniform recursive net composition', () {
+      var buildIndex = 0;
+      expect(
+        () => LogicArrayOf<Logic>(
+          [2],
+          ({name}) => buildIndex++ == 0
+              ? Logic(name: name, width: 3)
+              : LogicNet(name: name, width: 3),
+        ),
+        throwsA(isA<LogicConstructionException>()),
+      );
+      expect(
+        () => LogicArrayOf<_PartiallyNetSampleStructure>(
+          [2],
+          _PartiallyNetSampleStructure.new,
+        ),
+        throwsA(isA<LogicConstructionException>()),
+      );
+      expect(
+        () => LogicArrayOf<_PartiallyNetSampleStructure>(
+          [0],
+          _PartiallyNetSampleStructure.new,
+        ),
+        throwsA(isA<LogicConstructionException>()),
+      );
+      var structureBuildIndex = 0;
+      expect(
+        () => LogicArrayOf<LogicStructure>(
+          [2],
+          ({name}) => structureBuildIndex++ == 0
+              ? _SampleStructure(name: name)
+              : _NetSampleStructure(name: name),
+        ),
+        throwsA(isA<LogicConstructionException>()),
+      );
+
+      final logicValues = LogicArrayOf<_SampleStructure>(
+        [2],
+        _SampleStructure.new,
+      );
+      final emptyStructureValues = LogicArrayOf<_EmptyStructure>(
+        [0],
+        _EmptyStructure.new,
+      );
+      final netValues = LogicArrayOf<_NetSampleStructure>(
+        [2, 2],
+        _NetSampleStructure.new,
+      );
+      expect(logicValues.isNet, isFalse);
+      expect(emptyStructureValues.isNet, isFalse);
+      expect(netValues.isNet, isTrue);
+      expect(netValues.arrayElements, everyElement(isA<_NetSampleStructure>()));
+      expect(
+        netValues.arrayElements
+            .expand((element) => element.leafElements)
+            .every((element) => element.isNet),
+        isTrue,
       );
     });
 
