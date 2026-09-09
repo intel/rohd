@@ -199,9 +199,12 @@ class LogicStructure implements Logic {
       }
     }
 
-    final flattenedElements = sources
-        .map((source) => source.$1.clone(name: source.$2)..gets(source.$1))
-        .toList(growable: false);
+    final flattenedElements = sources.map((source) {
+      final flattened = source.$1 is Const
+          ? Logic(width: source.$1.width, name: source.$2)
+          : source.$1.clone(name: source.$2);
+      return flattened..gets(source.$1);
+    }).toList(growable: false);
     return LogicStructure(flattenedElements, name: name ?? this.name);
   }
 
