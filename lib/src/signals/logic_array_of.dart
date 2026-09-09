@@ -28,24 +28,38 @@ class LogicArrayOf<T extends Logic> extends BaseLogicArray {
   );
 
   /// Creates an array with [dimensions] and typed leaves from [elementBuilder].
+  ///
+  /// [numUnpackedDimensions] controls how many outer dimensions are emitted as
+  /// unpacked dimensions by synthesis.
   LogicArrayOf(
     List<int> dimensions,
     LogicArrayElementBuilder<T> elementBuilder, {
     List<String>? dimensionNames,
     String? name,
+    Naming? naming,
+    int numUnpackedDimensions = 0,
   }) : this._(
             _LogicArrayOfBuild.build(dimensions, elementBuilder,
-                dimensionNames: dimensionNames),
+                dimensionNames: dimensionNames,
+                numUnpackedDimensions: numUnpackedDimensions),
             elementBuilder,
-            name: name);
+            name: name,
+            naming: naming,
+            numUnpackedDimensions: numUnpackedDimensions);
 
+  // ignore: use_super_parameters - invokes the protected structured constructor.
   LogicArrayOf._(
     _LogicArrayOfBuild<T> build,
     this._elementBuilder, {
+    required int numUnpackedDimensions,
     super.name,
+    Naming? naming,
   })  : dimensionNames = build.dimensionNames,
         super.structured(build.elements,
-            dimensions: build.dimensions, elementWidth: build.elementWidth);
+            dimensions: build.dimensions,
+            elementWidth: build.elementWidth,
+            numUnpackedDimensions: numUnpackedDimensions,
+            naming: naming);
 
   /// Creates a typed array from structurally compatible [elements].
   @protected
@@ -83,6 +97,7 @@ class LogicArrayOf<T extends Logic> extends BaseLogicArray {
   LogicArrayOf<U> flattenNestedDimensions<U extends Logic>({String? name}) {
     var leaves = typedLeafElements.cast<Logic>().toList(growable: false);
     final flattenedDimensions = <int>[...dimensions];
+    var flattenedUnpackedDimensions = numUnpackedDimensions;
 
     while (leaves.any((leaf) => leaf is BaseLogicArray)) {
       if (leaves.any((leaf) => leaf is! BaseLogicArray)) {
@@ -100,6 +115,7 @@ class LogicArrayOf<T extends Logic> extends BaseLogicArray {
       }
 
       flattenedDimensions.addAll(reference.dimensions);
+      flattenedUnpackedDimensions += reference.numUnpackedDimensions;
       leaves =
           arrays.expand((array) => array.arrayElements).toList(growable: false);
     }
@@ -119,6 +135,7 @@ class LogicArrayOf<T extends Logic> extends BaseLogicArray {
       flattenedDimensions,
       ({name}) => prototype.clone(name: name) as U,
       name: name,
+      numUnpackedDimensions: flattenedUnpackedDimensions,
     )..getsEach(leaves);
   }
 
@@ -159,14 +176,40 @@ class LogicArrayOf<T extends Logic> extends BaseLogicArray {
     }
   }
 
-  @override
-  LogicArrayOf<T> clone({String? name}) =>
+  /// Creates a clone while allowing subclasses to preserve their runtime type.
+  @protected
+  LogicArrayOf<T> createClone({
+    String? name,
+    Naming? naming,
+    int? numUnpackedDimensions,
+  }) =>
       LogicArrayOf(dimensions, _elementBuilder,
-          dimensionNames: dimensionNames, name: name ?? this.name);
+          dimensionNames: dimensionNames,
+          name: name ?? this.name,
+          naming: naming,
+          numUnpackedDimensions:
+              numUnpackedDimensions ?? this.numUnpackedDimensions);
 
   @override
-  LogicArrayOf<T> named(String name, {Naming? naming}) =>
-      clone(name: name)..gets(this);
+  LogicArrayOf<T> _clone({String? name, Naming? naming}) => createClone(
+        name: name,
+        naming: naming,
+        numUnpackedDimensions: numUnpackedDimensions,
+      );
+
+  @override
+  LogicArrayOf<T> clone({String? name}) => _clone(name: name);
+
+  @override
+  LogicArrayOf<T> named(String name, {Naming? naming}) => _clone(
+        name: name,
+        naming: Naming.chooseCloneNaming(
+          originalName: this.name,
+          newName: name,
+          originalNaming: this.naming,
+          newNaming: naming,
+        ),
+      )..gets(this);
 }
 
 class _LogicArrayOfBuild<T extends Logic> {
@@ -180,12 +223,18 @@ class _LogicArrayOfBuild<T extends Logic> {
 
   factory _LogicArrayOfBuild.build(
       List<int> dimensions, LogicArrayElementBuilder<T> elementBuilder,
-      {List<String>? dimensionNames}) {
+      {List<String>? dimensionNames, int numUnpackedDimensions = 0}) {
     final normalizedDimensions = List<int>.unmodifiable(dimensions);
     if (normalizedDimensions.isEmpty ||
         normalizedDimensions.any((dimension) => dimension <= 0)) {
       throw LogicConstructionException(
           'LogicArrayOf dimensions must all be positive.');
+    }
+    if (numUnpackedDimensions < 0 ||
+        numUnpackedDimensions > normalizedDimensions.length) {
+      throw LogicConstructionException(
+          'numUnpackedDimensions must be between 0 and the number of '
+          'dimensions.');
     }
 
     final normalizedNames = List<String>.unmodifiable(
@@ -197,13 +246,21 @@ class _LogicArrayOfBuild<T extends Logic> {
       throw LogicConstructionException(
           'dimensionNames must match the number of dimensions.');
     }
+    if (normalizedNames.any((name) => !Sanitizer.isSanitary(name)) ||
+        normalizedNames.toSet().length != normalizedNames.length) {
+      throw LogicConstructionException(
+          'dimensionNames must be sanitary and unique.');
+    }
 
     final elements = List<Logic>.generate(normalizedDimensions.first, (index) {
       final elementName = '${normalizedNames.first}$index';
       return normalizedDimensions.length == 1
           ? elementBuilder(name: elementName)
           : LogicArrayOf<T>(normalizedDimensions.sublist(1), elementBuilder,
-              dimensionNames: normalizedNames.sublist(1), name: elementName);
+              dimensionNames: normalizedNames.sublist(1),
+              name: elementName,
+              numUnpackedDimensions: (numUnpackedDimensions - 1)
+                  .clamp(0, normalizedDimensions.length));
     }, growable: false);
     final typedLeaves = normalizedDimensions.length == 1
         ? elements.cast<T>().toList(growable: false)
@@ -211,9 +268,30 @@ class _LogicArrayOfBuild<T extends Logic> {
             .cast<LogicArrayOf<T>>()
             .expand((element) => element.typedLeafElements)
             .toList(growable: false);
+    if (typedLeaves.any((leaf) =>
+        leaf is LogicStructure &&
+        leaf is! BaseLogicArray &&
+        _containsNestedArray(leaf))) {
+      throw LogicConstructionException(
+          'LogicArrayOf leaves cannot contain nested BaseLogicArray fields.');
+    }
+    if (typedLeaves.any(_containsUnassignableLeaf)) {
+      throw LogicConstructionException(
+          'LogicArrayOf leaves must be driveable and cannot contain Consts.');
+    }
     return _LogicArrayOfBuild._(normalizedDimensions, normalizedNames, elements,
         _validateElementWidths(typedLeaves));
   }
+
+  static bool _containsNestedArray(LogicStructure structure) =>
+      structure.elements.any((element) =>
+          element is BaseLogicArray ||
+          (element is LogicStructure && _containsNestedArray(element)));
+
+  static bool _containsUnassignableLeaf(Logic leaf) =>
+      leaf is Const ||
+      (leaf is LogicStructure &&
+          leaf.leafElements.any((element) => element is Const));
 
   static int _validateElementWidths<T extends Logic>(List<T> elements) {
     final width = elements.first.width;

@@ -70,8 +70,7 @@ class BaseLogicArray extends LogicStructure {
           naming: naming,
           logicBuilder: Logic.new,
           logicArrayBuilder: BaseLogicArray.new,
-          arrayBuilder: BaseLogicArray._,
-          isNet: false);
+          arrayBuilder: BaseLogicArray._);
 
   @override
   final bool isNet;
@@ -94,8 +93,7 @@ class BaseLogicArray extends LogicStructure {
           naming: naming,
           logicBuilder: LogicNet.new,
           logicArrayBuilder: BaseLogicArray.net,
-          arrayBuilder: BaseLogicArray._,
-          isNet: true);
+          arrayBuilder: BaseLogicArray._);
 
   /// Creates an array from pre-built [elements].
   ///
@@ -105,16 +103,18 @@ class BaseLogicArray extends LogicStructure {
   /// dimensions. For a one-dimensional array, each element must have
   /// [elementWidth] bits.
   @protected
-  BaseLogicArray.structured(super.elements,
+  BaseLogicArray.structured(List<Logic> elements,
       {required List<int> dimensions,
       required this.elementWidth,
       String? name,
       this.numUnpackedDimensions = 0,
       Naming? naming,
-      this.isNet = false})
+      bool? isNet})
       : dimensions = List<int>.unmodifiable(dimensions),
+        isNet = isNet ?? elements.every((element) => element.isNet),
         naming = Naming.chooseNaming(name, naming),
-        super(name: Naming.chooseName(name, naming, nullStarter: 'a')) {
+        super(elements,
+            name: Naming.chooseName(name, naming, nullStarter: 'a')) {
     if (dimensions.isEmpty) {
       throw LogicConstructionException(
           'Arrays must have at least 1 dimension.');
@@ -172,7 +172,6 @@ class BaseLogicArray extends LogicStructure {
       {required String? name,
       required int numUnpackedDimensions,
       required Naming? naming,
-      required bool isNet,
       required Logic Function({int width, Naming naming, String name})
           logicBuilder,
       required BaseLogicArray Function(List<int> nextDimensions, int width,
@@ -212,25 +211,26 @@ class BaseLogicArray extends LogicStructure {
     naming = newNaming;
     name = newName;
 
-    return arrayBuilder(
-        List.generate(
-            dimensions.first,
-            (index) => (dimensions.length == 1
-                ? logicBuilder(
-                    width: elementWidth,
-                    naming: Naming.renameable,
-                    name: '${name}_$index')
-                : logicArrayBuilder(nextDimensions!, elementWidth,
-                    numUnpackedDimensions: max(0, numUnpackedDimensions - 1),
-                    name: '${name}_$index'))
-              .._arrayIndex = index,
-            growable: false),
+    final elements = List.generate(
+        dimensions.first,
+        (index) => (dimensions.length == 1
+            ? logicBuilder(
+                width: elementWidth,
+                naming: Naming.renameable,
+                name: '${name}_$index')
+            : logicArrayBuilder(nextDimensions!, elementWidth,
+                numUnpackedDimensions: max(0, numUnpackedDimensions - 1),
+                name: '${name}_$index'))
+          .._arrayIndex = index,
+        growable: false);
+
+    return arrayBuilder(elements,
         dimensions: List<int>.unmodifiable(dimensions),
         elementWidth: elementWidth,
         numUnpackedDimensions: numUnpackedDimensions,
         name: name,
         naming: naming,
-        isNet: isNet);
+        isNet: elements.every((element) => element.isNet));
   }
 
   @override
@@ -245,8 +245,7 @@ class BaseLogicArray extends LogicStructure {
               newNaming: naming),
           logicBuilder: isNet ? LogicNet.new : Logic.new,
           logicArrayBuilder: isNet ? BaseLogicArray.net : BaseLogicArray.new,
-          arrayBuilder: BaseLogicArray._,
-          isNet: isNet);
+          arrayBuilder: BaseLogicArray._);
 
   /// Creates a new [BaseLogicArray] which has the same [dimensions],
   /// [elementWidth], [numUnpackedDimensions], and [isNet] as `this`.
@@ -348,8 +347,7 @@ class LogicArray extends LogicArrayOf<Logic> {
           numUnpackedDimensions: numUnpackedDimensions,
           naming: naming,
           logicBuilder: Logic.new,
-          logicArrayBuilder: LogicArray.new,
-          isNet: false);
+          logicArrayBuilder: LogicArray.new);
 
   /// Creates an array of [LogicNet]s with [dimensions] and [elementWidth]
   /// named [name].
@@ -363,8 +361,7 @@ class LogicArray extends LogicArrayOf<Logic> {
           numUnpackedDimensions: numUnpackedDimensions,
           naming: naming,
           logicBuilder: LogicNet.new,
-          logicArrayBuilder: LogicArray.net,
-          isNet: true);
+          logicArrayBuilder: LogicArray.net);
 
   LogicArray._(List<Logic> elements,
       {required super.dimensions,
@@ -379,7 +376,6 @@ class LogicArray extends LogicArrayOf<Logic> {
           {required String? name,
           required int numUnpackedDimensions,
           required Naming? naming,
-          required bool isNet,
           required Logic Function({int width, Naming naming, String name})
               logicBuilder,
           required LogicArray Function(List<int> nextDimensions, int width,
@@ -391,8 +387,7 @@ class LogicArray extends LogicArrayOf<Logic> {
           naming: naming,
           logicBuilder: logicBuilder,
           logicArrayBuilder: logicArrayBuilder,
-          arrayBuilder: LogicArray._,
-          isNet: isNet) as LogicArray;
+          arrayBuilder: LogicArray._) as LogicArray;
 
   @override
 
@@ -408,8 +403,7 @@ class LogicArray extends LogicArrayOf<Logic> {
               originalNaming: naming,
               newNaming: null),
           logicBuilder: isNet ? LogicNet.new : Logic.new,
-          logicArrayBuilder: isNet ? LogicArray.net : LogicArray.new,
-          isNet: isNet);
+          logicArrayBuilder: isNet ? LogicArray.net : LogicArray.new);
 
   @override
 
@@ -424,8 +418,7 @@ class LogicArray extends LogicArrayOf<Logic> {
               originalNaming: this.naming,
               newNaming: naming),
           logicBuilder: isNet ? LogicNet.new : Logic.new,
-          logicArrayBuilder: isNet ? LogicArray.net : LogicArray.new,
-          isNet: isNet)
+          logicArrayBuilder: isNet ? LogicArray.net : LogicArray.new)
         ..gets(this);
 
   /// Creates an array port with a convenient constructor signature.

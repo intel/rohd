@@ -272,6 +272,19 @@ void main() {
           flattened.elements[2].srcConnections, contains(config.elements[1]));
     });
 
+    test('flatten outer connects constant promoted fields', () {
+      final config = LogicStructure([
+        Const(1, width: 1),
+      ], name: 'config');
+      final control = LogicStructure([config], name: 'control');
+
+      final flattened = control.flattenOuter(name: 'flatControl');
+
+      expect(flattened.elements.single, isA<Logic>());
+      expect(flattened.elements.single.srcConnections,
+          contains(config.elements.single));
+    });
+
     test('flatten outer rejects duplicate promoted field names', () {
       final control = LogicStructure([
         Logic(name: 'mode'),
