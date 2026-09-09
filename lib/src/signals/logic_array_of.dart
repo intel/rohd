@@ -431,14 +431,27 @@ class _LogicArrayOfBuild<T extends Logic> {
       throw LogicConstructionException(
           'LogicArrayOf leaves cannot contain nested LogicArrayOf fields.');
     }
+    final prototypeNetComposition = _netComposition(prototype);
+    final elementsForNetValidation =
+        typedLeaves.isEmpty ? <Logic>[prototype] : typedLeaves;
+    if (elementsForNetValidation.any((element) {
+      final composition = _netComposition(element);
+      return composition.contains(true) && composition.contains(false);
+    })) {
+      throw LogicConstructionException(
+          'LogicArrayOf elements cannot mix net and non-net leaves.');
+    }
+    if (elementsForNetValidation.any((element) => !_sameNetComposition(
+        _netComposition(element), prototypeNetComposition))) {
+      throw LogicConstructionException(
+          'All LogicArrayOf elements must have matching net composition.');
+    }
     return _LogicArrayOfBuild._(
         normalizedDimensions,
         normalizedNames,
         elements,
         _validateElementWidths(typedLeaves, prototype.width),
-        typedLeaves.isEmpty
-            ? prototype.isNet
-            : typedLeaves.every((element) => element.isNet));
+        prototypeNetComposition.every((isNet) => isNet));
   }
 
   /// Whether [structure] recursively contains an array field.
@@ -452,6 +465,24 @@ class _LogicArrayOfBuild<T extends Logic> {
       leaf is Const ||
       (leaf is LogicStructure &&
           leaf.leafElements.any((element) => element is Const));
+
+  /// Net kinds of [element]'s recursive leaves in packed order.
+  static List<bool> _netComposition(Logic element) {
+    if (element is! LogicStructure) {
+      return [element.isNet];
+    }
+    if (element.leafElements.isNotEmpty) {
+      return element.leafElements
+          .map((leaf) => leaf.isNet)
+          .toList(growable: false);
+    }
+    return [element is LogicArrayOf<Logic> && element.isNet];
+  }
+
+  /// Whether two recursive net-kind signatures are identical.
+  static bool _sameNetComposition(List<bool> left, List<bool> right) =>
+      left.length == right.length &&
+      left.indexed.every((entry) => entry.$2 == right[entry.$1]);
 
   /// Validates that [elements] all have [expectedWidth].
   static int _validateElementWidths<T extends Logic>(

@@ -53,7 +53,7 @@ final samples = LogicArrayOf<Sample>(
 final bottomRightData = samples.at([1, 2]).data;
 ```
 
-The element builder must always produce the configured type, width, and net kind. A zero-sized array calls it once as a prototype so that metadata remains available even though the array has no positions.
+The element builder must always produce the configured type, width, and recursively ordered net composition. Every element must be uniformly variable or uniformly net: a structure cannot mix `Logic` and `LogicNet` leaves. A zero-sized array calls the builder once as a prototype so that the same metadata and validation remain available even though the array has no positions.
 
 ### Traversal boundaries
 
