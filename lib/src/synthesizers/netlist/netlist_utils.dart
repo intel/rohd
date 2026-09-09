@@ -424,7 +424,7 @@ abstract class NetlistUtils {
     Logic logic, [
     List<Object>? bits,
   ]) {
-    if (logic is BaseLogicArray) {
+    if (logic is LogicArrayOf<Logic>) {
       final result = <String, Object?>{
         'width': logic.width,
         'arrayDims': logic.dimensions,
@@ -434,9 +434,9 @@ abstract class NetlistUtils {
       // include the element type metadata for recursive expansion.
       if (logic.elements.isNotEmpty) {
         final first = logic.elements.first;
-        if (first is LogicStructure && first is! BaseLogicArray) {
+        if (first is LogicStructure && first is! LogicArrayOf<Logic>) {
           result['elementType'] = buildLogicType(first);
-        } else if (first is BaseLogicArray) {
+        } else if (first is LogicArrayOf<Logic>) {
           // Nested array — encode inner dimensions via recursive call.
           result['elementType'] = buildLogicType(first);
         }
@@ -447,13 +447,13 @@ abstract class NetlistUtils {
       final fields = logic.elements.map((e) {
         final fieldBits = bits?.sublist(offset, offset + e.width);
         offset += e.width;
-        if (e is LogicStructure && e is! BaseLogicArray) {
+        if (e is LogicStructure && e is! LogicArrayOf<Logic>) {
           return <String, Object?>{
             'name': e.name,
             if (fieldBits != null) 'bits': fieldBits,
             'type': buildLogicType(e, fieldBits),
           };
-        } else if (e is BaseLogicArray) {
+        } else if (e is LogicArrayOf<Logic>) {
           return <String, Object?>{
             'name': e.name,
             'width': e.width,
@@ -483,7 +483,7 @@ abstract class NetlistUtils {
     final logics = sl.logics;
     return logics
             .whereType<LogicStructure>()
-            .where((l) => l is! BaseLogicArray)
+            .where((l) => l is! LogicArrayOf<Logic>)
             .firstOrNull ??
         logics.firstOrNull;
   }

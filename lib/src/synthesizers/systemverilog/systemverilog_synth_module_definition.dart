@@ -420,7 +420,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
         // Gather each element's single source (the other end of its single
         // connecting assignment), in element order (index 0 = LSB).
         final elementLogics = agg.logics
-            .whereType<BaseLogicArray>()
+            .whereType<LogicArrayOf<Logic>>()
             .first
             .elements
             .map(getSynthLogic)
@@ -428,7 +428,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
             .toList();
 
         final aggregateLogic = agg.logics.singleOrNull;
-        final isPackedBitArray = aggregateLogic is BaseLogicArray &&
+        final isPackedBitArray = aggregateLogic is LogicArrayOf<Logic> &&
             aggregateLogic.dimensions.length == 1 &&
             aggregateLogic.elementWidth == 1 &&
             aggregateLogic.numUnpackedDimensions == 0;
@@ -1223,7 +1223,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
         }
 
         final allElements = parentArray.logics
-            .whereType<BaseLogicArray>()
+            .whereType<LogicArrayOf<Logic>>()
             .expand((logicArray) => logicArray.elements)
             .map(getSynthLogic)
             .nonNulls
@@ -1388,8 +1388,9 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
     }
 
     bool elementsAllAbsent(SynthLogic parentArray) =>
-        parentArray.logics.every((logic) =>
-            !(logic as BaseLogicArray).elements.any(logicHasPresentSynthLogic));
+        parentArray.logics.every((logic) => !(logic as LogicArrayOf<Logic>)
+            .elements
+            .any(logicHasPresentSynthLogic));
 
     var droppedAny = true;
     while (droppedAny) {

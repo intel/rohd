@@ -111,7 +111,7 @@ class LogicStructure implements Logic {
   int? _arrayIndex;
 
   @override
-  bool get isArrayMember => parentStructure is BaseLogicArray;
+  bool get isArrayMember => parentStructure is LogicArrayOf<Logic>;
 
   @override
   void put(dynamic val, {bool fill = false}) {
@@ -178,7 +178,7 @@ class LogicStructure implements Logic {
   LogicStructure flattenOuter({String? name, bool prefixFieldNames = true}) {
     final sources = <(Logic, String)>[];
     for (final element in elements) {
-      if (element is LogicStructure && element is! BaseLogicArray) {
+      if (element is LogicStructure && element is! LogicArrayOf<Logic>) {
         for (final field in element.elements) {
           final prefix =
               element.name.endsWith('_') ? element.name : '${element.name}_';
