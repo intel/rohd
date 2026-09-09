@@ -78,7 +78,7 @@ class LogicValueArray {
   /// Captures the current values of a [BaseLogicArray].
   factory LogicValueArray.fromLogicArray(BaseLogicArray values) =>
       LogicValueArray(values.dimensions, values.elementWidth,
-          values.arrayElements.map((element) => element.packed.value));
+          values.arrayElements.map((element) => element.value));
 
   /// Stacks equally shaped arrays along a new outer dimension.
   factory LogicValueArray.stack(Iterable<LogicValueArray> arrays) {

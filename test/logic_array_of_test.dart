@@ -123,6 +123,20 @@ void main() {
       );
     });
 
+    test('preserves unpacked dimensions through cloning', () {
+      final values = LogicArrayOf<Logic>(
+        [2, 3],
+        ({name}) => Logic(name: name, width: 4),
+        numUnpackedDimensions: 1,
+      );
+
+      expect(values.clone().numUnpackedDimensions, 1);
+      expect(
+        values.named('renamed').numUnpackedDimensions,
+        1,
+      );
+    });
+
     test('recursively flattens nested array dimensions with typed leaves', () {
       final nested = LogicArrayOf<LogicArray>(
         [2, 2],
@@ -170,6 +184,29 @@ void main() {
         ),
         throwsA(isA<LogicConstructionException>()),
       );
+      expect(
+        () => LogicArrayOf<Logic>(
+          [2, 2],
+          Logic.new,
+          dimensionNames: const ['row.', 'column_'],
+        ),
+        throwsA(isA<LogicConstructionException>()),
+      );
+      expect(
+        () => LogicArrayOf<Logic>(
+          [2, 2],
+          Logic.new,
+          dimensionNames: const ['row_', 'row_'],
+        ),
+        throwsA(isA<LogicConstructionException>()),
+      );
+      expect(
+        () => LogicArrayOf<Const>(
+          [2],
+          ({name}) => Const(0, width: 1),
+        ),
+        throwsA(isA<LogicConstructionException>()),
+      );
 
       var width = 1;
       expect(
@@ -179,6 +216,20 @@ void main() {
         ),
         throwsA(isA<LogicConstructionException>()),
       );
+    });
+
+    test('preserves naming when named', () {
+      final values = LogicArrayOf<Logic>(
+        [2],
+        Logic.new,
+        name: 'values',
+        naming: Naming.mergeable,
+      );
+
+      final renamed = values.named('renamed', naming: Naming.reserved);
+
+      expect(renamed.name, 'renamed');
+      expect(renamed.naming, Naming.reserved);
     });
 
     test('drives and captures compatible packed and typed values', () {
