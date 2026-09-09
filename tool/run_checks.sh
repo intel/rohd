@@ -66,7 +66,7 @@ elif [[ "${ROHD_REQUIRE_VERILATOR:-0}" == '1' ]]; then
   echo 'Verilator is required: please install Verilator!'
   exit 1
 else
-  echo 'Verilator not found: compilation tests will be reported as skipped.'
+  echo 'Verilator not found: its compilation and simulation tests will be skipped.'
   echo 'Install Verilator for full native coverage; CI requires it.'
 fi
 

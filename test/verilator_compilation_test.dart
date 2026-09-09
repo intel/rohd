@@ -34,7 +34,113 @@ endmodule
 ''';
 }
 
+class VectorArrayFixture extends Module {
+  VectorArrayFixture() {
+    final array = addInputArray(
+        'array', LogicArray([3], 4, numUnpackedDimensions: 1),
+        dimensions: [3], elementWidth: 4, numUnpackedDimensions: 1);
+    addOutputArray('observed',
+            dimensions: [3], elementWidth: 4, numUnpackedDimensions: 1) <=
+        array;
+  }
+}
+
+class EarlyFinishFixture extends Module with SystemVerilog {
+  @override
+  String definitionVerilog(String definitionType) => '''
+module $definitionType();
+initial \$finish;
+endmodule
+''';
+}
+
 void main() {
+  for (final value in [LogicValue.x, LogicValue.z, '10xz00000000']) {
+    for (final isInput in [true, false]) {
+      test(
+          'Verilator rejects four-state ${isInput ? 'input' : 'output'} $value',
+          () async {
+        final module = VectorArrayFixture();
+        await module.build();
+        expect(
+            () => SimCompare.checkVerilatorVector(module, [
+                  Vector({'array': isInput ? value : 0},
+                      {'observed': isInput ? 0 : value}),
+                ]),
+            throwsA(isA<ArgumentError>().having((error) => error.message,
+                'diagnostic', contains('requires two-state vectors'))));
+      }, testOn: 'vm');
+    }
+  }
+
+  test('buildOnly permits four-state vectors', () async {
+    final module = VectorArrayFixture();
+    await module.build();
+    SimCompare.checkVerilatorVector(
+        module,
+        [
+          Vector({'array': LogicValue.x}, {'observed': LogicValue.x}),
+        ],
+        buildOnly: true);
+  });
+
+  test('simulation cannot pass by exiting before its checks', () async {
+    final module = EarlyFinishFixture();
+    await module.build();
+    if (!SimCompare.checkVerilatorVector(module, const [], buildOnly: true)) {
+      return;
+    }
+    expect(
+        () => SimCompare.checkVerilatorVector(module, const []),
+        throwsA(isA<TestFailure>().having((error) => error.message,
+            'diagnostic', contains('before completing the vectors'))));
+  });
+
+  test('Verilator simulates unpacked-array vectors', () async {
+    final module = VectorArrayFixture();
+    await module.build();
+    SimCompare.checkVerilatorVector(module, [
+      Vector({'array': 0x123}, {'observed': 0x123}),
+      Vector({'array': 0xabc}, {'observed': 0xabc}),
+      Vector({'array': 0}, {'observed': 0}),
+    ]);
+  });
+
+  test('buildOnly checks syntax without executing failing vectors', () async {
+    final module = VectorArrayFixture();
+    await module.build();
+    SimCompare.checkVerilatorVector(
+        module,
+        [
+          Vector({'array': 0x123}, {'observed': 0x321}),
+        ],
+        buildOnly: true);
+  });
+
+  test('Verilator simulation rejects incorrect expected values', () async {
+    final module = VectorArrayFixture();
+    await module.build();
+    if (!SimCompare.checkVerilatorVector(module, const [], buildOnly: true)) {
+      return;
+    }
+    TestFailure? failure;
+    try {
+      SimCompare.checkVerilatorVector(module, [
+        Vector({'array': 0xabc}, {'observed': 0xabc}),
+        Vector({'array': 0x123}, {'observed': 0x321}),
+      ]);
+    } on TestFailure catch (error) {
+      failure = error;
+    }
+    expect(failure, isNotNull);
+    final message = failure!.message!;
+    expect(message, contains('Verilator simulation failed'));
+    expect(message, contains('Expected observed[0]'));
+    final directory =
+        RegExp(r'Command: (\S+)/obj_dir/rohd_sim').firstMatch(message)![1]!;
+    expect(Directory(directory).existsSync(), isFalse);
+  });
+
   File fakeExecutable(String body,
       {bool executable = true, String interpreter = '/bin/sh'}) {
     final directory = Directory.systemTemp.createTempSync('rohd_verilator_');
@@ -50,20 +156,21 @@ void main() {
   test('Verilator accepts an unpacked array concatenation', () async {
     final module = ArrayConnectionFixture("{2'h0}");
     await module.build();
-    SimCompare.checkVerilatorCompilation(module);
+    SimCompare.checkVerilatorVector(module, const [], buildOnly: true);
   });
 
   test('Verilator rejects a scalar connected to an unpacked array', () async {
     final valid = ArrayConnectionFixture("{2'h0}");
     await valid.build();
-    if (!SimCompare.checkVerilatorCompilation(valid)) {
+    if (!SimCompare.checkVerilatorVector(valid, const [], buildOnly: true)) {
       return;
     }
 
     final invalid = ArrayConnectionFixture("2'h0");
     await invalid.build();
     expect(
-      () => SimCompare.checkVerilatorCompilation(invalid, requireTool: false),
+      () => SimCompare.checkVerilatorVector(invalid, const [],
+          buildOnly: true, requireTool: false),
       throwsA(isA<TestFailure>().having((error) => error.message, 'diagnostic',
           contains('Verilator compilation failed'))),
     );
@@ -71,7 +178,9 @@ void main() {
 
   test('missing optional Verilator explicitly skips', () {
     expect(
-        SimCompare.checkVerilatorCompilation(ArrayConnectionFixture("{2'h0}"),
+        SimCompare.checkVerilatorVector(
+            ArrayConnectionFixture("{2'h0}"), const [],
+            buildOnly: true,
             verilatorExecutable: '/rohd/nonexistent/verilator',
             requireTool: false),
         isFalse);
@@ -79,8 +188,9 @@ void main() {
 
   test('missing required Verilator fails', () {
     expect(
-      () => SimCompare.checkVerilatorCompilation(
-          ArrayConnectionFixture("{2'h0}"),
+      () => SimCompare.checkVerilatorVector(
+          ArrayConnectionFixture("{2'h0}"), const [],
+          buildOnly: true,
           verilatorExecutable: '/rohd/nonexistent/verilator',
           requireTool: true),
       throwsA(isA<TestFailure>().having(
@@ -89,9 +199,9 @@ void main() {
   }, testOn: 'vm');
 
   test('missing Verilator follows the environment policy', () {
-    bool check() =>
-        SimCompare.checkVerilatorCompilation(ArrayConnectionFixture("{2'h0}"),
-            verilatorExecutable: '/rohd/nonexistent/verilator');
+    bool check() => SimCompare.checkVerilatorVector(
+        ArrayConnectionFixture("{2'h0}"), const [],
+        buildOnly: true, verilatorExecutable: '/rohd/nonexistent/verilator');
     if (Platform.environment['ROHD_REQUIRE_VERILATOR'] == '1') {
       expect(check, throwsA(isA<TestFailure>()));
     } else {
@@ -102,8 +212,9 @@ void main() {
   test('a broken version command is not treated as a missing tool', () {
     final executable = fakeExecutable('exit 7');
     expect(
-        () => SimCompare.checkVerilatorCompilation(
-            ArrayConnectionFixture("{2'h0}"),
+        () => SimCompare.checkVerilatorVector(
+            ArrayConnectionFixture("{2'h0}"), const [],
+            buildOnly: true,
             verilatorExecutable: executable.path,
             requireTool: false),
         throwsA(isA<TestFailure>().having((error) => error.message,
@@ -113,8 +224,9 @@ void main() {
   test('permission errors are not treated as a missing tool', () {
     final executable = fakeExecutable('exit 0', executable: false);
     expect(
-        () => SimCompare.checkVerilatorCompilation(
-            ArrayConnectionFixture("{2'h0}"),
+        () => SimCompare.checkVerilatorVector(
+            ArrayConnectionFixture("{2'h0}"), const [],
+            buildOnly: true,
             verilatorExecutable: executable.path,
             requireTool: false),
         throwsA(isA<ProcessException>()));
@@ -132,8 +244,10 @@ esac
     await module.build();
     TestFailure? failure;
     try {
-      SimCompare.checkVerilatorCompilation(module,
-          verilatorExecutable: executable.path, requireTool: false);
+      SimCompare.checkVerilatorVector(module, const [],
+          buildOnly: true,
+          verilatorExecutable: executable.path,
+          requireTool: false);
     } on TestFailure catch (error) {
       failure = error;
     }
@@ -148,8 +262,9 @@ esac
     final executable =
         fakeExecutable('exit 0', interpreter: '/rohd/nonexistent/interpreter');
     expect(
-        () => SimCompare.checkVerilatorCompilation(
-            ArrayConnectionFixture("{2'h0}"),
+        () => SimCompare.checkVerilatorVector(
+            ArrayConnectionFixture("{2'h0}"), const [],
+            buildOnly: true,
             verilatorExecutable: executable.path,
             requireTool: false),
         throwsA(isA<ProcessException>()));
@@ -158,23 +273,26 @@ esac
   test('extra arguments select the warning policy and top module', () async {
     final module = ArrayConnectionFixture("{2'h0}");
     await module.build();
-    if (!SimCompare.checkVerilatorCompilation(module,
-        verilatorExtraArgs: ['-Wall'])) {
+    if (!SimCompare.checkVerilatorVector(module, const [],
+        buildOnly: true, verilatorExtraArgs: ['-Wall'])) {
       return;
     }
     expect(
-        () => SimCompare.checkVerilatorCompilation(module,
+        () => SimCompare.checkVerilatorVector(module, const [],
+            buildOnly: true,
             verilatorExtraArgs: ['-Wall', '-Werror-DECLFILENAME']),
         throwsA(isA<TestFailure>()));
-    SimCompare.checkVerilatorCompilation(module, moduleName: 'ArrayConsumer');
+    SimCompare.checkVerilatorVector(module, const [],
+        buildOnly: true, moduleName: 'ArrayConsumer');
     expect(
-        () => SimCompare.checkVerilatorCompilation(module,
-            moduleName: 'MissingTop', requireTool: false),
+        () => SimCompare.checkVerilatorVector(module, const [],
+            buildOnly: true, moduleName: 'MissingTop', requireTool: false),
         throwsA(isA<TestFailure>()));
   });
 
-  test('retained files use unique directories', () async {
-    final module = ArrayConnectionFixture("{2'h0}");
+  test('retained files use unique directories and include simulation waves',
+      () async {
+    final module = VectorArrayFixture();
     await module.build();
     final directories = <String>[];
     addTearDown(() {
@@ -192,16 +310,32 @@ esac
         }
       },
     ));
-    for (var iteration = 0; iteration < 2; iteration++) {
-      if (!capture.run(() => SimCompare.checkVerilatorCompilation(module,
-          dontDeleteTmpFiles: true))) {
+    for (final buildOnly in [true, false]) {
+      if (!capture.run(() => SimCompare.checkVerilatorVector(
+          module,
+          [
+            Vector({'array': 0x123}, {'observed': 0x123}),
+            Vector({'array': 0xabc}, {'observed': 0xabc}),
+          ],
+          buildOnly: buildOnly,
+          dumpWaves: true,
+          dontDeleteTmpFiles: true,
+          moduleName: module.definitionName,
+          synthesizerConfiguration: const SystemVerilogSynthesizerConfiguration(
+              inputPortType: SystemVerilogPortTypeConfiguration())))) {
         return;
       }
     }
     expect(directories.toSet(), hasLength(2));
     for (final path in directories) {
       expect(File('$path/design.sv').readAsStringSync(),
-          contains('ArrayConsumer'));
+          contains('VectorArrayFixture'));
     }
+    expect(File('${directories.first}/obj_dir/rohd_sim').existsSync(), isFalse);
+    expect(File('${directories.last}/obj_dir/rohd_sim').existsSync(), isTrue);
+    final waves = File('${directories.last}/waves.vcd').readAsStringSync();
+    expect(waves, contains(r'$enddefinitions'));
+    expect(waves, contains('observed'));
+    expect(waves, contains('#11'));
   }, testOn: 'vm');
 }

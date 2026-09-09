@@ -76,11 +76,18 @@ class Vector {
   }
 
   /// Converts this vector into a SystemVerilog check.
-  String toTbVerilog(Module module) {
+  String toTbVerilog(Module module) => _toTbVerilog(module);
+
+  String _toTbVerilog(Module module,
+      {Map<String, String> packedInputDrivers = const {}}) {
     final assignments = inputValues.keys.map((signalName) {
       final signal = module.tryInOut(signalName) ?? module.input(signalName);
 
-      if (signal is LogicArray) {
+      if (packedInputDrivers.containsKey(signalName)) {
+        final value =
+            LogicValue.of(inputValues[signalName], width: signal.width);
+        return '${packedInputDrivers[signalName]} = $value;';
+      } else if (signal is LogicArray) {
         final arrAssigns = StringBuffer();
         var index = 0;
         final fullVal =
@@ -159,35 +166,62 @@ abstract class SimCompare {
         FileSystemEntityType.notFound));
   }
 
-  /// Checks the generated SystemVerilog with Verilator's front-end compiler.
+  /// Checks [vectors] using Verilator, building and running a timed testbench.
   ///
-  /// Returns true after successful compilation, or false when the test is
-  /// marked skipped because Verilator is unavailable or running on the web.
-  /// Compilation and tool execution errors always fail the test.
+  /// With [buildOnly], only performs front-end compilation and elaboration:
+  /// no C++ compiler is needed and no simulation is run. If [vectors] is empty
+  /// in this mode, checks the design without a testbench.
   ///
-  /// [requireTool] defaults to whether the environment variable
-  /// `ROHD_REQUIRE_VERILATOR` is `1`. When required, a missing executable fails
-  /// instead of skipping. Web tests are skipped regardless of this setting.
-  /// [verilatorExecutable] selects the executable, normally found on PATH.
+  /// Simulation requires Verilator with timing support, a C++ compiler, and
+  /// Make. Input and expected output values containing X or Z are rejected
+  /// because Verilator does not provide four-state simulation. Use ROHD or
+  /// Icarus for four-state checks; [buildOnly] permits four-state vectors.
   ///
-  /// Warnings are printed but are nonfatal by default. [verilatorExtraArgs]
-  /// can override this policy. [moduleName] overrides the top-level definition
-  /// name, and [synthesizerConfiguration] controls SystemVerilog generation.
-  /// Temporary files are removed, including on failure, unless
-  /// [dontDeleteTmpFiles] is set.
-  static bool checkVerilatorCompilation(
-    Module module, {
+  /// [dumpWaves] enables VCD tracing in the temporary directory. Set
+  /// [dontDeleteTmpFiles] to retain the generated source, binary, and waves.
+  /// [moduleName] overrides the DUT definition name. [verilatorExtraArgs] and
+  /// [synthesizerConfiguration] control compilation and synthesis respectively.
+  ///
+  /// Returns true on success, or false when the test is explicitly skipped.
+  /// Web tests always skip. If [verilatorExecutable] is absent, skips unless
+  /// [requireTool] is true (defaulting to `ROHD_REQUIRE_VERILATOR=1`).
+  /// Execution, compilation, and simulation failures always fail the test.
+  /// Warnings are visible but nonfatal by default.
+  static bool checkVerilatorVector(
+    Module module,
+    List<Vector> vectors, {
     String? moduleName,
     bool? requireTool,
     String verilatorExecutable = 'verilator',
     List<String> verilatorExtraArgs = const [],
     bool dontDeleteTmpFiles = false,
+    bool dumpWaves = false,
+    bool buildOnly = false,
     SystemVerilogSynthesizerConfiguration synthesizerConfiguration =
         const SystemVerilogSynthesizerConfiguration(),
   }) {
     if (kIsWeb) {
-      markTestSkipped('Verilator compilation requires the Dart VM.');
+      markTestSkipped('Verilator checks require the Dart VM.');
       return false;
+    }
+
+    if (!buildOnly) {
+      for (final vector in vectors) {
+        for (final values in [
+          vector.inputValues,
+          vector.expectedOutputValues
+        ]) {
+          for (final entry in values.entries) {
+            final signal = identical(values, vector.inputValues)
+                ? module.tryInOut(entry.key) ?? module.input(entry.key)
+                : module.tryInOut(entry.key) ?? module.output(entry.key);
+            if (!LogicValue.of(entry.value, width: signal.width).isValid) {
+              throw ArgumentError('Verilator simulation requires two-state '
+                  'vectors; ${entry.key} contains X or Z in $vector.');
+            }
+          }
+        }
+      }
     }
 
     final required =
@@ -204,7 +238,7 @@ abstract class SimCompare {
         rethrow;
       }
       final message = 'Verilator executable "$verilatorExecutable" not found. '
-          'Install Verilator to run SystemVerilog compilation checks.';
+          'Install Verilator to run SystemVerilog checks.';
       if (required) {
         fail(message);
       }
@@ -215,19 +249,60 @@ abstract class SimCompare {
         reason: 'Could not run $verilatorExecutable --version:\n'
             '${version.stdout}\n${version.stderr}');
 
-    final verilog = module.generateSynth(
+    final generatedVerilog = module.generateSynth(
       configuration: synthesizerConfiguration,
     );
+    final withTestbench = !buildOnly || vectors.isNotEmpty;
+    const completionMarker = 'ROHD_VERILATOR_VECTORS_PASSED';
+    final testbenchName = Uniquifier(reservedNames: {
+      moduleName ?? module.definitionName,
+      ...module.subModules.map((child) => child.definitionName),
+    }).getUniqueName(initialName: 'rohd_verilator_tb');
+    var verilog = generatedVerilog;
+    if (withTestbench) {
+      final contents = _vectorTestbenchContents(module, vectors,
+          moduleName: moduleName, usePackedInputDrivers: true);
+      verilog = [
+        generatedVerilog,
+        'module $testbenchName;',
+        contents.declarations,
+        contents.instance,
+        'initial begin',
+        if (dumpWaves) ...[
+          r'$dumpfile("waves.vcd");',
+          r'$dumpvars(0,dut);',
+        ],
+        '#1',
+        contents.stimulus,
+        '\$display("$completionMarker");',
+        r'$finish;',
+        'end',
+        'endmodule',
+      ].join('\n');
+    }
     final directory = (Directory('tmp_test')..createSync(recursive: true))
-        .createTempSync('verilator_');
+        .createTempSync('verilator_')
+        .absolute;
     try {
       final source = File('${directory.path}/design.sv')
         ..writeAsStringSync(verilog);
       final arguments = [
-        '--lint-only',
+        if (buildOnly) '--lint-only' else '--binary',
+        if (withTestbench) '--timing',
+        if (!buildOnly) ...[
+          '--assert',
+          '-j',
+          '1',
+          '-o',
+          'rohd_sim',
+        ],
+        if (dumpWaves) '--trace',
         '-Wno-fatal',
         '--top-module',
-        moduleName ?? module.definitionName,
+        if (withTestbench)
+          testbenchName
+        else
+          moduleName ?? module.definitionName,
         '--Mdir',
         '${directory.path}/obj_dir',
         ...verilatorExtraArgs,
@@ -239,8 +314,22 @@ abstract class SimCompare {
           reason: 'Verilator compilation failed.\n'
               'Command: $verilatorExecutable ${arguments.join(' ')}\n'
               '$diagnostics');
-      if (diagnostics.isNotEmpty) {
-        print(diagnostics);
+      final warnings =
+          buildOnly ? diagnostics : result.stderr.toString().trim();
+      if (warnings.isNotEmpty) {
+        print(warnings);
+      }
+      if (!buildOnly) {
+        final executable = '${directory.path}/obj_dir/rohd_sim';
+        final simulation = Process.runSync(executable, const [],
+            workingDirectory: directory.path);
+        final output = '${simulation.stdout}\n${simulation.stderr}'.trim();
+        expect(simulation.exitCode, 0,
+            reason: 'Verilator simulation failed.\n'
+                'Command: $executable\n$output');
+        expect(simulation.stdout.toString(), contains(completionMarker),
+            reason: 'Verilator simulation exited before completing the vectors.'
+                '\nCommand: $executable\n$output');
       }
       return true;
     } finally {
@@ -371,25 +460,9 @@ abstract class SimCompare {
     }
   }
 
-  /// Executes [vectors] against the Icarus Verilog simulator.
-  static bool iverilogVector(
-    Module module,
-    List<Vector> vectors, {
-    String? moduleName,
-    bool dontDeleteTmpFiles = false,
-    bool dumpWaves = false,
-    List<String> iverilogExtraArgs = const [],
-    bool allowWarnings = false,
-    bool maskKnownWarnings = true,
-    bool buildOnly = false,
-    SystemVerilogSynthesizerConfiguration synthesizerConfiguration =
-        const SystemVerilogSynthesizerConfiguration(),
-  }) {
-    if (kIsWeb) {
-      // if running in web mode, then we can't run icarus verilog
-      return true;
-    }
-
+  static ({String declarations, String instance, String stimulus})
+      _vectorTestbenchContents(Module module, List<Vector> vectors,
+          {String? moduleName, bool usePackedInputDrivers = false}) {
     String signalDeclaration(String signalName,
         {String Function(String original)? adjust,
         String? signalTypeOverride}) {
@@ -430,7 +503,7 @@ abstract class SimCompare {
       for (final v in vectors) ...v.expectedOutputValues.keys,
     };
 
-    late final tbWireUniquifier = Uniquifier();
+    late final tbWireUniquifier = Uniquifier(reservedNames: allSignals);
     late final alreadyMappedLogicToWires = <String, String>{};
     String toTbWireName(String name) => alreadyMappedLogicToWires.putIfAbsent(
         name, () => tbWireUniquifier.getUniqueName(initialName: 'wire__$name'));
@@ -441,7 +514,29 @@ abstract class SimCompare {
         .where((name) => module.tryInOut(name) != null)
         .map((name) => MapEntry(name, toTbWireName(name))));
 
+    final packedInputDrivers = <String, String>{};
+    final packedInputDeclarations = <String>[];
+    if (usePackedInputDrivers) {
+      for (final signalName in allSignals) {
+        final signal = module.tryInput(signalName);
+        if (signal is! LogicArray || signal.numUnpackedDimensions == 0) {
+          continue;
+        }
+        final driver =
+            tbWireUniquifier.getUniqueName(initialName: 'driver__$signalName');
+        packedInputDrivers[signalName] = driver;
+        packedInputDeclarations.add('logic [${signal.width - 1}:0] $driver;');
+        var offset = 0;
+        for (final leaf in signal.leafElements) {
+          packedInputDeclarations.add('assign ${leaf.structureName} = '
+              '$driver[${offset + leaf.width - 1}:$offset];');
+          offset += leaf.width;
+        }
+      }
+    }
+
     final localDeclarations = [
+      ...packedInputDeclarations,
       ...allSignals.map((e) {
         final sigDecl = signalDeclaration(e,
             signalTypeOverride:
@@ -461,7 +556,41 @@ abstract class SimCompare {
     final moduleConnections =
         allSignals.map((e) => '.$e(${logicToWireMapping[e] ?? e})').join(', ');
     final moduleInstance = '$topModule dut($moduleConnections);';
-    final stimulus = vectors.map((e) => e.toTbVerilog(module)).join('\n');
+    final stimulus = vectors
+        .map((vector) =>
+            vector._toTbVerilog(module, packedInputDrivers: packedInputDrivers))
+        .join('\n');
+    return (
+      declarations: localDeclarations,
+      instance: moduleInstance,
+      stimulus: stimulus,
+    );
+  }
+
+  /// Executes [vectors] against the Icarus Verilog simulator.
+  static bool iverilogVector(
+    Module module,
+    List<Vector> vectors, {
+    String? moduleName,
+    bool dontDeleteTmpFiles = false,
+    bool dumpWaves = false,
+    List<String> iverilogExtraArgs = const [],
+    bool allowWarnings = false,
+    bool maskKnownWarnings = true,
+    bool buildOnly = false,
+    SystemVerilogSynthesizerConfiguration synthesizerConfiguration =
+        const SystemVerilogSynthesizerConfiguration(),
+  }) {
+    if (kIsWeb) {
+      // if running in web mode, then we can't run icarus verilog
+      return true;
+    }
+
+    final (
+      declarations: localDeclarations,
+      instance: moduleInstance,
+      :stimulus,
+    ) = _vectorTestbenchContents(module, vectors, moduleName: moduleName);
     final generatedVerilog = module.generateSynth(
       configuration: synthesizerConfiguration,
     );

@@ -44,11 +44,7 @@ You must have [Dart](https://dart.dev/) installed on your system to use ROHD. Yo
 
 To run the complete ROHD test suite for development, you need to install [Icarus Verilog](https://steveicarus.github.io/iverilog/). It is used to compare SystemVerilog functionality with the ROHD simulator functionality. Installation instructions are available here: <https://iverilog.fandom.com/wiki/Installation_Guide>
 
-Selected SystemVerilog compilation tests also use [Verilator](https://verilator.org/guide/latest/install.html), including unpacked-array cases that Icarus does not fully support. Verilator 5.020 or newer is recommended. On Ubuntu, install it with `sudo apt-get install verilator`. Verilator is preinstalled by the ROHD Codespaces setup and required in native CI, including coverage runs.
-
-Locally, a missing Verilator executable causes these compilation tests to be explicitly skipped. An installed tool that fails to run or rejects generated SystemVerilog always fails the test. Set `ROHD_REQUIRE_VERILATOR=1` to require the tool locally as CI does. Node/web runs skip external compilation checks; ROHD functional tests still run.
-
-`SimCompare.checkVerilatorCompilation` checks the generated design with `--lint-only`, without building a simulator or running vectors. Warnings are visible but nonfatal by default. Use separate compilation tests tagged `verilator` so skips do not hide functional checks. The helper accepts extra Verilator arguments, synthesis configuration, and `dontDeleteTmpFiles: true` to retain its temporary directory for debugging.
+Some tests also use [Verilator](https://verilator.org/guide/latest/install.html). It is optional for local development: tests that need it are skipped when it is not installed. CI requires it, and the Codespaces setup installs it for you.
 
 ### Setup Recommendations
 
@@ -80,14 +76,6 @@ cd rohd
 dart pub get
 dart test
 ```
-
-To run just the Verilator checks with the tool required:
-
-```shell
-ROHD_REQUIRE_VERILATOR=1 dart test --tags verilator
-```
-
-The same environment variable can be used with `dart test` or `tool/run_checks.sh` to require Verilator during the full native test run.
 
 ## How to Contribute
 

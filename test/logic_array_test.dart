@@ -567,16 +567,37 @@ class PartialArrayAssignTop extends Module {
 }
 
 void main() {
+  List<Vector> passthroughVectors(int width) {
+    const randWidth = 23;
+    final rand = Random(1234);
+    final values = List.generate(
+        10,
+        (index) =>
+            LogicValue.ofInt(rand.nextInt(oneSllBy(randWidth)), randWidth)
+                .replicate(width ~/ randWidth + 1)
+                .getRange(0, width));
+    return [
+      for (final value in values) Vector({'laIn': value}, {'laOut': value})
+    ];
+  }
+
   void testWithVerilator<ModuleType extends Module>(
     String description,
     ModuleType Function() createModule,
-    Future<void> Function(ModuleType module) body,
-  ) {
+    Future<void> Function(ModuleType module) body, {
+    bool buildOnly = false,
+  }) {
     test(description, () => body(createModule()));
-    test('$description compiles with Verilator', () async {
+    test('$description ${buildOnly ? 'compiles' : 'simulates'} with Verilator',
+        () async {
       final module = createModule();
       await module.build();
-      SimCompare.checkVerilatorCompilation(module);
+      SimCompare.checkVerilatorVector(
+          module,
+          buildOnly
+              ? const []
+              : passthroughVectors(module.output('laOut').width),
+          buildOnly: buildOnly);
     }, tags: ['verilator']);
   }
 
@@ -750,18 +771,7 @@ void main() {
         bool dontDeleteTmpFiles = false}) async {
       await mod.build();
 
-      const randWidth = 23;
-      final rand = Random(1234);
-      final values = List.generate(
-          10,
-          (index) =>
-              LogicValue.ofInt(rand.nextInt(oneSllBy(randWidth)), randWidth)
-                  .replicate(mod.laOut.width ~/ randWidth + 1)
-                  .getRange(0, mod.laOut.width));
-
-      final vectors = [
-        for (final value in values) Vector({'laIn': value}, {'laOut': value})
-      ];
+      final vectors = passthroughVectors(mod.laOut.width);
 
       if (checkNoSwizzle) {
         expect(mod.generateSynth().contains('swizzle'), false,
@@ -1115,7 +1125,7 @@ void main() {
         (mod) async {
       // unpacked array assignment not fully supported in iverilog
       await testArrayConstantAssignments(mod, doSvSim: false);
-    });
+    }, buildOnly: true);
 
     test('indexing single bit of array', () async {
       final mod = IndexBitOfArrayModule();

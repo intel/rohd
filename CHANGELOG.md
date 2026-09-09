@@ -1,7 +1,7 @@
 ## Next release
 
 - Fixed illegal scalar connections to singleton unpacked-array inputs when inlining constants or live signals into generated SystemVerilog.
-- Added targeted Verilator compilation checks, required in native CI and explicitly skipped locally when Verilator is unavailable.
+- Added targeted Verilator compilation and two-state vector simulation checks, including a `buildOnly` mode, required in native CI and explicitly skipped locally when Verilator is unavailable.
 
 ## 0.6.10
 

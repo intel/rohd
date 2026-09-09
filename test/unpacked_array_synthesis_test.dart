@@ -56,8 +56,52 @@ class UnpackedInputTop extends Module {
   }
 }
 
+class ArrayDriveSimulationTop extends Module {
+  final expected = <String, LogicValue>{};
+
+  ArrayDriveSimulationTop(List<int> dimensions, int unpacked) {
+    final width =
+        dimensions.fold(2, (product, dimension) => product * dimension);
+    final inputValue = addInput('value', Logic(width: width), width: width);
+    for (final drive in ArrayDrive.values) {
+      final values = drive == ArrayDrive.live ? [0] : [0, 0x39];
+      for (final value in values) {
+        final child = UnpackedInputTop(
+            dimensions: dimensions,
+            elementWidth: 2,
+            numUnpackedDimensions: unpacked,
+            drive: drive,
+            value: value);
+        final outputName = '${drive.name}_$value';
+        addOutput(outputName, width: width) <= child.output('observed');
+        if (drive == ArrayDrive.live) {
+          child.inputSource('value') <= inputValue;
+        } else {
+          expected[outputName] = LogicValue.of(value, width: width);
+        }
+      }
+    }
+  }
+}
+
 void main() {
   tearDown(Simulator.reset);
+
+  for (final shape in [
+    (dimensions: [1], unpacked: 1),
+    (dimensions: [3], unpacked: 1),
+    (dimensions: [1, 3], unpacked: 1),
+    (dimensions: [2, 2], unpacked: 2),
+  ]) {
+    test('Verilator simulates all drivers for $shape', () async {
+      final module = ArrayDriveSimulationTop(shape.dimensions, shape.unpacked);
+      await module.build();
+      SimCompare.checkVerilatorVector(module, [
+        for (final value in [0, 0x39, 0xa6, 0xff])
+          Vector({'value': value}, {...module.expected, 'live_0': value}),
+      ]);
+    }, tags: ['verilator']);
+  }
 
   final shapes = [
     (name: 'packed singleton', dimensions: [1], width: 2, unpacked: 0),
@@ -111,7 +155,8 @@ void main() {
         for (final value in values.take(2)) {
           final module = makeModule(value);
           await module.build();
-          if (!SimCompare.checkVerilatorCompilation(module)) {
+          if (!SimCompare.checkVerilatorVector(module, const [],
+              buildOnly: true)) {
             return;
           }
         }

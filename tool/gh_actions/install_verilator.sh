@@ -11,5 +11,5 @@
 
 set -euo pipefail
 
-sudo -n apt-get install --yes verilator
+sudo -n apt-get install --yes verilator build-essential
 verilator --version
