@@ -87,7 +87,7 @@ class Vector {
         final value =
             LogicValue.of(inputValues[signalName], width: signal.width);
         return '${packedInputDrivers[signalName]} = $value;';
-      } else if (signal is BaseLogicArray) {
+      } else if (signal is LogicArrayOf<Logic>) {
         final arrAssigns = StringBuffer();
         var index = 0;
         final fullVal =
@@ -117,7 +117,7 @@ class Vector {
       );
       final inputStimulus = inputValues.toString();
 
-      if (outputPort is BaseLogicArray) {
+      if (outputPort is LogicArrayOf<Logic>) {
         var index = 0;
         for (final element in outputPort.arrayElements) {
           final subVal = expectedValue.getRange(index, index + element.width);
@@ -471,7 +471,8 @@ abstract class SimCompare {
       final signal = module.signals.firstWhere((e) => e.name == signalName);
 
       final signalType = signalTypeOverride ??
-          ((signal is LogicNet || (signal is BaseLogicArray && signal.isNet))
+          ((signal is LogicNet ||
+                  (signal is LogicArrayOf<Logic> && signal.isNet))
               ? 'wire'
               : 'logic');
 
@@ -479,7 +480,7 @@ abstract class SimCompare {
         signalName = adjust(signalName);
       }
 
-      if (signal is BaseLogicArray) {
+      if (signal is LogicArrayOf<Logic>) {
         final unpackedDims =
             signal.dimensions.getRange(0, signal.numUnpackedDimensions);
         final packedDims = signal.dimensions

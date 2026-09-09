@@ -154,7 +154,8 @@ class NetlistSynthesizer extends Synthesizer {
       void aliasArrayChildren(SynthLogic src, SynthLogic dst) {
         final srcLogic = src.logics.firstOrNull;
         final dstLogic = dst.logics.firstOrNull;
-        if (srcLogic is! BaseLogicArray || dstLogic is! BaseLogicArray) {
+        if (srcLogic is! LogicArrayOf<Logic> ||
+            dstLogic is! LogicArrayOf<Logic>) {
           return;
         }
         if (srcLogic.elements.length != dstLogic.elements.length) {
@@ -171,8 +172,8 @@ class NetlistSynthesizer extends Synthesizer {
 
           final srcElementLogic = srcElementSynth.logics.firstOrNull;
           final dstElementLogic = dstElementSynth.logics.firstOrNull;
-          if (srcElementLogic is BaseLogicArray &&
-              dstElementLogic is BaseLogicArray) {
+          if (srcElementLogic is LogicArrayOf<Logic> &&
+              dstElementLogic is LogicArrayOf<Logic>) {
             aliasArrayChildren(srcElementSynth, dstElementSynth);
           }
 
@@ -221,11 +222,25 @@ class NetlistSynthesizer extends Synthesizer {
       void addStructAndDescendants(LogicStructure struct, Set<Logic> set) {
         set.add(struct);
         for (final elem in struct.elements) {
-          if (elem is LogicStructure && elem is! BaseLogicArray) {
+          if (elem is LogicStructure && elem is! LogicArrayOf<Logic>) {
             addStructAndDescendants(elem, set);
           }
         }
       }
+
+      void addArrayStructureElements(LogicArrayOf<Logic> array) {
+        for (final element in array.elements) {
+          if (element is LogicArrayOf<Logic>) {
+            addArrayStructureElements(element);
+          } else if (element is LogicStructure) {
+            addStructAndDescendants(element, outputStructPortLogics);
+          }
+        }
+      }
+
+      module.outputs.values
+          .whereType<LogicArrayOf<Logic>>()
+          .forEach(addArrayStructureElements);
 
       for (final pa
           in synthDef.assignments.whereType<PartialSynthAssignment>()) {
@@ -241,7 +256,7 @@ class NetlistSynthesizer extends Synthesizer {
         // current module.)
         final isSubModuleInputStructPort = !isCurrentModuleOutputPort &&
             pa.dst.logics
-                .any((l) => l is LogicStructure && l is! BaseLogicArray);
+                .any((l) => l is LogicStructure && l is! LogicArrayOf<Logic>);
 
         if (isCurrentModuleOutputPort || isSubModuleInputStructPort) {
           // Record as pending compose cell instead of aliasing.
@@ -256,7 +271,7 @@ class NetlistSynthesizer extends Synthesizer {
           // Track the Logic (and nested structs) so Step 3 skips
           // $struct_unpack for them.
           for (final l in pa.dst.logics) {
-            if (l is LogicStructure && l is! BaseLogicArray) {
+            if (l is LogicStructure && l is! LogicArrayOf<Logic>) {
               addStructAndDescendants(l, outputStructPortLogics);
             }
           }
@@ -330,7 +345,7 @@ class NetlistSynthesizer extends Synthesizer {
                 )
                 .map((e) => e.key)
                 .firstOrNull;
-            if (logic != null && logic is BaseLogicArray) {
+            if (logic != null && logic is LogicArrayOf<Logic>) {
               arraysWithExplicitCells.add(logic);
             }
             // Also check the resolved replacement chain.
@@ -339,7 +354,7 @@ class NetlistSynthesizer extends Synthesizer {
                 .where((e) => e.value == resolved)
                 .map((e) => e.key)
                 .firstOrNull;
-            if (logic2 != null && logic2 is BaseLogicArray) {
+            if (logic2 != null && logic2 is LogicArrayOf<Logic>) {
               arraysWithExplicitCells.add(logic2);
             }
           }
@@ -353,7 +368,7 @@ class NetlistSynthesizer extends Synthesizer {
                 )
                 .map((e) => e.key)
                 .firstOrNull;
-            if (logic != null && logic is BaseLogicArray) {
+            if (logic != null && logic is LogicArrayOf<Logic>) {
               arraysWithExplicitCells.add(logic);
             }
           }
@@ -368,7 +383,7 @@ class NetlistSynthesizer extends Synthesizer {
         final parentSL = entry.value;
         final parentIds = getIds(parentSL);
 
-        if (logic is BaseLogicArray) {
+        if (logic is LogicArrayOf<Logic>) {
           // Skip aliasing for arrays that have explicit $slice/$concat cells.
           if (arraysWithExplicitCells.contains(logic)) {
             continue;
@@ -417,7 +432,7 @@ class NetlistSynthesizer extends Synthesizer {
                   fullParentIds: parentIds,
                 ));
               }
-            } else if (elem is LogicStructure && elem is! BaseLogicArray) {
+            } else if (elem is LogicStructure && elem is! LogicArrayOf<Logic>) {
               // Nested InterfaceStructure: the intermediate struct
               // itself has no SynthLogic, but its leaf elements do
               // (created by _subsetReceiveStructPort).  Walk leaf
@@ -477,6 +492,7 @@ class NetlistSynthesizer extends Synthesizer {
     // (Populated inside the alias block below; declared here so netnames
     // can reference it later.)
     final arraySliceOldToNew = <int, int>{};
+    final arraySliceOutputBitsByCell = <String, Set<int>>{};
 
     // Alias port bits.
     if (idAlias.isNotEmpty) {
@@ -515,12 +531,17 @@ class NetlistSynthesizer extends Synthesizer {
         final cell = cellEntry.value as Map<String, dynamic>;
         final conns = cell['connections'] as Map<String, dynamic>;
         final dirs = cell['port_directions'] as Map<String, dynamic>;
+        final oldOutputBits = arraySliceOutputBitsByCell.putIfAbsent(
+          cellEntry.key,
+          () => <int>{},
+        );
 
         for (final portEntry in conns.entries.toList()) {
           if (dirs[portEntry.key] != 'output') {
             continue;
           }
           final oldBits = (portEntry.value as List).cast<Object>();
+          oldOutputBits.addAll(oldBits.whereType<int>());
           conns[portEntry.key] = [
             for (final b in oldBits)
               if (b is int)
@@ -552,18 +573,11 @@ class NetlistSynthesizer extends Synthesizer {
         }
 
         for (final cellEntry in cells.entries) {
-          if (NetlistCell.hasOrigin(
-            cellEntry.value,
-            NetlistCellOrigin.arraySlice,
-          )) {
-            // Keep each slice input connected to the original parent-array
-            // bits. Rewriting it would bypass the slice by connecting both
-            // its input and fresh output to the replacement IDs.
-            continue;
-          }
           final cell = cellEntry.value as Map<String, dynamic>;
           final conns = cell['connections'] as Map<String, dynamic>;
           final dirs = cell['port_directions'] as Map<String, dynamic>;
+          final ownOldOutputBits =
+              arraySliceOutputBitsByCell[cellEntry.key] ?? const <int>{};
 
           for (final portEntry in conns.entries.toList()) {
             if (dirs[portEntry.key] != 'input') {
@@ -572,7 +586,10 @@ class NetlistSynthesizer extends Synthesizer {
             final bits = (portEntry.value as List).cast<Object>();
             final newBits = [
               for (final b in bits)
-                if (b is int) arraySliceOldToNew[b] ?? b else b,
+                if (b is int && !ownOldOutputBits.contains(b))
+                  arraySliceOldToNew[b] ?? b
+                else
+                  b,
             ];
             if (bits.indexed.any((e) => e.$2 != newBits[e.$1])) {
               conns[portEntry.key] = newBits;
@@ -581,6 +598,14 @@ class NetlistSynthesizer extends Synthesizer {
         }
       }
     }
+
+    List<Object> applyArraySliceOutputs(List<Object> bits) =>
+        arraySliceOldToNew.isEmpty
+            ? bits
+            : [
+                for (final bit in bits)
+                  if (bit is int) arraySliceOldToNew[bit] ?? bit else bit,
+              ];
 
     // -- Elide trivial $slice cells ----------------------------------
     // Also elide struct_slice cells ([SynthStructureSlice] instances from
@@ -638,7 +663,9 @@ class NetlistSynthesizer extends Synthesizer {
         final parentLogic = entry.key;
         final fields = entry.value;
         final fullParentIds = fields.first.fullParentIds;
-        final resolvedParentBits = applyAlias(fullParentIds.cast<Object>());
+        final resolvedParentBits = applyArraySliceOutputs(
+          applyAlias(fullParentIds.cast<Object>()),
+        );
 
         // Filter out trivial fields (input slice == output after aliasing).
         final nonTrivialFields = fields
