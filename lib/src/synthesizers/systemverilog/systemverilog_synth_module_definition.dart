@@ -1266,7 +1266,10 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
           Logic(width: source.width),
     ];
 
-    final swizzle = _SwizzleConnect(dummySignals);
+    final swizzle = _SwizzleConnect(dummySignals,
+        unpacked: agg.logics
+            .whereType<LogicArray>()
+            .any((array) => array.numUnpackedDimensions > 0));
 
     final swizzleInst = getSynthSubModuleInstantiation(swizzle)
         as SystemVerilogSynthSubModuleInstantiation;
@@ -1516,6 +1519,10 @@ endmodule''';
 /// to render an aggregate's single use as an inline concatenation of its
 /// per-element sources.
 class _SwizzleConnect extends Swizzle {
+  /// Whether the connection represents an unpacked array and must preserve
+  /// concatenation braces and element boundaries, even for a single element.
+  final bool _unpacked;
+
   /// The names of the input ports, in the same order as the `signals` passed to
   /// the constructor.
   late final List<String> orderedInputPortNames;
@@ -1524,9 +1531,25 @@ class _SwizzleConnect extends Swizzle {
   // forced since it is generated post-build
   bool get hasBuilt => true;
 
-  _SwizzleConnect(super.signals) {
+  /// Creates a synthesis-only connection from [signals], ordered from most
+  /// significant to least significant.
+  ///
+  /// When [unpacked] is true, renders an unpacked-array concatenation instead
+  /// of applying packed-swizzle simplifications.
+  _SwizzleConnect(super.signals, {required bool unpacked})
+      : _unpacked = unpacked {
     orderedInputPortNames = (isNet ? inOuts.keys : inputs.keys)
         .where((name) => name != resultSignalName)
         .toList();
+  }
+
+  @override
+  String inlineVerilog(Map<String, String> inputs) {
+    if (!_unpacked) {
+      return super.inlineVerilog(inputs);
+    }
+    final elements =
+        orderedInputPortNames.reversed.map((name) => inputs[name]!).join(', ');
+    return '{$elements}';
   }
 }

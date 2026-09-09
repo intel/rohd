@@ -15,6 +15,8 @@ jobs:
   run-checks:
     name: Run Checks
     permissions: {}
+    env:
+      ROHD_REQUIRE_VERILATOR: '1'
     timeout-minutes: 60
     runs-on: ${{ github.repository_owner == 'intel' && 'intel-ubuntu-latest' || 'ubuntu-latest' }}
     steps:
@@ -61,6 +63,9 @@ jobs:
       - name: Install software - Icarus Verilog
         run: tool/gh_actions/install_iverilog.sh
 
+      - name: Install software - Verilator
+        run: bash tool/gh_actions/install_verilator.sh
+
       - name: Run project tests
         run: tool/gh_actions/run_tests.sh
 
@@ -71,7 +76,7 @@ jobs:
       - name: Build dev container and run tests in it
         uses: devcontainers/ci@v0.3
         with:
-          runCmd: tool/gh_actions/run_tests.sh
+          runCmd: ROHD_REQUIRE_VERILATOR=1 tool/gh_actions/run_tests.sh
 
   deploy-documentation:
     name: Deploy Documentation

@@ -1,3 +1,8 @@
+## Next release
+
+- Fixed illegal scalar connections to singleton unpacked-array inputs when inlining constants or live signals into generated SystemVerilog.
+- Added targeted Verilator compilation checks, required in native CI and explicitly skipped locally when Verilator is unavailable.
+
 ## 0.6.10
 
 - Improved `Logic.replicate(1)` and same-width `signExtend` to return the original signal, eliminating redundant replication modules and generated SystemVerilog (<https://github.com/intel/rohd/pull/689>).

@@ -138,6 +138,120 @@ class Vector {
 /// A utility class for checking a collection of [Vector]s against
 /// different simulators.
 abstract class SimCompare {
+  static bool _verilatorExecutableExists(String executable) {
+    final names = [
+      executable,
+      if (Platform.isWindows)
+        for (final extension
+            in (Platform.environment['PATHEXT'] ?? '.EXE;.BAT;.CMD;.COM')
+                .split(';'))
+          '$executable$extension',
+    ];
+    final paths = [
+      '',
+      ...(Platform.environment['PATH'] ?? '')
+          .split(Platform.isWindows ? ';' : ':'),
+    ];
+    return paths.any((path) => names.any((name) =>
+        FileSystemEntity.typeSync(
+            path.isEmpty ? name : '$path${Platform.pathSeparator}$name',
+            followLinks: false) !=
+        FileSystemEntityType.notFound));
+  }
+
+  /// Checks the generated SystemVerilog with Verilator's front-end compiler.
+  ///
+  /// Returns true after successful compilation, or false when the test is
+  /// marked skipped because Verilator is unavailable or running on the web.
+  /// Compilation and tool execution errors always fail the test.
+  ///
+  /// [requireTool] defaults to whether the environment variable
+  /// `ROHD_REQUIRE_VERILATOR` is `1`. When required, a missing executable fails
+  /// instead of skipping. Web tests are skipped regardless of this setting.
+  /// [verilatorExecutable] selects the executable, normally found on PATH.
+  ///
+  /// Warnings are printed but are nonfatal by default. [verilatorExtraArgs]
+  /// can override this policy. [moduleName] overrides the top-level definition
+  /// name, and [synthesizerConfiguration] controls SystemVerilog generation.
+  /// Temporary files are removed, including on failure, unless
+  /// [dontDeleteTmpFiles] is set.
+  static bool checkVerilatorCompilation(
+    Module module, {
+    String? moduleName,
+    bool? requireTool,
+    String verilatorExecutable = 'verilator',
+    List<String> verilatorExtraArgs = const [],
+    bool dontDeleteTmpFiles = false,
+    SystemVerilogSynthesizerConfiguration synthesizerConfiguration =
+        const SystemVerilogSynthesizerConfiguration(),
+  }) {
+    if (kIsWeb) {
+      markTestSkipped('Verilator compilation requires the Dart VM.');
+      return false;
+    }
+
+    final required =
+        requireTool ?? Platform.environment['ROHD_REQUIRE_VERILATOR'] == '1';
+    ProcessResult version;
+    try {
+      version = Process.runSync(verilatorExecutable, ['--version']);
+    } on ProcessException catch (error) {
+      if (error.errorCode != 2 &&
+          !(Platform.isWindows && error.errorCode == 3)) {
+        rethrow;
+      }
+      if (_verilatorExecutableExists(verilatorExecutable)) {
+        rethrow;
+      }
+      final message = 'Verilator executable "$verilatorExecutable" not found. '
+          'Install Verilator to run SystemVerilog compilation checks.';
+      if (required) {
+        fail(message);
+      }
+      markTestSkipped(message);
+      return false;
+    }
+    expect(version.exitCode, 0,
+        reason: 'Could not run $verilatorExecutable --version:\n'
+            '${version.stdout}\n${version.stderr}');
+
+    final verilog = module.generateSynth(
+      configuration: synthesizerConfiguration,
+    );
+    final directory = (Directory('tmp_test')..createSync(recursive: true))
+        .createTempSync('verilator_');
+    try {
+      final source = File('${directory.path}/design.sv')
+        ..writeAsStringSync(verilog);
+      final arguments = [
+        '--lint-only',
+        '-Wno-fatal',
+        '--top-module',
+        moduleName ?? module.definitionName,
+        '--Mdir',
+        '${directory.path}/obj_dir',
+        ...verilatorExtraArgs,
+        source.path,
+      ];
+      final result = Process.runSync(verilatorExecutable, arguments);
+      final diagnostics = '${result.stdout}\n${result.stderr}'.trim();
+      expect(result.exitCode, 0,
+          reason: 'Verilator compilation failed.\n'
+              'Command: $verilatorExecutable ${arguments.join(' ')}\n'
+              '$diagnostics');
+      if (diagnostics.isNotEmpty) {
+        print(diagnostics);
+      }
+      return true;
+    } finally {
+      if (dontDeleteTmpFiles) {
+        print('Verilator files retained in ${directory.path}');
+      } else {
+        directory.deleteSync(recursive: true);
+      }
+    }
+  }
+
   /// Runs a ROHD simulation where each of the [vectors] is executed per
   /// clock cycle sequentially.
   ///

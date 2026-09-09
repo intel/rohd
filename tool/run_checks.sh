@@ -59,6 +59,17 @@ else
   exit ${exit_code}
 fi
 
+print_step 'Check software - Verilator'
+if command -v verilator; then
+  verilator --version
+elif [[ "${ROHD_REQUIRE_VERILATOR:-0}" == '1' ]]; then
+  echo 'Verilator is required: please install Verilator!'
+  exit 1
+else
+  echo 'Verilator not found: compilation tests will be reported as skipped.'
+  echo 'Install Verilator for full native coverage; CI requires it.'
+fi
+
 # Run project tests
 print_step 'Run project tests'
 tool/gh_actions/run_tests.sh

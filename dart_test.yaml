@@ -1,3 +1,4 @@
 tags:
   benchmark:
     timeout: 2x
+  verilator:
