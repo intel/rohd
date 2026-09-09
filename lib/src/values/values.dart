@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 
 library;
@@ -13,6 +13,8 @@ import 'package:rohd/src/utilities/index_utilities.dart';
 import 'package:rohd/src/utilities/web.dart';
 
 part 'logic_value.dart';
+part 'logic_value_array.dart';
+part 'logic_value_array_of.dart';
 part 'small_logic_value.dart';
 part 'big_logic_value.dart';
 part 'filled_logic_value.dart';

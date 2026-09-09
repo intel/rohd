@@ -9,11 +9,8 @@
 
 part of 'signals.dart';
 
-/// Shared implementation for multidimensional arrays of [Logic] values.
-///
-/// Most callers should construct [LogicArray] for ordinary [Logic] leaves or
-/// [LogicArrayOf] for a specialized leaf type.
-class BaseLogicArray extends LogicStructure {
+/// Shared private implementation for multidimensional logic arrays.
+class _BaseLogicArray extends LogicStructure {
   /// The number of elements at each level of the array, starting from the most
   /// significant outermost level.
   ///
@@ -32,8 +29,11 @@ class BaseLogicArray extends LogicStructure {
   /// Unlike [LogicStructure.leafElements], traversal stops at the configured
   /// array leaf. This distinction matters when an array leaf is itself a
   /// [LogicStructure], such as a typed floating-point value.
-  late final List<Logic> arrayElements =
+  late final List<Logic> _arrayElements =
       UnmodifiableListView(_calculateArrayElements());
+
+  /// Elements reached after traversing exactly [dimensions] array levels.
+  List<Logic> get arrayElements => _arrayElements;
 
   @override
   final Naming naming;
@@ -62,15 +62,16 @@ class BaseLogicArray extends LogicStructure {
   /// than or equal to the length of [dimensions]. Modifying it will have no
   /// impact on simulation functionality or behavior. In SystemVerilog, there
   /// are some differences in access patterns for packed vs. unpacked arrays.
-  factory BaseLogicArray(List<int> dimensions, int elementWidth,
+  factory _BaseLogicArray(List<int> dimensions, int elementWidth,
           {String? name, int numUnpackedDimensions = 0, Naming? naming}) =>
-      BaseLogicArray._factory(dimensions, elementWidth,
+      _BaseLogicArray._factory(dimensions, elementWidth,
           name: name,
           numUnpackedDimensions: numUnpackedDimensions,
           naming: naming,
           logicBuilder: Logic.new,
-          logicArrayBuilder: BaseLogicArray.new,
-          arrayBuilder: BaseLogicArray._);
+          logicArrayBuilder: _BaseLogicArray.new,
+          arrayBuilder: _BaseLogicArray._,
+          isNet: false);
 
   @override
   final bool isNet;
@@ -85,25 +86,26 @@ class BaseLogicArray extends LogicStructure {
   /// than or equal to the length of [dimensions]. Modifying it will have no
   /// impact on simulation functionality or behavior. In SystemVerilog, there
   /// are some differences in access patterns for packed vs. unpacked arrays.
-  factory BaseLogicArray.net(List<int> dimensions, int elementWidth,
+  factory _BaseLogicArray.net(List<int> dimensions, int elementWidth,
           {String? name, int numUnpackedDimensions = 0, Naming? naming}) =>
-      BaseLogicArray._factory(dimensions, elementWidth,
+      _BaseLogicArray._factory(dimensions, elementWidth,
           name: name,
           numUnpackedDimensions: numUnpackedDimensions,
           naming: naming,
           logicBuilder: LogicNet.new,
-          logicArrayBuilder: BaseLogicArray.net,
-          arrayBuilder: BaseLogicArray._);
+          logicArrayBuilder: _BaseLogicArray.net,
+          arrayBuilder: _BaseLogicArray._,
+          isNet: true);
 
   /// Creates an array from pre-built [elements].
   ///
   /// This constructor supports subclasses whose leaf dimension contains a
   /// specialized [Logic] or [LogicStructure]. For arrays with more than one
-  /// dimension, [elements] must be [BaseLogicArray]s matching the remaining
+  /// dimension, [elements] must be arrays matching the remaining
   /// dimensions. For a one-dimensional array, each element must have
   /// [elementWidth] bits.
   @protected
-  BaseLogicArray.structured(List<Logic> elements,
+  _BaseLogicArray.structured(List<Logic> elements,
       {required List<int> dimensions,
       required this.elementWidth,
       String? name,
@@ -140,7 +142,7 @@ class BaseLogicArray extends LogicStructure {
     } else {
       final childDimensions = dimensions.sublist(1);
       if (elements.any((element) =>
-          element is! BaseLogicArray ||
+          element is! _BaseLogicArray ||
           !_sameDimensions(element.dimensions, childDimensions) ||
           element.elementWidth != elementWidth)) {
         throw LogicConstructionException(
@@ -168,16 +170,17 @@ class BaseLogicArray extends LogicStructure {
   ///
   /// The [logicBuilder] and [logicArrayBuilder] functions should generate
   /// proper types of [Logic]s as elements for the array.
-  factory BaseLogicArray._factory(List<int> dimensions, int elementWidth,
+  factory _BaseLogicArray._factory(List<int> dimensions, int elementWidth,
       {required String? name,
       required int numUnpackedDimensions,
       required Naming? naming,
+      required bool isNet,
       required Logic Function({int width, Naming naming, String name})
           logicBuilder,
-      required BaseLogicArray Function(List<int> nextDimensions, int width,
+      required _BaseLogicArray Function(List<int> nextDimensions, int width,
               {int numUnpackedDimensions, String name})
           logicArrayBuilder,
-      required BaseLogicArray Function(List<Logic> elements,
+      required _BaseLogicArray Function(List<Logic> elements,
               {required List<int> dimensions,
               required int elementWidth,
               required int numUnpackedDimensions,
@@ -230,12 +233,12 @@ class BaseLogicArray extends LogicStructure {
         numUnpackedDimensions: numUnpackedDimensions,
         name: name,
         naming: naming,
-        isNet: elements.every((element) => element.isNet));
+        isNet: isNet);
   }
 
   @override
-  BaseLogicArray _clone({String? name, Naming? naming}) =>
-      BaseLogicArray._factory(dimensions, elementWidth,
+  _BaseLogicArray _clone({String? name, Naming? naming}) =>
+      _BaseLogicArray._factory(dimensions, elementWidth,
           name: name ?? this.name,
           numUnpackedDimensions: numUnpackedDimensions,
           naming: Naming.chooseCloneNaming(
@@ -244,10 +247,11 @@ class BaseLogicArray extends LogicStructure {
               originalNaming: this.naming,
               newNaming: naming),
           logicBuilder: isNet ? LogicNet.new : Logic.new,
-          logicArrayBuilder: isNet ? BaseLogicArray.net : BaseLogicArray.new,
-          arrayBuilder: BaseLogicArray._);
+          logicArrayBuilder: isNet ? _BaseLogicArray.net : _BaseLogicArray.new,
+          arrayBuilder: _BaseLogicArray._,
+          isNet: isNet);
 
-  /// Creates a new [BaseLogicArray] which has the same [dimensions],
+  /// Creates a new array which has the same [dimensions],
   /// [elementWidth], [numUnpackedDimensions], and [isNet] as `this`.
   ///
   /// If no new [name] is specified, then it will also have the same name.
@@ -256,7 +260,7 @@ class BaseLogicArray extends LogicStructure {
   /// returns the same type as itself.
   @override
   @mustBeOverridden
-  BaseLogicArray clone({String? name}) => _clone(name: name);
+  _BaseLogicArray clone({String? name}) => _clone(name: name);
 
   /// Makes a [clone] with the provided [name] and optionally [naming], then
   /// assigns it to be driven by `this`.
@@ -265,13 +269,13 @@ class BaseLogicArray extends LogicStructure {
   /// construction without separately declaring a new named signal and then
   /// assigning.
   @override
-  BaseLogicArray named(String name, {Naming? naming}) =>
+  _BaseLogicArray named(String name, {Naming? naming}) =>
       _clone(name: name, naming: naming)..gets(this);
 
-  /// Private constructor for the factory [BaseLogicArray] constructor.
+  /// Private constructor for the factory [_BaseLogicArray] constructor.
   ///
   /// The [name] and [naming] should have been identified before calling this.
-  BaseLogicArray._(super.elements,
+  _BaseLogicArray._(super.elements,
       {required this.dimensions,
       required this.elementWidth,
       required this.numUnpackedDimensions,
@@ -282,57 +286,16 @@ class BaseLogicArray extends LogicStructure {
   List<Logic> _calculateArrayElements() => dimensions.length == 1
       ? elements
       : elements
-          .cast<BaseLogicArray>()
+          .cast<_BaseLogicArray>()
           .expand((element) => element.arrayElements)
           .toList(growable: false);
-
-  /// Constructs a new [BaseLogicArray] with a convenient constructor signature
-  /// for when many ports in an interface are declared together.  Also performs
-  /// some basic checks on the legality of the array as a port of a [Module].
-  factory BaseLogicArray.port(String name,
-      [List<int> dimensions = const [1],
-      int elementWidth = 1,
-      int numUnpackedDimensions = 0]) {
-    if (!Sanitizer.isSanitary(name)) {
-      throw InvalidPortNameException(name);
-    }
-
-    return BaseLogicArray(dimensions, elementWidth,
-        numUnpackedDimensions: numUnpackedDimensions,
-        name: name,
-
-        // make port names mergeable so we don't duplicate the ports
-        // when calling connectIO
-        naming: Naming.mergeable);
-  }
-
-  /// Constructs a new [BaseLogicArray.net] with a more convenient constructor
-  /// signature for when many ports in an interface are declared together.  Also
-  /// performs some basic checks on the legality of the array as a port of a
-  /// [Module].
-  factory BaseLogicArray.netPort(String name,
-      [List<int> dimensions = const [1],
-      int elementWidth = 1,
-      int numUnpackedDimensions = 0]) {
-    if (!Sanitizer.isSanitary(name)) {
-      throw InvalidPortNameException(name);
-    }
-
-    return BaseLogicArray.net(dimensions, elementWidth,
-        numUnpackedDimensions: numUnpackedDimensions,
-        name: name,
-
-        // make port names mergeable so we don't duplicate the ports
-        // when calling connectIO
-        naming: Naming.mergeable);
-  }
 }
 
 /// A multi-dimensional array structure of independent [Logic]s.
 ///
 /// This is the ordinary [Logic]-leaf specialization of [LogicArrayOf]. It has
 /// the same construction, port, clone, and naming API as the historical
-/// `LogicArray` type. [typedLeafElements] exposes its leaves as `List<Logic>`.
+/// `LogicArray` type.
 class LogicArray extends LogicArrayOf<Logic> {
   /// Creates an array with specified [dimensions] and [elementWidth] named
   /// [name].
@@ -347,7 +310,8 @@ class LogicArray extends LogicArrayOf<Logic> {
           numUnpackedDimensions: numUnpackedDimensions,
           naming: naming,
           logicBuilder: Logic.new,
-          logicArrayBuilder: LogicArray.new);
+          logicArrayBuilder: LogicArray.new,
+          isNet: false);
 
   /// Creates an array of [LogicNet]s with [dimensions] and [elementWidth]
   /// named [name].
@@ -361,7 +325,8 @@ class LogicArray extends LogicArrayOf<Logic> {
           numUnpackedDimensions: numUnpackedDimensions,
           naming: naming,
           logicBuilder: LogicNet.new,
-          logicArrayBuilder: LogicArray.net);
+          logicArrayBuilder: LogicArray.net,
+          isNet: true);
 
   LogicArray._(List<Logic> elements,
       {required super.dimensions,
@@ -369,25 +334,33 @@ class LogicArray extends LogicArrayOf<Logic> {
       required super.numUnpackedDimensions,
       required super.name,
       required super.naming,
-      required super.isNet})
-      : super.structured(elements, Logic.new);
+      required bool isNet})
+      : super.structured(
+          elements,
+          ({name}) => isNet
+              ? LogicNet(name: name, width: elementWidth)
+              : Logic(name: name, width: elementWidth),
+          isNet: isNet,
+        );
 
   factory LogicArray._factory(List<int> dimensions, int elementWidth,
           {required String? name,
           required int numUnpackedDimensions,
           required Naming? naming,
+          required bool isNet,
           required Logic Function({int width, Naming naming, String name})
               logicBuilder,
           required LogicArray Function(List<int> nextDimensions, int width,
                   {int numUnpackedDimensions, String name})
               logicArrayBuilder}) =>
-      BaseLogicArray._factory(dimensions, elementWidth,
+      _BaseLogicArray._factory(dimensions, elementWidth,
           name: name,
           numUnpackedDimensions: numUnpackedDimensions,
           naming: naming,
           logicBuilder: logicBuilder,
           logicArrayBuilder: logicArrayBuilder,
-          arrayBuilder: LogicArray._) as LogicArray;
+          arrayBuilder: LogicArray._,
+          isNet: isNet) as LogicArray;
 
   @override
 
@@ -403,7 +376,8 @@ class LogicArray extends LogicArrayOf<Logic> {
               originalNaming: naming,
               newNaming: null),
           logicBuilder: isNet ? LogicNet.new : Logic.new,
-          logicArrayBuilder: isNet ? LogicArray.net : LogicArray.new);
+          logicArrayBuilder: isNet ? LogicArray.net : LogicArray.new,
+          isNet: isNet);
 
   @override
 
@@ -418,8 +392,54 @@ class LogicArray extends LogicArrayOf<Logic> {
               originalNaming: this.naming,
               newNaming: naming),
           logicBuilder: isNet ? LogicNet.new : Logic.new,
-          logicArrayBuilder: isNet ? LogicArray.net : LogicArray.new)
+          logicArrayBuilder: isNet ? LogicArray.net : LogicArray.new,
+          isNet: isNet)
         ..gets(this);
+
+  @override
+  LogicArray getsEach(Iterable<Logic> sources) {
+    super.getsEach(sources);
+    return this;
+  }
+
+  @override
+  LogicArray getsGenerated(Logic Function(List<int> indices) generator) {
+    super.getsGenerated(generator);
+    return this;
+  }
+
+  @override
+  LogicArray reshape(List<int> newDimensions, {String? name}) {
+    if (_arrayLength(newDimensions) != arrayElements.length) {
+      throw ArgumentError.value(newDimensions, 'newDimensions',
+          'Must contain ${arrayElements.length} array elements.');
+    }
+    return (isNet ? LogicArray.net : LogicArray.new)(
+      newDimensions,
+      elementWidth,
+      name: name,
+      numUnpackedDimensions: min(numUnpackedDimensions, newDimensions.length),
+    )..getsEach(arrayElements);
+  }
+
+  @override
+  LogicArray transpose2D({String? name}) {
+    _checkArrayIsTwoDimensional(dimensions);
+    return (isNet ? LogicArray.net : LogicArray.new)(
+      [dimensions[1], dimensions[0]],
+      elementWidth,
+      name: name,
+      numUnpackedDimensions: numUnpackedDimensions,
+    )..getsGenerated((indices) => at([indices[1], indices[0]]));
+  }
+
+  @override
+  Iterable<LogicArray> get majorSlices {
+    if (dimensions.length < 2) {
+      throw StateError('majorSlices requires at least two dimensions.');
+    }
+    return elements.cast<LogicArray>();
+  }
 
   /// Creates an array port with a convenient constructor signature.
   ///

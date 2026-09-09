@@ -11,16 +11,16 @@ import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 
 /// A [Swizzle] used by synthesis backends to explicitly assemble a
-/// [BaseLogicArray] from its elements.
+/// [LogicArrayOf] from its elements.
 @internal
 class SynthArrayConcat extends Swizzle {
   /// The canonical base name for synthesized array concat operations.
   static const String operationName = 'array_concat';
 
-  final BaseLogicArray _destination;
+  final LogicArrayOf<Logic> _destination;
 
   /// Creates a synthesis array concatenation from [signals].
-  SynthArrayConcat(super.signals, {required BaseLogicArray destination})
+  SynthArrayConcat(super.signals, {required LogicArrayOf<Logic> destination})
       : _destination = destination,
         super(name: operationName);
 
