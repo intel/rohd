@@ -662,6 +662,39 @@ void main() {
       }
     });
 
+    test('packed value assignment remains shape-independent', () async {
+      final source = LogicArray([2], 8)..put(0x1234);
+      final target = LogicArray([1], 16);
+      final bitSource = LogicArray([1], 1)..put(1);
+      final fillTarget = LogicArray([3], 1);
+
+      target.put(source.value);
+      expect(source.value, isA<LogicValueArray>());
+      expect(target.value, isA<LogicValueArray>());
+      expect(target.value.toInt(), 0x1234);
+
+      fillTarget.put(bitSource.value, fill: true);
+      expect(fillTarget.value.toInt(), 0x7);
+      expect(
+        () => target.put(source.value, fill: true),
+        throwsA(isA<LogicValueConstructionException>()),
+      );
+
+      target
+        ..put(0)
+        ..inject(source.value);
+      fillTarget
+        ..put(0)
+        ..inject(bitSource.value, fill: true);
+      expect(target.value.toInt(), 0);
+      expect(fillTarget.value.toInt(), 0);
+
+      await Simulator.run();
+      expect(target.previousValue, isA<LogicValueArray>());
+      expect(target.value.toInt(), 0x1234);
+      expect(fillTarget.value.toInt(), 0x7);
+    });
+
     test('single-dim array', () {
       final dim = [5];
       const w = 16;

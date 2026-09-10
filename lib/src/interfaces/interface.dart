@@ -93,9 +93,9 @@ class Interface<TagType extends Enum> {
                   elementWidth: port.elementWidth,
                   numUnpackedDimensions: port.numUnpackedDimensions,
                 ),
-              LogicArrayOf<Logic>() => module.addTypedInput(
+              BaseLogicArray() => module.addTypedInput(
                   uniquify(port.name),
-                  srcInterface.port(port.name) as LogicArrayOf<Logic>,
+                  srcInterface.port(port.name) as BaseLogicArray,
                 ),
               _ => module.addInput(
                   uniquify(port.name),
@@ -115,7 +115,7 @@ class Interface<TagType extends Enum> {
               elementWidth: port.elementWidth,
               numUnpackedDimensions: port.numUnpackedDimensions,
             ),
-          LogicArrayOf<Logic>() => module.addTypedOutput(
+          BaseLogicArray() => module.addTypedOutput(
               uniquify(port.name),
               port.clone,
             ),
@@ -131,7 +131,7 @@ class Interface<TagType extends Enum> {
 
     if (inOutTags != null) {
       for (final port in getPorts(inOutTags).values) {
-        if (port is LogicArrayOf<Logic>) {
+        if (port is BaseLogicArray) {
           if (!port.isNet) {
             throw PortTypeException(
                 port, 'LogicArray nets must be used for inOut array ports.');
@@ -150,9 +150,9 @@ class Interface<TagType extends Enum> {
                   elementWidth: port.elementWidth,
                   numUnpackedDimensions: port.numUnpackedDimensions,
                 ),
-              LogicArrayOf<Logic>() => module.addTypedInOut(
+              BaseLogicArray() => module.addTypedInOut(
                   uniquify(port.name),
-                  srcInterface.port(port.name) as LogicArrayOf<Logic>,
+                  srcInterface.port(port.name) as BaseLogicArray,
                 ),
               _ => module.addInOut(
                   uniquify(port.name),

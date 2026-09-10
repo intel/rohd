@@ -92,7 +92,7 @@ class PairInterface extends Interface<PairDirection> {
                         p.numUnpackedDimensions)
                     : LogicArray.port(name, p.dimensions, p.elementWidth,
                         p.numUnpackedDimensions);
-              case LogicArrayOf<Logic>():
+              case BaseLogicArray():
                 return p.clone();
               case LogicNet():
                 return LogicNet.port(name, p.width);

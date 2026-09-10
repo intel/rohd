@@ -397,6 +397,22 @@ class NestedNetArrayRowsToChildModule extends Module {
   }
 }
 
+/// Exposes nested output-array rows already driven by child array outputs.
+class NestedArrayRowsOutputModule extends Module {
+  NestedArrayRowsOutputModule() : super(name: 'nestedarrayrowsoutput') {
+    final lower = ArrayOutputChildModule();
+    final upper = ArrayOutputChildModule();
+    final values = addOutputArray(
+      'values',
+      dimensions: [2, 4],
+      elementWidth: 8,
+    );
+
+    values.elements[0] <= lower.values;
+    values.elements[1] <= upper.values;
+  }
+}
+
 /// Simple two-field structure used to demonstrate netlist struct unpack/pack
 /// cells.
 class NetlistPairStruct extends LogicStructure {
@@ -2250,12 +2266,21 @@ void main() {
             return entry.key.startsWith('array_concat') &&
                 cell['type'] == r'$concat';
           });
+          final structurePacks = cells.entries.where((entry) {
+            final cell = entry.value as Map<String, dynamic>;
+            return cell['type'] == r'$struct_pack';
+          }).toList();
           final report = _connectivityReport(moduleDef);
           final multipleDrivers = report.driversByBit.entries
               .where((entry) => entry.value.length > 1)
               .toList();
 
           expect(nestedArrayConcats, isNotEmpty, reason: cells.keys.join(', '));
+          expect(
+            structurePacks,
+            isEmpty,
+            reason: 'Nested arrays must reuse their aggregate driver IDs.',
+          );
           expect(
             report.undrivenInputs,
             isEmpty,
@@ -2269,6 +2294,43 @@ void main() {
         }
       },
     );
+
+    test('nested output arrays reuse existing aggregate drivers', () async {
+      final module = NestedArrayRowsOutputModule();
+      final json = await _synthToMap(
+        module,
+        configuration: const NetlistSynthesizerConfiguration(
+          enableDeadCellElimination: false,
+        ),
+      );
+      final moduleDef =
+          _modules(json)[module.definitionName] as Map<String, dynamic>;
+      final cells = _cells(moduleDef);
+      final structurePacks = cells.entries.where((entry) {
+        final cell = entry.value as Map<String, dynamic>;
+        return cell['type'] == r'$struct_pack';
+      }).toList();
+      final report = _connectivityReport(moduleDef);
+      final multipleDrivers = report.driversByBit.entries
+          .where((entry) => entry.value.length > 1)
+          .toList();
+
+      expect(
+        structurePacks,
+        isEmpty,
+        reason: 'Nested arrays must reuse their aggregate driver IDs.',
+      );
+      expect(
+        report.undrivenInputs,
+        isEmpty,
+        reason: report.undrivenInputs.join('\n'),
+      );
+      expect(
+        multipleDrivers,
+        isEmpty,
+        reason: multipleDrivers.take(8).join('\n'),
+      );
+    });
 
     test('struct input fields get explicit unpack cell', () async {
       final module = StructInputConsumerModule(NetlistPairStruct());

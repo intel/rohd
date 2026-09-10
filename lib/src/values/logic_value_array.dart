@@ -9,20 +9,12 @@
 
 part of 'values.dart';
 
-LogicValue _decodeIdentityLogicValue(LogicValue value) => value;
-LogicValue _encodeIdentityLogicValue(LogicValue value) => value;
-
-const _identityLogicValueCodec = LogicValueCodec<LogicValue>(
-  decode: _decodeIdentityLogicValue,
-  encode: _encodeIdentityLogicValue,
-);
-
 /// A shaped [LogicValue] containing fixed-width [LogicValue] array elements.
 ///
 /// The nested constructor infers shape and element width. Use
 /// [LogicValueArray.fromFlat] when values are already row-major or when an
 /// empty array requires explicit shape and width metadata.
-class LogicValueArray extends LogicValueArrayOf<LogicValue> {
+class LogicValueArray extends TypedValueArray<LogicValue> {
   /// Creates a value array from nested [values].
   factory LogicValueArray(List<Object?> values) {
     final nested =
@@ -104,8 +96,9 @@ class LogicValueArray extends LogicValueArrayOf<LogicValue> {
         values.map((value) => LogicValue.ofInt(value, elementWidth)),
       );
 
-  /// Captures the current values of a hardware [LogicArrayOf].
-  factory LogicValueArray.fromLogicArray(LogicArrayOf<Logic> values) =>
+  /// Captures the current values of a hardware [LogicArray].
+  factory LogicValueArray.fromLogicArray(
+          TypedLogicArray<Logic, LogicValue> values) =>
       LogicValueArray.fromFlat(
         values.dimensions,
         values.elementWidth,
@@ -137,7 +130,7 @@ class LogicValueArray extends LogicValueArrayOf<LogicValue> {
           elementWidth,
           values,
           values,
-          _identityLogicValueCodec,
+          LogicValueCodec.logicValue,
         );
 
   @override
@@ -161,7 +154,7 @@ class LogicValueArray extends LogicValueArrayOf<LogicValue> {
 
   @override
   LogicValueArray mapMajorSlices(
-    LogicValueArrayOf<LogicValue> Function(LogicValueArrayOf<LogicValue> slice)
+    TypedValueArray<LogicValue> Function(TypedValueArray<LogicValue> slice)
         transform,
   ) {
     final transformed = majorSlices.map(transform).toList(growable: false);

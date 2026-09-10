@@ -53,7 +53,7 @@ class SynthStructureLayout {
         fieldPath: fieldPath,
         indexInParent: index,
       ));
-      if (element is LogicStructure && element is! LogicArrayOf<Logic>) {
+      if (element is LogicStructure && element is! BaseLogicArray) {
         _addStructure(element, offset, path, fieldPath);
       }
       offset = end;

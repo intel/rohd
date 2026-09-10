@@ -199,12 +199,28 @@ class _PairSample extends LogicStructure {
   _PairSample clone({String? name}) => _PairSample(name: name ?? this.name);
 }
 
+class _PairValue {
+  final LogicValue value;
+
+  _PairValue(this.value);
+}
+
+_PairValue _decodePairValue(LogicValue value) => _PairValue(value);
+
+LogicValue _encodePairValue(_PairValue value) => value.value;
+
+const _pairValueCodec = LogicValueCodec<_PairValue>(
+  decode: _decodePairValue,
+  encode: _encodePairValue,
+);
+
 class _TypedPairConsumer extends Module {
-  late final LogicArrayOf<_PairSample> samples;
+  late final TypedLogicArray<_PairSample, _PairValue> samples;
 
   _TypedPairConsumer(PairInterface source) {
     final internal = addPairInterfacePorts(source, PairRole.consumer);
-    samples = internal.port('samples') as LogicArrayOf<_PairSample>;
+    samples =
+        internal.port('samples') as TypedLogicArray<_PairSample, _PairValue>;
     addOutput('selected', width: samples.elementWidth) <= samples.at([1, 1]);
   }
 }
@@ -224,21 +240,25 @@ void main() {
   });
 
   test('clone preserves typed arrays through pair interface ports', () async {
-    final samples = LogicArrayOf<_PairSample>(
+    final samples = TypedLogicArray<_PairSample, _PairValue>(
       [2, 2],
       _PairSample.new,
+      valueCodec: _pairValueCodec,
       dimensionNames: const ['row_', 'column_'],
       name: 'samples',
     );
     final source = PairInterface(portsFromProvider: [samples]);
     final clone = source.clone();
-    final clonedSamples = clone.port('samples') as LogicArrayOf<_PairSample>;
+    final clonedSamples =
+        clone.port('samples') as TypedLogicArray<_PairSample, _PairValue>;
 
     expect(clonedSamples, isNot(same(samples)));
     expect(clonedSamples.dimensions, [2, 2]);
     expect(clonedSamples.dimensionNames, ['row_', 'column_']);
     expect(clonedSamples.arrayElements, everyElement(isA<_PairSample>()));
     expect(clonedSamples.at([1, 1]).high.width, 2);
+    expect(identical(clonedSamples.valueCodec, _pairValueCodec), isTrue);
+    expect(clonedSamples.value, isA<TypedValueArray<_PairValue>>());
 
     final module = _TypedPairConsumer(source);
     await module.build();
@@ -247,6 +267,8 @@ void main() {
     expect(module.samples.dimensionNames, ['row_', 'column_']);
     expect(module.samples.at([1, 1]), isA<_PairSample>());
     expect(module.samples.at([1, 1]).high.width, 2);
+    expect(identical(module.samples.valueCodec, _pairValueCodec), isTrue);
+    expect(module.samples.value, isA<TypedValueArray<_PairValue>>());
 
     final vectors = [
       Vector({'samples': 0xabc}, {'selected': 5}),
