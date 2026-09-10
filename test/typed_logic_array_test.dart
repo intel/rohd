@@ -251,6 +251,20 @@ LogicValue _encodeListLogicValue(List<int> value) =>
 
 void main() {
   group('TypedLogicArray', () {
+    test('requires at least one dimension', () {
+      expect(
+        () => TypedLogicArray<Logic, LogicValue>(
+          [],
+          ({name}) => Logic(name: name),
+        ),
+        throwsA(
+          predicate<LogicConstructionException>(
+            (exception) => exception.reason.contains('at least 1 dimension'),
+          ),
+        ),
+      );
+    });
+
     test('keeps structured leaves at the array boundary', () {
       final values = TypedLogicArray<_SampleStructure, LogicValue>(
         [2, 3],
