@@ -442,8 +442,11 @@ class _TypedLogicArrayBuild<T extends Logic, V> {
       T? emptyPrototype,
       bool validateValueCodec = true}) {
     final normalizedDimensions = List<int>.unmodifiable(dimensions);
-    if (normalizedDimensions.isEmpty ||
-        normalizedDimensions.any((dimension) => dimension < 0)) {
+    if (normalizedDimensions.isEmpty) {
+      throw LogicConstructionException(
+          'TypedLogicArray must have at least 1 dimension.');
+    }
+    if (normalizedDimensions.any((dimension) => dimension < 0)) {
       throw LogicConstructionException(
           'TypedLogicArray dimensions must be non-negative.');
     }
