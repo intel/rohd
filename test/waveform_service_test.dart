@@ -358,6 +358,9 @@ void main() {
 
     expect(File(waveformService.outputFilePath).existsSync(), equals(true));
 
+    // Let the service close its asynchronous file sink before cleanup.
+    await Simulator.run();
+
     if (File(waveformService.outputFilePath).existsSync()) {
       File(dir1Path).deleteSync(recursive: true);
     }
