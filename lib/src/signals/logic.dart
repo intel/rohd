@@ -161,8 +161,8 @@ class Logic {
   LogicStructure? get parentStructure => _parentStructure;
   LogicStructure? _parentStructure;
 
-  /// True if this is a direct member of a [LogicArrayOf].
-  bool get isArrayMember => parentStructure is LogicArrayOf<Logic>;
+  /// True if this is a direct member of a [BaseLogicArray].
+  bool get isArrayMember => parentStructure is BaseLogicArray;
 
   /// Returns the name relative to the [parentStructure]-defined hierarchy, if
   /// one exists.  Otherwise, this is the same as [name].
@@ -171,7 +171,7 @@ class Logic {
   /// [LogicArray] or [LogicStructure].
   String get structureName {
     if (parentStructure != null) {
-      if (parentStructure is LogicArrayOf<Logic>) {
+      if (parentStructure is BaseLogicArray) {
         return '${parentStructure!.structureName}[${arrayIndex!}]';
       } else {
         return '${parentStructure!.structureName}.$name';

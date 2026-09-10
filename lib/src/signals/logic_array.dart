@@ -9,8 +9,11 @@
 
 part of 'signals.dart';
 
-/// Shared private implementation for multidimensional logic arrays.
-class _BaseLogicArray extends LogicStructure {
+/// Shared structural base for multidimensional logic arrays.
+///
+/// Construct [LogicArray] for ordinary logic values or [TypedLogicArray] for
+/// hardware elements with an associated semantic value type.
+abstract class BaseLogicArray extends LogicStructure {
   /// The number of elements at each level of the array, starting from the most
   /// significant outermost level.
   ///
@@ -20,8 +23,8 @@ class _BaseLogicArray extends LogicStructure {
 
   /// The width of leaf elements in this array.
   ///
-  /// If the array has no leaf elements and/or the [width] is 0, then the
-  /// [elementWidth] is always 0.
+  /// An empty [LogicArray] retains its historical zero element width.
+  /// An empty [TypedLogicArray] retains the width of its constructed prototype.
   final int elementWidth;
 
   /// Elements at the leaf dimension of this array.
@@ -40,7 +43,7 @@ class _BaseLogicArray extends LogicStructure {
 
   @override
   String toString() => [
-        'LogicArray($dimensions, $elementWidth): $name',
+        '$runtimeType($dimensions, $elementWidth): $name',
         if (isArrayMember) 'index $arrayIndex of ($parentStructure)',
         if (isNet) '[Net]'
       ].join(', ');
@@ -52,50 +55,8 @@ class _BaseLogicArray extends LogicStructure {
   /// as a hint for [Synthesizer]s.
   final int numUnpackedDimensions;
 
-  /// Creates an array with specified [dimensions] and [elementWidth] named
-  /// [name].
-  ///
-  /// Setting the [numUnpackedDimensions] gives a hint to [Synthesizer]s about
-  /// the intent for declaration of signals. By default, all dimensions are
-  /// packed, but if the value is set to more than `0`, then the outer-most
-  /// dimensions (first in [dimensions]) will become unpacked.  It must be less
-  /// than or equal to the length of [dimensions]. Modifying it will have no
-  /// impact on simulation functionality or behavior. In SystemVerilog, there
-  /// are some differences in access patterns for packed vs. unpacked arrays.
-  factory _BaseLogicArray(List<int> dimensions, int elementWidth,
-          {String? name, int numUnpackedDimensions = 0, Naming? naming}) =>
-      _BaseLogicArray._factory(dimensions, elementWidth,
-          name: name,
-          numUnpackedDimensions: numUnpackedDimensions,
-          naming: naming,
-          logicBuilder: Logic.new,
-          logicArrayBuilder: _BaseLogicArray.new,
-          arrayBuilder: _BaseLogicArray._,
-          isNet: false);
-
   @override
   final bool isNet;
-
-  /// Creates an array of [LogicNet]s with specified [dimensions] and
-  /// [elementWidth] named [name].
-  ///
-  /// Setting the [numUnpackedDimensions] gives a hint to [Synthesizer]s about
-  /// the intent for declaration of signals. By default, all dimensions are
-  /// packed, but if the value is set to more than `0`, then the outer-most
-  /// dimensions (first in [dimensions]) will become unpacked.  It must be less
-  /// than or equal to the length of [dimensions]. Modifying it will have no
-  /// impact on simulation functionality or behavior. In SystemVerilog, there
-  /// are some differences in access patterns for packed vs. unpacked arrays.
-  factory _BaseLogicArray.net(List<int> dimensions, int elementWidth,
-          {String? name, int numUnpackedDimensions = 0, Naming? naming}) =>
-      _BaseLogicArray._factory(dimensions, elementWidth,
-          name: name,
-          numUnpackedDimensions: numUnpackedDimensions,
-          naming: naming,
-          logicBuilder: LogicNet.new,
-          logicArrayBuilder: _BaseLogicArray.net,
-          arrayBuilder: _BaseLogicArray._,
-          isNet: true);
 
   /// Creates an array from pre-built [elements].
   ///
@@ -105,7 +66,7 @@ class _BaseLogicArray extends LogicStructure {
   /// dimensions. For a one-dimensional array, each element must have
   /// [elementWidth] bits.
   @protected
-  _BaseLogicArray.structured(List<Logic> elements,
+  BaseLogicArray.structured(List<Logic> elements,
       {required List<int> dimensions,
       required this.elementWidth,
       String? name,
@@ -125,9 +86,15 @@ class _BaseLogicArray extends LogicStructure {
       throw LogicConstructionException(
           'Array dimensions must be non-negative.');
     }
-    if (numUnpackedDimensions > dimensions.length) {
+    if (elementWidth < 0) {
       throw LogicConstructionException(
-          'Cannot unpack more than all of the dimensions.');
+          'Array element width must be non-negative.');
+    }
+    if (numUnpackedDimensions < 0 ||
+        numUnpackedDimensions > dimensions.length) {
+      throw LogicConstructionException(
+          'The number of unpacked dimensions must be between 0 and the array '
+          'rank.');
     }
     if (elements.length != dimensions.first) {
       throw LogicConstructionException(
@@ -142,7 +109,7 @@ class _BaseLogicArray extends LogicStructure {
     } else {
       final childDimensions = dimensions.sublist(1);
       if (elements.any((element) =>
-          element is! _BaseLogicArray ||
+          element is! BaseLogicArray ||
           !_sameDimensions(element.dimensions, childDimensions) ||
           element.elementWidth != elementWidth)) {
         throw LogicConstructionException(
@@ -154,6 +121,14 @@ class _BaseLogicArray extends LogicStructure {
       element._arrayIndex = index;
     }
   }
+
+  /// Creates an array with the same shape and element representation.
+  @override
+  BaseLogicArray clone({String? name});
+
+  /// Creates and connects an array with the requested [name].
+  @override
+  BaseLogicArray named(String name, {Naming? naming});
 
   /// Internal factory constructor.
   ///
@@ -170,17 +145,17 @@ class _BaseLogicArray extends LogicStructure {
   ///
   /// The [logicBuilder] and [logicArrayBuilder] functions should generate
   /// proper types of [Logic]s as elements for the array.
-  factory _BaseLogicArray._factory(List<int> dimensions, int elementWidth,
+  factory BaseLogicArray._factory(List<int> dimensions, int elementWidth,
       {required String? name,
       required int numUnpackedDimensions,
       required Naming? naming,
       required bool isNet,
       required Logic Function({int width, Naming naming, String name})
           logicBuilder,
-      required _BaseLogicArray Function(List<int> nextDimensions, int width,
+      required BaseLogicArray Function(List<int> nextDimensions, int width,
               {int numUnpackedDimensions, String name})
           logicArrayBuilder,
-      required _BaseLogicArray Function(List<Logic> elements,
+      required BaseLogicArray Function(List<Logic> elements,
               {required List<int> dimensions,
               required int elementWidth,
               required int numUnpackedDimensions,
@@ -192,10 +167,19 @@ class _BaseLogicArray extends LogicStructure {
       throw LogicConstructionException(
           'Arrays must have at least 1 dimension.');
     }
-
-    if (numUnpackedDimensions > dimensions.length) {
+    if (dimensions.any((dimension) => dimension < 0)) {
       throw LogicConstructionException(
-          'Cannot unpack more than all of the dimensions.');
+          'Array dimensions must be non-negative.');
+    }
+    if (elementWidth < 0) {
+      throw LogicConstructionException(
+          'Array element width must be non-negative.');
+    }
+    if (numUnpackedDimensions < 0 ||
+        numUnpackedDimensions > dimensions.length) {
+      throw LogicConstructionException(
+          'The number of unpacked dimensions must be between 0 and the array '
+          'rank.');
     }
 
     // calculate the next layer's dimensions
@@ -236,67 +220,20 @@ class _BaseLogicArray extends LogicStructure {
         isNet: isNet);
   }
 
-  @override
-  _BaseLogicArray _clone({String? name, Naming? naming}) =>
-      _BaseLogicArray._factory(dimensions, elementWidth,
-          name: name ?? this.name,
-          numUnpackedDimensions: numUnpackedDimensions,
-          naming: Naming.chooseCloneNaming(
-              originalName: this.name,
-              newName: name,
-              originalNaming: this.naming,
-              newNaming: naming),
-          logicBuilder: isNet ? LogicNet.new : Logic.new,
-          logicArrayBuilder: isNet ? _BaseLogicArray.net : _BaseLogicArray.new,
-          arrayBuilder: _BaseLogicArray._,
-          isNet: isNet);
-
-  /// Creates a new array which has the same [dimensions],
-  /// [elementWidth], [numUnpackedDimensions], and [isNet] as `this`.
-  ///
-  /// If no new [name] is specified, then it will also have the same name.
-  ///
-  /// It is expected that any implementation will override this in a way that
-  /// returns the same type as itself.
-  @override
-  @mustBeOverridden
-  _BaseLogicArray clone({String? name}) => _clone(name: name);
-
-  /// Makes a [clone] with the provided [name] and optionally [naming], then
-  /// assigns it to be driven by `this`.
-  ///
-  /// This is a useful utility for naming the result of some hardware
-  /// construction without separately declaring a new named signal and then
-  /// assigning.
-  @override
-  _BaseLogicArray named(String name, {Naming? naming}) =>
-      _clone(name: name, naming: naming)..gets(this);
-
-  /// Private constructor for the factory [_BaseLogicArray] constructor.
-  ///
-  /// The [name] and [naming] should have been identified before calling this.
-  _BaseLogicArray._(super.elements,
-      {required this.dimensions,
-      required this.elementWidth,
-      required this.numUnpackedDimensions,
-      required String super.name,
-      required this.naming,
-      required this.isNet});
-
   List<Logic> _calculateArrayElements() => dimensions.length == 1
       ? elements
       : elements
-          .cast<_BaseLogicArray>()
+          .cast<BaseLogicArray>()
           .expand((element) => element.arrayElements)
           .toList(growable: false);
 }
 
 /// A multi-dimensional array structure of independent [Logic]s.
 ///
-/// This is the ordinary [Logic]-leaf specialization of [LogicArrayOf]. It has
-/// the same construction, port, clone, and naming API as the historical
+/// This is the ordinary [Logic]-leaf specialization of [TypedLogicArray]. It
+/// has the same construction, port, clone, and naming API as the historical
 /// `LogicArray` type.
-class LogicArray extends LogicArrayOf<Logic> {
+class LogicArray extends TypedLogicArray<Logic, LogicValue> {
   /// Creates an array with specified [dimensions] and [elementWidth] named
   /// [name].
   ///
@@ -340,6 +277,7 @@ class LogicArray extends LogicArrayOf<Logic> {
           ({name}) => isNet
               ? LogicNet(name: name, width: elementWidth)
               : Logic(name: name, width: elementWidth),
+          valueCodec: LogicValueCodec.logicValue,
           isNet: isNet,
         );
 
@@ -353,7 +291,7 @@ class LogicArray extends LogicArrayOf<Logic> {
           required LogicArray Function(List<int> nextDimensions, int width,
                   {int numUnpackedDimensions, String name})
               logicArrayBuilder}) =>
-      _BaseLogicArray._factory(dimensions, elementWidth,
+      BaseLogicArray._factory(dimensions, elementWidth,
           name: name,
           numUnpackedDimensions: numUnpackedDimensions,
           naming: naming,
@@ -361,6 +299,19 @@ class LogicArray extends LogicArrayOf<Logic> {
           logicArrayBuilder: logicArrayBuilder,
           arrayBuilder: LogicArray._,
           isNet: isNet) as LogicArray;
+
+  @override
+  LogicValueArray get value => LogicValueArray.fromLogicArray(this);
+
+  @override
+  LogicValueArray? get previousValue =>
+      arrayElements.any((element) => element.previousValue == null)
+          ? null
+          : LogicValueArray.fromFlat(
+              dimensions,
+              elementWidth,
+              arrayElements.map((element) => element.previousValue!),
+            );
 
   @override
 

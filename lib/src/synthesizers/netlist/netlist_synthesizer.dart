@@ -154,8 +154,7 @@ class NetlistSynthesizer extends Synthesizer {
       void aliasArrayChildren(SynthLogic src, SynthLogic dst) {
         final srcLogic = src.logics.firstOrNull;
         final dstLogic = dst.logics.firstOrNull;
-        if (srcLogic is! LogicArrayOf<Logic> ||
-            dstLogic is! LogicArrayOf<Logic>) {
+        if (srcLogic is! BaseLogicArray || dstLogic is! BaseLogicArray) {
           return;
         }
         if (srcLogic.elements.length != dstLogic.elements.length) {
@@ -172,8 +171,8 @@ class NetlistSynthesizer extends Synthesizer {
 
           final srcElementLogic = srcElementSynth.logics.firstOrNull;
           final dstElementLogic = dstElementSynth.logics.firstOrNull;
-          if (srcElementLogic is LogicArrayOf<Logic> &&
-              dstElementLogic is LogicArrayOf<Logic>) {
+          if (srcElementLogic is BaseLogicArray &&
+              dstElementLogic is BaseLogicArray) {
             aliasArrayChildren(srcElementSynth, dstElementSynth);
           }
 
@@ -222,15 +221,15 @@ class NetlistSynthesizer extends Synthesizer {
       void addStructAndDescendants(LogicStructure struct, Set<Logic> set) {
         set.add(struct);
         for (final elem in struct.elements) {
-          if (elem is LogicStructure && elem is! LogicArrayOf<Logic>) {
+          if (elem is LogicStructure && elem is! BaseLogicArray) {
             addStructAndDescendants(elem, set);
           }
         }
       }
 
-      void addArrayStructureElements(LogicArrayOf<Logic> array) {
+      void addArrayStructureElements(BaseLogicArray array) {
         for (final element in array.elements) {
-          if (element is LogicArrayOf<Logic>) {
+          if (element is BaseLogicArray) {
             addArrayStructureElements(element);
           } else if (element is LogicStructure) {
             addStructAndDescendants(element, outputStructPortLogics);
@@ -239,7 +238,7 @@ class NetlistSynthesizer extends Synthesizer {
       }
 
       module.outputs.values
-          .whereType<LogicArrayOf<Logic>>()
+          .whereType<BaseLogicArray>()
           .forEach(addArrayStructureElements);
 
       for (final pa
@@ -256,7 +255,7 @@ class NetlistSynthesizer extends Synthesizer {
         // current module.)
         final isSubModuleInputStructPort = !isCurrentModuleOutputPort &&
             pa.dst.logics
-                .any((l) => l is LogicStructure && l is! LogicArrayOf<Logic>);
+                .any((l) => l is LogicStructure && l is! BaseLogicArray);
 
         if (isCurrentModuleOutputPort || isSubModuleInputStructPort) {
           // Record as pending compose cell instead of aliasing.
@@ -271,7 +270,7 @@ class NetlistSynthesizer extends Synthesizer {
           // Track the Logic (and nested structs) so Step 3 skips
           // $struct_unpack for them.
           for (final l in pa.dst.logics) {
-            if (l is LogicStructure && l is! LogicArrayOf<Logic>) {
+            if (l is LogicStructure && l is! BaseLogicArray) {
               addStructAndDescendants(l, outputStructPortLogics);
             }
           }
@@ -345,7 +344,7 @@ class NetlistSynthesizer extends Synthesizer {
                 )
                 .map((e) => e.key)
                 .firstOrNull;
-            if (logic != null && logic is LogicArrayOf<Logic>) {
+            if (logic != null && logic is BaseLogicArray) {
               arraysWithExplicitCells.add(logic);
             }
             // Also check the resolved replacement chain.
@@ -354,7 +353,7 @@ class NetlistSynthesizer extends Synthesizer {
                 .where((e) => e.value == resolved)
                 .map((e) => e.key)
                 .firstOrNull;
-            if (logic2 != null && logic2 is LogicArrayOf<Logic>) {
+            if (logic2 != null && logic2 is BaseLogicArray) {
               arraysWithExplicitCells.add(logic2);
             }
           }
@@ -368,7 +367,7 @@ class NetlistSynthesizer extends Synthesizer {
                 )
                 .map((e) => e.key)
                 .firstOrNull;
-            if (logic != null && logic is LogicArrayOf<Logic>) {
+            if (logic != null && logic is BaseLogicArray) {
               arraysWithExplicitCells.add(logic);
             }
           }
@@ -383,7 +382,7 @@ class NetlistSynthesizer extends Synthesizer {
         final parentSL = entry.value;
         final parentIds = getIds(parentSL);
 
-        if (logic is LogicArrayOf<Logic>) {
+        if (logic is BaseLogicArray) {
           // Skip aliasing for arrays that have explicit $slice/$concat cells.
           if (arraysWithExplicitCells.contains(logic)) {
             continue;
@@ -432,7 +431,7 @@ class NetlistSynthesizer extends Synthesizer {
                   fullParentIds: parentIds,
                 ));
               }
-            } else if (elem is LogicStructure && elem is! LogicArrayOf<Logic>) {
+            } else if (elem is LogicStructure && elem is! BaseLogicArray) {
               // Nested InterfaceStructure: the intermediate struct
               // itself has no SynthLogic, but its leaf elements do
               // (created by _subsetReceiveStructPort).  Walk leaf

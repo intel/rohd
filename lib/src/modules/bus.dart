@@ -416,7 +416,7 @@ ${inputLines.join('\n')}
     var current = logic;
     while (current?.parentStructure != null) {
       final parentStructure = current!.parentStructure!;
-      if (parentStructure is LogicArrayOf<Logic> &&
+      if (parentStructure is BaseLogicArray &&
           parentStructure.numUnpackedDimensions > 0) {
         return true;
       }

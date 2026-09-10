@@ -22,5 +22,5 @@ part 'wire.dart';
 part 'wire_net.dart';
 part 'logic_structure.dart';
 part 'logic_array.dart';
-part 'logic_array_of.dart';
+part 'typed_logic_array.dart';
 part 'logic_net.dart';
