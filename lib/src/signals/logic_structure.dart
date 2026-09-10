@@ -200,12 +200,29 @@ class LogicStructure implements Logic {
     }
 
     final flattenedElements = sources.map((source) {
-      final flattened = source.$1 is Const
-          ? Logic(width: source.$1.width, name: source.$2)
-          : source.$1.clone(name: source.$2);
+      final flattened = _cloneDriveable(source.$1, name: source.$2);
       return flattened..gets(source.$1);
     }).toList(growable: false);
     return LogicStructure(flattenedElements, name: name ?? this.name);
+  }
+
+  /// Clones a promoted field without leaving any constant leaves to drive.
+  Logic _cloneDriveable(Logic source, {required String name}) {
+    if (source is Const) {
+      return Logic(width: source.width, name: name);
+    }
+    if (source is LogicStructure && source.hasConsts) {
+      if (source is BaseLogicArray) {
+        throw LogicConstructionException(
+            'Cannot promote an array containing constant elements.');
+      }
+      return LogicStructure(
+        source.elements
+            .map((element) => _cloneDriveable(element, name: element.name)),
+        name: name,
+      );
+    }
+    return source.clone(name: name);
   }
 
   /// Compute the list of all leaf elements, to be cached in [leafElements].

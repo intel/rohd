@@ -771,6 +771,38 @@ void main() {
       expect(target.srcConnections, contains(source));
     });
 
+    test('rejects nested arrays with different value codecs', () {
+      var codecIndex = 0;
+      final codecA = LogicValueCodec<LogicValue>(
+        decode: (value) => value,
+        encode: (value) => value,
+      );
+      final codecB = LogicValueCodec<LogicValue>(
+        decode: (value) => value,
+        encode: (value) => value,
+      );
+      final nested =
+          TypedLogicArray<TypedLogicArray<Logic, LogicValue>, LogicValue>(
+        [2],
+        ({name}) {
+          final codec = codecIndex++ == 0 ? codecA : codecB;
+          return TypedLogicArray<Logic, LogicValue>(
+            [2],
+            ({name}) => Logic(width: 8, name: name),
+            valueCodec: codec,
+            name: name,
+          );
+        },
+      );
+
+      expect(
+        () => nested.flattenNestedDimensions<Logic, LogicValue>(
+          valueCodec: codecA,
+        ),
+        throwsA(isA<LogicConstructionException>()),
+      );
+    });
+
     test('flattens every nested array layer', () {
       final nested =
           TypedLogicArray<TypedLogicArray<LogicArray, LogicValue>, LogicValue>(

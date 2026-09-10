@@ -256,10 +256,11 @@ class TypedLogicArray<T extends Logic, V> extends BaseLogicArray {
       if (arrays.any((array) =>
           !_sameDimensions(array.dimensions, reference.dimensions) ||
           array.elementWidth != reference.elementWidth ||
-          array.numUnpackedDimensions != reference.numUnpackedDimensions)) {
+          array.numUnpackedDimensions != reference.numUnpackedDimensions ||
+          !identical(array.valueCodec, reference.valueCodec))) {
         throw LogicConstructionException(
-            'Nested array leaves must have matching dimensions, widths, and '
-            'unpacked dimensions.');
+            'Nested array leaves must have matching dimensions, widths, '
+            'unpacked dimensions, and value codecs.');
       }
       if (reference.numUnpackedDimensions > 0 &&
           flattenedUnpackedDimensions != flattenedDimensions.length) {
