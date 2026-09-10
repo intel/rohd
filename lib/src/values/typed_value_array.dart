@@ -1,13 +1,19 @@
 // Copyright (C) 2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
-// logic_value_array_of.dart
+// typed_value_array.dart
 // Definition of typed multi-dimensional logic value arrays.
 //
 // 2026 July 21
 // Author: Desmond A. Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 part of 'values.dart';
+
+/// Returns an ordinary packed value unchanged when decoding.
+LogicValue _decodeIdentityLogicValue(LogicValue value) => value;
+
+/// Returns an ordinary packed value unchanged when encoding.
+LogicValue _encodeIdentityLogicValue(LogicValue value) => value;
 
 /// Converts semantic values of type [T] to and from packed [LogicValue]s.
 class LogicValueCodec<T> {
@@ -21,6 +27,12 @@ class LogicValueCodec<T> {
     required this.decode,
     required LogicValue Function(T value) encode,
   }) : _encode = encode;
+
+  /// Codec used when semantic values are already [LogicValue]s.
+  static const logicValue = LogicValueCodec<LogicValue>(
+    decode: _decodeIdentityLogicValue,
+    encode: _encodeIdentityLogicValue,
+  );
 
   /// Converts a semantic [value] into its packed representation.
   LogicValue encode(T value) =>
@@ -37,13 +49,13 @@ class LogicValueCodec<T> {
 /// The nested constructor infers dimensions from its input. The root list
 /// always represents an array dimension. Below the root, an object matching [T]
 /// is treated as a semantic value before considering whether it is also a list.
-/// Use [LogicValueArrayOf.fromFlat] when list-valued semantic data is ambiguous
+/// Use [TypedValueArray.fromFlat] when list-valued semantic data is ambiguous
 /// or when empty data requires explicit shape and width metadata.
 ///
 /// Values are normalized through [codec] at construction: each value is
 /// encoded and then immediately decoded. The packed representation is
 /// authoritative, so lossy codecs expose their normalized semantic values.
-class LogicValueArrayOf<T> extends LogicValue {
+class TypedValueArray<T> extends LogicValue {
   /// The number of elements at each array level.
   final List<int> dimensions;
 
@@ -63,9 +75,9 @@ class LogicValueArrayOf<T> extends LogicValue {
   /// Creates a typed value array from nested [values].
   ///
   /// Empty or ragged nested input is rejected. Use
-  /// [LogicValueArrayOf.fromFlat] to construct an empty array because its
+  /// [TypedValueArray.fromFlat] to construct an empty array because its
   /// element width cannot be inferred.
-  factory LogicValueArrayOf(
+  factory TypedValueArray(
     List<Object?> values, {
     required LogicValueCodec<T> codec,
   }) {
@@ -78,7 +90,7 @@ class LogicValueArrayOf<T> extends LogicValue {
     final encoded = nested.values.map(codec.encode).toList(growable: false);
     final elementWidth = encoded.first.width;
     _validateElementWidths(encoded, elementWidth, 'values');
-    return LogicValueArrayOf<T>._normalized(
+    return TypedValueArray<T>._normalized(
       nested.dimensions,
       elementWidth,
       encoded.map(codec.decode).toList(growable: false),
@@ -88,7 +100,7 @@ class LogicValueArrayOf<T> extends LogicValue {
   }
 
   /// Creates a typed value array from row-major [values] and explicit metadata.
-  factory LogicValueArrayOf.fromFlat(
+  factory TypedValueArray.fromFlat(
     List<int> dimensions,
     int elementWidth,
     Iterable<T> values, {
@@ -100,7 +112,7 @@ class LogicValueArrayOf<T> extends LogicValue {
     _validateValueCount(normalizedDimensions, semanticValues.length, 'values');
     final encoded = semanticValues.map(codec.encode).toList(growable: false);
     _validateElementWidths(encoded, elementWidth, 'values');
-    return LogicValueArrayOf<T>._normalized(
+    return TypedValueArray<T>._normalized(
       normalizedDimensions,
       elementWidth,
       encoded.map(codec.decode).toList(growable: false),
@@ -109,24 +121,44 @@ class LogicValueArrayOf<T> extends LogicValue {
     );
   }
 
+  /// Decodes row-major packed [values] with [codec].
+  factory TypedValueArray.fromPacked(
+    List<int> dimensions,
+    int elementWidth,
+    Iterable<LogicValue> values, {
+    required LogicValueCodec<T> codec,
+  }) {
+    final normalizedDimensions = _validateValueArrayDimensions(dimensions);
+    _validateValueArrayElementWidth(elementWidth);
+    final packedValues = values.toList(growable: false);
+    _validateValueCount(normalizedDimensions, packedValues.length, 'values');
+    _validateElementWidths(packedValues, elementWidth, 'values');
+    return TypedValueArray<T>._normalized(
+      normalizedDimensions,
+      elementWidth,
+      packedValues.map(codec.decode).toList(growable: false),
+      packedValues,
+      codec,
+    );
+  }
+
   /// Decodes the packed elements of [values] with [codec].
-  factory LogicValueArrayOf.fromLogicValueArray(
-    LogicValueArray values, {
+  factory TypedValueArray.fromLogicValueArray(
+    TypedValueArray<LogicValue> values, {
     required LogicValueCodec<T> codec,
   }) =>
-      LogicValueArrayOf<T>._normalized(
+      TypedValueArray<T>.fromPacked(
         values.dimensions,
         values.elementWidth,
-        values._packedElements.map(codec.decode).toList(growable: false),
         values._packedElements,
-        codec,
+        codec: codec,
       );
 
   /// Stacks equally shaped arrays along a new outer dimension.
   ///
   /// All arrays must use the identical [LogicValueCodec] instance. Codec
   /// functions cannot be compared for semantic equivalence.
-  factory LogicValueArrayOf.stack(Iterable<LogicValueArrayOf<T>> arrays) {
+  factory TypedValueArray.stack(Iterable<TypedValueArray<T>> arrays) {
     final slices = arrays.toList(growable: false);
     if (slices.isEmpty) {
       throw ArgumentError.value(arrays, 'arrays', 'Must not be empty.');
@@ -134,7 +166,7 @@ class LogicValueArrayOf<T> extends LogicValue {
 
     final first = slices.first;
     slices.skip(1).forEach(first._checkStackCompatible);
-    return LogicValueArrayOf<T>._normalized(
+    return TypedValueArray<T>._normalized(
       [slices.length, ...first.dimensions],
       first.elementWidth,
       slices.expand((slice) => slice._arrayValues).toList(growable: false),
@@ -143,7 +175,7 @@ class LogicValueArrayOf<T> extends LogicValue {
     );
   }
 
-  LogicValueArrayOf._normalized(
+  TypedValueArray._normalized(
     List<int> dimensions,
     this.elementWidth,
     List<T> arrayValues,
@@ -180,7 +212,7 @@ class LogicValueArrayOf<T> extends LogicValue {
       );
 
   /// Slices along the first dimension.
-  Iterable<LogicValueArrayOf<T>> get majorSlices sync* {
+  Iterable<TypedValueArray<T>> get majorSlices sync* {
     if (dimensions.length < 2) {
       throw StateError('majorSlices requires at least two dimensions.');
     }
@@ -206,8 +238,8 @@ class LogicValueArrayOf<T> extends LogicValue {
       _valueArrayFlatIndex(dimensions, indices);
 
   /// Maps semantic values while preserving shape and codec.
-  LogicValueArrayOf<T> map(T Function(T value) transform) =>
-      LogicValueArrayOf<T>.fromFlat(
+  TypedValueArray<T> map(T Function(T value) transform) =>
+      TypedValueArray<T>.fromFlat(
         dimensions,
         elementWidth,
         _arrayValues.map(transform),
@@ -215,10 +247,10 @@ class LogicValueArrayOf<T> extends LogicValue {
       );
 
   /// Maps semantic values with their multidimensional indices.
-  LogicValueArrayOf<T> indexedMap(
+  TypedValueArray<T> indexedMap(
     T Function(List<int> indices, T value) transform,
   ) =>
-      LogicValueArrayOf<T>.fromFlat(
+      TypedValueArray<T>.fromFlat(
         dimensions,
         elementWidth,
         indexedValues.map((entry) => transform(entry.$1, entry.$2)),
@@ -226,13 +258,13 @@ class LogicValueArrayOf<T> extends LogicValue {
       );
 
   /// Maps slices along the first dimension and stacks the results.
-  LogicValueArrayOf<T> mapMajorSlices(
-    LogicValueArrayOf<T> Function(LogicValueArrayOf<T> slice) transform,
+  TypedValueArray<T> mapMajorSlices(
+    TypedValueArray<T> Function(TypedValueArray<T> slice) transform,
   ) =>
-      LogicValueArrayOf<T>.stack(majorSlices.map(transform));
+      TypedValueArray<T>.stack(majorSlices.map(transform));
 
-  /// Returns a row-major view with [newDimensions].
-  LogicValueArrayOf<T> reshape(List<int> newDimensions) {
+  /// Returns the same row-major values with [newDimensions].
+  TypedValueArray<T> reshape(List<int> newDimensions) {
     final normalizedDimensions = _validateValueArrayDimensions(newDimensions);
     if (_valueArrayLength(normalizedDimensions) != elementCount) {
       throw ArgumentError.value(newDimensions, 'newDimensions',
@@ -242,7 +274,7 @@ class LogicValueArrayOf<T> extends LogicValue {
   }
 
   /// Transposes this two-dimensional value array.
-  LogicValueArrayOf<T> transpose2D() {
+  TypedValueArray<T> transpose2D() {
     _checkValueArrayIsTwoDimensional(dimensions);
     final newDimensions = [dimensions[1], dimensions[0]];
     final semanticValues = <T>[];
@@ -259,26 +291,19 @@ class LogicValueArrayOf<T> extends LogicValue {
 
   /// Creates a [LogicArray] with the same shape and drives it with this value.
   LogicArray toLogicArray({String? name}) =>
-      putInto(LogicArray(dimensions, elementWidth, name: name));
+      LogicArray(dimensions, elementWidth, name: name)..put(this);
 
-  /// Drives a compatible hardware [target] with this shaped value.
-  U putInto<U extends LogicArrayOf<Logic>>(U target) {
-    _checkHardwareCompatible(target);
-    for (var index = 0; index < elementCount; index++) {
-      target.arrayElements[index].put(_packedElements[index]);
-    }
-    return target;
-  }
-
-  LogicValueArrayOf<T> _createStored(
+  /// Rebuilds a shaped value from already-normalized semantic and packed data.
+  TypedValueArray<T> _createStored(
     List<int> dimensions,
     List<T> arrayValues,
     List<LogicValue> packedElements,
   ) =>
-      LogicValueArrayOf<T>._normalized(
+      TypedValueArray<T>._normalized(
           dimensions, elementWidth, arrayValues, packedElements, codec);
 
-  void _checkStackCompatible(LogicValueArrayOf<T> other) {
+  /// Validates shape, width, and codec identity for [TypedValueArray.stack].
+  void _checkStackCompatible(TypedValueArray<T> other) {
     if (!identical(codec, other.codec)) {
       throw ArgumentError.value(
           other.codec, 'arrays', 'All arrays must use the identical codec.');
@@ -289,17 +314,6 @@ class LogicValueArrayOf<T> extends LogicValue {
           other.dimensions,
           'arrays',
           'All arrays must have dimensions $dimensions and '
-              'elementWidth $elementWidth.');
-    }
-  }
-
-  void _checkHardwareCompatible(LogicArrayOf<Logic> target) {
-    if (elementWidth != target.elementWidth ||
-        !_sameValueArrayDimensions(dimensions, target.dimensions)) {
-      throw ArgumentError.value(
-          target,
-          'target',
-          'Must have dimensions $dimensions and '
               'elementWidth $elementWidth.');
     }
   }
@@ -381,13 +395,22 @@ class LogicValueArrayOf<T> extends LogicValue {
   int get _intInvalid => packed._intInvalid;
 }
 
+/// Shape and row-major leaves extracted from nested constructor input.
 class _NestedValueArray<T> {
+  /// Inferred dimension sizes from outermost to innermost.
   final List<int> dimensions;
+
+  /// Flattened semantic leaves in row-major order.
   final List<T> values;
 
+  /// Stores one validated nested-input parse result.
   _NestedValueArray(this.dimensions, this.values);
 }
 
+/// Parses arbitrary-depth nested lists into a rectangular row-major array.
+///
+/// Values matching [T] are treated as leaves before checking whether they are
+/// lists, which keeps list-valued semantic types unambiguous.
 _NestedValueArray<T> _parseNestedArray<T>(
   List<Object?> root, {
   required String argumentName,
@@ -425,6 +448,7 @@ _NestedValueArray<T> _parseNestedArray<T>(
   return parse(root, const []);
 }
 
+/// Validates dimension sizes and returns an immutable shape.
 List<int> _validateValueArrayDimensions(List<int> dimensions) {
   final normalized = List<int>.unmodifiable(dimensions);
   if (normalized.isEmpty) {
@@ -437,6 +461,7 @@ List<int> _validateValueArrayDimensions(List<int> dimensions) {
   return normalized;
 }
 
+/// Rejects a negative packed width for each array element.
 void _validateValueArrayElementWidth(int elementWidth) {
   if (elementWidth < 0) {
     throw ArgumentError.value(
@@ -444,6 +469,7 @@ void _validateValueArrayElementWidth(int elementWidth) {
   }
 }
 
+/// Requires the flat value count implied by [dimensions].
 void _validateValueCount(
     List<int> dimensions, int valueCount, String argumentName) {
   final expected = _valueArrayLength(dimensions);
@@ -453,6 +479,7 @@ void _validateValueCount(
   }
 }
 
+/// Requires every packed value to have [elementWidth] bits.
 void _validateElementWidths(
     Iterable<LogicValue> values, int elementWidth, String argumentName) {
   for (final value in values) {
@@ -463,9 +490,11 @@ void _validateElementWidths(
   }
 }
 
+/// Computes the number of row-major elements represented by [dimensions].
 int _valueArrayLength(List<int> dimensions) =>
     dimensions.fold(1, (length, dimension) => length * dimension);
 
+/// Converts a row-major [flatIndex] into one index per dimension.
 List<int> _valueArrayIndices(List<int> dimensions, int flatIndex) {
   final indices = List.filled(dimensions.length, 0);
   for (var dimension = dimensions.length - 1; dimension >= 0; dimension--) {
@@ -476,6 +505,7 @@ List<int> _valueArrayIndices(List<int> dimensions, int flatIndex) {
   return indices;
 }
 
+/// Converts multidimensional [indices] into a validated row-major flat index.
 int _valueArrayFlatIndex(List<int> dimensions, List<int> indices) {
   if (indices.length != dimensions.length) {
     throw RangeError.range(
@@ -494,10 +524,12 @@ int _valueArrayFlatIndex(List<int> dimensions, List<int> indices) {
   return flatIndex;
 }
 
+/// Whether two ordered dimension lists describe the same shape.
 bool _sameValueArrayDimensions(List<int> left, List<int> right) =>
     left.length == right.length &&
     left.indexed.every((entry) => entry.$2 == right[entry.$1]);
 
+/// Requires exactly two dimensions for transpose-only operations.
 void _checkValueArrayIsTwoDimensional(List<int> dimensions) {
   if (dimensions.length != 2) {
     throw StateError('Expected exactly two dimensions, got $dimensions.');

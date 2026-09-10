@@ -131,7 +131,7 @@ class NetlistModuleTranslation {
             final portLogic = modulePorts[portName];
             final emitOutputArrayConcat =
                 direction == NetlistPortDirection.output &&
-                    portLogic is LogicArrayOf<Logic> &&
+                    portLogic is BaseLogicArray &&
                     !_hasExistingOutputArrayConcat(synthLogic) &&
                     !_hasDirectSubmoduleOutputDriver(synthLogic);
             final originalIds = getIds(synthLogic);
@@ -168,7 +168,7 @@ class NetlistModuleTranslation {
   /// Emits a concat cell that assembles a LogicArray output port.
   void _emitOutputArrayConcat(
     String portName,
-    LogicArrayOf<Logic> array,
+    BaseLogicArray array,
     List<int> outputIds,
   ) {
     _emitOutputArrayConcatForArray(portName, array, outputIds);
@@ -177,7 +177,7 @@ class NetlistModuleTranslation {
   /// Recursively emits concat cells for nested LogicArray output elements.
   bool _emitOutputArrayConcatForArray(
     String concatName,
-    LogicArrayOf<Logic> array,
+    BaseLogicArray array,
     List<int> outputIds,
   ) {
     final definition = synthDef;
@@ -195,7 +195,7 @@ class NetlistModuleTranslation {
         return false;
       }
       var elementIds = getIds(synthLogic);
-      if (element is LogicArrayOf<Logic> &&
+      if (element is BaseLogicArray &&
           !_hasExistingOutputArrayConcat(synthLogic) &&
           !_hasDirectSubmoduleOutputDriver(synthLogic)) {
         final aggregateIds = List<int>.generate(
@@ -210,7 +210,7 @@ class NetlistModuleTranslation {
           return false;
         }
         elementIds = aggregateIds;
-      } else if (element is LogicStructure) {
+      } else if (element is LogicStructure && element is! BaseLogicArray) {
         _emitOutputArrayStructurePack(
           '${concatName}_$index',
           element,
@@ -436,7 +436,7 @@ class NetlistModuleTranslation {
         for (final portEntry in submodule.inputs.entries) {
           final portName = portEntry.key;
           final port = portEntry.value;
-          if (port is! LogicArrayOf<Logic> ||
+          if (port is! BaseLogicArray ||
               cellPortDirs[portName] != NetlistPortDirection.input) {
             continue;
           }

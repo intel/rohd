@@ -14,7 +14,7 @@ import 'package:rohd/src/utilities/web.dart';
 
 part 'logic_value.dart';
 part 'logic_value_array.dart';
-part 'logic_value_array_of.dart';
+part 'typed_value_array.dart';
 part 'small_logic_value.dart';
 part 'big_logic_value.dart';
 part 'filled_logic_value.dart';
