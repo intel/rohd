@@ -285,6 +285,22 @@ void main() {
           contains(config.elements.single));
     });
 
+    test('flatten outer connects nested constant promoted fields', () {
+      final grandchild = LogicStructure([
+        Const(1, width: 1),
+      ], name: 'grandchild');
+      final config = LogicStructure([grandchild], name: 'config');
+      final control = LogicStructure([config], name: 'control');
+
+      final flattened = control.flattenOuter(name: 'flatControl');
+      final promoted = flattened.elements.single;
+
+      expect(promoted, isA<LogicStructure>());
+      expect((promoted as LogicStructure).elements.single, isA<Logic>());
+      expect(promoted.elements.single.srcConnections,
+          contains(grandchild.elements.single));
+    });
+
     test('flatten outer rejects duplicate promoted field names', () {
       final control = LogicStructure([
         Logic(name: 'mode'),
