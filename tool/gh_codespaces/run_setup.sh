@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2023 Intel Corporation
+# Copyright (C) 2023-2026 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
 #
 # run_setup.sh
@@ -19,6 +19,8 @@ tool/gh_actions/install_dependencies.sh
 
 # Install Icarus Verilog.
 tool/gh_actions/install_iverilog.sh
+
+bash tool/gh_actions/install_verilator.sh
 
 # Install Node
 tool/gh_actions/install_node.sh

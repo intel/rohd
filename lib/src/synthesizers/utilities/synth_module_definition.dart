@@ -3069,18 +3069,27 @@ class SynthModuleDefinition {
       range.base,
       assignmentsByDestination,
     );
-    if (driver == null) {
+    var knownSourceRange = knownSourceRanges[range.base];
+    if (knownSourceRange != null &&
+        _isConstantBackedSource(
+          knownSourceRange.base,
+          assignmentsByDestination,
+        )) {
+      knownSourceRange = null;
+    }
+    if (driver == null && knownSourceRange == null) {
       return range;
     }
 
-    final sourceRange = driver is RangeSynthAssignment
-        ? _SynthRangeRef(
-            driver.src.resolved,
-            driver.srcLowerIndex,
-            driver.srcUpperIndex,
-          )
-        : knownSourceRanges[driver.src.resolved] ??
-            _SynthRangeRef(driver.src.resolved, 0, driver.src.width - 1);
+    final sourceRange = knownSourceRange ??
+        (driver is RangeSynthAssignment
+            ? _SynthRangeRef(
+                driver.src.resolved,
+                driver.srcLowerIndex,
+                driver.srcUpperIndex,
+              )
+            : knownSourceRanges[driver!.src.resolved] ??
+                _SynthRangeRef(driver.src.resolved, 0, driver.src.width - 1));
 
     final resolvedSourceRange = _resolveKnownRangeThroughFullWidthDrivers(
       sourceRange,

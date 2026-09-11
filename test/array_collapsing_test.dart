@@ -1700,6 +1700,97 @@ class LateSlicedSubsetInputTop extends Module {
   }
 }
 
+class Producer extends Module {
+  Producer(Logic seed) : super(name: 'producer') {
+    seed = addInput('seed', seed, width: 64);
+    addOutput('data_out', width: 64) <= seed;
+  }
+}
+
+class Consumer extends Module {
+  Consumer() : super(name: 'consumer') {
+    final dataIn = addInput('data_in', Logic(width: 2), width: 2);
+    addOutput('observed') <= dataIn[0];
+  }
+}
+
+class Top extends Module {
+  Top({required bool useRange})
+      : super(name: useRange ? 'range_top' : 'bitwise_top') {
+    final seed = addInput('seed', Logic(width: 64), width: 64);
+    final producer = Producer(seed);
+    final consumer = Consumer();
+    final dataOut = producer.output('data_out');
+    final dataIn = consumer.inputSource('data_in');
+
+    if (useRange) {
+      dataIn <= dataOut.getRange(40, 42);
+    } else {
+      dataIn
+        ..assignSubset([dataOut[40]])
+        ..assignSubset([dataOut[41]], start: 1);
+    }
+
+    addOutput('observed') <= consumer.output('observed');
+  }
+}
+
+class ArrayConsumer extends Module {
+  ArrayConsumer() : super(name: 'array_consumer') {
+    final dataIn = addInputArray(
+      'data_in',
+      LogicArray([2], 1),
+      dimensions: [2],
+    );
+    addOutput('observed') <= dataIn.elements[0];
+  }
+}
+
+class ArrayTop extends Module {
+  ArrayTop() : super(name: 'array_top') {
+    final seed = addInput('seed', Logic(width: 64), width: 64);
+    final producer = Producer(seed);
+    final consumer = ArrayConsumer();
+    final dataOut = producer.output('data_out');
+    (consumer.inputSource('data_in') as LogicArray)
+      ..assignSubset([dataOut[40]])
+      ..assignSubset([dataOut[41]], start: 1);
+
+    addOutput('observed') <= consumer.output('observed');
+  }
+}
+
+class ProducerHierarchy extends Module {
+  ProducerHierarchy(Logic seed) : super(name: 'producer_hierarchy') {
+    seed = addInput('seed', seed, width: 64);
+    final producer = Producer(seed);
+    addOutput('data_out', width: 64) <= producer.output('data_out');
+  }
+}
+
+class ConsumerHierarchy extends Module {
+  ConsumerHierarchy() : super(name: 'consumer_hierarchy') {
+    final dataIn = addInput('data_in', Logic(width: 2), width: 2);
+    final consumer = Consumer();
+    consumer.inputSource('data_in') <= dataIn;
+    addOutput('observed') <= consumer.output('observed');
+  }
+}
+
+class HierarchyTop extends Module {
+  HierarchyTop() : super(name: 'hierarchy_top') {
+    final seed = addInput('seed', Logic(width: 64), width: 64);
+    final producer = ProducerHierarchy(seed);
+    final consumer = ConsumerHierarchy();
+    final dataOut = producer.output('data_out');
+    consumer.inputSource('data_in')
+      ..assignSubset([dataOut[40]])
+      ..assignSubset([dataOut[41]], start: 1);
+
+    addOutput('observed') <= consumer.output('observed');
+  }
+}
+
 /// A child that forwards its input to an output for sibling connection tests.
 class SiblingSubsetProducer extends Module {
   SiblingSubsetProducer({super.name = 'sibling_subset_producer'}) {
@@ -4252,12 +4343,102 @@ void main() {
       final topBody = _topModuleBody(sv);
 
       expect(topBody, isNot(contains('.data()')));
-      expect(topBody, contains('assign'));
-      expect(topBody, contains('source[11:4]'));
+      expect(topBody, contains('.data((source[11:4]))'));
+      expect(topBody, isNot(contains('data_subset')));
+      expect(topBody, isNot(contains('logic [7:0] data;')));
+      expect(topBody, isNot(contains(RegExp(r'assign\s+data'))));
 
       final vectors = [
         for (final pattern in [0x0000, 0x0010, 0x00f0, 0xffff])
           Vector({'source': pattern}, {'y': (pattern >> 4) & 1})
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    });
+
+    for (final useRange in [false, true]) {
+      test(
+          'contiguous ${useRange ? 'range' : 'bitwise'} sibling connection '
+          'maps directly', () async {
+        final mod = Top(useRange: useRange);
+        await mod.build();
+        final sv = mod.generateSynth();
+        final topBody = _topModuleBody(sv);
+
+        expect(
+          topBody,
+          contains(RegExp(
+            r'\.data_in\(\(\{?\s*data_out\[41:40\]\s*\}?\)\)',
+          )),
+        );
+        expect(topBody, isNot(contains('_subset')));
+        expect(topBody, isNot(contains('logic [1:0] data_in;')));
+        expect(topBody, isNot(contains(RegExp(r'assign\s+data_in'))));
+
+        final vectors = [
+          for (final pattern in [
+            BigInt.zero,
+            BigInt.one << 40,
+            BigInt.one << 41,
+            (BigInt.one << 40) | (BigInt.one << 41),
+          ])
+            Vector({'seed': pattern}, {'observed': (pattern >> 40).toInt() & 1})
+        ];
+        await SimCompare.checkFunctionalVector(mod, vectors);
+        SimCompare.checkIverilogVector(mod, vectors);
+      });
+    }
+
+    test('contiguous bitwise connection to packed array stays explicit',
+        () async {
+      final mod = ArrayTop();
+      await mod.build();
+      final sv = mod.generateSynth();
+      final topBody = _topModuleBody(sv);
+
+      expect(topBody, contains('logic [1:0] data_in;'));
+      expect(topBody, contains('assign data_in[1] = data_out[41];'));
+      expect(topBody, contains('assign data_in[0] = data_out[40];'));
+      expect(topBody, isNot(contains('data_out[41:40]')));
+      expect(topBody, isNot(contains('_subset')));
+
+      final vectors = [
+        for (final pattern in [
+          BigInt.zero,
+          BigInt.one << 40,
+          BigInt.one << 41,
+          (BigInt.one << 40) | (BigInt.one << 41),
+        ])
+          Vector({'seed': pattern}, {'observed': (pattern >> 40).toInt() & 1})
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    });
+
+    test('contiguous bitwise connection maps through hierarchy', () async {
+      final mod = HierarchyTop();
+      await mod.build();
+      final sv = mod.generateSynth();
+      final topBody = _topModuleBody(sv);
+
+      expect(
+        topBody,
+        contains(RegExp(
+          r'\.data_in\(\(\{?\s*data_out\[41:40\]\s*\}?\)\)',
+        )),
+      );
+      expect(topBody, isNot(contains('_subset')));
+      expect(topBody, isNot(contains('logic [1:0] data_in;')));
+      expect(topBody, isNot(contains(RegExp(r'assign\s+data_in'))));
+
+      final vectors = [
+        for (final pattern in [
+          BigInt.zero,
+          BigInt.one << 40,
+          BigInt.one << 41,
+          (BigInt.one << 40) | (BigInt.one << 41),
+        ])
+          Vector({'seed': pattern}, {'observed': (pattern >> 40).toInt() & 1})
       ];
       await SimCompare.checkFunctionalVector(mod, vectors);
       SimCompare.checkIverilogVector(mod, vectors);
