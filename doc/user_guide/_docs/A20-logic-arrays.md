@@ -79,7 +79,7 @@ A zero-sized array calls the builder once as a prototype so that the same metada
 
 ### Hardware shape transformations
 
-`reshape` and `transpose2D` construct new typed hardware and connect it to the source array; they do not create aliases or views. `reshape` preserves row-major element order and clamps `numUnpackedDimensions` to the new rank when necessary. It retains dimension names when the rank is unchanged and otherwise generates default names. `transpose2D` swaps the two dimensions and their names while retaining `numUnpackedDimensions`.
+`reshape` and `transpose2D` construct new typed hardware and connect it to the source array; they do not create aliases or views. The receiver drives the returned array. `reshape` preserves row-major element order and clamps `numUnpackedDimensions` to the new rank when necessary. It retains dimension names when the rank is unchanged and otherwise generates default names. `transpose2D` swaps the two dimensions and their names while retaining `numUnpackedDimensions`. These operations do not infer reverse or permutation-aware connections from a later whole-array assignment; use `indexedElements` and `at` when the transformed array must drive the original or when constructing an explicitly disconnected mapping.
 
 ### Traversal boundaries
 
@@ -93,9 +93,7 @@ These APIs intentionally stop at different boundaries:
 
 For example, a `[2, 3]` array of two-field `Sample`s has six `arrayElements` and twelve recursive `leafElements`. A `[2]` array whose elements are `[3]` arrays has two `arrayElements` and six recursive leaves. An eight-bit `Logic` is one leaf, not eight.
 
-When typed array elements are themselves arrays, use `flattenNestedDimensions<U, UValue>(valueCodec: ...)` to create one rectangular `TypedLogicArray<U, UValue>` with all nested dimensions concatenated. The supplied codec must be the identical codec stored by the innermost array elements. The full address is preserved: `nested.at(outerIndices).at(innerIndices)` maps to `flattened.at([...outerIndices, ...innerIndices])`. Every sibling nested array must have matching dimensions, element width, depth, and unpacked-dimension configuration. Empty shapes are supported because the configured element builders supply the missing metadata.
-
-A `TypedLogicArray` element can be a `LogicStructure`, but it must be driveable. Direct `Const` elements, structures containing a `Const`, and element structures containing nested arrays are rejected. An array can instead directly contain another array and then be flattened as described above.
+A `TypedLogicArray` element can be a `LogicStructure`, but it must be driveable. Direct `Const` elements, structures containing a `Const`, and element structures containing nested arrays are rejected. Nested arrays remain available through their existing `arrayElements`, `at`, and `indexedElements` traversal APIs; no public recursive layout-conversion helper is provided.
 
 `TypedLogicArray` is also the supported base for custom typed arrays. A subclass using the protected `TypedLogicArray.structured` constructor must supply a correctly configured element builder and value codec, and should override `createClone` to preserve its runtime type and metadata.
 
@@ -119,7 +117,7 @@ final sameValues = LogicValueArray.fromFlatInts(
 final emptyRows = LogicValueArray.fromFlat([2, 0], 8, const []);
 
 final transposed = values.transpose2D(); // Dimensions: [3, 2]
-final signals = values.toLogicArray(name: 'values');
+final signals = values.toLogicArray(name: 'values'); // signals are driven by values
 ```
 
 Nested constructors reject ragged rows, inconsistent nesting depth, and mismatched element widths. Empty nested input cannot reveal the element width or trailing dimensions, so it must use `fromFlat`. `majorSlices` iterates the outer dimension rather than the total element count, so a `[2, 0]` value contains two empty `[0]` slices and can round-trip through `stack`.
