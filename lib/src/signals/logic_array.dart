@@ -13,6 +13,7 @@ part of 'signals.dart';
 ///
 /// Construct [LogicArray] for ordinary logic values or [TypedLogicArray] for
 /// hardware elements with an associated semantic value type.
+@internal
 abstract class BaseLogicArray extends LogicStructure {
   /// The number of elements at each level of the array, starting from the most
   /// significant outermost level.
@@ -348,18 +349,6 @@ class LogicArray extends TypedLogicArray<Logic, LogicValue> {
         ..gets(this);
 
   @override
-  LogicArray getsEach(Iterable<Logic> sources) {
-    super.getsEach(sources);
-    return this;
-  }
-
-  @override
-  LogicArray getsGenerated(Logic Function(List<int> indices) generator) {
-    super.getsGenerated(generator);
-    return this;
-  }
-
-  @override
   LogicArray reshape(List<int> newDimensions, {String? name}) {
     if (_arrayLength(newDimensions) != arrayElements.length) {
       throw ArgumentError.value(newDimensions, 'newDimensions',
@@ -370,18 +359,22 @@ class LogicArray extends TypedLogicArray<Logic, LogicValue> {
       elementWidth,
       name: name,
       numUnpackedDimensions: min(numUnpackedDimensions, newDimensions.length),
-    )..getsEach(arrayElements);
+    )..gets(this);
   }
 
   @override
   LogicArray transpose2D({String? name}) {
     _checkArrayIsTwoDimensional(dimensions);
-    return (isNet ? LogicArray.net : LogicArray.new)(
+    final transposed = (isNet ? LogicArray.net : LogicArray.new)(
       [dimensions[1], dimensions[0]],
       elementWidth,
       name: name,
       numUnpackedDimensions: numUnpackedDimensions,
-    )..getsGenerated((indices) => at([indices[1], indices[0]]));
+    );
+    for (final (indices, target) in transposed.indexedElements) {
+      target <= at([indices[1], indices[0]]);
+    }
+    return transposed;
   }
 
   @override

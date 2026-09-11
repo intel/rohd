@@ -289,7 +289,7 @@ void main() {
         schema: 'sample-v2',
         dimensionNames: const ['row_', 'column_'],
       );
-      final assigned = TypedValueArray<_SampleValue>.fromFlat(
+      final assigned = TypedLogicValueArray<_SampleValue>.fromFlat(
         [2, 2],
         3,
         [
@@ -303,7 +303,7 @@ void main() {
 
       values.put(assigned);
 
-      expect(values.value, isA<TypedValueArray<_SampleValue>>());
+      expect(values.value, isA<TypedLogicValueArray<_SampleValue>>());
       expect(values.value.arrayValues, assigned.arrayValues);
       expect(values.value.packed, assigned.packed);
       expect(values.value.at([0, 0]).value, LogicValue.ofString('1xz'));
@@ -318,7 +318,7 @@ void main() {
       for (final result in transformed) {
         expect(result, isA<TypedLogicArray<_SampleStructure, _SampleValue>>());
         expect(identical(result.valueCodec, _sampleValueCodec), isTrue);
-        expect(result.value, isA<TypedValueArray<_SampleValue>>());
+        expect(result.value, isA<TypedLogicValueArray<_SampleValue>>());
       }
       expect(transformed[1].value.packed, assigned.packed);
       expect(
@@ -336,7 +336,7 @@ void main() {
         () async {
       addTearDown(Simulator.reset);
       final values = _SampleArray([2], schema: 'sample-v2')..put(0);
-      final injected = TypedValueArray<_SampleValue>.fromFlat(
+      final injected = TypedLogicValueArray<_SampleValue>.fromFlat(
         [2],
         3,
         [
@@ -354,9 +354,9 @@ void main() {
 
       await Simulator.run();
 
-      expect(values.value, isA<TypedValueArray<_SampleValue>>());
+      expect(values.value, isA<TypedLogicValueArray<_SampleValue>>());
       expect(values.value.arrayValues, injected.arrayValues);
-      expect(values.previousValue, isA<TypedValueArray<_SampleValue>>());
+      expect(values.previousValue, isA<TypedLogicValueArray<_SampleValue>>());
       expect(values.previousValue!.packed, LogicValue.ofInt(0, 6));
       expect(identical(values.previousValue!.codec, _sampleValueCodec), isTrue);
       expect(changes, hasLength(1));
@@ -631,17 +631,14 @@ void main() {
       expect(clone, isA<TypedLogicArray<Logic, LogicValue>>());
       expect(clone.name, 'clone');
       expect(clone.arrayElements, hasLength(4));
+      values <= LogicArray([4], 8);
       expect(
-        () => values.getsPackedValues(LogicArray([4], 8)),
-        throwsA(isA<LogicConstructionException>()),
-      );
-      expect(
-        () => values.getsPackedValues(LogicArray([2, 2], 4)),
-        throwsA(isA<LogicConstructionException>()),
+        () => values <= LogicArray([2, 2], 4),
+        throwsA(isA<SignalWidthMismatchException>()),
       );
     });
 
-    test('getsPackedValues drives structured leaves in row-major order', () {
+    test('ordinary assignment drives structured leaves in row-major order', () {
       final values = TypedLogicArray<_SampleStructure, LogicValue>(
         [2, 2],
         _SampleStructure.new,
@@ -649,7 +646,7 @@ void main() {
       final packed = LogicArray([2, 2], 3)
         ..put(LogicValueArray.fromFlatInts([4], 3, [1, 2, 3, 4]));
 
-      values.getsPackedValues(packed);
+      values <= packed;
 
       expect(values.value.packed, packed.value.packed);
       expect(
@@ -981,26 +978,6 @@ void main() {
         ).transpose2D(),
         throwsA(isA<StateError>()),
       );
-
-      for (final sourceCount in [3, 5]) {
-        final target = TypedLogicArray<Logic, LogicValue>(
-          [2, 2],
-          ({name}) => Logic(name: name, width: 2),
-        );
-        final sources = [
-          for (var index = 0; index < sourceCount; index++)
-            Logic(name: 'source$index', width: 2),
-        ];
-
-        expect(
-          () => target.getsEach(sources),
-          throwsA(isA<StateError>()),
-        );
-        expect(
-          target.arrayElements.expand((element) => element.srcConnections),
-          isEmpty,
-        );
-      }
     });
 
     test('named applies every requested naming mode', () {
@@ -1070,7 +1047,7 @@ void main() {
         expect(specialized.numUnpackedDimensions, 1);
         expect(specialized.isNet, isFalse);
         expect(identical(specialized.valueCodec, _sampleValueCodec), isTrue);
-        expect(specialized.value, isA<TypedValueArray<_SampleValue>>());
+        expect(specialized.value, isA<TypedLogicValueArray<_SampleValue>>());
         expect(
           specialized.arrayElements,
           everyElement(isA<_SampleStructure>()),
@@ -1094,7 +1071,7 @@ void main() {
       );
       final sameShape = LogicValueArray.fromFlatInts([2, 2], 3, [0, 1, 2, 3]);
       final differentShape = sameShape.reshape([4]);
-      final typedValues = TypedValueArray<int>.fromFlat(
+      final typedValues = TypedLogicValueArray<int>.fromFlat(
         [1, 4],
         3,
         [7, 6, 5, 4],
@@ -1127,7 +1104,7 @@ void main() {
           expected: differentShape.packed,
         ),
         (
-          name: 'generic TypedValueArray',
+          name: 'generic TypedLogicValueArray',
           value: typedValues,
           expected: typedValues.packed,
         ),
@@ -1169,7 +1146,7 @@ void main() {
       expect(values.value.packed, LogicValue.ofInt(0, values.width));
       await Simulator.run();
       expect(
-        TypedValueArray<int>.fromLogicValueArray(
+        TypedLogicValueArray<int>.fromLogicValueArray(
           values.value,
           codec: codec,
         ).arrayValues,
@@ -1234,7 +1211,7 @@ void main() {
       expect(changes.single.previousValue, initial);
       expect(changes.single.newValue, updated);
       expect(values.value.packed, updated);
-      expect(values.previousValue, isA<TypedValueArray<LogicValue>>());
+      expect(values.previousValue, isA<TypedLogicValueArray<LogicValue>>());
       expect(values.previousValue!.dimensions, [2]);
       expect(values.previousValue!.elementWidth, 3);
       expect(values.previousValue!.packed, initial);
@@ -1250,11 +1227,11 @@ void main() {
       expect(valuesIn.dimensions, [2, 3]);
       expect(valuesIn.at([1, 2]), isA<_SampleStructure>());
       expect(identical(valuesIn.valueCodec, _sampleValueCodec), isTrue);
-      expect(valuesIn.value, isA<TypedValueArray<_SampleValue>>());
+      expect(valuesIn.value, isA<TypedLogicValueArray<_SampleValue>>());
       expect(module.valuesOut,
           isA<TypedLogicArray<_SampleStructure, _SampleValue>>());
       expect(identical(module.valuesOut.valueCodec, _sampleValueCodec), isTrue);
-      expect(module.valuesOut.value, isA<TypedValueArray<_SampleValue>>());
+      expect(module.valuesOut.value, isA<TypedLogicValueArray<_SampleValue>>());
       expect(module.valuesOut.at([1, 2]).low.width, 1);
       expect(module.valuesOut.at([1, 2]).high.width, 2);
     });
@@ -1271,7 +1248,7 @@ void main() {
           isA<TypedLogicArray<_NetSampleStructure, _SampleValue>>());
       expect(module.values.isNet, isTrue);
       expect(identical(module.values.valueCodec, _sampleValueCodec), isTrue);
-      expect(module.values.value, isA<TypedValueArray<_SampleValue>>());
+      expect(module.values.value, isA<TypedLogicValueArray<_SampleValue>>());
     });
 
     test('preserves typed arrays through interfaces and synthesis', () async {
@@ -1567,7 +1544,7 @@ void main() {
         throwsArgumentError,
       );
       expect(
-        () => TypedValueArray<int>.stack(<TypedValueArray<int>>[]),
+        () => TypedLogicValueArray<int>.stack(<TypedLogicValueArray<int>>[]),
         throwsArgumentError,
       );
       expect(
@@ -1796,7 +1773,7 @@ void main() {
     });
   });
 
-  group('TypedValueArray', () {
+  group('TypedLogicValueArray', () {
     test('rejects empty and non-semantic nested input', () {
       const codec = LogicValueCodec<int>(
         decode: _decodeLogicValue,
@@ -1804,11 +1781,11 @@ void main() {
       );
 
       expect(
-        () => TypedValueArray<int>(const [], codec: codec),
+        () => TypedLogicValueArray<int>(const [], codec: codec),
         throwsArgumentError,
       );
       expect(
-        () => TypedValueArray<int>(
+        () => TypedLogicValueArray<int>(
           [
             1,
             'not an integer',
@@ -1830,11 +1807,11 @@ void main() {
         [3],
         [4],
       ];
-      final nested = TypedValueArray<List<int>>([
+      final nested = TypedLogicValueArray<List<int>>([
         [leaves[0], leaves[1]],
         [leaves[2], leaves[3]],
       ], codec: codec);
-      final flat = TypedValueArray<List<int>>.fromFlat(
+      final flat = TypedLogicValueArray<List<int>>.fromFlat(
         [2, 2],
         8,
         leaves,
@@ -1858,7 +1835,7 @@ void main() {
         [1, 2, 3],
         [4, 5, 6],
       ], elementWidth: 8);
-      final values = TypedValueArray<int>.fromLogicValueArray(
+      final values = TypedLogicValueArray<int>.fromLogicValueArray(
         packed,
         codec: codec,
       );
@@ -1877,7 +1854,7 @@ void main() {
         decode: _decodeLogicValue,
         encode: _encodeLogicValue,
       );
-      final values = TypedValueArray<int>([
+      final values = TypedLogicValueArray<int>([
         [1, 2],
         [3, 4],
       ], codec: codec);
@@ -1891,7 +1868,7 @@ void main() {
         [1, 3, 3, 5],
       );
       expect(
-        TypedValueArray<int>.stack(values.majorSlices).arrayValues,
+        TypedLogicValueArray<int>.stack(values.majorSlices).arrayValues,
         values.arrayValues,
       );
       expect(values.packed, LogicValue.ofInt(0x04030201, 32));
@@ -1902,7 +1879,7 @@ void main() {
         decode: _decodeRoundedLogicValue,
         encode: _encodeRoundedLogicValue,
       );
-      final values = TypedValueArray<double>([
+      final values = TypedLogicValueArray<double>([
         [1.2, 2.4],
         [3.6, 4.8],
       ], codec: codec);
@@ -1910,7 +1887,7 @@ void main() {
       expect(values.arrayValues, [1.0, 2.0, 4.0, 5.0]);
       expect(values.reshape([4]).arrayValues, values.arrayValues);
       expect(
-        TypedValueArray<double>.stack(values.majorSlices).arrayValues,
+        TypedLogicValueArray<double>.stack(values.majorSlices).arrayValues,
         values.arrayValues,
       );
       expect(values.transpose2D().arrayValues, [1.0, 4.0, 2.0, 5.0]);
@@ -1925,13 +1902,13 @@ void main() {
         decode: _decodeLogicValue,
         encode: _encodeLogicValue,
       );
-      final first = TypedValueArray<int>.fromFlat(
+      final first = TypedLogicValueArray<int>.fromFlat(
         [1],
         8,
         [1],
         codec: firstCodec,
       );
-      final second = TypedValueArray<int>.fromFlat(
+      final second = TypedLogicValueArray<int>.fromFlat(
         [1],
         8,
         [2],
@@ -1939,7 +1916,7 @@ void main() {
       );
 
       expect(
-        () => TypedValueArray<int>.stack([first, second]),
+        () => TypedLogicValueArray<int>.stack([first, second]),
         throwsArgumentError,
       );
     });
@@ -1949,7 +1926,7 @@ void main() {
         decode: _decodeLogicValue,
         encode: _encodeLogicValue,
       );
-      final values = TypedValueArray<int>.fromFlat(
+      final values = TypedLogicValueArray<int>.fromFlat(
         [2, 0],
         8,
         const [],
@@ -1963,7 +1940,7 @@ void main() {
         [0],
       ]);
       expect(
-        TypedValueArray<int>.stack(slices).dimensions,
+        TypedLogicValueArray<int>.stack(slices).dimensions,
         [2, 0],
       );
       expect(values.mapMajorSlices((slice) => slice).dimensions, [2, 0]);

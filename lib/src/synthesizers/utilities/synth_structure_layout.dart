@@ -8,6 +8,7 @@
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/signals/signals.dart';
 
 /// An exclusive-end bit range within a packed [LogicStructure].
 typedef SynthStructureBitRange = ({int start, int end});

@@ -9,6 +9,7 @@
 
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/signals/signals.dart';
 
 /// A [BusSubset] used by synthesis backends to explicitly extract a
 /// [BaseLogicArray] element from its packed parent representation.
