@@ -10,6 +10,7 @@
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/signals/signals.dart';
 
 /// Represents a logical interface to a [Module].
 ///

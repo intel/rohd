@@ -14,6 +14,7 @@ import 'dart:io';
 
 import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/signals/signals.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
 import 'package:rohd/src/utilities/web.dart';
 import 'package:test/test.dart';

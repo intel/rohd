@@ -13,6 +13,7 @@ import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/collections/traverseable_collection.dart';
+import 'package:rohd/src/signals/signals.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
 import 'package:rohd/src/utilities/namer.dart';
 

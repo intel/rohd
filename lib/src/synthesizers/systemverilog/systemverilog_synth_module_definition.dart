@@ -8,6 +8,7 @@
 // Author: Max Korbel <max.korbel@intel.com>
 
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/signals/signals.dart';
 import 'package:rohd/src/synthesizers/systemverilog/systemverilog_synth_sub_module_instantiation.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
 

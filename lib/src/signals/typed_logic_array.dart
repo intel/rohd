@@ -18,6 +18,8 @@ typedef TypedLogicArrayElementCompatibility<T extends Logic> = bool Function(
     T prototype, T element);
 
 /// Selects the canonical packed-value codec when [V] is [LogicValue].
+/// Resolves the supplied codec or the canonical identity codec for
+/// [LogicValue] semantic values.
 LogicValueCodec<V> _resolveTypedLogicValueCodec<V>(
     LogicValueCodec<V>? valueCodec) {
   if (valueCodec != null) {
@@ -43,7 +45,7 @@ LogicValueCodec<V> _resolveTypedLogicValueCodec<V>(
 /// array whose [T] is a three-element [LogicArray] has two [arrayElements] and
 /// six recursive leaves. An eight-bit [Logic] is one leaf, not eight leaves.
 ///
-/// [value] and [previousValue] preserve [V] through [TypedValueArray]
+/// [value] and [previousValue] preserve [V] through [TypedLogicValueArray]
 /// snapshots. Standard [Logic.changed] events remain packed
 /// [LogicValueChanged] events.
 class TypedLogicArray<T extends Logic, V> extends BaseLogicArray {
@@ -96,21 +98,22 @@ class TypedLogicArray<T extends Logic, V> extends BaseLogicArray {
             naming: naming,
             numUnpackedDimensions: numUnpackedDimensions);
 
-  // ignore: use_super_parameters - invokes the protected structured constructor.
+  /// Initializes an array from validated construction data.
+  ///
+  /// This constructor is used for recursively building nested arrays and
+  /// assumes [build] has already validated the hierarchy.
   TypedLogicArray._(
     _TypedLogicArrayBuild<T, V> build,
     this._elementBuilder,
     this.valueCodec,
     this._elementCompatibility, {
-    required int numUnpackedDimensions,
+    required super.numUnpackedDimensions,
     super.name,
-    Naming? naming,
+    super.naming,
   })  : dimensionNames = build.dimensionNames,
         super.structured(build.elements,
             dimensions: build.dimensions,
             elementWidth: build.elementWidth,
-            numUnpackedDimensions: numUnpackedDimensions,
-            naming: naming,
             isNet: build.isNet);
 
   /// Creates a typed array from structurally compatible [elements].
@@ -159,25 +162,6 @@ class TypedLogicArray<T extends Logic, V> extends BaseLogicArray {
     return current as T;
   }
 
-  /// Connects row-major [arrayElements] to [sources].
-  TypedLogicArray<T, V> getsEach(Iterable<Logic> sources) {
-    for (final (target, source) in _zipExact(arrayElements, sources)) {
-      target <= source;
-    }
-    // ignore: avoid_returning_this - preserves the fluent array receiver type.
-    return this;
-  }
-
-  /// Connects each array element to a value generated from its indices.
-  TypedLogicArray<T, V> getsGenerated(
-      Logic Function(List<int> indices) generator) {
-    for (final (indices, target) in indexedElements) {
-      target <= generator(indices);
-    }
-    // ignore: avoid_returning_this - preserves the fluent array receiver type.
-    return this;
-  }
-
   /// Constructs connected hardware with [newDimensions] in row-major order.
   ///
   /// The returned array contains new elements driven by this array; it is not
@@ -197,7 +181,7 @@ class TypedLogicArray<T extends Logic, V> extends BaseLogicArray {
             : _defaultDimensionNames(newDimensions.length),
         name: name,
         numUnpackedDimensions: min(numUnpackedDimensions, newDimensions.length))
-      ..getsEach(arrayElements);
+      ..gets(this);
   }
 
   /// Constructs a connected two-dimensional transpose while preserving [T].
@@ -206,14 +190,17 @@ class TypedLogicArray<T extends Logic, V> extends BaseLogicArray {
   /// retains [numUnpackedDimensions].
   TypedLogicArray<T, V> transpose2D({String? name}) {
     _checkArrayIsTwoDimensional(dimensions);
-    return TypedLogicArray<T, V>(
+    final transposed = TypedLogicArray<T, V>(
         [dimensions[1], dimensions[0]], _elementBuilder,
         valueCodec: valueCodec,
         elementCompatibility: _elementCompatibility,
         dimensionNames: [dimensionNames[1], dimensionNames[0]],
         name: name,
-        numUnpackedDimensions: numUnpackedDimensions)
-      ..getsGenerated((indices) => at([indices[1], indices[0]]));
+        numUnpackedDimensions: numUnpackedDimensions);
+    for (final (indices, target) in transposed.indexedElements) {
+      target <= at([indices[1], indices[0]]);
+    }
+    return transposed;
   }
 
   /// Immediate typed child arrays along the first dimension.
@@ -306,18 +293,22 @@ class TypedLogicArray<T extends Logic, V> extends BaseLogicArray {
       return element;
     }
 
-    return TypedLogicArray<U, UValue>(
+    final flattened = TypedLogicArray<U, UValue>(
       flattenedDimensions,
       buildFlattenedElement,
       valueCodec: valueCodec,
       elementCompatibility: elementCompatibility,
       name: name,
       numUnpackedDimensions: flattenedUnpackedDimensions,
-    )..getsEach(leaves);
+    );
+    for (final (index, target) in flattened.arrayElements.indexed) {
+      target <= leaves[index];
+    }
+    return flattened;
   }
 
   @override
-  TypedValueArray<V> get value => TypedValueArray<V>.fromPacked(
+  TypedLogicValueArray<V> get value => TypedLogicValueArray<V>.fromPacked(
         dimensions,
         elementWidth,
         arrayElements.map((element) => element.value),
@@ -325,10 +316,10 @@ class TypedLogicArray<T extends Logic, V> extends BaseLogicArray {
       );
 
   @override
-  TypedValueArray<V>? get previousValue =>
+  TypedLogicValueArray<V>? get previousValue =>
       arrayElements.any((element) => element.previousValue == null)
           ? null
-          : TypedValueArray<V>.fromPacked(
+          : TypedLogicValueArray<V>.fromPacked(
               dimensions,
               elementWidth,
               arrayElements.map((element) => element.previousValue!),
@@ -342,26 +333,7 @@ class TypedLogicArray<T extends Logic, V> extends BaseLogicArray {
         elementWidth,
         name: name,
         numUnpackedDimensions: numUnpackedDimensions,
-      )..getsEach(arrayElements.map((element) => element.packed));
-
-  /// Drives typed leaves from a packed [LogicArray].
-  void getsPackedValues(LogicArray packedValues) {
-    _validateShape(packedValues.dimensions, packedValues.elementWidth);
-    for (final (target, source)
-        in _zipExact(arrayElements, packedValues.arrayElements)) {
-      target <= source;
-    }
-  }
-
-  /// Verifies that another array shape can be applied element by element.
-  void _validateShape(List<int> dimensions, int elementWidth) {
-    if (!_sameDimensions(this.dimensions, dimensions) ||
-        this.elementWidth != elementWidth) {
-      throw LogicConstructionException(
-          'Values must have dimensions ${this.dimensions} and '
-          'elementWidth ${this.elementWidth}.');
-    }
-  }
+      )..gets(this);
 
   /// Creates a clone while allowing subclasses to preserve their runtime type.
   ///
@@ -596,20 +568,6 @@ class _TypedLogicArrayBuild<T extends Logic, V> {
           'The value codec must encode values with width $elementWidth.');
     }
   }
-}
-
-/// Pairs [leftValues] and [rightValues], rejecting unequal lengths.
-List<(T, U)> _zipExact<T, U>(Iterable<T> leftValues, Iterable<U> rightValues) {
-  final left = leftValues.toList(growable: false);
-  final right = rightValues.toList(growable: false);
-  if (left.length != right.length) {
-    throw StateError('Cannot zip iterables of different lengths.');
-  }
-  return List.generate(
-    left.length,
-    (index) => (left[index], right[index]),
-    growable: false,
-  );
 }
 
 /// Returns the number of array positions described by [dimensions].

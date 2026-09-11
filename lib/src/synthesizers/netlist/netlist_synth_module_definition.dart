@@ -9,6 +9,7 @@
 
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/signals/signals.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
 
 /// A [SynthModuleDefinition] that preserves cells for netlist synthesis.

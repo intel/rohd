@@ -11,6 +11,7 @@ import 'dart:collection';
 
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/signals/signals.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 
 /// A direction for signals between a pair of components.

@@ -14,7 +14,7 @@ part of 'values.dart';
 /// The nested constructor infers shape and element width. Use
 /// [LogicValueArray.fromFlat] when values are already row-major or when an
 /// empty array requires explicit shape and width metadata.
-class LogicValueArray extends TypedValueArray<LogicValue> {
+class LogicValueArray extends TypedLogicValueArray<LogicValue> {
   /// Creates a value array from nested [values].
   factory LogicValueArray(List<Object?> values) {
     final nested =
@@ -154,7 +154,8 @@ class LogicValueArray extends TypedValueArray<LogicValue> {
 
   @override
   LogicValueArray mapMajorSlices(
-    TypedValueArray<LogicValue> Function(TypedValueArray<LogicValue> slice)
+    TypedLogicValueArray<LogicValue> Function(
+            TypedLogicValueArray<LogicValue> slice)
         transform,
   ) {
     final transformed = majorSlices.map(transform).toList(growable: false);
