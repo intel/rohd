@@ -165,9 +165,11 @@ class TypedLogicArray<T extends Logic, V> extends BaseLogicArray {
   /// Constructs connected hardware with [newDimensions] in row-major order.
   ///
   /// The returned array contains new elements driven by this array; it is not
-  /// an alias or view. [numUnpackedDimensions] is retained when the rank grows
-  /// and clamped to the new rank when it shrinks. Dimension names are retained
-  /// only when the rank is unchanged.
+  /// an alias or view. This operation does not create a disconnected result.
+  /// [numUnpackedDimensions] is retained when the rank grows and clamped to
+  /// the new rank when it shrinks. Dimension names are retained only when the
+  /// rank is unchanged. Use [indexedElements] and [at] for an explicit
+  /// connection in the opposite direction.
   TypedLogicArray<T, V> reshape(List<int> newDimensions, {String? name}) {
     if (_arrayLength(newDimensions) != arrayElements.length) {
       throw ArgumentError.value(newDimensions, 'newDimensions',
@@ -186,8 +188,10 @@ class TypedLogicArray<T extends Logic, V> extends BaseLogicArray {
 
   /// Constructs a connected two-dimensional transpose while preserving [T].
   ///
-  /// The returned array contains new elements, swaps the dimension names, and
-  /// retains [numUnpackedDimensions].
+  /// The returned array contains new elements driven by this array, swaps the
+  /// dimension names, and retains [numUnpackedDimensions]. A whole-array
+  /// assignment does not infer this permutation; use [indexedElements] and
+  /// [at] for an explicit reverse-direction connection.
   TypedLogicArray<T, V> transpose2D({String? name}) {
     _checkArrayIsTwoDimensional(dimensions);
     final transposed = TypedLogicArray<T, V>(
@@ -211,102 +215,6 @@ class TypedLogicArray<T extends Logic, V> extends BaseLogicArray {
     return elements.cast<TypedLogicArray<T, V>>();
   }
 
-  /// Flattens all nested array dimensions into one typed array of [U] leaves.
-  ///
-  /// Each nested array layer must be rectangular: sibling arrays must have the
-  /// same dimensions and element width. The returned dimensions concatenate
-  /// every nested layer, preserving row-major ordering and index addresses.
-  TypedLogicArray<U, UValue> flattenNestedDimensions<U extends Logic, UValue>({
-    required LogicValueCodec<UValue> valueCodec,
-    TypedLogicArrayElementCompatibility<U>? elementCompatibility,
-    String? name,
-  }) {
-    var leaves = arrayElements.cast<Logic>().toList(growable: false);
-    final flattenedDimensions = <int>[...dimensions];
-    var flattenedUnpackedDimensions = numUnpackedDimensions;
-    TypedLogicArrayElementBuilder<Logic> flattenedElementBuilder =
-        _elementBuilder;
-    Object discoveredValueCodec = this.valueCodec;
-    var prototype = leaves.isEmpty
-        ? flattenedElementBuilder(name: 'flatten_prototype')
-        : leaves.first;
-
-    while (prototype is TypedLogicArray<Logic, Object?>) {
-      if (leaves.isNotEmpty &&
-          leaves.any((leaf) => leaf is! TypedLogicArray<Logic, Object?>)) {
-        throw LogicConstructionException(
-            'Nested array leaves must have a uniform depth.');
-      }
-
-      final arrays = leaves.cast<TypedLogicArray<Logic, Object?>>();
-      final reference = arrays.isEmpty ? prototype : arrays.first;
-      if (arrays.any((array) =>
-          !_sameDimensions(array.dimensions, reference.dimensions) ||
-          array.elementWidth != reference.elementWidth ||
-          array.numUnpackedDimensions != reference.numUnpackedDimensions ||
-          !identical(array.valueCodec, reference.valueCodec))) {
-        throw LogicConstructionException(
-            'Nested array leaves must have matching dimensions, widths, '
-            'unpacked dimensions, and value codecs.');
-      }
-      if (reference.numUnpackedDimensions > 0 &&
-          flattenedUnpackedDimensions != flattenedDimensions.length) {
-        throw LogicConstructionException(
-            'Cannot flatten unpacked inner dimensions after packed outer '
-            'dimensions.');
-      }
-
-      flattenedDimensions.addAll(reference.dimensions);
-      flattenedUnpackedDimensions += reference.numUnpackedDimensions;
-      leaves =
-          arrays.expand((array) => array.arrayElements).toList(growable: false);
-      flattenedElementBuilder = reference._elementBuilder;
-      discoveredValueCodec = reference.valueCodec;
-      prototype = leaves.isEmpty
-          ? flattenedElementBuilder(name: 'flatten_prototype')
-          : leaves.first;
-    }
-
-    if (prototype is! U || leaves.any((leaf) => leaf is! U)) {
-      throw LogicConstructionException(
-          'Nested array leaves must have type $U.');
-    }
-
-    if (leaves.any((leaf) => leaf.width != prototype.width)) {
-      throw LogicConstructionException(
-          'Nested array leaves must have matching widths.');
-    }
-    if (!identical(discoveredValueCodec, valueCodec)) {
-      throw LogicConstructionException(
-          'valueCodec must be identical to the flattened element codec.');
-    }
-
-    var returnPrototype = leaves.isEmpty;
-    U buildFlattenedElement({String? name}) {
-      final element =
-          returnPrototype ? prototype : flattenedElementBuilder(name: name);
-      returnPrototype = false;
-      if (element is! U) {
-        throw LogicConstructionException(
-            'Nested array element builder must produce type $U.');
-      }
-      return element;
-    }
-
-    final flattened = TypedLogicArray<U, UValue>(
-      flattenedDimensions,
-      buildFlattenedElement,
-      valueCodec: valueCodec,
-      elementCompatibility: elementCompatibility,
-      name: name,
-      numUnpackedDimensions: flattenedUnpackedDimensions,
-    );
-    for (final (index, target) in flattened.arrayElements.indexed) {
-      target <= leaves[index];
-    }
-    return flattened;
-  }
-
   @override
   TypedLogicValueArray<V> get value => TypedLogicValueArray<V>.fromPacked(
         dimensions,
@@ -327,6 +235,10 @@ class TypedLogicArray<T extends Logic, V> extends BaseLogicArray {
             );
 
   /// Packs typed leaves into a conventional [LogicArray].
+  ///
+  /// The returned array is newly allocated and driven by this array. This is
+  /// an interoperability adapter for APIs that require a conventional packed
+  /// [LogicArray]; it is not an alias or a disconnected clone.
   LogicArray toLogicArray({String? name}) =>
       (isNet ? LogicArray.net : LogicArray.new)(
         dimensions,
