@@ -68,7 +68,7 @@ final samples = TypedLogicArray<Sample, SampleValue>(
 );
 
 final bottomRightData = samples.at([1, 2]).data;
-final TypedValueArray<SampleValue> currentSamples = samples.value;
+final TypedLogicValueArray<SampleValue> currentSamples = samples.value;
 ```
 
 The element builder must always produce the configured type, width, and recursively ordered net composition. Every element must be uniformly variable or uniformly net: a structure cannot mix `Logic` and `LogicNet` leaves. The optional `elementCompatibility` callback can additionally reject elements whose semantic representations differ from the prototype, such as floating-point elements with different exponent and mantissa layouts despite having the same total width.
@@ -124,13 +124,13 @@ final signals = values.toLogicArray(name: 'values');
 
 Nested constructors reject ragged rows, inconsistent nesting depth, and mismatched element widths. Empty nested input cannot reveal the element width or trailing dimensions, so it must use `fromFlat`. `majorSlices` iterates the outer dimension rather than the total element count, so a `[2, 0]` value contains two empty `[0]` slices and can round-trip through `stack`.
 
-`TypedValueArray<T>` adds a `LogicValueCodec<T>` for application-level values. `LogicValueArray` remains its `TypedValueArray<LogicValue>` specialization with the existing convenience constructors and concrete transform return types. Construction immediately encodes and decodes every value: the packed representation is authoritative, and a lossy codec therefore exposes normalized semantic values from the start. Shape-only operations preserve those normalized values without re-encoding them. `stack` requires every typed value array to use the identical codec object because codec functions cannot be compared for semantic equivalence.
+`TypedLogicValueArray<T>` adds a `LogicValueCodec<T>` for application-level values. `LogicValueArray` remains its `TypedLogicValueArray<LogicValue>` specialization with the existing convenience constructors and concrete transform return types. Construction immediately encodes and decodes every value: the packed representation is authoritative, and a lossy codec therefore exposes normalized semantic values from the start. Shape-only operations preserve those normalized values without re-encoding them. `stack` requires every typed value array to use the identical codec object because codec functions cannot be compared for semantic equivalence.
 
 The root list of a nested constructor always represents an array dimension. Below the root, an object matching `T` is treated as one semantic value before it is considered as another list dimension. This permits list-valued semantic elements; use `fromFlat` when the intended interpretation would otherwise be ambiguous.
 
 Both value-array classes are `LogicValue`s. Their `width` and deprecated `length` count packed bits, while `elementCount` counts array positions. Bit indexing, equality, hashing, arithmetic, and bitwise operations use the packed value and do not consider shape. The `packed` getter exposes the ordinary `LogicValue` representation.
 
-`TypedLogicArray<TLogic, TValue>.value` and `previousValue` return `TypedValueArray<TValue>` snapshots without adding hardware to the graph. `LogicArray` overrides these with the concrete `LogicValueArray` return type. The standard `changed`, `glitch`, and edge APIs remain packed `LogicValueChanged` events, so typed arrays retain the normal `Logic` event contract. Since all value arrays are `LogicValue`s, use the target-side `put` API for immediate assignment or `inject` for scheduled assignment. Both follow the ordinary packed-value contract, so same-width values remain assignable regardless of their shape metadata.
+`TypedLogicArray<TLogic, TValue>.value` and `previousValue` return `TypedLogicValueArray<TValue>` snapshots without adding hardware to the graph. `LogicArray` overrides these with the concrete `LogicValueArray` return type. The standard `changed`, `glitch`, and edge APIs remain packed `LogicValueChanged` events, so typed arrays retain the normal `Logic` event contract. Since all value arrays are `LogicValue`s, use the target-side `put` API for immediate assignment or `inject` for scheduled assignment. Both follow the ordinary packed-value contract, so same-width values remain assignable regardless of their shape metadata.
 
 ## Unpacked arrays
 

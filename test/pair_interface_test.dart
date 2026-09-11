@@ -258,7 +258,7 @@ void main() {
     expect(clonedSamples.arrayElements, everyElement(isA<_PairSample>()));
     expect(clonedSamples.at([1, 1]).high.width, 2);
     expect(identical(clonedSamples.valueCodec, _pairValueCodec), isTrue);
-    expect(clonedSamples.value, isA<TypedValueArray<_PairValue>>());
+    expect(clonedSamples.value, isA<TypedLogicValueArray<_PairValue>>());
 
     final module = _TypedPairConsumer(source);
     await module.build();
@@ -268,7 +268,7 @@ void main() {
     expect(module.samples.at([1, 1]), isA<_PairSample>());
     expect(module.samples.at([1, 1]).high.width, 2);
     expect(identical(module.samples.valueCodec, _pairValueCodec), isTrue);
-    expect(module.samples.value, isA<TypedValueArray<_PairValue>>());
+    expect(module.samples.value, isA<TypedLogicValueArray<_PairValue>>());
 
     final vectors = [
       Vector({'samples': 0xabc}, {'selected': 5}),

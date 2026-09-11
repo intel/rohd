@@ -9,6 +9,7 @@
 
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/signals/signals.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_cell.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_cell_mapper.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_port_direction.dart';
