@@ -39,8 +39,9 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
   /// Inlines a fully covered packed bus into its sole submodule input.
   ///
   /// Each driver must cover the next contiguous destination range and supply
-  /// its entire source. Constant-backed intermediates are resolved to their
-  /// literal before the sources are joined into an inline concatenation.
+  /// either its entire source or a safe packed selection. Constant-backed
+  /// intermediates are resolved to their literal before the sources are joined
+  /// into an inline concatenation.
   ///
   /// This remains SystemVerilog-specific because the replacement is an inline
   /// [Swizzle] expression. Backend-neutral range discovery and composition are
@@ -129,15 +130,32 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
         final upper = _packedDestinationUpper(driver);
         if (driver is! PartialSynthAssignment ||
             lower != nextDestinationBit ||
-            upper >= bus.width ||
-            (driver is RangeSynthAssignment &&
-                (driver.srcLowerIndex != 0 ||
-                    driver.srcUpperIndex != driver.src.width - 1))) {
+            upper >= bus.width) {
           canInline = false;
           break;
         }
 
         var source = driver.src.resolved;
+        if (driver is RangeSynthAssignment &&
+            (driver.srcLowerIndex != 0 ||
+                driver.srcUpperIndex != source.width - 1)) {
+          if (source.isArray || source.isNet || source.isConstant) {
+            canInline = false;
+            break;
+          }
+          source = driver.width == 1
+              ? SynthLogicPackedBitReference(
+                  source,
+                  driver.srcLowerIndex,
+                  parentSynthModuleDefinition: this,
+                )
+              : SynthLogicPackedRangeReference(
+                  source,
+                  driver.srcLowerIndex,
+                  driver.srcUpperIndex,
+                  parentSynthModuleDefinition: this,
+                );
+        }
         if (source.isArray || source.width != upper - lower + 1) {
           canInline = false;
           break;
@@ -1027,6 +1045,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
   SynthLogic _referenceBase(SynthLogic signal) => switch (signal) {
         SynthLogicArrayElement() => signal.parentArray.resolved,
         SynthLogicPackedBitReference() => signal.packedBase.resolved,
+        SynthLogicPackedRangeReference() => signal.packedBase.resolved,
         _ => signal.resolved,
       };
 

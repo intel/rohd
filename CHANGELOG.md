@@ -2,6 +2,8 @@
 
 - Fixed illegal scalar connections to singleton unpacked-array inputs when inlining constants or live signals into generated SystemVerilog (<https://github.com/intel/rohd/pull/714>).
 - Added targeted Verilator compilation and two-state vector simulation checks, including a `buildOnly` mode, required in native CI and explicitly skipped locally when Verilator is unavailable (<https://github.com/intel/rohd/pull/714>).
+- Improved generated SystemVerilog to inline packed `Logic.assignSubset` connections into submodule inputs (<https://github.com/intel/rohd/pull/711>).
+- Fixed a bug where isolated bit drivers could be lost beside collapsed ranges (<https://github.com/intel/rohd/pull/711>)
 
 ## 0.6.10
 
