@@ -56,6 +56,10 @@ class LogicValueCodec<T> {
 /// Values are normalized through [codec] at construction: each value is
 /// encoded and then immediately decoded. The packed representation is
 /// authoritative, so lossy codecs expose their normalized semantic values.
+/// Decoded semantic elements are exposed by reference; mutating a mutable
+/// semantic object does not update the stored packed bits. Callers using a
+/// mutable [T] are responsible for treating those objects consistently with
+/// this snapshot semantics.
 class TypedLogicValueArray<T> extends LogicValue {
   /// The number of elements at each array level.
   final List<int> dimensions;
