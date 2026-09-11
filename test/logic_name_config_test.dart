@@ -29,18 +29,32 @@ class FunctionGeneratedModule extends Module {
 
 class _PreservedChain extends Module {
   final aliases = <Logic>[];
+  final bridges = <Logic>[];
 
-  _PreservedChain(List<Naming> namings, String placement) {
+  _PreservedChain(List<Naming> namings, String placement,
+      {Naming? bridgeNaming, bool reverseOutputs = false}) {
     var previous =
         addInput(placement == 'input' ? 'shared' : 'source', Logic());
     for (final naming in namings) {
+      if (bridgeNaming != null && aliases.isNotEmpty) {
+        final bridge =
+            Logic(name: 'bridge${bridges.length}', naming: bridgeNaming)
+              ..gets(previous);
+        bridges.add(bridge);
+        previous = bridge;
+      }
       final alias = Logic(name: 'shared', naming: naming)..gets(previous);
       aliases.add(alias);
       previous = alias;
     }
-    addOutput(placement == 'output' ? 'shared' : 'result') <= previous;
-    addOutput('early') <= aliases.first;
-    addOutput('middle') <= aliases[1];
+    final outputs = [
+      (placement == 'output' ? 'shared' : 'result', previous),
+      ('early', aliases.first),
+      ('middle', aliases[1]),
+    ];
+    for (final (name, signal) in reverseOutputs ? outputs.reversed : outputs) {
+      addOutput(name) <= signal;
+    }
   }
 }
 
@@ -167,6 +181,99 @@ void main() {
           }
         }
       }
+    }
+
+    for (final bridgeNaming in [Naming.mergeable, Naming.unnamed]) {
+      for (final reverseOutputs in [false, true]) {
+        test('${bridgeNaming.name} bridges, reverseOutputs=$reverseOutputs',
+            () async {
+          final dut = _PreservedChain(
+              [Naming.reserved, Naming.renameable, Naming.reserved], 'internal',
+              bridgeNaming: bridgeNaming, reverseOutputs: reverseOutputs);
+          await dut.build();
+          final definition = SystemVerilogSynthModuleDefinition(dut);
+          final shared = definition.getSynthLogic(dut.aliases.first)!;
+          final originals = [...dut.aliases, ...dut.bridges];
+          expect(shared.name, 'shared');
+          expect(shared.logics, containsAll(originals));
+          expect(shared.isClearable, isFalse);
+          for (final signal in originals) {
+            expect(definition.getSynthLogic(signal), same(shared));
+            expect(dut.namer.signalNameOf(signal), 'shared');
+          }
+          expect(dut.generateSynth(), isNot(contains('shared_')));
+          expect(dut.generateSynth(), isNot(contains('bridge')));
+
+          final vectors = [
+            for (final value in [0, 1, 'x', 'z'])
+              Vector({'source': value},
+                  {'result': value, 'early': value, 'middle': value}),
+          ];
+          await SimCompare.checkFunctionalVector(dut, vectors);
+          SimCompare.checkIverilogVector(dut, vectors);
+        });
+      }
+    }
+
+    for (final reversed in [false, true]) {
+      test('same-name fanout, reversed=$reversed', () async {
+        final signals = <Logic>[];
+        final dut = FunctionGeneratedModule((in1, in2, out1) {
+          final root = Logic(name: 'shared', naming: Naming.reserved)
+            ..gets(in1);
+          final first = Logic(name: 'shared')..gets(root);
+          final second = Logic(name: 'shared', naming: Naming.reserved)
+            ..gets(root);
+          signals.addAll([root, first, second]);
+          out1 <= (reversed ? second | first : first | second);
+        });
+        await dut.build();
+        final definition = SystemVerilogSynthModuleDefinition(dut);
+        final shared = definition.getSynthLogic(signals.first)!;
+        expect(shared.name, 'shared');
+        expect(shared.logics, containsAll(signals));
+        for (final signal in signals) {
+          expect(definition.getSynthLogic(signal), same(shared));
+        }
+        expect(dut.generateSynth(), isNot(contains('shared_')));
+        final vectors = [
+          Vector({'in1': 0}, {'out1': 0}),
+          Vector({'in1': 1}, {'out1': 1}),
+          Vector({'in1': 'x'}, {'out1': 'x'}),
+          Vector({'in1': 'z'}, {'out1': 'x'}),
+        ];
+        await SimCompare.checkFunctionalVector(dut, vectors);
+        SimCompare.checkIverilogVector(dut, vectors);
+      });
+
+      test('two merged groups retain all members, reversed=$reversed',
+          () async {
+        final dut = _PreservedChain([
+          Naming.reserved,
+          Naming.renameable,
+          Naming.renameable,
+          Naming.reserved,
+        ], 'internal');
+        await dut.build();
+        final definition = SynthModuleDefinition(dut);
+        final signals = [
+          for (final alias in dut.aliases)
+            SynthLogic(alias, parentSynthModuleDefinition: definition),
+        ];
+        final firstPair = SynthLogic.tryMerge(signals[0], signals[1])!;
+        final secondPair = SynthLogic.tryMerge(signals[2], signals[3])!;
+        expect(firstPair.kept.logics, hasLength(2));
+        expect(secondPair.kept.logics, hasLength(2));
+        final merged = reversed
+            ? SynthLogic.tryMerge(secondPair.kept, firstPair.kept)!
+            : SynthLogic.tryMerge(firstPair.kept, secondPair.kept)!;
+        expect(merged.kept.logics, unorderedEquals(dut.aliases));
+        expect(merged.kept.isReserved, isTrue);
+        expect(merged.kept.isClearable, isFalse);
+        for (final signal in signals) {
+          expect(signal.resolved, same(merged.kept));
+        }
+      });
     }
 
     for (final naming in [Naming.reserved, Naming.renameable]) {
