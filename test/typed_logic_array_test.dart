@@ -155,13 +155,6 @@ class _SampleArray extends TypedLogicArray<_SampleStructure, _SampleValue> {
   _SampleArray clone({String? name}) => super.clone(name: name) as _SampleArray;
 }
 
-class _SpecialLogic extends Logic {
-  _SpecialLogic({super.name}) : super(width: 2);
-
-  @override
-  Logic clone({String? name}) => Logic(name: name ?? this.name, width: width);
-}
-
 class _TypedArrayPortModule extends Module {
   TypedLogicArray<_SampleStructure, _SampleValue> get valuesOut =>
       output('valuesOut') as TypedLogicArray<_SampleStructure, _SampleValue>;
