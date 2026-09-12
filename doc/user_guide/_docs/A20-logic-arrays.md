@@ -5,7 +5,7 @@ last_modified_at: 2026-09-10
 toc: true
 ---
 
-A [`LogicArray`](https://intel.github.io/rohd/rohd/LogicArray-class.html) is a type of `LogicStructure` that mirrors multi-dimensional arrays in hardware languages like SystemVerilog.  In ROHD, the `LogicArray` type inherits a lot of functionality from `LogicStructure`, so it can behave like a `Logic` where it makes sense or be individually referenced in other places.
+A [`LogicArray`](https://intel.github.io/rohd/rohd/LogicArray-class.html) is a type of `LogicStructure` that mirrors multi-dimensional arrays in hardware languages like SystemVerilog. `TypedLogicArray` uses the same structural model. An array is not a scalar `Logic` with an internal wire sliced into elements: it owns a hierarchy of child signals. `LogicStructure` supplies the common `Logic` behavior by packing those children when a scalar-like operation is needed, while the array layer adds dimensions, array-boundary traversal, and indexing. `TypedLogicArray` is indirectly a `Logic` through `LogicStructure`. It does not extend `LogicArray` because `LogicArray` is already the concrete `TypedLogicArray<Logic, LogicValue>` specialization; making it the superclass would require redesigning the public hierarchy around a separate generic or abstract array base.
 
 `LogicArray`s can be constructed easily using the constructor:
 
@@ -24,7 +24,7 @@ As long as the total width of a `LogicArray` and another type of `Logic` (includ
 
 ## Typed arrays
 
-Use `TypedLogicArray<TLogic, TValue>` when every position at the declared array boundary has the same specialized hardware type and associated semantic value type. `LogicArray` remains the ordinary `TypedLogicArray<Logic, LogicValue>` specialization, preserving its existing constructors, ports, cloning, naming, transformations, and packed assignment behavior. Both extend the non-generic `BaseLogicArray`, which synthesis and hierarchy utilities use when the element and value types are irrelevant.
+Use `TypedLogicArray<TLogic, TValue>` when every position at the declared array boundary has the same specialized hardware type and associated semantic value type. `LogicArray` remains the ordinary `TypedLogicArray<Logic, LogicValue>` specialization, preserving its existing constructors, ports, cloning, naming, and packed assignment behavior. Both extend the non-generic `BaseLogicArray`, which contains array-specific metadata and traversal shared by the two public types; it is an internal implementation base rather than another public construction API.
 
 For example, these sample hardware and value types preserve named fields in hardware while exposing typed snapshots:
 
@@ -77,9 +77,7 @@ A zero-sized array calls the builder once as a prototype so that the same metada
 
 `valueCodec` may be omitted when `TValue` is exactly `LogicValue`; the canonical identity codec is selected automatically. Other semantic types require a codec. Since hardware may contain `X` and `Z`, a codec used by `TypedLogicArray` should decode every four-state value that can appear in that hardware.
 
-### Hardware shape transformations
-
-`reshape` and `transpose2D` construct new typed hardware and connect it to the source array; they do not create aliases or views. The receiver drives the returned array. `reshape` preserves row-major element order and clamps `numUnpackedDimensions` to the new rank when necessary. It retains dimension names when the rank is unchanged and otherwise generates default names. `transpose2D` swaps the two dimensions and their names while retaining `numUnpackedDimensions`. These operations do not infer reverse or permutation-aware connections from a later whole-array assignment; use `indexedElements` and `at` when the transformed array must drive the original or when constructing an explicitly disconnected mapping.
+Hardware shape changes should use ordinary construction and connection APIs rather than specialized typed-array adapters. Construct a new `TypedLogicArray` with the desired dimensions and builder, then connect it with `gets`/`<=` when row-major assignment is sufficient. For a transpose, connect corresponding coordinates explicitly with `indexedElements` and `at`; whole-array assignment does not infer a permutation. This keeps construction disconnected and leaves driver ownership with the caller.
 
 ### Traversal boundaries
 

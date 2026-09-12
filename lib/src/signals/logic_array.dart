@@ -11,8 +11,14 @@ part of 'signals.dart';
 
 /// Shared structural base for multidimensional logic arrays.
 ///
-/// Construct [LogicArray] for ordinary logic values or [TypedLogicArray] for
-/// hardware elements with an associated semantic value type.
+/// Arrays are [LogicStructure]s rather than direct subclasses of [Logic]:
+/// their signal identity is the hierarchy of child signals, while the
+/// inherited [Logic] behavior is provided by [LogicStructure] through its
+/// packed representation. This lets arrays participate in ordinary structure
+/// traversal and assignment while adding dimensions and array-boundary
+/// traversal. Construct [LogicArray] for ordinary logic values or
+/// [TypedLogicArray] for hardware elements with an associated semantic value
+/// type.
 @internal
 abstract class BaseLogicArray extends LogicStructure {
   /// The number of elements at each level of the array, starting from the most
@@ -347,35 +353,6 @@ class LogicArray extends TypedLogicArray<Logic, LogicValue> {
           logicArrayBuilder: isNet ? LogicArray.net : LogicArray.new,
           isNet: isNet)
         ..gets(this);
-
-  @override
-  LogicArray reshape(List<int> newDimensions, {String? name}) {
-    if (_arrayLength(newDimensions) != arrayElements.length) {
-      throw ArgumentError.value(newDimensions, 'newDimensions',
-          'Must contain ${arrayElements.length} array elements.');
-    }
-    return (isNet ? LogicArray.net : LogicArray.new)(
-      newDimensions,
-      elementWidth,
-      name: name,
-      numUnpackedDimensions: min(numUnpackedDimensions, newDimensions.length),
-    )..gets(this);
-  }
-
-  @override
-  LogicArray transpose2D({String? name}) {
-    _checkArrayIsTwoDimensional(dimensions);
-    final transposed = (isNet ? LogicArray.net : LogicArray.new)(
-      [dimensions[1], dimensions[0]],
-      elementWidth,
-      name: name,
-      numUnpackedDimensions: numUnpackedDimensions,
-    );
-    for (final (indices, target) in transposed.indexedElements) {
-      target <= at([indices[1], indices[0]]);
-    }
-    return transposed;
-  }
 
   @override
   Iterable<LogicArray> get majorSlices {

@@ -34,6 +34,15 @@ LogicValueCodec<V> _resolveTypedLogicValueCodec<V>(
 /// A multidimensional logic array with hardware leaves of type [T] and
 /// semantic values of type [V].
 ///
+/// This is a [LogicStructure] because an array owns a hierarchy of child
+/// signals, just like [LogicArray]. It is therefore indirectly a [Logic]
+/// through the structure's packed representation, rather than a scalar
+/// [Logic] whose wire is subdivided into array elements. [LogicArray] is the
+/// concrete [TypedLogicArray]<[Logic], [LogicValue]> specialization, so the
+/// two public array types are siblings rather than one extending the other.
+/// The array-specific metadata and traversal live in [BaseLogicArray], while
+/// [T] preserves the type at the declared array boundary.
+///
 /// [elements] contains the immediate children of the outermost dimension.
 /// [arrayElements] traverses the number of array levels declared by
 /// [dimensions] and then stops, returning one [T] for each declared array
@@ -162,51 +171,6 @@ class TypedLogicArray<T extends Logic, V> extends BaseLogicArray {
     return current as T;
   }
 
-  /// Constructs connected hardware with [newDimensions] in row-major order.
-  ///
-  /// The returned array contains new elements driven by this array; it is not
-  /// an alias or view. This operation does not create a disconnected result.
-  /// [numUnpackedDimensions] is retained when the rank grows and clamped to
-  /// the new rank when it shrinks. Dimension names are retained only when the
-  /// rank is unchanged. Use [indexedElements] and [at] for an explicit
-  /// connection in the opposite direction.
-  TypedLogicArray<T, V> reshape(List<int> newDimensions, {String? name}) {
-    if (_arrayLength(newDimensions) != arrayElements.length) {
-      throw ArgumentError.value(newDimensions, 'newDimensions',
-          'Must contain ${arrayElements.length} array elements.');
-    }
-    return TypedLogicArray<T, V>(newDimensions, _elementBuilder,
-        valueCodec: valueCodec,
-        elementCompatibility: _elementCompatibility,
-        dimensionNames: newDimensions.length == dimensions.length
-            ? dimensionNames
-            : _defaultDimensionNames(newDimensions.length),
-        name: name,
-        numUnpackedDimensions: min(numUnpackedDimensions, newDimensions.length))
-      ..gets(this);
-  }
-
-  /// Constructs a connected two-dimensional transpose while preserving [T].
-  ///
-  /// The returned array contains new elements driven by this array, swaps the
-  /// dimension names, and retains [numUnpackedDimensions]. A whole-array
-  /// assignment does not infer this permutation; use [indexedElements] and
-  /// [at] for an explicit reverse-direction connection.
-  TypedLogicArray<T, V> transpose2D({String? name}) {
-    _checkArrayIsTwoDimensional(dimensions);
-    final transposed = TypedLogicArray<T, V>(
-        [dimensions[1], dimensions[0]], _elementBuilder,
-        valueCodec: valueCodec,
-        elementCompatibility: _elementCompatibility,
-        dimensionNames: [dimensionNames[1], dimensionNames[0]],
-        name: name,
-        numUnpackedDimensions: numUnpackedDimensions);
-    for (final (indices, target) in transposed.indexedElements) {
-      target <= at([indices[1], indices[0]]);
-    }
-    return transposed;
-  }
-
   /// Immediate typed child arrays along the first dimension.
   Iterable<TypedLogicArray<T, V>> get majorSlices {
     if (dimensions.length < 2) {
@@ -233,19 +197,6 @@ class TypedLogicArray<T extends Logic, V> extends BaseLogicArray {
               arrayElements.map((element) => element.previousValue!),
               codec: valueCodec,
             );
-
-  /// Packs typed leaves into a conventional [LogicArray].
-  ///
-  /// The returned array is newly allocated and driven by this array. This is
-  /// an interoperability adapter for APIs that require a conventional packed
-  /// [LogicArray]; it is not an alias or a disconnected clone.
-  LogicArray toLogicArray({String? name}) =>
-      (isNet ? LogicArray.net : LogicArray.new)(
-        dimensions,
-        elementWidth,
-        name: name,
-        numUnpackedDimensions: numUnpackedDimensions,
-      )..gets(this);
 
   /// Creates a clone while allowing subclasses to preserve their runtime type.
   ///
@@ -517,11 +468,4 @@ List<String> _normalizeLogicArrayDimensionNames(
         'dimensionNames must be sanitary and unique.');
   }
   return normalized;
-}
-
-/// Rejects shapes that cannot be transposed by [TypedLogicArray.transpose2D].
-void _checkArrayIsTwoDimensional(List<int> dimensions) {
-  if (dimensions.length != 2) {
-    throw StateError('Expected exactly two dimensions, got $dimensions.');
-  }
 }

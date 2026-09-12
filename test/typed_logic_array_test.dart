@@ -275,8 +275,7 @@ void main() {
       expect(values.indexedElements.last.$1, equals([1, 2]));
     });
 
-    test('preserves semantic values and codecs through hardware transforms',
-        () {
+    test('preserves typed metadata through hardware cloning', () {
       final values = _SampleArray(
         [2, 2],
         schema: 'sample-v2',
@@ -305,24 +304,12 @@ void main() {
 
       final transformed = [
         values.clone(),
-        values.reshape([4]),
-        values.transpose2D(),
       ];
       for (final result in transformed) {
         expect(result, isA<TypedLogicArray<_SampleStructure, _SampleValue>>());
         expect(identical(result.valueCodec, _sampleValueCodec), isTrue);
         expect(result.value, isA<TypedLogicValueArray<_SampleValue>>());
       }
-      expect(transformed[1].value.packed, assigned.packed);
-      expect(
-        transformed[2].value.arrayValues.map((value) => value.value),
-        [
-          LogicValue.ofString('1xz'),
-          LogicValue.ofString('010'),
-          LogicValue.ofString('z01'),
-          LogicValue.ofString('111'),
-        ],
-      );
     });
 
     test('preserves typed values through inherited inject and previousValue',
@@ -444,22 +431,8 @@ void main() {
         expect(slices.last.numUnpackedDimensions, 0);
         expect(slices.last.at([2]), same(array.at([1, 2])));
 
-        final reshaped = array.reshape([3, 2]);
-        final transposed = array.transpose2D();
         final clone = array.clone();
-        expect(reshaped is LogicArray, array is LogicArray);
-        expect(transposed is LogicArray, array is LogicArray);
         expect(clone is LogicArray, array is LogicArray);
-        expect(reshaped.dimensions, [3, 2]);
-        expect(
-          reshaped.value.arrayValues.map((value) => value.toInt()),
-          [1, 2, 3, 4, 5, 6],
-        );
-        expect(transposed.dimensions, [3, 2]);
-        expect(
-          transposed.value.arrayValues.map((value) => value.toInt()),
-          [1, 4, 2, 5, 3, 6],
-        );
         expect(clone.dimensions, array.dimensions);
         expect(clone.elementWidth, array.elementWidth);
         expect(clone.numUnpackedDimensions, array.numUnpackedDimensions);
@@ -497,86 +470,6 @@ void main() {
       );
     });
 
-    test('shape transforms create hardware with explicit unpacked policy', () {
-      final source = TypedLogicArray<_SampleStructure, LogicValue>(
-        [2, 3],
-        _SampleStructure.new,
-        dimensionNames: const ['row_', 'column_'],
-        numUnpackedDimensions: 2,
-      );
-      final reshapeCases = [
-        (
-          dimensions: <int>[6],
-          dimensionNames: <String>['d0_'],
-          numUnpackedDimensions: 1,
-        ),
-        (
-          dimensions: <int>[3, 2],
-          dimensionNames: <String>['row_', 'column_'],
-          numUnpackedDimensions: 2,
-        ),
-        (
-          dimensions: <int>[1, 2, 3],
-          dimensionNames: <String>['d0_', 'd1_', 'd2_'],
-          numUnpackedDimensions: 2,
-        ),
-      ];
-      final reshaped = [
-        for (final testCase in reshapeCases)
-          source.reshape(testCase.dimensions),
-      ];
-      final transposed = source.transpose2D();
-
-      for (var caseIndex = 0; caseIndex < reshapeCases.length; caseIndex++) {
-        final testCase = reshapeCases[caseIndex];
-        final result = reshaped[caseIndex];
-        expect(result.dimensions, testCase.dimensions);
-        expect(result.dimensionNames, testCase.dimensionNames);
-        expect(
-          result.numUnpackedDimensions,
-          testCase.numUnpackedDimensions,
-        );
-        expect(result.arrayElements, everyElement(isA<_SampleStructure>()));
-        for (var index = 0; index < result.arrayElements.length; index++) {
-          expect(
-            result.arrayElements[index],
-            isNot(same(source.arrayElements[index])),
-          );
-        }
-      }
-      expect(transposed.dimensions, [3, 2]);
-      expect(transposed.dimensionNames, ['column_', 'row_']);
-      expect(transposed.numUnpackedDimensions, 2);
-
-      source.put(
-        LogicValueArray.fromFlatInts([2, 3], 3, [0, 1, 2, 3, 4, 5]),
-      );
-      for (final result in reshaped) {
-        expect(
-          result.value.arrayValues.map((value) => value.toInt()),
-          [0, 1, 2, 3, 4, 5],
-        );
-      }
-      expect(
-        transposed.value.arrayValues.map((value) => value.toInt()),
-        [0, 3, 1, 4, 2, 5],
-      );
-
-      final empty = TypedLogicArray<_SampleStructure, LogicValue>(
-        [2, 0],
-        _SampleStructure.new,
-        numUnpackedDimensions: 2,
-      );
-      final emptyReshaped = empty.reshape([0]);
-      final emptyTransposed = empty.transpose2D();
-      expect(emptyReshaped.dimensions, [0]);
-      expect(emptyReshaped.numUnpackedDimensions, 1);
-      expect(emptyReshaped.arrayElements, isEmpty);
-      expect(emptyTransposed.dimensions, [0, 2]);
-      expect(emptyTransposed.numUnpackedDimensions, 2);
-      expect(emptyTransposed.arrayElements, isEmpty);
-    });
-
     test('majorSlices returns existing typed child arrays', () {
       final values = TypedLogicArray<_SampleStructure, LogicValue>(
         [2, 3, 2],
@@ -610,17 +503,14 @@ void main() {
       );
     });
 
-    test('provides typed indexing, cloning, and packed conversions', () {
+    test('provides typed indexing and cloning', () {
       final values = TypedLogicArray<Logic, LogicValue>(
         [2, 2],
         ({name}) => Logic(name: name, width: 8),
       );
-      final packed = values.toLogicArray(name: 'packed');
       final clone = values.clone(name: 'clone');
 
       expect(values.at([1, 0]), same(values.arrayElements[2]));
-      expect(packed.dimensions, equals([2, 2]));
-      expect(packed.elementWidth, 8);
       expect(clone, isA<TypedLogicArray<Logic, LogicValue>>());
       expect(clone.name, 'clone');
       expect(clone.arrayElements, hasLength(4));
@@ -825,7 +715,7 @@ void main() {
       }
     });
 
-    test('rejects invalid indexing and transforms without partial wiring', () {
+    test('rejects invalid indexing', () {
       final values = TypedLogicArray<Logic, LogicValue>(
         [2, 2],
         ({name}) => Logic(name: name, width: 2),
@@ -839,25 +729,6 @@ void main() {
       ]) {
         expect(() => values.at(indices), throwsA(isA<RangeError>()));
       }
-      expect(() => values.reshape([3]), throwsArgumentError);
-      expect(
-        () => values.reshape([-2, -2]),
-        throwsA(isA<LogicConstructionException>()),
-      );
-      expect(
-        () => TypedLogicArray<Logic, LogicValue>(
-          [4],
-          ({name}) => Logic(name: name, width: 2),
-        ).transpose2D(),
-        throwsA(isA<StateError>()),
-      );
-      expect(
-        () => TypedLogicArray<Logic, LogicValue>(
-          [1, 2, 2],
-          ({name}) => Logic(name: name, width: 2),
-        ).transpose2D(),
-        throwsA(isA<StateError>()),
-      );
     });
 
     test('named applies every requested naming mode', () {
