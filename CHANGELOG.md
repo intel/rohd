@@ -1,5 +1,7 @@
-## Next release
 
+## Next Release
+
+- Allowed connected, equivalent `reserved` and `renameable` signals with matching generated base names to share a declaration, including internal signals and port aliases, in generated outputs. Separate aliases may disappear and connected same-name reserved signals no longer cause naming errors; unrelated reserved-name collisions still fail (<https://github.com/intel/rohd/pull/712>).
 - Fixed illegal scalar connections to singleton unpacked-array inputs when inlining constants or live signals into generated SystemVerilog (<https://github.com/intel/rohd/pull/714>).
 - Added targeted Verilator compilation and two-state vector simulation checks, including a `buildOnly` mode, required in native CI and explicitly skipped locally when Verilator is unavailable (<https://github.com/intel/rohd/pull/714>).
 - Improved generated SystemVerilog to inline packed `Logic.assignSubset` connections into submodule inputs (<https://github.com/intel/rohd/pull/711>).

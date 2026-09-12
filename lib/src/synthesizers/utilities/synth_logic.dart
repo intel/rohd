@@ -19,9 +19,9 @@ import 'package:rohd/src/utilities/sanitizer.dart';
 class SynthLogic {
   /// All [Logic]s represented, regardless of type.
   List<Logic> get logics => UnmodifiableListView([
-        if (_reservedLogic != null) _reservedLogic!,
+        ..._reservedLogics,
         if (_constLogic != null) _constLogic!,
-        if (_renameableLogic != null) _renameableLogic!,
+        ..._renameableLogics,
         ..._mergeableLogics,
         ..._unnamedLogics,
       ]);
@@ -62,11 +62,8 @@ class SynthLogic {
       );
 
   /// Indicates if this signal is a port, optionally for a specific [module].
-  bool isPort([Module? module]) =>
-      // we can rely on ports being the reserved logic (optimization)
-      _reservedLogic != null &&
-      _reservedLogic!.isPort &&
-      (module == null || _reservedLogic!.parentModule == module);
+  bool isPort([Module? module]) => _reservedLogics.any((logic) =>
+      logic.isPort && (module == null || logic.parentModule == module));
 
   /// The direct replacement of this [SynthLogic].
   SynthLogic? _replacement;
@@ -75,18 +72,18 @@ class SynthLogic {
   int get width => logics.first.width;
 
   /// Indicates that this has a reserved name.
-  bool get isReserved => _reservedLogic != null;
+  bool get isReserved => _reservedLogics.isNotEmpty;
 
   /// Whether this contains a renameable or reserved name that must remain in
   /// generated output.
   bool get hasPreservedName =>
-      _reservedLogic != null || _renameableLogic != null;
+      _reservedLogics.isNotEmpty || _renameableLogics.isNotEmpty;
 
-  /// The [Logic] whose name is reserved, if there is one.
-  Logic? _reservedLogic;
+  /// All represented [Logic]s whose names are reserved in this module.
+  final Set<Logic> _reservedLogics = {};
 
-  /// The [Logic] whose name is renameable, if there is one.
-  Logic? _renameableLogic;
+  /// All represented [Logic]s whose names are renameable in this module.
+  final Set<Logic> _renameableLogics = {};
 
   /// [Logic]s that are marked mergeable.
   final Set<Logic> _mergeableLogics = {};
@@ -194,11 +191,12 @@ class SynthLogic {
             parentSynthModuleDefinition.logicHasPresentSynthLogic,
           ));
 
-  /// Two [SynthLogic]s that are not [mergeable] cannot be merged with each
-  /// other. If only one of them is not [mergeable], it can adopt the elements
-  /// from the other.
-  bool get mergeable =>
-      _reservedLogic == null && _constLogic == null && _renameableLogic == null;
+  /// Whether this can be merged without preserving its name or value literal.
+  ///
+  /// A non-mergeable signal can adopt a mergeable one. Two non-mergeable
+  /// signals can merge only under the pair-specific exceptions in [tryMerge],
+  /// without making the resulting signal clearable.
+  bool get mergeable => !hasPreservedName && _constLogic == null;
 
   /// True only if this represents a [LogicArray].
   final bool isArray;
@@ -272,6 +270,11 @@ class SynthLogic {
 
   /// Returns `null` if the merge did not occur, and a pair of the `removed` and
   /// `kept` [SynthLogic]s otherwise.
+  ///
+  /// The caller must establish whole-signal equivalence through connectivity.
+  /// Preserved signals may share a declaration when all their preserved base
+  /// names match before uniquification. This does not permit merging distinct
+  /// module ports, array elements, or other non-owning signal references.
   static ({SynthLogic removed, SynthLogic kept})? tryMerge(
     SynthLogic a,
     SynthLogic b,
@@ -283,7 +286,12 @@ class SynthLogic {
     }
 
     if (!a.mergeable && !b.mergeable) {
-      return null;
+      if (!_preservedNamesMergeable(a, b)) {
+        return null;
+      }
+
+      a.adopt(b);
+      return (removed: b, kept: a);
     }
 
     if (a.isNet != b.isNet) {
@@ -308,13 +316,58 @@ class SynthLogic {
       !a._constNameDisallowed &&
       !b._constNameDisallowed;
 
+  /// Whether whole signals can merge without losing any preserved base name.
+  ///
+  /// Only owning [SynthLogic] instances qualify; subclasses may forbid merging
+  /// for structural reasons unrelated to naming. Arrays must have identical
+  /// declaration shapes, not merely equal total widths.
+  static bool _preservedNamesMergeable(SynthLogic a, SynthLogic b) {
+    if (a.runtimeType != SynthLogic ||
+        b.runtimeType != SynthLogic ||
+        a.parentSynthModuleDefinition != b.parentSynthModuleDefinition ||
+        !a.hasPreservedName ||
+        !b.hasPreservedName ||
+        a.isConstant ||
+        b.isConstant ||
+        a.isNet != b.isNet ||
+        a.width != b.width ||
+        a.isArray != b.isArray ||
+        (a.isPort(a.parentSynthModuleDefinition.module) &&
+            b.isPort(b.parentSynthModuleDefinition.module))) {
+      return false;
+    }
+
+    if (a.isArray) {
+      final arrayA = a.logics.first as LogicArray;
+      final arrayB = b.logics.first as LogicArray;
+      if (arrayA.elementWidth != arrayB.elementWidth ||
+          arrayA.numUnpackedDimensions != arrayB.numUnpackedDimensions ||
+          !const ListEquality<int>()
+              .equals(arrayA.dimensions, arrayB.dimensions)) {
+        return false;
+      }
+    }
+
+    final preservedLogics = [
+      ...a._reservedLogics,
+      ...a._renameableLogics,
+      ...b._reservedLogics,
+      ...b._renameableLogics,
+    ];
+    final name = Namer.baseName(preservedLogics.first);
+    return preservedLogics.every((logic) => Namer.baseName(logic) == name);
+  }
+
   /// Merges [other] to be represented by `this` instead, and updates the
   /// [other] that it has been replaced.
   ///
   /// If [force] is `true`, then it will adopt even if both are non-mergeable.
   void adopt(SynthLogic other, {bool force = false}) {
     assert(
-      force || other.mergeable || _constantsMergeable(this, other),
+      force ||
+          other.mergeable ||
+          _constantsMergeable(this, other) ||
+          _preservedNamesMergeable(this, other),
       'Cannot merge a non-mergeable into this.',
     );
     assert(other.isArray == isArray, 'Cannot merge arrays and non-arrays');
@@ -331,10 +384,10 @@ class SynthLogic {
 
     // only take one of the other's items if we don't have it already
     _constLogic ??= other._constLogic;
-    _reservedLogic ??= other._reservedLogic;
-    _renameableLogic ??= other._renameableLogic;
 
     // the rest, take them all
+    _reservedLogics.addAll(other._reservedLogics);
+    _renameableLogics.addAll(other._renameableLogics);
     _mergeableLogics.addAll(other._mergeableLogics);
     _unnamedLogics.addAll(other._unnamedLogics);
 
@@ -350,9 +403,9 @@ class SynthLogic {
     } else {
       switch (naming) {
         case Naming.reserved:
-          _reservedLogic = logic;
+          _reservedLogics.add(logic);
         case Naming.renameable:
-          _renameableLogic = logic;
+          _renameableLogics.add(logic);
         case Naming.mergeable:
           _mergeableLogics.add(logic);
         case Naming.unnamed:
@@ -573,7 +626,7 @@ class SynthLogicArrayElement extends SynthLogic {
   bool isPort([Module? module]) =>
       super.isPort(module) ||
       // we cannot just use `super.isPort` since we can't rely on only using
-      // `_reservedLogic`
+      // `_reservedLogics`
       logics.any(
         (l) => l.isPort && (module == null || l.parentModule == module),
       ) ||
