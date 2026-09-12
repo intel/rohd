@@ -59,7 +59,13 @@
 
     
 <section class="desc markdown">
-  <p>/ Configuration options and utilities for naming and renaming signals.</p>
+  <p>Configuration options and utilities for naming and renaming signals.</p>
+<p>Connected, equivalent whole signals with compatible types may share one
+generated signal when their preserved names match exactly in the generated
+module's namespace, before uniquification. This applies to both <a href="../rohd/Naming.html">reserved</a>
+and <a href="../rohd/Naming.html">renameable</a> signals, including connections to ports. The name remains
+present, but each original signal need not have a separate declaration.
+Matching names alone do not establish equivalence.</p>
 </section>
 
 
@@ -100,7 +106,9 @@
 <dd>
   <p>The signal will be present in generated output and the name will not be
 changed.</p>
-<p>If this is not achievable, an <a href="https://api.dart.dev/stable/3.13.3/dart-core/Exception-class.html">Exception</a> will be thrown.</p>
+<p>Equivalent signals requesting this same name may share a declaration.
+If the exact name cannot be preserved, including a collision with an
+unrelated signal, an <a href="https://api.dart.dev/stable/3.13.3/dart-core/Exception-class.html">Exception</a> will be thrown.</p>
   
 
 </dd>
@@ -113,7 +121,8 @@ changed.</p>
 </dt>
 <dd>
   <p>The signal will be present in generated output, but the signal may be
-renamed for uniqueness. It will not be merged into any other signals.</p>
+renamed for uniqueness. Equivalent signals requesting this same name may
+share a declaration, but distinct preserved names will not be merged.</p>
   
 
 </dd>
