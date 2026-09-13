@@ -29,41 +29,47 @@ class LogicValueArray extends TypedLogicValueArray<LogicValue> {
         nested.dimensions, elementWidth, nested.values);
   }
 
-  /// Creates a value array from row-major [values] and explicit metadata.
+  /// Creates a value array from row-major [values].
+  ///
+  /// For nonempty input, [elementWidth] defaults to the width of the first
+  /// value and all values must have that width. Empty input requires an
+  /// explicit [elementWidth].
   factory LogicValueArray.fromFlat(
-    List<int> dimensions,
-    int elementWidth,
-    Iterable<LogicValue> values,
-  ) {
+      List<int> dimensions, Iterable<LogicValue> values,
+      {int? elementWidth}) {
     final normalizedDimensions = _validateValueArrayDimensions(dimensions);
-    _validateValueArrayElementWidth(elementWidth);
     final packedValues = values.toList(growable: false);
     _validateValueCount(normalizedDimensions, packedValues.length, 'values');
-    _validateElementWidths(packedValues, elementWidth, 'values');
+    if (packedValues.isEmpty && elementWidth == null) {
+      throw ArgumentError.value(
+          values, 'values', 'An elementWidth is required for empty input.');
+    }
+    final resolvedElementWidth = elementWidth ?? packedValues.first.width;
+    _validateValueArrayElementWidth(resolvedElementWidth);
+    _validateElementWidths(packedValues, resolvedElementWidth, 'values');
     return LogicValueArray._stored(
-        normalizedDimensions, elementWidth, packedValues);
+        normalizedDimensions, resolvedElementWidth, packedValues);
   }
 
   /// Creates an empty, zero-width value array.
   factory LogicValueArray.empty() =>
-      LogicValueArray.fromFlat(const [0], 0, const []);
+      LogicValueArray.fromFlat(const [0], const [], elementWidth: 0);
 
   /// Generates values from row-major multidimensional indices.
   factory LogicValueArray.generate(
-    List<int> dimensions,
-    int elementWidth,
-    LogicValue Function(List<int> indices) generator,
-  ) {
+      List<int> dimensions, LogicValue Function(List<int> indices) generator,
+      {int? elementWidth}) {
     final normalizedDimensions = _validateValueArrayDimensions(dimensions);
+    final values = [
+      for (var index = 0;
+          index < _valueArrayLength(normalizedDimensions);
+          index++)
+        generator(_valueArrayIndices(normalizedDimensions, index)),
+    ];
     return LogicValueArray.fromFlat(
       normalizedDimensions,
-      elementWidth,
-      Iterable.generate(
-        _valueArrayLength(normalizedDimensions),
-        (index) => generator(
-          _valueArrayIndices(normalizedDimensions, index),
-        ),
-      ),
+      values,
+      elementWidth: elementWidth,
     );
   }
 
@@ -79,30 +85,19 @@ class LogicValueArray extends TypedLogicValueArray<LogicValue> {
     }
     return LogicValueArray.fromFlat(
       nested.dimensions,
-      elementWidth,
       nested.values.map((value) => LogicValue.ofInt(value, elementWidth)),
+      elementWidth: elementWidth,
     );
   }
 
   /// Creates a value array from flat row-major integer [values].
   factory LogicValueArray.fromFlatInts(
-    List<int> dimensions,
-    int elementWidth,
-    Iterable<int> values,
-  ) =>
+          List<int> dimensions, Iterable<int> values,
+          {required int elementWidth}) =>
       LogicValueArray.fromFlat(
         dimensions,
-        elementWidth,
         values.map((value) => LogicValue.ofInt(value, elementWidth)),
-      );
-
-  /// Captures the current values of a hardware [LogicArray].
-  factory LogicValueArray.fromLogicArray(
-          TypedLogicArray<Logic, LogicValue> values) =>
-      LogicValueArray.fromFlat(
-        values.dimensions,
-        values.elementWidth,
-        values.arrayElements.map((element) => element.value),
+        elementWidth: elementWidth,
       );
 
   /// Stacks equally shaped arrays along a new outer dimension.
@@ -121,6 +116,10 @@ class LogicValueArray extends TypedLogicValueArray<LogicValue> {
     );
   }
 
+  /// Stores already-normalized packed [values] using the identity codec.
+  ///
+  /// The semantic and packed representations are the same for
+  /// [LogicValueArray], so this constructor avoids re-encoding them.
   LogicValueArray._stored(
     List<int> dimensions,
     int elementWidth,
@@ -140,7 +139,10 @@ class LogicValueArray extends TypedLogicValueArray<LogicValue> {
   @override
   LogicValueArray map(LogicValue Function(LogicValue value) transform) =>
       LogicValueArray.fromFlat(
-          dimensions, elementWidth, arrayValues.map(transform));
+        dimensions,
+        arrayValues.map(transform),
+        elementWidth: elementWidth,
+      );
 
   @override
   LogicValueArray indexedMap(
@@ -148,30 +150,9 @@ class LogicValueArray extends TypedLogicValueArray<LogicValue> {
   ) =>
       LogicValueArray.fromFlat(
         dimensions,
-        elementWidth,
         indexedValues.map((entry) => transform(entry.$1, entry.$2)),
+        elementWidth: elementWidth,
       );
-
-  @override
-  LogicValueArray mapMajorSlices(
-    TypedLogicValueArray<LogicValue> Function(
-            TypedLogicValueArray<LogicValue> slice)
-        transform,
-  ) {
-    final transformed = majorSlices.map(transform).toList(growable: false);
-    if (transformed.isEmpty) {
-      throw StateError('Cannot infer a mapped shape from zero major slices.');
-    }
-    final first = transformed.first;
-    transformed.skip(1).forEach(first._checkStackCompatible);
-    return LogicValueArray._stored(
-      [transformed.length, ...first.dimensions],
-      first.elementWidth,
-      transformed
-          .expand((slice) => slice._packedElements)
-          .toList(growable: false),
-    );
-  }
 
   @override
   LogicValueArray reshape(List<int> newDimensions) =>

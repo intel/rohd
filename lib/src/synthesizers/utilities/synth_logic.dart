@@ -580,6 +580,7 @@ class SynthLogicArrayElement extends SynthLogic {
 ///
 /// The field has no standalone declaration: it is selected from the packed
 /// array element that contains it.
+@internal
 class SynthLogicArrayStructureElement extends SynthLogic {
   /// The scalar field represented by this synthesized signal.
   final Logic logic;

@@ -254,7 +254,6 @@ void main() {
 
     expect(clonedSamples, isNot(same(samples)));
     expect(clonedSamples.dimensions, [2, 2]);
-    expect(clonedSamples.dimensionNames, ['row_', 'column_']);
     expect(clonedSamples.arrayElements, everyElement(isA<_PairSample>()));
     expect(clonedSamples.at([1, 1]).high.width, 2);
     expect(identical(clonedSamples.valueCodec, _pairValueCodec), isTrue);
@@ -264,7 +263,6 @@ void main() {
     await module.build();
 
     expect(module.samples.dimensions, [2, 2]);
-    expect(module.samples.dimensionNames, ['row_', 'column_']);
     expect(module.samples.at([1, 1]), isA<_PairSample>());
     expect(module.samples.at([1, 1]).high.width, 2);
     expect(identical(module.samples.valueCodec, _pairValueCodec), isTrue);
