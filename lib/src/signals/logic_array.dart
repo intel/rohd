@@ -279,7 +279,7 @@ class LogicArray extends TypedLogicArray<Logic, LogicValue> {
       required super.name,
       required super.naming,
       required bool isNet})
-      : super.structured(
+      : super._structured(
           elements,
           ({name}) => isNet
               ? LogicNet(name: name, width: elementWidth)
@@ -308,7 +308,11 @@ class LogicArray extends TypedLogicArray<Logic, LogicValue> {
           isNet: isNet) as LogicArray;
 
   @override
-  LogicValueArray get value => LogicValueArray.fromLogicArray(this);
+  LogicValueArray get value => LogicValueArray.fromFlat(
+        dimensions,
+        arrayElements.map((element) => element.value),
+        elementWidth: elementWidth,
+      );
 
   @override
   LogicValueArray? get previousValue =>
@@ -316,8 +320,8 @@ class LogicArray extends TypedLogicArray<Logic, LogicValue> {
           ? null
           : LogicValueArray.fromFlat(
               dimensions,
-              elementWidth,
               arrayElements.map((element) => element.previousValue!),
+              elementWidth: elementWidth,
             );
 
   @override

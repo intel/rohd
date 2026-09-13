@@ -26,6 +26,8 @@ As long as the total width of a `LogicArray` and another type of `Logic` (includ
 
 Use `TypedLogicArray<TLogic, TValue>` when every position at the declared array boundary has the same specialized hardware type and associated semantic value type. `LogicArray` remains the ordinary `TypedLogicArray<Logic, LogicValue>` specialization, preserving its existing constructors, ports, cloning, naming, and packed assignment behavior. Both extend the non-generic `BaseLogicArray`, which contains array-specific metadata and traversal shared by the two public types; it is an internal implementation base rather than another public construction API.
 
+`dimensionNames`, when supplied to `TypedLogicArray`, is construction metadata used to derive names within typed-array hierarchies and preserve them during internal cloning. It is not a public axis-metadata property, and it does not change the established generated naming convention of ordinary `LogicArray`.
+
 For example, these sample hardware and value types preserve named fields in hardware while exposing typed snapshots:
 
 ```dart
@@ -64,7 +66,6 @@ final samples = TypedLogicArray<Sample, SampleValue>(
   [2, 3],
   Sample.new,
   valueCodec: sampleCodec,
-  dimensionNames: ['row_', 'column_'],
 );
 
 final bottomRightData = samples.at([1, 2]).data;
@@ -93,7 +94,7 @@ For example, a `[2, 3]` array of two-field `Sample`s has six `arrayElements` and
 
 A `TypedLogicArray` element can be a `LogicStructure`, but it must be driveable. Direct `Const` elements, structures containing a `Const`, and element structures containing nested arrays are rejected. Nested arrays remain available through their existing `arrayElements`, `at`, and `indexedElements` traversal APIs; no public recursive layout-conversion helper is provided.
 
-`TypedLogicArray` is also the supported base for custom typed arrays. A subclass using the protected `TypedLogicArray.structured` constructor must supply a correctly configured element builder and value codec, and should override `createClone` to preserve its runtime type and metadata.
+`TypedLogicArray` is also the supported base for custom typed arrays. Subclasses should use the normal constructor and override `createClone` to preserve their runtime type and metadata. The lower-level prebuilt-element constructor is library-private and is reserved for trusted in-library construction.
 
 ## Value-domain arrays
 
@@ -109,10 +110,11 @@ final values = LogicValueArray.fromInts(
 );
 final sameValues = LogicValueArray.fromFlatInts(
   [2, 3],
-  8,
   [1, 2, 3, 4, 5, 6],
+  elementWidth: 8,
 );
-final emptyRows = LogicValueArray.fromFlat([2, 0], 8, const []);
+final emptyRows =
+    LogicValueArray.fromFlat([2, 0], const [], elementWidth: 8);
 
 final transposed = values.transpose2D(); // Dimensions: [3, 2]
 final signals = values.toLogicArray(name: 'values'); // signals are driven by values
@@ -124,7 +126,7 @@ Nested constructors reject ragged rows, inconsistent nesting depth, and mismatch
 
 The root list of a nested constructor always represents an array dimension. Below the root, an object matching `T` is treated as one semantic value before it is considered as another list dimension. This permits list-valued semantic elements; use `fromFlat` when the intended interpretation would otherwise be ambiguous.
 
-Both value-array classes are `LogicValue`s. Their `width` and deprecated `length` count packed bits, while `elementCount` counts array positions. Bit indexing, equality, hashing, arithmetic, and bitwise operations use the packed value and do not consider shape. The `packed` getter exposes the ordinary `LogicValue` representation.
+Both value-array classes are `LogicValue`s. Their `width` and deprecated `length` count packed bits, while `arrayValues.length` counts array positions. `arrayValues` has one entry for each configured array position in row-major order. Bit indexing, equality, hashing, arithmetic, and bitwise operations use the packed value and do not consider shape. The `packed` getter exposes the ordinary `LogicValue` representation.
 
 `TypedLogicArray<TLogic, TValue>.value` and `previousValue` return `TypedLogicValueArray<TValue>` snapshots without adding hardware to the graph. `LogicArray` overrides these with the concrete `LogicValueArray` return type. The standard `changed`, `glitch`, and edge APIs remain packed `LogicValueChanged` events, so typed arrays retain the normal `Logic` event contract. Since all value arrays are `LogicValue`s, use the target-side `put` API for immediate assignment or `inject` for scheduled assignment. Both follow the ordinary packed-value contract, so same-width values remain assignable regardless of their shape metadata.
 

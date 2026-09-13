@@ -57,9 +57,14 @@ LogicValueCodec<V> _resolveTypedLogicValueCodec<V>(
 /// [value] and [previousValue] preserve [V] through [TypedLogicValueArray]
 /// snapshots. Standard [Logic.changed] events remain packed
 /// [LogicValueChanged] events.
+///
+/// The optional `dimensionNames` constructor argument is construction metadata
+/// used when naming typed-array hierarchy members and when cloning. It is not
+/// exposed as a public axis-metadata property; ordinary [LogicArray] naming
+/// continues to follow its existing generated-name convention.
 class TypedLogicArray<T extends Logic, V> extends BaseLogicArray {
-  /// Labels used to name elements at each dimension.
-  final List<String> dimensionNames;
+  /// Construction prefixes retained for typed-array cloning.
+  final List<String> _dimensionNames;
 
   /// Recreates one [T] for cloning and shape transformations.
   final TypedLogicArrayElementBuilder<T> _elementBuilder;
@@ -119,15 +124,18 @@ class TypedLogicArray<T extends Logic, V> extends BaseLogicArray {
     required super.numUnpackedDimensions,
     super.name,
     super.naming,
-  })  : dimensionNames = build.dimensionNames,
+  })  : _dimensionNames = build.dimensionNames,
         super.structured(build.elements,
             dimensions: build.dimensions,
             elementWidth: build.elementWidth,
             isNet: build.isNet);
 
-  /// Creates a typed array from structurally compatible [elements].
-  @protected
-  TypedLogicArray.structured(
+  /// Creates an array from trusted, prebuilt [elements].
+  ///
+  /// This library-private constructor is used by [LogicArray] after its
+  /// factory has established the required representation metadata. It
+  /// intentionally bypasses the normal builder validation path.
+  TypedLogicArray._structured(
     super.elements,
     this._elementBuilder, {
     required this.valueCodec,
@@ -140,7 +148,7 @@ class TypedLogicArray<T extends Logic, V> extends BaseLogicArray {
     TypedLogicArrayElementCompatibility<T>? elementCompatibility,
     List<String>? dimensionNames,
   })  : _elementCompatibility = elementCompatibility,
-        dimensionNames =
+        _dimensionNames =
             _normalizeLogicArrayDimensionNames(dimensions, dimensionNames),
         super.structured(
           name: name,
@@ -201,7 +209,7 @@ class TypedLogicArray<T extends Logic, V> extends BaseLogicArray {
   /// Creates a clone while allowing subclasses to preserve their runtime type.
   ///
   /// Subclasses with additional metadata should override this method and
-  /// reconstruct that metadata together with [dimensions], [dimensionNames],
+  /// reconstruct that metadata together with [dimensions], [_dimensionNames],
   /// [elementWidth], [isNet], and [numUnpackedDimensions].
   @protected
   TypedLogicArray<T, V> createClone({
@@ -212,7 +220,7 @@ class TypedLogicArray<T extends Logic, V> extends BaseLogicArray {
       TypedLogicArray<T, V>(dimensions, _elementBuilder,
           valueCodec: valueCodec,
           elementCompatibility: _elementCompatibility,
-          dimensionNames: dimensionNames,
+          dimensionNames: _dimensionNames,
           name: name ?? this.name,
           naming: naming,
           numUnpackedDimensions:
@@ -326,13 +334,6 @@ class _TypedLogicArrayBuild<T extends Logic, V> {
             .cast<TypedLogicArray<T, V>>()
             .expand((element) => element.arrayElements)
             .toList(growable: false);
-    if (typedLeaves.any((leaf) =>
-        leaf is LogicStructure &&
-        leaf is! BaseLogicArray &&
-        _containsNestedArray(leaf))) {
-      throw LogicConstructionException(
-          'TypedLogicArray leaves cannot contain nested typed array fields.');
-    }
     if (typedLeaves.any(_containsUnassignableLeaf)) {
       throw LogicConstructionException('TypedLogicArray leaves must be '
           'driveable and cannot contain Consts.');
@@ -341,12 +342,6 @@ class _TypedLogicArrayBuild<T extends Logic, V> {
     if (_containsUnassignableLeaf(prototype)) {
       throw LogicConstructionException('TypedLogicArray leaves must be '
           'driveable and cannot contain Consts.');
-    }
-    if (prototype is LogicStructure &&
-        prototype is! BaseLogicArray &&
-        _containsNestedArray(prototype)) {
-      throw LogicConstructionException(
-          'TypedLogicArray leaves cannot contain nested typed array fields.');
     }
     final prototypeNetComposition = _netComposition(prototype);
     final elementsForNetValidation =
@@ -381,12 +376,6 @@ class _TypedLogicArrayBuild<T extends Logic, V> {
         elementWidth,
         prototypeNetComposition.every((isNet) => isNet));
   }
-
-  /// Whether [structure] recursively contains an array field.
-  static bool _containsNestedArray(LogicStructure structure) =>
-      structure.elements.any((element) =>
-          element is BaseLogicArray ||
-          (element is LogicStructure && _containsNestedArray(element)));
 
   /// Whether [leaf] is or recursively contains an unassignable constant.
   static bool _containsUnassignableLeaf(Logic leaf) =>
