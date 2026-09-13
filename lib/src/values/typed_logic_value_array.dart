@@ -209,15 +209,12 @@ class TypedLogicValueArray<T> extends LogicValue {
         packed.width == width, 'Packed width must match the LogicValue width.');
   }
 
-  /// Number of semantic array elements.
-  int get elementCount => _arrayValues.length;
-
   /// Semantic array elements in row-major order.
   List<T> get arrayValues => _arrayValues;
 
   /// Values paired with their row-major multidimensional indices.
   Iterable<(List<int>, T)> get indexedValues => Iterable.generate(
-        elementCount,
+        arrayValues.length,
         (index) => (
           _valueArrayIndices(dimensions, index),
           _arrayValues[index],
@@ -244,11 +241,8 @@ class TypedLogicValueArray<T> extends LogicValue {
   }
 
   /// Returns the semantic value at multidimensional [indices].
-  T at(List<int> indices) => _arrayValues[flatIndexOf(indices)];
-
-  /// Returns the row-major flat index for multidimensional [indices].
-  int flatIndexOf(List<int> indices) =>
-      _valueArrayFlatIndex(dimensions, indices);
+  T at(List<int> indices) =>
+      _arrayValues[_valueArrayFlatIndex(dimensions, indices)];
 
   /// Maps semantic values while preserving shape and codec.
   TypedLogicValueArray<T> map(T Function(T value) transform) =>
@@ -270,18 +264,12 @@ class TypedLogicValueArray<T> extends LogicValue {
         codec: codec,
       );
 
-  /// Maps slices along the first dimension and stacks the results.
-  TypedLogicValueArray<T> mapMajorSlices(
-    TypedLogicValueArray<T> Function(TypedLogicValueArray<T> slice) transform,
-  ) =>
-      TypedLogicValueArray<T>.stack(majorSlices.map(transform));
-
   /// Returns the same row-major values with [newDimensions].
   TypedLogicValueArray<T> reshape(List<int> newDimensions) {
     final normalizedDimensions = _validateValueArrayDimensions(newDimensions);
-    if (_valueArrayLength(normalizedDimensions) != elementCount) {
+    if (_valueArrayLength(normalizedDimensions) != arrayValues.length) {
       throw ArgumentError.value(newDimensions, 'newDimensions',
-          'Must contain $elementCount array elements.');
+          'Must contain ${arrayValues.length} array elements.');
     }
     return _createStored(normalizedDimensions, _arrayValues, _packedElements);
   }
@@ -294,7 +282,7 @@ class TypedLogicValueArray<T> extends LogicValue {
     final packedElements = <LogicValue>[];
     for (var row = 0; row < newDimensions[0]; row++) {
       for (var column = 0; column < newDimensions[1]; column++) {
-        final source = flatIndexOf([column, row]);
+        final source = _valueArrayFlatIndex(dimensions, [column, row]);
         semanticValues.add(_arrayValues[source]);
         packedElements.add(_packedElements[source]);
       }
