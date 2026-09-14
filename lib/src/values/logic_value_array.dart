@@ -116,7 +116,8 @@ class LogicValueArray extends TypedLogicValueArray<LogicValue> {
     );
   }
 
-  /// Stores already-normalized packed [values] using the identity codec.
+  /// Stores [values] that are already-normalized packed inputs using the
+  /// identity codec.
   ///
   /// The semantic and packed representations are the same for
   /// [LogicValueArray], so this constructor avoids re-encoding them.
