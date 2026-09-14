@@ -75,6 +75,10 @@ Internal signals, unlike ports, don't need to always have the same exact name as
 - If you want to make sure an internal signal maintains exactly the name you want, you can mark it explicitly with `reserved`.
 - You can downgrade a named signal as well to `mergeable` or even `unnamed`, if you care less about its name in generated outputs and prefer that others will take over.
 
+Connected, equivalent whole signals with compatible types may share one generated declaration when all their `reserved` or `renameable` names match exactly in the generated module's namespace, before uniquification. For example, three connected signals named `data`, with any combination of these two naming modes, may generate just one `data` signal. This also applies when an internal signal connects to a port named `data`; the port name and module interface remain unchanged.
+
+These modes preserve a generated name, not a separate declaration for every original signal. Structure-qualified names are compared, so matching leaf names alone are insufficient. Different preserved names remain separate, and matching names never establish connectivity: unrelated `renameable` signals are still uniquified, while unrelated `reserved` collisions still throw an exception. Partial assignments and incompatible array shapes are not eligible for this same-name merge.
+
 ### Unpreferred names
 
 The `Naming.unpreferredName` function will modify a signal name to indicate to downstream flows that the name is preferably omitted from the output, but preferable to an unnamed signal. This is generally most useful for things like output ports of `InlineSystemVerilog` modules.

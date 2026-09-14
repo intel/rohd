@@ -44,6 +44,8 @@ You must have [Dart](https://dart.dev/) installed on your system to use ROHD. Yo
 
 To run the complete ROHD test suite for development, you need to install [Icarus Verilog](https://steveicarus.github.io/iverilog/). It is used to compare SystemVerilog functionality with the ROHD simulator functionality. Installation instructions are available here: <https://iverilog.fandom.com/wiki/Installation_Guide>
 
+Some tests also use [Verilator](https://verilator.org/guide/latest/install.html). It is optional for local development: tests that need it are skipped when it is not installed. CI requires it, and the Codespaces setup installs it for you.
+
 ### Setup Recommendations
 
 #### On your own system
