@@ -55,28 +55,6 @@ void main() async {
 }
 ```
 
-Use `NetlistSynthesizer` to generate a Yosys-compatible JSON netlist instead
-of SystemVerilog. Build the top-level module before synthesis, then create a
-`SynthBuilder` and call `generateCombinedJson`:
-
-```dart
-import 'dart:io';
-
-import 'package:rohd/rohd.dart';
-
-void main() async {
-  final myModule = MyModule();
-  await myModule.build();
-
-  final synthesizer = NetlistSynthesizer();
-  final builder = SynthBuilder(myModule, synthesizer);
-  final netlistJson = synthesizer.generateCombinedJson(builder, myModule);
-  print(netlistJson);
-
-  await File('build/my_hardware.rohd.json').writeAsString(netlistJson);
-}
-```
-
 `NetlistSynthesizerConfiguration` controls optional netlist generation
 behavior, such as slim output for hierarchy loading. The same `SynthBuilder`
 also provides individual per-module synthesis results and generated file

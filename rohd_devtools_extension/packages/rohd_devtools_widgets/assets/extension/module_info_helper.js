@@ -142,10 +142,10 @@ async function buildModuleInfo(documentUri, moduleName, instancePath, output) {
   } catch (e) {
     if (output) output.appendLine('[moduleInfo] rohd.queryModule failed: ' + e.message);
     return {
-      extensionAvailable: false,
+      extensionAvailable,
       module: moduleName,
       formats: {},
-      error: 'Install the ROHD extension for source format detection.',
+      error: e instanceof Error ? e.message : String(e),
       fstLoading: false,
     };
   }

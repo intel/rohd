@@ -183,11 +183,14 @@ class FlcData {
                 continue;
               }
               final fi = int.tryParse(parts[0]);
-              if (fi == null || fi >= files.length) {
+              final line = int.tryParse(parts[1]) ?? 1;
+              if (fi == null || fi < 0 || fi >= files.length || line <= 0) {
                 continue;
               }
-              final line = int.tryParse(parts[1]) ?? 1;
-              final col = parts.length > 2 ? (int.tryParse(parts[2]) ?? 1) : 1;
+              final parsedColumn =
+                  parts.length > 2 ? int.tryParse(parts[2]) : null;
+              final col =
+                  parsedColumn == null || parsedColumn <= 0 ? 1 : parsedColumn;
               rohdFrames.add(
                 FlcFrame(file: files[fi], line: line, column: col),
               );
@@ -247,8 +250,11 @@ class FlcData {
   /// Parse embedded `rohd.src_trace` attributes from a Yosys netlist.
   ///
   /// Embedded traces use the same file-indexed frame representation as FLC
-  /// data, but store signal and instance maps directly on each module:
-  /// `modules.<module>.attributes.rohd.src_trace`.
+  /// data, but store signal and instance maps under each module's
+  /// `attributes.rohd.src_trace` entry. The JSON's `modules` map must
+  /// therefore have the shape `moduleName: {attributes: {rohd.src_trace:
+  /// trace}}`, as in a Yosys netlist. It may contain only the `modules`
+  /// portion of that netlist.
   factory FlcData.fromNetlistJson(Map<String, dynamic> json) {
     final rawFiles = json['files'];
     if (rawFiles is! List || rawFiles.any((file) => file is! String)) {
@@ -293,8 +299,9 @@ class FlcData {
 
   /// Parse one module's embedded `rohd.src_trace` attribute.
   ///
-  /// This is useful for schematic adapters that have already separated module
-  /// attributes from the enclosing netlist document.
+  /// [modules] must contain module entries with an
+  /// `attributes.rohd.src_trace` wrapper, for example:
+  /// `{'Top': {'attributes': {'rohd.src_trace': trace}}}`.
   factory FlcData.fromEmbeddedAttributes({
     required List<String> files,
     required Map<String, dynamic> modules,
@@ -330,10 +337,13 @@ class FlcData {
           if (fileIndex == null ||
               line == null ||
               fileIndex < 0 ||
-              fileIndex >= files.length) {
+              fileIndex >= files.length ||
+              line <= 0) {
             continue;
           }
-          final column = parts.length > 2 ? (int.tryParse(parts[2]) ?? 1) : 1;
+          final parsedColumn = parts.length > 2 ? int.tryParse(parts[2]) : null;
+          final column =
+              parsedColumn == null || parsedColumn <= 0 ? 1 : parsedColumn;
           frames.add(
             FlcFrame(file: files[fileIndex], line: line, column: column),
           );
@@ -414,7 +424,12 @@ class FlcData {
           final colStr =
               segments.length >= 2 ? segments[segments.length - 1] : null;
           final line = int.tryParse(lineStr) ?? 1;
-          final column = colStr != null ? (int.tryParse(colStr) ?? 1) : 1;
+          if (line <= 0) {
+            continue;
+          }
+          final parsedColumn = colStr != null ? int.tryParse(colStr) : null;
+          final column =
+              parsedColumn == null || parsedColumn <= 0 ? 1 : parsedColumn;
           outputPositions.add(
             _OutputPos(type: type, line: line, column: column),
           );

@@ -495,6 +495,28 @@ void main() {
       expect(frames[0].line, 10);
     });
 
+    test('rejects non-positive lines and normalizes non-positive columns', () {
+      final json = {
+        'version': 5,
+        'files': ['lib/x.dart'],
+        'modules': {
+          'M': {
+            'tree': [
+              ['0:0:5', 'invalidLine'],
+              ['0:10:0', 'zeroColumn'],
+              ['0:20:-3', 'negativeColumn'],
+            ],
+          },
+        },
+      };
+
+      final flc = FlcData.fromJson(json);
+
+      expect(flc.lookupSignal('M', 'invalidLine'), isNull);
+      expect(flc.lookupSignal('M', 'zeroColumn')![0].column, 1);
+      expect(flc.lookupSignal('M', 'negativeColumn')![0].column, 1);
+    });
+
     test('shared trie prefix produces correct frames', () {
       final json = {
         'version': 5,
