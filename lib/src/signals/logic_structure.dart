@@ -168,63 +168,6 @@ class LogicStructure implements Logic {
   late final List<Logic> leafElements =
       UnmodifiableListView(_calculateLeafElements());
 
-  /// Promotes direct non-array child structures into a new generic structure.
-  ///
-  /// Each promoted element is cloned and connected to its source. When
-  /// [prefixFieldNames] is `true`, promoted fields are named
-  /// `${child.name}_${field.name}`. This preserves the immediate structure
-  /// path and avoids common field-name collisions. The method throws a
-  /// [LogicConstructionException] when the resulting field names collide.
-  LogicStructure flattenOuter({String? name, bool prefixFieldNames = true}) {
-    final sources = <(Logic, String)>[];
-    for (final element in elements) {
-      if (element is LogicStructure && element is! BaseLogicArray) {
-        for (final field in element.elements) {
-          final prefix =
-              element.name.endsWith('_') ? element.name : '${element.name}_';
-          final fieldName =
-              prefixFieldNames ? '$prefix${field.name}' : field.name;
-          sources.add((field, fieldName));
-        }
-      } else {
-        sources.add((element, element.name));
-      }
-    }
-
-    final names = <String>{};
-    for (final source in sources) {
-      if (!names.add(source.$2)) {
-        throw LogicConstructionException(
-            'Flattened structure contains duplicate field name ${source.$2}.');
-      }
-    }
-
-    final flattenedElements = sources.map((source) {
-      final flattened = _cloneDriveable(source.$1, name: source.$2);
-      return flattened..gets(source.$1);
-    }).toList(growable: false);
-    return LogicStructure(flattenedElements, name: name ?? this.name);
-  }
-
-  /// Clones a promoted field without leaving any constant leaves to drive.
-  Logic _cloneDriveable(Logic source, {required String name}) {
-    if (source is Const) {
-      return Logic(width: source.width, name: name);
-    }
-    if (source is LogicStructure && source.hasConsts) {
-      if (source is BaseLogicArray) {
-        throw LogicConstructionException(
-            'Cannot promote an array containing constant elements.');
-      }
-      return LogicStructure(
-        source.elements
-            .map((element) => _cloneDriveable(element, name: element.name)),
-        name: name,
-      );
-    }
-    return source.clone(name: name);
-  }
-
   /// Compute the list of all leaf elements, to be cached in [leafElements].
   List<Logic> _calculateLeafElements() {
     final leaves = <Logic>[];
