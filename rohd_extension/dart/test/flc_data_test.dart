@@ -2,8 +2,11 @@
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // flc_data_test.dart
-// Unit tests for FlcData model: v5 trie-based FLC JSON parsing and
-// signal lookup.
+// Unit tests for FlcData model: trie-based FLC and embedded netlist trace
+// parsing, plus signal lookup.
+//
+// 2026 July
+// Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 import 'package:rohd_source_navigator/flc_data.dart';
 import 'package:test/test.dart';
@@ -279,6 +282,129 @@ void main() {
     });
   });
 
+  group('FlcData.fromNetlistJson (embedded traces)', () {
+    test('parses signal and instance maps with ordered frames', () {
+      final flc = FlcData.fromNetlistJson({
+        'files': ['lib/src/top.dart', 'lib/src/child.dart'],
+        'modules': {
+          'Top': {
+            'attributes': {
+              'rohd.src_trace': {
+                'signals': {
+                  'sum': ['1:20:4', '0:10'],
+                },
+                'instances': {
+                  'child': ['0:30'],
+                },
+              },
+            },
+          },
+        },
+      });
+
+      expect(flc.isEmpty, isFalse);
+      expect(flc.files, ['lib/src/top.dart', 'lib/src/child.dart']);
+      expect(flc.moduleNames, {'Top'});
+      expect(flc.signalNamesFor('Top'), {'sum'});
+      expect(flc.instanceNamesFor('Top'), {'child'});
+
+      final signalFrames = flc.lookupSignal('Top', 'sum');
+      expect(signalFrames, isNotNull);
+      expect(
+        signalFrames!.map((frame) => frame.toString()),
+        [
+          'lib/src/child.dart:20:4 [rohd]',
+          'lib/src/top.dart:10:1 [rohd]',
+        ],
+      );
+
+      final instanceFrames = flc.lookupInstance('Top', 'child');
+      expect(instanceFrames, isNotNull);
+      expect(instanceFrames!.single.toString(), 'lib/src/top.dart:30:1 [rohd]');
+    });
+
+    test('skips invalid frame indexes without discarding valid trace data', () {
+      final flc = FlcData.fromNetlistJson({
+        'files': ['lib/src/top.dart'],
+        'modules': {
+          'Top': {
+            'attributes': {
+              'rohd.src_trace': {
+                'signals': {
+                  'valid': ['5:10:2', '-1:11:3', '0:12:not-a-column'],
+                  'invalid': ['1:20:1', 'not-a-frame', 3],
+                },
+                'instances': {
+                  'child': ['0:30:7', '2:31:1'],
+                },
+              },
+            },
+          },
+        },
+      });
+
+      expect(flc.isEmpty, isFalse);
+      expect(flc.lookupSignal('Top', 'invalid'), isNull);
+      expect(
+        flc.lookupSignal('Top', 'valid')!.map((frame) => frame.toString()),
+        ['lib/src/top.dart:12:1 [rohd]'],
+      );
+      expect(
+        flc.lookupInstance('Top', 'child')!.map((frame) => frame.toString()),
+        ['lib/src/top.dart:30:7 [rohd]'],
+      );
+    });
+
+    test('rejects a malformed file table without shifting frame indexes', () {
+      final flc = FlcData.fromNetlistJson({
+        'files': ['lib/src/a.dart', null, 'lib/src/b.dart'],
+        'modules': {
+          'Top': {
+            'attributes': {
+              'rohd.src_trace': {
+                'signals': {
+                  'indexedByOriginalTable': ['2:10:1'],
+                },
+              },
+            },
+          },
+        },
+      });
+
+      expect(flc.isEmpty, isTrue);
+      expect(flc.files, isEmpty);
+      expect(flc.lookupSignal('Top', 'indexedByOriginalTable'), isNull);
+    });
+
+    test('returns empty data for absent or malformed trace attributes', () {
+      final absentAttributes = FlcData.fromNetlistJson({
+        'files': ['lib/src/top.dart'],
+        'modules': {
+          'Top': <String, dynamic>{},
+        },
+      });
+      final malformedAttributes = FlcData.fromNetlistJson({
+        'files': ['lib/src/top.dart'],
+        'modules': {
+          'Top': {
+            'attributes': {
+              'rohd.src_trace': {
+                'signals': 'not-a-map',
+                'instances': {'child': 'not-a-frame-list'},
+              },
+            },
+          },
+          'NotAModule': 'not-a-module-map',
+        },
+      });
+
+      expect(absentAttributes.isEmpty, isTrue);
+      expect(malformedAttributes.isEmpty, isTrue);
+      expect(malformedAttributes.lookupSignal('Top', 'sum'), isNull);
+      expect(malformedAttributes.lookupInstance('Top', 'child'), isNull);
+    });
+  });
+
   group('FlcData.empty', () {
     test('creates empty instance', () {
       final flc = FlcData.empty();
@@ -367,6 +493,28 @@ void main() {
       // 'bad' frame is skipped since file index parse fails.
       expect(frames!.length, 1);
       expect(frames[0].line, 10);
+    });
+
+    test('rejects non-positive lines and normalizes non-positive columns', () {
+      final json = {
+        'version': 5,
+        'files': ['lib/x.dart'],
+        'modules': {
+          'M': {
+            'tree': [
+              ['0:0:5', 'invalidLine'],
+              ['0:10:0', 'zeroColumn'],
+              ['0:20:-3', 'negativeColumn'],
+            ],
+          },
+        },
+      };
+
+      final flc = FlcData.fromJson(json);
+
+      expect(flc.lookupSignal('M', 'invalidLine'), isNull);
+      expect(flc.lookupSignal('M', 'zeroColumn')![0].column, 1);
+      expect(flc.lookupSignal('M', 'negativeColumn')![0].column, 1);
     });
 
     test('shared trie prefix produces correct frames', () {

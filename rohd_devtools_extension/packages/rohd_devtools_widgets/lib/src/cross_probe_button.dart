@@ -7,8 +7,9 @@
 // 2026 June
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
-import 'package:flutter/material.dart';
-import 'cross_probe_service.dart';
+import 'package:flutter/foundation.dart';
+import 'package:material_ui/material_ui.dart';
+import 'package:rohd_devtools_widgets/src/cross_probe_service.dart';
 
 /// A toolbar icon button for cross-probing signal selections between viewers.
 ///
@@ -26,23 +27,27 @@ class CrossProbeButton extends StatelessWidget {
   const CrossProbeButton({required this.service, super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return ValueListenableBuilder<bool>(
-      valueListenable: service.isActive,
-      builder: (context, active, _) {
-        final color = active
-            ? Theme.of(context).colorScheme.primary
-            : Theme.of(context).disabledColor;
-        return Tooltip(
-          message: active
-              ? 'Cross-probing active — tap to disable'
-              : 'Cross-probing disabled — tap to enable',
-          child: IconButton(
-            icon: Icon(Icons.compare_arrows, color: color),
-            onPressed: () => service.isActive.value = !service.isActive.value,
-          ),
-        );
-      },
-    );
+  Widget build(BuildContext context) => ValueListenableBuilder<bool>(
+        valueListenable: service.isActive,
+        builder: (context, active, _) {
+          final color = active
+              ? Theme.of(context).colorScheme.primary
+              : Theme.of(context).disabledColor;
+          return Tooltip(
+            message: active
+                ? 'Cross-probing active — tap to disable'
+                : 'Cross-probing disabled — tap to enable',
+            child: IconButton(
+              icon: Icon(Icons.compare_arrows, color: color),
+              onPressed: () => service.isActive.value = !service.isActive.value,
+            ),
+          );
+        },
+      );
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty<CrossProbeService>('service', service));
   }
 }

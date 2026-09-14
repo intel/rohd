@@ -19,6 +19,7 @@ dependencies:
   flutter_bloc: ^9.0.0
   flutter_simple_treeview: ^3.0.2
   logging: ^1.2.0
+  material_ui: ^1.1.0
   rohd_devtools_widgets:
     path: packages/rohd_devtools_widgets
   vm_service: ^14.3.1

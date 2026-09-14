@@ -7,20 +7,19 @@
 // 2026 July
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:rohd_devtools_widgets/rohd_devtools_widgets.dart';
 
 void main() {
-  testWidgets('renders camera icon, tooltip, and invokes callback',
-      (tester) async {
+  testWidgets('renders camera icon, tooltip, and invokes callback', (
+    tester,
+  ) async {
     var taps = 0;
 
     await tester.pumpWidget(
       MaterialApp(
-        theme: ThemeData(
-          splashFactory: NoSplash.splashFactory,
-        ),
+        theme: ThemeData(splashFactory: NoSplash.splashFactory),
         home: Scaffold(
           body: Center(
             child: ExportPngButton(
@@ -33,8 +32,10 @@ void main() {
     );
 
     expect(find.byIcon(Icons.camera_alt_outlined), findsOneWidget);
-    expect(tester.widget<Tooltip>(find.byType(Tooltip)).message,
-        'Save waveform PNG');
+    expect(
+      tester.widget<Tooltip>(find.byType(Tooltip)).message,
+      'Save waveform PNG',
+    );
 
     await tester.tap(find.byType(ExportPngButton));
     await tester.pump();

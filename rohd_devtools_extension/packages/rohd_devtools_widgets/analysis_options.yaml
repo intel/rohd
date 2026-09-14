@@ -7,4 +7,4 @@ analyzer:
     - windows/**
     - macos/**
     - linux/**
-include: package:lints/recommended.yaml
+include: ../../analysis_options.yaml

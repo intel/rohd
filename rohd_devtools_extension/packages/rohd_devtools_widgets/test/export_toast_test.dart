@@ -7,13 +7,14 @@
 // 2026 July
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:rohd_devtools_widgets/rohd_devtools_widgets.dart';
 
 void main() {
-  testWidgets('showExportToast inserts and removes an overlay entry',
-      (tester) async {
+  testWidgets('showExportToast inserts and removes an overlay entry', (
+    tester,
+  ) async {
     late BuildContext toastContext;
     await tester.pumpWidget(
       MaterialApp(

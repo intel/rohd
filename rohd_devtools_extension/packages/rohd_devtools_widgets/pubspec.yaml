@@ -3,10 +3,11 @@ description: "Shared widgets for ROHD DevTools sub-packages: help button, PNG ex
 version: 0.1.0
 publish_to: none
 environment:
-  sdk: '>=3.4.0 <4.0.0'
-  flutter: '>=3.0.0'
+  sdk: '>=3.6.0 <4.0.0'
+  flutter: '>=3.44.0'
 dependencies:
   flutter: {sdk: flutter}
+  material_ui: ^1.1.0
   rohd: ^0.6.9
   rohd_hierarchy:
     path: ../../../packages/rohd_hierarchy
@@ -18,3 +19,7 @@ dev_dependencies:
 dependency_overrides:
   rohd:
     path: ../../..
+
+flutter:
+  assets:
+    - assets/extension/

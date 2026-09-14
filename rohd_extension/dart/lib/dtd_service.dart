@@ -23,8 +23,10 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 ///
 /// The TS shell provides this callback to bridge DTD requests into
 /// VS Code command execution.
-typedef GoToSourceCallback = Future<void> Function(List<SourceFrame> frames,
-    {int startIndex});
+typedef GoToSourceCallback = Future<void> Function(
+  List<SourceFrame> frames, {
+  int startIndex,
+});
 
 /// Manages the DTD connection and service registration for source
 /// navigation.
@@ -44,7 +46,9 @@ class DtdService {
   ///
   /// Returns `true` if connection and registration succeeded.
   Future<bool> connect(String uri) async {
-    if (_disposed) return false;
+    if (_disposed) {
+      return false;
+    }
 
     try {
       _channel = WebSocketChannel.connect(Uri.parse(uri));
@@ -66,6 +70,7 @@ class DtdService {
     } on Exception catch (e) {
       _peer = null;
       _channel = null;
+      // DTD connections can run without a host-provided logger.
       // ignore: avoid_print
       print('[DtdService] Failed to connect to DTD at $uri: $e');
       return false;
