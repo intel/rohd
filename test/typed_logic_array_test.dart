@@ -1257,13 +1257,8 @@ void main() {
       ];
       final output = [242, 423, 40, 479, 150, 333];
       final inputValue = LogicValue.ofIterable(input);
-      final outputValue = LogicValue.ofInt(
-        output.indexed.fold(
-          0,
-          (packed, entry) => packed | (entry.$2 << (entry.$1 * 9)),
-        ),
-        54,
-      );
+      final outputValue = LogicValue.ofIterable(
+          output.map((value) => LogicValue.ofInt(value, 9)));
       final vectors = [
         Vector({'valuesIn': inputValue}, {'valuesOut': outputValue}),
       ];
