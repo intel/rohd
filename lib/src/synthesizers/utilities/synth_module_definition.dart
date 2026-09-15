@@ -28,6 +28,9 @@ class _BusSubsetForStructSlice extends BusSubset {
   /// signal and therefore does not drift run-to-run.
   final Logic _destination;
 
+  /// Whether the mapped input already represents the requested range.
+  final bool _inputIsSelected;
+
   /// Creates a [BusSubset] for use in [SynthModuleDefinition]s during
   /// [LogicStructure] port slicing.
   _BusSubsetForStructSlice(
@@ -35,7 +38,9 @@ class _BusSubsetForStructSlice extends BusSubset {
     super.startIndex,
     super.endIndex, {
     required Logic destination,
+    bool inputIsSelected = false,
   })  : _destination = destination,
+        _inputIsSelected = inputIsSelected,
         super(name: 'struct_slice');
 
   // we override this since it's added post-build
@@ -44,6 +49,10 @@ class _BusSubsetForStructSlice extends BusSubset {
 
   @override
   Object get instanceNameKey => _destination;
+
+  @override
+  String inlineVerilog(Map<String, String> inputs) =>
+      _inputIsSelected ? inputs.values.single : super.inlineVerilog(inputs);
 }
 
 /// A packed range of a base [SynthLogic], inclusive of [lower] and [upper].
@@ -348,7 +357,7 @@ class SynthModuleDefinition {
         signal is SynthLogicArrayStructureElement) {
       signal = switch (signal) {
         SynthLogicArrayElement() => signal.parentArray.resolved,
-        SynthLogicArrayStructureElement() => signal.rootArray.resolved,
+        SynthLogicArrayStructureElement() => signal.parentArray.resolved,
         _ => throw StateError('Unexpected synthesized array signal'),
       };
       signalAndAncestors.add(signal);
@@ -449,6 +458,8 @@ class SynthModuleDefinition {
 
       if (output is LogicStructure && output is! BaseLogicArray) {
         _partialAssignStructPort(output);
+      } else if (output is BaseLogicArray) {
+        _connectNestedArrayFields(output);
       }
     }
 
@@ -459,6 +470,8 @@ class SynthModuleDefinition {
 
       if (input is LogicStructure && input is! BaseLogicArray) {
         _subsetReceiveStructPort(input);
+      } else if (input is BaseLogicArray) {
+        _connectNestedArrayFields(input, receive: true);
       }
     }
 
@@ -470,6 +483,8 @@ class SynthModuleDefinition {
         // for nets, we can just use the normal bus subset here in either
         // direction!
         _subsetReceiveStructPort(inOut);
+      } else if (inOut is BaseLogicArray) {
+        _connectNestedArrayFields(inOut, receive: true);
       }
     }
 
@@ -493,16 +508,24 @@ class SynthModuleDefinition {
           .whereType<LogicStructure>()
           .where((e) => e is! BaseLogicArray)
           .forEach(_partialAssignStructPort);
-
+      subModule.inputs.values
+          .whereType<BaseLogicArray>()
+          .forEach(_connectNestedArrayFields);
       subModule.outputs.values
           .whereType<LogicStructure>()
           .where((e) => e is! BaseLogicArray)
           .forEach(_subsetReceiveStructPort);
+      subModule.outputs.values
+          .whereType<BaseLogicArray>()
+          .forEach((array) => _connectNestedArrayFields(array, receive: true));
 
       subModule.inOuts.values
           .whereType<LogicStructure>()
           .where((e) => e is! BaseLogicArray)
           .forEach(_subsetReceiveStructPort);
+      subModule.inOuts.values
+          .whereType<BaseLogicArray>()
+          .forEach((array) => _connectNestedArrayFields(array, receive: true));
     }
 
     // search for other modules contained within this module
@@ -1172,6 +1195,97 @@ class SynthModuleDefinition {
         }
       }
     }
+  }
+
+  /// Connects array-valued fields nested below an array port to the packed
+  /// array-element representation used at the module boundary.
+  ///
+  /// Nested arrays are retained as separate internal signals, while their
+  /// scalar fields occupy the containing structure's packed bits. These
+  /// connections preserve that existing representation without changing names
+  /// or declarations.
+  void _connectNestedArrayFields(
+    BaseLogicArray port, {
+    bool receive = false,
+  }) {
+    void visit(Logic current, SynthLogic packedParent) {
+      if (current is BaseLogicArray) {
+        for (final element in current.elements) {
+          visit(element, getSynthLogic(element)!);
+        }
+        return;
+      }
+
+      if (current is! LogicStructure) {
+        return;
+      }
+
+      var index = 0;
+      for (final leafElement in current.leafElements) {
+        var ancestor = leafElement.parentStructure;
+        var isNestedArrayField = false;
+        while (ancestor != null && ancestor != current) {
+          if (ancestor is BaseLogicArray) {
+            isNestedArrayField = true;
+            break;
+          }
+          ancestor = ancestor.parentStructure;
+        }
+
+        if (isNestedArrayField) {
+          final leafSynth = getSynthLogic(leafElement)!;
+          if (!port.isNet) {
+            _retainInternalSignal(leafSynth);
+          }
+          if (receive) {
+            final packedReference = leafElement.width == 1
+                ? SynthLogicPackedBitReference(
+                    packedParent,
+                    index,
+                    parentSynthModuleDefinition: this,
+                  )
+                : SynthLogicPackedRangeReference(
+                    packedParent,
+                    index,
+                    index + leafElement.width - 1,
+                    parentSynthModuleDefinition: this,
+                  );
+            if (port.isNet) {
+              assignments.add(SynthAssignment(leafSynth, packedReference));
+            } else {
+              final subsetMod = _BusSubsetForStructSlice(
+                Logic(
+                  width: leafElement.width,
+                  name: 'DUMMY',
+                ),
+                0,
+                leafElement.width - 1,
+                destination: leafElement,
+                inputIsSelected: true,
+              );
+              getSynthSubModuleInstantiation(subsetMod)
+                ..setOutputMapping(subsetMod.subset.name, leafSynth)
+                ..setInputMapping(
+                  subsetMod.original.name,
+                  packedReference,
+                );
+            }
+          } else {
+            assignments.add(
+              PartialSynthAssignment(
+                leafSynth,
+                packedParent,
+                dstUpperIndex: index + leafElement.width - 1,
+                dstLowerIndex: index,
+              ),
+            );
+          }
+        }
+        index += leafElement.width;
+      }
+    }
+
+    visit(port, getSynthLogic(port)!);
   }
 
   /// Updates all sub-module instantiations with information about which
@@ -3429,6 +3543,7 @@ class SynthModuleDefinition {
   SynthLogic _referenceBase(SynthLogic signal) => switch (signal) {
         SynthLogicArrayElement() => signal.parentArray.resolved,
         SynthLogicPackedBitReference() => signal.packedBase.resolved,
+        SynthLogicPackedRangeReference() => signal.packedBase.resolved,
         _ => signal.resolved,
       };
 

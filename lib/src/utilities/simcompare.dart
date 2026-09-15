@@ -88,7 +88,7 @@ class Vector {
         final value =
             LogicValue.of(inputValues[signalName], width: signal.width);
         return '${packedInputDrivers[signalName]} = $value;';
-      } else if (signal is LogicArray) {
+      } else if (signal is BaseLogicArray) {
         final arrAssigns = StringBuffer();
         var index = 0;
         final fullVal =
@@ -468,9 +468,12 @@ abstract class SimCompare {
         {String Function(String original)? adjust,
         String? signalTypeOverride}) {
       final signal = module.signals.firstWhere((e) => e.name == signalName);
+      final isOutput = module.tryOutput(signalName) != null;
 
       final signalType = signalTypeOverride ??
-          ((signal is LogicNet || (signal is BaseLogicArray && signal.isNet))
+          ((isOutput ||
+                  signal is LogicNet ||
+                  (signal is BaseLogicArray && signal.isNet))
               ? 'wire'
               : 'logic');
 
@@ -520,7 +523,7 @@ abstract class SimCompare {
     if (usePackedInputDrivers) {
       for (final signalName in allSignals) {
         final signal = module.tryInput(signalName);
-        if (signal is! LogicArray || signal.numUnpackedDimensions == 0) {
+        if (signal is! BaseLogicArray) {
           continue;
         }
         final driver =
@@ -528,10 +531,10 @@ abstract class SimCompare {
         packedInputDrivers[signalName] = driver;
         packedInputDeclarations.add('logic [${signal.width - 1}:0] $driver;');
         var offset = 0;
-        for (final leaf in signal.leafElements) {
-          packedInputDeclarations.add('assign ${leaf.structureName} = '
-              '$driver[${offset + leaf.width - 1}:$offset];');
-          offset += leaf.width;
+        for (final element in signal.arrayElements) {
+          packedInputDeclarations.add('assign ${element.structureName} = '
+              '$driver[${offset + element.width - 1}:$offset];');
+          offset += element.width;
         }
       }
     }

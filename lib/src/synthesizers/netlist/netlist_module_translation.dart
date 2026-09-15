@@ -81,6 +81,13 @@ class NetlistModuleTranslation {
   /// Allocates or returns the wire identifiers for [synthLogic].
   List<int> getIds(SynthLogic synthLogic) {
     final resolved = synthLogic.isConstant ? synthLogic : synthLogic.resolved;
+    if (resolved is SynthLogicPackedBitReference) {
+      return [getIds(resolved.packedBase)[resolved.bitIndex]];
+    }
+    if (resolved is SynthLogicPackedRangeReference) {
+      return getIds(resolved.packedBase)
+          .sublist(resolved.lowerIndex, resolved.upperIndex + 1);
+    }
     return _synthLogicIds.putIfAbsent(
       resolved,
       () => List<int>.generate(resolved.width, (_) => allocateWireId()),

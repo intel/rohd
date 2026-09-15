@@ -28,6 +28,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
 
   @override
   void process() {
+    _expandNestedUnpackedArrayAssignments();
     _inlinePackedRangesIntoSubmoduleInputs();
     _collapseAggregateConnections();
     _collapseWholeNetBuses();
@@ -36,6 +37,64 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
     _collapseMarkedChainableModules();
     _replaceInOutConnectionInlineableModules();
   }
+
+  /// Expands whole assignments involving nested payloads across unpacked
+  /// dimensions into assignments of their packed children.
+  ///
+  /// Some simulators do not support whole unpacked-array assignments. Existing
+  /// ordinary array output is left unchanged; this lowering only applies when
+  /// the configured array element itself contains another array.
+  void _expandNestedUnpackedArrayAssignments() {
+    final expanded = <SynthAssignment>[];
+
+    void addAssignment(
+      SynthLogic source,
+      SynthLogic destination, {
+      bool expandArray = false,
+    }) {
+      final sourceArray = source.logics.firstOrNull;
+      final destinationArray = destination.logics.firstOrNull;
+      final startsNestedUnpackedExpansion = sourceArray is BaseLogicArray &&
+          destinationArray is BaseLogicArray &&
+          (sourceArray.numUnpackedDimensions > 0 ||
+              destinationArray.numUnpackedDimensions > 0) &&
+          (_hasNestedArrayPayload(sourceArray) ||
+              _hasNestedArrayPayload(destinationArray));
+      if (sourceArray is BaseLogicArray &&
+          destinationArray is BaseLogicArray &&
+          (expandArray || startsNestedUnpackedExpansion) &&
+          sourceArray.elements.length == destinationArray.elements.length) {
+        for (var index = 0; index < sourceArray.elements.length; index++) {
+          addAssignment(
+            getSynthLogic(sourceArray.elements[index])!.resolved,
+            getSynthLogic(destinationArray.elements[index])!.resolved,
+            expandArray: true,
+          );
+        }
+      } else {
+        expanded.add(SynthAssignment(source, destination));
+      }
+    }
+
+    for (final assignment in assignments) {
+      if (assignment is PartialSynthAssignment) {
+        expanded.add(assignment);
+      } else {
+        addAssignment(assignment.src, assignment.dst);
+      }
+    }
+
+    assignments
+      ..clear()
+      ..addAll(expanded);
+  }
+
+  static bool _hasNestedArrayPayload(BaseLogicArray array) =>
+      array.arrayElements.any(_containsArray);
+
+  static bool _containsArray(Logic logic) =>
+      logic is BaseLogicArray ||
+      (logic is LogicStructure && logic.elements.any(_containsArray));
 
   /// Inlines a fully covered packed bus into its sole submodule input.
   ///
@@ -1526,8 +1585,12 @@ class _NetConnect extends Module with SystemVerilog {
   @override
   String? definitionVerilog(String definitionType) => '''
 // A special module for connecting two nets bidirectionally
-module $definitionType #(parameter int WIDTH=1) (w, w);
-inout wire[WIDTH-1:0] w;
+module $definitionType #(parameter int WIDTH=1) ($n0Name, $n1Name);
+inout wire[WIDTH-1:0] $n0Name;
+inout wire[WIDTH-1:0] $n1Name;
+for (genvar i = 0; i < WIDTH; i++) begin
+  tran ($n0Name[i], $n1Name[i]);
+end
 endmodule''';
 }
 

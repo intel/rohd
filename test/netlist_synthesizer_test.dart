@@ -2234,6 +2234,43 @@ void main() {
       );
     });
 
+    test('struct net aggregates allow distinct tri-state field drivers', () {
+      final cells = <String, Map<String, Object?>>{
+        for (var index = 0; index < 2; index++)
+          'driver_$index': {
+            'type': r'$tribuf',
+            'port_directions': {'A': 'input', 'EN': 'input', 'Y': 'output'},
+            'connections': {
+              'A': [100 + index],
+              'EN': [200 + index],
+              'Y': [300 + index],
+            },
+          },
+      };
+      final netnames = <String, Object?>{
+        'values': {
+          'bits': [300, 301],
+          'logic_type': {
+            'typeName': 'NetPair',
+            'fields': [
+              {'name': 'first', 'width': 1},
+              {'name': 'second', 'width': 1},
+            ],
+          },
+        },
+      };
+
+      expect(
+        () => NetlistValidation.validate(
+          const {},
+          cells,
+          'structured_net_module',
+          netnames: netnames,
+        ),
+        returnsNormally,
+      );
+    });
+
     test('optimized netlist removes concat aliases of named vectors', () async {
       final json = await _synthToMap(
         NestedInternalArrayToChildModule(),
