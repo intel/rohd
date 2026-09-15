@@ -1,0 +1,468 @@
+// Copyright (C) 2026 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// typed_logic_array.dart
+// Definition of typed logic arrays.
+//
+// 2026 July 21
+// Author: Desmond A. Kirkpatrick <desmond.a.kirkpatrick@intel.com>
+
+part of 'signals.dart';
+
+/// Builds one leaf element of a [TypedLogicArray].
+typedef TypedLogicArrayElementBuilder<T extends Logic> = T Function(
+    {String? name});
+
+/// Checks whether two typed hardware elements use compatible value formats.
+typedef TypedLogicArrayElementCompatibility<T extends Logic> = bool Function(
+    T prototype, T element);
+
+/// Selects the canonical packed-value codec when [V] is [LogicValue].
+/// Resolves the supplied codec or the canonical identity codec for
+/// [LogicValue] semantic values.
+LogicValueCodec<V> _resolveTypedLogicValueCodec<V>(
+    LogicValueCodec<V>? valueCodec) {
+  if (valueCodec != null) {
+    return valueCodec;
+  }
+  if (V == LogicValue) {
+    return LogicValueCodec.logicValue as LogicValueCodec<V>;
+  }
+  throw ArgumentError.notNull('valueCodec');
+}
+
+/// A multidimensional logic array with hardware leaves of type [T] and
+/// semantic values of type [V].
+///
+/// This is a [LogicStructure] because an array owns a hierarchy of child
+/// signals, just like [LogicArray]. It is therefore indirectly a [Logic]
+/// through the structure's packed representation, rather than a scalar
+/// [Logic] whose wire is subdivided into array elements.
+///
+/// [LogicArray] directly extends [TypedLogicArray]<[Logic], [LogicValue]> as
+/// the ordinary-[Logic] specialization, inheriting its typed-array API.
+/// [TypedLogicArray] extends the internal [BaseLogicArray], where the shared
+/// array metadata and traversal live, while [T] preserves the type at the
+/// declared array boundary.
+///
+/// [elements] contains the immediate children of the outermost dimension.
+/// [arrayElements] traverses the number of array levels declared by
+/// [dimensions] and then stops, returning one [T] for each declared array
+/// position. It does not recurse into a [LogicStructure] or nested array stored
+/// as a [T].
+///
+/// For example, a `[2, 3]` array of two-field `Sample` structures has six
+/// [arrayElements] and twelve recursive [LogicStructure.leafElements]. A `[2]`
+/// array whose [T] is a three-element [LogicArray] has two [arrayElements] and
+/// six recursive leaves. An eight-bit [Logic] is one leaf, not eight leaves.
+///
+/// [value] and [previousValue] preserve [V] through [TypedLogicValueArray]
+/// snapshots. Standard [Logic.changed] events remain packed
+/// [LogicValueChanged] events.
+///
+/// The optional `dimensionNames` constructor argument is construction metadata
+/// used when naming typed-array hierarchy members and when cloning. It is not
+/// exposed as a public axis-metadata property; ordinary [LogicArray] naming
+/// continues to follow its existing generated-name convention.
+class TypedLogicArray<T extends Logic, V> extends BaseLogicArray {
+  /// Construction prefixes retained for typed-array cloning.
+  final List<String> _dimensionNames;
+
+  /// Recreates one [T] for cloning and shape transformations.
+  final TypedLogicArrayElementBuilder<T> _elementBuilder;
+
+  /// Converts each element's packed bits to and from its semantic value type.
+  final LogicValueCodec<V> valueCodec;
+
+  /// Additional representation compatibility required between all elements.
+  // Safe because it is invoked only on elements produced by [_elementBuilder].
+  // ignore: unsafe_variance
+  final TypedLogicArrayElementCompatibility<T>? _elementCompatibility;
+
+  /// Unmodifiable typed view of the configured array-element boundary.
+  late final List<T> _typedArrayElements =
+      List<T>.unmodifiable(super.arrayElements.cast<T>());
+
+  @override
+  List<T> get arrayElements => _typedArrayElements;
+
+  /// Creates an array with [dimensions] and typed leaves from [elementBuilder].
+  ///
+  /// [valueCodec] may be omitted only when [V] is [LogicValue], in which case
+  /// the canonical identity codec is used.
+  ///
+  /// [numUnpackedDimensions] controls how many outer dimensions are emitted as
+  /// unpacked dimensions by synthesis.
+  TypedLogicArray(
+    List<int> dimensions,
+    TypedLogicArrayElementBuilder<T> elementBuilder, {
+    LogicValueCodec<V>? valueCodec,
+    TypedLogicArrayElementCompatibility<T>? elementCompatibility,
+    List<String>? dimensionNames,
+    String? name,
+    Naming? naming,
+    int numUnpackedDimensions = 0,
+  }) : this._(
+            _TypedLogicArrayBuild<T, V>.build(dimensions, elementBuilder,
+                _resolveTypedLogicValueCodec(valueCodec), elementCompatibility,
+                dimensionNames: dimensionNames,
+                numUnpackedDimensions: numUnpackedDimensions),
+            elementBuilder,
+            _resolveTypedLogicValueCodec(valueCodec),
+            elementCompatibility,
+            name: name,
+            naming: naming,
+            numUnpackedDimensions: numUnpackedDimensions);
+
+  /// Initializes an array from validated construction data.
+  ///
+  /// This constructor is used for recursively building nested arrays and
+  /// assumes [build] has already validated the hierarchy.
+  TypedLogicArray._(
+    _TypedLogicArrayBuild<T, V> build,
+    this._elementBuilder,
+    this.valueCodec,
+    this._elementCompatibility, {
+    required super.numUnpackedDimensions,
+    super.name,
+    super.naming,
+  })  : _dimensionNames = build.dimensionNames,
+        super.structured(build.elements,
+            dimensions: build.dimensions,
+            elementWidth: build.elementWidth,
+            isNet: build.isNet);
+
+  /// Creates an array from trusted, prebuilt [elements].
+  ///
+  /// This library-private constructor is used by [LogicArray] after its
+  /// factory has established the required representation metadata. It
+  /// intentionally bypasses the normal builder validation path.
+  TypedLogicArray._structured(
+    super.elements,
+    this._elementBuilder, {
+    required this.valueCodec,
+    required super.dimensions,
+    required super.elementWidth,
+    required super.numUnpackedDimensions,
+    required String name,
+    required Naming naming,
+    required super.isNet,
+    TypedLogicArrayElementCompatibility<T>? elementCompatibility,
+    List<String>? dimensionNames,
+  })  : _elementCompatibility = elementCompatibility,
+        _dimensionNames =
+            _normalizeLogicArrayDimensionNames(dimensions, dimensionNames),
+        super.structured(
+          name: name,
+          naming: naming,
+        );
+
+  /// Array elements paired with their row-major multidimensional indices.
+  Iterable<(List<int>, T)> get indexedElements => Iterable.generate(
+      arrayElements.length,
+      (index) => (_arrayIndices(dimensions, index), arrayElements[index]));
+
+  /// Returns the array element at multidimensional [indices].
+  T at(List<int> indices) {
+    if (indices.length != dimensions.length) {
+      throw RangeError.range(indices.length, dimensions.length,
+          dimensions.length, 'indices.length');
+    }
+
+    Logic current = this;
+    for (var dimension = 0; dimension < indices.length; dimension++) {
+      final index = indices[dimension];
+      final size = dimensions[dimension];
+      if (index < 0 || index >= size) {
+        throw RangeError.range(index, 0, size - 1, 'indices[$dimension]');
+      }
+      current = (current as LogicStructure).elements[index];
+    }
+    return current as T;
+  }
+
+  /// Immediate typed child arrays along the first dimension.
+  Iterable<TypedLogicArray<T, V>> get majorSlices {
+    if (dimensions.length < 2) {
+      throw StateError('majorSlices requires at least two dimensions.');
+    }
+    return elements.cast<TypedLogicArray<T, V>>();
+  }
+
+  @override
+  TypedLogicValueArray<V> get value => TypedLogicValueArray<V>.fromPacked(
+        dimensions,
+        elementWidth,
+        arrayElements.map((element) => element.value),
+        codec: valueCodec,
+      );
+
+  @override
+  TypedLogicValueArray<V>? get previousValue =>
+      arrayElements.any((element) => element.previousValue == null)
+          ? null
+          : TypedLogicValueArray<V>.fromPacked(
+              dimensions,
+              elementWidth,
+              arrayElements.map((element) => element.previousValue!),
+              codec: valueCodec,
+            );
+
+  /// Creates a clone while allowing subclasses to preserve their runtime type.
+  ///
+  /// The base implementation retains all construction state, including its
+  /// private dimension-name prefixes. A subclass that overrides this method
+  /// should retain any constructor-only arguments that affect reconstruction
+  /// in its own private fields and pass them to its constructor here. In
+  /// particular, a subclass exposing `dimensionNames` as a constructor
+  /// argument must retain a private copy because the base copy is intentionally
+  /// library-private. Public metadata such as [dimensions] and
+  /// [numUnpackedDimensions] can be read directly, while [elementWidth] and
+  /// [isNet] are re-derived by construction.
+  @protected
+  TypedLogicArray<T, V> createClone({
+    String? name,
+    Naming? naming,
+    int? numUnpackedDimensions,
+  }) =>
+      TypedLogicArray<T, V>(dimensions, _elementBuilder,
+          valueCodec: valueCodec,
+          elementCompatibility: _elementCompatibility,
+          dimensionNames: _dimensionNames,
+          name: name ?? this.name,
+          naming: naming,
+          numUnpackedDimensions:
+              numUnpackedDimensions ?? this.numUnpackedDimensions);
+
+  @override
+  TypedLogicArray<T, V> _clone({String? name, Naming? naming}) => createClone(
+        name: name,
+        naming: Naming.chooseCloneNaming(
+          originalName: this.name,
+          newName: name,
+          originalNaming: this.naming,
+          newNaming: naming,
+        ),
+        numUnpackedDimensions: numUnpackedDimensions,
+      );
+
+  @override
+  TypedLogicArray<T, V> clone({String? name}) => _clone(name: name);
+
+  @override
+  TypedLogicArray<T, V> named(String name, {Naming? naming}) => _clone(
+        name: name,
+        naming: Naming.chooseCloneNaming(
+          originalName: this.name,
+          newName: name,
+          originalNaming: this.naming,
+          newNaming: naming,
+        ),
+      )..gets(this);
+}
+
+/// Validated construction data prepared before initializing [TypedLogicArray].
+class _TypedLogicArrayBuild<T extends Logic, V> {
+  /// Validated array dimensions.
+  final List<int> dimensions;
+
+  /// Validated labels corresponding to [dimensions].
+  final List<String> dimensionNames;
+
+  /// Immediate children of the outermost dimension.
+  final List<Logic> elements;
+
+  /// Width shared by every typed array element.
+  final int elementWidth;
+
+  /// Whether every typed array element is a net.
+  final bool isNet;
+
+  /// Stores construction data after all validation is complete.
+  _TypedLogicArrayBuild._(this.dimensions, this.dimensionNames, this.elements,
+      this.elementWidth, this.isNet);
+
+  /// Builds and validates the complete typed-array hierarchy.
+  factory _TypedLogicArrayBuild.build(
+      List<int> dimensions,
+      TypedLogicArrayElementBuilder<T> elementBuilder,
+      LogicValueCodec<V> valueCodec,
+      TypedLogicArrayElementCompatibility<T>? elementCompatibility,
+      {List<String>? dimensionNames,
+      int numUnpackedDimensions = 0,
+      T? emptyPrototype,
+      bool validateValueCodec = true}) {
+    final normalizedDimensions = List<int>.unmodifiable(dimensions);
+    if (normalizedDimensions.isEmpty) {
+      throw LogicConstructionException(
+          'TypedLogicArray must have at least 1 dimension.');
+    }
+    if (normalizedDimensions.any((dimension) => dimension < 0)) {
+      throw LogicConstructionException(
+          'TypedLogicArray dimensions must be non-negative.');
+    }
+    if (numUnpackedDimensions < 0 ||
+        numUnpackedDimensions > normalizedDimensions.length) {
+      throw LogicConstructionException(
+          'numUnpackedDimensions must be between 0 and the number of '
+          'dimensions.');
+    }
+
+    final normalizedNames = _normalizeLogicArrayDimensionNames(
+        normalizedDimensions, dimensionNames);
+    emptyPrototype ??= _arrayLength(normalizedDimensions) == 0
+        ? elementBuilder(name: '${normalizedNames.last}prototype')
+        : null;
+
+    final elements = List<Logic>.generate(normalizedDimensions.first, (index) {
+      final elementName = '${normalizedNames.first}$index';
+      return normalizedDimensions.length == 1
+          ? elementBuilder(name: elementName)
+          : TypedLogicArray<T, V>._(
+              _TypedLogicArrayBuild<T, V>.build(
+                normalizedDimensions.sublist(1),
+                elementBuilder,
+                valueCodec,
+                elementCompatibility,
+                dimensionNames: normalizedNames.sublist(1),
+                numUnpackedDimensions: max(0, numUnpackedDimensions - 1),
+                emptyPrototype: emptyPrototype,
+                validateValueCodec: false,
+              ),
+              elementBuilder,
+              valueCodec,
+              elementCompatibility,
+              name: elementName,
+              numUnpackedDimensions: max(0, numUnpackedDimensions - 1),
+            );
+    }, growable: false);
+    final typedLeaves = normalizedDimensions.length == 1
+        ? elements.cast<T>().toList(growable: false)
+        : elements
+            .cast<TypedLogicArray<T, V>>()
+            .expand((element) => element.arrayElements)
+            .toList(growable: false);
+    if (typedLeaves.any(_containsUnassignableLeaf)) {
+      throw LogicConstructionException('TypedLogicArray leaves must be '
+          'driveable and cannot contain Consts.');
+    }
+    final prototype = typedLeaves.isEmpty ? emptyPrototype! : typedLeaves.first;
+    if (_containsUnassignableLeaf(prototype)) {
+      throw LogicConstructionException('TypedLogicArray leaves must be '
+          'driveable and cannot contain Consts.');
+    }
+    final prototypeNetComposition = _netComposition(prototype);
+    final elementsForNetValidation =
+        typedLeaves.isEmpty ? <Logic>[prototype] : typedLeaves;
+    if (elementsForNetValidation.any((element) {
+      final composition = _netComposition(element);
+      return composition.contains(true) && composition.contains(false);
+    })) {
+      throw LogicConstructionException(
+          'TypedLogicArray elements cannot mix net and non-net leaves.');
+    }
+    if (elementsForNetValidation.any((element) => !_sameNetComposition(
+        _netComposition(element), prototypeNetComposition))) {
+      throw LogicConstructionException(
+          'All TypedLogicArray elements must have matching net composition.');
+    }
+    if (elementCompatibility != null &&
+        elementsForNetValidation
+            .cast<T>()
+            .any((element) => !elementCompatibility(prototype, element))) {
+      throw LogicConstructionException(
+          'All TypedLogicArray elements must have compatible value formats.');
+    }
+    final elementWidth = _validateElementWidths(typedLeaves, prototype.width);
+    if (validateValueCodec) {
+      _validateValueCodec(prototype.value, elementWidth, valueCodec);
+    }
+    return _TypedLogicArrayBuild._(
+        normalizedDimensions,
+        normalizedNames,
+        elements,
+        elementWidth,
+        prototypeNetComposition.every((isNet) => isNet));
+  }
+
+  /// Whether [leaf] is or recursively contains an unassignable constant.
+  static bool _containsUnassignableLeaf(Logic leaf) =>
+      leaf is Const ||
+      (leaf is LogicStructure &&
+          leaf.leafElements.any((element) => element is Const));
+
+  /// Net kinds of [element]'s recursive leaves in packed order.
+  static List<bool> _netComposition(Logic element) {
+    if (element is! LogicStructure) {
+      return [element.isNet];
+    }
+    if (element.leafElements.isNotEmpty) {
+      return element.leafElements
+          .map((leaf) => leaf.isNet)
+          .toList(growable: false);
+    }
+    return [element is BaseLogicArray && element.isNet];
+  }
+
+  /// Whether two recursive net-kind signatures are identical.
+  static bool _sameNetComposition(List<bool> left, List<bool> right) =>
+      left.length == right.length &&
+      left.indexed.every((entry) => entry.$2 == right[entry.$1]);
+
+  /// Validates that [elements] all have [expectedWidth].
+  static int _validateElementWidths<T extends Logic>(
+      List<T> elements, int expectedWidth) {
+    if (elements.any((element) => element.width != expectedWidth)) {
+      throw LogicConstructionException(
+          'All TypedLogicArray leaves must have the same width.');
+    }
+    return expectedWidth;
+  }
+
+  /// Validates four-state decoding and the encoded semantic value width.
+  static void _validateValueCodec<V>(
+      LogicValue prototype, int elementWidth, LogicValueCodec<V> valueCodec) {
+    final encodedPrototype = valueCodec.encode(valueCodec.decode(prototype));
+    if (encodedPrototype.width != elementWidth) {
+      throw LogicConstructionException(
+          'The value codec must encode values with width $elementWidth.');
+    }
+  }
+}
+
+/// Returns the number of array positions described by [dimensions].
+int _arrayLength(List<int> dimensions) =>
+    dimensions.fold(1, (length, dimension) => length * dimension);
+
+/// Converts [flatIndex] to row-major indices for [dimensions].
+List<int> _arrayIndices(List<int> dimensions, int flatIndex) {
+  final indices = List.filled(dimensions.length, 0);
+  for (var dimension = dimensions.length - 1; dimension >= 0; dimension--) {
+    final size = dimensions[dimension];
+    indices[dimension] = size == 0 ? 0 : flatIndex % size;
+    flatIndex = size == 0 ? 0 : flatIndex ~/ size;
+  }
+  return indices;
+}
+
+/// Creates the default element-name prefix for each array dimension.
+List<String> _defaultDimensionNames(int rank) =>
+    List.generate(rank, (dimension) => 'd${dimension}_', growable: false);
+
+/// Validates and freezes dimension-name prefixes.
+List<String> _normalizeLogicArrayDimensionNames(
+    List<int> dimensions, List<String>? dimensionNames) {
+  final normalized = List<String>.unmodifiable(
+    dimensionNames ?? _defaultDimensionNames(dimensions.length),
+  );
+  if (normalized.length != dimensions.length) {
+    throw LogicConstructionException(
+        'dimensionNames must match the number of dimensions.');
+  }
+  if (normalized.any((name) => !Sanitizer.isSanitary(name)) ||
+      normalized.toSet().length != normalized.length) {
+    throw LogicConstructionException(
+        'dimensionNames must be sanitary and unique.');
+  }
+  return normalized;
+}

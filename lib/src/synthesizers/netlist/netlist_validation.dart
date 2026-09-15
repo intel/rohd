@@ -85,7 +85,8 @@ class NetlistValidation {
         final aggregateDrivers = <String>{
           for (final bit in bits) ...driversByBit[bit] ?? const <String>[],
         };
-        if (aggregateDrivers.length <= 1) {
+        if (aggregateDrivers.length <= 1 ||
+            aggregateDrivers.every(_isTriStateDriver)) {
           continue;
         }
         issues.add(NetlistValidationIssue(
@@ -101,6 +102,8 @@ class NetlistValidation {
       throw NetlistValidationException(moduleName, issues);
     }
   }
+
+  static bool _isTriStateDriver(String driver) => driver.endsWith(r'($tribuf)');
 
   /// Collects the port and cell output drivers for each integer bit ID.
   static Map<int, List<String>> _driversByBit(

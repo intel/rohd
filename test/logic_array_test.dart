@@ -16,6 +16,14 @@ import 'package:rohd/src/utilities/sv_cleaner.dart';
 import 'package:rohd/src/utilities/web.dart';
 import 'package:test/test.dart';
 
+class _TypedInputModule<T extends Logic> extends Module {
+  late final T values;
+
+  _TypedInputModule(T source) {
+    values = addTypedInput('values', source);
+  }
+}
+
 class SimpleLAPassthrough extends Module {
   LogicArray get laOut => output('laOut') as LogicArray;
   SimpleLAPassthrough(
@@ -619,6 +627,68 @@ void main() {
       final arr = LogicArray([5, 2, 0, 3], 6);
       expect(arr.width, 0);
       expect(arr.elementWidth, 0);
+    });
+
+    test('empty arrays preserve the selected net kind', () {
+      for (final dimensions in [
+        [0],
+        [2, 0],
+        [0, 2],
+      ]) {
+        final logicArray = LogicArray(dimensions, 8);
+        final netArray = LogicArray.net(dimensions, 8);
+
+        expect(logicArray.isNet, isFalse);
+        expect(netArray.isNet, isTrue);
+        expect(
+          logicArray.elements.every((element) => !element.isNet),
+          isTrue,
+        );
+        expect(netArray.elements.every((element) => element.isNet), isTrue);
+
+        final module = _TypedInputModule(logicArray);
+        expect(
+          module.values,
+          isA<LogicArray>(),
+        );
+        expect(
+          () => _TypedInputModule(netArray),
+          throwsA(isA<PortTypeException>()),
+        );
+      }
+    });
+
+    test('packed value assignment remains shape-independent', () async {
+      final source = LogicArray([2], 8)..put(0x1234);
+      final target = LogicArray([1], 16);
+      final bitSource = LogicArray([1], 1)..put(1);
+      final fillTarget = LogicArray([3], 1);
+
+      target.put(source.value);
+      expect(source.value, isA<LogicValueArray>());
+      expect(target.value, isA<LogicValueArray>());
+      expect(target.value.toInt(), 0x1234);
+
+      fillTarget.put(bitSource.value, fill: true);
+      expect(fillTarget.value.toInt(), 0x7);
+      expect(
+        () => target.put(source.value, fill: true),
+        throwsA(isA<LogicValueConstructionException>()),
+      );
+
+      target
+        ..put(0)
+        ..inject(source.value);
+      fillTarget
+        ..put(0)
+        ..inject(bitSource.value, fill: true);
+      expect(target.value.toInt(), 0);
+      expect(fillTarget.value.toInt(), 0);
+
+      await Simulator.run();
+      expect(target.previousValue, isA<LogicValueArray>());
+      expect(target.value.toInt(), 0x1234);
+      expect(fillTarget.value.toInt(), 0x7);
     });
 
     test('single-dim array', () {

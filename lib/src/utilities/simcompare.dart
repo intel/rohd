@@ -14,6 +14,7 @@ import 'dart:io';
 
 import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/signals/signals.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
 import 'package:rohd/src/utilities/web.dart';
 import 'package:test/test.dart';
@@ -87,15 +88,15 @@ class Vector {
         final value =
             LogicValue.of(inputValues[signalName], width: signal.width);
         return '${packedInputDrivers[signalName]} = $value;';
-      } else if (signal is LogicArray) {
+      } else if (signal is BaseLogicArray) {
         final arrAssigns = StringBuffer();
         var index = 0;
         final fullVal =
             LogicValue.of(inputValues[signalName], width: signal.width);
-        for (final leaf in signal.leafElements) {
-          final subVal = fullVal.getRange(index, index + leaf.width);
-          arrAssigns.writeln('${leaf.structureName} = $subVal;');
-          index += leaf.width;
+        for (final element in signal.arrayElements) {
+          final subVal = fullVal.getRange(index, index + element.width);
+          arrAssigns.writeln('${element.structureName} = $subVal;');
+          index += element.width;
         }
         return arrAssigns.toString();
       } else {
@@ -117,13 +118,13 @@ class Vector {
       );
       final inputStimulus = inputValues.toString();
 
-      if (outputPort is LogicArray) {
+      if (outputPort is BaseLogicArray) {
         var index = 0;
-        for (final leaf in outputPort.leafElements) {
-          final subVal = expectedValue.getRange(index, index + leaf.width);
+        for (final element in outputPort.arrayElements) {
+          final subVal = expectedValue.getRange(index, index + element.width);
           checksList.add(_errorCheckString(
-              leaf.structureName, subVal, subVal, inputStimulus));
-          index += leaf.width;
+              element.structureName, subVal, subVal, inputStimulus));
+          index += element.width;
         }
       } else {
         checksList.add(_errorCheckString(
@@ -467,9 +468,12 @@ abstract class SimCompare {
         {String Function(String original)? adjust,
         String? signalTypeOverride}) {
       final signal = module.signals.firstWhere((e) => e.name == signalName);
+      final isOutput = module.tryOutput(signalName) != null;
 
       final signalType = signalTypeOverride ??
-          ((signal is LogicNet || (signal is LogicArray && signal.isNet))
+          ((isOutput ||
+                  signal is LogicNet ||
+                  (signal is BaseLogicArray && signal.isNet))
               ? 'wire'
               : 'logic');
 
@@ -477,7 +481,7 @@ abstract class SimCompare {
         signalName = adjust(signalName);
       }
 
-      if (signal is LogicArray) {
+      if (signal is BaseLogicArray) {
         final unpackedDims =
             signal.dimensions.getRange(0, signal.numUnpackedDimensions);
         final packedDims = signal.dimensions
@@ -519,7 +523,7 @@ abstract class SimCompare {
     if (usePackedInputDrivers) {
       for (final signalName in allSignals) {
         final signal = module.tryInput(signalName);
-        if (signal is! LogicArray || signal.numUnpackedDimensions == 0) {
+        if (signal is! BaseLogicArray) {
           continue;
         }
         final driver =
@@ -527,10 +531,10 @@ abstract class SimCompare {
         packedInputDrivers[signalName] = driver;
         packedInputDeclarations.add('logic [${signal.width - 1}:0] $driver;');
         var offset = 0;
-        for (final leaf in signal.leafElements) {
-          packedInputDeclarations.add('assign ${leaf.structureName} = '
-              '$driver[${offset + leaf.width - 1}:$offset];');
-          offset += leaf.width;
+        for (final element in signal.arrayElements) {
+          packedInputDeclarations.add('assign ${element.structureName} = '
+              '$driver[${offset + element.width - 1}:$offset];');
+          offset += element.width;
         }
       }
     }

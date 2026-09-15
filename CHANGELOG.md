@@ -9,6 +9,7 @@
 
 ## 0.6.10
 
+- Added `TypedLogicArray<TLogic, TValue>` for multidimensional arrays with fixed typed hardware elements and associated semantic values, including typed snapshots and ports, traversal, cloning, shape operations, net support, and synthesis. Added shaped `LogicValueArray` and codec-backed `TypedLogicValueArray<TValue>` values with nested construction, packed `LogicValue` interoperability, and hardware-array assignment. Existing `LogicArray`, `LogicValueArray`, and concrete array port APIs remain available as specializations (<https://github.com/intel/rohd/pull/686>).
 - Improved `Logic.replicate(1)` and same-width `signExtend` to return the original signal, eliminating redundant replication modules and generated SystemVerilog (<https://github.com/intel/rohd/pull/689>).
 - Improved simulation performance and generated outputs by avoiding module creation for four-state-safe operations involving `Const`s, zero shifts, and muxes with constant controls (<https://github.com/intel/rohd/issues/429>).
 - Enforced that `Const` values cannot be changed through `put` or `inject`, including through another `Logic` driven by a `Const` (<https://github.com/intel/rohd/issues/486>).

@@ -36,6 +36,8 @@ jobs:
 
       - name: Setup Dart
         uses: dart-lang/setup-dart@v1
+        with:
+          sdk: 3.6.2
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -94,6 +96,8 @@ jobs:
 
       - name: Setup Dart
         uses: dart-lang/setup-dart@v1
+        with:
+          sdk: 3.6.2
 
       - name: Install project dependencies
         run: tool/gh_actions/install_dependencies.sh
@@ -124,7 +128,11 @@ jobs:
         uses: flutter-actions/setup-flutter@v2
         with:
           channel: stable
+<<<<<<< HEAD
+          version: 3.44.9
+=======
           version: 3.44.0
+>>>>>>> 5f0bc935f47d371c753bd27795c7f5696fccbc8d
 
       - name: Run Flutter Test
         run: tool/gh_actions/devtool/run_devtool_test.sh
@@ -134,6 +142,8 @@ jobs:
 
       - name: Test DevTools Installation
         run: tool/gh_actions/devtool/test_devtools_install.sh extension/devtools
+<<<<<<< HEAD
+=======
 
       - name: Build standalone DevTools application
         run: rohd_devtools_extension/tool/gh_actions/build_app.sh /rohd/rohd_devtools_extension/
@@ -145,3 +155,4 @@ jobs:
           path: rohd_devtools_extension/build/web
           if-no-files-found: error
           include-hidden-files: true
+>>>>>>> 5f0bc935f47d371c753bd27795c7f5696fccbc8d

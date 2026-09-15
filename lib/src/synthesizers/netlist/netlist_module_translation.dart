@@ -9,6 +9,7 @@
 
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/signals/signals.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_cell.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_cell_mapper.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_port_direction.dart';
@@ -80,6 +81,13 @@ class NetlistModuleTranslation {
   /// Allocates or returns the wire identifiers for [synthLogic].
   List<int> getIds(SynthLogic synthLogic) {
     final resolved = synthLogic.isConstant ? synthLogic : synthLogic.resolved;
+    if (resolved is SynthLogicPackedBitReference) {
+      return [getIds(resolved.packedBase)[resolved.bitIndex]];
+    }
+    if (resolved is SynthLogicPackedRangeReference) {
+      return getIds(resolved.packedBase)
+          .sublist(resolved.lowerIndex, resolved.upperIndex + 1);
+    }
     return _synthLogicIds.putIfAbsent(
       resolved,
       () => List<int>.generate(resolved.width, (_) => allocateWireId()),
@@ -115,7 +123,7 @@ class NetlistModuleTranslation {
             final portLogic = modulePorts[portName];
             final emitOutputArrayConcat =
                 direction == NetlistPortDirection.output &&
-                    portLogic is LogicArray &&
+                    portLogic is BaseLogicArray &&
                     !_hasExistingOutputArrayConcat(synthLogic) &&
                     !_hasDirectSubmoduleOutputDriver(synthLogic);
             final originalIds = getIds(synthLogic);
@@ -152,7 +160,7 @@ class NetlistModuleTranslation {
   /// Emits a concat cell that assembles a LogicArray output port.
   void _emitOutputArrayConcat(
     String portName,
-    LogicArray array,
+    BaseLogicArray array,
     List<int> outputIds,
   ) {
     _emitOutputArrayConcatForArray(portName, array, outputIds);
@@ -161,7 +169,7 @@ class NetlistModuleTranslation {
   /// Recursively emits concat cells for nested LogicArray output elements.
   bool _emitOutputArrayConcatForArray(
     String concatName,
-    LogicArray array,
+    BaseLogicArray array,
     List<int> outputIds,
   ) {
     final definition = synthDef;
@@ -179,7 +187,7 @@ class NetlistModuleTranslation {
         return false;
       }
       var elementIds = getIds(synthLogic);
-      if (element is LogicArray &&
+      if (element is BaseLogicArray &&
           !_hasExistingOutputArrayConcat(synthLogic) &&
           !_hasDirectSubmoduleOutputDriver(synthLogic)) {
         final aggregateIds = List<int>.generate(
@@ -194,6 +202,12 @@ class NetlistModuleTranslation {
           return false;
         }
         elementIds = aggregateIds;
+      } else if (element is LogicStructure && element is! BaseLogicArray) {
+        _emitOutputArrayStructurePack(
+          '${concatName}_$index',
+          element,
+          elementIds,
+        );
       }
       final upperIndex = lowerIndex + elementIds.length - 1;
       concatConnections['[$upperIndex:$lowerIndex]'] =
@@ -226,6 +240,74 @@ class NetlistModuleTranslation {
     ).toJson();
 
     return true;
+  }
+
+  void _emitOutputArrayStructurePack(
+    String packName,
+    LogicStructure structure,
+    List<int> outputIds,
+  ) {
+    final definition = synthDef;
+    if (definition == null) {
+      return;
+    }
+
+    final layout = SynthStructureLayout(structure);
+    final connections = <String, List<Object>>{};
+    final directions = <String, NetlistPortDirection>{};
+    final fields = <({String name, int offset, int width})>[];
+    var offset = 0;
+
+    for (final leaf in structure.leafElements) {
+      final leafSynth = definition.logicToSynthMap[leaf];
+      if (leafSynth == null) {
+        throw StateError(
+          'Missing synthesized logic for array structure field ${leaf.name}.',
+        );
+      }
+
+      final fieldName = layout.fieldNameAt(
+        offset,
+        fallbackName: leaf.name,
+        anonymousUnpreferred: true,
+      );
+      var portName = fieldName;
+      var suffix = 1;
+      while (portName == 'Y' || connections.containsKey(portName)) {
+        portName = '${fieldName}_${suffix++}';
+      }
+
+      connections[portName] = getIds(leafSynth).cast<Object>();
+      directions[portName] = NetlistPortDirection.input;
+      fields.add((name: fieldName, offset: offset, width: leaf.width));
+      offset += leaf.width;
+    }
+
+    if (offset != outputIds.length) {
+      throw StateError(
+        'Array structure fields occupy $offset bits, but ${structure.name} '
+        'occupies ${outputIds.length} bits.',
+      );
+    }
+
+    connections['Y'] = outputIds.cast<Object>();
+    directions['Y'] = NetlistPortDirection.output;
+
+    cells[Sanitizer.sanitizeSV('struct_pack_$packName')] = NetlistCell(
+      type: r'$struct_pack',
+      origin: NetlistCellOrigin.structurePack,
+      parameters: <String, Object?>{
+        'STRUCT_NAME': structure.name,
+        'FIELD_COUNT': fields.length,
+        for (final (index, field) in fields.indexed) ...{
+          'FIELD_${index}_NAME': field.name,
+          'FIELD_${index}_OFFSET': field.offset,
+          'FIELD_${index}_WIDTH': field.width,
+        },
+      },
+      portDirections: directions,
+      connections: connections,
+    ).toJson();
   }
 
   /// Checks whether [synthLogic] is already driven by an output concat cell.
@@ -346,7 +428,7 @@ class NetlistModuleTranslation {
         for (final portEntry in submodule.inputs.entries) {
           final portName = portEntry.key;
           final port = portEntry.value;
-          if (port is! LogicArray ||
+          if (port is! BaseLogicArray ||
               cellPortDirs[portName] != NetlistPortDirection.input) {
             continue;
           }

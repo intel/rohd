@@ -8,6 +8,8 @@
 // 2026 April 14
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
+import 'dart:convert';
+
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
 import 'package:test/test.dart';
@@ -105,6 +107,52 @@ class _CollapsedInstanceCollidingNames extends Module {
     retainedDup <= a | b;
     y <= collapsedInstanceOut ^ retainedDup;
     z <= retainedDup;
+  }
+}
+
+class _NestedNameStructure extends LogicStructure {
+  final Logic before;
+  final LogicArray lanes;
+  final Logic after;
+
+  factory _NestedNameStructure({String? name}) => _NestedNameStructure._(
+        Logic(name: 'before', width: 2),
+        LogicArray([2], 3, name: 'lanes'),
+        Logic(name: 'after'),
+        name: name ?? 'nested',
+      );
+
+  _NestedNameStructure._(
+    this.before,
+    this.lanes,
+    this.after, {
+    required String name,
+  }) : super([before, lanes, after], name: name);
+
+  @override
+  _NestedNameStructure clone({String? name}) =>
+      _NestedNameStructure(name: name ?? this.name);
+}
+
+class _NestedNameModule extends Module {
+  late final TypedLogicArray<_NestedNameStructure, LogicValue> valuesIn;
+  late final TypedLogicArray<_NestedNameStructure, LogicValue> valuesOut;
+
+  _NestedNameModule() : super(name: 'nestedNameModule') {
+    final source = TypedLogicArray<_NestedNameStructure, LogicValue>(
+      [2],
+      _NestedNameStructure.new,
+    );
+    valuesIn = addTypedInput('valuesIn', source);
+    valuesOut = addTypedOutput('valuesOut', valuesIn.clone);
+    for (var index = 0; index < 2; index++) {
+      valuesOut.at([index]).before <= valuesIn.at([index]).before;
+      valuesOut.at([index]).after <= ~valuesIn.at([index]).after;
+      for (var lane = 0; lane < 2; lane++) {
+        valuesOut.at([index]).lanes.at([lane]) <=
+            valuesIn.at([index]).lanes.at([lane]);
+      }
+    }
   }
 }
 
@@ -374,5 +422,50 @@ void main() {
         expect(netlistOnly['retainedDup'], equals('dup'));
       },
     );
+
+    test('nested typed-array names match between SV and netlist synthesis',
+        () async {
+      Map<String, String> names(_NestedNameModule module) => {
+            'input': module.namer.signalNameOfBest([module.valuesIn]),
+            'output': module.namer.signalNameOfBest([module.valuesOut]),
+            'inputLanes': module.namer.signalNameOfBest([
+              module.valuesIn.at([0]).lanes,
+            ]),
+            'outputLanes': module.namer.signalNameOfBest([
+              module.valuesOut.at([1]).lanes,
+            ]),
+          };
+
+      final netlistModule = _NestedNameModule();
+      await netlistModule.build();
+      final netlist =
+          jsonDecode(netlistModule.generateNetlist()) as Map<String, dynamic>;
+      final netlistModules = netlist['modules'] as Map<String, dynamic>;
+      final emittedNetlistNames = {
+        for (final moduleDefinition
+            in netlistModules.values.cast<Map<String, dynamic>>()) ...[
+          ...(moduleDefinition['ports'] as Map<String, dynamic>).keys,
+          ...(moduleDefinition['netnames'] as Map<String, dynamic>).keys,
+        ],
+      };
+      final netlistNames = names(netlistModule);
+      await Simulator.reset();
+
+      final svModule = _NestedNameModule();
+      await svModule.build();
+      final sv = svModule.generateSynth();
+      final svNames = names(svModule);
+
+      expect(svNames, equals(netlistNames));
+      expect(svNames['input'], 'valuesIn');
+      expect(svNames['output'], 'valuesOut');
+      expect(svNames['inputLanes'], 'valuesIn_0__lanes');
+      expect(svNames['outputLanes'], 'valuesOut_1__lanes');
+      for (final name in svNames.values) {
+        expect(sv, contains(name));
+        expect(emittedNetlistNames, contains(name),
+            reason: 'SV and netlist should preserve signal name $name.');
+      }
+    });
   });
 }
