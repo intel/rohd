@@ -774,7 +774,7 @@ void main() {
       final vectors = passthroughVectors(mod.laOut.width);
 
       if (checkNoSwizzle) {
-        expect(mod.generateSynth().contains('swizzle'), false,
+        expect(mod.dumpSystemVerilog().contains('swizzle'), false,
             reason: 'Expected no swizzles but found one.');
       }
 
@@ -824,7 +824,7 @@ void main() {
         // unpacked array assignment not fully supported in iverilog
         await testArrayPassthrough(mod, noSvSim: true);
 
-        final sv = mod.generateSynth();
+        final sv = mod.dumpSystemVerilog();
         expect(sv.contains(RegExp(r'\[7:0\]\s*laIn\s*\[2:0\]')), true);
         expect(sv.contains(RegExp(r'\[7:0\]\s*laOut\s*\[2:0\]')), true);
       });
@@ -845,7 +845,7 @@ void main() {
         // unpacked array assignment not fully supported in iverilog
         await testArrayPassthrough(mod, noSvSim: true);
 
-        final sv = mod.generateSynth();
+        final sv = mod.dumpSystemVerilog();
         expect(
             sv.contains(RegExp(
                 r'\[2:0\]\s*\[1:0\]\s*\[7:0\]\s*laIn\s*\[4:0\]\s*\[3:0\]')),
@@ -873,7 +873,7 @@ void main() {
         await testArrayPassthrough(mod);
 
         // ensure ports with interface are still an array
-        final sv = mod.generateSynth();
+        final sv = mod.dumpSystemVerilog();
         expect(sv, contains('input logic [2:0][1:0][2:0][7:0] laIn'));
         expect(sv, contains('output logic [2:0][1:0][2:0][7:0] laOut'));
       });
@@ -888,7 +888,7 @@ void main() {
         await testArrayPassthrough(mod, noSvSim: true);
 
         // ensure ports with interface are still an array
-        final sv = mod.generateSynth();
+        final sv = mod.dumpSystemVerilog();
         expect(sv, contains('input logic [1:0][2:0][7:0] laIn [2:0]'));
         expect(sv, contains('output logic [1:0][2:0][7:0] laOut [2:0]'));
       });
@@ -955,7 +955,7 @@ void main() {
         // unpacked array assignment not fully supported in iverilog
         await testArrayPassthrough(mod, noSvSim: true);
 
-        final sv = mod.generateSynth();
+        final sv = mod.dumpSystemVerilog();
         expect(sv.contains('logic [2:0][3:0][7:0] intermediate [1:0]'), true);
       });
     });
@@ -1008,7 +1008,7 @@ void main() {
       test('3d', () async {
         final mod = SimpleArraysAndHierarchy(LogicArray([2], 8));
         await testArrayPassthrough(mod);
-        final sv = mod.generateSynth();
+        final sv = mod.dumpSystemVerilog();
         expect(sv, contains('SimpleLAPassthrough  simple_la_passthrough'));
       });
 
@@ -1019,7 +1019,7 @@ void main() {
         // unpacked array assignment not fully supported in iverilog
         await testArrayPassthrough(mod, noSvSim: true);
 
-        expect(mod.generateSynth(), contains('SimpleLAPassthrough'));
+        expect(mod.dumpSystemVerilog(), contains('SimpleLAPassthrough'));
       });
     });
 
@@ -1028,7 +1028,7 @@ void main() {
         final mod = FancyArraysAndHierarchy(LogicArray([4, 3, 2], 8));
         await testArrayPassthrough(mod, checkNoSwizzle: false);
 
-        final sv = mod.generateSynth();
+        final sv = mod.dumpSystemVerilog();
 
         // make sure the 4th one is there (since we expect 4)
         expect(sv, contains('SimpleLAPassthrough  simple_la_passthrough_2'));
@@ -1070,7 +1070,8 @@ void main() {
       final mod = WithSetArrayOffsetModule(LogicArray([2, 2], 8));
       await testArrayPassthrough(mod, checkNoSwizzle: false);
 
-      final sv = SvCleaner.removeSwizzleAnnotationComments(mod.generateSynth());
+      final sv =
+          SvCleaner.removeSwizzleAnnotationComments(mod.dumpSystemVerilog());
 
       // make sure we're reassigning both times it overlaps!
       expect(
