@@ -26,8 +26,6 @@ export 'src/export_toast.dart';
 export 'src/logic_type_utils.dart';
 // Help
 export 'src/markdown_help_button.dart';
-// Regular expression helpers
-export 'src/regex_utils.dart';
 export 'src/rohd_extension_client.dart';
 // ROHD extension client
 export 'src/rohd_extension_status.dart';

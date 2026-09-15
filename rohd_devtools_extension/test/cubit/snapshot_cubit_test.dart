@@ -156,7 +156,7 @@ void main() {
       expect(state.getSignal('top.counter')!.width, 8);
     });
 
-    test('clear returns to camera mode and its initial state', () {
+    test('clear returns to camera mode and its initial state', () async {
       final cubit = SnapshotCubit();
       addTearDown(cubit.close);
 
