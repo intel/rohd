@@ -500,8 +500,13 @@ class SynthLogicPackedBitReference extends SynthLogic {
     this.packedBase,
     this.bitIndex, {
     required super.parentSynthModuleDefinition,
+    @internal bool allowNet = false,
   })  : assert(
             !packedBase.isArray, 'Packed reference base must not be an array.'),
+        assert(
+          allowNet || !packedBase.isNet,
+          'Packed reference base must not be a net.',
+        ),
         assert(
           !packedBase.isConstant,
           'Packed reference base must not be a constant.',
@@ -578,8 +583,13 @@ class SynthLogicPackedRangeReference extends SynthLogic {
     this.lowerIndex,
     this.upperIndex, {
     required super.parentSynthModuleDefinition,
+    @internal bool allowNet = false,
   })  : assert(
             !packedBase.isArray, 'Packed reference base must not be an array.'),
+        assert(
+          allowNet || !packedBase.isNet,
+          'Packed reference base must not be a net.',
+        ),
         assert(
           !packedBase.isConstant,
           'Packed reference base must not be a constant.',
@@ -908,13 +918,17 @@ String _synthArrayReferenceName(
   final orderedIndices = indices.reversed.toList(growable: false);
   final rootRank = rootArray.dimensions.length;
   if (orderedIndices.length < rootRank) {
-    if (target is! BaseLogicArray || lowerIndex != null) {
+    if (target is! BaseLogicArray) {
       throw StateError('Array descendant is missing root array indices.');
     }
     final rootSynth = parentSynthModuleDefinition.getSynthLogic(rootArray)!;
     final rootName = rootSynth.replacement?.name ?? rootSynth.name;
-    return '$rootName'
+    final partialReference = '$rootName'
         '${orderedIndices.map((index) => '[$index]').join()}';
+    return lowerIndex == null
+        ? partialReference
+        : '$partialReference'
+            '${_packedRangeSuffix(lowerIndex, upperIndex!)}';
   }
 
   final rootSynth = parentSynthModuleDefinition.getSynthLogic(rootArray)!;

@@ -1242,12 +1242,14 @@ class SynthModuleDefinition {
                 ? SynthLogicPackedBitReference(
                     packedParent,
                     index,
+                    allowNet: port.isNet,
                     parentSynthModuleDefinition: this,
                   )
                 : SynthLogicPackedRangeReference(
                     packedParent,
                     index,
                     index + leafElement.width - 1,
+                    allowNet: port.isNet,
                     parentSynthModuleDefinition: this,
                   );
             if (port.isNet) {

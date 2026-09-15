@@ -210,9 +210,15 @@ class TypedLogicArray<T extends Logic, V> extends BaseLogicArray {
 
   /// Creates a clone while allowing subclasses to preserve their runtime type.
   ///
-  /// Subclasses with additional metadata should override this method and
-  /// reconstruct that metadata together with [dimensions], [_dimensionNames],
-  /// [elementWidth], [isNet], and [numUnpackedDimensions].
+  /// The base implementation retains all construction state, including its
+  /// private dimension-name prefixes. A subclass that overrides this method
+  /// should retain any constructor-only arguments that affect reconstruction
+  /// in its own private fields and pass them to its constructor here. In
+  /// particular, a subclass exposing `dimensionNames` as a constructor
+  /// argument must retain a private copy because the base copy is intentionally
+  /// library-private. Public metadata such as [dimensions] and
+  /// [numUnpackedDimensions] can be read directly, while [elementWidth] and
+  /// [isNet] are re-derived by construction.
   @protected
   TypedLogicArray<T, V> createClone({
     String? name,
