@@ -14,6 +14,7 @@ import 'dart:convert';
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
+import 'package:rohd_hierarchy/rohd_hierarchy.dart';
 import 'package:test/test.dart';
 
 class _SampleStructure extends LogicStructure {
@@ -222,11 +223,27 @@ class _TypedArrayHierarchy extends Module {
 class _NestedArrayStructure extends LogicStructure {
   final Logic before;
   final LogicArray lanes;
+  final TypedLogicArray<_SampleStructure, LogicValue> samples;
   final Logic after;
 
-  factory _NestedArrayStructure({String? name}) => _NestedArrayStructure._(
+  factory _NestedArrayStructure({
+    String? name,
+    int numUnpackedDimensions = 0,
+  }) =>
+      _NestedArrayStructure._(
         Logic(name: 'before', width: 2),
-        LogicArray([2], 3, name: 'lanes'),
+        LogicArray(
+          [2],
+          3,
+          name: 'lanes',
+          numUnpackedDimensions: numUnpackedDimensions,
+        ),
+        TypedLogicArray<_SampleStructure, LogicValue>(
+          [2],
+          _SampleStructure.new,
+          name: 'samples',
+          numUnpackedDimensions: numUnpackedDimensions,
+        ),
         Logic(name: 'after'),
         name: name ?? 'nested',
       );
@@ -234,13 +251,51 @@ class _NestedArrayStructure extends LogicStructure {
   _NestedArrayStructure._(
     this.before,
     this.lanes,
+    this.samples,
+    this.after, {
+    required String name,
+  }) : super([before, lanes, samples, after], name: name);
+
+  @override
+  _NestedArrayStructure clone({String? name}) => _NestedArrayStructure(
+        name: name ?? this.name,
+        numUnpackedDimensions: lanes.numUnpackedDimensions,
+      );
+}
+
+class _NestedNetArrayStructure extends LogicStructure {
+  final LogicNet before;
+  final LogicArray lanes;
+  final LogicNet after;
+
+  factory _NestedNetArrayStructure({
+    String? name,
+    int numUnpackedDimensions = 0,
+  }) =>
+      _NestedNetArrayStructure._(
+        LogicNet(name: 'before', width: 2),
+        LogicArray.net(
+          [2],
+          3,
+          name: 'lanes',
+          numUnpackedDimensions: numUnpackedDimensions,
+        ),
+        LogicNet(name: 'after'),
+        name: name ?? 'nestedNet',
+      );
+
+  _NestedNetArrayStructure._(
+    this.before,
+    this.lanes,
     this.after, {
     required String name,
   }) : super([before, lanes, after], name: name);
 
   @override
-  _NestedArrayStructure clone({String? name}) =>
-      _NestedArrayStructure(name: name ?? this.name);
+  _NestedNetArrayStructure clone({String? name}) => _NestedNetArrayStructure(
+        name: name ?? this.name,
+        numUnpackedDimensions: lanes.numUnpackedDimensions,
+      );
 }
 
 class _NestedArrayBoundaryModule extends Module {
@@ -249,18 +304,104 @@ class _NestedArrayBoundaryModule extends Module {
               LogicValue>
           source) {
     final input = addTypedInput('valuesIn', source);
-    final output = addTypedOutput('valuesOut', input.clone);
+    final child = _NestedArrayBoundaryChild(input);
+    addTypedOutput('valuesOut', input.clone).gets(child.valuesOut);
+  }
+}
+
+class _NestedArrayBoundaryChild extends Module {
+  late final TypedLogicArray<TypedLogicArray<_NestedArrayStructure, LogicValue>,
+      LogicValue> valuesOut;
+
+  _NestedArrayBoundaryChild(
+      TypedLogicArray<TypedLogicArray<_NestedArrayStructure, LogicValue>,
+              LogicValue>
+          input) {
+    input = addTypedInput('valuesIn', input);
+    valuesOut = addTypedOutput('valuesOut', input.clone);
     for (var outer = 0; outer < 2; outer++) {
       for (var inner = 0; inner < 3; inner++) {
         final sourceElement = input.at([1 - outer]).at([2 - inner]);
-        final destination = output.at([outer]).at([inner]);
+        final destination = valuesOut.at([outer]).at([inner]);
         destination.before <= sourceElement.before;
         destination.after <= ~sourceElement.after;
         for (var lane = 0; lane < 2; lane++) {
           destination.lanes.at([lane]) <= sourceElement.lanes.at([1 - lane]);
+          final sourceSample = sourceElement.samples.at([1 - lane]);
+          final destinationSample = destination.samples.at([lane]);
+          destinationSample.low <= sourceSample.low;
+          destinationSample.high <= ~sourceSample.high;
         }
       }
     }
+  }
+}
+
+class _MixedNestedArrayModule extends Module {
+  _MixedNestedArrayModule(
+      TypedLogicArray<TypedLogicArray<Logic, LogicValue>, LogicValue> source) {
+    final input = addTypedInput('valuesIn', source);
+    final child = _MixedNestedArrayChild(input);
+    addTypedOutput('valuesOut', input.clone).gets(child.valuesOut);
+  }
+}
+
+class _MixedNestedArrayChild extends Module {
+  late final TypedLogicArray<TypedLogicArray<Logic, LogicValue>, LogicValue>
+      valuesOut;
+
+  _MixedNestedArrayChild(
+      TypedLogicArray<TypedLogicArray<Logic, LogicValue>, LogicValue> input) {
+    input = addTypedInput('valuesIn', input);
+    valuesOut = addTypedOutput('valuesOut', input.clone);
+    for (final (outerIndex, sourceElement) in input.indexedElements) {
+      final destination = valuesOut.at(outerIndex);
+      for (var row = 0; row < 4; row++) {
+        for (var column = 0; column < 5; column++) {
+          destination.at([row, column]) <=
+              sourceElement.at([3 - row, 4 - column]);
+        }
+      }
+    }
+  }
+}
+
+class _NestedStructuredInOutDriveModule extends Module {
+  late final TypedLogicArray<_NestedNetArrayStructure, LogicValue> bus;
+
+  _NestedStructuredInOutDriveModule(
+      TypedLogicArray<_NestedNetArrayStructure, LogicValue> source,
+      Logic enable,
+      Logic driveValue) {
+    bus = addTypedInOut('bus', source);
+    enable = addInput('enable', enable);
+    driveValue = addInput('driveValue', driveValue, width: bus.width);
+    final child = _NestedStructuredInOutDriveChild(bus, enable, driveValue);
+    addOutput('observed', width: bus.width).gets(child.observed);
+  }
+}
+
+class _NestedStructuredInOutDriveChild extends Module {
+  late final Logic observed;
+
+  _NestedStructuredInOutDriveChild(
+      TypedLogicArray<_NestedNetArrayStructure, LogicValue> source,
+      Logic enable,
+      Logic driveValue) {
+    final bus = addTypedInOut('bus', source);
+    enable = addInput('enable', enable);
+    driveValue = addInput('driveValue', driveValue, width: bus.width);
+    var driveOffset = 0;
+    for (final leaf in bus.leafElements) {
+      leaf <=
+          TriStateBuffer(
+            driveValue.getRange(driveOffset, driveOffset + leaf.width),
+            enable: enable,
+          ).out;
+      driveOffset += leaf.width;
+    }
+    observed = addOutput('observed', width: bus.width);
+    Combinational([observed < bus.packed]);
   }
 }
 
@@ -268,11 +409,18 @@ LogicValue _nestedPacked(
   int before,
   int lane0,
   int lane1,
+  int sample0,
+  int sample1,
   int after,
 ) =>
     LogicValue.ofInt(
-      before | (lane0 << 2) | (lane1 << 5) | (after << 8),
-      9,
+      before |
+          (lane0 << 2) |
+          (lane1 << 5) |
+          (sample0 << 8) |
+          (sample1 << 11) |
+          (after << 14),
+      15,
     );
 
 class _TypedInputModule<T extends Logic> extends Module {
@@ -1232,8 +1380,9 @@ void main() {
       );
     });
 
-    test('simulates nested typed arrays with array-valued structure fields',
-        () async {
+    test(
+        'simulates packed and mixed nested arrays with array-valued '
+        'structure fields', () async {
       await Simulator.reset();
       final source = TypedLogicArray<
           TypedLogicArray<_NestedArrayStructure, LogicValue>, LogicValue>(
@@ -1247,26 +1396,275 @@ void main() {
       final module = _NestedArrayBoundaryModule(source);
       await module.build();
 
-      final input = [
-        _nestedPacked(1, 2, 3, 0),
-        _nestedPacked(2, 4, 5, 1),
-        _nestedPacked(3, 6, 7, 0),
-        _nestedPacked(0, 1, 2, 1),
-        _nestedPacked(3, 5, 1, 0),
-        _nestedPacked(2, 7, 4, 1),
+      final inputFields = [
+        (before: 1, lane0: 2, lane1: 3, sample0: 4, sample1: 5, after: 0),
+        (before: 2, lane0: 4, lane1: 5, sample0: 1, sample1: 6, after: 1),
+        (before: 3, lane0: 6, lane1: 7, sample0: 2, sample1: 0, after: 0),
+        (before: 0, lane0: 1, lane1: 2, sample0: 3, sample1: 7, after: 1),
+        (before: 3, lane0: 5, lane1: 1, sample0: 4, sample1: 2, after: 0),
+        (before: 2, lane0: 7, lane1: 4, sample0: 5, sample1: 3, after: 1),
       ];
-      final output = [242, 423, 40, 479, 150, 333];
+      final input = [
+        for (final fields in inputFields)
+          _nestedPacked(
+            fields.before,
+            fields.lane0,
+            fields.lane1,
+            fields.sample0,
+            fields.sample1,
+            fields.after,
+          ),
+      ];
+      final output = <LogicValue>[];
+      for (var outer = 0; outer < 2; outer++) {
+        for (var inner = 0; inner < 3; inner++) {
+          final fields = inputFields[(1 - outer) * 3 + (2 - inner)];
+          output.add(
+            _nestedPacked(
+              fields.before,
+              fields.lane1,
+              fields.lane0,
+              fields.sample1 ^ 6,
+              fields.sample0 ^ 6,
+              fields.after ^ 1,
+            ),
+          );
+        }
+      }
       final inputValue = LogicValue.ofIterable(input);
-      final outputValue = LogicValue.ofIterable(
-          output.map((value) => LogicValue.ofInt(value, 9)));
+      final outputValue = LogicValue.ofIterable(output);
       final vectors = [
         Vector({'valuesIn': inputValue}, {'valuesOut': outputValue}),
       ];
 
       await SimCompare.checkFunctionalVector(module, vectors);
-      // Icarus rejects the generated nested packed/unpacked indexing here;
-      // the ROHD functional result is still checked above.
-      expect(module.generateSynth(), contains('module'));
+      final sv = module.generateSynth();
+      expect(sv, contains('valuesIn[1][31:30]'));
+      expect(sv, contains('valuesOut[0][31:30]'));
+      final netlistJson = NetlistSynthesizer().synthesizeToJson(module);
+      final netlist = jsonDecode(netlistJson) as Map<String, dynamic>;
+      final hierarchy = NetlistHierarchyAdapter.fromJson(netlistJson);
+      final modules = netlist['modules'] as Map<String, dynamic>;
+      final child =
+          modules['_NestedArrayBoundaryChild'] as Map<String, dynamic>;
+      final parent =
+          modules['_NestedArrayBoundaryModule'] as Map<String, dynamic>;
+      final childPorts = child['ports'] as Map<String, dynamic>;
+      final childInput = childPorts['valuesIn'] as Map<String, dynamic>;
+      final childInputType = childInput['logic_type'] as Map<String, dynamic>;
+      final innerType = childInputType['elementType'] as Map<String, dynamic>;
+      final elementType = innerType['elementType'] as Map<String, dynamic>;
+      final fields =
+          (elementType['fields'] as List<dynamic>).cast<Map<String, dynamic>>();
+      final parentCells = parent['cells'] as Map<String, dynamic>;
+      final childCell = parentCells.values
+          .cast<Map<String, dynamic>>()
+          .singleWhere((cell) => cell['type'] == '_NestedArrayBoundaryChild');
+      final childConnections = childCell['connections'] as Map<String, dynamic>;
+
+      expect(childInputType['arrayDims'], [2]);
+      expect(innerType['arrayDims'], [3]);
+      expect(
+        fields.singleWhere((field) => field['name'] == 'lanes')['type'],
+        containsPair('arrayDims', [2]),
+      );
+      final samplesType =
+          fields.singleWhere((field) => field['name'] == 'samples')['type']
+              as Map<String, dynamic>;
+      expect(samplesType['arrayDims'], [2]);
+      expect(
+        samplesType['elementType'],
+        containsPair('typeName', '_SampleStructure'),
+      );
+      expect(childConnections['valuesIn'], hasLength(90));
+      expect(childConnections['valuesOut'], hasLength(90));
+      expect(hierarchy.root.definition, '_NestedArrayBoundaryModule');
+      expect(
+        hierarchy.root.children
+            .singleWhere(
+              (occurrence) =>
+                  occurrence.definition == '_NestedArrayBoundaryChild',
+            )
+            .name,
+        'unnamed_module',
+      );
+      final loadedNames = hierarchy.root
+          .depthFirstSignals()
+          .map((signal) => signal.name)
+          .toSet();
+      for (final name in [
+        'valuesIn',
+        'valuesOut',
+        'valuesIn_0__0__lanes',
+        'valuesIn_0__0__samples',
+        'valuesOut_1__2__lanes',
+      ]) {
+        expect(sv, contains(name));
+        expect(loadedNames, contains(name),
+            reason: 'SV and loaded netlist should preserve signal name $name.');
+      }
+      SimCompare.checkIverilogVector(module, vectors);
+      SimCompare.checkVerilatorVector(module, vectors);
+
+      await Simulator.reset();
+      final mixedSource = TypedLogicArray<
+          TypedLogicArray<_NestedArrayStructure, LogicValue>, LogicValue>(
+        [2],
+        ({name}) => TypedLogicArray<_NestedArrayStructure, LogicValue>(
+          [3],
+          ({name}) => _NestedArrayStructure(
+            name: name,
+            numUnpackedDimensions: 1,
+          ),
+          name: name,
+          numUnpackedDimensions: 1,
+        ),
+        numUnpackedDimensions: 1,
+      );
+      final mixedModule = _NestedArrayBoundaryModule(mixedSource);
+      await mixedModule.build();
+
+      await SimCompare.checkFunctionalVector(mixedModule, vectors);
+      final mixedSv = mixedModule.generateSynth();
+      expect(
+        mixedSv,
+        contains('input logic [44:0] valuesIn [1:0]'),
+      );
+      expect(
+        mixedSv,
+        contains('output wire logic [44:0] valuesOut [1:0]'),
+      );
+      expect(
+        mixedSv,
+        contains('logic [2:0] valuesIn_0__0__lanes [1:0];'),
+      );
+      expect(
+        mixedSv,
+        contains('logic [2:0] valuesIn_0__0__samples [1:0];'),
+      );
+      expect(
+        () => NetlistHierarchyAdapter.fromJson(
+          NetlistSynthesizer().synthesizeToJson(mixedModule),
+        ),
+        returnsNormally,
+      );
+      SimCompare.checkIverilogVector(mixedModule, vectors);
+      SimCompare.checkVerilatorVector(mixedModule, vectors);
+    });
+
+    test('simulates mixed nested arrays across a child boundary', () async {
+      await Simulator.reset();
+      final source =
+          TypedLogicArray<TypedLogicArray<Logic, LogicValue>, LogicValue>(
+        [2, 3],
+        ({name}) => TypedLogicArray<Logic, LogicValue>(
+          [4, 5],
+          ({name}) => Logic(name: name, width: 8),
+          name: name,
+          numUnpackedDimensions: 1,
+        ),
+        numUnpackedDimensions: 1,
+      );
+      final module = _MixedNestedArrayModule(source);
+      await module.build();
+      final input = LogicValue.ofIterable([
+        for (var value = 1; value <= 120; value++) LogicValue.ofInt(value, 8),
+      ]);
+      final expected = LogicValue.ofIterable([
+        for (var group = 0; group < 6; group++)
+          for (var value = 20; value >= 1; value--)
+            LogicValue.ofInt(group * 20 + value, 8),
+      ]);
+
+      final vectors = [
+        Vector({'valuesIn': input}, {'valuesOut': expected})
+      ];
+      await SimCompare.checkFunctionalVector(module, vectors);
+      final sv = module.generateSynth();
+      expect(
+        sv,
+        contains('input logic [2:0][159:0] valuesIn [1:0]'),
+      );
+      expect(
+        sv,
+        contains('output wire logic [2:0][159:0] valuesOut [1:0]'),
+      );
+      expect(
+        sv,
+        contains('valuesOut[1][2][159:152] = '
+            'valuesIn[1][2][7:0]'),
+      );
+      final netlist = jsonDecode(NetlistSynthesizer().synthesizeToJson(module))
+          as Map<String, dynamic>;
+      final modules = netlist['modules'] as Map<String, dynamic>;
+      final top = modules['_MixedNestedArrayModule'] as Map<String, dynamic>;
+      final ports = top['ports'] as Map<String, dynamic>;
+      for (final portName in ['valuesIn', 'valuesOut']) {
+        final port = ports[portName] as Map<String, dynamic>;
+        final type = port['logic_type'] as Map<String, dynamic>;
+        final outerElementType = type['elementType'] as Map<String, dynamic>;
+        final innerType =
+            outerElementType['elementType'] as Map<String, dynamic>;
+        expect(type['arrayDims'], [2, 3]);
+        expect(type['elementWidth'], 160);
+        expect(outerElementType['arrayDims'], [3]);
+        expect(innerType['arrayDims'], [4, 5]);
+        expect(innerType['elementWidth'], 8);
+        expect(port['bits'], hasLength(960));
+      }
+      SimCompare.checkIverilogVector(module, vectors);
+      SimCompare.checkVerilatorVector(module, vectors);
+      expect(source.numUnpackedDimensions, 1);
+      expect(source.at([1, 2]).numUnpackedDimensions, 1);
+      expect(source.at([1, 2]).at([3, 4]).width, 8);
+    });
+
+    test('drives and releases a nested structured typed inout array', () async {
+      await Simulator.reset();
+      final source = TypedLogicArray<_NestedNetArrayStructure, LogicValue>(
+        [2],
+        ({name}) => _NestedNetArrayStructure(
+          name: name,
+          numUnpackedDimensions: 1,
+        ),
+      );
+      final enable = Logic();
+      final driveValue = Logic(width: source.width);
+      final module =
+          _NestedStructuredInOutDriveModule(source, enable, driveValue);
+      await module.build();
+      final vectors = [
+        Vector(
+          {'bus': 0x2a155, 'enable': 0, 'driveValue': 0},
+          {'observed': 0x2a155},
+        ),
+        Vector(
+          {'bus': LogicValue.z, 'enable': 1, 'driveValue': 0x15caa},
+          {'observed': 0x15caa},
+        ),
+        Vector(
+          {'bus': LogicValue.z, 'enable': 0, 'driveValue': 0},
+          {'bus': LogicValue.z},
+        ),
+      ];
+      await SimCompare.checkFunctionalVector(module, vectors);
+      final sv = module.generateSynth();
+      expect(sv, contains('inout wire [1:0][8:0] bus'));
+      expect(source.numUnpackedDimensions, 0);
+      expect(source.at([0]).lanes.numUnpackedDimensions, 1);
+      SimCompare.checkIverilogVector(module, vectors);
+      final netlistJson = NetlistSynthesizer().synthesizeToJson(module);
+      final hierarchy = NetlistHierarchyAdapter.fromJson(netlistJson);
+      expect(hierarchy.root.definition, '_NestedStructuredInOutDriveModule');
+      final loadedSignals = {
+        for (final signal in hierarchy.root.depthFirstSignals())
+          signal.name: signal,
+      };
+      expect(loadedSignals.keys, containsAll(['bus', 'observed']));
+      expect(loadedSignals['bus']!.direction, 'inout');
+      expect(loadedSignals['bus']!.width, source.width);
+      // Verilator does not support the bidirectional `tran` primitive needed
+      // to model four-state drive and release.
     });
   });
 

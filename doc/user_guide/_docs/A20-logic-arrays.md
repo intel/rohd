@@ -92,7 +92,33 @@ These APIs intentionally stop at different boundaries:
 
 For example, a `[2, 3]` array of two-field `Sample`s has six `arrayElements` and twelve recursive `leafElements`. A `[2]` array whose elements are `[3]` arrays has two `arrayElements` and six recursive leaves. An eight-bit `Logic` is one leaf, not eight.
 
-A `TypedLogicArray` element can be a `LogicStructure`, but it must be driveable. Direct `Const` elements, structures containing a `Const`, and element structures containing nested arrays are rejected. Nested arrays remain available through their existing `arrayElements`, `at`, and `indexedElements` traversal APIs; no public recursive layout-conversion helper is provided.
+A `TypedLogicArray` element can be a `LogicStructure`, but it must be driveable.
+Direct `Const` elements and structures containing a `Const` are rejected.
+Nested arrays are supported for ROHD construction, packed assignment, and
+`arrayElements`, `at`, and `indexedElements` traversal.
+
+SystemVerilog declarations retain the packed/unpacked split of the root array.
+When a configured element contains another array, that nested value occupies
+packed bits within the root element at the port boundary. Nested coordinates
+and structure fields are therefore lowered to one packed bit or range selection
+instead of adding dimensions that are absent from the declaration. An
+array-valued structure field may use a separate internal declaration with its
+own packed/unpacked split; synthesis inserts the packing or unpacking needed at
+the enclosing port.
+
+This lowering preserves the existing inline declaration and naming style; it
+does not introduce SystemVerilog `typedef`s or generated structural type names.
+Whole assignments involving nested unpacked arrays are emitted as element or
+packed-range assignments for simulator portability. The netlist output retains
+the recursive array and structure metadata in `logic_type`.
+
+ROHD, Icarus, and Verilator simulation cover fully packed nested arrays,
+mixed packed/unpacked outer and inner arrays, and structures containing
+unpacked ordinary and typed array fields across module boundaries. Four-state
+structured inout drive and release, including an unpacked nested net-array
+field across a child boundary, is covered in ROHD and Icarus. Verilator does
+not currently simulate that last case because it does not support the
+bidirectional `tran` primitive used for net aliasing.
 
 `TypedLogicArray` is also the supported base for custom typed arrays. Subclasses should use the normal constructor and override `createClone` to preserve their runtime type and metadata. The lower-level prebuilt-element constructor is library-private and is reserved for trusted in-library construction.
 
