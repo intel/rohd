@@ -37,11 +37,13 @@ LogicValueCodec<V> _resolveTypedLogicValueCodec<V>(
 /// This is a [LogicStructure] because an array owns a hierarchy of child
 /// signals, just like [LogicArray]. It is therefore indirectly a [Logic]
 /// through the structure's packed representation, rather than a scalar
-/// [Logic] whose wire is subdivided into array elements. [LogicArray] is the
-/// concrete [TypedLogicArray]<[Logic], [LogicValue]> specialization, so the
-/// two public array types are siblings rather than one extending the other.
-/// The array-specific metadata and traversal live in [BaseLogicArray], while
-/// [T] preserves the type at the declared array boundary.
+/// [Logic] whose wire is subdivided into array elements.
+///
+/// [LogicArray] directly extends [TypedLogicArray]<[Logic], [LogicValue]> as
+/// the ordinary-[Logic] specialization, inheriting its typed-array API.
+/// [TypedLogicArray] extends the internal [BaseLogicArray], where the shared
+/// array metadata and traversal live, while [T] preserves the type at the
+/// declared array boundary.
 ///
 /// [elements] contains the immediate children of the outermost dimension.
 /// [arrayElements] traverses the number of array levels declared by

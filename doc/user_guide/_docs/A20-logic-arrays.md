@@ -5,7 +5,7 @@ last_modified_at: 2026-09-10
 toc: true
 ---
 
-A [`LogicArray`](https://intel.github.io/rohd/rohd/LogicArray-class.html) is a type of `LogicStructure` that mirrors multi-dimensional arrays in hardware languages like SystemVerilog. `TypedLogicArray` uses the same structural model. An array is not a scalar `Logic` with an internal wire sliced into elements: it owns a hierarchy of child signals. `LogicStructure` supplies the common `Logic` behavior by packing those children when a scalar-like operation is needed, while the array layer adds dimensions, array-boundary traversal, and indexing. `TypedLogicArray` is indirectly a `Logic` through `LogicStructure`. It does not extend `LogicArray` because `LogicArray` is already the concrete `TypedLogicArray<Logic, LogicValue>` specialization; making it the superclass would require redesigning the public hierarchy around a separate generic or abstract array base.
+A [`LogicArray`](https://intel.github.io/rohd/rohd/LogicArray-class.html) is a type of `LogicStructure` that mirrors multi-dimensional arrays in hardware languages like SystemVerilog. `TypedLogicArray` uses the same structural model. An array is not a scalar `Logic` with an internal wire sliced into elements: it owns a hierarchy of child signals. `LogicStructure` supplies the common `Logic` behavior by packing those children when a scalar-like operation is needed, while the array layer adds dimensions, array-boundary traversal, and indexing. `TypedLogicArray` is indirectly a `Logic` through `LogicStructure`. `LogicArray` directly extends `TypedLogicArray<Logic, LogicValue>` as its ordinary-`Logic` specialization and inherits the typed-array API.
 
 `LogicArray`s can be constructed easily using the constructor:
 
@@ -24,7 +24,7 @@ As long as the total width of a `LogicArray` and another type of `Logic` (includ
 
 ## Typed arrays
 
-Use `TypedLogicArray<TLogic, TValue>` when every position at the declared array boundary has the same specialized hardware type and associated semantic value type. `LogicArray` remains the ordinary `TypedLogicArray<Logic, LogicValue>` specialization, preserving its existing constructors, ports, cloning, naming, and packed assignment behavior. Both extend the non-generic `BaseLogicArray`, which contains array-specific metadata and traversal shared by the two public types; it is an internal implementation base rather than another public construction API.
+Use `TypedLogicArray<TLogic, TValue>` when every position at the declared array boundary has the same specialized hardware type and associated semantic value type. `LogicArray` directly extends `TypedLogicArray<Logic, LogicValue>` as the ordinary specialization, inheriting its array metadata, traversal, indexing, and assignment APIs while preserving its existing constructors and concrete clone and naming behavior. `TypedLogicArray` extends the non-generic `BaseLogicArray`, which is an internal implementation base rather than another public construction API.
 
 `dimensionNames`, when supplied to `TypedLogicArray`, is construction metadata used to derive names within typed-array hierarchies and preserve them during internal cloning. It is not a public axis-metadata property, and it does not change the established generated naming convention of ordinary `LogicArray`.
 
