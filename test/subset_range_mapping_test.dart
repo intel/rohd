@@ -4,7 +4,7 @@
 // subset_range_mapping_test.dart
 // Tests for packed subset range mapping and isolated-bit preservation
 //
-// 2026 September 15
+// 2026 September 8
 // Author: Max Korbel <max.korbel@intel.com>
 
 // Legacy API call is intentional coverage for deprecated generateSynth().
