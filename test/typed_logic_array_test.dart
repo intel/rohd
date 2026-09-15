@@ -14,7 +14,6 @@ import 'dart:convert';
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
-import 'package:rohd_hierarchy/rohd_hierarchy.dart';
 import 'package:test/test.dart';
 
 class _SampleStructure extends LogicStructure {
@@ -1443,7 +1442,6 @@ void main() {
       expect(sv, contains('valuesOut[0][31:30]'));
       final netlistJson = NetlistSynthesizer().synthesizeToJson(module);
       final netlist = jsonDecode(netlistJson) as Map<String, dynamic>;
-      final hierarchy = NetlistHierarchyAdapter.fromJson(netlistJson);
       final modules = netlist['modules'] as Map<String, dynamic>;
       final child =
           modules['_NestedArrayBoundaryChild'] as Map<String, dynamic>;
@@ -1457,9 +1455,12 @@ void main() {
       final fields =
           (elementType['fields'] as List<dynamic>).cast<Map<String, dynamic>>();
       final parentCells = parent['cells'] as Map<String, dynamic>;
-      final childCell = parentCells.values
-          .cast<Map<String, dynamic>>()
-          .singleWhere((cell) => cell['type'] == '_NestedArrayBoundaryChild');
+      final childCellEntry = parentCells.entries.singleWhere(
+        (entry) =>
+            (entry.value as Map<String, dynamic>)['type'] ==
+            '_NestedArrayBoundaryChild',
+      );
+      final childCell = childCellEntry.value as Map<String, dynamic>;
       final childConnections = childCell['connections'] as Map<String, dynamic>;
 
       expect(childInputType['arrayDims'], [2]);
@@ -1478,20 +1479,14 @@ void main() {
       );
       expect(childConnections['valuesIn'], hasLength(90));
       expect(childConnections['valuesOut'], hasLength(90));
-      expect(hierarchy.root.definition, '_NestedArrayBoundaryModule');
-      expect(
-        hierarchy.root.children
-            .singleWhere(
-              (occurrence) =>
-                  occurrence.definition == '_NestedArrayBoundaryChild',
-            )
-            .name,
-        'unnamed_module',
-      );
-      final loadedNames = hierarchy.root
-          .depthFirstSignals()
-          .map((signal) => signal.name)
-          .toSet();
+      expect(childCellEntry.key, 'unnamed_module');
+      final netlistNames = {
+        for (final moduleDefinition
+            in modules.values.cast<Map<String, dynamic>>()) ...[
+          ...(moduleDefinition['ports'] as Map<String, dynamic>).keys,
+          ...(moduleDefinition['netnames'] as Map<String, dynamic>).keys,
+        ],
+      };
       for (final name in [
         'valuesIn',
         'valuesOut',
@@ -1500,8 +1495,8 @@ void main() {
         'valuesOut_1__2__lanes',
       ]) {
         expect(sv, contains(name));
-        expect(loadedNames, contains(name),
-            reason: 'SV and loaded netlist should preserve signal name $name.');
+        expect(netlistNames, contains(name),
+            reason: 'SV and netlist should preserve signal name $name.');
       }
       SimCompare.checkIverilogVector(module, vectors);
       SimCompare.checkVerilatorVector(module, vectors);
@@ -1542,11 +1537,12 @@ void main() {
         mixedSv,
         contains('logic [2:0] valuesIn_0__0__samples [1:0];'),
       );
+      final mixedNetlist = jsonDecode(
+        NetlistSynthesizer().synthesizeToJson(mixedModule),
+      ) as Map<String, dynamic>;
       expect(
-        () => NetlistHierarchyAdapter.fromJson(
-          NetlistSynthesizer().synthesizeToJson(mixedModule),
-        ),
-        returnsNormally,
+        mixedNetlist['modules'],
+        containsPair('_NestedArrayBoundaryModule', isA<Map<String, dynamic>>()),
       );
       SimCompare.checkIverilogVector(mixedModule, vectors);
       SimCompare.checkVerilatorVector(mixedModule, vectors);
@@ -1653,16 +1649,17 @@ void main() {
       expect(source.numUnpackedDimensions, 0);
       expect(source.at([0]).lanes.numUnpackedDimensions, 1);
       SimCompare.checkIverilogVector(module, vectors);
-      final netlistJson = NetlistSynthesizer().synthesizeToJson(module);
-      final hierarchy = NetlistHierarchyAdapter.fromJson(netlistJson);
-      expect(hierarchy.root.definition, '_NestedStructuredInOutDriveModule');
-      final loadedSignals = {
-        for (final signal in hierarchy.root.depthFirstSignals())
-          signal.name: signal,
-      };
-      expect(loadedSignals.keys, containsAll(['bus', 'observed']));
-      expect(loadedSignals['bus']!.direction, 'inout');
-      expect(loadedSignals['bus']!.width, source.width);
+      final netlist = jsonDecode(
+        NetlistSynthesizer().synthesizeToJson(module),
+      ) as Map<String, dynamic>;
+      final modules = netlist['modules'] as Map<String, dynamic>;
+      final top =
+          modules['_NestedStructuredInOutDriveModule'] as Map<String, dynamic>;
+      final ports = top['ports'] as Map<String, dynamic>;
+      final busPort = ports['bus'] as Map<String, dynamic>;
+      expect(ports, contains('observed'));
+      expect(busPort['direction'], 'inout');
+      expect(busPort['bits'], hasLength(source.width));
       // Verilator does not support the bidirectional `tran` primitive needed
       // to model four-state drive and release.
     });
