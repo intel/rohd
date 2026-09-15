@@ -1051,7 +1051,7 @@ class NetlistSynthesizer extends Synthesizer {
     final netnames = translation.netnames;
 
     // -- Structural validation -------------------------------------------
-    NetlistValidation.validate(ports, cells, module.name);
+    NetlistValidation.validate(ports, cells, module.name, netnames: netnames);
 
     return NetlistSynthesisResult(
       module,

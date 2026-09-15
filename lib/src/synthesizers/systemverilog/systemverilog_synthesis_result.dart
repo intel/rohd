@@ -11,6 +11,7 @@ import 'dart:io';
 
 import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/signals/signals.dart';
 import 'package:rohd/src/synthesizers/systemverilog/systemverilog_synth_module_definition.dart';
 import 'package:rohd/src/synthesizers/systemverilog/systemverilog_synth_sub_module_instantiation.dart';
 import 'package:rohd/src/synthesizers/utilities/synth_enum_definition.dart';
@@ -170,7 +171,13 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
           module.tryOutput(sig.name) != null,
           'Named output ${sig.name} not found in module ${module.name}.',
         );
-        return _verilogPort('output', 'var', configuration.outputPortType, sig);
+        return _verilogPort(
+          'output',
+          _requiresNetDeclaration(sig) ? 'wire' : 'var',
+          configuration.outputPortType,
+          sig,
+          forceObjectType: _requiresNetDeclaration(sig),
+        );
       });
 
   /// Representation of all inout port declarations in generated SV.
@@ -193,14 +200,55 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
     String direction,
     String objectType,
     SystemVerilogPortTypeConfiguration portType,
-    SynthLogic sig,
-  ) =>
+    SynthLogic sig, {
+    bool forceObjectType = false,
+  }) =>
       [
         direction,
-        if (portType.objectType == SystemVerilogPortType.explicit) objectType,
+        if (forceObjectType ||
+            portType.objectType == SystemVerilogPortType.explicit)
+          objectType,
         if (portType.dataType == SystemVerilogPortType.explicit) 'logic',
         sig.definitionName(useEnumType: false),
       ].join(' ');
+
+  /// Whether [sig] is a nested array aggregate that must be a net.
+  ///
+  /// Nested array payloads are lowered into multiple continuous assignments to
+  /// disjoint packed ranges. Declaring the aggregate as a variable causes some
+  /// simulators to retain only one of those drivers. Submodule outputs also
+  /// require a net actual when the aggregate crosses a port boundary.
+  bool _requiresNetDeclaration(SynthLogic sig) {
+    final logic = sig.logics.firstOrNull;
+    if (logic is! BaseLogicArray || !logic.arrayElements.any(_containsArray)) {
+      return false;
+    }
+
+    final resolved = sig.resolved;
+    return module.tryOutput(sig.name) != null ||
+        _synthModuleDefinition.assignments.any(
+          (assignment) => identical(_referenceRoot(assignment.dst), resolved),
+        ) ||
+        _synthModuleDefinition.subModuleInstantiations.any(
+          (instantiation) => instantiation.outputMapping.values
+              .any((mapped) => identical(mapped.resolved, resolved)),
+        );
+  }
+
+  SynthLogic _referenceRoot(SynthLogic signal) {
+    final resolved = signal.resolved;
+    return switch (resolved) {
+      SynthLogicArrayElement() => _referenceRoot(resolved.parentArray),
+      SynthLogicArrayStructureElement() => _referenceRoot(resolved.rootArray),
+      SynthLogicPackedBitReference() => _referenceRoot(resolved.packedBase),
+      SynthLogicPackedRangeReference() => _referenceRoot(resolved.packedBase),
+      _ => resolved,
+    };
+  }
+
+  static bool _containsArray(Logic logic) =>
+      logic is BaseLogicArray ||
+      (logic is LogicStructure && logic.elements.any(_containsArray));
 
   /// Representation of all internal net declarations in generated SV.
   String _verilogInternalSignals(_SvTraceHelper traceHelper) {
@@ -215,8 +263,11 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
       final comment = _assignedSignalNames.contains(sig.name)
           ? ''
           : traceHelper.signalComment(sig);
+      final type = _requiresNetDeclaration(sig)
+          ? 'wire'
+          : sig.definitionType(useEnumType: configuration.generateEnums);
       final decl =
-          '${sig.definitionType(useEnumType: configuration.generateEnums)} '
+          '$type '
           '${sig.definitionName(useEnumType: configuration.generateEnums)};';
       declarations.add(_SvTraceHelper._pad(decl, comment));
     }
@@ -230,11 +281,6 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
     // that only the *first* assignment for each signal is annotated.
     final tracedDsts = <String>{};
 
-    String rangeString(int upperIndex, int lowerIndex) =>
-        upperIndex == lowerIndex
-            ? '[$upperIndex]'
-            : '[$upperIndex:$lowerIndex]';
-
     for (final assignment in _synthModuleDefinition.assignments) {
       assert(
         !(assignment.src.isNet && assignment.dst.isNet),
@@ -242,39 +288,34 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
         ' bidirectional net connections.',
       );
 
-      var dstSliceString = '';
-      var srcSliceString = '';
       final assignsWholeDestination = assignment is! PartialSynthAssignment ||
           (assignment.dstLowerIndex == 0 &&
               assignment.dstUpperIndex == assignment.dst.width - 1);
       final normalizesWholeEnumDestination =
           assignment.dst.isEnum && assignsWholeDestination;
+      var destination = assignment.dst.name;
+      var source = assignment.src.name;
       if (assignment is RangeSynthAssignment) {
         if (!normalizesWholeEnumDestination) {
-          dstSliceString = rangeString(
-            assignment.dstUpperIndex,
+          destination = assignment.dst.rangeName(
             assignment.dstLowerIndex,
+            assignment.dstUpperIndex,
           );
         }
-        if (assignment.src.isArray ||
-            assignment.src.width <= 1 ||
-            assignment.srcLowerIndex != 0 ||
-            assignment.srcUpperIndex != assignment.src.width - 1) {
-          srcSliceString = rangeString(
-            assignment.srcUpperIndex,
-            assignment.srcLowerIndex,
-          );
-        }
+        source = assignment.src.rangeName(
+          assignment.srcLowerIndex,
+          assignment.srcUpperIndex,
+        );
       } else if (assignment is PartialSynthAssignment &&
           assignment.width > 1 &&
           !normalizesWholeEnumDestination) {
-        dstSliceString = rangeString(
-          assignment.dstUpperIndex,
+        destination = assignment.dst.rangeName(
           assignment.dstLowerIndex,
+          assignment.dstUpperIndex,
         );
       }
 
-      var sourceExpression = '${assignment.src.name}$srcSliceString';
+      var sourceExpression = source;
 
       final sourceIsPackedEnumInput = assignment.src.isEnum &&
           _synthModuleDefinition.inputs.contains(assignment.src.resolved);
@@ -293,8 +334,7 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
         sourceExpression = "$enumType'($sourceExpression)";
       }
 
-      final line = 'assign ${assignment.dst.name}$dstSliceString'
-          ' = $sourceExpression;';
+      final line = 'assign $destination = $sourceExpression;';
 
       // Emit the trace comment on the first assignment to this signal.
       final comment = tracedDsts.add(assignment.dst.name)
