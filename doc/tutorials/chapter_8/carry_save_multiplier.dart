@@ -1,3 +1,12 @@
+// Copyright (C) 2023-2026 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// carry_save_multiplier.dart
+// Chapter 8 carry-save multiplier tutorial example.
+//
+// 2023 September 7
+// Author: Yao Jing Quek <yao.jing.quek@intel.com>
+
 // ignore_for_file: avoid_print - tutorial
 
 import 'package:rohd/rohd.dart';
@@ -108,7 +117,7 @@ void main() async {
   reset.inject(1);
 
   // Attach a waveform dumper so we can see what happens.
-  WaveDumper(csm, outputPath: 'csm.vcd');
+  csm.dumpWaves(outputPath: 'csm.vcd');
 
   Simulator.registerAction(10, () {
     reset.inject(0);

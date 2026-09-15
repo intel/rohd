@@ -7,6 +7,9 @@
 // 2026 September 8
 // Author: Max Korbel <max.korbel@intel.com>
 
+// Legacy API call is intentional coverage for deprecated generateSynth().
+// ignore_for_file: deprecated_member_use_from_same_package
+
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/synthesizers/systemverilog/systemverilog_synth_module_definition.dart';
 import 'package:rohd/src/synthesizers/systemverilog/systemverilog_synth_sub_module_instantiation.dart';
