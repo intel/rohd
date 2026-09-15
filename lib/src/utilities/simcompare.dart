@@ -249,7 +249,7 @@ abstract class SimCompare {
         reason: 'Could not run $verilatorExecutable --version:\n'
             '${version.stdout}\n${version.stderr}');
 
-    final generatedVerilog = module.generateSynth(
+    final generatedVerilog = module.dumpSystemVerilog(
       configuration: synthesizerConfiguration,
     );
     final withTestbench = !buildOnly || vectors.isNotEmpty;
@@ -591,7 +591,7 @@ abstract class SimCompare {
       instance: moduleInstance,
       :stimulus,
     ) = _vectorTestbenchContents(module, vectors, moduleName: moduleName);
-    final generatedVerilog = module.generateSynth(
+    final generatedVerilog = module.dumpSystemVerilog(
       configuration: synthesizerConfiguration,
     );
 
