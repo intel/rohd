@@ -53,8 +53,9 @@ class NetlistValidation {
   static void validate(
     Map<String, Map<String, Object?>> ports,
     Map<String, Map<String, Object?>> cells,
-    String moduleName,
-  ) {
+    String moduleName, {
+    Map<String, Object?>? netnames,
+  }) {
     final issues = <NetlistValidationIssue>[];
 
     final driversByBit = _driversByBit(ports, cells);
@@ -72,10 +73,40 @@ class NetlistValidation {
       ));
     }
 
+    if (netnames != null) {
+      for (final entry in netnames.entries) {
+        final netname = entry.value;
+        if (netname is! Map<String, Object?>) {
+          continue;
+        }
+        final logicType = netname['logic_type'];
+        if (logicType is! Map ||
+            (logicType['arrayDims'] is! List && logicType['fields'] is! List)) {
+          continue;
+        }
+        final bits = (netname['bits'] as List?)?.whereType<int>() ?? const [];
+        final aggregateDrivers = <String>{
+          for (final bit in bits) ...driversByBit[bit] ?? const <String>[],
+        };
+        if (aggregateDrivers.length <= 1 ||
+            aggregateDrivers.every(_isTriStateDriver)) {
+          continue;
+        }
+        issues.add(NetlistValidationIssue(
+          'aggregate net "${entry.key}" is reached from multiple drivers: '
+          '${aggregateDrivers.join(', ')}',
+          netname: entry.key,
+          drivers: aggregateDrivers.toList(),
+        ));
+      }
+    }
+
     if (issues.isNotEmpty) {
       throw NetlistValidationException(moduleName, issues);
     }
   }
+
+  static bool _isTriStateDriver(String driver) => driver.endsWith(r'($tribuf)');
 
   /// Collects the port and cell output drivers for each integer bit ID.
   static Map<int, List<_NetlistDriver>> _driversByBit(
