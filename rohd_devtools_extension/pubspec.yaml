@@ -19,6 +19,7 @@ dependencies:
   flutter_bloc: ^9.0.0
   flutter_simple_treeview: ^3.0.2
   logging: ^1.2.0
+  # Keep below 1.3.0 for the Dart 3.6 CI toolchain.
   material_ui: ">=1.1.0 <1.3.0"
   rohd_devtools_widgets:
     path: packages/rohd_devtools_widgets
@@ -40,5 +41,7 @@ flutter:
     - assets/icons/
 
 dependency_overrides:
+  # Keep the transitive Cupertino UI package below the Dart 3.6-incompatible release.
+  cupertino_ui: ">=1.0.0 <1.1.0"
   rohd:
     path: ../
