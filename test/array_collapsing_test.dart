@@ -7,6 +7,9 @@
 // 2024 June 5
 // Author: Shankar Sharma <shankar.sharma@intel.com>
 
+// Legacy API calls are intentional coverage for deprecated generateSynth().
+// ignore_for_file: deprecated_member_use_from_same_package
+
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
