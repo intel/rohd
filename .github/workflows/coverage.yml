@@ -24,6 +24,8 @@ jobs:
 
       - name: Setup Dart
         uses: dart-lang/setup-dart@v1
+        with:
+          sdk: 3.6.2
 
       - name: Install dependencies
         run: tool/gh_actions/install_dependencies.sh
