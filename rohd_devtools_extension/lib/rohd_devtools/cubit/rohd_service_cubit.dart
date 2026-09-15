@@ -1,10 +1,10 @@
-// Copyright (C) 2025 Intel Corporation
+// Copyright (C) 2025-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // rohd_service_cubit.dart
 // Cubit for the ROHD service.
 //
-// 2025 January 28
+// 2026 September 15
 // Author: Roberto Torres <roberto.torres@intel.com>
 
 import 'dart:async';
