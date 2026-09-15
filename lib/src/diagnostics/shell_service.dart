@@ -81,6 +81,7 @@ class RohdShellService {
       );
     } on FormatException catch (error) {
       return _protocolError('invalidArgument', error.message);
+      // FormatException is converted into the protocol's error response.
       // ignore: avoid_catching_errors
     } on StateError catch (error) {
       return _protocolError('failedPrecondition', error.message);
@@ -99,6 +100,7 @@ class RohdShellService {
       return jsonEncode(shell.execute(input));
     } on FormatException catch (error) {
       return _protocolError('invalidArgument', error.message);
+      // FormatException is converted into the protocol's error response.
       // ignore: avoid_catching_errors
     } on StateError catch (error) {
       return _protocolError('failedPrecondition', error.message);
@@ -121,6 +123,7 @@ class RohdShellService {
       return jsonEncode({'ok': true, 'items': shell.complete(input, cursor)});
     } on FormatException catch (error) {
       return _protocolError('invalidArgument', error.message);
+      // FormatException is converted into the protocol's error response.
       // ignore: avoid_catching_errors
     } on StateError catch (error) {
       return _protocolError('failedPrecondition', error.message);

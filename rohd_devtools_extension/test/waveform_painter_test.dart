@@ -1,11 +1,11 @@
-// Copyright (C) 2025 Intel Corporation
+// Copyright (C) 2025-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // waveform_painter_test.dart
 // Test that WaveformBinary reacts correctly to clock data with proper
 // timescale.
 //
-// 2026 March
+// 2026 September 15
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 // Run: flutter test test/waveform_painter_test.dart

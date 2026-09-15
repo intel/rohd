@@ -13,9 +13,12 @@ import 'dart:convert';
 import 'dart:developer' as developer;
 
 import 'package:rohd/rohd.dart';
-import 'package:rohd_hierarchy/rohd_hierarchy.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
+import 'package:rohd_hierarchy/rohd_hierarchy.dart';
+
+// WaveDumper remains supported for compatibility with existing waveform users.
+// ignore_for_file: deprecated_member_use_from_same_package
 
 /// Represents a single value change for a signal.
 class ValueChange {
@@ -383,6 +386,7 @@ class WaveformDataService {
       developer.Service.getInfo().then((info) {
         final uri = info.serverUri;
         if (uri != null) {
+          // This URI is intentionally printed to help users connect DevTools.
           // ignore: avoid_print
           print('ROHD VM Service URI: $uri');
         }
