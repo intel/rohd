@@ -4,7 +4,7 @@
 // logic_name_config_test.dart
 // Unit tests for logic naming using configuration for naming preferences.
 //
-// 2026 September 15
+// 2023 November 3
 // Author: Max Korbel <max.korbel@intel.com>
 
 // Legacy API calls are intentional coverage for deprecated generateSynth().

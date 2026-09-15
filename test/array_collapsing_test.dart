@@ -4,7 +4,7 @@
 // array_collapsing_test.dart
 // Tests for array collapsing
 //
-// 2026 September 15
+// 2024 June 5
 // Author: Shankar Sharma <shankar.sharma@intel.com>
 
 // Legacy API calls are intentional coverage for deprecated generateSynth().
