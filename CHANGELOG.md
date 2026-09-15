@@ -4,6 +4,8 @@
 - Added `LogicEnum<T>` hardware signals with explicit enum encodings, mapped member assignments, driveable cloning, and SystemVerilog enum generation (<https://github.com/intel/rohd/pull/599>).
 - Netlist JSON format is now `0.1.0`, preserving enum types and encodings on retained netnames using Yosys-style attributes, including constant-driven enum uses (<https://github.com/intel/rohd/pull/599>).
 - **Breaking:** `FiniteStateMachine`, `State`, and the deprecated `StateMachine` alias now require Dart enum state identifiers. Replace integer, string, or custom-object identifiers with enum members; update reset and transition targets accordingly. `currentState` and `nextState` are now `LogicEnum` signals (<https://github.com/intel/rohd/pull/599>).
+- Refined the typed-array hierarchy so `LogicArray` directly specializes `TypedLogicArray<Logic, LogicValue>`, and strengthened custom `TypedLogicArray` cloning to preserve runtime types, codecs, unpacked dimensions, and constructor-only naming prefixes without exposing them as public axis metadata (<https://github.com/intel/rohd/pull/686>).
+- Expanded `TypedLogicArray` support for recursively nested typed and ordinary arrays, structures containing array fields, mixed packed/unpacked dimensions, structured net and inout ports, and recursive netlist type metadata. Fixed generated SystemVerilog for array-valued elements to use packed offsets consistent with declarations and module-port connections, avoiding invalid chained selections in Icarus and Verilator (<https://github.com/intel/rohd/pull/686>).
 
 ## 0.6.11
 
