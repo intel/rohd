@@ -22,7 +22,7 @@ class VmServiceSignalValueSource implements SignalValueSource {
       'ModuleTree.instance.hierarchyJson';
 
   static const _currentTimeExpressions = <String>[
-    'WaveformDataService.instance.currentTime'
+    'WaveformDataService.instance.currentTime',
   ];
 
   static const _currentTimeExtension = 'ext.rohd.currentTime';
@@ -57,10 +57,12 @@ class VmServiceSignalValueSource implements SignalValueSource {
       required Disposable? isAlive,
     })? evalInstance,
   }) : _evalInstance = evalInstance ?? rohdControllerEval.evalInstance {
-    _debugEventSubscription =
-        vmService.onDebugEvent.listen(_handleDebugEvent, onError: (Object e) {
-      debugPrint('[VmSignalValueSource] Debug stream error: $e');
-    });
+    _debugEventSubscription = vmService.onDebugEvent.listen(
+      _handleDebugEvent,
+      onError: (Object e) {
+        debugPrint('[VmSignalValueSource] Debug stream error: $e');
+      },
+    );
   }
 
   @override
@@ -76,7 +78,10 @@ class VmServiceSignalValueSource implements SignalValueSource {
 
     for (final expression in _currentTimeExpressions) {
       try {
-        final value = await _evalInstance(expression, isAlive: evalDisposable);
+        final value = await _evalInstance(
+          expression,
+          isAlive: evalDisposable,
+        );
         final raw = value.valueAsString;
         if (raw == null || raw.isEmpty) {
           continue;
@@ -99,8 +104,10 @@ class VmServiceSignalValueSource implements SignalValueSource {
           return currentTime;
         }
       } on Exception catch (e) {
-        debugPrint('[VmSignalValueSource] Current time eval failed '
-            'for "$expression": $e');
+        debugPrint(
+          '[VmSignalValueSource] Current time eval failed '
+          'for "$expression": $e',
+        );
       }
     }
 
@@ -117,12 +124,15 @@ class VmServiceSignalValueSource implements SignalValueSource {
     final snapshotExpressions = <String>[
       _moduleTreeHierarchyExpression,
       _moduleTreeSignalValuesExpression,
-      _waveformSnapshotExpression(time)
+      _waveformSnapshotExpression(time),
     ];
 
     for (final expression in snapshotExpressions) {
       try {
-        final value = await _evalInstance(expression, isAlive: evalDisposable);
+        final value = await _evalInstance(
+          expression,
+          isAlive: evalDisposable,
+        );
         final payload = value.valueAsString;
         if (payload == null || payload.isEmpty) {
           continue;
@@ -134,8 +144,10 @@ class VmServiceSignalValueSource implements SignalValueSource {
         }
 
         if (decoded['status'] == 'fail' || decoded['status'] == 'unavailable') {
-          debugPrint('[VmSignalValueSource] Snapshot unavailable: '
-              '${decoded['message'] ?? decoded['reason'] ?? decoded['error']}');
+          debugPrint(
+            '[VmSignalValueSource] Snapshot unavailable: '
+            '${decoded['message'] ?? decoded['reason'] ?? decoded['error']}',
+          );
           continue;
         }
 
@@ -163,8 +175,10 @@ class VmServiceSignalValueSource implements SignalValueSource {
           return signals;
         }
       } on Exception catch (e) {
-        debugPrint('[VmSignalValueSource] Snapshot eval failed '
-            'for "$expression": $e');
+        debugPrint(
+          '[VmSignalValueSource] Snapshot eval failed '
+          'for "$expression": $e',
+        );
       }
     }
 
@@ -179,10 +193,10 @@ class VmServiceSignalValueSource implements SignalValueSource {
   }
 
   static String _waveformSnapshotExpression(int time) =>
-      'WaveformService.instance.getSnapshotCompactJSON($time)';
+      'WaveformService.instance.getSnapshotCompactJson($time)';
 
   static const _moduleTreeSignalValuesExpression =
-      'ModuleTree.instance.signalValuesJSON';
+      'ModuleTree.instance.signalValuesJson';
 
   Future<int?> _readCurrentTimeFromExtension() async {
     final response = await _callExtension(_currentTimeExtension);
@@ -198,8 +212,10 @@ class VmServiceSignalValueSource implements SignalValueSource {
   }
 
   Future<SignalSnapshotData?> _readSnapshotFromExtension(int time) async {
-    final response = await _callExtension(_snapshotExtension,
-        args: {'time': time.toString()});
+    final response = await _callExtension(
+      _snapshotExtension,
+      args: {'time': time.toString()},
+    );
     if (response == null) {
       return null;
     }
@@ -207,8 +223,10 @@ class VmServiceSignalValueSource implements SignalValueSource {
     return _decodeSnapshotPayload(response);
   }
 
-  Future<Map<String, dynamic>?> _callExtension(String method,
-      {Map<String, String>? args}) async {
+  Future<Map<String, dynamic>?> _callExtension(
+    String method, {
+    Map<String, String>? args,
+  }) async {
     try {
       final response = await vmService.callServiceExtension(method, args: args);
       return response.json;
@@ -219,8 +237,10 @@ class VmServiceSignalValueSource implements SignalValueSource {
 
   SignalSnapshotData? _decodeSnapshotPayload(Map<String, dynamic> decoded) {
     if (decoded['status'] == 'fail' || decoded['status'] == 'unavailable') {
-      debugPrint('[VmSignalValueSource] Snapshot unavailable: '
-          '${decoded['message'] ?? decoded['reason'] ?? decoded['error']}');
+      debugPrint(
+        '[VmSignalValueSource] Snapshot unavailable: '
+        '${decoded['message'] ?? decoded['reason'] ?? decoded['error']}',
+      );
       return null;
     }
 
@@ -245,9 +265,11 @@ class VmServiceSignalValueSource implements SignalValueSource {
     return signals.isEmpty ? null : signals;
   }
 
-  void _collectHierarchySignals(Map<String, dynamic> moduleJson,
-      Map<String, Map<String, dynamic>> signals,
-      {required String parentPath}) {
+  void _collectHierarchySignals(
+    Map<String, dynamic> moduleJson,
+    Map<String, Map<String, dynamic>> signals, {
+    required String parentPath,
+  }) {
     final moduleName = moduleJson['name'] as String?;
     final modulePath = moduleName == null || moduleName.isEmpty
         ? parentPath
@@ -255,12 +277,24 @@ class VmServiceSignalValueSource implements SignalValueSource {
             ? moduleName
             : '$parentPath.$moduleName';
 
-    _collectSignalGroup(moduleJson['inputs'],
-        direction: 'Input', modulePath: modulePath, signals: signals);
-    _collectSignalGroup(moduleJson['outputs'],
-        direction: 'Output', modulePath: modulePath, signals: signals);
-    _collectSignalGroup(moduleJson['inouts'],
-        direction: 'Inout', modulePath: modulePath, signals: signals);
+    _collectSignalGroup(
+      moduleJson['inputs'],
+      direction: 'Input',
+      modulePath: modulePath,
+      signals: signals,
+    );
+    _collectSignalGroup(
+      moduleJson['outputs'],
+      direction: 'Output',
+      modulePath: modulePath,
+      signals: signals,
+    );
+    _collectSignalGroup(
+      moduleJson['inouts'],
+      direction: 'Inout',
+      modulePath: modulePath,
+      signals: signals,
+    );
 
     final subModules = moduleJson['subModules'];
     if (subModules is! List) {
@@ -274,10 +308,12 @@ class VmServiceSignalValueSource implements SignalValueSource {
     }
   }
 
-  void _collectSignalGroup(Object? groupJson,
-      {required String direction,
-      required String modulePath,
-      required Map<String, Map<String, dynamic>> signals}) {
+  void _collectSignalGroup(
+    Object? groupJson, {
+    required String direction,
+    required String modulePath,
+    required Map<String, Map<String, dynamic>> signals,
+  }) {
     if (groupJson is! Map<String, dynamic>) {
       return;
     }
@@ -295,7 +331,7 @@ class VmServiceSignalValueSource implements SignalValueSource {
         'name': signalName,
         'value': data['value']?.toString() ?? '?',
         'width': _decodeWidth(data['width']),
-        'direction': direction
+        'direction': direction,
       };
     }
   }
@@ -347,6 +383,7 @@ class VmServiceSignalValueSource implements SignalValueSource {
     final time = _nextUpdateTime();
 
     _updatesController.add(
-        SignalValueUpdateEvent(upToTime: time, hasData: true, reason: reason));
+      SignalValueUpdateEvent(upToTime: time, hasData: true, reason: reason),
+    );
   }
 }

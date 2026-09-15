@@ -13,20 +13,35 @@ import 'package:rohd_devtools_extension/rohd_devtools/cubit/snapshot_cubit.dart'
 import 'package:rohd_devtools_extension/rohd_devtools/models/signal_model.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/models/tree_model.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/ui/signal_details_card.dart';
+import 'package:rohd_devtools_extension/rohd_devtools/ui/simulation_time_display.dart';
 
 final _module = TreeModel(
   name: 'top',
-  signals: [
-    SignalModel(name: 'input_enable', direction: 'input', value: '0', width: 1),
+  inputs: [
+    SignalModel(
+      name: 'input_enable',
+      direction: 'Input',
+      value: '0',
+      width: 1,
+    ),
+  ],
+  outputs: [
     SignalModel(
       name: 'output_value',
-      direction: 'output',
+      direction: 'Output',
       value: '00',
       width: 8,
     ),
-    SignalModel(name: 'shared_bus', direction: 'inout', value: 'zz', width: 8),
   ],
-  children: const [],
+  inouts: [
+    SignalModel(
+      name: 'shared_bus',
+      direction: 'Inout',
+      value: 'zz',
+      width: 8,
+    ),
+  ],
+  subModules: const [],
 );
 
 void main() {
@@ -35,6 +50,7 @@ void main() {
     TreeModel? module,
     bool includeModule = true,
     SnapshotLoaded? snapshot,
+    SimulationTimeDisplay timeDisplay = SimulationTimeDisplay.none,
   }) =>
       tester.pumpWidget(
         MaterialApp(
@@ -45,24 +61,23 @@ void main() {
               child: SignalDetailsCard(
                 module: includeModule ? module ?? _module : null,
                 snapshot: snapshot,
+                timeDisplay: timeDisplay,
               ),
             ),
           ),
         ),
       );
 
-  testWidgets('shows an empty state until a module is selected', (
-    tester,
-  ) async {
+  testWidgets('shows an empty state until a module is selected',
+      (tester) async {
     await pumpCard(tester, includeModule: false);
 
     expect(find.text('No module selected'), findsOneWidget);
     expect(find.byType(TextField), findsNothing);
   });
 
-  testWidgets('filters signals by search text and restores them when cleared', (
-    tester,
-  ) async {
+  testWidgets('filters signals by search text and restores them when cleared',
+      (tester) async {
     await pumpCard(tester);
 
     expect(find.text('input_enable'), findsOneWidget);
@@ -104,9 +119,8 @@ void main() {
     expect(find.text('shared_bus'), findsNothing);
   });
 
-  testWidgets('uses snapshot values and formats the snapshot time', (
-    tester,
-  ) async {
+  testWidgets('uses snapshot values and formats the snapshot time',
+      (tester) async {
     await pumpCard(
       tester,
       snapshot: const SnapshotLoaded(
@@ -115,15 +129,16 @@ void main() {
           'output_value': SignalSnapshot(
             signalId: 'output_value',
             name: 'output_value',
-            value: "8'hff",
+            value: 'ff',
             width: 8,
           ),
         },
       ),
+      timeDisplay: const SimulationTimeDisplay(unit: 'ns'),
     );
 
-    expect(find.text('Value (@ 42)'), findsOneWidget);
-    expect(find.text("8'hff"), findsOneWidget);
-    expect(find.text("1'h0"), findsOneWidget);
+    expect(find.text('Value (@ 42ns)'), findsOneWidget);
+    expect(find.text('ff'), findsOneWidget);
+    expect(find.text('0'), findsOneWidget);
   });
 }

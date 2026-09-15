@@ -23,8 +23,9 @@ void main() {
     addTearDown(dtdUriController.dispose);
     final module = TreeModel(
       name: 'top',
-      signals: const [],
-      children: const [],
+      inputs: const [],
+      outputs: const [],
+      subModules: const [],
     );
     final diagnosticObjects = <Diagnosticable>[
       const DetailsHelpButton(isDark: true),
@@ -54,7 +55,7 @@ void main() {
         cleanDtdUri: (value) => value,
       ),
       DiscoveredVmService(uri: 'ws://host:8181/app=/ws'),
-      const TreeStructurePage(screenSize: Size.zero),
+      TreeStructurePage(screenSize: Size.zero),
     ];
 
     for (final object in diagnosticObjects) {

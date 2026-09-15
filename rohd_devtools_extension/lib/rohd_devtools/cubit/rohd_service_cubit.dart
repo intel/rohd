@@ -4,7 +4,7 @@
 // rohd_service_cubit.dart
 // Cubit for the ROHD service.
 //
-// 2026 September 15
+// 2025 January 28
 // Author: Roberto Torres <roberto.torres@intel.com>
 
 import 'dart:async';
@@ -16,8 +16,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/models/tree_model.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/services/service_manager_bridge.dart';
-import 'package:rohd_devtools_extension/rohd_devtools/services/services.dart'
-    hide serviceManager;
+import 'package:rohd_devtools_extension/rohd_devtools/services/signal_value_source.dart';
+import 'package:rohd_devtools_extension/rohd_devtools/services/signal_value_source_binding.dart';
+import 'package:rohd_devtools_extension/rohd_devtools/services/tree_service.dart';
 import 'package:vm_service/vm_service.dart' as vm;
 
 part 'rohd_service_state.dart';
@@ -64,9 +65,7 @@ class RohdServiceCubit extends Cubit<RohdServiceState> {
   /// Configure a standalone VM service session without relying on the global
   /// DevTools extension [serviceManager].
   Future<void> configureStandaloneVmService(
-    vm.VmService vmService,
-    String isolateId,
-  ) async {
+      vm.VmService vmService, String isolateId) async {
     _rohdIsolateId = null;
     _disposeSignalValueSource();
 
@@ -80,10 +79,8 @@ class RohdServiceCubit extends Cubit<RohdServiceState> {
     final localManager = _localServiceManager!;
     _localServiceClosedSignal = Completer<void>();
 
-    await localManager.vmServiceOpened(
-      vmService,
-      onClosed: _localServiceClosedSignal!.future,
-    );
+    await localManager.vmServiceOpened(vmService,
+        onClosed: _localServiceClosedSignal!.future);
 
     final vmInfo = await vmService.getVM();
     final isolates = vmInfo.isolates ?? const <vm.IsolateRef>[];
@@ -100,10 +97,8 @@ class RohdServiceCubit extends Cubit<RohdServiceState> {
 
   void _onConnectionStateChanged() {
     final connected = serviceManager.connectedState.value.connected;
-    debugPrint(
-      '[RohdServiceCubit] Connection state changed: '
-      'connected=$connected',
-    );
+    debugPrint('[RohdServiceCubit] Connection state changed: '
+        'connected=$connected');
     if (connected) {
       // Reset tree service so we use the new connection
       treeService = null;
@@ -137,25 +132,21 @@ class RohdServiceCubit extends Cubit<RohdServiceState> {
   Future<void> evalModuleTree() async {
     debugPrint('[RohdServiceCubit] evalModuleTree called');
     await _handleModuleTreeOperation(
-      (treeService) => treeService.evalModuleTree(),
-    );
+        (treeService) => treeService.evalModuleTree());
   }
 
   /// Refresh the module tree from the ROHD service.
   Future<void> refreshModuleTree() async {
     debugPrint('[RohdServiceCubit] refreshModuleTree called');
     await _handleModuleTreeOperation(
-      (treeService) => treeService.refreshModuleTree(),
-    );
+        (treeService) => treeService.refreshModuleTree());
   }
 
   Future<void> _handleModuleTreeOperation(
-    Future<TreeModel?> Function(TreeService) operation,
-  ) async {
+      Future<TreeModel?> Function(TreeService) operation) async {
     try {
       debugPrint(
-        '[RohdServiceCubit] _handleModuleTreeOperation - emitting loading',
-      );
+          '[RohdServiceCubit] _handleModuleTreeOperation - emitting loading');
       emit(RohdServiceLoading());
 
       final activeServiceManager =
@@ -163,10 +154,8 @@ class RohdServiceCubit extends Cubit<RohdServiceState> {
       final activeService = activeServiceManager?.service;
 
       if (activeService == null) {
-        debugPrint(
-          '[RohdServiceCubit] ServiceManager is not initialized - '
-          'emitting loaded with null',
-        );
+        debugPrint('[RohdServiceCubit] ServiceManager is not initialized - '
+            'emitting loaded with null');
         // When not running in DevTools, just emit loaded with null tree
         // This prevents constant error states and allows the UI to work
         emit(const RohdServiceLoaded(null));
@@ -185,10 +174,8 @@ class RohdServiceCubit extends Cubit<RohdServiceState> {
         try {
           final vmInfo = await service.getVM();
           final isolates = vmInfo.isolates ?? [];
-          debugPrint(
-            '[RohdServiceCubit] Scanning ${isolates.length} '
-            'isolate(s) for ROHD library...',
-          );
+          debugPrint('[RohdServiceCubit] Scanning ${isolates.length} '
+              'isolate(s) for ROHD library...');
 
           for (final isoRef in isolates) {
             final id = isoRef.id;
@@ -198,29 +185,21 @@ class RohdServiceCubit extends Cubit<RohdServiceState> {
             try {
               final iso = await service.getIsolate(id);
               final libs = iso.libraries ?? [];
-              debugPrint(
-                '[RohdServiceCubit]   Isolate ${isoRef.name} '
-                '(${isoRef.id}): ${libs.length} libraries',
-              );
-              final hasRohd = libs.any(
-                (lib) =>
-                    lib.uri ==
-                    'package:rohd/src/diagnostics/inspector_service.dart',
-              );
+              debugPrint('[RohdServiceCubit]   Isolate ${isoRef.name} '
+                  '(${isoRef.id}): ${libs.length} libraries');
+              final hasRohd = libs.any((lib) =>
+                  lib.uri ==
+                  'package:rohd/src/diagnostics/inspector_service.dart');
               if (hasRohd) {
-                debugPrint(
-                  '[RohdServiceCubit]   → Found ROHD in '
-                  '${isoRef.name}',
-                );
+                debugPrint('[RohdServiceCubit]   → Found ROHD in '
+                    '${isoRef.name}');
                 rohdIsolate = ValueNotifier(isoRef);
                 _rohdIsolateId = id;
                 break;
               }
             } on Exception catch (e) {
-              debugPrint(
-                '[RohdServiceCubit]   Isolate ${isoRef.name} '
-                'scan error: $e',
-              );
+              debugPrint('[RohdServiceCubit]   Isolate ${isoRef.name} '
+                  'scan error: $e');
             }
           }
         } on Exception catch (e) {
@@ -228,29 +207,21 @@ class RohdServiceCubit extends Cubit<RohdServiceState> {
         }
 
         if (rohdIsolate == null) {
-          debugPrint(
-            '[RohdServiceCubit] ROHD isolate not found, '
-            'falling back to selected isolate',
-          );
+          debugPrint('[RohdServiceCubit] ROHD isolate not found, '
+              'falling back to selected isolate');
         }
 
         treeService = TreeService(
-          EvalOnDartLibrary(
-            'package:rohd/src/diagnostics/inspector_service.dart',
-            service,
-            serviceManager: activeServiceManager!,
-            isolate: rohdIsolate,
-          ),
-          Disposable(),
-          vmService: service,
-          isolateId: _rohdIsolateId,
-        );
+            EvalOnDartLibrary(
+                'package:rohd/src/diagnostics/inspector_service.dart', service,
+                serviceManager: activeServiceManager!, isolate: rohdIsolate),
+            Disposable(),
+            vmService: service,
+            isolateId: _rohdIsolateId);
 
         _disposeSignalValueSource();
         _signalValueSource = createSignalValueSourceBinding(
-          treeService: treeService!,
-          vmService: service,
-        );
+            treeService: treeService!, vmService: service);
       }
 
       debugPrint('[RohdServiceCubit] Calling operation...');
