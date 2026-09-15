@@ -10,9 +10,9 @@
 import 'dart:convert';
 
 import 'package:rohd/rohd.dart';
-import 'package:rohd_hierarchy/rohd_hierarchy.dart';
 import 'package:rohd/src/diagnostics/output_file_writer.dart'
     if (dart.library.io) 'package:rohd/src/diagnostics/output_file_writer_io.dart';
+import 'package:rohd_hierarchy/rohd_hierarchy.dart';
 
 /// A service that wraps netlist (Yosys JSON) synthesis of a [Module]
 /// hierarchy.
@@ -422,8 +422,9 @@ class NetlistService extends ArtifactProducingService {
   List<Object?>? _bitsForSignal(Map<String, dynamic> moduleData, String name) {
     final ports = moduleData['ports'] as Map<String, dynamic>?;
     final port = ports?[name] as Map<String, dynamic>?;
-    if (port?['bits'] case final List<Object?> bits) {
-      return bits;
+    final portBits = port?['bits'];
+    if (portBits is List<Object?>) {
+      return portBits;
     }
     final netnames = moduleData['netnames'] as Map<String, dynamic>?;
     final net = netnames?[name] as Map<String, dynamic>?;
