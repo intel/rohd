@@ -120,7 +120,7 @@ field across a child boundary, is covered in ROHD and Icarus. Verilator does
 not currently simulate that last case because it does not support the
 bidirectional `tran` primitive used for net aliasing.
 
-`TypedLogicArray` is also the supported base for custom typed arrays. Subclasses should use the normal constructor and override `createClone` to preserve their runtime type and metadata. The lower-level prebuilt-element constructor is library-private and is reserved for trusted in-library construction.
+`TypedLogicArray` is also the supported base for custom typed arrays. Subclasses should use the normal constructor and override `createClone` to preserve their runtime type and metadata. Constructor-only configuration needed during reconstruction, including custom `dimensionNames`, should be retained in private subclass fields and passed back through the subclass constructor. The lower-level prebuilt-element constructor is library-private and is reserved for trusted in-library construction.
 
 ## Value-domain arrays
 

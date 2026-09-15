@@ -116,6 +116,7 @@ class _EmptyStructure extends LogicStructure {
 
 class _SampleArray extends TypedLogicArray<_SampleStructure, _SampleValue> {
   final String schema;
+  final List<String>? _constructionDimensionNames;
 
   // ignore: use_super_parameters - fixes the element builder for this subtype.
   _SampleArray(
@@ -125,7 +126,10 @@ class _SampleArray extends TypedLogicArray<_SampleStructure, _SampleValue> {
     String? name,
     Naming? naming,
     int numUnpackedDimensions = 0,
-  }) : super(
+  })  : _constructionDimensionNames = dimensionNames == null
+            ? null
+            : List<String>.unmodifiable(dimensionNames),
+        super(
           dimensions,
           _SampleStructure.new,
           valueCodec: _sampleValueCodec,
@@ -144,6 +148,7 @@ class _SampleArray extends TypedLogicArray<_SampleStructure, _SampleValue> {
       _SampleArray(
         dimensions,
         schema: schema,
+        dimensionNames: _constructionDimensionNames,
         name: name ?? this.name,
         naming: naming,
         numUnpackedDimensions:
@@ -998,6 +1003,21 @@ void main() {
           specialized.arrayElements,
           everyElement(isA<_SampleStructure>()),
         );
+        expect(
+          specialized.elements.map((element) => element.name),
+          ['row_0', 'row_1'],
+        );
+        expect(
+          specialized.arrayElements.map((element) => element.name),
+          [
+            'column_0',
+            'column_1',
+            'column_2',
+            'column_0',
+            'column_1',
+            'column_2',
+          ],
+        );
       }
       expect(clone.name, 'values');
       expect(clone.naming, Naming.mergeable);
@@ -1546,7 +1566,7 @@ void main() {
       );
       SimCompare.checkIverilogVector(mixedModule, vectors);
       SimCompare.checkVerilatorVector(mixedModule, vectors);
-    });
+    }, tags: ['verilator']);
 
     test('simulates mixed nested arrays across a child boundary', () async {
       await Simulator.reset();
@@ -1613,7 +1633,7 @@ void main() {
       expect(source.numUnpackedDimensions, 1);
       expect(source.at([1, 2]).numUnpackedDimensions, 1);
       expect(source.at([1, 2]).at([3, 4]).width, 8);
-    });
+    }, tags: ['verilator']);
 
     test('drives and releases a nested structured typed inout array', () async {
       await Simulator.reset();
