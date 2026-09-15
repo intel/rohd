@@ -122,21 +122,30 @@ async function sendSignals(args: SendSignalsArgs): Promise<{ delivered: number }
   }
 
   let delivered = 0;
+  let failed = 0;
   for (const viewer of viewers.values()) {
     if (viewer.viewerId === args.sourceViewerId || !viewer.receiveCommand) {
       continue;
     }
 
-    await vscode.commands.executeCommand(viewer.receiveCommand, {
-      targetViewerId: viewer.viewerId,
-      sourceViewerId: args.sourceViewerId,
-      signalPaths,
-    });
-    delivered++;
+    try {
+      await vscode.commands.executeCommand(viewer.receiveCommand, {
+        targetViewerId: viewer.viewerId,
+        sourceViewerId: args.sourceViewerId,
+        signalPaths,
+      });
+      delivered++;
+    } catch (err) {
+      failed++;
+      output.appendLine(
+        `[SignalViewers] delivery to ${viewer.viewerId} failed: ${err}`,
+      );
+    }
   }
 
   output.appendLine(
-    `[SignalViewers] sent ${signalPaths.length} signal(s) from ${args.sourceViewerId} to ${delivered} viewer(s)`,
+    `[SignalViewers] sent ${signalPaths.length} signal(s) from ${args.sourceViewerId} ` +
+    `to ${delivered} viewer(s)${failed > 0 ? `; ${failed} failed` : ''}`,
   );
   return { delivered };
 }

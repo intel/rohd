@@ -86,7 +86,9 @@ void main() {
       expect(RohdModuleInfo.formatLabel(RohdSourceFormat.sv), 'SystemVerilog');
       expect(RohdModuleInfo.formatLabel(RohdSourceFormat.sc), 'SystemC');
       expect(
-          RohdModuleInfo.formatLabel(RohdSourceFormat.fst), 'Waveform (FST)');
+        RohdModuleInfo.formatLabel(RohdSourceFormat.fst),
+        'Waveform (FST)',
+      );
 
       const unavailable = RohdModuleInfo.unavailable;
       expect(unavailable.extensionAvailable, isFalse);

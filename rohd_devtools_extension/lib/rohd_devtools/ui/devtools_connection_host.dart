@@ -12,7 +12,7 @@ import 'dart:async';
 
 import 'package:dtd/dtd.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/models/dtd_vm_service_info.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/services/services.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/ui/ui.dart';

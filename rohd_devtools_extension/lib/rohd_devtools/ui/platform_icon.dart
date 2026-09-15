@@ -10,7 +10,7 @@
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// A widget that renders either a Material Icon or emoji text based on
 /// platform emoji font availability.

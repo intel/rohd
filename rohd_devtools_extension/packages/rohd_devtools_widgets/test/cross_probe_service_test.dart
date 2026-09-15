@@ -27,10 +27,7 @@ void main() {
       expect(schematic.incomingSignals.value, ['top.clk', 'top.reset']);
       expect(channel.lastSource, 'waveform');
       expect(channel.lastPaths, ['top.clk', 'top.reset']);
-      expect(
-        () => channel.lastPaths!.add('top.extra'),
-        throwsUnsupportedError,
-      );
+      expect(() => channel.lastPaths!.add('top.extra'), throwsUnsupportedError);
     });
 
     test('does not broadcast while inactive or for empty selections', () {
