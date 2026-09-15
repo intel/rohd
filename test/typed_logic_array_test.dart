@@ -267,6 +267,30 @@ class _NestedArrayStructure extends LogicStructure {
       );
 }
 
+class _NineBitNestedStructure extends LogicStructure {
+  final Logic prefix;
+  final LogicArray payload;
+  final Logic suffix;
+
+  factory _NineBitNestedStructure({String? name}) => _NineBitNestedStructure._(
+        Logic(name: 'prefix', width: 2),
+        LogicArray([2], 3, name: 'payload'),
+        Logic(name: 'suffix'),
+        name: name ?? 'nineBitNested',
+      );
+
+  _NineBitNestedStructure._(
+    this.prefix,
+    this.payload,
+    this.suffix, {
+    required String name,
+  }) : super([prefix, payload, suffix], name: name);
+
+  @override
+  _NineBitNestedStructure clone({String? name}) =>
+      _NineBitNestedStructure(name: name ?? this.name);
+}
+
 class _NestedNetArrayStructure extends LogicStructure {
   final LogicNet before;
   final LogicArray lanes;
@@ -300,6 +324,16 @@ class _NestedNetArrayStructure extends LogicStructure {
         name: name ?? this.name,
         numUnpackedDimensions: lanes.numUnpackedDimensions,
       );
+}
+
+class _NestedPackedOffsetModule extends Module {
+  _NestedPackedOffsetModule(
+      TypedLogicArray<TypedLogicArray<_NineBitNestedStructure, LogicValue>,
+              LogicValue>
+          source) {
+    final values = addTypedInput('values', source);
+    addOutput('selected', width: 2) <= values.at([1]).at([2]).prefix;
+  }
 }
 
 class _NestedArrayBoundaryModule extends Module {
@@ -425,6 +459,13 @@ LogicValue _nestedPacked(
           (sample1 << 11) |
           (after << 14),
       15,
+    );
+
+LogicValue _nineBitNestedPacked(
+        int prefix, int payload0, int payload1, int suffix) =>
+    LogicValue.ofInt(
+      prefix | (payload0 << 2) | (payload1 << 5) | (suffix << 8),
+      9,
     );
 
 class _TypedInputModule<T extends Logic> extends Module {
@@ -1398,6 +1439,45 @@ void main() {
         isA<TypedLogicArray<_SampleStructure, _SampleValue>>(),
       );
     });
+
+    test('lowers array-valued elements to their parent packed offsets',
+        () async {
+      await Simulator.reset();
+      final source = TypedLogicArray<
+          TypedLogicArray<_NineBitNestedStructure, LogicValue>, LogicValue>(
+        [2],
+        ({name}) => TypedLogicArray<_NineBitNestedStructure, LogicValue>(
+          [3],
+          _NineBitNestedStructure.new,
+          name: name,
+        ),
+      );
+      final module = _NestedPackedOffsetModule(source);
+      await module.build();
+
+      final elements = [
+        _nineBitNestedPacked(0, 1, 2, 0),
+        _nineBitNestedPacked(1, 2, 3, 1),
+        _nineBitNestedPacked(2, 3, 4, 0),
+        _nineBitNestedPacked(3, 4, 5, 1),
+        _nineBitNestedPacked(0, 5, 6, 0),
+        _nineBitNestedPacked(2, 6, 7, 1),
+      ];
+      final vectors = [
+        Vector(
+          {'values': LogicValue.ofIterable(elements)},
+          {'selected': elements.last.getRange(0, 2)},
+        ),
+      ];
+
+      await SimCompare.checkFunctionalVector(module, vectors);
+      final sv = module.generateSynth();
+      expect(sv, contains('input logic [1:0][26:0] values'));
+      expect(sv, contains('assign selected = values[1][19:18];'));
+      expect(sv, isNot(contains('values[1][2][1:0]')));
+      SimCompare.checkIverilogVector(module, vectors);
+      SimCompare.checkVerilatorVector(module, vectors);
+    }, tags: ['verilator']);
 
     test(
         'simulates packed and mixed nested arrays with array-valued '
