@@ -4,7 +4,7 @@
 // unpacked_array_synthesis_test.dart
 // Tests for unpacked-array synthesis and input connection inlining.
 //
-// 2026 September 9
+// 2026 September 15
 // Author: Max Korbel <max.korbel@intel.com>
 
 // Legacy API calls are intentional coverage for deprecated generateSynth().
