@@ -41,6 +41,8 @@ flutter:
     - assets/icons/
 
 dependency_overrides:
+  # Keep the transitive Cupertino UI package below the Dart 3.6-incompatible release.
+  cupertino_ui: ">=1.0.0 <1.1.0"
   rohd:
     path: ../
   rohd_hierarchy:
