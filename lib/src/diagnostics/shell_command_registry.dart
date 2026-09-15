@@ -99,7 +99,7 @@ class ShellCommandRegistry {
   }
 
   /// Registers a parser for a manifest argument type such as
-  /// `SignalOccurrence` or `CellOccurrence`.
+  /// `SignalOccurrence` or `HierarchyOccurrence`.
   void registerArgumentParser(String type, ShellArgumentParser parser) {
     if (type.trim().isEmpty) {
       throw const FormatException('Argument type names cannot be empty.');
