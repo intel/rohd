@@ -692,9 +692,11 @@ abstract class SimCompare {
     return true;
   }
 
+  /// Removes cached SystemC build artifacts, optionally preserving PCH files.
   static void cleanupSystemCCache({bool keepPch = true}) =>
       _SystemCSimCompare.cleanupSystemCCache(keepPch: keepPch);
 
+  /// Builds a SystemC executable for [module] using the supplied options.
   static SystemCVectorExecutable? buildSystemCVectorExecutable(
     Module module, {
     String? moduleName,
@@ -712,18 +714,21 @@ abstract class SimCompare {
         systemcLib: systemcLib,
       );
 
+  /// Runs [vectors] against a built SystemC [executable].
   static bool runSystemCVectors(
     SystemCVectorExecutable executable,
     List<Vector> vectors,
   ) =>
       _SystemCSimCompare.runSystemCVectors(executable, vectors);
 
+  /// Checks [vectors] against a built SystemC [executable].
   static void checkSystemCVectors(
     SystemCVectorExecutable executable,
     List<Vector> vectors,
   ) =>
       _SystemCSimCompare.checkSystemCVectors(executable, vectors);
 
+  /// Checks SystemC vectors generated from [module].
   static void checkSystemCVector(
     Module module,
     List<Vector> vectors, {
@@ -747,6 +752,7 @@ abstract class SimCompare {
         buildOnly: buildOnly,
       );
 
+  /// Compares [module] behavior with SystemC using [stimulus].
   static Future<bool> systemcSimCompare(
     Module module,
     Logic clk, {
