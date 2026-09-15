@@ -1,3 +1,12 @@
+// Copyright (C) 2023-2026 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// n_bit_subtractor.dart
+// Chapter 5 N-bit subtractor exercise answer.
+//
+// 2023 May 26
+// Author: Yao Jing Quek <yao.jing.quek@intel.com>
+
 // ignore_for_file: avoid_print - tutorial
 
 import 'package:rohd/rohd.dart';

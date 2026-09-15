@@ -1,3 +1,12 @@
+// Copyright (C) 2023-2026 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// full_adder.dart
+// Chapter 5 full-adder exercise answer.
+//
+// 2023 May 26
+// Author: Yao Jing Quek <yao.jing.quek@intel.com>
+
 // ignore_for_file: avoid_print - tutorial
 
 import 'package:rohd/rohd.dart';

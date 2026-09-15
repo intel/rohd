@@ -1,10 +1,10 @@
-// Copyright (C) 2023 Intel Corporation
+// Copyright (C) 2023-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // logic_name_config_test.dart
 // Unit tests for logic naming using configuration for naming preferences.
 //
-// 2023 November 3
+// 2026 September 15
 // Author: Max Korbel <max.korbel@intel.com>
 
 import 'package:collection/collection.dart';
