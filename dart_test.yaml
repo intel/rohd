@@ -3,3 +3,9 @@ tags:
     timeout: 2x
   verilator:
     timeout: 5m
+  ffi:
+    # Tests requiring dart:ffi and native shared libraries.
+
+presets:
+  no-ffi:
+    exclude_tags: ffi
