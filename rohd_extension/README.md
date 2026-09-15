@@ -231,7 +231,7 @@ so the construction site closest to the signal or instance is selected first.
 
 ## Prerequisites
 
-- **Node.js >= 22** for the pinned VSIX packaging tool (CI uses Node 24):
+- **Node.js >= 24** for the pinned VSIX packaging tool:
 
   ```bash
   nvm install

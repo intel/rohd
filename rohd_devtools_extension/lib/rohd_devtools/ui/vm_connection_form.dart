@@ -10,7 +10,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/ui/platform_icon.dart';
 
 /// Describes a single VM service discovered via DTD.

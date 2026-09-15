@@ -134,9 +134,7 @@ class FlcData {
       // Falls back to legacy "svFile" field. For lookup we use the first
       // file in each language list (the canonical output).
       final rawOutputFiles = modMap['outputFiles'];
-      final outputFiles = <String, String>{
-        if (svFile != null) 'sv': svFile,
-      };
+      final outputFiles = <String, String>{if (svFile != null) 'sv': svFile};
       if (rawOutputFiles is Map) {
         for (final e in rawOutputFiles.entries) {
           final v = e.value;
@@ -185,11 +183,14 @@ class FlcData {
                 continue;
               }
               final fi = int.tryParse(parts[0]);
-              if (fi == null || fi >= files.length) {
+              final line = int.tryParse(parts[1]) ?? 1;
+              if (fi == null || fi < 0 || fi >= files.length || line <= 0) {
                 continue;
               }
-              final line = int.tryParse(parts[1]) ?? 1;
-              final col = parts.length > 2 ? (int.tryParse(parts[2]) ?? 1) : 1;
+              final parsedColumn =
+                  parts.length > 2 ? int.tryParse(parts[2]) : null;
+              final col =
+                  parsedColumn == null || parsedColumn <= 0 ? 1 : parsedColumn;
               rohdFrames.add(
                 FlcFrame(file: files[fi], line: line, column: col),
               );
@@ -244,6 +245,120 @@ class FlcData {
     }
 
     return FlcData._(files: files, signals: signals, instances: instances);
+  }
+
+  /// Parse embedded `rohd.src_trace` attributes from a Yosys netlist.
+  ///
+  /// Embedded traces use the same file-indexed frame representation as FLC
+  /// data, but store signal and instance maps under each module's
+  /// `attributes.rohd.src_trace` entry. The JSON's `modules` map must
+  /// therefore have the shape `moduleName: {attributes: {rohd.src_trace:
+  /// trace}}`, as in a Yosys netlist. It may contain only the `modules`
+  /// portion of that netlist.
+  factory FlcData.fromNetlistJson(Map<String, dynamic> json) {
+    final rawFiles = json['files'];
+    if (rawFiles is! List || rawFiles.any((file) => file is! String)) {
+      return FlcData.empty();
+    }
+    // Frame indexes address this table directly, so do not filter malformed
+    // entries and accidentally shift the remaining paths.
+    final files = rawFiles.cast<String>();
+    final rawModules = json['modules'];
+    if (rawModules is! Map) {
+      return FlcData.empty();
+    }
+
+    final signals = <String, Map<String, FlcEntry>>{};
+    final instances = <String, Map<String, FlcEntry>>{};
+    for (final moduleEntry in rawModules.entries) {
+      final module = moduleEntry.value;
+      if (module is! Map) {
+        continue;
+      }
+      final attributes = module['attributes'];
+      if (attributes is! Map) {
+        continue;
+      }
+      final trace = attributes['rohd.src_trace'];
+      if (trace is! Map) {
+        continue;
+      }
+      final parsed = _parseEmbeddedModule(
+        trace.cast<Object?, Object?>(),
+        files,
+      );
+      if (parsed.signals.isNotEmpty) {
+        signals[moduleEntry.key.toString()] = parsed.signals;
+      }
+      if (parsed.instances.isNotEmpty) {
+        instances[moduleEntry.key.toString()] = parsed.instances;
+      }
+    }
+    return FlcData._(files: files, signals: signals, instances: instances);
+  }
+
+  /// Parse one module's embedded `rohd.src_trace` attribute.
+  ///
+  /// [modules] must contain module entries with an
+  /// `attributes.rohd.src_trace` wrapper, for example:
+  /// `{'Top': {'attributes': {'rohd.src_trace': trace}}}`.
+  factory FlcData.fromEmbeddedAttributes({
+    required List<String> files,
+    required Map<String, dynamic> modules,
+  }) =>
+      FlcData.fromNetlistJson({'files': files, 'modules': modules});
+
+  static _EmbeddedModule _parseEmbeddedModule(
+    Map<Object?, Object?> trace,
+    List<String> files,
+  ) {
+    Map<String, FlcEntry> parseEntries(Object? value) {
+      if (value is! Map) {
+        return <String, FlcEntry>{};
+      }
+      final result = <String, FlcEntry>{};
+      for (final entry in value.entries) {
+        final name = entry.key.toString();
+        final rawFrames = entry.value;
+        if (rawFrames is! List) {
+          continue;
+        }
+        final frames = <FlcFrame>[];
+        for (final rawFrame in rawFrames) {
+          if (rawFrame is! String) {
+            continue;
+          }
+          final parts = rawFrame.split(':');
+          if (parts.length < 2) {
+            continue;
+          }
+          final fileIndex = int.tryParse(parts[0]);
+          final line = int.tryParse(parts[1]);
+          if (fileIndex == null ||
+              line == null ||
+              fileIndex < 0 ||
+              fileIndex >= files.length ||
+              line <= 0) {
+            continue;
+          }
+          final parsedColumn = parts.length > 2 ? int.tryParse(parts[2]) : null;
+          final column =
+              parsedColumn == null || parsedColumn <= 0 ? 1 : parsedColumn;
+          frames.add(
+            FlcFrame(file: files[fileIndex], line: line, column: column),
+          );
+        }
+        if (frames.isNotEmpty) {
+          result[name] = FlcEntry(frames: frames);
+        }
+      }
+      return result;
+    }
+
+    return _EmbeddedModule(
+      signals: parseEntries(trace['signals']),
+      instances: parseEntries(trace['instances']),
+    );
   }
 
   /// Parse a v5 string-encoded symbol.
@@ -309,9 +424,15 @@ class FlcData {
           final colStr =
               segments.length >= 2 ? segments[segments.length - 1] : null;
           final line = int.tryParse(lineStr) ?? 1;
-          final column = colStr != null ? (int.tryParse(colStr) ?? 1) : 1;
-          outputPositions
-              .add(_OutputPos(type: type, line: line, column: column));
+          if (line <= 0) {
+            continue;
+          }
+          final parsedColumn = colStr != null ? int.tryParse(colStr) : null;
+          final column =
+              parsedColumn == null || parsedColumn <= 0 ? 1 : parsedColumn;
+          outputPositions.add(
+            _OutputPos(type: type, line: line, column: column),
+          );
         }
       }
     }
@@ -460,4 +581,11 @@ class _OutputPos {
   final int column;
 
   const _OutputPos({required this.type, required this.line, this.column = 1});
+}
+
+class _EmbeddedModule {
+  final Map<String, FlcEntry> signals;
+  final Map<String, FlcEntry> instances;
+
+  const _EmbeddedModule({required this.signals, required this.instances});
 }

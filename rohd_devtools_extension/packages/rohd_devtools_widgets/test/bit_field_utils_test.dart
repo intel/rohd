@@ -7,8 +7,8 @@
 // 2026 July
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:rohd_devtools_widgets/rohd_devtools_widgets.dart';
 
 void main() {
@@ -37,17 +37,14 @@ void main() {
 
   group('parseBitFieldDefs', () {
     test('parses named and unnamed bit fields', () {
-      final fields = BitFieldUtils.parseBitFieldDefs(
-        '''
+      final fields = BitFieldUtils.parseBitFieldDefs('''
 exponent 31:21
 mantissa   20:0
 sign 31
 7:4
 0
 ignored-name 3
-''',
-        31,
-      );
+''', 31);
 
       expect(fields, hasLength(5));
       expect(fields[0].name, 'exponent');
@@ -68,13 +65,10 @@ ignored-name 3
     });
 
     test('normalizes reversed and out-of-range indexes', () {
-      final fields = BitFieldUtils.parseBitFieldDefs(
-        '''
+      final fields = BitFieldUtils.parseBitFieldDefs('''
 low_high 1:8
 too_high 40:32
-''',
-        31,
-      );
+''', 31);
 
       expect(fields, hasLength(2));
       expect(fields[0].high, 8);
@@ -84,50 +78,53 @@ too_high 40:32
     });
   });
 
-  testWidgets('showBitRangeDialog returns parsed input and cancel returns null',
-      (tester) async {
-    late BuildContext dialogContext;
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: ThemeData(
-          useMaterial3: false,
-          splashFactory: NoSplash.splashFactory,
+  testWidgets(
+    'showBitRangeDialog returns parsed input and cancel returns null',
+    (tester) async {
+      late BuildContext dialogContext;
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData(
+            useMaterial3: false,
+            splashFactory: NoSplash.splashFactory,
+          ),
+          home: Builder(
+            builder: (context) {
+              dialogContext = context;
+              return const SizedBox.shrink();
+            },
+          ),
         ),
-        home: Builder(
-          builder: (context) {
-            dialogContext = context;
-            return const SizedBox.shrink();
-          },
-        ),
-      ),
-    );
+      );
 
-    final future = showBitRangeDialog(
-      dialogContext,
-      signalName: 'data',
-      width: 16,
-    );
-    await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField), '2:5');
-    await tester.tap(find.text('OK'));
-    await tester.pumpAndSettle();
+      final future = showBitRangeDialog(
+        dialogContext,
+        signalName: 'data',
+        width: 16,
+      );
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), '2:5');
+      await tester.tap(find.text('OK'));
+      await tester.pumpAndSettle();
 
-    expect(await future, (5, 2));
+      expect(await future, (5, 2));
 
-    final cancelled = showBitRangeDialog(
-      dialogContext,
-      signalName: 'data',
-      width: 16,
-    );
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Cancel'));
-    await tester.pumpAndSettle();
+      final cancelled = showBitRangeDialog(
+        dialogContext,
+        signalName: 'data',
+        width: 16,
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
 
-    expect(await cancelled, isNull);
-  });
+      expect(await cancelled, isNull);
+    },
+  );
 
-  testWidgets('showDefineBitFieldsDialog parses edited definitions',
-      (tester) async {
+  testWidgets('showDefineBitFieldsDialog parses edited definitions', (
+    tester,
+  ) async {
     late BuildContext dialogContext;
     await tester.pumpWidget(
       MaterialApp(
@@ -148,9 +145,7 @@ too_high 40:32
       dialogContext,
       signalName: 'floatBits',
       width: 32,
-      existingDefs: const [
-        BitFieldDef(name: 'sign', high: 31, low: 31),
-      ],
+      existingDefs: const [BitFieldDef(name: 'sign', high: 31, low: 31)],
     );
     await tester.pumpAndSettle();
 

@@ -13,8 +13,9 @@
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 import 'package:flutter/foundation.dart';
+import 'package:rohd_devtools_widgets/src/rohd_extension_status.dart';
+
 export 'rohd_extension_status.dart';
-import 'rohd_extension_status.dart';
 
 /// Abstract client for the ROHD VS Code extension handshake.
 ///

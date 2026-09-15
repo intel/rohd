@@ -40,10 +40,7 @@ enum SignalValueFormat {
 /// A format preference for one signal occurrence address.
 class SignalValueFormatPreference {
   /// Creates a preference for [address] using [format].
-  SignalValueFormatPreference(
-    this.address,
-    this.format,
-  );
+  SignalValueFormatPreference(this.address, this.format);
 
   /// The occurrence address, including the signal index.
   final OccurrenceAddress address;
@@ -67,7 +64,7 @@ class SignalValueFormatRegistry {
   static final RegExp _hexadecimalDigits = RegExp(r'^[0-9a-fxz]+$');
 
   /// Matches a character that distinguishes hexadecimal from decimal.
-  static final RegExp _hexadecimalMarker = RegExp(r'[a-fxz]');
+  static final RegExp _hexadecimalMarker = RegExp('[a-fxz]');
 
   /// Stores the registered preference for each signal occurrence.
   static OccurrenceTrie<SignalValueFormat> _formatTrie =
@@ -104,10 +101,8 @@ class SignalValueFormatRegistry {
     Iterable<OccurrenceAddress> addresses,
     SignalValueFormat format,
   ) {
-    final requestedAddresses = addresses.toList(growable: false);
-    for (final address in requestedAddresses) {
-      _validateSignalAddress(address);
-    }
+    final requestedAddresses = addresses.toList(growable: false)
+      ..forEach(_validateSignalAddress);
 
     var changed = false;
     for (final address in requestedAddresses) {
@@ -136,9 +131,8 @@ class SignalValueFormatRegistry {
   static String formatToString(SignalValueFormat format) => format.name;
 
   /// Returns the requested format for [address], or the waveform default.
-  static SignalValueFormat formatFor(OccurrenceAddress address) {
-    return formatForAny([address]);
-  }
+  static SignalValueFormat formatFor(OccurrenceAddress address) =>
+      formatForAny([address]);
 
   /// Returns the first registered format matching [addresses].
   static SignalValueFormat formatForAny(
@@ -185,11 +179,7 @@ class SignalValueFormatRegistry {
   }
 
   /// Formats a ROHD radix literal according to [format].
-  static String formatValue(
-    String value,
-    SignalValueFormat format,
-    int width,
-  ) {
+  static String formatValue(String value, SignalValueFormat format, int width) {
     final waveformValue = _waveformValue(value, width);
     if (waveformValue == null) {
       return _canonicalWaveformValue(value, width);
@@ -205,32 +195,36 @@ class SignalValueFormatRegistry {
           includeWidth: false,
           sepChar: '',
         ),
-      SignalValueFormat.hexadecimal =>
-        logicValue.toRadixString(radix: 16, sepChar: ''),
-      SignalValueFormat.unsignedDecimal =>
-        logicValue.toRadixString(radix: 10, includeWidth: false, sepChar: ''),
+      SignalValueFormat.hexadecimal => logicValue.toRadixString(
+          radix: 16,
+          sepChar: '',
+        ),
+      SignalValueFormat.unsignedDecimal => logicValue.toRadixString(
+          radix: 10,
+          includeWidth: false,
+          sepChar: '',
+        ),
       SignalValueFormat.signedDecimal =>
         logicValue.toBigInt().toSigned(logicValue.width).toString(),
-      SignalValueFormat.octal =>
-        '0o${logicValue.toRadixString(radix: 8, includeWidth: false, sepChar: '')}',
+      SignalValueFormat.octal => _formatOctal(logicValue),
       SignalValueFormat.ascii => () {
           final byteCount = (logicValue.width + 7) ~/ 8;
           return String.fromCharCodes(
-            List<int>.generate(
-              byteCount,
-              (index) {
-                final shift = (byteCount - index - 1) * 8;
-                final code =
-                    ((logicValue.toBigInt() >> shift) & BigInt.from(0xff))
-                        .toInt();
-                return code >= 0x20 && code <= 0x7e ? code : 0x2e;
-              },
-            ),
+            List<int>.generate(byteCount, (index) {
+              final shift = (byteCount - index - 1) * 8;
+              final code =
+                  ((logicValue.toBigInt() >> shift) & BigInt.from(0xff))
+                      .toInt();
+              return code >= 0x20 && code <= 0x7e ? code : 0x2e;
+            }),
           );
         }(),
       SignalValueFormat.waveform => canonical,
     };
   }
+
+  static String _formatOctal(LogicValue value) =>
+      '0o${value.toRadixString(radix: 8, includeWidth: false, sepChar: '')}';
 
   /// Parses [value] as a waveform literal and returns it with its canonical
   /// waveform representation.
