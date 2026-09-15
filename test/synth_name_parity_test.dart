@@ -8,9 +8,10 @@
 // 2026 April 14
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
+import 'dart:convert';
+
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
-import 'package:rohd_hierarchy/rohd_hierarchy.dart';
 import 'package:test/test.dart';
 
 import '../example/filter_bank.dart';
@@ -437,8 +438,16 @@ void main() {
 
       final netlistModule = _NestedNameModule();
       await netlistModule.build();
-      final netlistHierarchy =
-          NetlistHierarchyAdapter.fromJson(netlistModule.generateNetlist());
+      final netlist =
+          jsonDecode(netlistModule.generateNetlist()) as Map<String, dynamic>;
+      final netlistModules = netlist['modules'] as Map<String, dynamic>;
+      final emittedNetlistNames = {
+        for (final moduleDefinition
+            in netlistModules.values.cast<Map<String, dynamic>>()) ...[
+          ...(moduleDefinition['ports'] as Map<String, dynamic>).keys,
+          ...(moduleDefinition['netnames'] as Map<String, dynamic>).keys,
+        ],
+      };
       final netlistNames = names(netlistModule);
       await Simulator.reset();
 
@@ -452,14 +461,10 @@ void main() {
       expect(svNames['output'], 'valuesOut');
       expect(svNames['inputLanes'], 'valuesIn_0__lanes');
       expect(svNames['outputLanes'], 'valuesOut_1__lanes');
-      final loadedNames = netlistHierarchy.root
-          .depthFirstSignals()
-          .map((signal) => signal.name)
-          .toSet();
       for (final name in svNames.values) {
         expect(sv, contains(name));
-        expect(loadedNames, contains(name),
-            reason: 'SV and loaded netlist should preserve signal name $name.');
+        expect(emittedNetlistNames, contains(name),
+            reason: 'SV and netlist should preserve signal name $name.');
       }
     });
   });
