@@ -131,6 +131,52 @@ The first form starts an interactive session. The later forms send one command
 and print a JSON response. Use `help` in the shell for manifest-derived command
 help and argument metadata.
 
+#### Target-Owned Design Shell
+
+The shell is backed by a target-owned `RohdDesignSession`. The target session
+owns the live `HierarchyOccurrence` tree and the `SignalOccurrence` handles
+returned by searches. Handles are kept inside the target isolate; the DTD
+transport exchanges paths, occurrence addresses, and JSON response data rather
+than serializing live Dart objects.
+
+The shell exposes these capability groups:
+
+- `status` reports whether the synthesized design is ready and which hierarchy,
+  connectivity, waveform, and cross-probe capabilities are available.
+- `find-cell`, `find-port`, and `find-signal` resolve one absolute path.
+- `find-cells`, `find-ports`, and `find-signals` search a hierarchy using the
+  shared regex/glob syntax. A search can use an alias as its root and can
+  request transparent traversal across hierarchical ports.
+- `fanin` and `fanout` traverse signal connectivity. Transparent traversal
+  crosses hierarchical port boundaries but does not infer behavior through
+  arbitrary logic.
+- `name` expands one occurrence handle into its canonical path and metadata.
+- `let` stores a live `HierarchyOccurrence` or `SignalOccurrence` result for
+  reuse in later commands.
+
+For example, this sequence finds a signal, inspects its identity, and follows
+its consumers across hierarchy boundaries:
+
+```text
+let sum = find-signal top/alu/sum
+name $sum
+fanout $sum transparent
+```
+
+Use `--json` for automation or `--file` to execute one command per script line:
+
+```sh
+dart run bin/rohd_shell.dart --dtd "$DTD_URI" --json \
+  'find-signals "clk|reset"'
+dart run bin/rohd_shell.dart --dtd "$DTD_URI" --file shell.commands
+```
+
+The typed protocol is also available through the target VM service extension
+`ext.rohd.designSession`. It uses versioned methods and structured error
+responses, making it suitable for DevTools, debugger evaluation, and other
+clients that need design queries without depending on the terminal command
+syntax.
+
 #### Cross-Probe Send
 
 `send` is an agent operation: it resolves signal paths in the shell process
