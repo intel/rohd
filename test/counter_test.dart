@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2023 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // counter_test.dart
@@ -48,7 +48,7 @@ void main() {
       final reset = Logic();
       final counter = Counter(Logic(), reset);
       await counter.build();
-      // WaveDumper(counter);
+      // counter.dumpWaves();
 
       unawaited(reset.nextPosedge
           .then((value) => expect(counter.val.value.toInt(), equals(0))));
