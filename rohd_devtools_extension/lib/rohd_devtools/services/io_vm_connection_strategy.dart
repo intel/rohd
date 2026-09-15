@@ -11,7 +11,7 @@
 import 'dart:async';
 
 import 'package:logging/logging.dart';
-import 'package:rohd_devtools_extension/rohd_devtools/services/vm_connection_strategy.dart';
+import 'package:rohd_devtools_extension/rohd_devtools/ui/ui.dart';
 import 'package:vm_service/vm_service.dart';
 import 'package:vm_service/vm_service_io.dart';
 
@@ -49,8 +49,10 @@ class IoVmConnectionStrategy extends VmConnectionStrategy {
       throw Exception('Invalid URI format');
     }
 
-    final vmService =
-        await _connectUri(normalizedUri.toString(), _StdoutLog()).timeout(
+    final vmService = await _connectUri(
+      normalizedUri.toString(),
+      _StdoutLog(),
+    ).timeout(
       const Duration(seconds: 10),
       onTimeout: () =>
           throw TimeoutException('VM connection timed out after 10 s'),

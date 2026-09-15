@@ -19,12 +19,7 @@ dev_dependencies:
 dependency_overrides:
   rohd:
     path: ../../..
-  rohd_hcl:
-    path: ../../../../../rohd-hcl
 
 flutter:
   assets:
     - assets/extension/
-    - assets/rohd_icon.png
-    - assets/systemverilog_icon.png
-    - assets/systemc_icon.png
