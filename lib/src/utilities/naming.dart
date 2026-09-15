@@ -1,10 +1,10 @@
-// Copyright (C) 2021-2025 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // name_validator.dart
 // Performs validation on naming.
 //
-// 2023 October 24
+// 2026 September 15
 
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
