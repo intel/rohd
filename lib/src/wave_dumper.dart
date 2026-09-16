@@ -13,7 +13,7 @@ import 'package:rohd/rohd.dart';
 ///
 /// [WaveDumper] is a simple wrapper around [WaveformService] for backward
 /// compatibility. It provides the legacy API for recording all signal changes
-/// in a simulation to a VCD file.
+/// in a simulation to a VCD file without retaining the complete VCD in memory.
 ///
 /// **Migration guide:**
 ///

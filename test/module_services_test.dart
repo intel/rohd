@@ -36,8 +36,8 @@ class FakeService implements ModuleService {
 }
 
 void main() {
-  tearDown(() {
-    SystemVerilogService.current = null;
+  tearDown(() async {
+    await Simulator.reset();
     ModuleServices.instance.reset();
   });
 
@@ -96,6 +96,74 @@ void main() {
       ModuleServices.instance.reset();
       expect(ModuleServices.instance.rootModule, isNull);
       expect(ModuleServices.instance.lookup<FakeService>(), isNull);
+    });
+
+    test('service current accessors follow latest registrations', () async {
+      final mod = SimpleModule(Logic());
+      await mod.build();
+
+      final firstWaveform = WaveformService(mod);
+      final secondWaveform = WaveformService(mod);
+      final firstNetlist = NetlistService(mod);
+      final secondNetlist = NetlistService(mod);
+      final firstSv = SystemVerilogService(mod);
+      final secondSv = SystemVerilogService(mod);
+
+      expect(WaveformService.current, same(secondWaveform));
+      expect(NetlistService.current, same(secondNetlist));
+      expect(SystemVerilogService.current, same(secondSv));
+      expect(ModuleServices.instance.lookup<WaveformService>(),
+          isNot(same(firstWaveform)));
+      expect(ModuleServices.instance.lookup<NetlistService>(),
+          isNot(same(firstNetlist)));
+      expect(ModuleServices.instance.lookup<SystemVerilogService>(),
+          isNot(same(firstSv)));
+    });
+
+    test('service opt-out does not replace a registered service', () async {
+      final mod = SimpleModule(Logic());
+      await mod.build();
+
+      final waveform = WaveformService(mod);
+      final netlist = NetlistService(mod);
+      final sv = SystemVerilogService(mod);
+      WaveformService(mod, register: false);
+      NetlistService(mod, register: false);
+      SystemVerilogService(mod, register: false);
+
+      expect(WaveformService.current, same(waveform));
+      expect(NetlistService.current, same(netlist));
+      expect(SystemVerilogService.current, same(sv));
+    });
+
+    test('unregister clears matching service current accessors', () async {
+      final mod = SimpleModule(Logic());
+      await mod.build();
+      WaveformService(mod);
+      NetlistService(mod);
+      SystemVerilogService(mod);
+
+      ModuleServices.instance.unregister<WaveformService>();
+      ModuleServices.instance.unregister<NetlistService>();
+      ModuleServices.instance.unregister<SystemVerilogService>();
+
+      expect(WaveformService.current, isNull);
+      expect(NetlistService.current, isNull);
+      expect(SystemVerilogService.current, isNull);
+    });
+
+    test('reset clears every service current accessor', () async {
+      final mod = SimpleModule(Logic());
+      await mod.build();
+      WaveformService(mod);
+      NetlistService(mod);
+      SystemVerilogService(mod);
+
+      ModuleServices.instance.reset();
+
+      expect(WaveformService.current, isNull);
+      expect(NetlistService.current, isNull);
+      expect(SystemVerilogService.current, isNull);
     });
   });
 
@@ -301,6 +369,62 @@ void main() {
         () => SystemVerilogService(mod),
         throwsA(isA<ModuleNotBuiltException>()),
       );
+    });
+  });
+
+  group('NetlistService', () {
+    test('construction does not write configured output', () async {
+      final mod = SimpleModule(Logic());
+      await mod.build();
+      final dir = Directory.systemTemp.createTempSync('netlist_test_');
+      try {
+        final netlist = NetlistService(
+          mod,
+          outputDirectory: dir.path,
+          outputBaseName: 'configured',
+        );
+
+        expect(netlist.json, isNotEmpty);
+        expect(File('${dir.path}/configured.rohd.json').existsSync(), isFalse);
+      } finally {
+        dir.deleteSync(recursive: true);
+      }
+    });
+
+    test('artifact defaults to the module definition name', () async {
+      final mod = SimpleModule(Logic());
+      await mod.build();
+      final netlist = NetlistService(mod);
+
+      final artifact = netlist.artifacts.single;
+
+      expect(artifact.fileName, equals('${mod.definitionName}.rohd.json'));
+      expect(artifact.mediaType, equals('application/json'));
+      expect(
+        utf8.decode(
+          await artifact.openRead().expand((bytes) => bytes).toList(),
+        ),
+        equals(netlist.json),
+      );
+    });
+
+    test('writeOutputs writes the configured artifact name', () async {
+      final mod = SimpleModule(Logic());
+      await mod.build();
+      final dir = Directory.systemTemp.createTempSync('netlist_test_');
+      try {
+        final netlist = NetlistService(
+          mod,
+          outputDirectory: dir.path,
+          outputBaseName: 'out',
+        )..writeOutputs();
+
+        final outputFile = File('${dir.path}/out.rohd.json');
+        expect(outputFile.existsSync(), isTrue);
+        expect(outputFile.readAsStringSync(), equals(netlist.json));
+      } finally {
+        dir.deleteSync(recursive: true);
+      }
     });
   });
 }

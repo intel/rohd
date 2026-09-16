@@ -11,6 +11,7 @@
 library;
 
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:rohd/rohd.dart';
@@ -143,9 +144,19 @@ void main() {
     expect(service.module, same(mod));
     expect(service.outputPath, outputPath);
     expect(service.outputFilePath, outputPath);
+    expect(service.retainInMemory, isFalse);
     expect(File(service.outputPath).existsSync(), isTrue);
 
     await Simulator.run();
+
+    expect(
+      (await service.artifacts.single
+              .openRead()
+              .expand((bytes) => bytes)
+              .toList())
+          .isNotEmpty,
+      isTrue,
+    );
     deleteTemporaryDump(dumpName);
   });
 
@@ -163,7 +174,8 @@ void main() {
     File(outputPath).deleteSync();
   });
 
-  test('waveform artifact derives its extension from the format', () async {
+  test('file-only capture streams its artifact after simulation finalization',
+      () async {
     final mod = SimpleModule(Logic());
     await mod.build();
 
@@ -171,17 +183,88 @@ void main() {
       mod,
       outputDirectory: tempDumpDir,
       outputBaseName: 'capture',
+      writeToFile: true,
     );
 
     final artifact = waveformService.artifacts.single;
 
     expect(artifact.fileName, equals('capture.vcd'));
     expect(artifact.mediaType, equals('text/x-vcd'));
-    expect(File(waveformService.outputFilePath).existsSync(), isFalse);
+    expect(waveformService.retainInMemory, isFalse);
+    expect(File(waveformService.outputFilePath).existsSync(), isTrue);
+
+    await Simulator.run();
+
     expect(
       (await artifact.openRead().expand((bytes) => bytes).toList()).isNotEmpty,
       isTrue,
     );
+
+    File(waveformService.outputFilePath).deleteSync();
+  });
+
+  test('in-memory-only debugging capture retains waveform history', () async {
+    final mod = SimpleModule(Logic());
+    await mod.build();
+
+    final waveformService = WaveformService(
+      mod,
+      outputDirectory: tempDumpDir,
+      outputBaseName: 'in_memory_capture',
+    );
+
+    expect(waveformService.writeToFile, isFalse);
+    expect(waveformService.retainInMemory, isTrue);
+    expect(File(waveformService.outputFilePath).existsSync(), isFalse);
+
+    await Simulator.run();
+
+    final bytes = await waveformService.artifacts.single
+        .openRead()
+        .expand((bytes) => bytes)
+        .toList();
+    expect(utf8.decode(bytes), contains(r'$enddefinitions'));
+  });
+
+  test('capture without a file or retained history has no artifact', () async {
+    final mod = SimpleModule(Logic());
+    await mod.build();
+
+    final waveformService = WaveformService(mod, retainInMemory: false);
+
+    expect(waveformService.artifacts, isEmpty);
+  });
+
+  test('recording window snapshots stable signal values at its start',
+      () async {
+    final a = Logic(name: 'a');
+    final mod = SimpleModule(a);
+    await mod.build();
+    a.inject(0);
+
+    const dumpName = 'windowInitialSnapshot';
+    Directory(tempDumpDir).createSync(recursive: true);
+    WaveformService(
+      mod,
+      outputDirectory: tempDumpDir,
+      outputBaseName: 'temp_dump_$dumpName',
+      writeToFile: true,
+      startTime: 10,
+    );
+
+    Simulator.registerAction(5, () => a.put(1));
+    Simulator.registerAction(15, () {});
+    Simulator.registerAction(20, () {});
+    await Simulator.run();
+
+    final vcdContents = File(temporaryDumpPath(dumpName)).readAsStringSync();
+    expect(
+      VcdParser.confirmValue(vcdContents, 'a', 15, LogicValue.one),
+      isTrue,
+      reason: 'the stable value at startTime must seed the recording window',
+    );
+
+    deleteTemporaryDump(dumpName);
   });
 
   test('rejects formats without a matching waveform writer', () async {

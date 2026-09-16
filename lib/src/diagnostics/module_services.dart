@@ -18,9 +18,17 @@ import 'package:rohd/src/diagnostics/inspector_service.dart';
 /// type) and are retrieved with [lookup].  The registry intentionally exposes
 /// no per-format accessors: each service owns its own JSON and output methods,
 /// reached through [lookup] or the service's own static `current` accessor.
+/// Those accessors are backed by this registry, so both discovery routes have
+/// the same registration lifetime.
 ///
 /// The registry references no specific service type, so it is identical across
 /// all feature branches that contribute services.
+///
+/// Service registrations are independent latest registrations by concrete
+/// service type; they are not an atomic set associated with [rootModule].
+/// [reset] explicitly clears both the hierarchy and every service
+/// registration. [Simulator.reset] does not reset this registry, allowing
+/// generated service results to remain available after a simulation ends.
 ///
 /// **Auto-registered:**
 ///  - [rootModule] / [hierarchyJson] — set by [Module.build].
@@ -71,7 +79,10 @@ class ModuleServices {
     _services.remove(T);
   }
 
-  /// Resets all services.  Intended for test teardown.
+  /// Resets the hierarchy and all service registrations.
+  ///
+  /// This is independent of [Simulator.reset] and is intended for test
+  /// teardown or callers that explicitly want to discard discovered services.
   void reset() {
     rootModule = null;
     _services.clear();

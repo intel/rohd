@@ -162,7 +162,7 @@ Future<void> main({bool noPrint = false}) async {
 
   // Let's see what this module looks like as SystemVerilog, so we can pass it
   // to other tools.
-  final systemVerilogCode = counter.dumpSystemVerilog().output;
+  final systemVerilogCode = counter.dumpSystemVerilog();
   if (!noPrint) {
     print(systemVerilogCode);
   }

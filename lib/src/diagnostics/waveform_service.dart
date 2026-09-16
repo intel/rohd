@@ -61,7 +61,7 @@ enum OverwritePolicy {
 ///
 /// This is the base class for waveform capture.  It handles:
 /// - Signal collection (with optional [signalFilter])
-/// - In-memory VCD output with configurable [timescale]
+/// - Optional whole-history in-memory VCD output with configurable [timescale]
 /// - Selective recording via [startTime] / [stopTime]
 /// - Optional file output with periodic buffer flushing and [overwritePolicy]
 /// - Optional registration with [ModuleServices]
@@ -105,7 +105,11 @@ enum OverwritePolicy {
 /// ```
 class WaveformService extends ArtifactProducingService {
   /// The most recently registered [WaveformService], or `null`.
-  static WaveformService? current;
+  ///
+  /// This is backed by [ModuleServices], so it is cleared by unregistering
+  /// this service type or resetting the registry.
+  static WaveformService? get current =>
+      ModuleServices.instance.lookup<WaveformService>();
 
   /// Path of the output waveform file.
   ///
@@ -162,9 +166,17 @@ class WaveformService extends ArtifactProducingService {
 
   /// Whether waveform bytes are written to [outputFilePath].
   ///
-  /// When `false`, the service retains its waveform bytes in memory and exposes
-  /// them through [artifacts].
+  /// File-backed captures retain only the current [flushBufferSize]-bounded
+  /// write buffer unless [retainInMemory] is enabled.
   final bool writeToFile;
+
+  /// Whether to retain the complete waveform in memory.
+  ///
+  /// By default, this is `true` for in-memory-only VCD debugging captures and
+  /// `false` for file-backed captures. Set it explicitly to override those
+  /// defaults when consumers need whole-history waveform queries during or
+  /// after simulation.
+  final bool retainInMemory;
 
   // ─── Internal file-writing state ─────────────────────────────
 
@@ -174,7 +186,7 @@ class WaveformService extends ArtifactProducingService {
   /// Write buffer; flushed when it exceeds [flushBufferSize].
   final StringBuffer _fileBuffer = StringBuffer();
 
-  /// The complete waveform output retained for streaming artifacts.
+  /// The complete waveform output when [retainInMemory] is enabled.
   final StringBuffer _inMemoryOutput = StringBuffer();
 
   /// Counter for assigning compact signal markers in the VCD.
@@ -189,6 +201,9 @@ class WaveformService extends ArtifactProducingService {
   /// The timestamp currently being accumulated.
   int _currentDumpingTimestamp = Simulator.time;
 
+  /// Whether the recording window's initial signal snapshot has been written.
+  bool _hasWrittenWindowSnapshot = false;
+
   // ─── Constructor ─────────────────────────────────────────────
 
   /// Creates a [WaveformService] for [module].
@@ -202,6 +217,11 @@ class WaveformService extends ArtifactProducingService {
   ///
   /// Use the optional constructor parameters to configure format, filtering,
   /// timescale, start/stop times, flush size, and overwrite policy.
+  ///
+  /// In-memory-only VCD debugging captures retain the complete waveform by
+  /// default. Set [retainInMemory] explicitly to choose whole-history
+  /// retention; file-backed captures default to bounded memory while retaining
+  /// a streamable artifact on disk.
   WaveformService(
     Module module, {
     super.outputDirectory,
@@ -216,7 +236,9 @@ class WaveformService extends ArtifactProducingService {
     this.overwritePolicy = OverwritePolicy.overwrite,
     this.register = true,
     this.writeToFile = false,
-  }) : super(module) {
+    bool? retainInMemory,
+  })  : retainInMemory = retainInMemory ?? !writeToFile,
+        super(module) {
     if (!module.hasBuilt) {
       throw Exception(
         'Module must be built before creating WaveformService. '
@@ -248,6 +270,7 @@ class WaveformService extends ArtifactProducingService {
     _collectSignals();
     _writeHeader();
     _writeScope();
+    _hasWrittenWindowSnapshot = startTime == null || startTime == 0;
 
     Simulator.preTick.listen((_) {
       if (Simulator.time != _currentDumpingTimestamp) {
@@ -255,6 +278,7 @@ class WaveformService extends ArtifactProducingService {
           _captureTimestamp(_currentDumpingTimestamp);
         }
         _currentDumpingTimestamp = Simulator.time;
+        _writeWindowSnapshotIfNeeded(Simulator.time);
       }
     });
 
@@ -265,7 +289,6 @@ class WaveformService extends ArtifactProducingService {
     });
 
     if (register) {
-      current = this;
       ModuleServices.instance.register<WaveformService>(this);
     }
   }
@@ -415,6 +438,7 @@ class WaveformService extends ArtifactProducingService {
       return;
     }
 
+    _writeWindowSnapshotIfNeeded(timestamp);
     _writeToBuffer('#$timestamp\n');
 
     final snapshot = Set<Logic>.of(_changedThisTimestamp);
@@ -425,6 +449,19 @@ class WaveformService extends ArtifactProducingService {
     _changedThisTimestamp.clear();
 
     onTimestampCapture(timestamp, snapshot);
+  }
+
+  void _writeWindowSnapshotIfNeeded(int timestamp) {
+    if (_hasWrittenWindowSnapshot ||
+        startTime == null ||
+        timestamp < startTime! ||
+        !_isInRecordingWindow(startTime!)) {
+      return;
+    }
+
+    _writeToBuffer('#$startTime\n');
+    _signalToMarkerMap.keys.forEach(_writeSignalValueUpdate);
+    _hasWrittenWindowSnapshot = true;
   }
 
   void _writeSignalValueUpdate(Logic signal) {
@@ -442,16 +479,22 @@ class WaveformService extends ArtifactProducingService {
   // ─── Buffered I/O ─────────────────────────────────────────────
 
   void _writeToBuffer(String contents) {
-    _fileBuffer.write(contents);
-    _inMemoryOutput.write(contents);
-    if (_fileBuffer.length > flushBufferSize) {
+    if (writeToFile) {
+      _fileBuffer.write(contents);
+    }
+    if (retainInMemory) {
+      _inMemoryOutput.write(contents);
+    }
+    if (writeToFile && _fileBuffer.length > flushBufferSize) {
       _flushBuffer();
     }
   }
 
   void _flushBuffer() {
-    _outFileSink?.write(_fileBuffer.toString());
-    _fileBuffer.clear();
+    if (writeToFile) {
+      _outFileSink!.write(_fileBuffer.toString());
+      _fileBuffer.clear();
+    }
   }
 
   Future<void> _terminate() async {
@@ -463,14 +506,24 @@ class WaveformService extends ArtifactProducingService {
   // ─── Inspection ───────────────────────────────────────────────
 
   /// The waveform artifact produced by this service.
+  ///
+  /// File-backed artifacts stream directly from the output file, avoiding a
+  /// second whole-trace allocation. In-memory artifacts are available only
+  /// when [retainInMemory] is explicitly enabled.
   @override
-  Iterable<ModuleServiceArtifact> get artifacts => [
-        ModuleServiceArtifact(
-          fileName: outputFileName ?? '$outputBaseName.${format.fileExtension}',
-          mediaType: format.mediaType,
-          openRead: () => Stream.value(utf8.encode(_inMemoryOutput.toString())),
-        ),
-      ];
+  Iterable<ModuleServiceArtifact> get artifacts sync* {
+    if (!writeToFile && !retainInMemory) {
+      return;
+    }
+
+    yield ModuleServiceArtifact(
+      fileName: outputFileName ?? '$outputBaseName.${format.fileExtension}',
+      mediaType: format.mediaType,
+      openRead: writeToFile
+          ? () => File(outputFilePath).openRead()
+          : () => Stream.value(utf8.encode(_inMemoryOutput.toString())),
+    );
+  }
 
   /// Returns a JSON-serialisable summary of this service.
   @override
@@ -479,6 +532,7 @@ class WaveformService extends ArtifactProducingService {
         'outputBaseName': outputBaseName,
         'outputFilePath': outputFilePath,
         'writeToFile': writeToFile,
+        'retainInMemory': retainInMemory,
         'format': format.name,
         'signalCount': _signalToMarkerMap.length,
         'timescale': timescale,
