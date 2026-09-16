@@ -145,6 +145,7 @@ void main() {
     expect(service.outputPath, outputPath);
     expect(service.outputFilePath, outputPath);
     expect(service.retainInMemory, isFalse);
+    expect(service.canSendWaveforms(), isFalse);
     expect(File(service.outputPath).existsSync(), isTrue);
 
     await Simulator.run();
@@ -191,6 +192,7 @@ void main() {
     expect(artifact.fileName, equals('capture.vcd'));
     expect(artifact.mediaType, equals('text/x-vcd'));
     expect(waveformService.retainInMemory, isFalse);
+    expect(waveformService.canSendWaveforms(), isFalse);
     expect(File(waveformService.outputFilePath).existsSync(), isTrue);
 
     await Simulator.run();
@@ -215,6 +217,7 @@ void main() {
 
     expect(waveformService.writeToFile, isFalse);
     expect(waveformService.retainInMemory, isTrue);
+    expect(waveformService.canSendWaveforms(), isTrue);
     expect(File(waveformService.outputFilePath).existsSync(), isFalse);
 
     await Simulator.run();
@@ -226,6 +229,24 @@ void main() {
     expect(utf8.decode(bytes), contains(r'$enddefinitions'));
   });
 
+  test('retained file-backed capture can send waveforms', () async {
+    final mod = SimpleModule(Logic());
+    await mod.build();
+
+    final waveformService = WaveformService(
+      mod,
+      outputDirectory: tempDumpDir,
+      outputBaseName: 'retained_file_capture',
+      writeToFile: true,
+      retainInMemory: true,
+    );
+
+    expect(waveformService.canSendWaveforms(), isTrue);
+
+    await Simulator.run();
+    File(waveformService.outputFilePath).deleteSync();
+  });
+
   test('capture without a file or retained history has no artifact', () async {
     final mod = SimpleModule(Logic());
     await mod.build();
@@ -233,6 +254,12 @@ void main() {
     final waveformService = WaveformService(mod, retainInMemory: false);
 
     expect(waveformService.artifacts, isEmpty);
+    expect(waveformService.canSendWaveforms(), isFalse);
+  });
+
+  test('FST supports querying waveforms from a file', () {
+    expect(WaveOutputFormat.vcd.supportsOnDiskQueries, isFalse);
+    expect(WaveOutputFormat.fst.supportsOnDiskQueries, isTrue);
   });
 
   test('recording window snapshots stable signal values at its start',
