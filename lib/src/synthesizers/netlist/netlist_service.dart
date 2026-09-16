@@ -37,10 +37,11 @@ class NetlistService extends ArtifactProducingService {
   static const String formatVersion = '0.0.5';
 
   /// The most recently registered [NetlistService], or `null`.
-  static NetlistService? current;
-
-  /// The default location written by [write], or `null`.
-  final String? outputPath;
+  ///
+  /// This is backed by [ModuleServices], so it is cleared by unregistering
+  /// this service type or resetting the registry.
+  static NetlistService? get current =>
+      ModuleServices.instance.lookup<NetlistService>();
 
   /// The [NetlistSynthesizer] used for synthesis.
   late final NetlistSynthesizer synthesizer;
@@ -65,15 +66,16 @@ class NetlistService extends ArtifactProducingService {
 
   /// Creates a netlist service for a built [module].
   ///
-  /// Uses [configuration] for netlist synthesis and optionally
-  /// [register]s this instance with [ModuleServices] for DevTools lookup.
+  /// Uses [configuration] for netlist synthesis and optionally [register]s
+  /// this instance with [ModuleServices] for DevTools lookup. Construction
+  /// does not write to the filesystem; call [writeOutputs] to write the
+  /// service artifacts to [outputDirectory].
   NetlistService(
     Module module, {
     NetlistSynthesizerConfiguration configuration =
         const NetlistSynthesizerConfiguration(),
     String? packageRoot,
     bool register = true,
-    this.outputPath,
     super.outputDirectory,
     super.outputBaseName,
   }) : super(module) {
@@ -98,12 +100,7 @@ class NetlistService extends ArtifactProducingService {
         (decoded['modules'] as Map<String, dynamic>?) ?? <String, dynamic>{};
     _loadedVersion = decoded['version'] as String?;
 
-    if (outputPath != null) {
-      write();
-    }
-
     if (register) {
-      current = this;
       ModuleServices.instance.register<NetlistService>(this);
     }
   }
@@ -148,12 +145,11 @@ class NetlistService extends ArtifactProducingService {
   /// Returns the full netlist hierarchy as a JSON string.
   String get json => _fullJson;
 
-  /// Writes the full netlist [json] to [path], or to [outputPath] when [path]
-  /// is omitted.
-  void write([String? path]) {
-    final target =
-        path ?? outputPath ?? '$outputDirectory/$outputBaseName.rohd.json';
-    writeOutputTextFile(target, _fullJson);
+  /// Writes this service's artifacts to [outputDirectory].
+  ///
+  /// The written filename always matches the corresponding artifact name.
+  void writeOutputs() {
+    writeOutputTextFile('$outputDirectory/$outputBaseName.rohd.json', json);
   }
 
   /// Returns a JSON-serialisable summary of the netlist synthesis.

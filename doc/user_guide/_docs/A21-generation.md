@@ -7,8 +7,8 @@ toc: true
 
 Hardware in ROHD is convertible to an output format via `Synthesizer`s, the most popular of which is SystemVerilog. Hardware in ROHD can be converted to logically equivalent, human-readable SystemVerilog with structure, hierarchy, ports, and names maintained.
 
-The simplest way to write SystemVerilog is with `dumpSystemVerilog` on
-`Module`:
+The simplest way to generate SystemVerilog text is with
+`dumpSystemVerilog` on `Module`:
 
 ```dart
 void main() async {
@@ -17,32 +17,39 @@ void main() async {
     // remember that `build` returns a `Future`, hence the `await` here
     await myModule.build();
 
-    myModule.dumpSystemVerilog(outputPath: 'myHardware.sv');
+    final systemVerilog = myModule.dumpSystemVerilog();
+    print(systemVerilog);
 }
 ```
 
-  `dumpSystemVerilog` writes one file containing the SystemVerilog `module`
-  definitions for the top-level module and all recursive submodules. To write
-  one `.sv` file per module definition instead, pass a directory and set
-  `multiFile` to `true`:
+`dumpSystemVerilog` returns one string containing the SystemVerilog `module`
+definitions for the top-level module and all recursive submodules. For
+filesystem output, use `SystemVerilogService` and explicitly write its
+artifacts:
 
-  ```dart
-  myModule.dumpSystemVerilog(
-    outputPath: 'build/systemverilog',
-    multiFile: true,
-  );
-  ```
+```dart
+final systemVerilog = SystemVerilogService(
+  myModule,
+  outputDirectory: 'build',
+  outputBaseName: 'myHardware',
+);
+systemVerilog.writeOutputs(); // Writes build/myHardware.sv.
+```
 
-  For generated text without writing a file, use `dumpSystemVerilog` without an
-  `outputPath`:
+To write one `.sv` file per module definition, configure the service with
+`multiFile: true`:
 
-  ```dart
-  final generatedSv = myModule.dumpSystemVerilog().output;
-  ```
+```dart
+final systemVerilog = SystemVerilogService(
+  myModule,
+  outputDirectory: 'build/systemverilog',
+  multiFile: true,
+);
+systemVerilog.writeOutputs();
+```
 
-  The dump methods preserve the legacy one-shot output workflow. For the service
-  API, artifact streams, or explicit output configuration, use
-  `SystemVerilogService` directly.
+For artifact streams or other explicit output configuration, use
+`SystemVerilogService` directly.
 
 ## Generating a netlist
 
@@ -85,8 +92,7 @@ the complete synthesized hierarchy. Each module entry contains `attributes`,
 Generated ports default to `input logic`, `output logic`, and `inout wire`, preserving the traditional ROHD declarations. Use a `SystemVerilogSynthesizerConfiguration` to independently control whether object types, such as `wire` and `var`, and data types, such as `logic`, are explicit for each port direction:
 
 ```dart
-myModule.dumpSystemVerilog(
-  outputPath: 'myHardware.sv',
+final systemVerilog = myModule.dumpSystemVerilog(
   configuration: const SystemVerilogSynthesizerConfiguration(
     inputPortType: SystemVerilogPortTypeConfiguration(
       objectType: SystemVerilogPortType.explicit,
@@ -185,9 +191,11 @@ final oneShotSystemVerilog = SystemVerilogService(
 );
 ```
 
-The `Module.dumpSystemVerilog()` and `Module.dumpWaves()` convenience methods
-use the normal registration defaults. Construct the corresponding service
-directly with `register: false` when this side effect is not desired.
+`Module.dumpSystemVerilog()` is a one-shot operation and uses
+`register: false`, so it does not change globally discoverable service state.
+`Module.dumpWaves()` registers its `WaveformService` by default. Construct the
+corresponding service directly with `register: false` when registration is not
+desired.
 
 `SystemVerilogService` is the direct synthesis service. Its `outputDirectory`
 defaults to the current directory and its `outputBaseName` defaults to the top
@@ -230,8 +238,9 @@ myModule.dumpWaves(outputPath: 'waves.vcd');
 
 `WaveformService` records VCD data in memory by default and exposes it as a
 `ModuleServiceArtifact`. Its output directory and basename use the same
-defaults as other artifact-producing services. Set `writeToFile` when capture
-should also create a VCD file:
+defaults as other artifact-producing services. Set `writeToFile` for a
+bounded-memory file-backed capture; set `retainInMemory: true` as well only
+when that file-backed capture also needs whole-history in-memory access:
 
 ```dart
 final waveform = WaveformService(

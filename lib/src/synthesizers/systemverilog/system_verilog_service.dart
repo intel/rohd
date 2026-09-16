@@ -38,7 +38,11 @@ import 'package:rohd/src/utilities/timestamper.dart';
 /// ```
 class SystemVerilogService extends CodeGenService {
   /// The most recently registered [SystemVerilogService], or `null`.
-  static SystemVerilogService? current;
+  ///
+  /// This is backed by [ModuleServices], so it is cleared by unregistering
+  /// this service type or resetting the registry.
+  static SystemVerilogService? get current =>
+      ModuleServices.instance.lookup<SystemVerilogService>();
 
   /// The separator inserted between module definitions in the
   /// concatenated single-file output from [allContents].
@@ -93,7 +97,6 @@ class SystemVerilogService extends CodeGenService {
     fileContents = synthBuilder.getSynthFileContents();
 
     if (register) {
-      current = this;
       ModuleServices.instance.register<SystemVerilogService>(this);
     }
   }

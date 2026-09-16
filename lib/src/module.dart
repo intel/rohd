@@ -1147,10 +1147,13 @@ abstract class Module {
         register: false,
       ).output;
 
-  /// Attaches waveform dumping for this [Module] to a VCD at [outputPath].
+  /// Attaches bounded-memory waveform dumping for this [Module] to a VCD at
+  /// [outputPath].
   ///
-  /// For filtering, alternative formats, and other waveform controls, use
-  /// [WaveformService] directly.
+  /// The resulting service streams artifacts from the output file rather than
+  /// retaining the complete trace. For filtering, alternative formats,
+  /// in-memory history, and other waveform controls, use [WaveformService]
+  /// directly.
   WaveformService dumpWaves({String outputPath = 'waves.vcd'}) {
     final normalized = outputPath.replaceAll(r'\', '/');
     final separatorIndex = normalized.lastIndexOf('/');
