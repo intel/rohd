@@ -44,6 +44,15 @@ enum WaveOutputFormat {
         WaveOutputFormat.vcd => 'text/x-vcd',
         WaveOutputFormat.fst => 'application/vnd.gtkwave.fst',
       };
+
+  /// Whether this format supports querying waveform data directly from a file.
+  ///
+  /// FST is indexed and can support on-disk queries without retaining the
+  /// entire waveform in memory. VCD is a sequential text format and cannot.
+  bool get supportsOnDiskQueries => switch (this) {
+        WaveOutputFormat.vcd => false,
+        WaveOutputFormat.fst => true,
+      };
 }
 
 /// Policy applied when the output file already exists at construction time.
@@ -177,6 +186,16 @@ class WaveformService extends ArtifactProducingService {
   /// defaults when consumers need whole-history waveform queries during or
   /// after simulation.
   final bool retainInMemory;
+
+  /// Whether this service can provide waveform data to a consumer.
+  ///
+  /// Capture can be sent when complete history is retained in memory, or when
+  /// a file-backed [format] supports indexed on-disk queries. This lets
+  /// consumers select waveform-capable services without depending on a
+  /// particular retention strategy. VCD requires [retainInMemory]; FST can
+  /// provide this capability from a file once FST writing is supported.
+  bool canSendWaveforms() =>
+      retainInMemory || (writeToFile && format.supportsOnDiskQueries);
 
   // ─── Internal file-writing state ─────────────────────────────
 
