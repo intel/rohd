@@ -81,10 +81,10 @@ sed -i \
 
 if grep -q "^## $VERSION$" CHANGELOG.md; then
   :
-elif grep -q '^## Next release$' CHANGELOG.md; then
-  sed -i "0,/^## Next release$/s//## $VERSION/" CHANGELOG.md
+elif grep -q '^## Next [Rr]elease$' CHANGELOG.md; then
+  sed -i "0,/^## Next [Rr]elease$/s//## $VERSION/" CHANGELOG.md
 else
-  echo "CHANGELOG.md needs a '## Next release' or '## $VERSION' heading." >&2
+  echo "CHANGELOG.md needs a '## Next Release' or '## $VERSION' heading." >&2
   exit 1
 fi
 

@@ -1,0 +1,22 @@
+name: rohd_devtools_widgets
+description: "Shared Flutter widgets and utilities for ROHD debug tools, including cross-probing, signal formatting, help, and PNG export."
+version: 0.1.0
+homepage: https://intel.github.io/rohd-website/
+repository: https://github.com/intel/rohd/tree/main/packages/rohd_devtools_widgets
+issue_tracker: https://github.com/intel/rohd/issues
+environment:
+  sdk: '>=3.6.0 <4.0.0'
+  flutter: '>=3.44.0'
+dependencies:
+  flutter: {sdk: flutter}
+  material_ui: ^1.1.0
+  rohd: ^0.6.9
+  rohd_hierarchy: ^0.1.0
+  web: ^1.0.0
+dev_dependencies:
+  flutter_test: {sdk: flutter}
+  lints: ^5.0.0
+
+flutter:
+  assets:
+    - assets/extension/
