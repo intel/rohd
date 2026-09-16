@@ -135,7 +135,7 @@ commands:
 
     expect(loadResult.output['loaded'], ['inspect']);
     expect(commandResult.output, {'ready': true});
-  });
+  }, testOn: 'vm');
 
   test('binds a handler registered after registry creation', () {
     final registry = ShellCommandRegistry(
