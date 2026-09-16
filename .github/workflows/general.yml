@@ -50,8 +50,6 @@ jobs:
 
       - name: Setup Dart
         uses: dart-lang/setup-dart@v1
-        with:
-          sdk: 3.6.2
 
       - name: Setup Pana source analysis
         run: tool/gh_actions/install_pana.sh
@@ -243,8 +241,6 @@ jobs:
 
       - name: Setup Dart
         uses: dart-lang/setup-dart@v1
-        with:
-          sdk: 3.6.2
 
       - name: Install project dependencies
         run: tool/gh_actions/install_dependencies.sh
