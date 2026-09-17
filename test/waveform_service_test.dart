@@ -177,7 +177,12 @@ void main() {
     Directory(_tempDumpDir).createSync(recursive: true);
     final dumpPath = _temporaryVcdPath('serviceCapture');
 
-    WaveformService.fromOutputPath(mod, outputPath: dumpPath, register: false);
+    WaveformService.fromOutputPath(
+      mod,
+      outputPath: dumpPath,
+      register: false,
+      enableDevToolsStreaming: true,
+    );
 
     a.inject(1);
     Simulator.registerAction(10, () => a.put(0));
@@ -209,6 +214,7 @@ void main() {
       outputPath: dumpPath,
       format: WaveOutputFormat.fst,
       register: false,
+      enableDevToolsStreaming: true,
     );
 
     a.inject(1);
@@ -229,7 +235,12 @@ void main() {
 
     Directory(_tempDumpDir).createSync(recursive: true);
     final dumpPath = _temporaryVcdPath('dataService');
-    WaveformService.fromOutputPath(mod, outputPath: dumpPath, register: false);
+    WaveformService.fromOutputPath(
+      mod,
+      outputPath: dumpPath,
+      register: false,
+      enableDevToolsStreaming: true,
+    );
 
     a.inject(1);
     Simulator.registerAction(10, () => a.put(0));
@@ -263,6 +274,7 @@ void main() {
       outputPath: dumpPath,
       format: WaveOutputFormat.fst,
       register: false,
+      enableDevToolsStreaming: true,
     );
 
     a.inject(1);

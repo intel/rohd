@@ -111,7 +111,7 @@ class WaveformService extends ArtifactProducingService {
     this.overwritePolicy = OverwritePolicy.overwrite,
     this.register = true,
     this.retainInMemory = false,
-    this.enableDevToolsStreaming = true,
+    this.enableDevToolsStreaming = false,
     this.fstConfig,
   }) : super(module) {
     if (!module.hasBuilt) {
@@ -185,7 +185,7 @@ class WaveformService extends ArtifactProducingService {
     OverwritePolicy overwritePolicy = OverwritePolicy.overwrite,
     bool register = true,
     bool retainInMemory = false,
-    bool enableDevToolsStreaming = true,
+    bool enableDevToolsStreaming = false,
     FstWriterConfig? fstConfig,
   }) {
     final normalized = outputPath.replaceAll(r'\', '/');
