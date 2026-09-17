@@ -246,6 +246,9 @@ class NetlistSynthesizer extends Synthesizer {
           in synthDef.assignments.whereType<PartialSynthAssignment>()) {
         final srcIds = getIds(pa.src);
         final dstIds = getIds(pa.dst);
+        final selectedSrcIds = pa is RangeSynthAssignment
+            ? srcIds.sublist(pa.srcLowerIndex, pa.srcUpperIndex + 1)
+            : srcIds;
 
         // Detect: is pa.dst an output struct port of the current module?
         final isCurrentModuleOutputPort =
@@ -261,7 +264,7 @@ class NetlistSynthesizer extends Synthesizer {
         if (isCurrentModuleOutputPort || isSubModuleInputStructPort) {
           // Record as pending compose cell instead of aliasing.
           structPackFields.add((
-            srcIds: srcIds,
+            srcIds: selectedSrcIds,
             dstIds: dstIds,
             dstLowerIndex: pa.dstLowerIndex,
             dstUpperIndex: pa.dstUpperIndex,
@@ -277,10 +280,10 @@ class NetlistSynthesizer extends Synthesizer {
           }
         } else {
           // Non-struct sub-module input port: alias as before.
-          for (var i = 0; i < srcIds.length; i++) {
+          for (var i = 0; i < selectedSrcIds.length; i++) {
             final dstIdx = pa.dstLowerIndex + i;
-            if (dstIdx < dstIds.length && dstIds[dstIdx] != srcIds[i]) {
-              idAlias[dstIds[dstIdx]] = srcIds[i];
+            if (dstIdx < dstIds.length && dstIds[dstIdx] != selectedSrcIds[i]) {
+              idAlias[dstIds[dstIdx]] = selectedSrcIds[i];
             }
           }
         }

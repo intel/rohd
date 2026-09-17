@@ -19,6 +19,10 @@ enum SystemVerilogPortType {
 /// Configuration for types in a SystemVerilog port declaration.
 class SystemVerilogPortTypeConfiguration {
   /// Whether the object type, such as `wire` or `var`, is explicit.
+  ///
+  /// When an output port omits its object type but includes an explicit data
+  /// type, SystemVerilog infers a variable. When both are omitted, it infers a
+  /// net. See IEEE 1800-2023 section 23.2.2.3.
   final SystemVerilogPortType objectType;
 
   /// Whether the data type, such as `logic`, is explicit.
@@ -43,6 +47,16 @@ class SystemVerilogSynthesizerConfiguration {
   /// Type configuration for inout ports.
   final SystemVerilogPortTypeConfiguration inOutPortType;
 
+  /// Whether to work around Icarus Verilog's unpacked array variable issue.
+  ///
+  /// Icarus Verilog 12.0 accepts child-driven unpacked array variables,
+  /// including output ports and internal intermediates, but their values remain
+  /// unknown during simulation. Enabling this option emits an explicit `wire`
+  /// object type for unpacked array output ports and child-driven internal
+  /// unpacked arrays. It overrides `outputPortType.objectType` for those ports
+  /// and is disabled by default.
+  final bool iverilogWorkaroundForUnpackedArrayVariables;
+
   /// Creates a new configuration for SystemVerilog synthesis.
   const SystemVerilogSynthesizerConfiguration({
     this.inputPortType = const SystemVerilogPortTypeConfiguration(
@@ -54,5 +68,6 @@ class SystemVerilogSynthesizerConfiguration {
     this.inOutPortType = const SystemVerilogPortTypeConfiguration(
       dataType: SystemVerilogPortType.implicit,
     ),
+    this.iverilogWorkaroundForUnpackedArrayVariables = false,
   });
 }

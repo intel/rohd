@@ -1585,12 +1585,8 @@ class _NetConnect extends Module with SystemVerilog {
   @override
   String? definitionVerilog(String definitionType) => '''
 // A special module for connecting two nets bidirectionally
-module $definitionType #(parameter int WIDTH=1) ($n0Name, $n1Name);
-inout wire[WIDTH-1:0] $n0Name;
-inout wire[WIDTH-1:0] $n1Name;
-for (genvar i = 0; i < WIDTH; i++) begin
-  tran ($n0Name[i], $n1Name[i]);
-end
+module $definitionType #(parameter int WIDTH=1) (w, w);
+inout wire[WIDTH-1:0] w;
 endmodule''';
 }
 

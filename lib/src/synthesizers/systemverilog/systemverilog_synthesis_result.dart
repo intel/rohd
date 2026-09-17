@@ -126,12 +126,19 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
       _synthModuleDefinition.outputs.map((sig) {
         assert(module.tryOutput(sig.name) != null,
             'Named output ${sig.name} not found in module ${module.name}.');
+        final useIverilogWorkaround =
+            configuration.iverilogWorkaroundForUnpackedArrayVariables &&
+                _isUnpackedArray(sig);
+        final portType = useIverilogWorkaround
+            ? SystemVerilogPortTypeConfiguration(
+                dataType: configuration.outputPortType.dataType,
+              )
+            : configuration.outputPortType;
         return _verilogPort(
           'output',
-          _requiresNetDeclaration(sig) ? 'wire' : 'var',
-          configuration.outputPortType,
+          useIverilogWorkaround ? 'wire' : 'var',
+          portType,
           sig,
-          forceObjectType: _requiresNetDeclaration(sig),
         );
       });
 
@@ -144,38 +151,28 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
 
   /// Representation of a port declaration in generated SV.
   String _verilogPort(String direction, String objectType,
-          SystemVerilogPortTypeConfiguration portType, SynthLogic sig,
-          {bool forceObjectType = false}) =>
+          SystemVerilogPortTypeConfiguration portType, SynthLogic sig) =>
       [
         direction,
-        if (forceObjectType ||
-            portType.objectType == SystemVerilogPortType.explicit)
-          objectType,
+        if (portType.objectType == SystemVerilogPortType.explicit) objectType,
         if (portType.dataType == SystemVerilogPortType.explicit) 'logic',
         sig.definitionName(),
       ].join(' ');
 
-  /// Whether [sig] is a nested array aggregate that must be a net.
-  ///
-  /// Nested array payloads are lowered into multiple continuous assignments to
-  /// disjoint packed ranges. Declaring the aggregate as a variable causes some
-  /// simulators to retain only one of those drivers. Submodule outputs also
-  /// require a net actual when the aggregate crosses a port boundary.
-  bool _requiresNetDeclaration(SynthLogic sig) {
-    final logic = sig.logics.firstOrNull;
-    if (logic is! BaseLogicArray || !logic.arrayElements.any(_containsArray)) {
-      return false;
-    }
+  /// Whether [sig] represents an array with an unpacked dimension.
+  bool _isUnpackedArray(SynthLogic sig) {
+    final array = sig.logics.whereType<BaseLogicArray>().firstOrNull;
+    return array != null && array.numUnpackedDimensions > 0;
+  }
 
-    final resolved = sig.resolved;
-    return module.tryOutput(sig.name) != null ||
-        _synthModuleDefinition.assignments.any(
-          (assignment) => identical(_referenceRoot(assignment.dst), resolved),
-        ) ||
-        _synthModuleDefinition.subModuleInstantiations.any(
-          (instantiation) => instantiation.outputMapping.values
-              .any((mapped) => identical(mapped.resolved, resolved)),
-        );
+  /// Whether [sig] is driven by a submodule output.
+  bool _isDrivenBySubmoduleOutput(SynthLogic sig) {
+    final target = sig.resolved;
+    return _synthModuleDefinition.subModuleInstantiations.any(
+      (instantiation) => instantiation.outputMapping.values.any(
+        (mapped) => identical(_referenceRoot(mapped), target),
+      ),
+    );
   }
 
   SynthLogic _referenceRoot(SynthLogic signal) {
@@ -189,17 +186,17 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
     };
   }
 
-  static bool _containsArray(Logic logic) =>
-      logic is BaseLogicArray ||
-      (logic is LogicStructure && logic.elements.any(_containsArray));
-
   /// Representation of all internal net declarations in generated SV.
   String _verilogInternalSignals() {
     final declarations = <String>[];
     for (final sig in _synthModuleDefinition.internalSignals
         .where((e) => e.needsDeclaration)
         .sorted((a, b) => a.name.compareTo(b.name))) {
-      final type = _requiresNetDeclaration(sig) ? 'wire' : sig.definitionType();
+      final useIverilogWorkaround =
+          configuration.iverilogWorkaroundForUnpackedArrayVariables &&
+              _isUnpackedArray(sig) &&
+              _isDrivenBySubmoduleOutput(sig);
+      final type = useIverilogWorkaround ? 'wire' : sig.definitionType();
       declarations.add('$type ${sig.definitionName()};');
     }
     return declarations.join('\n');
