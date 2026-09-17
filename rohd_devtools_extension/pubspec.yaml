@@ -58,8 +58,6 @@ dev_dependencies:
   mocktail: ^1.0.2
 
 dependency_overrides:
-  # Keep the transitive Cupertino UI package below the Dart 3.6-incompatible release.
-  cupertino_ui: ">=1.0.0 <1.1.0"
   dart_wellen: ^0.1.0
   rohd:
     path: ..
