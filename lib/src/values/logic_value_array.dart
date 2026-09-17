@@ -60,10 +60,9 @@ class LogicValueArray extends TypedLogicValueArray<LogicValue> {
       List<int> dimensions, LogicValue Function(List<int> indices) generator,
       {int? elementWidth}) {
     final normalizedDimensions = _validateValueArrayDimensions(dimensions);
+    final elementCount = _valueArrayLength(normalizedDimensions);
     final values = [
-      for (var index = 0;
-          index < _valueArrayLength(normalizedDimensions);
-          index++)
+      for (var index = 0; index < elementCount; index++)
         generator(_valueArrayIndices(normalizedDimensions, index)),
     ];
     return LogicValueArray.fromFlat(

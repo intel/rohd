@@ -45,17 +45,6 @@ LogicValueCodec<V> _resolveTypedLogicValueCodec<V>(
 /// array metadata and traversal live, while [T] preserves the type at the
 /// declared array boundary.
 ///
-/// [elements] contains the immediate children of the outermost dimension.
-/// [arrayElements] traverses the number of array levels declared by
-/// [dimensions] and then stops, returning one [T] for each declared array
-/// position. It does not recurse into a [LogicStructure] or nested array stored
-/// as a [T].
-///
-/// For example, a `[2, 3]` array of two-field `Sample` structures has six
-/// [arrayElements] and twelve recursive [LogicStructure.leafElements]. A `[2]`
-/// array whose [T] is a three-element [LogicArray] has two [arrayElements] and
-/// six recursive leaves. An eight-bit [Logic] is one leaf, not eight leaves.
-///
 /// [value] and [previousValue] preserve [V] through [TypedLogicValueArray]
 /// snapshots. Standard [Logic.changed] events remain packed
 /// [LogicValueChanged] events.
@@ -68,7 +57,7 @@ class TypedLogicArray<T extends Logic, V> extends BaseLogicArray {
   /// Construction prefixes retained for typed-array cloning.
   final List<String> _dimensionNames;
 
-  /// Recreates one [T] for cloning and shape transformations.
+  /// Recreates [T] elements when cloning this array.
   final TypedLogicArrayElementBuilder<T> _elementBuilder;
 
   /// Converts each element's packed bits to and from its semantic value type.
@@ -79,10 +68,22 @@ class TypedLogicArray<T extends Logic, V> extends BaseLogicArray {
   // ignore: unsafe_variance
   final TypedLogicArrayElementCompatibility<T>? _elementCompatibility;
 
-  /// Unmodifiable typed view of the configured array-element boundary.
+  /// Cached typed view of the configured array-element boundary.
   late final List<T> _typedArrayElements =
       List<T>.unmodifiable(super.arrayElements.cast<T>());
 
+  /// Typed elements reached after traversing exactly [dimensions] array levels.
+  ///
+  /// Traversal stops at the configured [T] boundary rather than recursively
+  /// flattening a [LogicStructure] or nested array stored as a [T]. This
+  /// differs from [LogicStructure.leafElements], which recursively visits
+  /// every structure leaf.
+  ///
+  /// For example, a `[2, 3]` array of two-field `Sample` structures has six
+  /// [arrayElements] and twelve recursive [LogicStructure.leafElements]. A
+  /// `[2]` array whose [T] is a three-element [LogicArray] has two
+  /// [arrayElements] and six recursive leaves. An eight-bit [Logic] is one
+  /// leaf, not eight leaves.
   @override
   List<T> get arrayElements => _typedArrayElements;
 

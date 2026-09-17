@@ -2271,6 +2271,87 @@ void main() {
       );
     });
 
+    test('struct net aggregates reject mixed tri-state and normal drivers', () {
+      final cells = <String, Map<String, Object?>>{
+        'tri_state': {
+          'type': r'$tribuf',
+          'port_directions': {'A': 'input', 'EN': 'input', 'Y': 'output'},
+          'connections': {
+            'A': [100],
+            'EN': [200],
+            'Y': [300]
+          },
+        },
+        'normal': {
+          'type': r'$buf',
+          'port_directions': {'A': 'input', 'Y': 'output'},
+          'connections': {
+            'A': [101],
+            'Y': [301]
+          },
+        },
+      };
+      final netnames = <String, Object?>{
+        'values': {
+          'bits': [300, 301],
+          'logic_type': {
+            'typeName': 'NetPair',
+            'fields': [
+              {'name': 'first', 'width': 1},
+              {'name': 'second', 'width': 1},
+            ],
+          },
+        },
+      };
+
+      expect(
+        () => NetlistValidation.validate(
+          const {},
+          cells,
+          'structured_net_module',
+          netnames: netnames,
+        ),
+        throwsA(isA<NetlistValidationException>()),
+      );
+    });
+
+    test('struct net aggregates reject normal partial overlaps', () {
+      final cells = <String, Map<String, Object?>>{
+        'tri_state': {
+          'type': r'$tribuf',
+          'port_directions': {'A': 'input', 'EN': 'input', 'Y': 'output'},
+          'connections': {
+            'A': [100, 101],
+            'EN': [200],
+            'Y': [300, 301]
+          },
+        },
+        'normal': {
+          'type': r'$buf',
+          'port_directions': {'A': 'input', 'Y': 'output'},
+          'connections': {
+            'A': [102],
+            'Y': [301]
+          },
+        },
+      };
+      final netnames = <String, Object?>{
+        'values': {
+          'bits': [300, 301],
+          'logic_type': {'typeName': 'NetPair', 'fields': <Object?>[]},
+        },
+      };
+      expect(
+        () => NetlistValidation.validate(
+          const {},
+          cells,
+          'structured_net_module',
+          netnames: netnames,
+        ),
+        throwsA(isA<NetlistValidationException>()),
+      );
+    });
+
     test('optimized netlist removes concat aliases of named vectors', () async {
       final json = await _synthToMap(
         NestedInternalArrayToChildModule(),

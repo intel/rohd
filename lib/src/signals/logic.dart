@@ -161,7 +161,12 @@ class Logic {
   LogicStructure? get parentStructure => _parentStructure;
   LogicStructure? _parentStructure;
 
-  /// True if this is a direct member of a [BaseLogicArray].
+  /// Whether the immediate [parentStructure] is a [BaseLogicArray].
+  ///
+  /// This tests direct membership, not recursive array containment. For
+  /// example, a structure configured as an element of a [TypedLogicArray] has
+  /// `isArrayMember == true`, while a field inside that structure has
+  /// `isArrayMember == false` even though the field has an array ancestor.
   bool get isArrayMember => parentStructure is BaseLogicArray;
 
   /// Returns the name relative to the [parentStructure]-defined hierarchy, if
@@ -181,10 +186,12 @@ class Logic {
     }
   }
 
-  /// If this is a part of a [LogicArray], the index within that array.
-  /// Othwerise, returns `null`.
+  /// The index within the immediate parent array, if there is one.
   ///
-  /// If [isArrayMember] is true, this will be non-`null`.
+  /// This is non-`null` exactly when [isArrayMember] is true, including for
+  /// elements of a [TypedLogicArray]. A field whose immediate parent is a
+  /// non-array [LogicStructure] has no [arrayIndex], even when that structure
+  /// has an array ancestor.
   int? get arrayIndex => _arrayIndex;
   int? _arrayIndex;
 

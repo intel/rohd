@@ -500,13 +500,8 @@ class SynthLogicPackedBitReference extends SynthLogic {
     this.packedBase,
     this.bitIndex, {
     required super.parentSynthModuleDefinition,
-    @internal bool allowNet = false,
   })  : assert(
             !packedBase.isArray, 'Packed reference base must not be an array.'),
-        assert(
-          allowNet || !packedBase.isNet,
-          'Packed reference base must not be a net.',
-        ),
         assert(
           !packedBase.isConstant,
           'Packed reference base must not be a constant.',
@@ -583,13 +578,8 @@ class SynthLogicPackedRangeReference extends SynthLogic {
     this.lowerIndex,
     this.upperIndex, {
     required super.parentSynthModuleDefinition,
-    @internal bool allowNet = false,
   })  : assert(
             !packedBase.isArray, 'Packed reference base must not be an array.'),
-        assert(
-          allowNet || !packedBase.isNet,
-          'Packed reference base must not be a net.',
-        ),
         assert(
           !packedBase.isConstant,
           'Packed reference base must not be a constant.',
@@ -769,20 +759,20 @@ class SynthLogicArrayStructureElement extends SynthLogic {
     return parentSynthModuleDefinition.getSynthLogic(parent)!;
   }
 
-  /// The synthesized root array containing [logic].
+  /// The synthesized outermost array ancestor containing [logic].
   SynthLogic get rootArray {
-    var current = logic;
-    var parent = current.parentStructure;
+    BaseLogicArray? rootArray;
+    var parent = logic.parentStructure;
     while (parent != null) {
       if (parent is BaseLogicArray) {
-        current = parent;
-        parent = current.parentStructure;
-      } else {
-        current = parent;
-        parent = current.parentStructure;
+        rootArray = parent;
       }
+      parent = parent.parentStructure;
     }
-    return parentSynthModuleDefinition.getSynthLogic(current)!;
+    if (rootArray == null) {
+      throw StateError('Structured array field has no array ancestor.');
+    }
+    return parentSynthModuleDefinition.getSynthLogic(rootArray)!;
   }
 
   @override
@@ -879,75 +869,69 @@ String _synthArrayReferenceName(
   final nestedArray =
       rootArray.isNet ? null : _nearestNestedArray(target, rootArray);
   if (nestedArray != null) {
-    final nestedSynth = parentSynthModuleDefinition.getSynthLogic(nestedArray)!;
-    final nestedIndices = <int>[];
-    current = target;
-    while (!identical(current, nestedArray)) {
-      if (current.isArrayMember) {
-        nestedIndices.add(current.arrayIndex!);
-      }
-      current = current.parentStructure!;
-    }
-    final orderedNestedIndices = nestedIndices.reversed.toList(growable: false);
-    final nestedReference = '${nestedSynth.name}'
-        '${orderedNestedIndices.map((index) => '[$index]').join()}';
-    final nestedElement = _arrayElementAt(
+    return _synthRepresentedArrayReference(
+      target,
       nestedArray,
-      orderedNestedIndices,
-      nestedArray.dimensions.length,
+      parentSynthModuleDefinition,
+      lowerIndex: lowerIndex,
+      upperIndex: upperIndex,
     );
-    if (identical(target, nestedElement) && lowerIndex == null) {
-      return nestedReference;
-    }
-
-    final offset = _packedOffset(nestedElement, target);
-    final lower = offset + (lowerIndex ?? 0);
-    final upper = offset + (upperIndex ?? target.width - 1);
-    return '$nestedReference${_packedRangeSuffix(lower, upper)}';
   }
 
+  return _synthRepresentedArrayReference(
+    target,
+    rootArray,
+    parentSynthModuleDefinition,
+    lowerIndex: lowerIndex,
+    upperIndex: upperIndex,
+  );
+}
+
+/// Renders [target] relative to the declaration represented by [array].
+String _synthRepresentedArrayReference(
+  Logic target,
+  BaseLogicArray array,
+  SynthModuleDefinition parentSynthModuleDefinition, {
+  int? lowerIndex,
+  int? upperIndex,
+}) {
   final indices = <int>[];
-  current = target;
-  while (current.parentStructure != null) {
+  var current = target;
+  while (!identical(current, array)) {
     if (current.isArrayMember) {
       indices.add(current.arrayIndex!);
     }
-
     current = current.parentStructure!;
   }
   final orderedIndices = indices.reversed.toList(growable: false);
-  final rootRank = rootArray.dimensions.length;
-  if (orderedIndices.length < rootRank) {
+  final arrayRank = array.dimensions.length;
+  final arraySynth = parentSynthModuleDefinition.getSynthLogic(array)!;
+  final arrayName = arraySynth.replacement?.name ?? arraySynth.name;
+  if (orderedIndices.length < arrayRank) {
     if (target is! BaseLogicArray) {
-      throw StateError('Array descendant is missing root array indices.');
+      throw StateError('Array descendant is missing declared array indices.');
     }
-    final rootSynth = parentSynthModuleDefinition.getSynthLogic(rootArray)!;
-    final rootName = rootSynth.replacement?.name ?? rootSynth.name;
-    final partialReference = '$rootName'
-        '${orderedIndices.map((index) => '[$index]').join()}';
+    final partialReference =
+        '$arrayName${orderedIndices.map((index) => '[$index]').join()}';
     return lowerIndex == null
         ? partialReference
-        : '$partialReference'
-            '${_packedRangeSuffix(lowerIndex, upperIndex!)}';
+        : '$partialReference${_packedRangeSuffix(lowerIndex, upperIndex!)}';
   }
 
-  final rootSynth = parentSynthModuleDefinition.getSynthLogic(rootArray)!;
-  final rootName = rootSynth.replacement?.name ?? rootSynth.name;
-  final rootIndices =
-      orderedIndices.take(rootRank).map((index) => '[$index]').join();
-
-  final rootElement = _arrayElementAt(rootArray, orderedIndices, rootRank);
-  if (identical(target, rootElement) && lowerIndex == null) {
-    return '$rootName$rootIndices';
+  final declarationIndices =
+      orderedIndices.take(arrayRank).map((index) => '[$index]').join();
+  final arrayElement = _arrayElementAt(array, orderedIndices, arrayRank);
+  if (identical(target, arrayElement) && lowerIndex == null) {
+    return '$arrayName$declarationIndices';
   }
 
-  final offset = _packedOffset(rootElement, target);
+  final offset = _packedOffset(arrayElement, target);
   final lower = offset + (lowerIndex ?? 0);
   final upper = offset + (upperIndex ?? target.width - 1);
   final range = _packedRangeSuffix(lower, upper);
-  final rendered = '$rootName$rootIndices$range';
+  final rendered = '$arrayName$declarationIndices$range';
   assert(
-    Sanitizer.isSanitary(rootName),
+    Sanitizer.isSanitary(arrayName),
     'Array name should be sanitary, but found $rendered',
   );
   return rendered;
