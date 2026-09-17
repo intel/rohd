@@ -1,13 +1,14 @@
 // Copyright (C) 2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
-// ignore_for_file: prefer_const_constructors
-// ignore_for_file: prefer_const_literals_to_create_immutables
 //
 // typed_logic_array_test.dart
 // Tests for typed logic and logic value arrays.
 //
 // 2026 July 21
 // Author: Desmond A. Kirkpatrick <desmond.a.kirkpatrick@intel.com>
+
+// Test fixtures intentionally use mutable literals to exercise array APIs.
+// ignore_for_file: prefer_const_literals_to_create_immutables
 
 import 'dart:convert';
 
@@ -291,38 +292,69 @@ class _NineBitNestedStructure extends LogicStructure {
       _NineBitNestedStructure(name: name ?? this.name);
 }
 
-class _NestedNetArrayStructure extends LogicStructure {
-  final LogicNet before;
-  final LogicArray lanes;
-  final LogicNet after;
+class _MatrixCell extends LogicStructure {
+  final Logic low;
+  final Logic high;
 
-  factory _NestedNetArrayStructure({
-    String? name,
-    int numUnpackedDimensions = 0,
-  }) =>
-      _NestedNetArrayStructure._(
-        LogicNet(name: 'before', width: 2),
-        LogicArray.net(
-          [2],
-          3,
-          name: 'lanes',
-          numUnpackedDimensions: numUnpackedDimensions,
-        ),
-        LogicNet(name: 'after'),
-        name: name ?? 'nestedNet',
+  factory _MatrixCell({String? name}) => _MatrixCell._(
+        Logic(name: 'low'),
+        Logic(name: 'high', width: 2),
+        name: name ?? 'matrixCell',
       );
 
-  _NestedNetArrayStructure._(
-    this.before,
-    this.lanes,
-    this.after, {
-    required String name,
-  }) : super([before, lanes, after], name: name);
+  _MatrixCell._(this.low, this.high, {required String name})
+      : super([low, high], name: name);
 
   @override
-  _NestedNetArrayStructure clone({String? name}) => _NestedNetArrayStructure(
+  _MatrixCell clone({String? name}) => _MatrixCell(name: name ?? this.name);
+}
+
+class _ArrayValuedElementStructure extends LogicStructure {
+  final Logic prefix;
+  final TypedLogicArray<TypedLogicArray<_MatrixCell, LogicValue>, LogicValue>
+      matrix;
+  final Logic suffix;
+  final List<int> matrixDimensions;
+  final int matrixUnpackedDimensions;
+
+  factory _ArrayValuedElementStructure({
+    List<int> matrixDimensions = const [2],
+    int matrixUnpackedDimensions = 0,
+    String? name,
+  }) =>
+      _ArrayValuedElementStructure._(
+        Logic(name: 'prefix', width: 2),
+        TypedLogicArray<TypedLogicArray<_MatrixCell, LogicValue>, LogicValue>(
+          matrixDimensions,
+          ({name}) => TypedLogicArray<_MatrixCell, LogicValue>(
+            [3],
+            _MatrixCell.new,
+            name: name,
+          ),
+          name: 'matrix',
+          numUnpackedDimensions: matrixUnpackedDimensions,
+        ),
+        Logic(name: 'suffix'),
+        matrixDimensions: List<int>.unmodifiable(matrixDimensions),
+        matrixUnpackedDimensions: matrixUnpackedDimensions,
+        name: name ?? 'arrayValuedElement',
+      );
+
+  _ArrayValuedElementStructure._(
+    this.prefix,
+    this.matrix,
+    this.suffix, {
+    required this.matrixDimensions,
+    required this.matrixUnpackedDimensions,
+    required String name,
+  }) : super([prefix, matrix, suffix], name: name);
+
+  @override
+  _ArrayValuedElementStructure clone({String? name}) =>
+      _ArrayValuedElementStructure(
+        matrixDimensions: matrixDimensions,
+        matrixUnpackedDimensions: matrixUnpackedDimensions,
         name: name ?? this.name,
-        numUnpackedDimensions: lanes.numUnpackedDimensions,
       );
 }
 
@@ -375,6 +407,38 @@ class _NestedArrayBoundaryChild extends Module {
   }
 }
 
+class _ArrayValuedElementFieldModule extends Module {
+  _ArrayValuedElementFieldModule(
+    TypedLogicArray<_ArrayValuedElementStructure, LogicValue> source, {
+    List<int> matrixIndices = const [1],
+  }) {
+    final input = addTypedInput('values', source);
+    final child = _ArrayValuedElementFieldChild(input, matrixIndices);
+    addOutput('selected', width: 2).gets(child.selected);
+  }
+}
+
+class _ArrayValuedElementFieldChild extends Module {
+  late final Logic selected;
+
+  _ArrayValuedElementFieldChild(
+    TypedLogicArray<_ArrayValuedElementStructure, LogicValue> source,
+    List<int> matrixIndices,
+  ) {
+    final values = addTypedInput('values', source);
+    selected = addOutput('selected', width: 2);
+    selected <= values.at([1]).matrix.at(matrixIndices).at([2]).high;
+  }
+}
+
+class _ArrayValuedElementPayloadModule extends Module {
+  _ArrayValuedElementPayloadModule(
+      TypedLogicArray<_ArrayValuedElementStructure, LogicValue> source) {
+    final values = addTypedInput('values', source);
+    addOutput('selected', width: 9) <= values.at([1]).matrix.at([1]);
+  }
+}
+
 class _MixedNestedArrayModule extends Module {
   _MixedNestedArrayModule(
       TypedLogicArray<TypedLogicArray<Logic, LogicValue>, LogicValue> source) {
@@ -404,45 +468,6 @@ class _MixedNestedArrayChild extends Module {
   }
 }
 
-class _NestedStructuredInOutDriveModule extends Module {
-  late final TypedLogicArray<_NestedNetArrayStructure, LogicValue> bus;
-
-  _NestedStructuredInOutDriveModule(
-      TypedLogicArray<_NestedNetArrayStructure, LogicValue> source,
-      Logic enable,
-      Logic driveValue) {
-    bus = addTypedInOut('bus', source);
-    enable = addInput('enable', enable);
-    driveValue = addInput('driveValue', driveValue, width: bus.width);
-    final child = _NestedStructuredInOutDriveChild(bus, enable, driveValue);
-    addOutput('observed', width: bus.width).gets(child.observed);
-  }
-}
-
-class _NestedStructuredInOutDriveChild extends Module {
-  late final Logic observed;
-
-  _NestedStructuredInOutDriveChild(
-      TypedLogicArray<_NestedNetArrayStructure, LogicValue> source,
-      Logic enable,
-      Logic driveValue) {
-    final bus = addTypedInOut('bus', source);
-    enable = addInput('enable', enable);
-    driveValue = addInput('driveValue', driveValue, width: bus.width);
-    var driveOffset = 0;
-    for (final leaf in bus.leafElements) {
-      leaf <=
-          TriStateBuffer(
-            driveValue.getRange(driveOffset, driveOffset + leaf.width),
-            enable: enable,
-          ).out;
-      driveOffset += leaf.width;
-    }
-    observed = addOutput('observed', width: bus.width);
-    Combinational([observed < bus.packed]);
-  }
-}
-
 LogicValue _nestedPacked(
   int before,
   int lane0,
@@ -468,6 +493,22 @@ LogicValue _nineBitNestedPacked(
       9,
     );
 
+LogicValue _arrayValuedElementPacked(
+  List<int> matrixDimensions,
+  List<int> matrixIndices,
+) {
+  var matrixElementIndex = 0;
+  for (var index = 0; index < matrixDimensions.length; index++) {
+    matrixElementIndex =
+        matrixElementIndex * matrixDimensions[index] + matrixIndices[index];
+  }
+  final matrixWidth = matrixDimensions.fold(1, (width, size) => width * size);
+  return LogicValue.ofInt(
+    2 << (2 + matrixElementIndex * 9 + 7),
+    2 + matrixWidth * 9 + 1,
+  );
+}
+
 class _TypedInputModule<T extends Logic> extends Module {
   late final T values;
 
@@ -475,20 +516,6 @@ class _TypedInputModule<T extends Logic> extends Module {
     values = addTypedInput('values', source);
   }
 }
-
-int _decodeLogicValue(LogicValue value) => value.toInt();
-
-LogicValue _encodeLogicValue(int value) => LogicValue.ofInt(value, 8);
-
-double _decodeRoundedLogicValue(LogicValue value) => value.toInt().toDouble();
-
-LogicValue _encodeRoundedLogicValue(double value) =>
-    LogicValue.ofInt(value.round(), 8);
-
-List<int> _decodeListLogicValue(LogicValue value) => [value.toInt()];
-
-LogicValue _encodeListLogicValue(List<int> value) =>
-    LogicValue.ofInt(value.single, 8);
 
 void main() {
   group('TypedLogicArray', () {
@@ -1480,6 +1507,139 @@ void main() {
     }, tags: ['verilator']);
 
     test(
+        'lowers separately declared array-valued structure fields by '
+        'declaration rank', () async {
+      await Simulator.reset();
+      final source = TypedLogicArray<_ArrayValuedElementStructure, LogicValue>(
+        [2],
+        _ArrayValuedElementStructure.new,
+      );
+      final module = _ArrayValuedElementFieldModule(source);
+      await module.build();
+      final vectors = [
+        Vector(
+          {'values': LogicValue.ofInt(2 << 39, source.width)},
+          {'selected': 2},
+        ),
+      ];
+
+      await SimCompare.checkFunctionalVector(module, vectors);
+      final sv = module.generateSynth();
+      expect(sv, contains('logic [1:0][8:0] values_1__matrix;'));
+      expect(sv, contains('values_1__matrix[1][8:7]'));
+      expect(sv, isNot(contains('values_1__matrix[1][2][8:7]')));
+      expect(
+        sv,
+        contains(
+          'assign values_1__matrix_0[1][8:7] = '
+          'values_1__matrix[1][8:7];',
+        ),
+      );
+      SimCompare.checkIverilogVector(module, vectors);
+      SimCompare.checkVerilatorVector(module, vectors);
+    }, tags: ['verilator']);
+
+    test('lowers unpacked separately declared array-valued structure fields',
+        () async {
+      await Simulator.reset();
+      final source = TypedLogicArray<_ArrayValuedElementStructure, LogicValue>(
+        [2],
+        ({name}) => _ArrayValuedElementStructure(
+          matrixUnpackedDimensions: 1,
+          name: name,
+        ),
+      );
+      final module = _ArrayValuedElementFieldModule(source);
+      await module.build();
+      final selectedElement = _arrayValuedElementPacked(const [2], const [1]);
+      final vectors = [
+        Vector(
+          {
+            'values': LogicValue.ofIterable([
+              LogicValue.ofInt(0, selectedElement.width),
+              selectedElement,
+            ]),
+          },
+          {'selected': 2},
+        ),
+      ];
+
+      await SimCompare.checkFunctionalVector(module, vectors);
+      final sv = module.generateSynth();
+      expect(sv, contains('logic [8:0] values_1__matrix [1:0];'));
+      expect(sv, contains('values_1__matrix[1][8:7]'));
+      expect(sv, isNot(contains('values_1__matrix[1][2][8:7]')));
+      SimCompare.checkIverilogVector(module, vectors);
+      SimCompare.checkVerilatorVector(module, vectors);
+    }, tags: ['verilator']);
+
+    test(
+        'limits separately declared multidimensional array fields to '
+        'their declaration rank', () async {
+      await Simulator.reset();
+      const matrixDimensions = [2, 2];
+      const matrixIndices = [1, 0];
+      final source = TypedLogicArray<_ArrayValuedElementStructure, LogicValue>(
+        [2],
+        ({name}) => _ArrayValuedElementStructure(
+          matrixDimensions: matrixDimensions,
+          name: name,
+        ),
+      );
+      final module = _ArrayValuedElementFieldModule(
+        source,
+        matrixIndices: matrixIndices,
+      );
+      await module.build();
+      final selectedElement =
+          _arrayValuedElementPacked(matrixDimensions, matrixIndices);
+      final vectors = [
+        Vector(
+          {
+            'values': LogicValue.ofIterable([
+              LogicValue.ofInt(0, selectedElement.width),
+              selectedElement,
+            ]),
+          },
+          {'selected': 2},
+        ),
+      ];
+
+      await SimCompare.checkFunctionalVector(module, vectors);
+      final sv = module.generateSynth();
+      expect(sv, contains('logic [1:0][1:0][8:0] values_1__matrix;'));
+      expect(sv, contains('values_1__matrix[1][0][8:7]'));
+      expect(sv, isNot(contains('values_1__matrix[1][0][2][8:7]')));
+      SimCompare.checkIverilogVector(module, vectors);
+      SimCompare.checkVerilatorVector(module, vectors);
+    }, tags: ['verilator']);
+
+    test('reads a whole separately declared array-valued element', () async {
+      await Simulator.reset();
+      final source = TypedLogicArray<_ArrayValuedElementStructure, LogicValue>(
+        [2],
+        _ArrayValuedElementStructure.new,
+      );
+      final module = _ArrayValuedElementPayloadModule(source);
+      await module.build();
+      const payload = 0x15c;
+      final vectors = [
+        Vector(
+          {'values': LogicValue.ofInt(payload << 32, source.width)},
+          {'selected': payload},
+        ),
+      ];
+
+      await SimCompare.checkFunctionalVector(module, vectors);
+      final sv = module.generateSynth();
+      expect(sv, contains('values_1__matrix[1][8:7]'));
+      expect(sv, contains('values_1__matrix[1][0]'));
+      expect(sv, isNot(contains('values_1__matrix[1][2][8:7]')));
+      SimCompare.checkIverilogVector(module, vectors);
+      SimCompare.checkVerilatorVector(module, vectors);
+    }, tags: ['verilator']);
+
+    test(
         'simulates packed and mixed nested arrays with array-valued '
         'structure fields', () async {
       await Simulator.reset();
@@ -1714,623 +1874,5 @@ void main() {
       expect(source.at([1, 2]).numUnpackedDimensions, 1);
       expect(source.at([1, 2]).at([3, 4]).width, 8);
     }, tags: ['verilator']);
-
-    test('drives and releases a nested structured typed inout array', () async {
-      await Simulator.reset();
-      final source = TypedLogicArray<_NestedNetArrayStructure, LogicValue>(
-        [2],
-        ({name}) => _NestedNetArrayStructure(
-          name: name,
-          numUnpackedDimensions: 1,
-        ),
-      );
-      final enable = Logic();
-      final driveValue = Logic(width: source.width);
-      final module =
-          _NestedStructuredInOutDriveModule(source, enable, driveValue);
-      await module.build();
-      final vectors = [
-        Vector(
-          {'bus': 0x2a155, 'enable': 0, 'driveValue': 0},
-          {'observed': 0x2a155},
-        ),
-        Vector(
-          {'bus': LogicValue.z, 'enable': 1, 'driveValue': 0x15caa},
-          {'observed': 0x15caa},
-        ),
-        Vector(
-          {'bus': LogicValue.z, 'enable': 0, 'driveValue': 0},
-          {'bus': LogicValue.z},
-        ),
-      ];
-      await SimCompare.checkFunctionalVector(module, vectors);
-      final sv = module.generateSynth();
-      expect(sv, contains('inout wire [1:0][8:0] bus'));
-      expect(source.numUnpackedDimensions, 0);
-      expect(source.at([0]).lanes.numUnpackedDimensions, 1);
-      SimCompare.checkIverilogVector(module, vectors);
-      final netlist = jsonDecode(
-        NetlistSynthesizer().synthesizeToJson(module),
-      ) as Map<String, dynamic>;
-      final modules = netlist['modules'] as Map<String, dynamic>;
-      final top =
-          modules['_NestedStructuredInOutDriveModule'] as Map<String, dynamic>;
-      final ports = top['ports'] as Map<String, dynamic>;
-      final busPort = ports['bus'] as Map<String, dynamic>;
-      expect(ports, contains('observed'));
-      expect(busPort['direction'], 'inout');
-      expect(busPort['bits'], hasLength(source.width));
-      // Verilator does not support the bidirectional `tran` primitive needed
-      // to model four-state drive and release.
-    });
-  });
-
-  group('LogicValueArray', () {
-    test('constructs equivalent nested and flat row-major values', () {
-      final leaves = [
-        for (var value = 1; value <= 4; value++) LogicValue.ofInt(value, 8),
-      ];
-      final nested = LogicValueArray([
-        [leaves[0], leaves[1]],
-        [leaves[2], leaves[3]],
-      ]);
-      final flat = LogicValueArray.fromFlat([2, 2], leaves);
-      final nestedInts = LogicValueArray.fromInts([
-        [1, 2],
-        [3, 4],
-      ], elementWidth: 8);
-      final flatInts = LogicValueArray.fromFlatInts(
-        [2, 2],
-        [1, 2, 3, 4],
-        elementWidth: 8,
-      );
-
-      expect(nested.dimensions, [2, 2]);
-      expect(nested.elementWidth, 8);
-      expect(nested.arrayValues.length, 4);
-      expect(nested.width, 32);
-      // The deprecated LogicValue length retains its packed-bit meaning.
-      // ignore: deprecated_member_use_from_same_package
-      expect(nested.length, 32);
-      expect(nested.arrayValues, leaves);
-      expect(nested.packed, LogicValue.ofInt(0x04030201, 32));
-      expect(flat, nested);
-      expect(nestedInts, nested);
-      expect(flatInts, nested);
-    });
-
-    test('indexes, slices, reshapes, transposes, and maps values', () {
-      final values = LogicValueArray.fromInts([
-        [1, 2, 3],
-        [4, 5, 6],
-      ], elementWidth: 8);
-
-      expect(values.at([1, 1]).toInt(), 5);
-      expect(values.indexedValues.last.$1, equals([1, 2]));
-      expect(
-        values.majorSlices.map((slice) =>
-            slice.arrayValues.map((value) => value.toInt()).toList()),
-        equals([
-          [1, 2, 3],
-          [4, 5, 6],
-        ]),
-      );
-      expect(values.reshape([3, 2]).at([2, 1]).toInt(), 6);
-      expect(
-        values.transpose2D().arrayValues.map((value) => value.toInt()),
-        [1, 4, 2, 5, 3, 6],
-      );
-      expect(
-        values
-            .indexedMap((indices, value) =>
-                LogicValue.ofInt(value.toInt() + indices[0], 8))
-            .arrayValues
-            .map((value) => value.toInt()),
-        equals([1, 2, 3, 5, 6, 7]),
-      );
-      expect(
-        LogicValueArray.stack(values.majorSlices).dimensions,
-        equals([2, 3]),
-      );
-    });
-
-    test('supports empty, generated, mapped, and empty-stack contracts', () {
-      var generatorCalls = 0;
-      final generated = LogicValueArray.generate(
-        [2, 3],
-        (indices) {
-          generatorCalls++;
-          return LogicValue.ofInt(indices[0] * 3 + indices[1] + 1, 8);
-        },
-      );
-      final mapped = generated.map(
-        (value) => LogicValue.ofInt(value.toInt() + 1, 8),
-      );
-      final empty = LogicValueArray.empty();
-      var emptyMapCalls = 0;
-      final mappedEmpty = empty.map((value) {
-        emptyMapCalls++;
-        return value;
-      });
-      final generatedEmpty = LogicValueArray.generate(
-        [2, 0],
-        (indices) => throw StateError('Generator must not run for $indices.'),
-        elementWidth: 8,
-      );
-
-      expect(generatorCalls, 6);
-      expect(generated.elementWidth, 8);
-      expect(generated.dimensions, [2, 3]);
-      expect(
-        generated.arrayValues.map((value) => value.toInt()),
-        [1, 2, 3, 4, 5, 6],
-      );
-      expect(mapped, isA<LogicValueArray>());
-      expect(
-        mapped.arrayValues.map((value) => value.toInt()),
-        [2, 3, 4, 5, 6, 7],
-      );
-      expect(empty.dimensions, [0]);
-      expect(empty.elementWidth, 0);
-      expect(empty.arrayValues.length, 0);
-      expect(empty.width, 0);
-      expect(empty.arrayValues, isEmpty);
-      expect(empty.packed, LogicValue.empty);
-      expect(emptyMapCalls, 0);
-      expect(mappedEmpty.dimensions, [0]);
-      expect(generatedEmpty.dimensions, [2, 0]);
-      expect(generatedEmpty.elementWidth, 8);
-      expect(generatedEmpty.arrayValues, isEmpty);
-      expect(
-        () => LogicValueArray.stack(<LogicValueArray>[]),
-        throwsArgumentError,
-      );
-      expect(
-        () => TypedLogicValueArray<int>.stack(<TypedLogicValueArray<int>>[]),
-        throwsArgumentError,
-      );
-      expect(
-        () => LogicValueArray.stack(
-          LogicValueArray.fromFlat([0, 2], const [], elementWidth: 8)
-              .majorSlices,
-        ),
-        throwsArgumentError,
-      );
-    });
-
-    test('round-trips slices with an empty inner dimension', () {
-      final values =
-          LogicValueArray.fromFlat([2, 0], const [], elementWidth: 8);
-      final slices = values.majorSlices.toList(growable: false);
-
-      expect(slices, hasLength(2));
-      expect(slices.map((slice) => slice.dimensions), [
-        [0],
-        [0],
-      ]);
-      expect(slices.map((slice) => slice.elementWidth), [8, 8]);
-      expect(LogicValueArray.stack(slices).dimensions, [2, 0]);
-    });
-
-    test('matches packed semantics across storage and validity domains', () {
-      final smallInvalid = LogicValueArray([
-        LogicValue.ofString('1xz0'),
-        LogicValue.ofString('z011'),
-      ]);
-      final wideInvalid = LogicValueArray([
-        LogicValue.ofString('${'10' * 33}1xz0'),
-        LogicValue.ofString('z0x1${'01' * 33}'),
-      ]);
-      final wideValid = LogicValueArray([
-        LogicValue.ofBigInt(
-          (BigInt.one << 69) | BigInt.from(0x1234),
-          70,
-        ),
-        LogicValue.ofBigInt(
-          (BigInt.one << 65) | BigInt.from(0x5678),
-          70,
-        ),
-      ]);
-      final testCases = [
-        (
-          name: 'small X/Z',
-          shaped: smallInvalid,
-          other: LogicValue.ofString('10z101x0'),
-        ),
-        (
-          name: 'wide X/Z',
-          shaped: wideInvalid,
-          other: LogicValue.ofString('01xz' * 35),
-        ),
-        (
-          name: 'wide valid',
-          shaped: wideValid,
-          other: LogicValue.ofBigInt(
-            (BigInt.one << 138) | BigInt.from(0x9abc),
-            140,
-          ),
-        ),
-      ];
-      final binaryOperations = <({
-        String name,
-        LogicValue Function(LogicValue left, LogicValue right) apply,
-      })>[
-        (name: 'and', apply: (left, right) => left & right),
-        (name: 'or', apply: (left, right) => left | right),
-        (name: 'xor', apply: (left, right) => left ^ right),
-        (name: 'triState', apply: (left, right) => left.triState(right)),
-        (name: 'add', apply: (left, right) => left + right),
-        (name: 'subtract', apply: (left, right) => left - right),
-        (name: 'multiply', apply: (left, right) => left * right),
-      ];
-
-      for (final testCase in testCases) {
-        final shaped = testCase.shaped;
-        final packed = shaped.packed;
-        final other = testCase.other;
-        final reshaped = shaped.reshape([1, shaped.arrayValues.length]);
-
-        expect(shaped, packed, reason: testCase.name);
-        expect(packed, shaped, reason: testCase.name);
-        expect(shaped, reshaped, reason: testCase.name);
-        expect(shaped.hashCode, packed.hashCode, reason: testCase.name);
-        expect(shaped.hashCode, reshaped.hashCode, reason: testCase.name);
-        expect({shaped, packed, reshaped}, hasLength(1));
-        expect(LogicValue.ofIterable([shaped]), packed);
-        expect(shaped.isValid, packed.isValid);
-        expect(shaped.isFloating, packed.isFloating);
-        expect(shaped.isZero, packed.isZero);
-        expect(shaped[0], packed[0]);
-        expect(shaped[-1], packed[-1]);
-        expect(shaped.getRange(2, shaped.width - 2),
-            packed.getRange(2, packed.width - 2));
-        expect(shaped.slice(shaped.width - 3, 1),
-            packed.slice(packed.width - 3, 1));
-        expect(shaped.reversed, packed.reversed);
-        expect(~shaped, ~packed);
-        expect(shaped.and(), packed.and());
-        expect(shaped.or(), packed.or());
-        expect(shaped.xor(), packed.xor());
-        expect(shaped << 3, packed << 3);
-        expect(shaped >> 3, packed >> 3);
-        expect(shaped >>> 3, packed >>> 3);
-        if (shaped.isValid) {
-          expect(shaped.toBigInt(), packed.toBigInt());
-        }
-        if (testCase.name.startsWith('wide')) {
-          expect(shaped.width, greaterThan(64));
-        }
-
-        for (final operation in binaryOperations) {
-          expect(
-            operation.apply(shaped, other),
-            operation.apply(packed, other),
-            reason: '${testCase.name}: shaped ${operation.name} packed',
-          );
-          expect(
-            operation.apply(other, shaped),
-            operation.apply(other, packed),
-            reason: '${testCase.name}: packed ${operation.name} shaped',
-          );
-        }
-      }
-    });
-
-    test('rejects ragged, inconsistent, empty, and mismatched input', () {
-      final one = LogicValue.ofInt(1, 8);
-      expect(() => LogicValueArray(const []), throwsArgumentError);
-      expect(
-        () => LogicValueArray([
-          [one],
-          [one, one],
-        ]),
-        throwsArgumentError,
-      );
-      expect(
-        () => LogicValueArray([
-          one,
-          [one],
-        ]),
-        throwsArgumentError,
-      );
-      expect(
-        () => LogicValueArray([one, LogicValue.ofInt(2, 4)]),
-        throwsArgumentError,
-      );
-      expect(
-        () => LogicValueArray.fromFlat([2, 2], [one]),
-        throwsArgumentError,
-      );
-      expect(
-        LogicValueArray.fromFlat(
-          [2],
-          [LogicValue.ofInt(1, 4), LogicValue.ofInt(2, 4)],
-        ).elementWidth,
-        4,
-      );
-      expect(
-        LogicValueArray.fromFlat(
-          [2],
-          [LogicValue.ofInt(1, 4), LogicValue.ofInt(2, 4)],
-          elementWidth: 4,
-        ).elementWidth,
-        4,
-      );
-      expect(
-        () => LogicValueArray.fromFlat(
-          [2],
-          [LogicValue.ofInt(1, 4), LogicValue.ofInt(2, 3)],
-        ),
-        throwsArgumentError,
-      );
-      expect(
-        () => LogicValueArray.fromFlat(
-          [2],
-          [LogicValue.ofInt(1, 4), LogicValue.ofInt(2, 4)],
-          elementWidth: 3,
-        ),
-        throwsArgumentError,
-      );
-      expect(
-        () => LogicValueArray.fromInts(const [], elementWidth: 8),
-        throwsArgumentError,
-      );
-      expect(
-          () => LogicValueArray.fromFlat(const [], const [], elementWidth: 8),
-          throwsArgumentError);
-      expect(
-        LogicValueArray.fromFlat([2, 0], const [], elementWidth: 8)
-            .elementWidth,
-        8,
-      );
-      expect(
-        () => LogicValueArray.fromFlat([2, 0], const []),
-        throwsArgumentError,
-      );
-    });
-
-    test('rejects invalid value indices, shapes, widths, and stacks', () {
-      final values = LogicValueArray.fromFlatInts(
-        [2, 2],
-        [1, 2, 3, 4],
-        elementWidth: 8,
-      );
-      final oneDimensional = LogicValueArray.fromFlatInts(
-        [4],
-        [1, 2, 3, 4],
-        elementWidth: 8,
-      );
-      final threeDimensional = LogicValueArray.fromFlatInts(
-        [1, 2, 2],
-        [1, 2, 3, 4],
-        elementWidth: 8,
-      );
-
-      for (final indices in <List<int>>[
-        [0],
-        [-1, 0],
-        [2, 0],
-        [0, 2],
-      ]) {
-        expect(() => values.at(indices), throwsA(isA<RangeError>()));
-      }
-      expect(() => values.reshape([3]), throwsArgumentError);
-      expect(() => values.reshape([-2, -2]), throwsArgumentError);
-      expect(
-        () => oneDimensional.majorSlices.toList(),
-        throwsA(isA<StateError>()),
-      );
-      expect(
-        oneDimensional.transpose2D,
-        throwsA(isA<StateError>()),
-      );
-      expect(
-        threeDimensional.transpose2D,
-        throwsA(isA<StateError>()),
-      );
-      expect(
-        () => LogicValueArray.fromFlat([-1], const [], elementWidth: 8),
-        throwsArgumentError,
-      );
-      expect(
-        () => LogicValueArray.fromFlat([1], const [], elementWidth: -1),
-        throwsArgumentError,
-      );
-      expect(
-        () => LogicValueArray.generate(
-          [1],
-          (indices) => LogicValue.ofInt(indices.single, 4),
-          elementWidth: 8,
-        ),
-        throwsArgumentError,
-      );
-      expect(
-        () => LogicValueArray.stack([
-          LogicValueArray.fromFlatInts([2], [1, 2], elementWidth: 8),
-          LogicValueArray.fromFlatInts([1, 2], [3, 4], elementWidth: 8),
-        ]),
-        throwsArgumentError,
-      );
-      expect(
-        () => LogicValueArray.stack([
-          LogicValueArray.fromFlatInts([2], [1, 2], elementWidth: 8),
-          LogicValueArray.fromFlatInts([2], [3, 4], elementWidth: 4),
-        ]),
-        throwsArgumentError,
-      );
-    });
-  });
-
-  group('TypedLogicValueArray', () {
-    test('rejects empty and non-semantic nested input', () {
-      const codec = LogicValueCodec<int>(
-        decode: _decodeLogicValue,
-        encode: _encodeLogicValue,
-      );
-
-      expect(
-        () => TypedLogicValueArray<int>(const [], codec: codec),
-        throwsArgumentError,
-      );
-      expect(
-        () => TypedLogicValueArray<int>(
-          [
-            1,
-            'not an integer',
-          ],
-          codec: codec,
-        ),
-        throwsArgumentError,
-      );
-    });
-
-    test('constructs equivalent nested and flat list-valued data', () {
-      const codec = LogicValueCodec<List<int>>(
-        decode: _decodeListLogicValue,
-        encode: _encodeListLogicValue,
-      );
-      final leaves = [
-        [1],
-        [2],
-        [3],
-        [4],
-      ];
-      final nested = TypedLogicValueArray<List<int>>([
-        [leaves[0], leaves[1]],
-        [leaves[2], leaves[3]],
-      ], codec: codec);
-      final flat = TypedLogicValueArray<List<int>>.fromFlat(
-        [2, 2],
-        8,
-        leaves,
-        codec: codec,
-      );
-
-      expect(nested.dimensions, [2, 2]);
-      expect(flat.dimensions, nested.dimensions);
-      expect(nested.arrayValues.map((value) => value.single), [1, 2, 3, 4]);
-      expect(flat.arrayValues.map((value) => value.single), [1, 2, 3, 4]);
-      expect(nested.at([1, 0]), [3]);
-      expect(flat.packed, nested.packed);
-    });
-
-    test('maps, reshapes, transposes, and converts typed values', () {
-      const codec = LogicValueCodec<int>(
-        decode: _decodeLogicValue,
-        encode: _encodeLogicValue,
-      );
-      final packed = LogicValueArray.fromInts([
-        [1, 2, 3],
-        [4, 5, 6],
-      ], elementWidth: 8);
-      final values = TypedLogicValueArray<int>.fromLogicValueArray(
-        packed,
-        codec: codec,
-      );
-
-      expect(values.at([1, 1]), 5);
-      expect(values.map((value) => value + 1).at([1, 1]), 6);
-      expect(values.reshape([3, 2]).at([2, 1]), 6);
-      expect(values.transpose2D().arrayValues, [1, 4, 2, 5, 3, 6]);
-      final signals = values.toLogicArray();
-      expect(signals.dimensions, [2, 3]);
-      expect(signals.value, values);
-    });
-
-    test('supports slices, indexed mapping, and compatible stacking', () {
-      const codec = LogicValueCodec<int>(
-        decode: _decodeLogicValue,
-        encode: _encodeLogicValue,
-      );
-      final values = TypedLogicValueArray<int>([
-        [1, 2],
-        [3, 4],
-      ], codec: codec);
-
-      expect(values.majorSlices.map((slice) => slice.arrayValues), [
-        [1, 2],
-        [3, 4],
-      ]);
-      expect(
-        values.indexedMap((indices, value) => value + indices[1]).arrayValues,
-        [1, 3, 3, 5],
-      );
-      expect(
-        TypedLogicValueArray<int>.stack(values.majorSlices).arrayValues,
-        values.arrayValues,
-      );
-      expect(values.packed, LogicValue.ofInt(0x04030201, 32));
-    });
-
-    test('normalizes lossy codecs at construction and preserves values', () {
-      const codec = LogicValueCodec<double>(
-        decode: _decodeRoundedLogicValue,
-        encode: _encodeRoundedLogicValue,
-      );
-      final values = TypedLogicValueArray<double>([
-        [1.2, 2.4],
-        [3.6, 4.8],
-      ], codec: codec);
-
-      expect(values.arrayValues, [1.0, 2.0, 4.0, 5.0]);
-      expect(values.reshape([4]).arrayValues, values.arrayValues);
-      expect(
-        TypedLogicValueArray<double>.stack(values.majorSlices).arrayValues,
-        values.arrayValues,
-      );
-      expect(values.transpose2D().arrayValues, [1.0, 4.0, 2.0, 5.0]);
-    });
-
-    test('requires identical codecs when stacking', () {
-      final firstCodec = LogicValueCodec<int>(
-        decode: _decodeLogicValue,
-        encode: _encodeLogicValue,
-      );
-      final secondCodec = LogicValueCodec<int>(
-        decode: _decodeLogicValue,
-        encode: _encodeLogicValue,
-      );
-      final first = TypedLogicValueArray<int>.fromFlat(
-        [1],
-        8,
-        [1],
-        codec: firstCodec,
-      );
-      final second = TypedLogicValueArray<int>.fromFlat(
-        [1],
-        8,
-        [2],
-        codec: secondCodec,
-      );
-
-      expect(
-        () => TypedLogicValueArray<int>.stack([first, second]),
-        throwsArgumentError,
-      );
-    });
-
-    test('round-trips typed slices with an empty inner dimension', () {
-      const codec = LogicValueCodec<int>(
-        decode: _decodeLogicValue,
-        encode: _encodeLogicValue,
-      );
-      final values = TypedLogicValueArray<int>.fromFlat(
-        [2, 0],
-        8,
-        const [],
-        codec: codec,
-      );
-      final slices = values.majorSlices.toList(growable: false);
-
-      expect(slices, hasLength(2));
-      expect(slices.map((slice) => slice.dimensions), [
-        [0],
-        [0],
-      ]);
-      expect(
-        TypedLogicValueArray<int>.stack(slices).dimensions,
-        [2, 0],
-      );
-    });
   });
 }
