@@ -193,6 +193,7 @@ void main() {
       mod,
       outputPath: dumpPath,
       register: false,
+      enableDevToolsStreaming: true,
     );
     expect(service.outputFilePath, dumpPath);
 
@@ -219,8 +220,13 @@ void main() {
     Directory(_tempDumpDir).createSync(recursive: true);
     final dumpPath = _temporaryFstPath('fstCapture');
 
-    WaveformService.fromOutputPath(mod,
-        outputPath: dumpPath, format: WaveOutputFormat.fst, register: false);
+    WaveformService.fromOutputPath(
+      mod,
+      outputPath: dumpPath,
+      format: WaveOutputFormat.fst,
+      register: false,
+      enableDevToolsStreaming: true,
+    );
 
     a.inject(1);
     Simulator.registerAction(10, () => a.put(0));
@@ -280,7 +286,12 @@ void main() {
 
     Directory(_tempDumpDir).createSync(recursive: true);
     final dumpPath = _temporaryVcdPath('dataService');
-    WaveformService.fromOutputPath(mod, outputPath: dumpPath, register: false);
+    WaveformService.fromOutputPath(
+      mod,
+      outputPath: dumpPath,
+      register: false,
+      enableDevToolsStreaming: true,
+    );
 
     a.inject(1);
     Simulator.registerAction(10, () => a.put(0));
@@ -314,6 +325,7 @@ void main() {
       outputPath: dumpPath,
       format: WaveOutputFormat.fst,
       register: false,
+      enableDevToolsStreaming: true,
     );
 
     a.inject(1);

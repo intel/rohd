@@ -143,7 +143,7 @@ class WaveformService extends ArtifactProducingService {
     this.register = true,
     this.writeToFile = false,
     bool? retainInMemory,
-    this.enableDevToolsStreaming = true,
+    this.enableDevToolsStreaming = false,
     this.fstConfig,
   })  : retainInMemory = retainInMemory ?? !writeToFile,
         super(module) {
@@ -221,7 +221,7 @@ class WaveformService extends ArtifactProducingService {
     OverwritePolicy overwritePolicy = OverwritePolicy.overwrite,
     bool register = true,
     bool? retainInMemory,
-    bool enableDevToolsStreaming = true,
+    bool enableDevToolsStreaming = false,
     FstWriterConfig? fstConfig,
   }) {
     final normalized = outputPath.replaceAll(r'\', '/');
