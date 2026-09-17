@@ -1149,9 +1149,12 @@ abstract class Module {
 
   /// Attaches waveform dumping for this [Module] to a VCD at [outputPath].
   ///
-  /// For filtering, alternative formats, and other waveform controls, use
-  /// [WaveformService] directly.
-  WaveformService dumpWaves({String outputPath = 'waves.vcd'}) {
+  /// Set [retainInMemory] to `true` when a debugger needs to query the
+  /// complete waveform history while the simulation is running.
+  WaveformService dumpWaves({
+    String outputPath = 'waves.vcd',
+    bool retainInMemory = false,
+  }) {
     final normalized = outputPath.replaceAll(r'\', '/');
     final separatorIndex = normalized.lastIndexOf('/');
     final outputDirectory = switch (separatorIndex) {
@@ -1165,6 +1168,7 @@ abstract class Module {
       this,
       outputDirectory: outputDirectory,
       outputFileName: outputFileName,
+      retainInMemory: retainInMemory,
     );
   }
 
