@@ -161,6 +161,22 @@ void main() {
     deleteTemporaryDump(dumpName);
   });
 
+  test('dumpWaves can retain history for debugging', () async {
+    final mod = SimpleModule(Logic());
+    await mod.build();
+
+    final service = mod.dumpWaves(
+      outputPath: temporaryDumpPath('debugDump'),
+      retainInMemory: true,
+    );
+
+    expect(service.retainInMemory, isTrue);
+    expect(service.canSendWaveforms(), isTrue);
+
+    await Simulator.run();
+    deleteTemporaryDump('debugDump');
+  });
+
   test('dumpWaves preserves an arbitrary legacy output filename', () async {
     final mod = SimpleModule(Logic());
     await mod.build();
