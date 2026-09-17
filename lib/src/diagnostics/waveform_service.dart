@@ -68,6 +68,15 @@ class WaveformService extends ArtifactProducingService {
   /// Whether to register this service with [ModuleServices] for inspection.
   final bool register;
 
+  /// Whether to retain a complete in-memory copy for debugging consumers.
+  final bool retainInMemory;
+
+  /// Whether this service can provide waveform data to a consumer.
+  bool canSendWaveforms() => retainInMemory || format.supportsOnDiskQueries;
+
+  /// The retained VCD waveform, or `null` when retention is disabled.
+  String? get inMemoryOutput => _writer.inMemoryOutput;
+
   /// The FST writer configuration (only used when [format] is
   /// [WaveOutputFormat.fst]).
   final FstWriterConfig? fstConfig;
@@ -103,6 +112,7 @@ class WaveformService extends ArtifactProducingService {
     this.flushBufferSize = 100000,
     this.overwritePolicy = OverwritePolicy.overwrite,
     this.register = true,
+    this.retainInMemory = false,
     this.fstConfig,
   }) : super(module) {
     if (!module.hasBuilt) {
@@ -159,6 +169,7 @@ class WaveformService extends ArtifactProducingService {
     int flushBufferSize = 100000,
     OverwritePolicy overwritePolicy = OverwritePolicy.overwrite,
     bool register = true,
+    bool retainInMemory = false,
     FstWriterConfig? fstConfig,
   }) {
     final normalized = outputPath.replaceAll(r'\', '/');
@@ -181,6 +192,7 @@ class WaveformService extends ArtifactProducingService {
       flushBufferSize: flushBufferSize,
       overwritePolicy: overwritePolicy,
       register: register,
+      retainInMemory: retainInMemory,
       fstConfig: fstConfig,
     );
   }
@@ -213,6 +225,7 @@ class WaveformService extends ArtifactProducingService {
           timescale: timescale,
           flushBufferSize: flushBufferSize,
           overwritePolicy: overwritePolicy,
+          memoryBuffer: retainInMemory ? StringBuffer() : null,
         );
       case WaveOutputFormat.fst:
         return FstWaveformWriter(

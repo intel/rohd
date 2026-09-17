@@ -61,6 +61,23 @@ void main() {
     ModuleServices.instance.reset();
   });
 
+  test('dumpWaves can retain history for debugging', () async {
+    final mod = _SimpleWaveModule(Logic());
+    await mod.build();
+
+    final service = mod.dumpWaves(
+      outputPath: temporaryDumpPath('debugDump'),
+      retainInMemory: true,
+    );
+
+    expect(service.retainInMemory, isTrue);
+    expect(service.canSendWaveforms(), isTrue);
+    expect(service.inMemoryOutput, isNotNull);
+
+    await Simulator.run();
+    deleteTemporaryDump('debugDump');
+  });
+
   test('registers with ModuleServices by default', () async {
     final a = Logic(name: 'a');
     final mod = _SimpleWaveModule(a);
