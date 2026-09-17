@@ -7,7 +7,8 @@ toc: true
 
 Use [`LogicArray`](https://intel.github.io/rohd/rohd/LogicArray-class.html)
 for multidimensional arrays of ordinary `Logic`. Use
-[`TypedLogicArray`](https://intel.github.io/rohd/rohd/TypedLogicArray-class.html)
+`TypedLogicArray`
+<!-- [`TypedLogicArray`](https://intel.github.io/rohd/rohd/TypedLogicArray-class.html) -->
 when each array position has a specialized hardware type and semantic value
 type. Both are `LogicStructure`s, so they can be indexed as arrays while still
 participating in ordinary packed `Logic` assignments and operations.
@@ -87,7 +88,8 @@ representations.
 should decode every four-state value that can appear in its hardware.
 `dimensionNames` controls child naming during construction and cloning; it is
 not public axis metadata. See the
-[`TypedLogicArray` API documentation](https://intel.github.io/rohd/rohd/TypedLogicArray-class.html)
+`TypedLogicArray` API documentation
+<!-- [`TypedLogicArray` API documentation](https://intel.github.io/rohd/rohd/TypedLogicArray-class.html) -->
 for the complete constructor and cloning contracts.
 
 Hardware shape changes should use ordinary construction and connection APIs rather than specialized typed-array adapters. Construct a new `TypedLogicArray` with the desired dimensions and builder, then connect it with `gets`/`<=` when row-major assignment is sufficient. For a transpose, connect corresponding coordinates explicitly with `indexedElements` and `at`; whole-array assignment does not infer a permutation. This keeps construction disconnected and leaves driver ownership with the caller.
