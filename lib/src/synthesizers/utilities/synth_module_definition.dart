@@ -29,9 +29,6 @@ class _BusSubsetForStructSlice extends BusSubset {
   /// signal and therefore does not drift run-to-run.
   final Logic _destination;
 
-  /// Whether the mapped input already represents the requested range.
-  final bool _inputIsSelected;
-
   /// Creates a [BusSubset] for use in [SynthModuleDefinition]s during
   /// [LogicStructure] port slicing.
   _BusSubsetForStructSlice(
@@ -39,9 +36,7 @@ class _BusSubsetForStructSlice extends BusSubset {
     super.startIndex,
     super.endIndex, {
     required Logic destination,
-    bool inputIsSelected = false,
   })  : _destination = destination,
-        _inputIsSelected = inputIsSelected,
         super(name: 'struct_slice');
 
   // we override this since it's added post-build
@@ -50,10 +45,6 @@ class _BusSubsetForStructSlice extends BusSubset {
 
   @override
   Object get instanceNameKey => _destination;
-
-  @override
-  String inlineVerilog(Map<String, String> inputs) =>
-      _inputIsSelected ? inputs.values.single : super.inlineVerilog(inputs);
 }
 
 /// A packed range of a base [SynthLogic], inclusive of [lower] and [upper].
@@ -1589,37 +1580,31 @@ class SynthModuleDefinition {
             _retainInternalSignal(leafSynth);
           }
           if (receive) {
-            final packedReference = leafElement.width == 1
-                ? SynthLogicPackedBitReference(
-                    packedParent,
-                    index,
-                    parentSynthModuleDefinition: this,
-                  )
-                : SynthLogicPackedRangeReference(
-                    packedParent,
-                    index,
-                    index + leafElement.width - 1,
-                    parentSynthModuleDefinition: this,
-                  );
             if (port.isNet) {
+              final packedReference = leafElement.width == 1
+                  ? SynthLogicPackedBitReference(
+                      packedParent,
+                      index,
+                      parentSynthModuleDefinition: this,
+                    )
+                  : SynthLogicPackedRangeReference(
+                      packedParent,
+                      index,
+                      index + leafElement.width - 1,
+                      parentSynthModuleDefinition: this,
+                    );
               assignments.add(SynthAssignment(leafSynth, packedReference));
             } else {
-              final subsetMod = _BusSubsetForStructSlice(
-                Logic(
-                  width: leafElement.width,
-                  name: 'DUMMY',
+              assignments.add(
+                RangeSynthAssignment(
+                  packedParent,
+                  leafSynth,
+                  srcUpperIndex: index + leafElement.width - 1,
+                  srcLowerIndex: index,
+                  dstUpperIndex: leafElement.width - 1,
+                  dstLowerIndex: 0,
                 ),
-                0,
-                leafElement.width - 1,
-                destination: leafElement,
-                inputIsSelected: true,
               );
-              getSynthSubModuleInstantiation(subsetMod)
-                ..setOutputMapping(subsetMod.subset.name, leafSynth)
-                ..setInputMapping(
-                  subsetMod.original.name,
-                  packedReference,
-                );
             }
           } else {
             assignments.add(
