@@ -148,7 +148,7 @@ class WaveformService extends ArtifactProducingService {
     bool register = true,
     bool writeToFile = false,
     bool? retainInMemory,
-    bool enableDevToolsStreaming = true,
+    bool enableDevToolsStreaming = false,
   }) : this._(
           module,
           outputDirectory: outputDirectory ?? '.',
@@ -184,7 +184,7 @@ class WaveformService extends ArtifactProducingService {
     bool register = true,
     bool writeToFile = true,
     FstWriterConfig config = const FstWriterConfig(),
-    bool enableDevToolsStreaming = true,
+    bool enableDevToolsStreaming = false,
   }) : this._(
           module,
           outputDirectory: outputDirectory ?? '.',
@@ -218,7 +218,7 @@ class WaveformService extends ArtifactProducingService {
     this.register = true,
     this.writeToFile = false,
     bool? retainInMemory,
-    this.enableDevToolsStreaming = true,
+    this.enableDevToolsStreaming = false,
     FstWriterConfig? fstWriterConfig,
   })  : retainInMemory = retainInMemory ?? !writeToFile,
         _fstWriterConfig = fstWriterConfig,
@@ -307,7 +307,7 @@ class WaveformService extends ArtifactProducingService {
     OverwritePolicy overwritePolicy = OverwritePolicy.overwrite,
     bool register = true,
     bool? retainInMemory,
-    bool enableDevToolsStreaming = true,
+    bool enableDevToolsStreaming = false,
   }) {
     final normalized = outputPath.replaceAll(r'\', '/');
     final sep = normalized.lastIndexOf('/');
