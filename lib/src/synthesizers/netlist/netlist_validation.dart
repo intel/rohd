@@ -85,18 +85,18 @@ class NetlistValidation {
           continue;
         }
         final bits = (netname['bits'] as List?)?.whereType<int>() ?? const [];
-        final aggregateDrivers = <String>{
-          for (final bit in bits) ...driversByBit[bit] ?? const <String>[],
+        final aggregateDrivers = <({String description, bool isTriState})>{
+          for (final bit in bits) ...driversByBit[bit] ?? const [],
         };
         if (aggregateDrivers.length <= 1 ||
-            aggregateDrivers.every(_isTriStateDriver)) {
+            aggregateDrivers.every((driver) => driver.isTriState)) {
           continue;
         }
         issues.add(NetlistValidationIssue(
           'aggregate net "${entry.key}" is reached from multiple drivers: '
-          '${aggregateDrivers.join(', ')}',
+          '${aggregateDrivers.map((driver) => driver.description).join(', ')}',
           netname: entry.key,
-          drivers: aggregateDrivers.toList(),
+          drivers: aggregateDrivers.map((driver) => driver.description),
         ));
       }
     }
@@ -105,8 +105,6 @@ class NetlistValidation {
       throw NetlistValidationException(moduleName, issues);
     }
   }
-
-  static bool _isTriStateDriver(String driver) => driver.endsWith(r'($tribuf)');
 
   /// Collects the port and cell output drivers for each integer bit ID.
   static Map<int, List<_NetlistDriver>> _driversByBit(
