@@ -276,7 +276,9 @@ class TypedLogicValueArray<T> extends LogicValue {
 
   /// Transposes this two-dimensional value array.
   TypedLogicValueArray<T> transpose2D() {
-    _checkValueArrayIsTwoDimensional(dimensions);
+    if (dimensions.length != 2) {
+      throw StateError('Expected exactly two dimensions, got $dimensions.');
+    }
     final newDimensions = [dimensions[1], dimensions[0]];
     final semanticValues = <T>[];
     final packedElements = <LogicValue>[];
@@ -530,10 +532,3 @@ int _valueArrayFlatIndex(List<int> dimensions, List<int> indices) {
 bool _sameValueArrayDimensions(List<int> left, List<int> right) =>
     left.length == right.length &&
     left.indexed.every((entry) => entry.$2 == right[entry.$1]);
-
-/// Requires exactly two dimensions for transpose-only operations.
-void _checkValueArrayIsTwoDimensional(List<int> dimensions) {
-  if (dimensions.length != 2) {
-    throw StateError('Expected exactly two dimensions, got $dimensions.');
-  }
-}
