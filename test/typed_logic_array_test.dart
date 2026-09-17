@@ -507,8 +507,8 @@ LogicValue _arrayValuedElementPacked(
         matrixElementIndex * matrixDimensions[index] + matrixIndices[index];
   }
   final matrixWidth = matrixDimensions.fold(1, (width, size) => width * size);
-  return LogicValue.ofInt(
-    2 << (2 + matrixElementIndex * 9 + 7),
+  return LogicValue.ofBigInt(
+    BigInt.from(2) << (2 + matrixElementIndex * 9 + 7),
     2 + matrixWidth * 9 + 1,
   );
 }
@@ -1520,9 +1520,15 @@ void main() {
       );
       final module = _ArrayValuedElementFieldModule(source);
       await module.build();
+      final selectedElement = _arrayValuedElementPacked(const [2], const [1]);
       final vectors = [
         Vector(
-          {'values': LogicValue.ofInt(2 << 39, source.width)},
+          {
+            'values': LogicValue.ofIterable([
+              LogicValue.ofBigInt(BigInt.zero, selectedElement.width),
+              selectedElement,
+            ]),
+          },
           {'selected': 2},
         ),
       ];
@@ -1627,9 +1633,18 @@ void main() {
       final module = _ArrayValuedElementPayloadModule(source);
       await module.build();
       const payload = 0x15c;
+      final arrayElement = LogicValue.ofBigInt(
+        BigInt.from(payload) << 11,
+        source.elementWidth,
+      );
       final vectors = [
         Vector(
-          {'values': LogicValue.ofInt(payload << 32, source.width)},
+          {
+            'values': LogicValue.ofIterable([
+              LogicValue.ofBigInt(BigInt.zero, source.elementWidth),
+              arrayElement,
+            ]),
+          },
           {'selected': payload},
         ),
       ];
