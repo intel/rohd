@@ -32,6 +32,12 @@ enum WaveOutputFormat {
         WaveOutputFormat.vcd => 'text/x-vcd',
         WaveOutputFormat.fst => 'application/vnd.gtkwave.fst',
       };
+
+  /// Whether waveform data can be queried from the output file.
+  bool get supportsOnDiskQueries => switch (this) {
+        WaveOutputFormat.vcd => false,
+        WaveOutputFormat.fst => true,
+      };
 }
 
 /// Policy applied when the output file already exists at construction time.
@@ -105,6 +111,9 @@ abstract class WaveformWriter {
 
   /// Returns a JSON-serialisable summary of writer state.
   Map<String, Object?> toJson();
+
+  /// Returns the retained waveform text, when supported and enabled.
+  String? get inMemoryOutput;
 }
 
 /// VCD implementation of [WaveformWriter].
@@ -115,6 +124,7 @@ class VcdWaveformWriter implements WaveformWriter {
     this.timescale = '1ps',
     this.flushBufferSize = 100000,
     this.overwritePolicy = OverwritePolicy.overwrite,
+    this.memoryBuffer,
   }) {
     if (overwritePolicy == OverwritePolicy.failIfExists) {
       final existingFile = File(outputPath);
@@ -144,6 +154,9 @@ class VcdWaveformWriter implements WaveformWriter {
   /// Existing-file policy.
   final OverwritePolicy overwritePolicy;
 
+  /// Optional buffer receiving a complete copy of the VCD output.
+  final StringBuffer? memoryBuffer;
+
   late final File _outputFile;
   late final IOSink _outFileSink;
   final StringBuffer _fileBuffer = StringBuffer();
@@ -155,6 +168,9 @@ class VcdWaveformWriter implements WaveformWriter {
 
   @override
   WaveOutputFormat get format => WaveOutputFormat.vcd;
+
+  @override
+  String? get inMemoryOutput => memoryBuffer?.toString();
 
   @override
   void pushScope(String name) {
@@ -249,6 +265,7 @@ class VcdWaveformWriter implements WaveformWriter {
   }
 
   void _writeToBuffer(String contents) {
+    memoryBuffer?.write(contents);
     _fileBuffer.write(contents);
     if (_fileBuffer.length > flushBufferSize) {
       _flushBuffer();
@@ -274,6 +291,9 @@ class FstWaveformWriter implements WaveformWriter {
 
   @override
   WaveOutputFormat get format => WaveOutputFormat.fst;
+
+  @override
+  String? get inMemoryOutput => null;
 
   @override
   void pushScope(String name) {
