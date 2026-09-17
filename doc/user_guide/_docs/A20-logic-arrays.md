@@ -1,11 +1,16 @@
 ---
 title: "Logic Arrays"
 permalink: /docs/logic-arrays/
-last_modified_at: 2026-09-10
+last_modified_at: 2026-09-16
 toc: true
 ---
 
-A [`LogicArray`](https://intel.github.io/rohd/rohd/LogicArray-class.html) is a type of `LogicStructure` that mirrors multi-dimensional arrays in hardware languages like SystemVerilog. `TypedLogicArray` uses the same structural model. An array is not a scalar `Logic` with an internal wire sliced into elements: it owns a hierarchy of child signals. `LogicStructure` supplies the common `Logic` behavior by packing those children when a scalar-like operation is needed, while the array layer adds dimensions, array-boundary traversal, and indexing. `TypedLogicArray` is indirectly a `Logic` through `LogicStructure`. `LogicArray` directly extends `TypedLogicArray<Logic, LogicValue>` as its ordinary-`Logic` specialization and inherits the typed-array API.
+Use [`LogicArray`](https://intel.github.io/rohd/rohd/LogicArray-class.html)
+for multidimensional arrays of ordinary `Logic`. Use
+[`TypedLogicArray`](https://intel.github.io/rohd/rohd/TypedLogicArray-class.html)
+when each array position has a specialized hardware type and semantic value
+type. Both are `LogicStructure`s, so they can be indexed as arrays while still
+participating in ordinary packed `Logic` assignments and operations.
 
 `LogicArray`s can be constructed easily using the constructor:
 
@@ -24,9 +29,9 @@ As long as the total width of a `LogicArray` and another type of `Logic` (includ
 
 ## Typed arrays
 
-Use `TypedLogicArray<TLogic, TValue>` when every position at the declared array boundary has the same specialized hardware type and associated semantic value type. `LogicArray` directly extends `TypedLogicArray<Logic, LogicValue>` as the ordinary specialization, inheriting its array metadata, traversal, indexing, and assignment APIs while preserving its existing constructors and concrete clone and naming behavior. `TypedLogicArray` extends the non-generic `BaseLogicArray`, which is an internal implementation base rather than another public construction API.
-
-`dimensionNames`, when supplied to `TypedLogicArray`, is construction metadata used to derive names within typed-array hierarchies and preserve them during internal cloning. It is not a public axis-metadata property, and it does not change the established generated naming convention of ordinary `LogicArray`.
+Use `TypedLogicArray<TLogic, TValue>` when every array position has the same
+specialized hardware type and associated semantic value type. `LogicArray` is
+the ordinary `TypedLogicArray<Logic, LogicValue>` specialization.
 
 For example, these sample hardware and value types preserve named fields in hardware while exposing typed snapshots:
 
@@ -72,11 +77,18 @@ final bottomRightData = samples.at([1, 2]).data;
 final TypedLogicValueArray<SampleValue> currentSamples = samples.value;
 ```
 
-The element builder must always produce the configured type, width, and recursively ordered net composition. Every element must be uniformly variable or uniformly net: a structure cannot mix `Logic` and `LogicNet` leaves. The optional `elementCompatibility` callback can additionally reject elements whose semantic representations differ from the prototype, such as floating-point elements with different exponent and mantissa layouts despite having the same total width.
+The element builder must consistently produce the configured type, width,
+ordered structure, and net kind. Every element must be entirely variable or
+entirely net; a structure cannot mix `Logic` and `LogicNet` leaves. Use
+`elementCompatibility` when equal width is not enough to establish compatible
+representations.
 
-A zero-sized array calls the builder once as a prototype so that the same metadata and validation remain available even though the array has no positions. Generic zero-sized arrays retain the prototype's element width; `LogicArray` retains its historical behavior of reporting an element width of zero for an empty shape.
-
-`valueCodec` may be omitted when `TValue` is exactly `LogicValue`; the canonical identity codec is selected automatically. Other semantic types require a codec. Since hardware may contain `X` and `Z`, a codec used by `TypedLogicArray` should decode every four-state value that can appear in that hardware.
+`valueCodec` is optional only when `TValue` is `LogicValue`. A custom codec
+should decode every four-state value that can appear in its hardware.
+`dimensionNames` controls child naming during construction and cloning; it is
+not public axis metadata. See the
+[`TypedLogicArray` API documentation](https://intel.github.io/rohd/rohd/TypedLogicArray-class.html)
+for the complete constructor and cloning contracts.
 
 Hardware shape changes should use ordinary construction and connection APIs rather than specialized typed-array adapters. Construct a new `TypedLogicArray` with the desired dimensions and builder, then connect it with `gets`/`<=` when row-major assignment is sufficient. For a transpose, connect corresponding coordinates explicitly with `indexedElements` and `at`; whole-array assignment does not infer a permutation. This keeps construction disconnected and leaves driver ownership with the caller.
 
@@ -97,30 +109,22 @@ Direct `Const` elements and structures containing a `Const` are rejected.
 Nested arrays are supported for ROHD construction, packed assignment, and
 `arrayElements`, `at`, and `indexedElements` traversal.
 
-SystemVerilog declarations retain the packed/unpacked split of the root array.
-When a configured element contains another array, that nested value occupies
-packed bits within the root element at the port boundary. Nested coordinates
-and structure fields are therefore lowered to one packed bit or range selection
-instead of adding dimensions that are absent from the declaration. An
-array-valued structure field may use a separate internal declaration with its
-own packed/unpacked split; synthesis inserts the packing or unpacking needed at
-the enclosing port.
+At a generated SystemVerilog boundary, a nested array-valued element may occupy
+packed bits within its containing element rather than introduce another visible
+array dimension. Its row-major value and structure-field order are preserved;
+use `at`, `indexedElements`, and named fields in ROHD instead of depending on
+the textual shape of generated selections.
 
-This lowering preserves the existing inline declaration and naming style; it
-does not introduce SystemVerilog `typedef`s or generated structural type names.
-Whole assignments involving nested unpacked arrays are emitted as element or
-packed-range assignments for simulator portability. The netlist output retains
-the recursive array and structure metadata in `logic_type`.
+Some simulators do not accept unpacked `inout` array ports. Prefer packed
+outer dimensions for portable bidirectional interfaces.
 
-ROHD, Icarus, and Verilator simulation cover fully packed nested arrays,
-mixed packed/unpacked outer and inner arrays, and structures containing
-unpacked ordinary and typed array fields across module boundaries. Four-state
-structured inout drive and release, including an unpacked nested net-array
-field across a child boundary, is covered in ROHD and Icarus. Verilator does
-not currently simulate that last case because it does not support the
-bidirectional `tran` primitive used for net aliasing.
+Icarus Verilog 12.0 can leave child-driven unpacked array variables unknown
+during simulation. When targeting that tool, enable
+`SystemVerilogSynthesizerConfiguration.iverilogWorkaroundForUnpackedArrayVariables`.
 
-`TypedLogicArray` is also the supported base for custom typed arrays. Subclasses should use the normal constructor and override `createClone` to preserve their runtime type and metadata. Constructor-only configuration needed during reconstruction, including custom `dimensionNames`, should be retained in private subclass fields and passed back through the subclass constructor. The lower-level prebuilt-element constructor is library-private and is reserved for trusted in-library construction.
+Custom typed-array subclasses should override `createClone` to preserve their
+runtime type and constructor configuration. See the API documentation for the
+full subclassing contract.
 
 ## Value-domain arrays
 

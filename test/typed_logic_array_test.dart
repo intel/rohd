@@ -17,6 +17,10 @@ import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
 
+const _iverilogUnpackedArrayWorkaround = SystemVerilogSynthesizerConfiguration(
+  iverilogWorkaroundForUnpackedArrayVariables: true,
+);
+
 class _SampleStructure extends LogicStructure {
   final Logic low;
   final Logic high;
@@ -1700,6 +1704,13 @@ void main() {
       final sv = module.generateSynth();
       expect(sv, contains('valuesIn[1][31:30]'));
       expect(sv, contains('valuesOut[0][31:30]'));
+      expect(
+        sv,
+        contains(
+          'assign valuesIn_0__0__lanes[0][2:0] = valuesIn[0][4:2];',
+        ),
+      );
+      expect(sv, isNot(contains('// struct_slice')));
       final netlistJson = NetlistSynthesizer().synthesizeToJson(module);
       final netlist = jsonDecode(netlistJson) as Map<String, dynamic>;
       final modules = netlist['modules'] as Map<String, dynamic>;
@@ -1710,6 +1721,11 @@ void main() {
       final childPorts = child['ports'] as Map<String, dynamic>;
       final childInput = childPorts['valuesIn'] as Map<String, dynamic>;
       final childInputType = childInput['logic_type'] as Map<String, dynamic>;
+      final childNetnames = child['netnames'] as Map<String, dynamic>;
+      final firstLanes =
+          childNetnames['valuesIn_0__0__lanes'] as Map<String, dynamic>;
+      final firstSamples =
+          childNetnames['valuesIn_0__0__samples'] as Map<String, dynamic>;
       final innerType = childInputType['elementType'] as Map<String, dynamic>;
       final elementType = innerType['elementType'] as Map<String, dynamic>;
       final fields =
@@ -1740,6 +1756,32 @@ void main() {
       expect(childConnections['valuesIn'], hasLength(90));
       expect(childConnections['valuesOut'], hasLength(90));
       expect(childCellEntry.key, 'unnamed_module');
+      final firstLaneBits = (firstLanes['bits'] as List).cast<Object?>();
+      final childCells = (child['cells'] as Map<String, dynamic>)
+          .values
+          .cast<Map<String, dynamic>>();
+      final firstInputUnpack = childCells.singleWhere((cell) {
+        if (cell['type'] != r'$struct_unpack') {
+          return false;
+        }
+        final connections = cell['connections'] as Map<String, dynamic>;
+        final lanes = (connections['lanes'] as List?)?.cast<Object?>();
+        return lanes != null &&
+            lanes.length == firstLaneBits.length &&
+            lanes.indexed.every((entry) => entry.$2 == firstLaneBits[entry.$1]);
+      });
+      final unpackParameters =
+          firstInputUnpack['parameters'] as Map<String, dynamic>;
+      final unpackConnections =
+          firstInputUnpack['connections'] as Map<String, dynamic>;
+      expect(unpackParameters['FIELD_1_NAME'], 'lanes');
+      expect(unpackParameters['FIELD_1_OFFSET'], 2);
+      expect(unpackParameters['FIELD_1_WIDTH'], 6);
+      expect(unpackConnections['lanes'], firstLanes['bits']);
+      expect(unpackParameters['FIELD_2_NAME'], 'samples');
+      expect(unpackParameters['FIELD_2_OFFSET'], 8);
+      expect(unpackParameters['FIELD_2_WIDTH'], 6);
+      expect(unpackConnections['samples'], firstSamples['bits']);
       final netlistNames = {
         for (final moduleDefinition
             in modules.values.cast<Map<String, dynamic>>()) ...[
@@ -1787,7 +1829,7 @@ void main() {
       );
       expect(
         mixedSv,
-        contains('output wire logic [44:0] valuesOut [1:0]'),
+        contains('output logic [44:0] valuesOut [1:0]'),
       );
       expect(
         mixedSv,
@@ -1797,6 +1839,19 @@ void main() {
         mixedSv,
         contains('logic [2:0] valuesIn_0__0__samples [1:0];'),
       );
+      final workaroundSv = mixedModule.generateSynth(
+        configuration: _iverilogUnpackedArrayWorkaround,
+      );
+      expect(
+        RegExp(
+          RegExp.escape('output wire logic [44:0] valuesOut [1:0]'),
+        ).allMatches(workaroundSv),
+        hasLength(2),
+      );
+      expect(
+        workaroundSv,
+        contains('wire [44:0] valuesOut_0 [1:0];'),
+      );
       final mixedNetlist = jsonDecode(
         NetlistSynthesizer().synthesizeToJson(mixedModule),
       ) as Map<String, dynamic>;
@@ -1804,7 +1859,11 @@ void main() {
         mixedNetlist['modules'],
         containsPair('_NestedArrayBoundaryModule', isA<Map<String, dynamic>>()),
       );
-      SimCompare.checkIverilogVector(mixedModule, vectors);
+      SimCompare.checkIverilogVector(
+        mixedModule,
+        vectors,
+        synthesizerConfiguration: _iverilogUnpackedArrayWorkaround,
+      );
       SimCompare.checkVerilatorVector(mixedModule, vectors);
     }, tags: ['verilator']);
 
@@ -1843,12 +1902,19 @@ void main() {
       );
       expect(
         sv,
-        contains('output wire logic [2:0][159:0] valuesOut [1:0]'),
+        contains('output logic [2:0][159:0] valuesOut [1:0]'),
       );
       expect(
         sv,
         contains('valuesOut[1][2][159:152] = '
             'valuesIn[1][2][7:0]'),
+      );
+      final workaroundSv = module.generateSynth(
+        configuration: _iverilogUnpackedArrayWorkaround,
+      );
+      expect(
+        workaroundSv,
+        contains('output wire logic [2:0][159:0] valuesOut [1:0]'),
       );
       final netlist = jsonDecode(NetlistSynthesizer().synthesizeToJson(module))
           as Map<String, dynamic>;
@@ -1868,7 +1934,11 @@ void main() {
         expect(innerType['elementWidth'], 8);
         expect(port['bits'], hasLength(960));
       }
-      SimCompare.checkIverilogVector(module, vectors);
+      SimCompare.checkIverilogVector(
+        module,
+        vectors,
+        synthesizerConfiguration: _iverilogUnpackedArrayWorkaround,
+      );
       SimCompare.checkVerilatorVector(module, vectors);
       expect(source.numUnpackedDimensions, 1);
       expect(source.at([1, 2]).numUnpackedDimensions, 1);

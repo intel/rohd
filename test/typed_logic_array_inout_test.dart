@@ -180,15 +180,25 @@ class _ArrayValuedStructuredInOutDriveChild extends Module {
   }
 }
 
-/// Checks the backends that support the required four-state `tran` behavior.
+/// Checks the backends used for four-state inout resolution.
 ///
-/// Verilator is intentionally excluded because it does not support `tran`.
+/// This specialized suite intentionally has narrower backend coverage than
+/// the ordinary typed-array tests and does not include Verilator.
 Future<void> _checkRohdAndIverilogVectors(
   Module module,
   List<Vector> vectors,
 ) async {
   await SimCompare.checkFunctionalVector(module, vectors);
   SimCompare.checkIverilogVector(module, vectors);
+}
+
+void _expectCompatibleNetConnectDefinition(String systemVerilog) {
+  expect(
+    systemVerilog,
+    contains('module net_connect #(parameter int WIDTH=1) (w, w);'),
+  );
+  expect(systemVerilog, contains('inout wire[WIDTH-1:0] w;'));
+  expect(systemVerilog, isNot(contains('tran (')));
 }
 
 List<Map<String, dynamic>> _triStateCells(
@@ -264,7 +274,7 @@ void main() {
       await _checkRohdAndIverilogVectors(module, vectors);
       final sv = module.generateSynth();
       expect(sv, contains('inout wire [1:0][8:0] bus'));
-      expect(sv, contains('tran ('));
+      _expectCompatibleNetConnectDefinition(sv);
       expect(source.numUnpackedDimensions, 0);
       expect(source.at([0]).lanes.numUnpackedDimensions, 1);
 
@@ -332,7 +342,7 @@ void main() {
       await _checkRohdAndIverilogVectors(module, vectors);
       final sv = module.generateSynth();
       expect(sv, contains('inout wire [1:0][20:0] bus'));
-      expect(sv, contains('tran ('));
+      _expectCompatibleNetConnectDefinition(sv);
 
       final netlist = jsonDecode(
         NetlistSynthesizer().synthesizeToJson(module),
