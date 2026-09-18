@@ -73,7 +73,7 @@ across DevTools packages.
 Add the package to your Flutter application:
 
 ```shell
-flutter pub add rohd_devtools_widgets:^0.1.0
+flutter pub add rohd_devtools_widgets
 ```
 
 Import the shared widgets you need:
