@@ -10,7 +10,6 @@
 import 'dart:io';
 
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/fst/fst_waveform_query.dart';
 import 'package:rohd/src/utilities/config.dart';
 import 'package:rohd/src/utilities/timestamper.dart';
 
