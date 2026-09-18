@@ -9,7 +9,6 @@ environment:
 
 dependencies:
   cupertino_icons: ^1.0.2
-  dart_wellen: ^0.1.0
   devtools_app_shared: ^0.5.0
   devtools_extensions: ^0.5.0
   devtools_shared: ^13.0.1
@@ -34,7 +33,6 @@ dependencies:
     path: ../packages/rohd_devtools_widgets
   rohd_hierarchy:
     path: ../packages/rohd_hierarchy
-  rohd_schematic_viewer: ^0.1.0
   rohd_source_navigator:
     path: ../packages/rohd_source_navigator
   rohd_wave_viewer: ^0.1.0
@@ -59,28 +57,19 @@ dev_dependencies:
 dependency_overrides:
   # Keep the transitive Cupertino UI package below the Dart 3.6-incompatible release.
   cupertino_ui: ">=1.0.0 <1.1.0"
-  dart_wellen: ^0.1.0
   rohd:
     path: ..
   rohd_devtools_widgets:
-    path: packages/rohd_devtools_widgets
+    path: ../packages/rohd_devtools_widgets
   rohd_hcl:
     path: ../../../rohd-hcl
   rohd_hierarchy:
     path: ../packages/rohd_hierarchy
   rohd_source_navigator:
-    path: ../rohd_extension/dart
-  # Keep transitive viewer code on the same waveform model.
-  rohd_waveform: ^0.0.2
+    path: ../packages/rohd_source_navigator
 
 flutter:
   uses-material-design: true
   assets:
     - assets/help/
     - assets/icons/
-    - assets/layout_bridge/
-    - assets/third_party/elkjs/
-    - assets/third_party/elkjs/LICENSES/elkjs_LICENSES.txt
-    - assets/rohd_icon.png
-    - assets/systemverilog_icon.png
-    - assets/systemc_icon.png
