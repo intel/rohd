@@ -11,6 +11,7 @@ analyzer:
     - packages/rohd_devtools_widgets
     - packages/rohd_hierarchy
     - packages/rohd_waveform
+    - reviews/**
     - rohd_devtools_extension
     - rohd_extension
     - build/**

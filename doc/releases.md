@@ -85,12 +85,14 @@ with a merge or rebase; the preparation PR itself does not need to be merged yet
    `pubspec_overrides.yaml` files. These files are excluded from publication;
    overrides apply only to the root package being resolved, not its consumers.
    The non-published DevTools app therefore also declares its own local overrides.
-4. Run analysis, formatting checks, tests, and API documentation generation for
-   each changed package. Use `dart` for Dart packages and `flutter` for Flutter
-   packages. For ROHD, run `tool/run_checks.sh`; Icarus Verilog is required and
-   Verilator is required in CI. Test the DevTools app when shared widgets change.
-5. Run `tool/prepare_release.sh [package ...]` on the preparation branch from the
-   repository root. No arguments selects all four publishable packages; explicit
+4. Verify the PR's CI results cover the relevant tests for the release commit,
+   including DevTools app tests when shared widgets change. Preparation skips
+   local test suites by default and does not query GitHub or verify CI status.
+   Use `--run-tests` to repeat selected package suites locally. ROHD's local
+   tests require Icarus Verilog; Verilator is required in CI and when
+   `ROHD_REQUIRE_VERILATOR=1`.
+5. Run `tool/prepare_release.sh [--run-tests] [package ...]` on the preparation
+   branch from the repository root. No package names selects all four; explicit
    names select only those packages. Versions come from their manifests, not
    command-line arguments. It validates selected metadata before making changes,
    fetches `main` from `intel/rohd`, and requires that commit to be an ancestor
@@ -99,8 +101,9 @@ with a merge or rebase; the preparation PR itself does not need to be merged yet
    `main` commit, not the release branch's tip. It smoke-tests and installs that
    web build before preparing metadata, then runs ROHD's checks. Sub-package-only
    preparation leaves ROHD metadata and DevTools untouched. Each selected
-   sub-package gets dependency resolution, formatting checks, analysis, and tests
-   in its own directory. Only after all selected package checks pass does it run
+   sub-package gets dependency resolution, formatting checks, and analysis in its
+   own directory, plus tests when `--run-tests` is supplied. Only after all
+   enabled checks for selected packages pass does it run
    publication dry runs. It does not merge, rebase, change manifest versions,
    commit, tag, push, or upload anything. If a guard fails, incorporate the latest
    `main` or wait for its artifact workflow as appropriate, then rerun preparation.
@@ -117,16 +120,21 @@ with a merge or rebase; the preparation PR itself does not need to be merged yet
 
 Preparation runs the following checks before invoking `tool/check_release.sh`:
 
-| Selected Package | Checks |
-| --- | --- |
-| `rohd` | `tool/run_checks.sh`: dependencies, formatting, analysis, API docs, simulator prerequisites, tests, and temporary-file checks. |
-| `rohd_hierarchy`, `rohd_waveform` | In each package directory: `dart pub get`, `dart format --output=none --set-exit-if-changed .`, `dart analyze --fatal-infos`, then `dart test`. |
-| `rohd_devtools_widgets` | In its package directory: `flutter pub get`, `dart format --output=none --set-exit-if-changed .`, `flutter analyze --fatal-infos`, then `flutter test`. |
+| Selected Package | Default Checks | Added With `--run-tests` |
+| --- | --- | --- |
+| `rohd` | `tool/run_checks.sh --skip-tests`: dependencies, formatting, analysis, API docs, and temporary-file checks. | Simulator prerequisites and ROHD tests via `tool/run_checks.sh`. |
+| `rohd_hierarchy`, `rohd_waveform` | In each package directory: `dart pub get`, `dart format --output=none --set-exit-if-changed .`, then `dart analyze --fatal-infos`. | `dart test` in each selected package. |
+| `rohd_devtools_widgets` | In its package directory: `flutter pub get`, `dart format --output=none --set-exit-if-changed .`, then `flutter analyze --fatal-infos`. | `flutter test` in the widgets package. |
+
+Artifact provenance verification and the DevTools installation smoke test always
+run when ROHD is selected, even when test suites are skipped. Running
+`tool/run_checks.sh` directly still includes tests by default; its `--skip-tests`
+option is what preparation uses unless `--run-tests` is supplied.
 
 Formatting is checked without rewriting files. Analyzer info diagnostics are
 fatal. The script prints each sub-package stage and stops on the first failed
-prerequisite or check; no publication dry runs start unless every selected
-package's checks pass. An early failure such as a nonempty `tmp_test` directory
+prerequisite or enabled check; no publication dry runs start unless all enabled
+checks pass. An early failure such as a nonempty `tmp_test` directory
 means later stages have not run. Review leftover test files before retrying.
 Checks use the current checkout's dependency overrides; hosted-dependency
 validation without overrides is still required as described below. Tests for the
@@ -135,11 +143,17 @@ separate DevTools application remain a separate step when its shared widgets cha
 Preparation examples (choose one):
 
 ```sh
-# All four packages, using each manifest's version:
+# All four packages, using each manifest's version; rely on CI for test suites:
 tool/prepare_release.sh
+
+# All four packages, also running their test suites locally:
+tool/prepare_release.sh --run-tests
 
 # ROHD only:
 tool/prepare_release.sh rohd
+
+# ROHD only, including its test suite:
+tool/prepare_release.sh --run-tests rohd
 
 # ROHD plus hierarchy and waveform:
 tool/prepare_release.sh rohd rohd_hierarchy rohd_waveform
@@ -184,6 +198,9 @@ The helper's isolated regression checks run with
 `bash tool/test/prepare_release_test.sh` using temporary local Git repositories.
 Both stub publication commands on a restricted PATH. Preparation tests also
 stub package-check commands to verify their order, SDK choice, and failure handling.
+They cover both the default skipped suites and the `--run-tests` mode. The root
+checker's default and `--skip-tests` paths are covered by
+`bash tool/test/run_checks_test.sh`, which also uses isolated command stubs.
 They allow real Dart execution only for the metadata helper, never for publication
 commands.
 Its focused metadata tests run with

@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 #
 # prepare_release_test.sh
-# Test preparation defaults, versions, guards, and selected-package checks.
+# Test preparation defaults, optional test suites, versions, and package guards.
 # Uses disposable local Git repositories and stubbed check/publication commands.
 # Only the metadata helper runs on real Dart, using root package dependencies;
 # commits and artifact installation are confined to temporary test repositories.
@@ -65,7 +65,12 @@ printf '%s\n' '#!/bin/bash' \
   '[[ -f "$1/build/index.html" && -f "$1/config.yaml" ]] || exit 1' \
   'printf "smoke\n" >> "$STAGE_LOG"' \
   'exit "${SMOKE_STATUS:-0}"' > "$UPSTREAM/tool/gh_actions/devtool/test_devtools_install.sh"
-printf '%s\n' '#!/bin/bash' 'printf "checks\n" >> "$STAGE_LOG"' \
+printf '%s\n' '#!/bin/bash' \
+  'if [[ "$#" -eq 0 ]]; then' \
+  '  printf "checks\n" >> "$STAGE_LOG"' \
+  'elif [[ "$#" -eq 1 && "$1" == --skip-tests ]]; then' \
+  '  printf "checks-skip-tests\n" >> "$STAGE_LOG"' \
+  'else exit 99; fi' \
   'exit "${ROOT_CHECK_STATUS:-0}"' > "$UPSTREAM/tool/run_checks.sh"
 chmod +x "$UPSTREAM/tool/gh_actions/check_tmp_test.sh" \
   "$UPSTREAM/tool/gh_actions/devtool/test_devtools_install.sh" "$UPSTREAM/tool/run_checks.sh"
@@ -135,6 +140,7 @@ assert_unchanged() {
 
 expected_checks() {
   local package="$1"
+  local include_tests="${2:-false}"
   local sdk=dart
   if [[ "$package" == rohd_devtools_widgets ]]; then
     sdk=flutter
@@ -142,7 +148,9 @@ expected_checks() {
   printf '%s|%s|%s\n' "$sdk" "$RELEASE/packages/$package" 'pub get'
   printf '%s|%s|%s\n' dart "$RELEASE/packages/$package" 'format --output=none --set-exit-if-changed .'
   printf '%s|%s|%s\n' "$sdk" "$RELEASE/packages/$package" 'analyze --fatal-infos'
-  printf '%s|%s|%s\n' "$sdk" "$RELEASE/packages/$package" test
+  if [[ "$include_tests" == true ]]; then
+    printf '%s|%s|%s\n' "$sdk" "$RELEASE/packages/$package" test
+  fi
 }
 
 git -C "$UPSTREAM" commit --quiet --allow-empty -m 'Fixture main advances'
@@ -164,7 +172,8 @@ assert_unchanged
 unset SMOKE_STATUS
 
 run_case 0 "DevTools source commit (upstream main): $MAIN_COMMIT"
-[[ "$(cat "$STAGE_LOG")" == $'smoke\nchecks\ndry-run\ndry-run\ndry-run\ndry-run' ]]
+[[ "$(cat "$STAGE_LOG")" == $'smoke\nchecks-skip-tests\ndry-run\ndry-run\ndry-run\ndry-run' ]]
+grep -Fq 'Test suites were not run.' "$FIXTURE/output"
 expected_log="$(
   for package in rohd_hierarchy rohd_waveform rohd_devtools_widgets; do
     expected_checks "$package"
@@ -185,13 +194,31 @@ expected_log="$(
 [[ "$(cat "$RELEASE/packages/rohd_devtools_widgets/CHANGELOG.md")" == '## 3.4.5' ]]
 git -C "$RELEASE" diff --exit-code -- pubspec.yaml 'packages/*/pubspec.yaml'
 
+run_case 0 "DevTools source commit (upstream main): $MAIN_COMMIT" --run-tests
+[[ "$(cat "$STAGE_LOG")" == $'smoke\nchecks\ndry-run\ndry-run\ndry-run\ndry-run' ]]
+expected_log="$(
+  for package in rohd_hierarchy rohd_waveform rohd_devtools_widgets; do
+    expected_checks "$package" true
+  done
+  printf 'dart|%s|pub publish --dry-run\n' "$RELEASE"
+  printf 'dart|%s|pub publish --dry-run\n' "$RELEASE/packages/rohd_hierarchy"
+  printf 'dart|%s|pub publish --dry-run\n' "$RELEASE/packages/rohd_waveform"
+  printf 'flutter|%s|pub publish --dry-run\n' "$RELEASE/packages/rohd_devtools_widgets"
+)"
+[[ "$(cat "$SDK_LOG")" == "$expected_log" ]]
+! grep -Fq 'Test suites were not run.' "$FIXTURE/output"
+
 run_case 0 "DevTools source commit (upstream main): $MAIN_COMMIT" rohd
 [[ "$(cat "$SDK_LOG")" == "dart|$RELEASE|pub publish --dry-run" ]]
+[[ "$(cat "$STAGE_LOG")" == $'smoke\nchecks-skip-tests\ndry-run' ]]
+run_case 0 "DevTools source commit (upstream main): $MAIN_COMMIT" --run-tests rohd
+[[ "$(cat "$SDK_LOG")" == "dart|$RELEASE|pub publish --dry-run" ]]
+[[ "$(cat "$STAGE_LOG")" == $'smoke\nchecks\ndry-run' ]]
 
 export ROOT_CHECK_STATUS=72
 run_case 72 '=== rohd: project checks ==='
 [[ ! -s "$SDK_LOG" ]]
-[[ "$(cat "$STAGE_LOG")" == $'smoke\nchecks' ]]
+[[ "$(cat "$STAGE_LOG")" == $'smoke\nchecks-skip-tests' ]]
 unset ROOT_CHECK_STATUS
 
 git -C "$UPSTREAM" update-ref -d refs/heads/artifacts
@@ -217,10 +244,27 @@ expected_log="$(
 [[ "$(cat "$SDK_LOG")" == "$expected_log" ]]
 [[ "$(cat "$STAGE_LOG")" == 'dry-run' ]]
 
+run_case 0 'rohd_devtools_widgets: PASSED' rohd_devtools_widgets --run-tests
+expected_log="$(
+  expected_checks rohd_devtools_widgets true
+  printf 'flutter|%s|pub publish --dry-run\n' "$RELEASE/packages/rohd_devtools_widgets"
+)"
+[[ "$(cat "$SDK_LOG")" == "$expected_log" ]]
+[[ "$(cat "$STAGE_LOG")" == 'dry-run' ]]
+
 for package in rohd_hierarchy rohd_waveform rohd_devtools_widgets; do
+  export FAIL_PACKAGE="$package" FAIL_COMMAND=test
+  run_case 0 "$package: PASSED" "$package"
+  ! grep -Fq '|test' "$SDK_LOG"
   for check_command in 'pub get' 'format --output=none --set-exit-if-changed .' 'analyze --fatal-infos' test; do
     export FAIL_PACKAGE="$package" FAIL_COMMAND="$check_command"
-    run_case 71 "Simulated check failure: $check_command" "$package" rohd_hierarchy rohd_waveform
+    check_arguments=()
+    include_tests=false
+    if [[ "$check_command" == test ]]; then
+      check_arguments+=(--run-tests)
+      include_tests=true
+    fi
+    run_case 71 "Simulated check failure: $check_command" "${check_arguments[@]}" "$package" rohd_hierarchy rohd_waveform
     [[ ! -s "$STAGE_LOG" ]]
     expected_log="$(
       while IFS= read -r expected_line; do
@@ -228,12 +272,15 @@ for package in rohd_hierarchy rohd_waveform rohd_devtools_widgets; do
         if [[ "$expected_line" == *"|$check_command" ]]; then
           break
         fi
-      done < <(expected_checks "$package")
+      done < <(expected_checks "$package" "$include_tests")
     )"
     [[ "$(cat "$SDK_LOG")" == "$expected_log" ]]
   done
 done
 unset FAIL_PACKAGE FAIL_COMMAND
+
+run_case 2 'Unsupported package or option: --skip-tests' --skip-tests
+[[ ! -s "$STAGE_LOG" && ! -s "$SDK_LOG" ]]
 
 printf 'name: rohd_hierarchy\n' > "$RELEASE/packages/rohd_hierarchy/pubspec.yaml"
 run_case 2 'needs a stable major.minor.patch version.' rohd_hierarchy

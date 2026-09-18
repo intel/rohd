@@ -7,7 +7,7 @@
 # Prepare selected ROHD packages for release without publishing them.
 #
 # Usage (from repo root):
-#   tool/prepare_release.sh [package ...]
+#   tool/prepare_release.sh [--run-tests] [package ...]
 #
 # Run on your preparation branch after merging or rebasing the latest intel/rohd
 # main into it. When selecting ROHD, wait for that main commit's DevTools build.
@@ -20,11 +20,15 @@
 # to its package's version (an existing version heading is also accepted).
 #
 # Selecting ROHD also synchronizes Config.version, fetches and verifies artifacts,
-# smoke-tests and installs the DevTools build, and runs tool/run_checks.sh.
+# smoke-tests and installs the DevTools build, and runs tool/run_checks.sh with
+# --skip-tests by default. The artifact smoke test always runs.
 # The DevTools build comes from main, not from branch-only implementation changes.
 # Each selected sub-package gets dependency resolution, a non-writing format check,
-# analysis (including fatal infos), and tests in its own directory. Dart is used
+# and analysis (including fatal infos) in its own directory. Dart is used
 # for hierarchy/waveform, Flutter for widgets, and dart format for all three.
+# Test suites are skipped by default; verify CI results for the release commit.
+# Add --run-tests to also run all selected package suites locally, including
+# ROHD's simulator prerequisites when ROHD is selected.
 # Only after all selected checks pass do publication dry runs start.
 # It never publishes, commits, tags, pushes, merges, or rebases.
 #
@@ -37,8 +41,14 @@
 #   ROHD plus all three publishable sub-packages (the default):
 #     tool/prepare_release.sh
 #
+#   All four packages, including their test suites:
+#     tool/prepare_release.sh --run-tests
+#
 #   ROHD only:
 #     tool/prepare_release.sh rohd
+#
+#   ROHD only, including its test suite:
+#     tool/prepare_release.sh --run-tests rohd
 #
 #   ROHD plus hierarchy and waveform:
 #     tool/prepare_release.sh rohd rohd_hierarchy rohd_waveform
@@ -59,12 +69,24 @@
 set -euo pipefail
 
 if [[ $# -eq 1 && "$1" == '--help' ]]; then
-  echo "Usage: $0 [package ...]"
+  echo "Usage: $0 [--run-tests] [package ...]"
   echo "Packages: rohd rohd_hierarchy rohd_waveform rohd_devtools_widgets"
   echo "Defaults to all four packages, using each package's pubspec.yaml version."
+  echo "Test suites are skipped by default; use --run-tests to include them."
+  echo "Artifact verification and its smoke test still run when ROHD is selected."
   echo "Prepares metadata, runs package checks and publication dry runs; never uploads packages."
   exit 0
 fi
+run_tests=false
+packages=()
+for argument in "$@"; do
+  if [[ "$argument" == '--run-tests' ]]; then
+    run_tests=true
+  else
+    packages+=("$argument")
+  fi
+done
+set -- "${packages[@]}"
 if [[ $# -eq 0 ]]; then
   set -- rohd rohd_hierarchy rohd_waveform rohd_devtools_widgets
 fi
@@ -73,6 +95,11 @@ fi
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 bash "$SCRIPT_DIR/check_release.sh" --validate-only "$@"
+if [[ "$run_tests" == true ]]; then
+  echo "Test suites enabled for selected packages (--run-tests)."
+else
+  echo "Test suites skipped; verify CI results for the release commit. Use --run-tests to run them locally."
+fi
 prepare_rohd=false
 for package in "$@"; do
   if [[ "$package" == rohd ]]; then
@@ -147,7 +174,11 @@ dart run "$SCRIPT_DIR/prepare_release_metadata.dart" "$@"
 # Publishing remains a separate, intentionally manual operation.
 if [[ "$prepare_rohd" == true ]]; then
   echo "=== rohd: project checks ==="
-  tool/run_checks.sh
+  if [[ "$run_tests" == true ]]; then
+    tool/run_checks.sh
+  else
+    tool/run_checks.sh --skip-tests
+  fi
 fi
 for package in "$@"; do
   if [[ "$package" == rohd ]]; then
@@ -165,8 +196,12 @@ for package in "$@"; do
     dart format --output=none --set-exit-if-changed .
     echo "=== $package: analyze ($sdk analyze --fatal-infos) ==="
     "$sdk" analyze --fatal-infos
-    echo "=== $package: tests ($sdk test) ==="
-    "$sdk" test
+    if [[ "$run_tests" == true ]]; then
+      echo "=== $package: tests ($sdk test) ==="
+      "$sdk" test
+    else
+      echo "=== $package: tests skipped (use --run-tests) ==="
+    fi
   )
 done
 git diff --check
@@ -183,3 +218,6 @@ cat <<EOF
 Review the changelog and working tree before performing the manual publish step.
 Selected packages passed checks and publication dry runs; nothing was uploaded.
 EOF
+if [[ "$run_tests" == false ]]; then
+  echo "Test suites were not run. Verify CI results for the release commit before publishing."
+fi
