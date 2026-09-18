@@ -322,19 +322,21 @@ class WaveformService extends ArtifactProducingService {
   @protected
   void onSignalCollected(Logic signal) {}
 
-  /// Called for every value-change event on [signal] at [timestamp].
+  /// Called for every captured value on [signal] at [timestamp].
   ///
-  /// Only called within the [startTime] / [stopTime] window.
+  /// When [startTime] is set, this includes one window-entry value for every
+  /// tracked signal at [startTime]. Those calls describe the state entering
+  /// the recording window, rather than physical transitions.
   ///
   /// Override in a subclass to feed an in-memory waveform store or
   /// streaming buffer.  Always call `super` first.
   @protected
   void onValueChange(Logic signal, int timestamp) {}
 
-  /// Called once per simulation timestamp that contains at least one change,
-  /// after all value-change events for that timestamp have been processed.
+  /// Called once after each batch of captured values at [timestamp].
   ///
-  /// [changed] is the set of signals that changed at [timestamp].
+  /// When [startTime] is set, the complete window-entry signal snapshot is
+  /// delivered as a batch at [startTime] before later value-change batches.
   ///
   /// Override in a subclass to flush incremental streaming payloads.
   /// Always call `super` first.
@@ -479,8 +481,15 @@ class WaveformService extends ArtifactProducingService {
     }
 
     _writeToBuffer('#$startTime\n');
-    _signalToMarkerMap.keys.forEach(_writeSignalValueUpdate);
+    final snapshot = Set<Logic>.of(_signalToMarkerMap.keys);
+    for (final signal in snapshot) {
+      _writeSignalValueUpdate(signal);
+      onValueChange(signal, startTime!);
+    }
     _hasWrittenWindowSnapshot = true;
+    if (snapshot.isNotEmpty) {
+      onTimestampCapture(startTime!, snapshot);
+    }
   }
 
   void _writeSignalValueUpdate(Logic signal) {
