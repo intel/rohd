@@ -12,6 +12,7 @@ import 'dart:io';
 
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/fst/fst_waveform_query.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
 
@@ -81,6 +82,15 @@ class WaveformService extends ArtifactProducingService {
   final FstWriterConfig? fstConfig;
 
   late final WaveformWriter _writer;
+
+  /// Creates a bounded-memory query provider for an FST capture.
+  ///
+  /// Returns `null` for VCD captures, whose text output is not indexed for
+  /// time-range queries.
+  FstWaveformQuery? createFstQuery() => switch (_writer) {
+        FstWaveformWriter() => (_writer as FstWaveformWriter).createQuery(),
+        _ => null,
+      };
 
   /// Maps each captured [Logic] to its writer-specific signal handle.
   final Map<Logic, Object> _signalHandles = <Logic, Object>{};
