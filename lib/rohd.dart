@@ -13,6 +13,7 @@ export 'src/external.dart';
 export 'src/finite_state_machine.dart';
 export 'src/fst/fst_block_reader.dart';
 export 'src/fst/fst_types.dart';
+export 'src/fst/fst_waveform_query.dart';
 export 'src/fst/fst_writer.dart';
 export 'src/interfaces/interfaces.dart';
 export 'src/module.dart';
