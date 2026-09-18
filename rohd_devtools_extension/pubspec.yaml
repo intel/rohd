@@ -24,7 +24,7 @@ dependencies:
   flutter_web_plugins:
     sdk: flutter
   logging: ^1.2.0
-  material_ui: ">=1.1.0 <1.3.0"
+  material_ui: ^1.1.0
   path: ^1.9.0
   path_provider: ^2.1.0
   rohd:
@@ -55,8 +55,6 @@ dev_dependencies:
   mocktail: ^1.0.2
 
 dependency_overrides:
-  # Keep the transitive Cupertino UI package below the Dart 3.6-incompatible release.
-  cupertino_ui: ">=1.0.0 <1.1.0"
   rohd:
     path: ..
   rohd_devtools_widgets:
