@@ -14,18 +14,21 @@ import 'package:rohd/src/diagnostics/inspector_service.dart';
 
 /// A slim, type-keyed registry of [ModuleService]s.
 ///
-/// Services register themselves here on construction (keyed by their concrete
-/// type) and are retrieved with [lookup].  The registry intentionally exposes
-/// no per-format accessors: each service owns its own JSON and output methods,
-/// reached through [lookup] or the service's own static `current` accessor.
-/// Those accessors are backed by this registry, so both discovery routes have
-/// the same registration lifetime.
+/// Services register themselves here on construction under the type argument
+/// supplied to [register] and are retrieved with [lookup]. This key is not
+/// necessarily the runtime concrete type: for example, a [WaveformService]
+/// subclass registered as `register<WaveformService>(this)` is available under
+/// [WaveformService], not automatically under its subclass type. The registry
+/// intentionally exposes no per-format accessors: each service owns its own
+/// JSON and output methods, reached through [lookup] or the service's own
+/// static `current` accessor. Those accessors are backed by this registry, so
+/// both discovery routes have the same registration lifetime.
 ///
 /// The registry references no specific service type, so it is identical across
 /// all feature branches that contribute services.
 ///
-/// Service registrations are independent latest registrations by concrete
-/// service type; they are not an atomic set associated with [rootModule].
+/// Service registrations are independent latest registrations by registration
+/// type; they are not an atomic set associated with [rootModule].
 /// [reset] explicitly clears both the hierarchy and every service
 /// registration. [Simulator.reset] does not reset this registry, allowing
 /// generated service results to remain available after a simulation ends.

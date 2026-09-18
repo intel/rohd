@@ -82,11 +82,11 @@ enum OverwritePolicy {
 ///
 /// - [onSignalCollected] — called once per tracked signal at startup; use
 ///   it to register signals in a VM-service index.
-/// - [onValueChange] — called for every value-change event within the
-///   [startTime]/[stopTime] window; use it to feed an in-memory store for
+/// - [onValueChange] — called once for each signal in a captured timestamp's
+///   coalesced final-value set; use it to feed an in-memory store for
 ///   streaming.
-/// - [onTimestampCapture] — called once per simulation timestamp that
-///   contains at least one change; the full changed-signal set is passed.
+/// - [onTimestampCapture] — called after each captured timestamp batch,
+///   including the possibly empty finalization batch.
 /// - [onSimulationEnd] — called after the final timestamp is written and
 ///   the file is closed; use it to finalise any streaming buffers.
 ///
@@ -187,13 +187,15 @@ class WaveformService extends ArtifactProducingService {
   /// after simulation.
   final bool retainInMemory;
 
-  /// Whether this service can provide waveform data to a consumer.
+  /// Whether this service can service debugger waveform-data queries.
   ///
-  /// Capture can be sent when complete history is retained in memory, or when
-  /// a file-backed [format] supports indexed on-disk queries. This lets
-  /// consumers select waveform-capable services without depending on a
-  /// particular retention strategy. VCD requires [retainInMemory]; FST can
-  /// provide this capability from a file once FST writing is supported.
+  /// A `true` result promises that a debugger can request captured waveform
+  /// values, such as selected signals over a time interval. It does not
+  /// promise that [artifacts] can transfer waveform-file bytes. Capture can be
+  /// queried when complete history is retained in memory, or when a
+  /// file-backed [format] supports indexed on-disk queries. VCD requires
+  /// [retainInMemory]; FST can provide this capability from a file once FST
+  /// writing is supported.
   bool canSendWaveforms() =>
       retainInMemory || (writeToFile && format.supportsOnDiskQueries);
 
@@ -238,9 +240,9 @@ class WaveformService extends ArtifactProducingService {
   /// timescale, start/stop times, flush size, and overwrite policy.
   ///
   /// In-memory-only VCD debugging captures retain the complete waveform by
-  /// default. Set [retainInMemory] explicitly to choose whole-history
-  /// retention; file-backed captures default to bounded memory while retaining
-  /// a streamable artifact on disk.
+  /// default. Set [retainInMemory] to override these defaults; file-backed
+  /// captures default to bounded memory while retaining a streamable artifact
+  /// on disk.
   WaveformService(
     Module module, {
     super.outputDirectory,
@@ -259,10 +261,7 @@ class WaveformService extends ArtifactProducingService {
   })  : retainInMemory = retainInMemory ?? !writeToFile,
         super(module) {
     if (!module.hasBuilt) {
-      throw Exception(
-        'Module must be built before creating WaveformService. '
-        'Call build() first.',
-      );
+      throw ModuleNotBuiltException(module);
     }
     if (format != WaveOutputFormat.vcd) {
       throw UnsupportedError(
@@ -322,7 +321,10 @@ class WaveformService extends ArtifactProducingService {
   @protected
   void onSignalCollected(Logic signal) {}
 
-  /// Called for every captured value on [signal] at [timestamp].
+  /// Called once for each signal's final captured value at [timestamp].
+  ///
+  /// Multiple changes to the same signal within a simulation timestamp are
+  /// coalesced, so this hook receives that signal once with its final value.
   ///
   /// When [startTime] is set, this includes one window-entry value for every
   /// tracked signal at [startTime]. Those calls describe the state entering
@@ -333,10 +335,11 @@ class WaveformService extends ArtifactProducingService {
   @protected
   void onValueChange(Logic signal, int timestamp) {}
 
-  /// Called once after each batch of captured values at [timestamp].
+  /// Called once after each captured timestamp batch.
   ///
   /// When [startTime] is set, the complete window-entry signal snapshot is
   /// delivered as a batch at [startTime] before later value-change batches.
+  /// Finalization invokes this hook even when its [changed] set is empty.
   ///
   /// Override in a subclass to flush incremental streaming payloads.
   /// Always call `super` first.
@@ -535,9 +538,13 @@ class WaveformService extends ArtifactProducingService {
 
   /// The waveform artifact produced by this service.
   ///
-  /// File-backed artifacts stream directly from the output file, avoiding a
-  /// second whole-trace allocation. In-memory artifacts are available only
-  /// when [retainInMemory] is explicitly enabled.
+  /// The artifact is complete after simulation finalization. During capture,
+  /// file-backed artifacts expose only bytes already flushed to
+  /// [outputFilePath]; the current write buffer is not visible. Each
+  /// file-backed [ModuleServiceArtifact.openRead] opens the current file, not
+  /// an immutable snapshot or a live tail, so concurrent capture may change
+  /// what a read observes. In-memory artifacts are available whenever
+  /// [retainInMemory] is enabled, including its automatic memory-only default.
   @override
   Iterable<ModuleServiceArtifact> get artifacts sync* {
     if (!writeToFile && !retainInMemory) {

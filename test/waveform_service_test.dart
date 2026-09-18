@@ -196,6 +196,15 @@ void main() {
     deleteTemporaryDump(dumpName);
   });
 
+  test('throws if module not built', () {
+    final mod = SimpleModule(Logic());
+
+    expect(
+      () => WaveformService(mod),
+      throwsA(isA<ModuleNotBuiltException>()),
+    );
+  });
+
   test('dumpWaves can retain history for debugging', () async {
     final mod = SimpleModule(Logic());
     await mod.build();

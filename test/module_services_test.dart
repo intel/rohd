@@ -373,6 +373,15 @@ void main() {
   });
 
   group('NetlistService', () {
+    test('throws if module not built', () {
+      final mod = SimpleModule(Logic());
+
+      expect(
+        () => NetlistService(mod),
+        throwsA(isA<ModuleNotBuiltException>()),
+      );
+    });
+
     test('uses the synthesized format version across all JSON views', () async {
       final mod = SimpleModule(Logic());
       await mod.build();
