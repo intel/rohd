@@ -91,6 +91,9 @@ class WaveformService extends ArtifactProducingService {
   /// The timestamp currently being accumulated.
   int _currentDumpingTimestamp = Simulator.time;
 
+  /// Whether the recording window's initial signal snapshot was emitted.
+  bool _hasWrittenWindowSnapshot = false;
+
   /// Creates a [WaveformService] for [module].
   ///
   /// [module] must be built before construction. [outputDirectory] defaults to
@@ -130,12 +133,13 @@ class WaveformService extends ArtifactProducingService {
       ),
       timestamp: Simulator.time,
     );
+    _hasWrittenWindowSnapshot = startTime == null || startTime == 0;
     if (enableDevToolsStreaming) {
       WaveformDataService.init(module);
       _dataService = WaveformDataService.instance;
       if (_writer case final FstWaveformWriter fstWriter) {
-        _dataService!.attachFstWriter(
-          fstWriter.writer,
+        _dataService!.attachFstQuery(
+          fstWriter.createQuery(),
           <Logic, FstSignalHandle>{
             for (final entry in _signalHandles.entries)
               entry.key: entry.value as FstSignalHandle,
@@ -153,6 +157,7 @@ class WaveformService extends ArtifactProducingService {
           _captureTimestamp(_currentDumpingTimestamp);
         }
         _currentDumpingTimestamp = Simulator.time;
+        _writeWindowSnapshotIfNeeded(Simulator.time);
       }
     });
 
@@ -322,6 +327,7 @@ class WaveformService extends ArtifactProducingService {
       return;
     }
 
+    _writeWindowSnapshotIfNeeded(timestamp);
     final snapshot = Set<Logic>.of(_changedThisTimestamp);
     final changes = <WaveformValueChange>[
       for (final sig in snapshot)
@@ -340,6 +346,33 @@ class WaveformService extends ArtifactProducingService {
 
     if (snapshot.isNotEmpty) {
       onTimestampCapture(timestamp, snapshot);
+    }
+  }
+
+  void _writeWindowSnapshotIfNeeded(int timestamp) {
+    if (_hasWrittenWindowSnapshot ||
+        startTime == null ||
+        timestamp < startTime! ||
+        !_isInRecordingWindow(startTime!)) {
+      return;
+    }
+
+    final snapshot = Set<Logic>.of(_signalHandles.keys);
+    _writer.emitValueChanges(
+      startTime!,
+      [
+        for (final signal in snapshot)
+          WaveformValueChange(_signalHandles[signal]!, _binaryValue(signal)),
+      ],
+    );
+    _hasWrittenWindowSnapshot = true;
+
+    for (final signal in snapshot) {
+      _dataService?.recordLogicChange(signal, startTime!);
+      onValueChange(signal, startTime!);
+    }
+    if (snapshot.isNotEmpty) {
+      onTimestampCapture(startTime!, snapshot);
     }
   }
 
