@@ -34,6 +34,8 @@ printf '%s\n' \
   '#!/bin/bash' \
   'printf "%s|%s|%s\n" "${0##*/}" "$PWD" "$*" >> "$SDK_LOG"' \
   '[[ "$#" -eq 3 && "$1" == pub && "$2" == publish && "$3" == --dry-run ]] || exit 99' \
+  '[[ "${DASH__SUPPRESS_ANALYTICS:-}" == true ]] || exit 98' \
+  '[[ "${FLUTTER_SUPPRESS_ANALYTICS:-}" == true ]] || exit 97' \
   'if [[ "${FAIL_PACKAGE:-}" == "${PWD##*/}" ]]; then exit 65; fi' \
   'exit 0' > "$FIXTURE/bin/sdk"
 chmod +x "$FIXTURE/bin/sdk"
@@ -65,6 +67,7 @@ run_case 0 "$HELPER" --help
 [[ ! -s "$SDK_LOG" ]]
 run_case 0 "$HELPER"
 [[ "$(wc -l < "$SDK_LOG")" -eq 4 ]]
+DASH__SUPPRESS_ANALYTICS=false FLUTTER_SUPPRESS_ANALYTICS=false run_case 0 "$HELPER" rohd_devtools_widgets
 run_case 0 "$HELPER" --validate-only
 [[ ! -s "$SDK_LOG" ]]
 for invalid in --force --dry-run ../rohd rohd_source_navigator rohd_devtools_extension; do

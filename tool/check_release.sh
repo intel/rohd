@@ -27,6 +27,7 @@
 # Results are summarized; any failure or nonzero warning makes this script fail.
 # Dry runs may update dependency caches/lockfiles. Local overrides are preserved
 # and do not prove hosted dependency readiness. No commits, tags, or pushes occur.
+# SDK telemetry is suppressed for these checks and their child analyzers only.
 #
 # For ROHD, first run tool/prepare_release.sh rohd to install verified DevTools.
 # See doc/releases.md for preparation, hosted validation, and manual publication.
@@ -35,6 +36,9 @@
 # Author: Max Korbel <max.korbel@intel.com>
 
 set -euo pipefail
+
+export DASH__SUPPRESS_ANALYTICS=true
+export FLUTTER_SUPPRESS_ANALYTICS=true
 
 usage() {
   echo "Usage: $0 [--validate-only] [package ...]"

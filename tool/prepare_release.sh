@@ -68,6 +68,9 @@
 
 set -euo pipefail
 
+export DASH__SUPPRESS_ANALYTICS=true
+export FLUTTER_SUPPRESS_ANALYTICS=true
+
 if [[ $# -eq 1 && "$1" == '--help' ]]; then
   echo "Usage: $0 [--run-tests] [package ...]"
   echo "Packages: rohd rohd_hierarchy rohd_waveform rohd_devtools_widgets"
