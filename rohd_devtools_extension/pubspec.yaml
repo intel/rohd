@@ -21,7 +21,7 @@ dependencies:
   logging: ^1.2.0
   material_ui: ^1.1.0
   rohd_devtools_widgets:
-    path: packages/rohd_devtools_widgets
+    path: ../packages/rohd_devtools_widgets
   vm_service: ^14.3.1
   web: ^1.0.0
   web_socket_channel: ^3.0.0
@@ -42,3 +42,5 @@ flutter:
 dependency_overrides:
   rohd:
     path: ../
+  rohd_hierarchy:
+    path: ../packages/rohd_hierarchy

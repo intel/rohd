@@ -7,4 +7,4 @@ analyzer:
     - windows/**
     - macos/**
     - linux/**
-include: ../../analysis_options.yaml
+include: ../../rohd_devtools_extension/analysis_options.yaml

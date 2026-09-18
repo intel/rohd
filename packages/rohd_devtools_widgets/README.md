@@ -70,7 +70,13 @@ across DevTools packages.
 
 ## Usage
 
-Add this package as a path dependency from a ROHD DevTools package and import the shared widgets you need:
+Add the package to your Flutter application:
+
+```shell
+flutter pub add rohd_devtools_widgets
+```
+
+Import the shared widgets you need:
 
 ```dart
 import 'package:rohd_devtools_widgets/rohd_devtools_widgets.dart';
