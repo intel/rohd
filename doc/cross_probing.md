@@ -1,3 +1,8 @@
+<!--
+Copyright (C) 2026 Intel Corporation
+SPDX-License-Identifier: BSD-3-Clause
+-->
+
 # Cross-Probing with FLC (File-Line-Column) Traces
 
 ROHD can record the Dart source location of every signal and submodule
