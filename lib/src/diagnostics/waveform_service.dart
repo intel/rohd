@@ -71,6 +71,7 @@ class WaveformService extends ArtifactProducingService {
 
   /// The retained VCD waveform, or `null` when retention is disabled.
   String? get inMemoryOutput => _writer.inMemoryOutput;
+
   /// Whether to expose captured values to DevTools.
   final bool enableDevToolsStreaming;
 
