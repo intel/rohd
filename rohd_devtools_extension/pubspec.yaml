@@ -61,8 +61,6 @@ dependency_overrides:
     path: ..
   rohd_devtools_widgets:
     path: ../packages/rohd_devtools_widgets
-  rohd_hcl:
-    path: ../../../rohd-hcl
   rohd_hierarchy:
     path: ../packages/rohd_hierarchy
   rohd_source_navigator:
