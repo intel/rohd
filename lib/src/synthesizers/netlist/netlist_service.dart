@@ -91,10 +91,7 @@ class NetlistService extends ArtifactProducingService {
     super.outputBaseName,
   }) : super(module) {
     if (!module.hasBuilt) {
-      throw Exception(
-        'Module must be built before creating NetlistService. '
-        'Call build() first.',
-      );
+      throw ModuleNotBuiltException(module);
     }
 
     final effectiveRoot = packageRoot ?? configuration.effectivePackageRoot;
@@ -199,7 +196,7 @@ class NetlistService extends ArtifactProducingService {
         }
         return jsonEncode(<String, Object?>{
           'creator': 'ROHD netlist synthesizer',
-          'version': formatVersion,
+          'version': version,
           if (_srcTraceFiles case final files? when files.isNotEmpty)
             'files': files,
           'modules': <String, Object?>{definitionName: modData},
@@ -406,7 +403,7 @@ class NetlistService extends ArtifactProducingService {
     return jsonEncode(<String, dynamic>{
       'netlist': <String, dynamic>{
         'creator': 'ROHD NetlistService (slim)',
-        'version': formatVersion,
+        'version': version,
         if (_srcTraceFiles case final files? when files.isNotEmpty)
           'files': files,
         'rootInstanceName': rootName,

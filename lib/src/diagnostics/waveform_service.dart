@@ -22,7 +22,8 @@ import 'package:rohd/src/utilities/uniquifier.dart';
 /// [WaveOutputFormat.vcd], [FstWaveformWriter] for [WaveOutputFormat.fst]).
 class WaveformService extends ArtifactProducingService {
   /// The most recently registered [WaveformService], or `null`.
-  static WaveformService? current;
+  static WaveformService? get current =>
+      ModuleServices.instance.lookup<WaveformService>();
 
   /// Exact output filename override.
   ///
@@ -119,10 +120,7 @@ class WaveformService extends ArtifactProducingService {
     this.fstConfig,
   }) : super(module) {
     if (!module.hasBuilt) {
-      throw Exception(
-        'Module must be built before creating WaveformService. '
-        'Call build() first.',
-      );
+      throw ModuleNotBuiltException(module);
     }
 
     _writer = _createWriter();
@@ -168,7 +166,6 @@ class WaveformService extends ArtifactProducingService {
     });
 
     if (register) {
-      current = this;
       ModuleServices.instance.register<WaveformService>(this);
     }
   }
