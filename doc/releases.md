@@ -67,6 +67,11 @@ pushes, and publication are separate maintainer actions.
 
 ## Pub.dev Preparation
 
+Use a dedicated preparation branch and PR. Publish the selected packages from
+that branch, then merge the PR after their releases have succeeded on pub.dev.
+Before preparing, incorporate the latest upstream `main` into the release branch
+with a merge or rebase; the preparation PR itself does not need to be merged yet.
+
 1. Select only the packages that need releasing. Update each package's
    `pubspec.yaml` version and promote its pending changelog section to that
    version. For ROHD, also update `Config.version` in
@@ -82,18 +87,60 @@ pushes, and publication are separate maintainer actions.
    each changed package. Use `dart` for Dart packages and `flutter` for Flutter
    packages. For ROHD, run `tool/run_checks.sh`; Icarus Verilog is required and
    Verilator is required in CI. Test the DevTools app when shared widgets change.
-5. Merge the reviewed preparation changes. Before publishing ROHD, wait for the
-   DevTools artifact workflow for that exact source commit, then run
-   `tool/prepare_release.sh <version>` from the repository root, replacing
-   `<version>` with the target ROHD version. It checks artifact provenance,
-   smoke-tests and installs the web build, synchronizes ROHD versions, and runs checks. It does
-   not prepare sub-package versions, commit, tag, or publish anything. Do not
-   bypass its stale-artifact check or reuse a build from another source commit.
-6. Inspect the publication archive with `dart pub publish --dry-run` in each Dart
-   package directory, or `flutter pub publish --dry-run` in the widgets directory.
-   Review warnings, included files, and compressed archive sizes. For ROHD, verify
-   that `extension/devtools/build` is included and passes
+5. On the preparation branch, wait for the DevTools artifact workflow for the
+   latest upstream `main`, then run
+   `tool/prepare_release.sh <version> [sub-package ...]` from the repository root,
+   replacing `<version>` with the target ROHD version and optionally appending
+   selected package names. It fetches `main` from `intel/rohd` and requires that
+   commit to be an ancestor of the release branch's `HEAD`. It then fetches
+   `artifacts` and requires the artifact's source commit to match that fetched
+   `main` commit, not the release branch's tip. It smoke-tests and installs the
+   web build, synchronizes ROHD versions, and runs checks. After those checks,
+   it runs publication dry runs for ROHD and any selected sub-packages. It does
+   not merge, rebase, change sub-package versions, commit, tag, push, or upload
+   anything. If either guard fails, incorporate the latest `main` or wait for its
+   artifact workflow as appropriate, then rerun preparation.
+6. For independent package releases or to repeat archive checks, run
+   `tool/check_release.sh <package> [package ...]`. Select from `rohd`,
+   `rohd_hierarchy`, `rohd_waveform`, and `rohd_devtools_widgets`; each uses its
+   existing version. The helper runs `dart pub publish --dry-run` in each selected
+   Dart package directory or `flutter pub publish --dry-run` for widgets. Review
+   warnings, included files, and compressed archive sizes. For ROHD, first prepare
+   the verified DevTools build as above, then verify that
+   `extension/devtools/build` is included and passes
    `tool/gh_actions/devtool/test_devtools_install.sh extension/devtools`.
+
+The bundled DevTools is built from upstream `main`, not from preparation-branch
+changes. Release metadata can differ on the preparation branch, but any DevTools
+implementation changes, including changes to shared code it uses, must already
+be in `main` and its artifact build to be included. Do not bypass the artifact
+guard to package an older build. The source repository defaults to `intel/rohd`;
+`ROHD_ARTIFACT_REPOSITORY` overrides the repository used for both fetches, and
+`ROHD_ARTIFACT_BRANCH` overrides only the artifact branch name.
+
+For example, validate a selection without invoking any SDK commands, then run
+the selected dry runs:
+
+```sh
+tool/check_release.sh --validate-only rohd_hierarchy rohd_waveform rohd_devtools_widgets
+tool/check_release.sh rohd_hierarchy rohd_waveform rohd_devtools_widgets
+```
+
+`--validate-only` checks package names, manifest presence, and SDK availability.
+Unknown names and options are rejected before any SDK command runs; preparation
+also validates its selection before fetching artifacts or changing files. The
+helper has no upload mode, hard-codes `--dry-run`, and does not forward pub flags.
+It reports each result and continues after a failed dry run, returning nonzero
+if any package fails, including when pub treats warnings as a nonzero result.
+Dry runs can resolve dependencies and update local caches or lockfiles; they
+leave package versions and local override files unchanged. They do not prove
+hosted dependency readiness when local overrides are present.
+
+The helper's isolated regression checks run with
+`bash tool/test/check_release_test.sh`. Preparation guard checks run with
+`bash tool/test/prepare_release_test.sh` using temporary local Git repositories.
+Both use fake SDK executables on a restricted PATH and cannot reach real Dart
+or Flutter publication commands.
 
 ## Publication Order
 
@@ -117,12 +164,16 @@ repeat the publish dry run. A dry run using local overrides does not prove that
 pub.dev consumers can resolve or use the package. Never remove a developer's
 overrides from their working checkout just to perform this check.
 
-After reviewing the final archive, a maintainer runs `dart pub publish` or
-`flutter pub publish` from the selected package directory. Confirm the version
-on pub.dev, then create its tag and publish its GitHub release using the strategy
-above. Record the source commit and, for ROHD, the DevTools artifact commit in
-the release notes. Start a new pending changelog section when subsequent changes
-are made; do not rewrite notes for already published versions.
+After reviewing the final archive, publish from a reviewed, clean commit on the
+preparation branch. A maintainer runs `dart pub publish` or `flutter pub publish`
+from the selected package directory. Confirm each version on pub.dev, then create
+its tag at the preparation-branch commit used for publication and publish its
+GitHub release using the strategy above. Record the release source commit and,
+for ROHD, both the DevTools source (`main`) and artifact commits in the release
+notes. Once all selected packages have been published successfully, merge the
+preparation PR; do not move release tags to a later merge or squash commit.
+Start a new pending changelog section when subsequent changes are made; do not
+rewrite notes for already published versions.
 
 ## VS Code Publication
 
