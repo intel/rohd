@@ -165,7 +165,9 @@ class NetlistService extends ArtifactProducingService {
   /// {
   ///   "creator": "ROHD netlist synthesizer",
   ///   "version": "...",
-  ///   "modules": {"DefinitionName": {"ports": {}, "cells": {}, "netnames": {}}}
+  ///   "modules": {
+  ///     "DefinitionName": {"ports": {}, "cells": {}, "netnames": {}}
+  ///   }
   /// }
   /// ```
   /// This matches the format expected by the DevTools schematic viewer
@@ -217,7 +219,9 @@ class NetlistService extends ArtifactProducingService {
   ///     "creator": "ROHD NetlistService (slim)",
   ///     "version": "...",
   ///     "rootInstanceName": "...",
-  ///     "modules": {"DefinitionName": {"ports": {}, "cells": {}, "netnames": {}}}
+  ///     "modules": {
+  ///       "DefinitionName": {"ports": {}, "cells": {}, "netnames": {}}
+  ///     }
   ///   }
   /// }
   /// ```
