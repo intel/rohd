@@ -170,8 +170,8 @@ class WaveformService extends ArtifactProducingService {
       WaveformDataService.init(module);
       _dataService = WaveformDataService.instance;
       if (_writer case final FstWaveformWriter fstWriter) {
-        _dataService!.attachFstWriter(
-          fstWriter.writer,
+        _dataService!.attachFstQuery(
+          fstWriter.createQuery(),
           <Logic, FstSignalHandle>{
             for (final entry in _signalHandles.entries)
               entry.key: entry.value as FstSignalHandle,
@@ -406,6 +406,33 @@ class WaveformService extends ArtifactProducingService {
       onValueChange(signal, startTime!);
     }
     onTimestampCapture(startTime!, snapshot);
+  }
+
+  void _writeWindowSnapshotIfNeeded(int timestamp) {
+    if (_hasWrittenWindowSnapshot ||
+        startTime == null ||
+        timestamp < startTime! ||
+        !_isInRecordingWindow(startTime!)) {
+      return;
+    }
+
+    final snapshot = Set<Logic>.of(_signalHandles.keys);
+    _writer.emitValueChanges(
+      startTime!,
+      [
+        for (final signal in snapshot)
+          WaveformValueChange(_signalHandles[signal]!, _binaryValue(signal)),
+      ],
+    );
+    _hasWrittenWindowSnapshot = true;
+
+    for (final signal in snapshot) {
+      _dataService?.recordLogicChange(signal, startTime!);
+      onValueChange(signal, startTime!);
+    }
+    if (snapshot.isNotEmpty) {
+      onTimestampCapture(startTime!, snapshot);
+    }
   }
 
   String _binaryValue(Logic signal) => signal.value.reversed

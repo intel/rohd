@@ -150,53 +150,40 @@ class WaveformDataService {
 
   // ─── FST-backed storage (Phase 2) ────────────────────────────────────
   //
-  // When an FstWriter is attached, historical signal data lives on disk
-  // in flushed VcData blocks.  WaveformDataService only keeps unflushed data
-  // (the "hot buffer") in memory, dramatically reducing memory usage for
-  // long simulations.
+  // When an FstWaveformQuery is attached, historical signal data lives in
+  // flushed FST blocks and the writer's bounded hot buffer.
   //
-  // For VCD mode (no FstWriter attached), the full in-memory cache in
+  // For VCD mode (no FstWaveformQuery attached), the full in-memory cache in
   // [_signalData] is used as before.
 
-  /// The attached FST writer, or null for VCD mode.
-  FstWriter? _fstWriter;
+  /// The attached FST query provider, or null for VCD mode.
+  FstWaveformQuery? _fstQuery;
 
-  /// The block reader (created when [_fstWriter] is attached).
-  FstBlockReader? _fstBlockReader;
-
-  /// Mapping from WaveformDataService signal ID → FST handle index (0-based).
-  final Map<String, int> _signalIdToFstHandle = {};
-
-  /// Reverse mapping: FST handle index (0-based) → signal ID.
-  final Map<int, String> _fstHandleToSignalId = {};
+  /// Mapping from WaveformDataService signal ID → FST signal handle.
+  final Map<String, FstSignalHandle> _signalIdToFstHandle = {};
 
   /// Whether FST-backed disk storage is active.
-  bool get isFstBacked => _fstWriter != null;
+  bool get isFstBacked => _fstQuery != null;
 
-  /// Attach an [FstWriter] for FST-backed disk storage.
+  /// Attach an [FstWaveformQuery] for FST-backed waveform retrieval.
   ///
   /// When attached, [recordChange] stores data only in the writer's
   /// hot buffer instead of the unbounded in-memory [_signalData] map.
-  /// Historical data is read back from flushed VcData blocks on demand.
+  /// Historical data is read back from flushed blocks on demand.
   ///
   /// [logicToHandle] maps each Logic to its FST signal handle, enabling
   /// the service to route queries to the correct disk-backed signal.
-  void attachFstWriter(
-    FstWriter writer,
+  void attachFstQuery(
+    FstWaveformQuery query,
     Map<Logic, FstSignalHandle> logicToHandle,
   ) {
-    _fstWriter = writer;
-    _fstBlockReader = FstBlockReader(writer.filePath, writer.signalInfoList);
+    _fstQuery = query;
 
-    // Build the signal ID ↔ FST handle mapping
     _signalIdToFstHandle.clear();
-    _fstHandleToSignalId.clear();
     for (final entry in logicToHandle.entries) {
       final signalId = _logicToIdMap[entry.key];
       if (signalId != null) {
-        final handleIdx = entry.value.handle - 1; // 0-based
-        _signalIdToFstHandle[signalId] = handleIdx;
-        _fstHandleToSignalId[handleIdx] = signalId;
+        _signalIdToFstHandle[signalId] = entry.value;
       }
     }
   }
@@ -291,9 +278,7 @@ class WaveformDataService {
     _addressToSignalId.clear();
     _signalIdToAddress.clear();
     _signalIdToFstHandle.clear();
-    _fstHandleToSignalId.clear();
-    _fstWriter = null;
-    _fstBlockReader = null;
+    _fstQuery = null;
     _currentTime = 0;
     _rootModule = null;
     _recordingStarted = false;
@@ -861,64 +846,25 @@ class WaveformDataService {
   // ─────────────────────────────────────────────────────────────────────────
   // FST-backed query helpers
   //
-  // These methods read historical data from flushed VcData blocks on disk
-  // and merge with the FstWriter's unflushed hot buffer.  Used by the JSON
-  // APIs when [isFstBacked] is true.
+  // These methods adapt FstWaveformQuery results for the DevTools JSON APIs.
   // ─────────────────────────────────────────────────────────────────────────
 
   /// Query FST-backed signal data for [signalId] in time range
   /// [startTime] .. [endTime].
   ///
-  /// Reads flushed VcData blocks from disk via [_fstBlockReader] and
-  /// unflushed changes from [_fstWriter]'s hot buffer, merging them into
-  /// a sorted list of [ValueChange]s.
   List<ValueChange> _queryFstSignal(
     String signalId,
     int startTime,
     int endTime,
   ) {
-    final handleIdx = _signalIdToFstHandle[signalId];
-    if (handleIdx == null) {
+    final handle = _signalIdToFstHandle[signalId];
+    if (handle == null) {
       return [];
     }
-
-    final writer = _fstWriter!;
-    final reader = _fstBlockReader!;
-    final blocks = writer.blockIndex;
-    final result = <ValueChange>[];
-
-    // 1. Read from flushed blocks that overlap [startTime, endTime].
-    for (final block in blocks) {
-      if (block.endTime < startTime || block.startTime > endTime) {
-        continue;
-      }
-
-      final changes = reader.readBlock(
-        block,
-        handleIndices: {handleIdx},
-        startTime: startTime,
-        endTime: endTime,
-      );
-
-      final signalChanges = changes[handleIdx];
-      if (signalChanges != null) {
-        for (final c in signalChanges) {
-          result.add(ValueChange(time: c.time, value: c.value));
-        }
-      }
-    }
-
-    // 2. Read from hot buffer (unflushed changes after last block).
-    final hotChanges = writer.queryHotBuffer(handleIdx, startTime, endTime);
-    for (final c in hotChanges) {
-      result.add(ValueChange(time: c.time, value: c.value));
-    }
-
-    // Blocks are chronological and hot buffer is after all blocks, so the
-    // result is already sorted.  Sort defensively in case of overlap.
-    result.sort((a, b) => a.time.compareTo(b.time));
-
-    return result;
+    return _fstQuery!
+        .changes(handle, startTime: startTime, endTime: endTime)
+        .map((change) => ValueChange(time: change.time, value: change.value))
+        .toList();
   }
 
   /// Get the value of an FST-backed signal at-or-before [time].
@@ -927,47 +873,11 @@ class WaveformDataService {
   /// newest to oldest.  Falls back to block frame values (carry-over state
   /// at block start) when no explicit change is found.
   String? _getValueAtTimeFst(String signalId, int time) {
-    final handleIdx = _signalIdToFstHandle[signalId];
-    if (handleIdx == null) {
+    final handle = _signalIdToFstHandle[signalId];
+    if (handle == null) {
       return null;
     }
-
-    final writer = _fstWriter!;
-    final reader = _fstBlockReader!;
-    final blocks = writer.blockIndex;
-
-    // 1. Check hot buffer (unflushed changes after last flushed block).
-    final hotChanges = writer.queryHotBuffer(handleIdx, 0, time);
-    if (hotChanges.isNotEmpty) {
-      return hotChanges.last.value;
-    }
-
-    // 2. Search flushed blocks from newest to oldest.
-    for (var i = blocks.length - 1; i >= 0; i--) {
-      final block = blocks[i];
-      if (block.startTime > time) {
-        continue;
-      }
-
-      // Read all changes for this signal up to `time`.
-      final changes = reader.readBlock(
-        block,
-        handleIndices: {handleIdx},
-        endTime: time,
-      );
-
-      final signalChanges = changes[handleIdx];
-      if (signalChanges != null && signalChanges.isNotEmpty) {
-        return signalChanges.last.value;
-      }
-
-      // No explicit changes — use the frame carry-over value.
-      final frame = reader.readBlockFrame(block);
-      return frame[handleIdx];
-    }
-
-    // 3. No data found — signal is in its initial/undriven state.
-    return null;
+    return _fstQuery!.valueAt(handle, time);
   }
 
   // ─────────────────────────────────────────────────────────────────────────
