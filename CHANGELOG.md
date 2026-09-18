@@ -1,4 +1,9 @@
 
+## Next Release
+
+- Exposed the shared `rohd_source_navigator` code used by `rohd-schematic-viewer` as a standalone pub.dev package.
+- Corrected the ROHD dependency in `rohd_devtools_widgets` from `^0.6.9` to `^0.6.11` to reflect the minimum compatible ROHD version.
+
 ## 0.6.11
 
 - Added `NetlistSynthesizer` for generating JSON netlists, with configurable synthesis passes, validation, and hierarchy support (<https://github.com/intel/rohd/pull/675>).

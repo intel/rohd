@@ -86,13 +86,14 @@ printf "static const String version = '0.0.0';\n" > "$UPSTREAM/lib/src/utilities
 printf '## Next Release\n' > "$UPSTREAM/CHANGELOG.md"
 printf 'fixture configuration\n' > "$UPSTREAM/extension/devtools/config.yaml"
 printf 'extension/devtools/build/\n' > "$UPSTREAM/.gitignore"
-for package in rohd_hierarchy rohd_waveform rohd_devtools_widgets; do
+for package in rohd_hierarchy rohd_waveform rohd_devtools_widgets rohd_source_navigator; do
   mkdir -p "$UPSTREAM/packages/$package"
   printf '## Next Release\n' > "$UPSTREAM/packages/$package/CHANGELOG.md"
 done
 printf 'version: 1.2.3\n' > "$UPSTREAM/packages/rohd_hierarchy/pubspec.yaml"
 printf 'version: 2.3.4\n' > "$UPSTREAM/packages/rohd_waveform/pubspec.yaml"
 printf 'version: 3.4.5\n' > "$UPSTREAM/packages/rohd_devtools_widgets/pubspec.yaml"
+printf 'version: 4.5.6\n' > "$UPSTREAM/packages/rohd_source_navigator/pubspec.yaml"
 
 git init --quiet --initial-branch=main "$UPSTREAM"
 git -C "$UPSTREAM" add .
@@ -140,7 +141,7 @@ assert_unchanged() {
   [[ "$(cat "$RELEASE/CHANGELOG.md")" == '## Next Release' ]]
   [[ "$(cat "$RELEASE/extension/devtools/build/index.html")" == 'original payload' ]]
   [[ "$(cat "$RELEASE/extension/devtools/config.yaml")" == 'fixture configuration' ]]
-  for package in rohd_hierarchy rohd_waveform rohd_devtools_widgets; do
+  for package in rohd_hierarchy rohd_waveform rohd_devtools_widgets rohd_source_navigator; do
     [[ "$(cat "$RELEASE/packages/$package/CHANGELOG.md")" == '## Next Release' ]]
   done
 }
@@ -152,11 +153,12 @@ expected_checks() {
   if [[ "$package" == rohd_devtools_widgets ]]; then
     sdk=flutter
   fi
-  printf '%s|%s|%s\n' "$sdk" "$RELEASE/packages/$package" 'pub get'
-  printf '%s|%s|%s\n' dart "$RELEASE/packages/$package" 'format --output=none --set-exit-if-changed .'
-  printf '%s|%s|%s\n' "$sdk" "$RELEASE/packages/$package" 'analyze --fatal-infos'
+  local directory="$RELEASE/packages/$package"
+  printf '%s|%s|%s\n' "$sdk" "$directory" 'pub get'
+  printf '%s|%s|%s\n' dart "$directory" 'format --output=none --set-exit-if-changed .'
+  printf '%s|%s|%s\n' "$sdk" "$directory" 'analyze --fatal-infos'
   if [[ "$include_tests" == true ]]; then
-    printf '%s|%s|%s\n' "$sdk" "$RELEASE/packages/$package" test
+    printf '%s|%s|%s\n' "$sdk" "$directory" test
   fi
 }
 
@@ -179,17 +181,18 @@ assert_unchanged
 unset SMOKE_STATUS
 
 run_case 0 "DevTools source commit (upstream main): $MAIN_COMMIT"
-[[ "$(cat "$STAGE_LOG")" == $'smoke\nchecks-skip-tests\nvsix\ndry-run\ndry-run\ndry-run\ndry-run' ]]
+[[ "$(cat "$STAGE_LOG")" == $'smoke\nchecks-skip-tests\nvsix\ndry-run\ndry-run\ndry-run\ndry-run\ndry-run' ]]
 [[ ! -e "$(cat "$VSIX_PATH_LOG")" ]]
 grep -Fq 'Test suites were not run.' "$FIXTURE/output"
 expected_log="$(
-  for package in rohd_hierarchy rohd_waveform rohd_devtools_widgets; do
+  for package in rohd_hierarchy rohd_waveform rohd_devtools_widgets rohd_source_navigator; do
     expected_checks "$package"
   done
   printf 'dart|%s|pub publish --dry-run\n' "$RELEASE"
   printf 'dart|%s|pub publish --dry-run\n' "$RELEASE/packages/rohd_hierarchy"
   printf 'dart|%s|pub publish --dry-run\n' "$RELEASE/packages/rohd_waveform"
   printf 'flutter|%s|pub publish --dry-run\n' "$RELEASE/packages/rohd_devtools_widgets"
+  printf 'dart|%s|pub publish --dry-run\n' "$RELEASE/packages/rohd_source_navigator"
 )"
 [[ "$(cat "$SDK_LOG")" == "$expected_log" ]]
 [[ "$(cat "$RELEASE/pubspec.yaml")" == "version: '0.6.11' # release" ]]
@@ -200,18 +203,20 @@ expected_log="$(
 [[ "$(cat "$RELEASE/packages/rohd_hierarchy/CHANGELOG.md")" == '## 1.2.3' ]]
 [[ "$(cat "$RELEASE/packages/rohd_waveform/CHANGELOG.md")" == '## 2.3.4' ]]
 [[ "$(cat "$RELEASE/packages/rohd_devtools_widgets/CHANGELOG.md")" == '## 3.4.5' ]]
+[[ "$(cat "$RELEASE/packages/rohd_source_navigator/CHANGELOG.md")" == '## 4.5.6' ]]
 git -C "$RELEASE" diff --exit-code -- pubspec.yaml 'packages/*/pubspec.yaml'
 
 run_case 0 "DevTools source commit (upstream main): $MAIN_COMMIT" --run-tests
-[[ "$(cat "$STAGE_LOG")" == $'smoke\nchecks\nvsix\ndry-run\ndry-run\ndry-run\ndry-run' ]]
+[[ "$(cat "$STAGE_LOG")" == $'smoke\nchecks\nvsix\ndry-run\ndry-run\ndry-run\ndry-run\ndry-run' ]]
 expected_log="$(
-  for package in rohd_hierarchy rohd_waveform rohd_devtools_widgets; do
+  for package in rohd_hierarchy rohd_waveform rohd_devtools_widgets rohd_source_navigator; do
     expected_checks "$package" true
   done
   printf 'dart|%s|pub publish --dry-run\n' "$RELEASE"
   printf 'dart|%s|pub publish --dry-run\n' "$RELEASE/packages/rohd_hierarchy"
   printf 'dart|%s|pub publish --dry-run\n' "$RELEASE/packages/rohd_waveform"
   printf 'flutter|%s|pub publish --dry-run\n' "$RELEASE/packages/rohd_devtools_widgets"
+  printf 'dart|%s|pub publish --dry-run\n' "$RELEASE/packages/rohd_source_navigator"
 )"
 [[ "$(cat "$SDK_LOG")" == "$expected_log" ]]
 ! grep -Fq 'Test suites were not run.' "$FIXTURE/output"
@@ -267,12 +272,22 @@ expected_log="$(
 [[ "$(cat "$SDK_LOG")" == "$expected_log" ]]
 [[ "$(cat "$STAGE_LOG")" == 'dry-run' ]]
 
-for package in rohd_hierarchy rohd_waveform rohd_devtools_widgets; do
+run_case 0 'rohd_source_navigator: PASSED' --run-tests rohd_source_navigator
+expected_log="$(
+  expected_checks rohd_source_navigator true
+  printf 'dart|%s|pub publish --dry-run\n' "$RELEASE/packages/rohd_source_navigator"
+)"
+[[ "$(cat "$SDK_LOG")" == "$expected_log" ]]
+[[ "$(cat "$STAGE_LOG")" == 'dry-run' ]]
+[[ "$(cat "$RELEASE/lib/src/utilities/config.dart")" == "static const String version = '0.0.0';" ]]
+[[ "$(cat "$RELEASE/CHANGELOG.md")" == '## Next Release' ]]
+
+for package in rohd_hierarchy rohd_waveform rohd_devtools_widgets rohd_source_navigator; do
   export FAIL_PACKAGE="$package" FAIL_COMMAND=test
   run_case 0 "$package: PASSED" "$package"
   ! grep -Fq '|test' "$SDK_LOG"
   for check_command in 'pub get' 'format --output=none --set-exit-if-changed .' 'analyze --fatal-infos' test; do
-    export FAIL_PACKAGE="$package" FAIL_COMMAND="$check_command"
+    export FAIL_COMMAND="$check_command"
     check_arguments=()
     include_tests=false
     if [[ "$check_command" == test ]]; then
