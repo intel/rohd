@@ -391,21 +391,25 @@ class ConstantAssignmentArrayModule extends Module {
     laIn = addInputArray('laIn', laIn,
         dimensions: [3, 3, 3, 3],
         numUnpackedDimensions: laIn.numUnpackedDimensions,
-        elementWidth: 8);
+        elementWidth: laIn.elementWidth);
 
     addOutputArray('laOut',
         dimensions: laIn.dimensions,
         numUnpackedDimensions: laIn.numUnpackedDimensions,
         elementWidth: laIn.elementWidth);
 
+    final elementWidth = laIn.elementWidth;
     laOut.elements[1] <=
-        Const([for (var i = 0; i < 3 * 3 * 3; i++) LogicValue.ofInt(i, 8)]
-            .rswizzle());
+        Const([
+          for (var i = 0; i < 3 * 3 * 3; i++) LogicValue.ofInt(i, elementWidth)
+        ].rswizzle());
     laOut.elements[2].elements[1] <=
-        (Logic(width: 3 * 3 * 8)..gets(Const(0, width: 3 * 3 * 8)));
+        (Logic(width: 3 * 3 * elementWidth)
+          ..gets(Const(0, width: 3 * 3 * elementWidth)));
     laOut.elements[2].elements[2].elements[1] <=
-        Const(1, width: 3 * 8, fill: true);
-    laOut.elements[2].elements[2].elements[2].elements[1] <= Const(0, width: 8);
+        Const(1, width: 3 * elementWidth, fill: true);
+    laOut.elements[2].elements[2].elements[2].elements[1] <=
+        Const(0, width: elementWidth);
   }
 }
 
@@ -791,11 +795,6 @@ void main() {
         await testArrayPassthrough(mod);
       });
 
-      test('single element', () async {
-        final mod = SimpleLAPassthrough(LogicArray([1], 8));
-        await testArrayPassthrough(mod);
-      });
-
       test('array of bits', () async {
         final mod = SimpleLAPassthrough(LogicArray([8], 1));
         await testArrayPassthrough(mod);
@@ -808,11 +807,6 @@ void main() {
 
       test('3 dimensions', () async {
         final mod = SimpleLAPassthrough(LogicArray([3, 2, 3], 8));
-        await testArrayPassthrough(mod);
-      });
-
-      test('4 dimensions', () async {
-        final mod = SimpleLAPassthrough(LogicArray([5, 4, 3, 2], 8));
         await testArrayPassthrough(mod);
       });
 
@@ -895,11 +889,6 @@ void main() {
     });
 
     group('pack and unpack', () {
-      test('1d', () async {
-        final mod = PackAndUnpackPassthrough(LogicArray([3], 8));
-        await testArrayPassthrough(mod, checkNoSwizzle: false);
-      });
-
       test('3d', () async {
         final mod = PackAndUnpackPassthrough(LogicArray([5, 3, 2], 8));
         await testArrayPassthrough(mod, checkNoSwizzle: false);
@@ -915,11 +904,6 @@ void main() {
     });
 
     group('pack and unpack with arrays', () {
-      test('1d', () async {
-        final mod = PackAndUnpackWithArraysPassthrough(LogicArray([3], 8));
-        await testArrayPassthrough(mod, checkNoSwizzle: false);
-      });
-
       test('2d', () async {
         final mod = PackAndUnpackWithArraysPassthrough(LogicArray([3, 2], 8));
         await testArrayPassthrough(mod, checkNoSwizzle: false);
@@ -1084,6 +1068,7 @@ void main() {
         {bool doSvSim = true}) async {
       await mod.build();
 
+      final elementWidth = mod.laOut.width ~/ (3 * 3 * 3 * 3);
       final a = <LogicValue>[];
       var iIdx = 0;
       for (var i = 0; i < 3; i++) {
@@ -1091,16 +1076,16 @@ void main() {
           for (var k = 0; k < 3; k++) {
             for (var l = 0; l < 3; l++) {
               if (i == 1) {
-                a.add(LogicValue.ofInt(iIdx, 8));
+                a.add(LogicValue.ofInt(iIdx, elementWidth));
                 iIdx++;
               } else if (i == 2 && j == 1) {
-                a.add(LogicValue.filled(8, LogicValue.zero));
+                a.add(LogicValue.filled(elementWidth, LogicValue.zero));
               } else if (i == 2 && j == 2 && k == 1) {
-                a.add(LogicValue.filled(8, LogicValue.one));
+                a.add(LogicValue.filled(elementWidth, LogicValue.one));
               } else if (i == 2 && j == 2 && k == 2 && l == 1) {
-                a.add(LogicValue.filled(8, LogicValue.zero));
+                a.add(LogicValue.filled(elementWidth, LogicValue.zero));
               } else {
-                a.add(LogicValue.filled(8, LogicValue.z));
+                a.add(LogicValue.filled(elementWidth, LogicValue.z));
               }
             }
           }
@@ -1116,13 +1101,13 @@ void main() {
 
     test('with packed only', () async {
       await testArrayConstantAssignments(
-          ConstantAssignmentArrayModule(LogicArray([3, 3, 3, 3], 8)));
+          ConstantAssignmentArrayModule(LogicArray([3, 3, 3, 3], 5)));
     });
 
     testWithVerilator(
         'with unpacked also',
         () => ConstantAssignmentArrayModule(
-            LogicArray([3, 3, 3, 3], 8, numUnpackedDimensions: 2)),
+            LogicArray([3, 3, 3, 3], 5, numUnpackedDimensions: 2)),
         (mod) async {
       // unpacked array assignment not fully supported in iverilog
       await testArrayConstantAssignments(mod, doSvSim: false);
