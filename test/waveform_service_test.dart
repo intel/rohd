@@ -25,6 +25,41 @@ class SimpleModule extends Module {
   }
 }
 
+class WindowWaveModule extends Module {
+  late final Logic a;
+
+  WindowWaveModule() {
+    a = addOutput('a');
+  }
+}
+
+class HistoryWaveformService extends WaveformService {
+  final Map<Logic, List<(int, String)>> history = {};
+  final List<int> capturedTimestamps = [];
+
+  HistoryWaveformService(super.module, {super.startTime});
+
+  @override
+  void onSignalCollected(Logic signal) {
+    history[signal] = [(Simulator.time, binaryValue(signal))];
+  }
+
+  @override
+  void onValueChange(Logic signal, int timestamp) {
+    history[signal]!.add((timestamp, binaryValue(signal)));
+  }
+
+  @override
+  void onTimestampCapture(int timestamp, Set<Logic> changed) {
+    capturedTimestamps.add(timestamp);
+  }
+}
+
+String binaryValue(Logic signal) => signal.value.reversed
+    .toList()
+    .map((value) => value.toString(includeWidth: false))
+    .join();
+
 class SimpleModWithSeq extends Module {
   Logic get val => output('val');
   SimpleModWithSeq(Logic asyncReset, Logic clk) {
@@ -308,6 +343,36 @@ void main() {
     );
 
     deleteTemporaryDump(dumpName);
+  });
+
+  test('window-entry snapshot reaches waveform hooks', () async {
+    final mod = WindowWaveModule();
+    await mod.build();
+    mod.a.put(0);
+    final service = HistoryWaveformService(mod, startTime: 10);
+
+    Simulator.registerAction(5, () => mod.a.put(1));
+    Simulator.registerAction(15, () {});
+    Simulator.registerAction(20, () {});
+    await Simulator.run();
+
+    final vcdContents = utf8.decode(
+      await service.artifacts.single
+          .openRead()
+          .expand((bytes) => bytes)
+          .toList(),
+    );
+    expect(
+      VcdParser.confirmValue(
+        vcdContents,
+        'a',
+        10,
+        LogicValue.one,
+      ),
+      isTrue,
+    );
+    expect(service.history[mod.a], equals([(0, '0'), (10, '1')]));
+    expect(service.capturedTimestamps, contains(10));
   });
 
   test('rejects formats without a matching waveform writer', () async {
