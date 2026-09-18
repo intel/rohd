@@ -35,10 +35,33 @@ class FakeService implements ModuleService {
   Map<String, Object?> toJson() => <String, Object?>{'kind': 'fake'};
 }
 
+final _waveformOutputDirectories = <Directory>[];
+
+WaveformService _createWaveformService(
+  Module module, {
+  bool register = true,
+}) {
+  final directory = Directory.systemTemp.createTempSync(
+    'rohd_module_services_waveform_',
+  );
+  _waveformOutputDirectories.add(directory);
+  return WaveformService.fromOutputPath(
+    module,
+    outputPath: '${directory.path}/capture.vcd',
+    register: register,
+  );
+}
+
 void main() {
   tearDown(() async {
     await Simulator.reset();
     ModuleServices.instance.reset();
+    for (final directory in _waveformOutputDirectories) {
+      if (directory.existsSync()) {
+        directory.deleteSync(recursive: true);
+      }
+    }
+    _waveformOutputDirectories.clear();
   });
 
   group('ModuleServices registry', () {
@@ -102,8 +125,8 @@ void main() {
       final mod = SimpleModule(Logic());
       await mod.build();
 
-      final firstWaveform = WaveformService(mod);
-      final secondWaveform = WaveformService(mod);
+      final firstWaveform = _createWaveformService(mod);
+      final secondWaveform = _createWaveformService(mod);
       final firstNetlist = NetlistService(mod);
       final secondNetlist = NetlistService(mod);
       final firstSv = SystemVerilogService(mod);
@@ -124,10 +147,10 @@ void main() {
       final mod = SimpleModule(Logic());
       await mod.build();
 
-      final waveform = WaveformService(mod);
+      final waveform = _createWaveformService(mod);
       final netlist = NetlistService(mod);
       final sv = SystemVerilogService(mod);
-      WaveformService(mod, register: false);
+      _createWaveformService(mod, register: false);
       NetlistService(mod, register: false);
       SystemVerilogService(mod, register: false);
 
@@ -139,7 +162,7 @@ void main() {
     test('unregister clears matching service current accessors', () async {
       final mod = SimpleModule(Logic());
       await mod.build();
-      WaveformService(mod);
+      _createWaveformService(mod);
       NetlistService(mod);
       SystemVerilogService(mod);
 
@@ -155,7 +178,7 @@ void main() {
     test('reset clears every service current accessor', () async {
       final mod = SimpleModule(Logic());
       await mod.build();
-      WaveformService(mod);
+      _createWaveformService(mod);
       NetlistService(mod);
       SystemVerilogService(mod);
 
