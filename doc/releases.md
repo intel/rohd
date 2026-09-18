@@ -72,10 +72,12 @@ that branch, then merge the PR after their releases have succeeded on pub.dev.
 Before preparing, incorporate the latest upstream `main` into the release branch
 with a merge or rebase; the preparation PR itself does not need to be merged yet.
 
-1. Select only the packages that need releasing. Update each package's
-   `pubspec.yaml` version and promote its pending changelog section to that
-   version. For ROHD, also update `Config.version` in
-   `lib/src/utilities/config.dart`.
+1. Select only the packages that need releasing. Set each package's target stable
+   `major.minor.patch` version in its own `pubspec.yaml` and prepare its changelog
+   entries. The preparation script reads those independent versions, promotes
+   each selected package's `## Next Release` heading (or accepts an existing
+   version heading), and synchronizes `Config.version` when ROHD is selected.
+   It never rewrites package manifests or assigns ROHD's version to sub-packages.
 2. Ensure each package has a README, license, changelog, and package-specific
    repository URL. Publishable dependencies must use hosted version constraints,
    not local paths or Git checkouts. Keep minimum versions tied to APIs used.
@@ -87,28 +89,50 @@ with a merge or rebase; the preparation PR itself does not need to be merged yet
    each changed package. Use `dart` for Dart packages and `flutter` for Flutter
    packages. For ROHD, run `tool/run_checks.sh`; Icarus Verilog is required and
    Verilator is required in CI. Test the DevTools app when shared widgets change.
-5. On the preparation branch, wait for the DevTools artifact workflow for the
-   latest upstream `main`, then run
-   `tool/prepare_release.sh <version> [sub-package ...]` from the repository root,
-   replacing `<version>` with the target ROHD version and optionally appending
-   selected package names. It fetches `main` from `intel/rohd` and requires that
-   commit to be an ancestor of the release branch's `HEAD`. It then fetches
+5. Run `tool/prepare_release.sh [package ...]` on the preparation branch from the
+   repository root. No arguments selects all four publishable packages; explicit
+   names select only those packages. Versions come from their manifests, not
+   command-line arguments. It validates selected metadata before making changes,
+   fetches `main` from `intel/rohd`, and requires that commit to be an ancestor
+   of the release branch's `HEAD`. When ROHD is selected, it also fetches
    `artifacts` and requires the artifact's source commit to match that fetched
-   `main` commit, not the release branch's tip. It smoke-tests and installs the
-   web build, synchronizes ROHD versions, and runs checks. After those checks,
-   it runs publication dry runs for ROHD and any selected sub-packages. It does
-   not merge, rebase, change sub-package versions, commit, tag, push, or upload
-   anything. If either guard fails, incorporate the latest `main` or wait for its
-   artifact workflow as appropriate, then rerun preparation.
-6. For independent package releases or to repeat archive checks, run
-   `tool/check_release.sh <package> [package ...]`. Select from `rohd`,
-   `rohd_hierarchy`, `rohd_waveform`, and `rohd_devtools_widgets`; each uses its
-   existing version. The helper runs `dart pub publish --dry-run` in each selected
-   Dart package directory or `flutter pub publish --dry-run` for widgets. Review
+   `main` commit, not the release branch's tip. It smoke-tests and installs that
+   web build before preparing metadata, then runs ROHD's checks. Sub-package-only
+   preparation leaves ROHD metadata and DevTools untouched; run the sub-package
+   analysis and tests separately as above. Finally, it runs publication dry runs
+   for the selected packages. It does not merge, rebase, change manifest versions,
+   commit, tag, push, or upload anything. If a guard fails, incorporate the latest
+   `main` or wait for its artifact workflow as appropriate, then rerun preparation.
+6. To inspect archives without preparing metadata, run
+   `tool/check_release.sh [package ...]`. Like preparation, it defaults to all four
+   packages and accepts explicit names: `rohd`, `rohd_hierarchy`, `rohd_waveform`,
+   and `rohd_devtools_widgets`. Each uses its existing version. The helper runs
+   `dart pub publish --dry-run` in each selected Dart package directory or
+   `flutter pub publish --dry-run` for widgets. Review
    warnings, included files, and compressed archive sizes. For ROHD, first prepare
    the verified DevTools build as above, then verify that
    `extension/devtools/build` is included and passes
    `tool/gh_actions/devtool/test_devtools_install.sh extension/devtools`.
+
+Preparation examples (choose one):
+
+```sh
+# All four packages, using each manifest's version:
+tool/prepare_release.sh
+
+# ROHD only:
+tool/prepare_release.sh rohd
+
+# ROHD plus hierarchy and waveform:
+tool/prepare_release.sh rohd rohd_hierarchy rohd_waveform
+
+# Only hierarchy and waveform:
+tool/prepare_release.sh rohd_hierarchy rohd_waveform
+```
+
+Preparation requires Dart for YAML metadata parsing using the root package's
+dependencies. Selecting widgets also requires Flutter, including the default
+all-package selection.
 
 The bundled DevTools is built from upstream `main`, not from preparation-branch
 changes. Release metadata can differ on the preparation branch, but any DevTools
@@ -122,6 +146,7 @@ For example, validate a selection without invoking any SDK commands, then run
 the selected dry runs:
 
 ```sh
+tool/check_release.sh --validate-only
 tool/check_release.sh --validate-only rohd_hierarchy rohd_waveform rohd_devtools_widgets
 tool/check_release.sh rohd_hierarchy rohd_waveform rohd_devtools_widgets
 ```
@@ -139,8 +164,10 @@ hosted dependency readiness when local overrides are present.
 The helper's isolated regression checks run with
 `bash tool/test/check_release_test.sh`. Preparation guard checks run with
 `bash tool/test/prepare_release_test.sh` using temporary local Git repositories.
-Both use fake SDK executables on a restricted PATH and cannot reach real Dart
-or Flutter publication commands.
+Both stub publication commands on a restricted PATH. Preparation tests allow
+real Dart execution only for the metadata helper, never for publication commands.
+Its focused metadata tests run with
+`dart test test/prepare_release_metadata_test.dart`.
 
 ## Publication Order
 

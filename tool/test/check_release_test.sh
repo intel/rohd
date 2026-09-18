@@ -1,5 +1,19 @@
 #!/bin/bash
 
+# Copyright (C) 2026 Intel Corporation
+# SPDX-License-Identifier: BSD-3-Clause
+#
+# check_release_test.sh
+# Test package selection, SDK routing, and dry-run failure reporting.
+# Uses temporary files and fake SDK executables on a restricted PATH;
+# no real Dart or Flutter publication commands can run.
+#
+# Usage (from repo root):
+#   bash tool/test/check_release_test.sh
+#
+# 2026 September 18
+# Author: Max Korbel <max.korbel@intel.com>
+
 set -euo pipefail
 
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -49,7 +63,9 @@ run_case() {
 
 run_case 0 "$HELPER" --help
 [[ ! -s "$SDK_LOG" ]]
-run_case 2 "$HELPER"
+run_case 0 "$HELPER"
+[[ "$(wc -l < "$SDK_LOG")" -eq 4 ]]
+run_case 0 "$HELPER" --validate-only
 [[ ! -s "$SDK_LOG" ]]
 for invalid in --force --dry-run ../rohd rohd_source_navigator rohd_devtools_extension; do
   run_case 2 "$HELPER" rohd_hierarchy "$invalid"
@@ -92,13 +108,13 @@ rm "$FIXTURE/bin/flutter"
 run_case 2 "$HELPER" rohd_hierarchy rohd_devtools_widgets
 [[ ! -s "$SDK_LOG" ]]
 
-run_case 2 "$FIXTURE/repo/tool/prepare_release.sh" 0.6.11 --force
+run_case 2 "$FIXTURE/repo/tool/prepare_release.sh" rohd --force
 [[ ! -s "$SDK_LOG" ]]
 run_case 2 "$FIXTURE/repo/tool/prepare_release.sh"
 [[ ! -s "$SDK_LOG" ]]
 run_case 2 "$FIXTURE/repo/tool/prepare_release.sh" 0.6.11-rc.1
 [[ ! -s "$SDK_LOG" ]]
-run_case 2 "$FIXTURE/repo/tool/prepare_release.sh" 0.6.11 rohd_devtools_widgets
+run_case 2 "$FIXTURE/repo/tool/prepare_release.sh" rohd_devtools_widgets
 [[ ! -s "$SDK_LOG" ]]
 
 echo "$passed checks passed using only fake SDK executables."

@@ -1,10 +1,45 @@
 #!/bin/bash
 
+# Copyright (C) 2026 Intel Corporation
+# SPDX-License-Identifier: BSD-3-Clause
+#
+# check_release.sh
+# Check selected publication archives without uploading packages.
+#
+# Usage (from repo root):
+#   tool/check_release.sh [--validate-only] [package ...]
+#
+# With no package names, check rohd, rohd_hierarchy, rohd_waveform, and
+# rohd_devtools_widgets. Explicit names select only those packages. Each package
+# uses its existing pubspec.yaml version; manifests and changelogs are not edited.
+# Dart is required for Dart packages; Flutter is required for widgets.
+#
+# Examples:
+#   tool/check_release.sh
+#   tool/check_release.sh rohd
+#   tool/check_release.sh rohd_hierarchy rohd_waveform
+#   tool/check_release.sh rohd_devtools_widgets
+#   tool/check_release.sh --validate-only
+#
+# --validate-only checks names, manifests, and SDK availability without invoking
+# SDK commands. Normal checks hard-code pub publish --dry-run with stdin closed;
+# there is no upload mode and no forwarding of arbitrary pub options.
+# Results are summarized; any failure or nonzero warning makes this script fail.
+# Dry runs may update dependency caches/lockfiles. Local overrides are preserved
+# and do not prove hosted dependency readiness. No commits, tags, or pushes occur.
+#
+# For ROHD, first run tool/prepare_release.sh rohd to install verified DevTools.
+# See doc/releases.md for preparation, hosted validation, and manual publication.
+#
+# 2026 September 18
+# Author: Max Korbel <max.korbel@intel.com>
+
 set -euo pipefail
 
 usage() {
-  echo "Usage: $0 [--validate-only] <package> [package ...]"
+  echo "Usage: $0 [--validate-only] [package ...]"
   echo "Packages: rohd rohd_hierarchy rohd_waveform rohd_devtools_widgets"
+  echo "Defaults to all four packages, using each package's pubspec.yaml version."
   echo "Runs publication dry runs only; never uploads packages."
 }
 
@@ -19,8 +54,7 @@ if [[ "${1:-}" == '--validate-only' ]]; then
   shift
 fi
 if [[ $# -eq 0 ]]; then
-  usage >&2
-  exit 2
+  set -- rohd rohd_hierarchy rohd_waveform rohd_devtools_widgets
 fi
 
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -79,7 +113,7 @@ for index in "${!packages[@]}"; do
   if [[ "$package" == rohd ]] &&
       [[ ! -f "$REPO_ROOT/extension/devtools/build/index.html" ||
          ! -f "$REPO_ROOT/extension/devtools/config.yaml" ]]; then
-    echo "ROHD requires its prepared DevTools build. Run tool/prepare_release.sh <version> first." >&2
+    echo "ROHD requires its prepared DevTools build. Run tool/prepare_release.sh rohd first." >&2
     results+=("$package: FAILED (missing DevTools payload)")
     failed=1
     continue
