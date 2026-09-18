@@ -182,7 +182,7 @@ class NetlistService extends ArtifactProducingService {
         }
         return jsonEncode(<String, Object?>{
           'creator': 'ROHD netlist synthesizer',
-          'version': formatVersion,
+          'version': version,
           'modules': <String, Object?>{definitionName: modData},
         });
       });
@@ -304,7 +304,7 @@ class NetlistService extends ArtifactProducingService {
     return jsonEncode(<String, dynamic>{
       'netlist': <String, dynamic>{
         'creator': 'ROHD NetlistService (slim)',
-        'version': formatVersion,
+        'version': version,
         'rootInstanceName': rootName,
         'modules': slimModules,
       },
