@@ -373,6 +373,24 @@ void main() {
   });
 
   group('NetlistService', () {
+    test('uses the synthesized format version across all JSON views', () async {
+      final mod = SimpleModule(Logic());
+      await mod.build();
+      final netlist = NetlistService(mod);
+
+      final full = jsonDecode(netlist.json) as Map<String, dynamic>;
+      final module = jsonDecode(netlist.moduleJson(mod.definitionName))
+          as Map<String, dynamic>;
+      final slim = jsonDecode(netlist.slimJson) as Map<String, dynamic>;
+
+      expect(netlist.version, equals(full['version']));
+      expect(module['version'], equals(full['version']));
+      expect(
+        (slim['netlist'] as Map<String, dynamic>)['version'],
+        equals(full['version']),
+      );
+    });
+
     test('construction does not write configured output', () async {
       final mod = SimpleModule(Logic());
       await mod.build();
