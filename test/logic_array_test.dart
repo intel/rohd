@@ -882,7 +882,7 @@ void main() {
           '3 dimensions with interface and unpacked',
           () => LAPassthroughWithIntf(LAPassthroughIntf(
                 dimensions: [3, 2, 3],
-                elementWidth: 8,
+                elementWidth: 3,
                 numUnpackedDimensions: 1,
               )), (mod) async {
         await testArrayPassthrough(mod, noSvSim: true);
@@ -956,7 +956,7 @@ void main() {
         await testArrayPassthrough(mod, noSvSim: true);
 
         final sv = mod.dumpSystemVerilog();
-        expect(sv.contains('logic [2:0][3:0][7:0] intermediate [1:0]'), true);
+        expect(sv.contains('logic [2:0][3:0][2:0] intermediate [1:0]'), true);
       });
     });
 
