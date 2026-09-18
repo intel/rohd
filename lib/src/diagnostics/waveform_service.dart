@@ -22,7 +22,11 @@ import 'package:rohd/src/utilities/uniquifier.dart';
 /// [WaveOutputFormat.vcd], [FstWaveformWriter] for [WaveOutputFormat.fst]).
 class WaveformService extends ArtifactProducingService {
   /// The most recently registered [WaveformService], or `null`.
-  static WaveformService? current;
+  ///
+  /// This is backed by [ModuleServices], so it is cleared by unregistering
+  /// this service type or resetting the registry.
+  static WaveformService? get current =>
+      ModuleServices.instance.lookup<WaveformService>();
 
   /// Exact output filename override.
   ///
@@ -142,7 +146,6 @@ class WaveformService extends ArtifactProducingService {
     });
 
     if (register) {
-      current = this;
       ModuleServices.instance.register<WaveformService>(this);
     }
   }
