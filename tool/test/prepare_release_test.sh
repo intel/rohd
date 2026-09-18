@@ -72,6 +72,13 @@ printf '%s\n' '#!/bin/bash' \
   '  printf "checks-skip-tests\n" >> "$STAGE_LOG"' \
   'else exit 99; fi' \
   'exit "${ROOT_CHECK_STATUS:-0}"' > "$UPSTREAM/tool/run_checks.sh"
+printf '%s\n' '#!/bin/bash' \
+  '[[ "$#" -eq 1 && "$1" == /*.vsix ]] || exit 99' \
+  'printf "vsix\n" >> "$STAGE_LOG"' \
+  'printf "%s\n" "$1" > "$VSIX_PATH_LOG"' \
+  'printf "fixture vsix\n" > "$1"' \
+  'exit "${VSIX_STATUS:-0}"' > "$UPSTREAM/tool/package_vscode.sh"
+export VSIX_PATH_LOG="$FIXTURE/vsix-path.log"
 chmod +x "$UPSTREAM/tool/gh_actions/check_tmp_test.sh" \
   "$UPSTREAM/tool/gh_actions/devtool/test_devtools_install.sh" "$UPSTREAM/tool/run_checks.sh"
 printf "version: '0.6.11' # release\n" > "$UPSTREAM/pubspec.yaml"
@@ -172,7 +179,8 @@ assert_unchanged
 unset SMOKE_STATUS
 
 run_case 0 "DevTools source commit (upstream main): $MAIN_COMMIT"
-[[ "$(cat "$STAGE_LOG")" == $'smoke\nchecks-skip-tests\ndry-run\ndry-run\ndry-run\ndry-run' ]]
+[[ "$(cat "$STAGE_LOG")" == $'smoke\nchecks-skip-tests\nvsix\ndry-run\ndry-run\ndry-run\ndry-run' ]]
+[[ ! -e "$(cat "$VSIX_PATH_LOG")" ]]
 grep -Fq 'Test suites were not run.' "$FIXTURE/output"
 expected_log="$(
   for package in rohd_hierarchy rohd_waveform rohd_devtools_widgets; do
@@ -195,7 +203,7 @@ expected_log="$(
 git -C "$RELEASE" diff --exit-code -- pubspec.yaml 'packages/*/pubspec.yaml'
 
 run_case 0 "DevTools source commit (upstream main): $MAIN_COMMIT" --run-tests
-[[ "$(cat "$STAGE_LOG")" == $'smoke\nchecks\ndry-run\ndry-run\ndry-run\ndry-run' ]]
+[[ "$(cat "$STAGE_LOG")" == $'smoke\nchecks\nvsix\ndry-run\ndry-run\ndry-run\ndry-run' ]]
 expected_log="$(
   for package in rohd_hierarchy rohd_waveform rohd_devtools_widgets; do
     expected_checks "$package" true
@@ -210,10 +218,17 @@ expected_log="$(
 
 run_case 0 "DevTools source commit (upstream main): $MAIN_COMMIT" rohd
 [[ "$(cat "$SDK_LOG")" == "dart|$RELEASE|pub publish --dry-run" ]]
-[[ "$(cat "$STAGE_LOG")" == $'smoke\nchecks-skip-tests\ndry-run' ]]
+[[ "$(cat "$STAGE_LOG")" == $'smoke\nchecks-skip-tests\nvsix\ndry-run' ]]
 run_case 0 "DevTools source commit (upstream main): $MAIN_COMMIT" --run-tests rohd
 [[ "$(cat "$SDK_LOG")" == "dart|$RELEASE|pub publish --dry-run" ]]
-[[ "$(cat "$STAGE_LOG")" == $'smoke\nchecks\ndry-run' ]]
+[[ "$(cat "$STAGE_LOG")" == $'smoke\nchecks\nvsix\ndry-run' ]]
+
+export VSIX_STATUS=73
+run_case 73 '=== rohd: VS Code extension packaging check ==='
+[[ ! -s "$SDK_LOG" ]]
+[[ "$(cat "$STAGE_LOG")" == $'smoke\nchecks-skip-tests\nvsix' ]]
+[[ ! -e "$(cat "$VSIX_PATH_LOG")" ]]
+unset VSIX_STATUS
 
 export ROOT_CHECK_STATUS=72
 run_case 72 '=== rohd: project checks ==='

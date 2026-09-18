@@ -42,11 +42,8 @@ jobs:
             exit 1
           fi
 
-      - name: Install dependencies
-        run: npm ci
-
       - name: Package VSIX
-        run: npm run package -- --out "$RUNNER_TEMP/$RELEASE_TAG.vsix"
+        run: bash ../tool/package_vscode.sh "$RUNNER_TEMP/$RELEASE_TAG.vsix"
 
       - name: Attach VSIX to release
         env:

@@ -107,7 +107,9 @@ with a merge or rebase; the preparation PR itself does not need to be merged yet
    web build before preparing metadata, then runs ROHD's checks. Sub-package-only
    preparation leaves ROHD metadata and DevTools untouched. Each selected
    sub-package gets dependency resolution, formatting checks, and analysis in its
-   own directory, plus tests when `--run-tests` is supplied. Only after all
+   own directory, plus tests when `--run-tests` is supplied. Selecting ROHD also
+   compiles and packages a temporary VSIX using the same helper as the VS Code
+   release workflow, even when test suites are skipped. Only after all
    enabled checks for selected packages pass does it run
    publication dry runs. It does not merge, rebase, change manifest versions,
    commit, tag, push, or upload anything. If a guard fails, incorporate the latest
@@ -127,12 +129,17 @@ Preparation runs the following checks before invoking `tool/check_release.sh`:
 
 | Selected Package | Default Checks | Added With `--run-tests` |
 | --- | --- | --- |
-| `rohd` | `tool/run_checks.sh --skip-tests`: dependencies, formatting, analysis, API docs, and temporary-file checks. | Simulator prerequisites and ROHD tests via `tool/run_checks.sh`. |
+| `rohd` | `tool/run_checks.sh --skip-tests`: dependencies, formatting, analysis, API docs, and temporary-file checks; then `tool/package_vscode.sh` compiles and packages a temporary VSIX. | Simulator prerequisites and ROHD tests via `tool/run_checks.sh`. |
 | `rohd_hierarchy`, `rohd_waveform` | In each package directory: `dart pub get`, `dart format --output=none --set-exit-if-changed .`, then `dart analyze --fatal-infos`. | `dart test` in each selected package. |
 | `rohd_devtools_widgets` | In its package directory: `flutter pub get`, `dart format --output=none --set-exit-if-changed .`, then `flutter analyze --fatal-infos`. | `flutter test` in the widgets package. |
 
 Artifact provenance verification and the DevTools installation smoke test always
-run when ROHD is selected, even when test suites are skipped. Running
+run when ROHD is selected, even when test suites are skipped. The VSIX packaging
+check also always runs for that selection and discards its temporary archive on
+exit. It checks the current preparation branch, not the DevTools artifact branch.
+Packaging failure stops preparation before any pub.dev dry runs. This catches
+TypeScript compilation and VSCE packaging errors; it is not an interactive
+extension smoke test or a Marketplace publication. Running
 `tool/run_checks.sh` directly still includes tests by default; its `--skip-tests`
 option is what preparation uses unless `--run-tests` is supplied.
 
@@ -169,7 +176,9 @@ tool/prepare_release.sh rohd_hierarchy rohd_waveform
 
 Preparation requires Dart for YAML metadata parsing using the root package's
 dependencies. Selecting widgets also requires Flutter, including the default
-all-package selection.
+all-package selection. Selecting ROHD also requires Node.js and npm for the VSIX
+check; the release workflow uses Node.js 24. Explicit sub-package-only preparation
+does not build the VSIX or require Node.js/npm.
 
 The bundled DevTools is built from upstream `main`, not from preparation-branch
 changes. Release metadata can differ on the preparation branch, but any DevTools
@@ -203,7 +212,10 @@ The helper's isolated regression checks run with
 `bash tool/test/prepare_release_test.sh` using temporary local Git repositories.
 Both stub publication commands on a restricted PATH. Preparation tests also
 stub package-check commands to verify their order, SDK choice, and failure handling.
-They cover both the default skipped suites and the `--run-tests` mode. The root
+They cover both the default skipped suites and the `--run-tests` mode, including
+VSIX failure before publication checks and temporary-archive cleanup. The shared
+VSIX helper has isolated command and failure checks in
+`bash tool/test/package_vscode_test.sh`. The root
 checker's default and `--skip-tests` paths are covered by
 `bash tool/test/run_checks_test.sh`, which also uses isolated command stubs.
 They allow real Dart execution only for the metadata helper, never for publication
@@ -248,9 +260,26 @@ rewrite notes for already published versions.
 
 Prepare the extension separately from pub.dev packages. Update its version in
 `rohd_extension/package.json` and prepare extension-specific release notes.
-From `rohd_extension`, run `npm ci` and `npm run package`; the prepublish script
-compiles TypeScript before VSIX packaging. Use that local build for pre-release
-checks.
+Before merging the preparation PR, verify that the VSIX builds. The default
+`tool/prepare_release.sh` command (or an explicit selection including `rohd`)
+does this using `tool/package_vscode.sh`. For an extension-only check, or to keep
+a local VSIX for inspection and manual testing, run from the repository root:
+
+```sh
+bash tool/package_vscode.sh /absolute/path/to/check.vsix
+```
+
+Choose a new output path; the helper refuses to overwrite an existing archive.
+It runs `npm ci` with the checked-in lockfile and `npm run package -- --out ...`;
+the prepublish script compiles TypeScript before VSCE validates and packages the
+extension. It neither installs the extension nor uploads anything. Review the
+reported archive contents and any warnings. Packaging alone does not verify
+activation, completions, or cross-probe behavior; smoke-test those in VS Code.
+
+Local VSIX files are for pre-release checks only. The distributable is the VSIX
+built from the release tag and attached by the release workflow. Publish that
+exact downloaded asset to the Marketplace; do not substitute or rebuild a local
+VSIX for publication.
 
 1. Tag the reviewed source commit as `rohd-vscode-v<version>`, where `<version>`
    exactly matches `rohd_extension/package.json`. The tagged commit must include
@@ -258,7 +287,8 @@ checks.
 2. Publish a GitHub release for that tag, choosing the previous same-component
    tag for auto-generated notes. Do not mark it as GitHub's latest release.
 3. Wait for **Release ROHD VS Code Extension** to succeed. It checks out the
-   release tag, verifies the version, runs `npm ci` and `npm run package`, and
+   release tag, verifies the version, runs the same `tool/package_vscode.sh`
+   helper with Node.js 24, and
    attaches `rohd-vscode-v<version>.vsix` to that release using `GITHUB_TOKEN`.
    Other component releases are skipped. Saving a draft or pushing a tag alone
    does not trigger the workflow.

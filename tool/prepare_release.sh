@@ -21,7 +21,8 @@
 #
 # Selecting ROHD also synchronizes Config.version, fetches and verifies artifacts,
 # smoke-tests and installs the DevTools build, and runs tool/run_checks.sh with
-# --skip-tests by default. The artifact smoke test always runs.
+# --skip-tests by default. It also compiles and packages a temporary VSIX using
+# the release workflow's helper. The smoke test and VSIX check always run.
 # The DevTools build comes from main, not from branch-only implementation changes.
 # Each selected sub-package gets dependency resolution, a non-writing format check,
 # and analysis (including fatal infos) in its own directory. Dart is used
@@ -33,6 +34,7 @@
 # It never publishes, commits, tags, pushes, merges, or rebases.
 #
 # Dart is required to read YAML metadata using the root package's dependencies.
+# Selecting ROHD also requires Node.js and npm (release CI uses Node.js 24).
 # Selecting rohd_devtools_widgets also requires Flutter. Any failed prerequisite
 # or package check stops preparation before publication dry runs.
 #
@@ -77,6 +79,7 @@ if [[ $# -eq 1 && "$1" == '--help' ]]; then
   echo "Defaults to all four packages, using each package's pubspec.yaml version."
   echo "Test suites are skipped by default; use --run-tests to include them."
   echo "Artifact verification and its smoke test still run when ROHD is selected."
+  echo "Selecting ROHD also checks VSIX packaging (requires Node.js and npm)."
   echo "Prepares metadata, runs package checks and publication dry runs; never uploads packages."
   exit 0
 fi
@@ -182,6 +185,8 @@ if [[ "$prepare_rohd" == true ]]; then
   else
     tool/run_checks.sh --skip-tests
   fi
+  echo "=== rohd: VS Code extension packaging check ==="
+  bash "$SCRIPT_DIR/package_vscode.sh" "$TEMP_DIR/rohd-vscode.vsix"
 fi
 for package in "$@"; do
   if [[ "$package" == rohd ]]; then
@@ -214,6 +219,7 @@ echo "Selected packages prepared from source commit $SOURCE_COMMIT."
 if [[ "$prepare_rohd" == true ]]; then
   echo "DevTools source commit (upstream main): $MAIN_COMMIT"
   echo "DevTools artifact commit: $ARTIFACT_COMMIT"
+  echo "VSIX build check passed; its temporary archive is discarded, not published."
 fi
 
 cat <<EOF
