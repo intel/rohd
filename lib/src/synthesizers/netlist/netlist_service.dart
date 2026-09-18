@@ -55,7 +55,7 @@ class NetlistService extends ArtifactProducingService {
   /// Cached per-module JSON, keyed by definition name.
   final Map<String, String> _moduleJsonCache = {};
 
-  /// The parsed modules map from the combined JSON.
+  /// The service-owned parsed modules map from the combined JSON.
   late final Map<String, dynamic> _modulesMap;
 
   /// The package root directory used for FLC trace injection.
@@ -190,10 +190,17 @@ class NetlistService extends ArtifactProducingService {
   /// Returns the set of module definition names in the netlist.
   Set<String> get moduleNames => _modulesMap.keys.toSet();
 
-  /// Read-only access to the parsed modules map.
+  /// Read-only, zero-copy access to the parsed modules map.
   ///
   /// Each key is a definition name and each value is the Yosys-style
-  /// module descriptor containing `ports`, `cells`, and `netnames`.
+  /// module descriptor containing `ports`, `cells`, and `netnames`. The
+  /// outer map is unmodifiable, but its nested module/cell maps and bit lists
+  /// are shared with this service's internal representation.
+  ///
+  /// Callers must treat the complete returned object graph as immutable.
+  /// Mutating nested values is unsupported and can make uncached [moduleJson]
+  /// or [slimJson] results disagree with previously serialized or cached
+  /// service views. Create a caller-owned copy before making modifications.
   Map<String, dynamic> get synthesizedModules =>
       Map<String, dynamic>.unmodifiable(_modulesMap);
 
