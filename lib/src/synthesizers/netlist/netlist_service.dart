@@ -80,20 +80,14 @@ class NetlistService extends ArtifactProducingService {
     super.outputBaseName,
   }) : super(module) {
     if (!module.hasBuilt) {
-      throw Exception(
-        'Module must be built before creating NetlistService. '
-        'Call build() first.',
-      );
+      throw ModuleNotBuiltException(module);
     }
 
     final effectiveRoot = packageRoot;
     synthesizer = NetlistSynthesizer(configuration: configuration);
     this.packageRoot = effectiveRoot;
     synthBuilder = SynthBuilder(module, synthesizer);
-    _fullJson = synthesizer.synthesizeToJson(
-      module,
-      packageRoot: effectiveRoot,
-    );
+    _fullJson = synthesizer.generateCombinedJson(synthBuilder, module);
 
     final decoded = jsonDecode(_fullJson) as Map<String, dynamic>;
     _modulesMap =
@@ -127,7 +121,7 @@ class NetlistService extends ArtifactProducingService {
   /// Checks whether [version] is compatible with the current
   /// [formatVersion].
   ///
-  /// Compatible means the major version matches. Returns `true` if
+  /// Compatible means both major and minor versions match. Returns `true` if
   /// the loaded JSON can be consumed by this version of the service.
   static bool isCompatibleVersion(String version) {
     final current = formatVersion.split('.');
@@ -163,10 +157,17 @@ class NetlistService extends ArtifactProducingService {
         'modules': moduleNames.toList(),
       };
 
-  /// Returns the netlist JSON for a single module [definitionName].
+  /// Returns the netlist JSON for the module named [definitionName].
   ///
-  /// The returned JSON is keyed by definition name:
-  /// `{"DefinitionName": { ports, cells, netnames }}`.
+  /// [definitionName] must be one of the generated definition names returned
+  /// by [moduleNames]. The returned JSON has this shape:
+  /// ```json
+  /// {
+  ///   "creator": "ROHD netlist synthesizer",
+  ///   "version": "...",
+  ///   "modules": {"DefinitionName": {"ports": {}, "cells": {}, "netnames": {}}}
+  /// }
+  /// ```
   /// This matches the format expected by the DevTools schematic viewer
   /// for incremental module fetches.
   ///
@@ -207,8 +208,20 @@ class NetlistService extends ArtifactProducingService {
   /// Cached slim JSON (lazy).
   String? _slimJsonCache;
 
-  /// Returns a slim netlist JSON string — same structure as [toJson] but
-  /// with cell `connections` stripped.
+  /// Returns a slim netlist JSON string with cell `connections` stripped.
+  ///
+  /// The returned JSON has this shape:
+  /// ```json
+  /// {
+  ///   "netlist": {
+  ///     "creator": "ROHD NetlistService (slim)",
+  ///     "version": "...",
+  ///     "rootInstanceName": "...",
+  ///     "modules": {"DefinitionName": {"ports": {}, "cells": {}, "netnames": {}}}
+  ///   }
+  /// }
+  /// ```
+  /// Module lookup keys are the generated definition names in [moduleNames].
   ///
   /// The slim representation preserves ports, cells (type + port_directions
   /// + port_widths), and netnames so the DevTools extension can render the
