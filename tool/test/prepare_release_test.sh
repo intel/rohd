@@ -36,7 +36,7 @@ export METADATA_SCRIPT="$RELEASE/tool/prepare_release_metadata.dart"
 
 mkdir -p "$FIXTURE/bin" "$UPSTREAM/tool/gh_actions/devtool" \
   "$UPSTREAM/lib/src/utilities" "$UPSTREAM/extension/devtools"
-for executable in bash cat cp dirname git grep mkdir mktemp rm sed tar; do
+for executable in bash cat cp dirname find git grep mkdir mktemp rm sed tar; do
   ln -s "$(command -v "$executable")" "$FIXTURE/bin/$executable"
 done
 printf '%s\n' \
@@ -60,7 +60,7 @@ ln -s dart "$FIXTURE/bin/flutter"
 
 cp "$REPO_ROOT/tool/prepare_release.sh" "$REPO_ROOT/tool/check_release.sh" \
   "$REPO_ROOT/tool/prepare_release_metadata.dart" "$UPSTREAM/tool/"
-printf '%s\n' '#!/bin/bash' 'exit 0' > "$UPSTREAM/tool/gh_actions/check_tmp_test.sh"
+cp "$REPO_ROOT/tool/gh_actions/check_tmp_test.sh" "$UPSTREAM/tool/gh_actions/"
 printf '%s\n' '#!/bin/bash' \
   '[[ -f "$1/build/index.html" && -f "$1/config.yaml" ]] || exit 1' \
   'printf "smoke\n" >> "$STAGE_LOG"' \
