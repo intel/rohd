@@ -119,6 +119,42 @@ void main() {
   });
 
   group('FstWriter unit tests', () {
+    test('queries flushed blocks and the hot buffer', () {
+      const path = '$_tempDumpDir/fst_query_test.fst';
+      Directory(_tempDumpDir).createSync(recursive: true);
+
+      final writer = FstWriter(
+        path,
+        config: const FstWriterConfig(maxChangesPerBlock: 2),
+      )..pushScope('top');
+      final signal = writer.declareSignal('signal', 1);
+      writer
+        ..popScope()
+        ..writeHeader()
+        ..emitValueChange(0, signal, '0')
+        ..emitValueChange(5, signal, '1')
+        ..emitValueChange(10, signal, '0');
+
+      final query = FstWaveformQuery(writer);
+      expect(
+        query
+            .changes(signal, startTime: 0, endTime: 10)
+            .map((change) => (change.time, change.value)),
+        equals([(0, '0'), (5, '1'), (10, '0')]),
+      );
+      expect(query.valueAt(signal, 7), equals('1'));
+      expect(query.valueAt(signal, 10), equals('0'));
+
+      writer.finish();
+      expect(
+        query
+            .changes(signal, startTime: 0, endTime: 10)
+            .map((change) => (change.time, change.value)),
+        equals([(0, '0'), (5, '1'), (10, '0')]),
+      );
+      File(path).deleteSync();
+    });
+
     test('writes valid header block', () {
       const path = '$_tempDumpDir/fst_header_test.fst';
       Directory(_tempDumpDir).createSync(recursive: true);
