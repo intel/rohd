@@ -91,6 +91,9 @@ class WaveformService extends ArtifactProducingService {
   /// The timestamp currently being accumulated.
   int _currentDumpingTimestamp = Simulator.time;
 
+  /// Whether the recording window's initial signal snapshot was emitted.
+  bool _hasWrittenWindowSnapshot = false;
+
   /// Creates a [WaveformService] for [module].
   ///
   /// [module] must be built before construction. [outputDirectory] defaults to
@@ -129,6 +132,7 @@ class WaveformService extends ArtifactProducingService {
       ),
       timestamp: Simulator.time,
     );
+    _hasWrittenWindowSnapshot = startTime == null || startTime == 0;
 
     Simulator.preTick.listen((_) {
       if (Simulator.time != _currentDumpingTimestamp) {
@@ -136,6 +140,7 @@ class WaveformService extends ArtifactProducingService {
           _captureTimestamp(_currentDumpingTimestamp);
         }
         _currentDumpingTimestamp = Simulator.time;
+        _writeWindowSnapshotIfNeeded(Simulator.time);
       }
     });
 
@@ -203,11 +208,18 @@ class WaveformService extends ArtifactProducingService {
   @protected
   void onSignalCollected(Logic signal) {}
 
-  /// Called for every value-change event on [signal] at [timestamp].
+  /// Called for every captured value on [signal] at [timestamp].
+  ///
+  /// When [startTime] is set, this includes one window-entry value for every
+  /// tracked signal at [startTime]. Those calls describe the state entering
+  /// the recording window, rather than physical transitions.
   @protected
   void onValueChange(Logic signal, int timestamp) {}
 
-  /// Called once per simulation timestamp that contains at least one change.
+  /// Called once after each batch of captured values at [timestamp].
+  ///
+  /// When [startTime] is set, the complete window-entry signal snapshot is
+  /// delivered as a batch at [startTime] before later value-change batches.
   @protected
   void onTimestampCapture(int timestamp, Set<Logic> changed) {}
 
@@ -302,6 +314,7 @@ class WaveformService extends ArtifactProducingService {
       return;
     }
 
+    _writeWindowSnapshotIfNeeded(timestamp);
     final snapshot = Set<Logic>.of(_changedThisTimestamp);
     final changes = <WaveformValueChange>[
       for (final sig in snapshot)
@@ -319,6 +332,32 @@ class WaveformService extends ArtifactProducingService {
 
     if (snapshot.isNotEmpty) {
       onTimestampCapture(timestamp, snapshot);
+    }
+  }
+
+  void _writeWindowSnapshotIfNeeded(int timestamp) {
+    if (_hasWrittenWindowSnapshot ||
+        startTime == null ||
+        timestamp < startTime! ||
+        !_isInRecordingWindow(startTime!)) {
+      return;
+    }
+
+    final snapshot = Set<Logic>.of(_signalHandles.keys);
+    _writer.emitValueChanges(
+      startTime!,
+      [
+        for (final signal in snapshot)
+          WaveformValueChange(_signalHandles[signal]!, _binaryValue(signal)),
+      ],
+    );
+    _hasWrittenWindowSnapshot = true;
+
+    for (final signal in snapshot) {
+      onValueChange(signal, startTime!);
+    }
+    if (snapshot.isNotEmpty) {
+      onTimestampCapture(startTime!, snapshot);
     }
   }
 
