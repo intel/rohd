@@ -10,6 +10,7 @@
 import 'dart:io';
 
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/fst/fst_waveform_query.dart';
 import 'package:rohd/src/utilities/config.dart';
 import 'package:rohd/src/utilities/timestamper.dart';
 
@@ -288,6 +289,9 @@ class FstWaveformWriter implements WaveformWriter {
 
   /// The low-level FST binary writer.
   final FstWriter writer;
+
+  /// Creates a bounded-memory query provider for this writer's waveform.
+  FstWaveformQuery createQuery() => FstWaveformQuery(writer);
 
   @override
   WaveOutputFormat get format => WaveOutputFormat.fst;
