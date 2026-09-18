@@ -56,12 +56,13 @@ class FstWaveformQuery {
             const [],
       );
     }
-    result.addAll(
-      writer
-          .queryHotBuffer(handleIndex, startTime, endTime)
-          .map((change) => FstValueChange(change.time, change.value)),
-    );
-    result.sort((a, b) => a.time.compareTo(b.time));
+    result
+      ..addAll(
+        writer
+            .queryHotBuffer(handleIndex, startTime, endTime)
+            .map((change) => FstValueChange(change.time, change.value)),
+      )
+      ..sort((a, b) => a.time.compareTo(b.time));
     return result;
   }
 
