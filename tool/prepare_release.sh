@@ -22,12 +22,15 @@
 # Selecting ROHD also synchronizes Config.version, fetches and verifies artifacts,
 # smoke-tests and installs the DevTools build, and runs tool/run_checks.sh.
 # The DevTools build comes from main, not from branch-only implementation changes.
-# All selected packages get publication dry runs after metadata preparation.
+# Each selected sub-package gets dependency resolution, a non-writing format check,
+# analysis (including fatal infos), and tests in its own directory. Dart is used
+# for hierarchy/waveform, Flutter for widgets, and dart format for all three.
+# Only after all selected checks pass do publication dry runs start.
 # It never publishes, commits, tags, pushes, merges, or rebases.
 #
 # Dart is required to read YAML metadata using the root package's dependencies.
-# Selecting rohd_devtools_widgets also requires Flutter. Run each sub-package's
-# analysis/tests separately; its publication dry run does not replace those checks.
+# Selecting rohd_devtools_widgets also requires Flutter. Any failed prerequisite
+# or package check stops preparation before publication dry runs.
 #
 # Examples:
 #
@@ -59,7 +62,7 @@ if [[ $# -eq 1 && "$1" == '--help' ]]; then
   echo "Usage: $0 [package ...]"
   echo "Packages: rohd rohd_hierarchy rohd_waveform rohd_devtools_widgets"
   echo "Defaults to all four packages, using each package's pubspec.yaml version."
-  echo "Prepares metadata and runs publication dry runs only; never uploads packages."
+  echo "Prepares metadata, runs package checks and publication dry runs; never uploads packages."
   exit 0
 fi
 if [[ $# -eq 0 ]]; then
@@ -143,8 +146,29 @@ dart run "$SCRIPT_DIR/prepare_release_metadata.dart" "$@"
 # Run the same checks used for normal development and reject malformed diffs.
 # Publishing remains a separate, intentionally manual operation.
 if [[ "$prepare_rohd" == true ]]; then
+  echo "=== rohd: project checks ==="
   tool/run_checks.sh
 fi
+for package in "$@"; do
+  if [[ "$package" == rohd ]]; then
+    continue
+  fi
+  sdk=dart
+  if [[ "$package" == rohd_devtools_widgets ]]; then
+    sdk=flutter
+  fi
+  (
+    cd "$REPO_ROOT/packages/$package"
+    echo "=== $package: resolve dependencies ($sdk pub get) ==="
+    "$sdk" pub get
+    echo "=== $package: verify formatting ==="
+    dart format --output=none --set-exit-if-changed .
+    echo "=== $package: analyze ($sdk analyze --fatal-infos) ==="
+    "$sdk" analyze --fatal-infos
+    echo "=== $package: tests ($sdk test) ==="
+    "$sdk" test
+  )
+done
 git diff --check
 bash "$SCRIPT_DIR/check_release.sh" "$@"
 
@@ -157,5 +181,5 @@ fi
 cat <<EOF
 
 Review the changelog and working tree before performing the manual publish step.
-Selected packages passed publication dry runs; nothing was uploaded.
+Selected packages passed checks and publication dry runs; nothing was uploaded.
 EOF

@@ -98,9 +98,10 @@ with a merge or rebase; the preparation PR itself does not need to be merged yet
    `artifacts` and requires the artifact's source commit to match that fetched
    `main` commit, not the release branch's tip. It smoke-tests and installs that
    web build before preparing metadata, then runs ROHD's checks. Sub-package-only
-   preparation leaves ROHD metadata and DevTools untouched; run the sub-package
-   analysis and tests separately as above. Finally, it runs publication dry runs
-   for the selected packages. It does not merge, rebase, change manifest versions,
+   preparation leaves ROHD metadata and DevTools untouched. Each selected
+   sub-package gets dependency resolution, formatting checks, analysis, and tests
+   in its own directory. Only after all selected package checks pass does it run
+   publication dry runs. It does not merge, rebase, change manifest versions,
    commit, tag, push, or upload anything. If a guard fails, incorporate the latest
    `main` or wait for its artifact workflow as appropriate, then rerun preparation.
 6. To inspect archives without preparing metadata, run
@@ -113,6 +114,23 @@ with a merge or rebase; the preparation PR itself does not need to be merged yet
    the verified DevTools build as above, then verify that
    `extension/devtools/build` is included and passes
    `tool/gh_actions/devtool/test_devtools_install.sh extension/devtools`.
+
+Preparation runs the following checks before invoking `tool/check_release.sh`:
+
+| Selected Package | Checks |
+| --- | --- |
+| `rohd` | `tool/run_checks.sh`: dependencies, formatting, analysis, API docs, simulator prerequisites, tests, and temporary-file checks. |
+| `rohd_hierarchy`, `rohd_waveform` | In each package directory: `dart pub get`, `dart format --output=none --set-exit-if-changed .`, `dart analyze --fatal-infos`, then `dart test`. |
+| `rohd_devtools_widgets` | In its package directory: `flutter pub get`, `dart format --output=none --set-exit-if-changed .`, `flutter analyze --fatal-infos`, then `flutter test`. |
+
+Formatting is checked without rewriting files. Analyzer info diagnostics are
+fatal. The script prints each sub-package stage and stops on the first failed
+prerequisite or check; no publication dry runs start unless every selected
+package's checks pass. An early failure such as a nonempty `tmp_test` directory
+means later stages have not run. Review leftover test files before retrying.
+Checks use the current checkout's dependency overrides; hosted-dependency
+validation without overrides is still required as described below. Tests for the
+separate DevTools application remain a separate step when its shared widgets change.
 
 Preparation examples (choose one):
 
@@ -164,8 +182,10 @@ hosted dependency readiness when local overrides are present.
 The helper's isolated regression checks run with
 `bash tool/test/check_release_test.sh`. Preparation guard checks run with
 `bash tool/test/prepare_release_test.sh` using temporary local Git repositories.
-Both stub publication commands on a restricted PATH. Preparation tests allow
-real Dart execution only for the metadata helper, never for publication commands.
+Both stub publication commands on a restricted PATH. Preparation tests also
+stub package-check commands to verify their order, SDK choice, and failure handling.
+They allow real Dart execution only for the metadata helper, never for publication
+commands.
 Its focused metadata tests run with
 `dart test test/prepare_release_metadata_test.dart`.
 

@@ -4,8 +4,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 #
 # prepare_release_test.sh
-# Test preparation defaults, package versions, and main/artifact guards.
-# Uses disposable local Git repositories and stubbed publication commands.
+# Test preparation defaults, versions, guards, and selected-package checks.
+# Uses disposable local Git repositories and stubbed check/publication commands.
 # Only the metadata helper runs on real Dart, using root package dependencies;
 # commits and artifact installation are confined to temporary test repositories.
 #
@@ -45,9 +45,16 @@ printf '%s\n' \
   '  shift' \
   '  exec "$REAL_DART" "--packages=$PACKAGE_CONFIG" "$@"' \
   'fi' \
-  'printf "%s|%s\n" "$PWD" "$*" >> "$SDK_LOG"' \
-  '[[ "$#" -eq 3 && "$1" == pub && "$2" == publish && "$3" == --dry-run ]] || exit 99' \
-  'printf "dry-run\n" >> "$STAGE_LOG"' > "$FIXTURE/bin/dart"
+  'printf "%s|%s|%s\n" "${0##*/}" "$PWD" "$*" >> "$SDK_LOG"' \
+  'case "$*" in' \
+  '  "pub publish --dry-run") printf "dry-run\n" >> "$STAGE_LOG" ;;' \
+  '  "pub get"|"format --output=none --set-exit-if-changed ."|"analyze --fatal-infos"|"test")' \
+  '    if [[ "${FAIL_PACKAGE:-}" == "${PWD##*/}" && "${FAIL_COMMAND:-}" == "$*" ]]; then' \
+  '      echo "Simulated check failure: $*" >&2' \
+  '      exit 71' \
+  '    fi ;;' \
+  '  *) exit 99 ;;' \
+  'esac' > "$FIXTURE/bin/dart"
 chmod +x "$FIXTURE/bin/dart"
 ln -s dart "$FIXTURE/bin/flutter"
 
@@ -58,7 +65,8 @@ printf '%s\n' '#!/bin/bash' \
   '[[ -f "$1/build/index.html" && -f "$1/config.yaml" ]] || exit 1' \
   'printf "smoke\n" >> "$STAGE_LOG"' \
   'exit "${SMOKE_STATUS:-0}"' > "$UPSTREAM/tool/gh_actions/devtool/test_devtools_install.sh"
-printf '%s\n' '#!/bin/bash' 'printf "checks\n" >> "$STAGE_LOG"' > "$UPSTREAM/tool/run_checks.sh"
+printf '%s\n' '#!/bin/bash' 'printf "checks\n" >> "$STAGE_LOG"' \
+  'exit "${ROOT_CHECK_STATUS:-0}"' > "$UPSTREAM/tool/run_checks.sh"
 chmod +x "$UPSTREAM/tool/gh_actions/check_tmp_test.sh" \
   "$UPSTREAM/tool/gh_actions/devtool/test_devtools_install.sh" "$UPSTREAM/tool/run_checks.sh"
 printf "version: '0.6.11' # release\n" > "$UPSTREAM/pubspec.yaml"
@@ -125,6 +133,18 @@ assert_unchanged() {
   done
 }
 
+expected_checks() {
+  local package="$1"
+  local sdk=dart
+  if [[ "$package" == rohd_devtools_widgets ]]; then
+    sdk=flutter
+  fi
+  printf '%s|%s|%s\n' "$sdk" "$RELEASE/packages/$package" 'pub get'
+  printf '%s|%s|%s\n' dart "$RELEASE/packages/$package" 'format --output=none --set-exit-if-changed .'
+  printf '%s|%s|%s\n' "$sdk" "$RELEASE/packages/$package" 'analyze --fatal-infos'
+  printf '%s|%s|%s\n' "$sdk" "$RELEASE/packages/$package" test
+}
+
 git -C "$UPSTREAM" commit --quiet --allow-empty -m 'Fixture main advances'
 readonly MAIN_COMMIT="$(git -C "$UPSTREAM" rev-parse main)"
 run_case 1 'The release branch does not contain the latest upstream main.'
@@ -145,11 +165,16 @@ unset SMOKE_STATUS
 
 run_case 0 "DevTools source commit (upstream main): $MAIN_COMMIT"
 [[ "$(cat "$STAGE_LOG")" == $'smoke\nchecks\ndry-run\ndry-run\ndry-run\ndry-run' ]]
-[[ "$(wc -l < "$SDK_LOG")" -eq 4 ]]
-grep -Fxq "$RELEASE|pub publish --dry-run" "$SDK_LOG"
-for package in rohd_hierarchy rohd_waveform rohd_devtools_widgets; do
-  grep -Fxq "$RELEASE/packages/$package|pub publish --dry-run" "$SDK_LOG"
-done
+expected_log="$(
+  for package in rohd_hierarchy rohd_waveform rohd_devtools_widgets; do
+    expected_checks "$package"
+  done
+  printf 'dart|%s|pub publish --dry-run\n' "$RELEASE"
+  printf 'dart|%s|pub publish --dry-run\n' "$RELEASE/packages/rohd_hierarchy"
+  printf 'dart|%s|pub publish --dry-run\n' "$RELEASE/packages/rohd_waveform"
+  printf 'flutter|%s|pub publish --dry-run\n' "$RELEASE/packages/rohd_devtools_widgets"
+)"
+[[ "$(cat "$SDK_LOG")" == "$expected_log" ]]
 [[ "$(cat "$RELEASE/pubspec.yaml")" == "version: '0.6.11' # release" ]]
 [[ "$(cat "$RELEASE/lib/src/utilities/config.dart")" == "static const String version = '0.6.11';" ]]
 [[ "$(cat "$RELEASE/CHANGELOG.md")" == '## 0.6.11' ]]
@@ -161,7 +186,13 @@ done
 git -C "$RELEASE" diff --exit-code -- pubspec.yaml 'packages/*/pubspec.yaml'
 
 run_case 0 "DevTools source commit (upstream main): $MAIN_COMMIT" rohd
-[[ "$(cat "$SDK_LOG")" == "$RELEASE|pub publish --dry-run" ]]
+[[ "$(cat "$SDK_LOG")" == "dart|$RELEASE|pub publish --dry-run" ]]
+
+export ROOT_CHECK_STATUS=72
+run_case 72 '=== rohd: project checks ==='
+[[ ! -s "$SDK_LOG" ]]
+[[ "$(cat "$STAGE_LOG")" == $'smoke\nchecks' ]]
+unset ROOT_CHECK_STATUS
 
 git -C "$UPSTREAM" update-ref -d refs/heads/artifacts
 printf "static const String version = '0.0.0';\n" > "$RELEASE/lib/src/utilities/config.dart"
@@ -170,7 +201,39 @@ run_case 0 'rohd_hierarchy: 1.2.3 (prepared from pubspec.yaml)' rohd_hierarchy r
 [[ "$(cat "$STAGE_LOG")" == $'dry-run\ndry-run' ]]
 [[ "$(cat "$RELEASE/lib/src/utilities/config.dart")" == "static const String version = '0.0.0';" ]]
 [[ "$(cat "$RELEASE/CHANGELOG.md")" == '## Next Release' ]]
-[[ "$(wc -l < "$SDK_LOG")" -eq 2 ]]
+expected_log="$(
+  expected_checks rohd_hierarchy
+  expected_checks rohd_waveform
+  printf 'dart|%s|pub publish --dry-run\n' "$RELEASE/packages/rohd_hierarchy"
+  printf 'dart|%s|pub publish --dry-run\n' "$RELEASE/packages/rohd_waveform"
+)"
+[[ "$(cat "$SDK_LOG")" == "$expected_log" ]]
+
+run_case 0 'rohd_devtools_widgets: PASSED' rohd_devtools_widgets
+expected_log="$(
+  expected_checks rohd_devtools_widgets
+  printf 'flutter|%s|pub publish --dry-run\n' "$RELEASE/packages/rohd_devtools_widgets"
+)"
+[[ "$(cat "$SDK_LOG")" == "$expected_log" ]]
+[[ "$(cat "$STAGE_LOG")" == 'dry-run' ]]
+
+for package in rohd_hierarchy rohd_waveform rohd_devtools_widgets; do
+  for check_command in 'pub get' 'format --output=none --set-exit-if-changed .' 'analyze --fatal-infos' test; do
+    export FAIL_PACKAGE="$package" FAIL_COMMAND="$check_command"
+    run_case 71 "Simulated check failure: $check_command" "$package" rohd_hierarchy rohd_waveform
+    [[ ! -s "$STAGE_LOG" ]]
+    expected_log="$(
+      while IFS= read -r expected_line; do
+        printf '%s\n' "$expected_line"
+        if [[ "$expected_line" == *"|$check_command" ]]; then
+          break
+        fi
+      done < <(expected_checks "$package")
+    )"
+    [[ "$(cat "$SDK_LOG")" == "$expected_log" ]]
+  done
+done
+unset FAIL_PACKAGE FAIL_COMMAND
 
 printf 'name: rohd_hierarchy\n' > "$RELEASE/packages/rohd_hierarchy/pubspec.yaml"
 run_case 2 'needs a stable major.minor.patch version.' rohd_hierarchy
@@ -178,4 +241,4 @@ run_case 2 'needs a stable major.minor.patch version.' rohd_hierarchy
 run_case 0 'Usage:' --help
 [[ ! -s "$STAGE_LOG" && ! -s "$SDK_LOG" ]]
 
-echo "$passed preparation checks passed using local Git fixtures and stubbed publication commands."
+echo "$passed preparation checks passed using local Git fixtures and stubbed package/publication commands."
