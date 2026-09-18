@@ -25,6 +25,47 @@ class _SimpleWaveModule extends Module {
   }
 }
 
+class _WindowWaveModule extends Module {
+  late final Logic a;
+
+  _WindowWaveModule() {
+    a = addOutput('a');
+  }
+}
+
+class _HistoryWaveformService extends WaveformService {
+  final Map<Logic, List<(int, String)>> history = {};
+  final List<int> capturedTimestamps = [];
+
+  _HistoryWaveformService(
+    super.module, {
+    super.outputDirectory,
+    super.outputBaseName,
+    super.startTime,
+    super.register,
+  });
+
+  @override
+  void onSignalCollected(Logic signal) {
+    history[signal] = [(Simulator.time, _binaryValue(signal))];
+  }
+
+  @override
+  void onValueChange(Logic signal, int timestamp) {
+    history[signal]!.add((timestamp, _binaryValue(signal)));
+  }
+
+  @override
+  void onTimestampCapture(int timestamp, Set<Logic> changed) {
+    capturedTimestamps.add(timestamp);
+  }
+}
+
+String _binaryValue(Logic signal) => signal.value.reversed
+    .toList()
+    .map((value) => value.toString(includeWidth: false))
+    .join();
+
 const _tempDumpDir = 'tmp_test';
 
 String _temporaryVcdPath(String name) => '$_tempDumpDir/temp_wave_$name.vcd';
@@ -92,6 +133,37 @@ void main() {
     expect(service, isNotNull);
     final waveformJson = jsonEncode(service!.toJson());
     expect(waveformJson, contains('"format":"vcd"'));
+
+    File(dumpPath).deleteSync();
+  });
+
+  test('window-entry snapshot reaches waveform hooks', () async {
+    final mod = _WindowWaveModule();
+    await mod.build();
+    mod.a.put(0);
+
+    Directory(_tempDumpDir).createSync(recursive: true);
+    final dumpPath = _temporaryVcdPath('windowHookSnapshot');
+    final service = _HistoryWaveformService(
+      mod,
+      outputDirectory: _tempDumpDir,
+      outputBaseName: 'temp_wave_windowHookSnapshot',
+      startTime: 10,
+      register: false,
+    );
+
+    Simulator.registerAction(5, () => mod.a.put(1));
+    Simulator.registerAction(15, () {});
+    Simulator.registerAction(20, () {});
+    await Simulator.run();
+
+    final vcdContents = File(dumpPath).readAsStringSync();
+    expect(
+      VcdParser.confirmValue(vcdContents, 'a', 10, LogicValue.one),
+      isTrue,
+    );
+    expect(service.history[mod.a], equals([(0, '0'), (10, '1')]));
+    expect(service.capturedTimestamps, contains(10));
 
     File(dumpPath).deleteSync();
   });
