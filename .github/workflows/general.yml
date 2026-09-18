@@ -78,10 +78,56 @@ jobs:
         with:
           runCmd: ROHD_REQUIRE_VERILATOR=1 tool/gh_actions/run_tests.sh
 
+  sub-package-checks:
+    name: Check ${{ matrix.package }}
+    permissions: {}
+    timeout-minutes: 30
+    runs-on: ${{ github.repository_owner == 'intel' && 'intel-ubuntu-latest' || 'ubuntu-latest' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - package: rohd_hierarchy
+            sdk: dart
+          - package: rohd_waveform
+            sdk: dart
+          - package: rohd_devtools_widgets
+            sdk: flutter
+    defaults:
+      run:
+        working-directory: packages/${{ matrix.package }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Dart
+        if: matrix.sdk == 'dart'
+        uses: dart-lang/setup-dart@v1
+
+      - name: Setup Flutter SDK
+        if: matrix.sdk == 'flutter'
+        uses: flutter-actions/setup-flutter@v2
+        with:
+          channel: stable
+          version: 3.44.0
+
+      - name: Install package dependencies
+        run: ${{ matrix.sdk }} pub get
+
+      - name: Verify package formatting
+        run: dart format --output=none --set-exit-if-changed .
+
+      - name: Analyze package
+        run: ${{ matrix.sdk }} analyze --fatal-infos
+
+      - name: Run package tests
+        run: ${{ matrix.sdk }} test
+
   deploy-documentation:
     name: Deploy Documentation
     needs:
       - run-checks
+      - sub-package-checks
       - build-devtool
     if: github.event_name == 'push'
     permissions:

@@ -154,7 +154,8 @@ class SignalWaveformRepository {
   /// Get the current simulation time from the waveform API.
   Future<int?> getCurrentTime() async {
     await _ensureReady();
-    return _signalWaveformApi.getCurrentTime();
+    final currentTime = await _signalWaveformApi.getCurrentTime();
+    return currentTime;
   }
 
   /// Retrieves waveform data for specific signals.

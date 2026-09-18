@@ -86,8 +86,13 @@ with a merge or rebase; the preparation PR itself does not need to be merged yet
    overrides apply only to the root package being resolved, not its consumers.
    The non-published DevTools app therefore also declares its own local overrides.
 4. Verify the PR's CI results cover the relevant tests for the release commit,
-   including DevTools app tests when shared widgets change. Preparation skips
-   local test suites by default and does not query GitHub or verify CI status.
+   including DevTools app tests when shared widgets change. The General workflow
+   has separate `Check rohd_hierarchy`, `Check rohd_waveform`, and
+   `Check rohd_devtools_widgets` jobs for dependency resolution, formatting,
+   fatal-info analysis, and package tests. These run alongside the root checks
+   and DevTools app job; documentation deployment waits for all of them.
+   Preparation skips local test suites by default and does not query GitHub or
+   verify CI status.
    Use `--run-tests` to repeat selected package suites locally. ROHD's local
    tests require Icarus Verilog; Verilator is required in CI and when
    `ROHD_REQUIRE_VERILATOR=1`.
