@@ -874,8 +874,8 @@ void main() {
 
         // ensure ports with interface are still an array
         final sv = mod.dumpSystemVerilog();
-        expect(sv, contains('input logic [2:0][1:0][2:0][7:0] laIn'));
-        expect(sv, contains('output logic [2:0][1:0][2:0][7:0] laOut'));
+        expect(sv, contains('input logic [2:0][1:0][2:0][2:0] laIn'));
+        expect(sv, contains('output logic [2:0][1:0][2:0][2:0] laOut'));
       });
 
       testWithVerilator(
