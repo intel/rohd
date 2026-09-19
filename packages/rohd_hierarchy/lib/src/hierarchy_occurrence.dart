@@ -35,9 +35,17 @@ class HierarchyOccurrence {
   /// is written.
   final bool isPrimitive;
 
-  /// Signals within this occurrence (includes both internal signals and
-  /// ports).  Empty for leaf occurrences.
+  /// Signals within this occurrence (includes both ports and internal
+  /// signals). Ports always precede internal signals. Empty for leaf
+  /// occurrences.
   final List<SignalOccurrence> signals;
+
+  /// Number of port signals in the prefix of [signals].
+  ///
+  /// Hierarchy producers should supply this when they construct an
+  /// occurrence. It lets port lookup and completion avoid inspecting the
+  /// internal-signal suffix.
+  final int? _explicitPortCount;
 
   /// Child occurrences. Populated from sub-modules in the hierarchy.
   final List<HierarchyOccurrence> children;
@@ -60,8 +68,73 @@ class HierarchyOccurrence {
     this.isPrimitive = false,
     List<SignalOccurrence>? signals,
     List<HierarchyOccurrence>? children,
-  })  : signals = signals ?? [],
-        children = children ?? [];
+    int? portCount,
+    List<SignalOccurrence>? inputs,
+    List<SignalOccurrence>? outputs,
+    List<SignalOccurrence>? inouts,
+    List<HierarchyOccurrence>? subModules,
+  })  : assert(
+          portCount == null ||
+              (portCount >= 0 && portCount <= (signals?.length ?? 0)),
+          'portCount must be non-negative and no greater than the signal '
+          'count.',
+        ),
+        assert(
+          signals == null ||
+              (inputs == null && outputs == null && inouts == null),
+          'Provide either signals or directional port lists, not both.',
+        ),
+        assert(
+          children == null || subModules == null,
+          'Provide either children or subModules, not both.',
+        ),
+        assert(
+          portCount == null ||
+              (portCount >= 0 &&
+                  portCount <=
+                      (signals?.length ??
+                          _legacySignals(inputs, outputs, inouts).length)),
+          'portCount must be within the available signal range.',
+        ),
+        signals = signals ?? _legacySignals(inputs, outputs, inouts),
+        _explicitPortCount = portCount,
+        children = children ?? subModules ?? [];
+
+  /// Creates an occurrence from the legacy DevTools module-tree JSON format.
+  factory HierarchyOccurrence.fromJson(Map<String, dynamic> json) {
+    List<SignalOccurrence> parsePorts(String key, String direction) {
+      final rawPorts = json[key] as Map<String, dynamic>? ?? {};
+      return rawPorts.entries.map((entry) {
+        final value = entry.value as Map<String, dynamic>;
+        return SignalOccurrence.fromMap({
+          'name': entry.key,
+          'direction': direction,
+          'value': value['value'],
+          'width': value['width'],
+        });
+      }).toList();
+    }
+
+    return HierarchyOccurrence(
+      name: json['name'] as String,
+      inputs: parsePorts('inputs', 'Input'),
+      outputs: parsePorts('outputs', 'Output'),
+      inouts: parsePorts('inouts', 'Inout'),
+      subModules: (json['subModules'] as List)
+          .map(
+            (subModule) =>
+                HierarchyOccurrence.fromJson(subModule as Map<String, dynamic>),
+          )
+          .toList(),
+    );
+  }
+
+  static List<SignalOccurrence> _legacySignals(
+    List<SignalOccurrence>? inputs,
+    List<SignalOccurrence>? outputs,
+    List<SignalOccurrence>? inouts,
+  ) =>
+      [...?inputs, ...?outputs, ...?inouts];
 
   /// Compute the full hierarchical path by walking up the parent chain.
   ///
@@ -80,9 +153,6 @@ class HierarchyOccurrence {
     return parts.reversed.join(separator);
   }
 
-  /// Returns only signals that are ports (have a direction).
-  List<SignalOccurrence> get ports => signals.where((s) => s.isPort).toList();
-
   // ───────────────── Name → offset (index) lookups ─────────────────
 
   /// Lazily-built index: child name → offset in [children].
@@ -90,6 +160,25 @@ class HierarchyOccurrence {
 
   /// Lazily-built index: signal name → offset in [signals].
   Map<String, int>? _signalNameIndex;
+
+  /// Lazily-built list of ports in their source order.
+  List<SignalOccurrence>? _ports;
+
+  /// Lazily-built index: port name → port occurrence.
+  Map<String, SignalOccurrence>? _portByName;
+
+  /// Returns only signals that are ports (have a direction).
+  ///
+  /// Ports occupy a contiguous prefix of [signals], so this never scans
+  /// internal signals when [portCount] was provided by the producer.
+  List<SignalOccurrence> get ports {
+    final portCount = _explicitPortCount;
+    return _ports ??= List.unmodifiable(
+      portCount == null
+          ? signals.where((signal) => signal.isPort)
+          : signals.take(portCount),
+    );
+  }
 
   /// Return the offset (index) of the child with [name] in [children],
   /// or -1 if not found.  Case-sensitive.
@@ -109,6 +198,13 @@ class HierarchyOccurrence {
       for (var i = 0; i < signals.length; i++) signals[i].name: i,
     };
     return _signalNameIndex![name] ?? -1;
+  }
+
+  /// Returns the port named [name], or `null` when it is not an interface
+  /// port on this occurrence. Case-sensitive.
+  SignalOccurrence? portByName(String name) {
+    _portByName ??= {for (final port in ports) port.name: port};
+    return _portByName![name];
   }
 
   /// Whether [cellType] represents a netlist built-in primitive cell type.
@@ -136,18 +232,24 @@ class HierarchyOccurrence {
 
   /// Returns only input signals.
   List<SignalOccurrence> get inputs =>
-      signals.where((s) => s.direction == 'input').toList();
+      signals.where((signal) => signal.isInput).toList();
 
   /// Returns only output signals.
   List<SignalOccurrence> get outputs =>
-      signals.where((s) => s.direction == 'output').toList();
+      signals.where((signal) => signal.isOutput).toList();
 
   /// Returns only inout signals.
   List<SignalOccurrence> get inouts =>
-      signals.where((s) => s.direction == 'inout').toList();
+      signals.where((signal) => signal.isInout).toList();
 
-  /// Number of port signals in this occurrence.
-  int get portCount => signals.where((s) => s.isPort).length;
+  /// Child occurrences under the legacy DevTools property name.
+  List<HierarchyOccurrence> get subModules => children;
+
+  /// Number of port signals in the prefix of [signals].
+  ///
+  /// New hierarchy producers provide this directly. The fallback maintains
+  /// compatibility for manually-created legacy occurrences.
+  int get portCount => _explicitPortCount ?? ports.length;
 
   /// Finds the sub-field [SignalOccurrence] entries for a struct/array signal.
   ///
@@ -188,8 +290,10 @@ class HierarchyOccurrence {
   /// Production code should use [signalCount], [computedSignalCount], or
   /// a recursive visitor instead of materializing the full list.
   @visibleForTesting
-  List<SignalOccurrence> depthFirstSignals() =>
-      [...signals, ...children.expand((c) => c.depthFirstSignals())];
+  List<SignalOccurrence> depthFirstSignals() => [
+        ...signals,
+        ...children.expand((c) => c.depthFirstSignals()),
+      ];
 
   /// Total number of signals in this subtree (O(n) recursive count).
   ///
@@ -231,21 +335,29 @@ class HierarchyOccurrence {
   void buildAddresses([OccurrenceAddress startAddr = OccurrenceAddress.root]) {
     _address = startAddr;
 
-    // Assign ports first, then internal signals, so that port indices
-    // are stable across incremental hierarchy expansion.
-    var idx = 0;
-    for (final s in signals) {
-      if (s.isPort) {
-        s
-          ..address = startAddr.signal(idx++)
+    if (_explicitPortCount != null) {
+      for (var index = 0; index < signals.length; index++) {
+        signals[index]
+          ..address = startAddr.signal(index)
           ..parent = this;
       }
-    }
-    for (final s in signals) {
-      if (!s.isPort) {
-        s
-          ..address = startAddr.signal(idx++)
-          ..parent = this;
+    } else {
+      // Maintain address compatibility for manually-built legacy occurrences
+      // that did not declare their port prefix.
+      var index = 0;
+      for (final signal in signals) {
+        if (signal.isPort) {
+          signal
+            ..address = startAddr.signal(index++)
+            ..parent = this;
+        }
+      }
+      for (final signal in signals) {
+        if (!signal.isPort) {
+          signal
+            ..address = startAddr.signal(index++)
+            ..parent = this;
+        }
       }
     }
 

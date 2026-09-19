@@ -1,7 +1,7 @@
 // Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
-// logic_values.dart
+// logic_value.dart
 // Definitions for a set of logical values of any width
 //
 // 2021 August 2
@@ -10,8 +10,10 @@
 part of 'values.dart';
 
 /// Deprecated: use [LogicValue] instead.
-@Deprecated('Use `LogicValue` instead.'
-    '  `LogicValues` and `LogicValue` have been merged into one type.')
+@Deprecated(
+  'Use `LogicValue` instead.'
+  '  `LogicValues` and `LogicValue` have been merged into one type.',
+)
 typedef LogicValues = LogicValue;
 
 /// An immutable 4-value representation of an arbitrary number of bits.
@@ -64,7 +66,10 @@ abstract class LogicValue implements Comparable<LogicValue> {
   /// [width] must be greater than or equal to 0.
   static LogicValue ofInt(int value, int width) => width > INT_BITS
       ? _bigLogicValueOrFilled(
-          BigInt.from(value).toUnsigned(INT_BITS), BigInt.zero, width)
+          BigInt.from(value).toUnsigned(INT_BITS),
+          BigInt.zero,
+          width,
+        )
       : _smallLogicValueOrFilled(value, 0, width);
 
   /// Converts `int` [value] to a valid [LogicValue] with [width]
@@ -101,7 +106,8 @@ abstract class LogicValue implements Comparable<LogicValue> {
   _LogicValueEnum get _enum {
     if (width != 1) {
       throw Exception(
-          'Cannot convert value of width $width to a single bit value.');
+        'Cannot convert value of width $width to a single bit value.',
+      );
     }
     return this == LogicValue.one
         ? _LogicValueEnum.one
@@ -126,14 +132,16 @@ abstract class LogicValue implements Comparable<LogicValue> {
     if (val is int) {
       if (val < 0) {
         throw LogicValueConstructionException(
-            'Cannot infer width of a negative int.');
+          'Cannot infer width of a negative int.',
+        );
       } else {
         width = val.bitLength;
       }
     } else if (val is BigInt) {
       if (val.isNegative) {
         throw LogicValueConstructionException(
-            'Cannot infer width of a negative BigInt.');
+          'Cannot infer width of a negative BigInt.',
+        );
       } else {
         width = val.bitLength;
       }
@@ -170,36 +178,42 @@ abstract class LogicValue implements Comparable<LogicValue> {
     if (val is int) {
       if (width == null) {
         throw LogicValueConstructionException(
-            '`width` must be provided for `int`.');
+          '`width` must be provided for `int`.',
+        );
       }
 
       if (fill) {
         return LogicValue.filled(
-            width,
-            val == 0
-                ? LogicValue.zero
-                : val == 1
-                    ? LogicValue.one
-                    : throw LogicValueConstructionException(
-                        '`int` can only can fill 0 or 1, but saw $val.'));
+          width,
+          val == 0
+              ? LogicValue.zero
+              : val == 1
+                  ? LogicValue.one
+                  : throw LogicValueConstructionException(
+                      '`int` can only can fill 0 or 1, but saw $val.',
+                    ),
+        );
       } else {
         return LogicValue.ofInt(val, width);
       }
     } else if (val is BigInt) {
       if (width == null) {
         throw LogicValueConstructionException(
-            '`width` must be provided for `BigInt`.');
+          '`width` must be provided for `BigInt`.',
+        );
       }
 
       if (fill) {
         return LogicValue.filled(
-            width,
-            val == BigInt.zero
-                ? LogicValue.zero
-                : val == BigInt.one
-                    ? LogicValue.one
-                    : throw LogicValueConstructionException(
-                        '`BigInt` can only fill 0 or 1, but saw $val.'));
+          width,
+          val == BigInt.zero
+              ? LogicValue.zero
+              : val == BigInt.one
+                  ? LogicValue.one
+                  : throw LogicValueConstructionException(
+                      '`BigInt` can only fill 0 or 1, but saw $val.',
+                    ),
+        );
       } else {
         return LogicValue.ofBigInt(val, width);
       }
@@ -213,7 +227,8 @@ abstract class LogicValue implements Comparable<LogicValue> {
     } else if (val is LogicValue) {
       if (fill && val.width != 1) {
         throw LogicValueConstructionException(
-            'Only 1-bit `LogicValue`s can be filled');
+          'Only 1-bit `LogicValue`s can be filled',
+        );
       }
 
       if (val.width == 1 && (!val.isValid || fill)) {
@@ -222,7 +237,8 @@ abstract class LogicValue implements Comparable<LogicValue> {
         }
         if (width == null) {
           throw LogicValueConstructionException(
-              'Filled `LogicValue` $val must have provided a width.');
+            'Filled `LogicValue` $val must have provided a width.',
+          );
         }
         return LogicValue.filled(width, val);
       } else {
@@ -237,7 +253,8 @@ abstract class LogicValue implements Comparable<LogicValue> {
     } else if (val is String) {
       if (fill && val.length != 1) {
         throw LogicValueConstructionException(
-            'Only 1-bit values can be filled');
+          'Only 1-bit values can be filled',
+        );
       }
 
       if (val.length == 1 && (val == 'x' || val == 'z' || fill)) {
@@ -246,7 +263,8 @@ abstract class LogicValue implements Comparable<LogicValue> {
         }
         if (width == null) {
           throw LogicValueConstructionException(
-              'Filled `String` $val must have provided a width.');
+            'Filled `String` $val must have provided a width.',
+          );
         }
         return LogicValue.filled(width, LogicValue.ofString(val));
       } else {
@@ -261,7 +279,8 @@ abstract class LogicValue implements Comparable<LogicValue> {
     } else if (val is Iterable<LogicValue>) {
       if (fill && val.length != 1) {
         throw LogicValueConstructionException(
-            'Only 1-bit values can be filled');
+          'Only 1-bit values can be filled',
+        );
       }
 
       if (val.length == 1 &&
@@ -271,7 +290,8 @@ abstract class LogicValue implements Comparable<LogicValue> {
         }
         if (width == null) {
           throw LogicValueConstructionException(
-              'Filled `Iterable<LogicValue>` $val must have provided a width.');
+            'Filled `Iterable<LogicValue>` $val must have provided a width.',
+          );
         }
         return LogicValue.filled(width, val.first);
       } else {
@@ -286,8 +306,14 @@ abstract class LogicValue implements Comparable<LogicValue> {
     } else if (val == null) {
       throw LogicValueConstructionException('Cannot construct from `null`.');
     } else {
-      throw UnsupportedTypeException(val,
-          const [LogicValue, int, BigInt, bool, String, Iterable<LogicValue>]);
+      throw UnsupportedTypeException(val, const [
+        LogicValue,
+        int,
+        BigInt,
+        bool,
+        String,
+        Iterable<LogicValue>,
+      ]);
     }
   }
 
@@ -326,8 +352,10 @@ abstract class LogicValue implements Comparable<LogicValue> {
         smallBuffer = lv.getRange(upperBound, lv.width);
       }
 
-      assert(smallBuffer.width <= INT_BITS,
-          'Keep smallBuffer small to meet invariants and efficiency');
+      assert(
+        smallBuffer.width <= INT_BITS,
+        'Keep smallBuffer small to meet invariants and efficiency',
+      );
     }
 
     // grab what's left
@@ -354,12 +382,18 @@ abstract class LogicValue implements Comparable<LogicValue> {
       return _FilledLogicValue(other._value, newWidth);
     } else if (newWidth > INT_BITS) {
       // BigInt's only
-      return _BigLogicValue(_bigIntValue << other.width | other._bigIntValue,
-          _bigIntInvalid << other.width | other._bigIntInvalid, newWidth);
+      return _BigLogicValue(
+        _bigIntValue << other.width | other._bigIntValue,
+        _bigIntInvalid << other.width | other._bigIntInvalid,
+        newWidth,
+      );
     } else {
       // int's ok
-      return _SmallLogicValue(_intValue << other.width | other._intValue,
-          _intInvalid << other.width | other._intInvalid, newWidth);
+      return _SmallLogicValue(
+        _intValue << other.width | other._intValue,
+        _intInvalid << other.width | other._intInvalid,
+        newWidth,
+      );
     }
   }
 
@@ -412,13 +446,17 @@ abstract class LogicValue implements Comparable<LogicValue> {
   /// relying on `_value` and `_invalid`.
   static String _valueString(String stringRepresentation) =>
       stringRepresentation.replaceAllMapped(
-          RegExp('[xz]'), (m) => m[0] == 'x' ? '0' : '1');
+        RegExp('[xz]'),
+        (m) => m[0] == 'x' ? '0' : '1',
+      );
 
   /// Returns a [String] representing the `_invalid` to be used by
   /// implementations relying on `_value` and `_invalid`.
   static String _invalidString(String stringRepresentation) =>
       stringRepresentation.replaceAllMapped(
-          RegExp('[1xz]'), (m) => m[0] == '1' ? '0' : '1');
+        RegExp('[1xz]'),
+        (m) => m[0] == '1' ? '0' : '1',
+      );
 
   /// Converts a binary [String] representation of a [LogicValue] into a
   /// [LogicValue].
@@ -441,7 +479,8 @@ abstract class LogicValue implements Comparable<LogicValue> {
 
     if (stringRepresentation.contains(RegExp('[^01xz]'))) {
       throw LogicValueConstructionException(
-          'Invalid characters found, must only contain 0, 1, x, and z.');
+        'Invalid characters found, must only contain 0, 1, x, and z.',
+      );
     }
 
     final valueString = _valueString(stringRepresentation);
@@ -464,7 +503,10 @@ abstract class LogicValue implements Comparable<LogicValue> {
   ///
   /// Only use if [width] > [INT_BITS].
   static LogicValue _bigLogicValueOrFilled(
-      BigInt value, BigInt invalid, int width) {
+    BigInt value,
+    BigInt invalid,
+    int width,
+  ) {
     assert(width > INT_BITS, 'Should only be used for big values');
 
     return _filledIfPossible(
@@ -482,7 +524,10 @@ abstract class LogicValue implements Comparable<LogicValue> {
   ///
   /// Only use if [width] <= [INT_BITS].
   static LogicValue _smallLogicValueOrFilled(
-      int value, int invalid, int width) {
+    int value,
+    int invalid,
+    int width,
+  ) {
     assert(width <= INT_BITS, 'Should only be used for small values');
 
     return _filledIfPossible(
@@ -499,7 +544,12 @@ abstract class LogicValue implements Comparable<LogicValue> {
   /// are all 1's or all 0's.  If it's not possible to represent the value
   /// as filled, it will return `null`.
   static LogicValue? _filledIfPossible(
-      bool value1s, bool value0, bool invalid1s, bool invalid0, int width) {
+    bool value1s,
+    bool value0,
+    bool invalid1s,
+    bool invalid0,
+    int width,
+  ) {
     if (value0) {
       if (invalid0) {
         return LogicValue.filled(width, LogicValue.zero);
@@ -567,9 +617,10 @@ abstract class LogicValue implements Comparable<LogicValue> {
   /// var it = lv.toList();
   /// print(lv); // This prints `[1'h0, 1'bx, 1'h1]`
   /// ```
-  List<LogicValue> toList() =>
-      List<LogicValue>.generate(width, (index) => this[index])
-          .toList(growable: false);
+  List<LogicValue> toList() => List<LogicValue>.generate(
+        width,
+        (index) => this[index],
+      ).toList(growable: false);
 
   /// Converts this [LogicValue] to a binary [String], including a decorator at
   /// the front in SystemVerilog style.
@@ -594,8 +645,10 @@ abstract class LogicValue implements Comparable<LogicValue> {
     } else {
       return [
         if (includeWidth) "$width'b",
-        ...List<String>.generate(width, (index) => this[index]._bitString())
-            .reversed
+        ...List<String>.generate(
+          width,
+          (index) => this[index]._bitString(),
+        ).reversed,
       ].join();
     }
   }
@@ -651,12 +704,13 @@ abstract class LogicValue implements Comparable<LogicValue> {
   /// bits to fill the first radix character.
   /// - `9'bz_zzzz_zzzz = 9'hZZZ`
   ///
-  String toRadixString(
-      {int radix = 2,
-      int chunkSize = 4,
-      bool leadingZeros = false,
-      bool includeWidth = true,
-      String sepChar = '_'}) {
+  String toRadixString({
+    int radix = 2,
+    int chunkSize = 4,
+    bool leadingZeros = false,
+    bool includeWidth = true,
+    String sepChar = '_',
+  }) {
     if (sepChar.isNotEmpty && radixStringChars.contains(sepChar)) {
       throw LogicValueConversionException('separation character invalid');
     }
@@ -666,7 +720,7 @@ abstract class LogicValue implements Comparable<LogicValue> {
       8 => "'o",
       10 => "'d",
       16 => "'h",
-      _ => throw LogicValueConversionException('Unsupported radix: $radix')
+      _ => throw LogicValueConversionException('Unsupported radix: $radix'),
     };
     final String reversedStr;
     if (radix == 10) {
@@ -674,16 +728,20 @@ abstract class LogicValue implements Comparable<LogicValue> {
         var radixString =
             toBigInt().toUnsigned(width).toRadixString(radix).toUpperCase();
         if (leadingZeros) {
-          final span =
-              math.max(1, (width * math.log(2) / math.log(radix)).floor());
+          final span = math.max(
+            1,
+            (width * math.log(2) / math.log(radix)).floor(),
+          );
           for (var i = radixString.length; i < (width / span).ceil(); i++) {
             radixString = '0$radixString';
           }
         }
         reversedStr = _reverse(radixString);
       } else {
-        final span =
-            math.max(1, (width * math.log(2) / math.log(radix)).floor());
+        final span = math.max(
+          1,
+          (width * math.log(2) / math.log(radix)).floor(),
+        );
         if (toRadixString().contains(RegExp('[xX]'))) {
           reversedStr = 'X' * span;
         } else {
@@ -692,8 +750,10 @@ abstract class LogicValue implements Comparable<LogicValue> {
       }
     } else {
       final span = (math.log(radix) / math.log(2)).ceil();
-      final extendedStr =
-          LogicValue.of(this, width: span * (width / span).ceil());
+      final extendedStr = LogicValue.of(
+        this,
+        width: span * (width / span).ceil(),
+      );
       final buf = StringBuffer();
       var haveLeadingZeros = true;
       for (var i = (extendedStr.width ~/ span) - 1; i >= 0; i--) {
@@ -702,7 +762,9 @@ abstract class LogicValue implements Comparable<LogicValue> {
         if (i == extendedStr.width ~/ span - 1) {
           final chunkWidth = chunkString.length;
           chunkString = chunkString.substring(
-              chunkWidth - (width - i * span), chunkWidth);
+            chunkWidth - (width - i * span),
+            chunkWidth,
+          );
         }
         final s = [
           if (chunkString == 'z' * chunkString.length)
@@ -712,7 +774,7 @@ abstract class LogicValue implements Comparable<LogicValue> {
           else if (chunkString.contains('z') | chunkString.contains('x'))
             '>${_reverse(chunkString)}<'
           else
-            binaryChunk.toBigInt().toUnsigned(span).toRadixString(radix)
+            binaryChunk.toBigInt().toUnsigned(span).toRadixString(radix),
         ].first;
         if (s != '0') {
           haveLeadingZeros = false;
@@ -725,11 +787,14 @@ abstract class LogicValue implements Comparable<LogicValue> {
       reversedStr = _reverse(buf.toString());
     }
 
-    final spaceString = _reverse(reversedStr
-        .replaceAllMapped(
+    final spaceString = _reverse(
+      reversedStr
+          .replaceAllMapped(
             RegExp('((>(.){$chunkSize}<)|([a-zA-Z0-9])){$chunkSize}'),
-            (match) => '${match.group(0)}$sepChar')
-        .replaceAll('$sepChar<', '<'));
+            (match) => '${match.group(0)}$sepChar',
+          )
+          .replaceAll('$sepChar<', '<'),
+    );
 
     final fullString = (spaceString.isNotEmpty)
         ? (spaceString[0] == sepChar)
@@ -777,13 +842,15 @@ abstract class LogicValue implements Comparable<LogicValue> {
       throw LogicValueConstructionException('separation character invalid');
     }
     if (RegExp(r'^\d+').firstMatch(valueString) != null) {
-      final formatStr =
-          RegExp("^(\\d+)'([bqodh])([0-9aAbBcCdDeEfFzZxX<>$sepChar]*)")
-              .firstMatch(valueString);
+      final formatStr = RegExp(
+        "^(\\d+)'([bqodh])([0-9aAbBcCdDeEfFzZxX<>$sepChar]*)",
+      ).firstMatch(valueString);
       if (formatStr != null) {
         if (valueString.length != formatStr.group(0)!.length) {
-          throw LogicValueConstructionException('radix string stopped '
-              'parsing at character position ${formatStr.group(0)!.length}');
+          throw LogicValueConstructionException(
+            'radix string stopped '
+            'parsing at character position ${formatStr.group(0)!.length}',
+          );
         }
         final specifiedLength = int.parse(formatStr.group(1)!);
         final compressedStr = formatStr.group(3)!.replaceAll(sepChar, '');
@@ -796,7 +863,8 @@ abstract class LogicValue implements Comparable<LogicValue> {
           'd' => 10,
           'h' => 16,
           _ => throw LogicValueConstructionException(
-              'Unsupported radix: $radixString'),
+              'Unsupported radix: $radixString',
+            ),
         };
         final span = (math.log(radix) / math.log(2)).ceil();
 
@@ -841,8 +909,9 @@ abstract class LogicValue implements Comparable<LogicValue> {
         }
         if ((radix != 10) & (binaryLength - shorter > specifiedLength)) {
           throw LogicValueConstructionException(
-              'ofRadixString: cannot represent '
-              '$compressedStr in $specifiedLength');
+            'ofRadixString: cannot represent '
+            '$compressedStr in $specifiedLength',
+          );
         }
         final noBinariesStr = reversedStr.replaceAll(fullBinaries, '0');
         final xLocations = RegExp('x|X')
@@ -859,16 +928,17 @@ abstract class LogicValue implements Comparable<LogicValue> {
         final BigInt intValue;
         if (noBinariesStr.isNotEmpty) {
           intValue = BigInt.parse(
-                  _reverse(noBinariesStr.replaceAll(RegExp('[xXzZ]'), '0')),
-                  radix: radix)
-              .toUnsigned(specifiedLength);
+            _reverse(noBinariesStr.replaceAll(RegExp('[xXzZ]'), '0')),
+            radix: radix,
+          ).toUnsigned(specifiedLength);
         } else {
           intValue = BigInt.zero;
         }
         final logicValList = List<LogicValue>.from(
-            LogicValue.ofString(intValue.toRadixString(2))
-                .zeroExtend(specifiedLength)
-                .toList());
+          LogicValue.ofString(intValue.toRadixString(2))
+              .zeroExtend(specifiedLength)
+              .toList(),
+        );
         // Put all the X and Z's back into the list
         for (final x in xLocations) {
           if (x < specifiedLength) {
@@ -907,7 +977,7 @@ abstract class LogicValue implements Comparable<LogicValue> {
               '0' => LogicValue.zero,
               '1' => LogicValue.one,
               'x' => LogicValue.x,
-              _ => LogicValue.z
+              _ => LogicValue.z,
             };
           }
           lastCpos = i.$2.start;
@@ -917,7 +987,8 @@ abstract class LogicValue implements Comparable<LogicValue> {
       }
     }
     throw LogicValueConstructionException(
-        'Invalid LogicValue string $valueString');
+      'Invalid LogicValue string $valueString',
+    );
   }
 
   /// Compares this to `other`.
@@ -977,7 +1048,8 @@ abstract class LogicValue implements Comparable<LogicValue> {
   String _bitString() {
     if (width != 1) {
       throw LogicValueConversionException(
-          'Cannot convert value of width $width to a single bit value.');
+        'Cannot convert value of width $width to a single bit value.',
+      );
     }
     return this == LogicValue.x
         ? 'x'
@@ -1047,10 +1119,16 @@ abstract class LogicValue implements Comparable<LogicValue> {
   LogicValue getRange(int startIndex, [int? endIndex]) {
     endIndex ??= width;
 
-    final modifiedStartIndex =
-        IndexUtilities.wrapIndex(startIndex, width, allowWidth: true);
-    final modifiedEndIndex =
-        IndexUtilities.wrapIndex(endIndex, width, allowWidth: true);
+    final modifiedStartIndex = IndexUtilities.wrapIndex(
+      startIndex,
+      width,
+      allowWidth: true,
+    );
+    final modifiedEndIndex = IndexUtilities.wrapIndex(
+      endIndex,
+      width,
+      allowWidth: true,
+    );
 
     // if we're getting the whole thing, just return itself immediately
     if (modifiedStartIndex == 0 && modifiedEndIndex == width) {
@@ -1132,12 +1210,14 @@ abstract class LogicValue implements Comparable<LogicValue> {
   bool toBool() {
     if (!isValid) {
       throw LogicValueConversionException(
-          'Cannot convert value "$this" to bool');
+        'Cannot convert value "$this" to bool',
+      );
     }
     if (width != 1) {
       throw LogicValueConversionException(
-          'Only single bit values can be converted to a bool,'
-          ' but found width $width in $this');
+        'Only single bit values can be converted to a bool,'
+        ' but found width $width in $this',
+      );
     }
     return this == LogicValue.one;
   }
@@ -1203,7 +1283,9 @@ abstract class LogicValue implements Comparable<LogicValue> {
   LogicValue _triState2(LogicValue other);
 
   LogicValue _twoInputBitwiseOp(
-      LogicValue other, LogicValue Function(LogicValue, LogicValue) op) {
+    LogicValue other,
+    LogicValue Function(LogicValue, LogicValue) op,
+  ) {
     if (width != other.width) {
       throw Exception('Widths must match, but found $this and $other');
     }
@@ -1330,8 +1412,11 @@ abstract class LogicValue implements Comparable<LogicValue> {
   /// If the math [isDivision], then 64-bit ([INT_BITS]) operations have some
   /// special consideration for two's complement math, so it will use an
   /// unsigned [BigInt] for math.
-  LogicValue _doMath(dynamic other, dynamic Function(dynamic a, dynamic b) op,
-      {bool isDivision = false}) {
+  LogicValue _doMath(
+    dynamic other,
+    dynamic Function(dynamic a, dynamic b) op, {
+    bool isDivision = false,
+  }) {
     if (!(other is int || other is LogicValue || other is BigInt)) {
       throw UnsupportedTypeException(other, const [int, LogicValue, BigInt]);
     }
@@ -1435,8 +1520,9 @@ abstract class LogicValue implements Comparable<LogicValue> {
         return BigInt.zero;
       } else if (!exponent.isValidInt) {
         throw InvalidTruncationException(
-            "BigInt (${exponent.bitLength} bits) won't fit in "
-            'int ($INT_BITS bits)');
+          "BigInt (${exponent.bitLength} bits) won't fit in "
+          'int ($INT_BITS bits)',
+        );
       } else {
         return base.pow(exponent.toInt());
       }
@@ -1516,7 +1602,9 @@ abstract class LogicValue implements Comparable<LogicValue> {
     if (direction == _ShiftType.arithmeticRight &&
         this[-1] != LogicValue.zero) {
       return LogicValue.filled(
-          width, this[-1].isValid ? LogicValue.one : LogicValue.x);
+        width,
+        this[-1].isValid ? LogicValue.one : LogicValue.x,
+      );
     } else {
       return LogicValue.filled(width, LogicValue.zero);
     }
@@ -1551,12 +1639,15 @@ abstract class LogicValue implements Comparable<LogicValue> {
       }
 
       assert(
-          shamtNum <= BigInt.from(-1).toUnsigned(INT_BITS),
-          'It should not be possible for the shift amount to be less '
-          'than the width, but more than fits in an int.');
+        shamtNum <= BigInt.from(-1).toUnsigned(INT_BITS),
+        'It should not be possible for the shift amount to be less '
+        'than the width, but more than fits in an int.',
+      );
 
-      assert(shamtNum.isValidInt,
-          'Should have returned already if it does not fit.');
+      assert(
+        shamtNum.isValidInt,
+        'Should have returned already if it does not fit.',
+      );
 
       shamtInt = shamtNum.toInt();
     } else {
@@ -1607,14 +1698,18 @@ abstract class LogicValue implements Comparable<LogicValue> {
   /// Only returns true from 0 -> 1.  If [previousValue] or [newValue] is
   /// invalid, an Exception will be thrown, unless [ignoreInvalid] is set
   /// to `true`.
-  static bool isPosedge(LogicValue previousValue, LogicValue newValue,
-      {bool ignoreInvalid = false}) {
+  static bool isPosedge(
+    LogicValue previousValue,
+    LogicValue newValue, {
+    bool ignoreInvalid = false,
+  }) {
     _assertSingleBit(previousValue);
     _assertSingleBit(newValue);
 
     if (!ignoreInvalid && (!previousValue.isValid | !newValue.isValid)) {
       throw Exception(
-          'Edge detection on invalid value from $previousValue to $newValue.');
+        'Edge detection on invalid value from $previousValue to $newValue.',
+      );
     }
     return previousValue == LogicValue.zero && newValue == LogicValue.one;
   }
@@ -1624,14 +1719,18 @@ abstract class LogicValue implements Comparable<LogicValue> {
   /// Only returns true from 1 -> 0.  If [previousValue] or [newValue] is
   /// invalid, an Exception will be thrown, unless [ignoreInvalid] is set
   /// to `true`.
-  static bool isNegedge(LogicValue previousValue, LogicValue newValue,
-      {bool ignoreInvalid = false}) {
+  static bool isNegedge(
+    LogicValue previousValue,
+    LogicValue newValue, {
+    bool ignoreInvalid = false,
+  }) {
     _assertSingleBit(previousValue);
     _assertSingleBit(newValue);
 
     if (!ignoreInvalid && (!previousValue.isValid | !newValue.isValid)) {
       throw Exception(
-          'Edge detection on invalid value from $previousValue to $newValue');
+        'Edge detection on invalid value from $previousValue to $newValue',
+      );
     }
     return previousValue == LogicValue.one && newValue == LogicValue.zero;
   }
@@ -1645,15 +1744,13 @@ abstract class LogicValue implements Comparable<LogicValue> {
   LogicValue extend(int newWidth, LogicValue fill) {
     if (newWidth < width) {
       throw Exception(
-          'New width $newWidth must be greater than or equal to width $width.');
+        'New width $newWidth must be greater than or equal to width $width.',
+      );
     }
     if (fill.width != 1) {
       throw Exception('The fill must be 1 bit, but got $fill.');
     }
-    return [
-      LogicValue.filled(newWidth - width, fill),
-      this,
-    ].swizzle();
+    return [LogicValue.filled(newWidth - width, fill), this].swizzle();
   }
 
   /// Returns a new [LogicValue] with width [newWidth] where new bits added are
@@ -1681,8 +1778,9 @@ abstract class LogicValue implements Comparable<LogicValue> {
   LogicValue withSet(int startIndex, LogicValue update) {
     if (startIndex + update.width > width) {
       throw Exception(
-          'Width of updatedValue $update at startIndex $startIndex would'
-          ' overrun the width of the original ($width).');
+        'Width of updatedValue $update at startIndex $startIndex would'
+        ' overrun the width of the original ($width).',
+      );
     }
 
     return [
@@ -1757,9 +1855,10 @@ int _unsignedBinaryParse(String source) {
   if (val != null) {
     return val.toSigned(INT_BITS);
   } else {
-    return BigInt.parse(source, radix: 2)
-        .toIntUnsigned(source.length)
-        .toSigned(INT_BITS);
+    return BigInt.parse(
+      source,
+      radix: 2,
+    ).toIntUnsigned(source.length).toSigned(INT_BITS);
   }
 }
 

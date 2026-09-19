@@ -13,8 +13,9 @@
 # main into it. When selecting ROHD, wait for that main commit's DevTools build.
 # Publish from the preparation branch; merge its PR after publication succeeds.
 #
-# With no arguments, select rohd, rohd_hierarchy, rohd_waveform, and
-# rohd_devtools_widgets. Explicit package names select only those packages.
+# With no arguments, select rohd, rohd_hierarchy, rohd_waveform,
+# rohd_devtools_widgets, and rohd_source_navigator.
+# Explicit package names select only those packages.
 # Set each selected package's version in its own pubspec.yaml before running.
 # The manifests are never rewritten; each pending changelog heading is promoted
 # to its package's version (an existing version heading is also accepted).
@@ -26,7 +27,8 @@
 # The DevTools build comes from main, not from branch-only implementation changes.
 # Each selected sub-package gets dependency resolution, a non-writing format check,
 # and analysis (including fatal infos) in its own directory. Dart is used
-# for hierarchy/waveform, Flutter for widgets, and dart format for all three.
+# for hierarchy/waveform/source navigator, Flutter for widgets, and dart format
+# for all sub-packages.
 # Test suites are skipped by default; verify CI results for the release commit.
 # Add --run-tests to also run all selected package suites locally, including
 # ROHD's simulator prerequisites when ROHD is selected.
@@ -40,10 +42,10 @@
 #
 # Examples:
 #
-#   ROHD plus all three publishable sub-packages (the default):
+#   ROHD plus all four publishable sub-packages (the default):
 #     tool/prepare_release.sh
 #
-#   All four packages, including their test suites:
+#   All five packages, including their test suites:
 #     tool/prepare_release.sh --run-tests
 #
 #   ROHD only:
@@ -57,6 +59,9 @@
 #
 #   Only hierarchy and waveform (no ROHD metadata or DevTools changes):
 #     tool/prepare_release.sh rohd_hierarchy rohd_waveform
+#
+#   Only source navigator:
+#     tool/prepare_release.sh rohd_source_navigator
 #
 #   Sub-package archive checks only (no metadata preparation):
 #     tool/check_release.sh rohd_hierarchy rohd_waveform rohd_devtools_widgets
@@ -75,8 +80,8 @@ export FLUTTER_SUPPRESS_ANALYTICS=true
 
 if [[ $# -eq 1 && "$1" == '--help' ]]; then
   echo "Usage: $0 [--run-tests] [package ...]"
-  echo "Packages: rohd rohd_hierarchy rohd_waveform rohd_devtools_widgets"
-  echo "Defaults to all four packages, using each package's pubspec.yaml version."
+  echo "Packages: rohd rohd_hierarchy rohd_waveform rohd_devtools_widgets rohd_source_navigator"
+  echo "Defaults to all five packages, using each package's pubspec.yaml version."
   echo "Test suites are skipped by default; use --run-tests to include them."
   echo "Artifact verification and its smoke test still run when ROHD is selected."
   echo "Selecting ROHD also checks VSIX packaging (requires Node.js and npm)."
@@ -94,7 +99,7 @@ for argument in "$@"; do
 done
 set -- "${packages[@]}"
 if [[ $# -eq 0 ]]; then
-  set -- rohd rohd_hierarchy rohd_waveform rohd_devtools_widgets
+  set -- rohd rohd_hierarchy rohd_waveform rohd_devtools_widgets rohd_source_navigator
 fi
 
 # Resolve all paths and source provenance before changing the working tree.

@@ -10,6 +10,7 @@ analyzer:
     - doc/tutorials/chapter_9/rohd_vf_example
     - packages/rohd_devtools_widgets
     - packages/rohd_hierarchy
+    - packages/rohd_source_navigator
     - packages/rohd_waveform
     - reviews/**
     - rohd_devtools_extension

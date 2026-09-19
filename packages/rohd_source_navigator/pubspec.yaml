@@ -3,7 +3,9 @@ description: >
   Dart implementation of the ROHD source navigator — path normalisation,
   frame cycling, and DTD service for cross-probe source navigation.
 version: 0.1.0
-publish_to: none
+homepage: https://intel.github.io/rohd-website/
+repository: https://github.com/intel/rohd/tree/main/packages/rohd_source_navigator
+issue_tracker: https://github.com/intel/rohd/issues
 
 environment:
   sdk: ^3.0.0
