@@ -35,9 +35,6 @@ dependencies:
     path: ../packages/rohd_hierarchy
   rohd_source_navigator:
     path: ../packages/rohd_source_navigator
-  rohd_wave_viewer: ^0.1.0
-  # Shares the viewer's extended monitored-waveform model.
-  rohd_waveform: ^0.0.2
   vm_service: ^14.0.0
   web: ^1.0.0
   web_socket_channel: ^3.0.0
