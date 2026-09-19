@@ -126,14 +126,10 @@ class _AppBarOverlayState extends State<AppBarOverlay>
     if (!widget.autoHide) {
       return;
     }
-<<<<<<< HEAD:packages/rohd_devtools_widgets/lib/src/app_bar_overlay.dart
     if (_externalTrigger?.value ?? false) {
       return;
     }
     unawaited(_controller.reverse());
-=======
-    _controller.reverse();
->>>>>>> aadec78fc3 (Keep DevTools overlay out of design shell branch):rohd_devtools_extension/packages/rohd_devtools_widgets/lib/src/app_bar_overlay.dart
   }
 
   @override
