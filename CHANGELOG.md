@@ -1,6 +1,8 @@
 
 ## Next Release
 
+- Released `rohd_hierarchy` 0.2.0 with the hierarchy query and netlist
+  adapter APIs.
 - Exposed the shared `rohd_source_navigator` code used by `rohd-schematic-viewer` as a standalone pub.dev package.
 - Corrected the ROHD dependency in `rohd_devtools_widgets` from `^0.6.9` to `^0.6.11` to reflect the minimum compatible ROHD version.
 

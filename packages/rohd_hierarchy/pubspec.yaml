@@ -2,7 +2,7 @@ name: rohd_hierarchy
 description: "Generic hierarchy data models for hardware module navigation - HierarchyNode, Port, and HierarchyService."
 homepage: https://intel.github.io/rohd-website/
 repository: https://github.com/intel/rohd/tree/main/packages/rohd_hierarchy
-version: 0.1.0
+version: 0.2.0
 issue_tracker: https://github.com/intel/rohd/issues
 
 environment:
