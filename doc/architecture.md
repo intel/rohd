@@ -24,7 +24,7 @@ The `Simulator` acts as a statically accessible driver of the overall simulation
 
 ### Synthesizer
 
-A separate type of object responsible for taking a `Module` and converting it to some output, such as SystemVerilog.
+A separate type of object responsible for taking a `Module` and converting it to some output, such as SystemVerilog or SystemC.
 
 ## Organization
 
@@ -44,7 +44,7 @@ Contains a collection of `Module` implementations that can be used as primitive 
 
 ### Synthesizers
 
-Contains logic for synthesizing `Module`s into some output. It is structured to maximize reusability across different output types (including those not yet supported).
+Contains logic for synthesizing `Module`s into some output (e.g. SystemVerilog, SystemC). It is structured to maximize reusability across different output types.
 
 ### Utilities
 

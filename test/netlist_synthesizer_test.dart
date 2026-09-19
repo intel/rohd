@@ -2643,6 +2643,71 @@ void main() {
         returnsNormally,
       );
     });
+
+    test(r'validation allows multiple $tribuf drivers on a resolved net', () {
+      final cells = <String, Map<String, Object?>>{
+        'firstDriver': {
+          'type': r'$tribuf',
+          'port_directions': {'Y': 'output'},
+          'connections': {
+            'Y': [1],
+          },
+        },
+        'secondDriver': {
+          'type': r'$tribuf',
+          'port_directions': {'Y': 'inout'},
+          'connections': {
+            'Y': [1],
+          },
+        },
+      };
+
+      expect(
+        () => NetlistValidation.validate(
+          const {},
+          cells,
+          'ResolvedTriStateNet',
+        ),
+        returnsNormally,
+      );
+    });
+
+    test(r'validation rejects mixed $tribuf and exclusive drivers', () {
+      final cells = <String, Map<String, Object?>>{
+        'triStateDriver': {
+          'type': r'$tribuf',
+          'port_directions': {'Y': 'output'},
+          'connections': {
+            'Y': [1],
+          },
+        },
+        'exclusiveDriver': {
+          'type': r'$buf',
+          'port_directions': {'Y': 'output'},
+          'connections': {
+            'Y': [1],
+          },
+        },
+      };
+
+      expect(
+        () => NetlistValidation.validate(
+          const {},
+          cells,
+          'ConflictingTriStateNet',
+        ),
+        throwsA(
+          isA<NetlistValidationException>().having(
+            (error) => error.issues.single.drivers,
+            'drivers',
+            containsAll([
+              r'cell triStateDriver.Y ($tribuf)',
+              r'cell exclusiveDriver.Y ($buf)',
+            ]),
+          ),
+        ),
+      );
+    });
   });
 
   // ── Group 11: Named constant signals ─────────────────────────────
