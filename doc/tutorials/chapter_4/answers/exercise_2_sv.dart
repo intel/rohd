@@ -1,3 +1,12 @@
+// Copyright (C) 2023-2026 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// exercise_2_sv.dart
+// Chapter 4 SystemVerilog exercise answer.
+//
+// 2023 April 11
+// Author: Yao Jing Quek <yao.jing.quek@intel.com>
+
 import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
 
@@ -9,7 +18,7 @@ void main() async {
 
   final mod = NBitSubtractor(a, b);
   await mod.build();
-  print(mod.generateSynth());
+  print(mod.dumpSystemVerilog());
 
   test('should return 5 when a is 25 and b is 20', () {
     a.put(25);

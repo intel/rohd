@@ -1,0 +1,609 @@
+// Copyright (C) 2021-2026 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// waveform_service_test.dart
+// Tests for the WaveformService
+//
+// 2021 November 4
+// Author: Max Korbel <max.korbel@intel.com>
+
+@TestOn('vm')
+library;
+
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:rohd/rohd.dart';
+import 'package:rohd/src/utilities/vcd_parser.dart';
+import 'package:test/test.dart';
+
+class SimpleModule extends Module {
+  SimpleModule(Logic a) {
+    a = addInput('a', a, width: a.width);
+    addOutput('b', width: a.width) <= ~a;
+  }
+}
+
+class WindowWaveModule extends Module {
+  late final Logic a;
+
+  WindowWaveModule() {
+    a = addOutput('a');
+  }
+}
+
+class HistoryWaveformService extends WaveformService {
+  final Map<Logic, List<(int, String)>> history = {};
+  final List<int> capturedTimestamps = [];
+
+  HistoryWaveformService(super.module, {super.startTime});
+
+  @override
+  void onSignalCollected(Logic signal) {
+    history[signal] = [(Simulator.time, binaryValue(signal))];
+  }
+
+  @override
+  void onValueChange(Logic signal, int timestamp) {
+    history[signal]!.add((timestamp, binaryValue(signal)));
+  }
+
+  @override
+  void onTimestampCapture(int timestamp, Set<Logic> changed) {
+    capturedTimestamps.add(timestamp);
+  }
+}
+
+String binaryValue(Logic signal) => signal.value.reversed
+    .toList()
+    .map((value) => value.toString(includeWidth: false))
+    .join();
+
+class SimpleModWithSeq extends Module {
+  Logic get val => output('val');
+  SimpleModWithSeq(Logic asyncReset, Logic clk) {
+    clk = addInput('clk', clk);
+    asyncReset = addInput('asyncReset', asyncReset);
+    addOutput('val');
+
+    val <= flop(clk, Const(1), reset: asyncReset, asyncReset: true);
+  }
+}
+
+const tempDumpDir = 'tmp_test';
+
+/// Gets the path of the VCD file based on a name.
+String temporaryDumpPath(String name) => '$tempDumpDir/temp_dump_$name.vcd';
+
+/// Attaches a [WaveformService] to [module] to VCD with [name].
+void createTemporaryDump(Module module, String name) {
+  Directory(tempDumpDir).createSync(recursive: true);
+  WaveformService(
+    module,
+    outputDirectory: tempDumpDir,
+    outputBaseName: 'temp_dump_$name',
+    writeToFile: true,
+  );
+}
+
+// The helper intentionally exercises the deprecated WaveDumper compatibility
+// path.
+// ignore: deprecated_member_use_from_same_package
+/// Attaches the deprecated [WaveDumper] to [module] to VCD with [name].
+void createTemporaryWaveDumperDump(Module module, String name) {
+  Directory(tempDumpDir).createSync(recursive: true);
+  final tmpDumpFile = temporaryDumpPath(name);
+  // The deprecated WaveDumper constructor is invoked to test its behavior.
+  // ignore: deprecated_member_use_from_same_package
+  WaveDumper(module, outputPath: tmpDumpFile);
+}
+
+/// Deletes the temporary VCD file associated with [name].
+void deleteTemporaryDump(String name) {
+  final tmpDumpFile = temporaryDumpPath(name);
+  File(tmpDumpFile).deleteSync();
+}
+
+void main() {
+  tearDown(() async {
+    await Simulator.reset();
+  });
+
+  test('attach dumper after put', () async {
+    final a = Logic(name: 'a');
+    final mod = SimpleModule(a);
+    await mod.build();
+
+    const dumpName = 'dumpAfterPut';
+
+    a.put(1);
+    createTemporaryDump(mod, dumpName);
+
+    Simulator.registerAction(10, () => a.put(0));
+    await Simulator.run();
+
+    final vcdContents = File(temporaryDumpPath(dumpName)).readAsStringSync();
+
+    expect(
+        VcdParser.confirmValue(vcdContents, 'a', 0, LogicValue.ofString('1')),
+        equals(true));
+    expect(
+        VcdParser.confirmValue(vcdContents, 'a', 5, LogicValue.ofString('1')),
+        equals(true));
+    expect(
+        VcdParser.confirmValue(vcdContents, 'a', 10, LogicValue.ofString('0')),
+        equals(true));
+
+    deleteTemporaryDump(dumpName);
+  });
+
+  test('attach deprecated wave dumper after put', () async {
+    final a = Logic(name: 'a');
+    final mod = SimpleModule(a);
+    await mod.build();
+
+    const dumpName = 'deprecatedDumpAfterPut';
+
+    a.put(1);
+    createTemporaryWaveDumperDump(mod, dumpName);
+
+    Simulator.registerAction(10, () => a.put(0));
+    await Simulator.run();
+
+    final vcdContents = File(temporaryDumpPath(dumpName)).readAsStringSync();
+
+    expect(
+        VcdParser.confirmValue(vcdContents, 'a', 0, LogicValue.ofString('1')),
+        equals(true));
+    expect(
+        VcdParser.confirmValue(vcdContents, 'a', 5, LogicValue.ofString('1')),
+        equals(true));
+    expect(
+        VcdParser.confirmValue(vcdContents, 'a', 10, LogicValue.ofString('0')),
+        equals(true));
+
+    deleteTemporaryDump(dumpName);
+  });
+
+  test('dumpWaves returns a waveform service', () async {
+    final mod = SimpleModule(Logic());
+    await mod.build();
+
+    const dumpName = 'moduleDumpWaveforms';
+    final outputPath = temporaryDumpPath(dumpName);
+    Directory(tempDumpDir).createSync(recursive: true);
+    final service = mod.dumpWaves(outputPath: outputPath);
+
+    expect(service, isA<WaveformService>());
+    expect(service.module, same(mod));
+    expect(service.outputPath, outputPath);
+    expect(service.outputFilePath, outputPath);
+    expect(service.retainInMemory, isFalse);
+    expect(service.canSendWaveforms(), isFalse);
+    expect(File(service.outputPath).existsSync(), isTrue);
+
+    await Simulator.run();
+
+    expect(
+      (await service.artifacts.single
+              .openRead()
+              .expand((bytes) => bytes)
+              .toList())
+          .isNotEmpty,
+      isTrue,
+    );
+    deleteTemporaryDump(dumpName);
+  });
+
+  test('throws if module not built', () {
+    final mod = SimpleModule(Logic());
+
+    expect(
+      () => WaveformService(mod),
+      throwsA(isA<ModuleNotBuiltException>()),
+    );
+  });
+
+  test('dumpWaves can retain history for debugging', () async {
+    final mod = SimpleModule(Logic());
+    await mod.build();
+
+    final service = mod.dumpWaves(
+      outputPath: temporaryDumpPath('debugDump'),
+      retainInMemory: true,
+    );
+
+    expect(service.retainInMemory, isTrue);
+    expect(service.canSendWaveforms(), isTrue);
+
+    await Simulator.run();
+    deleteTemporaryDump('debugDump');
+  });
+
+  test('dumpWaves preserves an arbitrary legacy output filename', () async {
+    final mod = SimpleModule(Logic());
+    await mod.build();
+
+    const outputPath = '$tempDumpDir/capture.trace';
+    final service = mod.dumpWaves(outputPath: outputPath);
+
+    expect(service.outputPath, equals(outputPath));
+    expect(File(outputPath).existsSync(), isTrue);
+
+    await Simulator.run();
+    File(outputPath).deleteSync();
+  });
+
+  test('file-only capture streams its artifact after simulation finalization',
+      () async {
+    final mod = SimpleModule(Logic());
+    await mod.build();
+
+    final waveformService = WaveformService(
+      mod,
+      outputDirectory: tempDumpDir,
+      outputBaseName: 'capture',
+      writeToFile: true,
+    );
+
+    final artifact = waveformService.artifacts.single;
+
+    expect(artifact.fileName, equals('capture.vcd'));
+    expect(artifact.mediaType, equals('text/x-vcd'));
+    expect(waveformService.retainInMemory, isFalse);
+    expect(waveformService.canSendWaveforms(), isFalse);
+    expect(File(waveformService.outputFilePath).existsSync(), isTrue);
+
+    await Simulator.run();
+
+    expect(
+      (await artifact.openRead().expand((bytes) => bytes).toList()).isNotEmpty,
+      isTrue,
+    );
+
+    File(waveformService.outputFilePath).deleteSync();
+  });
+
+  test('in-memory-only debugging capture retains waveform history', () async {
+    final mod = SimpleModule(Logic());
+    await mod.build();
+
+    final waveformService = WaveformService(
+      mod,
+      outputDirectory: tempDumpDir,
+      outputBaseName: 'in_memory_capture',
+    );
+
+    expect(waveformService.writeToFile, isFalse);
+    expect(waveformService.retainInMemory, isTrue);
+    expect(waveformService.canSendWaveforms(), isTrue);
+    expect(File(waveformService.outputFilePath).existsSync(), isFalse);
+
+    await Simulator.run();
+
+    final bytes = await waveformService.artifacts.single
+        .openRead()
+        .expand((bytes) => bytes)
+        .toList();
+    expect(utf8.decode(bytes), contains(r'$enddefinitions'));
+  });
+
+  test('retained file-backed capture can send waveforms', () async {
+    final mod = SimpleModule(Logic());
+    await mod.build();
+
+    final waveformService = WaveformService(
+      mod,
+      outputDirectory: tempDumpDir,
+      outputBaseName: 'retained_file_capture',
+      writeToFile: true,
+      retainInMemory: true,
+    );
+
+    expect(waveformService.canSendWaveforms(), isTrue);
+
+    await Simulator.run();
+    File(waveformService.outputFilePath).deleteSync();
+  });
+
+  test('capture without a file or retained history has no artifact', () async {
+    final mod = SimpleModule(Logic());
+    await mod.build();
+
+    final waveformService = WaveformService(mod, retainInMemory: false);
+
+    expect(waveformService.artifacts, isEmpty);
+    expect(waveformService.canSendWaveforms(), isFalse);
+  });
+
+  test('FST supports querying waveforms from a file', () {
+    expect(WaveOutputFormat.vcd.supportsOnDiskQueries, isFalse);
+    expect(WaveOutputFormat.fst.supportsOnDiskQueries, isTrue);
+  });
+
+  test('recording window snapshots stable signal values at its start',
+      () async {
+    final a = Logic(name: 'a');
+    final mod = SimpleModule(a);
+    await mod.build();
+    a.inject(0);
+
+    const dumpName = 'windowInitialSnapshot';
+    Directory(tempDumpDir).createSync(recursive: true);
+    WaveformService(
+      mod,
+      outputDirectory: tempDumpDir,
+      outputBaseName: 'temp_dump_$dumpName',
+      writeToFile: true,
+      startTime: 10,
+    );
+
+    Simulator.registerAction(5, () => a.put(1));
+    Simulator.registerAction(15, () {});
+    Simulator.registerAction(20, () {});
+    await Simulator.run();
+
+    final vcdContents = File(temporaryDumpPath(dumpName)).readAsStringSync();
+    expect(
+      VcdParser.confirmValue(vcdContents, 'a', 15, LogicValue.one),
+      isTrue,
+      reason: 'the stable value at startTime must seed the recording window',
+    );
+
+    deleteTemporaryDump(dumpName);
+  });
+
+  test('window-entry snapshot reaches waveform hooks', () async {
+    final mod = WindowWaveModule();
+    await mod.build();
+    mod.a.put(0);
+    final service = HistoryWaveformService(mod, startTime: 10);
+
+    Simulator.registerAction(5, () => mod.a.put(1));
+    Simulator.registerAction(15, () {});
+    Simulator.registerAction(20, () {});
+    await Simulator.run();
+
+    final vcdContents = utf8.decode(
+      await service.artifacts.single
+          .openRead()
+          .expand((bytes) => bytes)
+          .toList(),
+    );
+    expect(
+      VcdParser.confirmValue(
+        vcdContents,
+        'a',
+        10,
+        LogicValue.one,
+      ),
+      isTrue,
+    );
+    expect(service.history[mod.a], equals([(0, '0'), (10, '1')]));
+    expect(service.capturedTimestamps, contains(10));
+  });
+
+  test('rejects formats without a matching waveform writer', () async {
+    final mod = SimpleModule(Logic());
+    await mod.build();
+
+    expect(
+      () => WaveformService(mod, format: WaveOutputFormat.fst),
+      throwsUnsupportedError,
+    );
+  });
+
+  test('attach dumper before put', () async {
+    final a = Logic(name: 'a');
+    final mod = SimpleModule(a);
+    await mod.build();
+
+    const dumpName = 'dumpBeforePut';
+
+    createTemporaryDump(mod, dumpName);
+    a.inject(1);
+
+    Simulator.registerAction(10, () => a.put(0));
+    Simulator.registerAction(20, () => a.put(1));
+    await Simulator.run();
+
+    final vcdContents = File(temporaryDumpPath(dumpName)).readAsStringSync();
+
+    expect(
+        VcdParser.confirmValue(vcdContents, 'a', 0, LogicValue.ofString('1')),
+        equals(true));
+    expect(
+        VcdParser.confirmValue(vcdContents, 'a', 1, LogicValue.ofString('1')),
+        equals(true));
+    expect(
+        VcdParser.confirmValue(vcdContents, 'a', 10, LogicValue.ofString('0')),
+        equals(true));
+    expect(
+        VcdParser.confirmValue(vcdContents, 'a', 20, LogicValue.ofString('1')),
+        equals(true));
+
+    deleteTemporaryDump(dumpName);
+  });
+
+  test('multiple injects in the same timestamp', () async {
+    final clk = SimpleClockGenerator(10).clk;
+    final a = Logic(name: 'a');
+    final mod = SimpleModule(a);
+    a <= clk;
+
+    await mod.build();
+
+    const dumpName = 'multiInject';
+
+    createTemporaryDump(mod, dumpName);
+
+    Simulator.setMaxSimTime(100);
+    unawaited(Simulator.run());
+
+    await clk.nextPosedge;
+    await clk.nextPosedge;
+    await clk.nextPosedge;
+
+    // inject a 0 on a when it should be 1 already from the clock
+    a.inject(0);
+
+    await Simulator.simulationEnded;
+
+    final vcdContents = File(temporaryDumpPath(dumpName)).readAsStringSync();
+
+    expect(
+        VcdParser.confirmValue(vcdContents, 'a', 0, LogicValue.ofString('0')),
+        equals(true));
+    expect(
+        VcdParser.confirmValue(vcdContents, 'a', 5, LogicValue.ofString('1')),
+        equals(true));
+    expect(
+        VcdParser.confirmValue(vcdContents, 'a', 10, LogicValue.ofString('0')),
+        equals(true));
+    expect(
+        VcdParser.confirmValue(vcdContents, 'a', 35, LogicValue.ofString('0')),
+        equals(true));
+
+    deleteTemporaryDump(dumpName);
+  });
+
+  test('multi-bit value', () async {
+    final a = Logic(name: 'a', width: 8);
+    final mod = SimpleModule(a);
+    await mod.build();
+
+    const dumpName = 'multiBit';
+
+    createTemporaryDump(mod, dumpName);
+    a.inject(0x5a);
+
+    Simulator.registerAction(10, () => a.put(0xa5));
+    await Simulator.run();
+
+    final vcdContents = File(temporaryDumpPath(dumpName)).readAsStringSync();
+
+    expect(
+        VcdParser.confirmValue(vcdContents, 'a', 0, LogicValue.ofInt(0x5a, 8)),
+        equals(true));
+    expect(
+        VcdParser.confirmValue(vcdContents, 'a', 10, LogicValue.ofInt(0xa5, 8)),
+        equals(true));
+
+    deleteTemporaryDump(dumpName);
+  });
+
+  test('multi-bit value mixed invalid', () async {
+    final a = Logic(name: 'a', width: 8);
+    final mod = SimpleModule(a);
+    await mod.build();
+
+    const dumpName = 'multiBitInvalid';
+
+    createTemporaryDump(mod, dumpName);
+    a.inject(LogicValue.ofString('01xzzx10'));
+
+    Simulator.registerAction(10, () => a.put(LogicValue.ofString('0x0x1z1z')));
+    await Simulator.run();
+
+    final vcdContents = File(temporaryDumpPath(dumpName)).readAsStringSync();
+
+    expect(
+        VcdParser.confirmValue(
+            vcdContents, 'a', 0, LogicValue.ofString('01xzzx10')),
+        equals(true));
+    expect(
+        VcdParser.confirmValue(
+            vcdContents, 'a', 10, LogicValue.ofString('0x0x1z1z')),
+        equals(true));
+
+    deleteTemporaryDump(dumpName);
+  });
+
+  test('dump after max sim time works', () async {
+    final a = SimpleClockGenerator(10).clk;
+    final mod = SimpleModule(a);
+    await mod.build();
+
+    const dumpName = 'maxSimTime';
+
+    createTemporaryDump(mod, dumpName);
+
+    Simulator.setMaxSimTime(100);
+
+    await Simulator.run();
+
+    final vcdContents = File(temporaryDumpPath(dumpName)).readAsStringSync();
+
+    expect(
+      VcdParser.confirmValue(vcdContents, 'a', 99, LogicValue.one),
+      equals(true),
+    );
+
+    deleteTemporaryDump(dumpName);
+  });
+
+  test('create non-existent output directories', () async {
+    final mod = SimpleModule(Logic());
+    await mod.build();
+
+    const dir1Path = '$tempDumpDir/dir1';
+
+    final waveformService = WaveformService(
+      mod,
+      outputDirectory: '$dir1Path/dir2',
+      outputBaseName: 'waves',
+      writeToFile: true,
+    );
+
+    expect(File(waveformService.outputFilePath).existsSync(), equals(true));
+
+    // Let the service close its asynchronous file sink before cleanup.
+    await Simulator.run();
+
+    if (File(waveformService.outputFilePath).existsSync()) {
+      File(dir1Path).deleteSync(recursive: true);
+    }
+  });
+
+  test('async reset shown in waves correctly', () async {
+    final reset = Logic();
+    final clk = SimpleClockGenerator(10).clk;
+    final mod = SimpleModWithSeq(reset, clk);
+
+    await mod.build();
+
+    const dumpName = 'asyncReset';
+
+    Simulator.setMaxSimTime(100);
+    Simulator.registerAction(13, () => reset.put(1));
+    reset.put(0);
+
+    // add waveform service *after* the put to reset
+    createTemporaryDump(mod, dumpName);
+
+    // check functional matches
+    Simulator.registerAction(0, () => expect(reset.value.toInt(), 0));
+    Simulator.registerAction(6, () => expect(mod.val.value.toInt(), 1));
+    Simulator.registerAction(14, () => expect(mod.val.value.toInt(), 0));
+
+    await Simulator.run();
+
+    final vcdContents = File(temporaryDumpPath(dumpName)).readAsStringSync();
+
+    // reset is 0 initially
+    expect(
+        VcdParser.confirmValue(vcdContents, 'asyncReset', 1, LogicValue.zero),
+        equals(true));
+
+    // 1 after first clock edge
+    expect(VcdParser.confirmValue(vcdContents, 'val', 6, LogicValue.one),
+        equals(true));
+
+    // 0 after async reset
+    expect(VcdParser.confirmValue(vcdContents, 'val', 14, LogicValue.zero),
+        equals(true));
+
+    deleteTemporaryDump(dumpName);
+  });
+}
