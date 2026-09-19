@@ -274,7 +274,7 @@ esac
     final module = ArrayConnectionFixture("{2'h0}");
     await module.build();
     if (!SimCompare.checkVerilatorVector(module, const [],
-        buildOnly: true, verilatorExtraArgs: ['-Wall'])) {
+        buildOnly: true, verilatorExtraArgs: ['-Wall', '-Wno-DECLFILENAME'])) {
       return;
     }
     expect(

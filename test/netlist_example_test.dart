@@ -52,7 +52,6 @@ void main() {
 
     final counter = Counter(en, reset, clk);
     await counter.build();
-    counter.generateSynth();
 
     final modules = await convertTestWriteNetlist(
       counter,
