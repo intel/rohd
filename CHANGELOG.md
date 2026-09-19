@@ -1,4 +1,9 @@
 
+## Next Release
+
+- Exposed the shared `rohd_source_navigator` code used by `rohd-schematic-viewer` as a standalone pub.dev package.
+- Corrected the ROHD dependency in `rohd_devtools_widgets` from `^0.6.9` to `^0.6.11` to reflect the minimum compatible ROHD version.
+
 ## 0.6.11
 
 - Added `NetlistSynthesizer` for generating JSON netlists, with configurable synthesis passes, validation, and hierarchy support (<https://github.com/intel/rohd/pull/675>).
@@ -13,6 +18,24 @@
 - Added targeted Verilator compilation and two-state vector simulation checks, including a `buildOnly` mode, required in native CI and explicitly skipped locally when Verilator is unavailable (<https://github.com/intel/rohd/pull/714>).
 - Improved generated SystemVerilog to inline packed `Logic.assignSubset` connections into submodule inputs (<https://github.com/intel/rohd/pull/711>).
 - Fixed a bug where isolated bit drivers could be lost beside collapsed ranges (<https://github.com/intel/rohd/pull/711>).
+
+- Added the `ModuleService` API for module-scoped generation, capture, and
+  inspection services. `ModuleServices` registers and looks up services for a
+  built module hierarchy, and `hierarchyJson` exposes its hierarchy as JSON.
+- Added `ArtifactProducingService` and `ModuleServiceArtifact` for
+  transport-neutral output. Artifact-producing services default
+  `outputDirectory` to the current directory and `outputBaseName` to the
+  module definition name, and expose named, media-typed byte streams without
+  requiring filesystem output.
+- Added `SystemVerilogService` for configured SystemVerilog synthesis,
+  in-memory source output, artifact inspection, and explicit directory writes.
+  Added `WaveformService` for in-memory waveform capture with optional file
+  writing through `writeToFile`.
+- Added legacy-compatible `Module.dumpSystemVerilog` and `Module.dumpWaves`
+  convenience methods. `dumpSystemVerilog()` returns simple in-memory output;
+  `dumpWaves()` provides standard VCD capture as the replacement for
+  `WaveDumper`. `WaveDumper` and `generateSynth` are deprecated in favor of
+  these `Module` methods.
 
 ## 0.6.10
 

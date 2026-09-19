@@ -9,12 +9,14 @@
 // Author: Yao Jing Quek <yao.jing.quek@intel.com>
 
 import 'dart:io';
+
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/config.dart';
 import 'package:rohd/src/utilities/web.dart';
 import 'package:test/test.dart';
 import 'package:yaml/yaml.dart';
-import 'wave_dumper_test.dart';
+
+import 'waveform_service_test.dart';
 
 class SimpleModule extends Module {
   SimpleModule(Logic a, Logic b) {
@@ -23,7 +25,7 @@ class SimpleModule extends Module {
     final c = addOutput('c');
 
     Combinational([
-      If(a, then: [c < a], orElse: [c < b])
+      If(a, then: [c < a], orElse: [c < b]),
     ]);
   }
 }
@@ -46,14 +48,31 @@ void main() {
     final mod = SimpleModule(Logic(), Logic());
     await mod.build();
 
-    final sv = mod.generateSynth();
+    final sv = mod.dumpSystemVerilog();
 
     expect(sv, contains(version));
   });
 
+  test(
+    'should contains ROHD version number when deprecated synth is generated.',
+    () async {
+      const version = Config.version;
+
+      final mod = SimpleModule(Logic(), Logic());
+      await mod.build();
+
+      // This test verifies that the deprecated API still includes the version.
+      // ignore: deprecated_member_use_from_same_package
+      final sv = mod.generateSynth();
+
+      expect(sv, contains(version));
+    },
+  );
+
   if (!kIsWeb) {
-    test('should contains ROHD version number when wavedumper is generated.',
-        () async {
+    test(
+        'should contains ROHD version number when '
+        'waveform service is generated.', () async {
       const version = Config.version;
 
       final mod = SimpleModule(Logic(), Logic());

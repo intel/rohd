@@ -11,8 +11,9 @@
 
 set -euo pipefail
 
-dart test
+# Exclude FFI-dependent tests (dart:ffi unavailable on some CI platforms).
+dart test $(find test -name '*_test.dart' ! -name 'systemc_ffi_cosim_test.dart' | sort)
 
 # run tests in JS (increase heap size also)
 export NODE_OPTIONS="--max-old-space-size=8192"
-dart test --platform node
+dart test --platform node $(find test -name '*_test.dart' ! -name 'systemc_ffi_cosim_test.dart' | sort)

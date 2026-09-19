@@ -18,13 +18,15 @@ released, not a repository-wide version.
 | [rohd_hierarchy](../packages/rohd_hierarchy) | Shared hierarchy models, addressing, adapters, and search. | Independent pub.dev package; `dart pub publish` from its directory. | Its own `pubspec.yaml`. | Tag `rohd_hierarchy-v<version>`; release **rohd_hierarchy v<version>**. |
 | [rohd_waveform](../packages/rohd_waveform) | Shared waveform models and data services. | Independent pub.dev package; `dart pub publish` from its directory. | Its own `pubspec.yaml`. | Tag `rohd_waveform-v<version>`; release **rohd_waveform v<version>**. |
 | [rohd_devtools_widgets](../packages/rohd_devtools_widgets) | Reusable Flutter controls and utilities for debug viewers. | Independent pub.dev package; `flutter pub publish` from its directory. | Its own `pubspec.yaml`. | Tag `rohd_devtools_widgets-v<version>`; release **rohd_devtools_widgets v<version>**. |
+| [rohd_source_navigator](../packages/rohd_source_navigator) | Shared FLC data models and source-navigation utilities for debug viewers. | Independent pub.dev package; `dart pub publish` from its directory. | Its own `pubspec.yaml`. | Tag `rohd_source_navigator-v<version>`; release **rohd_source_navigator v<version>**. |
 | [ROHD DevTools application](../rohd_devtools_extension) | Interactive hardware debug UI embedded in Dart DevTools. | Flutter web build produced by CI and bundled under `extension/devtools` in the ROHD pub.dev package; the application itself is not published to pub.dev. | Tracked by the containing ROHD release and the build's source/artifact commits, not an independent application release version. | Included in ROHD's tag and release notes; no separate release tag. The `artifacts` branch holds CI output, not an immutable release. |
 | [ROHD VS Code extension](../rohd_extension) | Editor snippets, completions, and cross-probe source navigation. | GitHub Actions builds and attaches a VSIX when its GitHub release is published; a maintainer tests and publishes that VSIX to the VS Code Marketplace separately. | `rohd_extension/package.json`. | Tag `rohd-vscode-v<version>`; release `ROHD VS Code v<version>`, with `rohd-vscode-v<version>.vsix` attached automatically. |
 
-The internal Dart source-navigation port in `rohd_extension/dart` uses
-`publish_to: none` and has no independent release or tag. The VS Code extension
-compiles its TypeScript implementation, not the Dart port. Tutorial applications
-are also not independently released packages.
+The source-navigation library lives in `packages/rohd_source_navigator`, alongside
+the other independently published libraries. Git dependencies following the move
+must use the new package path; older pinned commits retain `rohd_extension/dart`.
+The VS Code extension still compiles its separate TypeScript implementation.
+Tutorial applications are not independently released packages.
 
 ## GitHub Strategy
 
@@ -91,13 +93,15 @@ with a merge or rebase; the preparation PR itself does not need to be merged yet
    `Check rohd_devtools_widgets` jobs for dependency resolution, formatting,
    fatal-info analysis, and package tests. These run alongside the root checks
    and DevTools app job; documentation deployment waits for all of them.
+   Source navigator is not included in that matrix; run its local checks with
+   `tool/prepare_release.sh --run-tests rohd_source_navigator`.
    Preparation skips local test suites by default and does not query GitHub or
    verify CI status.
    Use `--run-tests` to repeat selected package suites locally. ROHD's local
    tests require Icarus Verilog; Verilator is required in CI and when
    `ROHD_REQUIRE_VERILATOR=1`.
 5. Run `tool/prepare_release.sh [--run-tests] [package ...]` on the preparation
-   branch from the repository root. No package names selects all four; explicit
+   branch from the repository root. No package names selects all five; explicit
    names select only those packages. Versions come from their manifests, not
    command-line arguments. It validates selected metadata before making changes,
    fetches `main` from `intel/rohd`, and requires that commit to be an ancestor
@@ -115,9 +119,10 @@ with a merge or rebase; the preparation PR itself does not need to be merged yet
    commit, tag, push, or upload anything. If a guard fails, incorporate the latest
    `main` or wait for its artifact workflow as appropriate, then rerun preparation.
 6. To inspect archives without preparing metadata, run
-   `tool/check_release.sh [package ...]`. Like preparation, it defaults to all four
+   `tool/check_release.sh [package ...]`. Like preparation, it defaults to all five
    packages and accepts explicit names: `rohd`, `rohd_hierarchy`, `rohd_waveform`,
-   and `rohd_devtools_widgets`. Each uses its existing version. The helper runs
+   `rohd_devtools_widgets`, and `rohd_source_navigator`. Each uses its existing
+   version. The helper runs
    `dart pub publish --dry-run` in each selected Dart package directory or
    `flutter pub publish --dry-run` for widgets. Review
    warnings, included files, and compressed archive sizes. For ROHD, first prepare
@@ -130,7 +135,7 @@ Preparation runs the following checks before invoking `tool/check_release.sh`:
 | Selected Package | Default Checks | Added With `--run-tests` |
 | --- | --- | --- |
 | `rohd` | `tool/run_checks.sh --skip-tests`: dependencies, formatting, analysis, API docs, and temporary-file checks; then `tool/package_vscode.sh` compiles and packages a temporary VSIX. | Simulator prerequisites and ROHD tests via `tool/run_checks.sh`. |
-| `rohd_hierarchy`, `rohd_waveform` | In each package directory: `dart pub get`, `dart format --output=none --set-exit-if-changed .`, then `dart analyze --fatal-infos`. | `dart test` in each selected package. |
+| `rohd_hierarchy`, `rohd_waveform`, `rohd_source_navigator` | In each package directory: `dart pub get`, `dart format --output=none --set-exit-if-changed .`, then `dart analyze --fatal-infos`. | `dart test` in each selected package. |
 | `rohd_devtools_widgets` | In its package directory: `flutter pub get`, `dart format --output=none --set-exit-if-changed .`, then `flutter analyze --fatal-infos`. | `flutter test` in the widgets package. |
 
 Artifact provenance verification and the DevTools installation smoke test always
@@ -155,10 +160,10 @@ separate DevTools application remain a separate step when its shared widgets cha
 Preparation examples (choose one):
 
 ```sh
-# All four packages, using each manifest's version; rely on CI for test suites:
+# All five packages, using each manifest's version; rely on CI for test suites:
 tool/prepare_release.sh
 
-# All four packages, also running their test suites locally:
+# All five packages, also running their test suites locally:
 tool/prepare_release.sh --run-tests
 
 # ROHD only:
@@ -172,6 +177,9 @@ tool/prepare_release.sh rohd rohd_hierarchy rohd_waveform
 
 # Only hierarchy and waveform:
 tool/prepare_release.sh rohd_hierarchy rohd_waveform
+
+# Only source navigator:
+tool/prepare_release.sh rohd_source_navigator
 ```
 
 Preparation requires Dart for YAML metadata parsing using the root package's
@@ -195,6 +203,7 @@ the selected dry runs:
 tool/check_release.sh --validate-only
 tool/check_release.sh --validate-only rohd_hierarchy rohd_waveform rohd_devtools_widgets
 tool/check_release.sh rohd_hierarchy rohd_waveform rohd_devtools_widgets
+tool/check_release.sh rohd_source_navigator
 ```
 
 `--validate-only` checks package names, manifest presence, and SDK availability.
@@ -236,6 +245,13 @@ For example, `rohd_waveform` depends on `rohd_hierarchy`, and
 dependencies determine ordering only when the required versions have not yet
 been published. Sharing a repository or source commit does not require a
 coordinated release.
+
+`rohd_source_navigator` has only hosted Dart dependencies and can be published
+independently of ROHD and the Flutter packages. Once its version is available on
+pub.dev, consumers such as the ROHD Schematic Viewer can replace their Git
+dependency with `rohd_source_navigator: ^0.1.0` and remove any Git override for
+that package. Existing Dart imports remain unchanged. See the
+[package README](../packages/rohd_source_navigator/README.md) for migration details.
 
 For each package, wait until its required dependencies are available on pub.dev,
 then validate from a clean disposable checkout of the release commit without

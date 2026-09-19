@@ -1,3 +1,12 @@
+// Copyright (C) 2023-2026 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// exercise_3_pipeline.dart
+// Chapter 8 pipeline exercise answer.
+//
+// 2023 September 7
+// Author: Yao Jing Quek <yao.jing.quek@intel.com>
+
 import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
 
@@ -34,14 +43,14 @@ void main(List<String> args) {
     final pipe = Pipeline4Stages(clk, reset, a);
     await pipe.build();
 
-    // print(pipe.generateSynth());
+    // print(pipe.dumpSystemVerilog());
 
     a.inject(5);
     reset.inject(1);
 
     Simulator.registerAction(10, () => reset.put(0));
 
-    WaveDumper(pipe, outputPath: 'answer_1.vcd');
+    pipe.dumpWaves(outputPath: 'answer_1.vcd');
 
     Simulator.registerAction(50, () {
       // stage 4 / result: 30 + (30 * 3) = 120
