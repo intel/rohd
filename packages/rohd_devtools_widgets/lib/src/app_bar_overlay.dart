@@ -126,9 +126,6 @@ class _AppBarOverlayState extends State<AppBarOverlay>
     if (!widget.autoHide) {
       return;
     }
-    if (_externalTrigger?.value ?? false) {
-      return;
-    }
     unawaited(_controller.reverse());
   }
 
