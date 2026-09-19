@@ -72,6 +72,8 @@ class HierarchyOccurrence {
   })  : assert(
           portCount == null ||
               (portCount >= 0 && portCount <= (signals?.length ?? 0)),
+          'portCount must be non-negative and no greater than the signal '
+          'count.',
         ),
         signals = signals ?? [],
         _explicitPortCount = portCount,
