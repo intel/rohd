@@ -472,6 +472,28 @@ class _MixedNestedArrayChild extends Module {
   }
 }
 
+class _TypedConditionalModule extends Module {
+  late final TypedLogicArray<_SampleStructure, LogicValue> valuesOut;
+
+  _TypedConditionalModule(
+    TypedLogicArray<_SampleStructure, LogicValue> first,
+    TypedLogicArray<_SampleStructure, LogicValue> second,
+    Logic select,
+  ) {
+    first = addTypedInput('first', first);
+    second = addTypedInput('second', second);
+    select = addInput('select', select);
+    valuesOut = addTypedOutput('valuesOut', first.clone);
+    Combinational([
+      If(
+        select,
+        then: [valuesOut < first],
+        orElse: [valuesOut < second],
+      ),
+    ]);
+  }
+}
+
 LogicValue _nestedPacked(
   int before,
   int lane0,
@@ -661,6 +683,38 @@ void main() {
         ),
         throwsA(isA<LogicConstructionException>()),
       );
+
+      var layoutBuildIndex = 0;
+      expect(
+        () => TypedLogicArray<LogicStructure, LogicValue>(
+          [2],
+          ({name}) {
+            final reverseWidths = layoutBuildIndex++ == 1;
+            return LogicStructure(
+              [
+                Logic(name: 'first', width: reverseWidths ? 2 : 1),
+                Logic(name: 'second', width: reverseWidths ? 1 : 2),
+              ],
+              name: name,
+            );
+          },
+        ),
+        throwsA(isA<LogicConstructionException>()),
+      );
+
+      var nestedArrayBuildIndex = 0;
+      expect(
+        () => TypedLogicArray<TypedLogicArray<Logic, LogicValue>, LogicValue>(
+          [2],
+          ({name}) => TypedLogicArray<Logic, LogicValue>(
+            [2],
+            ({name}) => Logic(name: name, width: 3),
+            name: name,
+            numUnpackedDimensions: nestedArrayBuildIndex++,
+          ),
+        ),
+        throwsA(isA<LogicConstructionException>()),
+      );
     });
 
     test('matches ordinary LogicArray contracts for Logic leaves', () {
@@ -754,6 +808,25 @@ void main() {
       );
     });
 
+    test('withSet updates a range contained within one structured leaf', () {
+      final values = TypedLogicArray<LogicStructure, LogicValue>(
+        [2],
+        ({name}) => LogicStructure(
+          [Logic(name: 'wide', width: 4)],
+          name: name,
+        ),
+      )..put(LogicValue.ofString('10100101'));
+      final update = Const(1);
+
+      final updated = values.withSet(2, update);
+
+      expect(updated, isA<TypedLogicArray<LogicStructure, LogicValue>>());
+      expect(
+        updated.value,
+        values.value.packed.withSet(2, update.value),
+      );
+    });
+
     test('majorSlices returns existing typed child arrays', () {
       final values = TypedLogicArray<_SampleStructure, LogicValue>(
         [2, 3, 2],
@@ -786,6 +859,33 @@ void main() {
       );
     });
 
+    test('reports immediate array ancestry for structured and nested elements',
+        () {
+      final values = TypedLogicArray<_ArrayValuedElementStructure, LogicValue>(
+        [2],
+        _ArrayValuedElementStructure.new,
+      );
+      final element = values.at([1]);
+      final matrix = element.matrix;
+      final row = matrix.at([1]);
+      final cell = row.at([2]);
+
+      expect(values.isArrayMember, isFalse);
+      expect(values.arrayIndex, isNull);
+      expect(element.isArrayMember, isTrue);
+      expect(element.arrayIndex, 1);
+      expect(element.prefix.isArrayMember, isFalse);
+      expect(element.prefix.arrayIndex, isNull);
+      expect(matrix.isArrayMember, isFalse);
+      expect(matrix.arrayIndex, isNull);
+      expect(row.isArrayMember, isTrue);
+      expect(row.arrayIndex, 1);
+      expect(cell.isArrayMember, isTrue);
+      expect(cell.arrayIndex, 2);
+      expect(cell.high.isArrayMember, isFalse);
+      expect(cell.high.arrayIndex, isNull);
+    });
+
     test('provides typed indexing and cloning', () {
       final values = TypedLogicArray<Logic, LogicValue>(
         [2, 2],
@@ -802,6 +902,83 @@ void main() {
         () => values <= LogicArray([2, 2], 4),
         throwsA(isA<SignalWidthMismatchException>()),
       );
+    });
+
+    test('preserves metadata and snapshots across zero dimensions', () {
+      for (final dimensions in [
+        [0, 2],
+        [2, 0],
+        [2, 0, 3],
+      ]) {
+        var builds = 0;
+        final values = TypedLogicArray<_SampleStructure, LogicValue>(
+          dimensions,
+          ({name}) {
+            builds++;
+            return _SampleStructure(name: name);
+          },
+          numUnpackedDimensions: 1,
+        );
+
+        expect(builds, 1, reason: '$dimensions');
+        expect(values.width, 0, reason: '$dimensions');
+        expect(values.elementWidth, 3, reason: '$dimensions');
+        expect(values.arrayElements, isEmpty, reason: '$dimensions');
+        expect(values.indexedElements, isEmpty, reason: '$dimensions');
+        expect(values.value.dimensions, dimensions, reason: '$dimensions');
+        expect(values.value.elementWidth, 3, reason: '$dimensions');
+        expect(values.value.packed, LogicValue.empty, reason: '$dimensions');
+        expect(values.previousValue, isNotNull, reason: '$dimensions');
+        expect(
+          values.previousValue!.packed,
+          LogicValue.empty,
+          reason: '$dimensions',
+        );
+
+        final clone = values.clone();
+        expect(clone.dimensions, dimensions, reason: '$dimensions');
+        expect(clone.elementWidth, 3, reason: '$dimensions');
+        expect(clone.numUnpackedDimensions, 1, reason: '$dimensions');
+        expect(clone.arrayElements, isEmpty, reason: '$dimensions');
+
+        final slices = values.majorSlices.toList(growable: false);
+        expect(slices, hasLength(dimensions.first), reason: '$dimensions');
+        if (slices.isNotEmpty) {
+          expect(slices.first.dimensions, dimensions.sublist(1));
+          expect(slices.first.arrayElements, isEmpty);
+        }
+        expect(
+          () => values.at(List<int>.filled(dimensions.length, 0)),
+          throwsA(isA<RangeError>()),
+          reason: '$dimensions',
+        );
+      }
+    });
+
+    test('rejects zero-width arrays during SystemVerilog synthesis', () async {
+      for (final values in <TypedLogicArray<Logic, LogicValue>>[
+        TypedLogicArray<Logic, LogicValue>(
+          [2, 0],
+          ({name}) => Logic(name: name, width: 3),
+        ),
+        TypedLogicArray<Logic, LogicValue>(
+          [2],
+          ({name}) => Logic(name: name, width: 0),
+        ),
+      ]) {
+        final module = _TypedInputModule(values);
+        await module.build();
+        expect(
+          module.generateSynth,
+          throwsA(
+            isA<SynthException>().having(
+              (exception) => exception.message,
+              'message',
+              contains('zero-width array'),
+            ),
+          ),
+        );
+      }
     });
 
     test('ordinary assignment drives structured leaves in row-major order', () {
@@ -828,6 +1005,35 @@ void main() {
         isTrue,
       );
     });
+
+    test('conditional assignment drives every typed structured leaf', () async {
+      await Simulator.reset();
+      addTearDown(Simulator.reset);
+      final first = TypedLogicArray<_SampleStructure, LogicValue>(
+        [2],
+        _SampleStructure.new,
+      );
+      final second = TypedLogicArray<_SampleStructure, LogicValue>(
+        [2],
+        _SampleStructure.new,
+      );
+      final module = _TypedConditionalModule(first, second, Logic());
+      await module.build();
+      final vectors = [
+        Vector(
+          {'first': 0x09, 'second': 0x32, 'select': 0},
+          {'valuesOut': 0x32},
+        ),
+        Vector(
+          {'first': 0x09, 'second': 0x32, 'select': 1},
+          {'valuesOut': 0x09},
+        ),
+      ];
+
+      await SimCompare.checkFunctionalVector(module, vectors);
+      SimCompare.checkIverilogVector(module, vectors);
+      SimCompare.checkVerilatorVector(module, vectors);
+    }, tags: ['verilator']);
 
     test('derives the net kind for empty multidimensional typed arrays', () {
       var logicBuilds = 0;
@@ -956,6 +1162,29 @@ void main() {
         throwsA(isA<LogicConstructionException>()),
       );
 
+      expect(
+        () => TypedLogicArray<Logic, LogicValue>(
+          [1],
+          ({name}) {
+            final element = Logic(name: name)
+              ..makeUnassignable(reason: 'test fixture');
+            return element;
+          },
+        ),
+        throwsA(isA<LogicConstructionException>()),
+      );
+      expect(
+        () => TypedLogicArray<LogicStructure, LogicValue>(
+          [1],
+          ({name}) {
+            final field = Logic(name: 'field')
+              ..makeUnassignable(reason: 'test fixture');
+            return LogicStructure([field], name: name);
+          },
+        ),
+        throwsA(isA<LogicConstructionException>()),
+      );
+
       var width = 1;
       expect(
         () => TypedLogicArray<Logic, LogicValue>(
@@ -986,6 +1215,15 @@ void main() {
       ]) {
         expect(create, throwsA(isA<LogicConstructionException>()));
       }
+
+      final reused = Logic(width: 3);
+      expect(
+        () => TypedLogicArray<Logic, LogicValue>(
+          [2],
+          ({name}) => reused,
+        ),
+        throwsA(isA<LogicConstructionException>()),
+      );
     });
 
     test('rejects invalid indexing', () {

@@ -1347,7 +1347,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
 
     final swizzle = _SwizzleConnect(dummySignals,
         unpacked: agg.logics
-            .whereType<LogicArray>()
+            .whereType<BaseLogicArray>()
             .any((array) => array.numUnpackedDimensions > 0));
 
     final swizzleInst = getSynthSubModuleInstantiation(swizzle)

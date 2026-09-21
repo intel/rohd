@@ -254,6 +254,21 @@ void main() {
       // try a withSet of a subset of the second field
       MyFancyStruct().withSet(72, Logic(width: 4));
     });
+
+    test('withSet range can be contained within a wide field', () {
+      final structure = LogicStructure([
+        Logic(name: 'wide', width: 8),
+      ])
+        ..put(LogicValue.ofString('10100101'));
+      final update = Const(1);
+
+      final updated = structure.withSet(3, update);
+
+      expect(
+        updated.value,
+        structure.value.withSet(3, update.value),
+      );
+    });
   });
 
   group('LogicStructures with modules', () {
