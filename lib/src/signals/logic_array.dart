@@ -21,6 +21,9 @@ class LogicArray extends TypedLogicArray<Logic, LogicValue> {
   /// [numUnpackedDimensions] is a [Synthesizer] hint. When it is greater than
   /// zero, that many outermost dimensions are emitted as unpacked dimensions
   /// in SystemVerilog. It has no effect on simulation behavior.
+  ///
+  /// Zero-sized arrays are supported for simulation and value operations, but
+  /// cannot be represented in generated SystemVerilog.
   factory LogicArray(List<int> dimensions, int elementWidth,
           {String? name, int numUnpackedDimensions = 0, Naming? naming}) =>
       LogicArray._factory(dimensions, elementWidth,
