@@ -383,9 +383,7 @@ class LogicStructure implements Logic {
       final elementStart = index;
       final elementEnd = index + elementWidth;
 
-      final elementInRange =
-          ((elementStart >= startIndex) && (elementStart < endIndex)) ||
-              ((elementEnd > startIndex) && (elementEnd <= endIndex));
+      final elementInRange = elementStart < endIndex && elementEnd > startIndex;
 
       if (elementInRange) {
         newElement <=

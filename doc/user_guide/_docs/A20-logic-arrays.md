@@ -120,6 +120,10 @@ the textual shape of generated selections.
 Some simulators do not accept unpacked `inout` array ports. Prefer packed
 outer dimensions for portable bidirectional interfaces.
 
+Zero-sized arrays are supported for simulation and value operations.
+SystemVerilog generation rejects them because the language has no portable
+zero-width array declaration.
+
 Icarus Verilog 12.0 can leave child-driven unpacked array variables unknown
 during simulation. When targeting that tool, enable
 `SystemVerilogSynthesizerConfiguration.iverilogWorkaroundForUnpackedArrayVariables`.

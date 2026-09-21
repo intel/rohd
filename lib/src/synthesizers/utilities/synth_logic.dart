@@ -292,6 +292,13 @@ class SynthLogic {
     SynthLogic a,
     SynthLogic b,
   ) {
+    if (a.isArray != b.isArray) {
+      return null;
+    }
+    if (a.isArray && !_arrayRepresentationsCompatible(a, b)) {
+      return null;
+    }
+
     if (_constantsMergeable(a, b)) {
       // case to avoid things like a constant assigned to another constant
       a.adopt(b);
@@ -350,15 +357,8 @@ class SynthLogic {
       return false;
     }
 
-    if (a.isArray) {
-      final arrayA = a.logics.first as LogicArray;
-      final arrayB = b.logics.first as LogicArray;
-      if (arrayA.elementWidth != arrayB.elementWidth ||
-          arrayA.numUnpackedDimensions != arrayB.numUnpackedDimensions ||
-          !const ListEquality<int>()
-              .equals(arrayA.dimensions, arrayB.dimensions)) {
-        return false;
-      }
+    if (a.isArray && !_arrayRepresentationsCompatible(a, b)) {
+      return false;
     }
 
     final preservedLogics = [
@@ -369,6 +369,54 @@ class SynthLogic {
     ];
     final name = Namer.baseName(preservedLogics.first);
     return preservedLogics.every((logic) => Namer.baseName(logic) == name);
+  }
+
+  /// Whether two array signals have compatible declarations and element trees.
+  static bool _arrayRepresentationsCompatible(SynthLogic a, SynthLogic b) =>
+      _arrayLayoutsCompatible(
+        a.logics.first as BaseLogicArray,
+        b.logics.first as BaseLogicArray,
+      );
+
+  static bool _arrayLayoutsCompatible(
+    BaseLogicArray a,
+    BaseLogicArray b,
+  ) {
+    if (a.elementWidth != b.elementWidth ||
+        a.numUnpackedDimensions != b.numUnpackedDimensions ||
+        !const ListEquality<int>().equals(a.dimensions, b.dimensions) ||
+        a.elements.length != b.elements.length) {
+      return false;
+    }
+    if (a.elements.isEmpty) {
+      return true;
+    }
+    return _elementLayoutsCompatible(a.elements.first, b.elements.first);
+  }
+
+  static bool _elementLayoutsCompatible(Logic a, Logic b) {
+    if (a.width != b.width || a.isNet != b.isNet) {
+      return false;
+    }
+    if (a is BaseLogicArray || b is BaseLogicArray) {
+      return a is BaseLogicArray &&
+          b is BaseLogicArray &&
+          _arrayLayoutsCompatible(a, b);
+    }
+    if (a is LogicStructure || b is LogicStructure) {
+      if (a is! LogicStructure ||
+          b is! LogicStructure ||
+          a.runtimeType != b.runtimeType ||
+          a.elements.length != b.elements.length) {
+        return false;
+      }
+      return a.elements.indexed.every((entry) {
+        final other = b.elements[entry.$1];
+        return entry.$2.name == other.name &&
+            _elementLayoutsCompatible(entry.$2, other);
+      });
+    }
+    return true;
   }
 
   /// Merges [other] to be represented by `this` instead, and updates the
@@ -451,6 +499,14 @@ class SynthLogic {
 
     if (isArray) {
       final logicArr = logic as BaseLogicArray;
+      if (logicArr.elementWidth == 0 ||
+          logicArr.dimensions.any((dimension) => dimension == 0)) {
+        throw SynthException(
+          'SystemVerilog cannot represent zero-width array '
+          '${logicArr.name} with dimensions ${logicArr.dimensions} and '
+          'element width ${logicArr.elementWidth}.',
+        );
+      }
 
       final packedDimsBuf = StringBuffer();
       final unpackedDimsBuf = StringBuffer();

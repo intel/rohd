@@ -658,6 +658,26 @@ void main() {
       }
     });
 
+    test('zero-width arrays fail SystemVerilog synthesis explicitly', () async {
+      for (final array in [
+        LogicArray([2, 0], 3),
+        LogicArray([2], 0),
+      ]) {
+        final module = _TypedInputModule(array);
+        await module.build();
+        expect(
+          module.generateSynth,
+          throwsA(
+            isA<SynthException>().having(
+              (exception) => exception.message,
+              'message',
+              contains('zero-width array'),
+            ),
+          ),
+        );
+      }
+    });
+
     test('packed value assignment remains shape-independent', () async {
       final source = LogicArray([2], 8)..put(0x1234);
       final target = LogicArray([1], 16);

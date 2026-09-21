@@ -92,6 +92,9 @@ class TypedLogicArray<T extends Logic, V> extends BaseLogicArray {
   /// [valueCodec] may be omitted only when [V] is [LogicValue], in which case
   /// the canonical identity codec is used.
   ///
+  /// Every element produced by [elementBuilder] must have the same recursive
+  /// hardware layout and must contain only driveable signals.
+  ///
   /// [numUnpackedDimensions] controls how many outer dimensions are emitted as
   /// unpacked dimensions by synthesis.
   TypedLogicArray(
@@ -344,13 +347,13 @@ class _TypedLogicArrayBuild<T extends Logic, V> {
             .expand((element) => element.arrayElements)
             .toList(growable: false);
     if (typedLeaves.any(_containsUnassignableLeaf)) {
-      throw LogicConstructionException('TypedLogicArray leaves must be '
-          'driveable and cannot contain Consts.');
+      throw LogicConstructionException(
+          'TypedLogicArray leaves must be driveable.');
     }
     final prototype = typedLeaves.isEmpty ? emptyPrototype! : typedLeaves.first;
     if (_containsUnassignableLeaf(prototype)) {
-      throw LogicConstructionException('TypedLogicArray leaves must be '
-          'driveable and cannot contain Consts.');
+      throw LogicConstructionException(
+          'TypedLogicArray leaves must be driveable.');
     }
     final prototypeNetComposition = _netComposition(prototype);
     final elementsForNetValidation =
@@ -366,6 +369,11 @@ class _TypedLogicArrayBuild<T extends Logic, V> {
         _netComposition(element), prototypeNetComposition))) {
       throw LogicConstructionException(
           'All TypedLogicArray elements must have matching net composition.');
+    }
+    if (elementsForNetValidation
+        .any((element) => !_sameElementLayout(prototype, element))) {
+      throw LogicConstructionException(
+          'All TypedLogicArray elements must have matching hardware layouts.');
     }
     if (elementCompatibility != null &&
         elementsForNetValidation
@@ -386,11 +394,47 @@ class _TypedLogicArrayBuild<T extends Logic, V> {
         prototypeNetComposition.every((isNet) => isNet));
   }
 
-  /// Whether [leaf] is or recursively contains an unassignable constant.
-  static bool _containsUnassignableLeaf(Logic leaf) =>
-      leaf is Const ||
-      (leaf is LogicStructure &&
-          leaf.leafElements.any((element) => element is Const));
+  /// Whether [element] is or recursively contains an unassignable signal.
+  static bool _containsUnassignableLeaf(Logic element) =>
+      element is LogicStructure
+          ? element.leafElements.any(_containsUnassignableLeaf)
+          : element._unassignable;
+
+  /// Whether two configured elements have the same recursive hardware layout.
+  static bool _sameElementLayout(Logic left, Logic right) {
+    if (left.width != right.width || left.isNet != right.isNet) {
+      return false;
+    }
+    if (left is BaseLogicArray || right is BaseLogicArray) {
+      if (left is! BaseLogicArray || right is! BaseLogicArray) {
+        return false;
+      }
+      return left.elementWidth == right.elementWidth &&
+          left.numUnpackedDimensions == right.numUnpackedDimensions &&
+          _sameDimensions(left.dimensions, right.dimensions) &&
+          left.elements.length == right.elements.length &&
+          left.elements.indexed.every(
+            (entry) => _sameElementLayout(
+              entry.$2,
+              right.elements[entry.$1],
+            ),
+          );
+    }
+    if (left is LogicStructure || right is LogicStructure) {
+      if (left is! LogicStructure ||
+          right is! LogicStructure ||
+          left.runtimeType != right.runtimeType ||
+          left.elements.length != right.elements.length) {
+        return false;
+      }
+      return left.elements.indexed.every((entry) {
+        final other = right.elements[entry.$1];
+        return entry.$2.name == other.name &&
+            _sameElementLayout(entry.$2, other);
+      });
+    }
+    return true;
+  }
 
   /// Net kinds of [element]'s recursive leaves in packed order.
   static List<bool> _netComposition(Logic element) {
