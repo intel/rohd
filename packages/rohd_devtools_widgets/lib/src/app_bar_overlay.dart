@@ -14,6 +14,8 @@
 // 2026 April
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -103,10 +105,10 @@ class _AppBarOverlayState extends State<AppBarOverlay>
     super.didUpdateWidget(oldWidget);
     if (!widget.autoHide && oldWidget.autoHide) {
       // Switched from auto-hide → always visible: snap open.
-      _controller.forward();
+      unawaited(_controller.forward());
     } else if (widget.autoHide && !oldWidget.autoHide) {
       // Switched from always visible → auto-hide: hide immediately.
-      _controller.reverse();
+      unawaited(_controller.reverse());
     }
   }
 
@@ -117,14 +119,14 @@ class _AppBarOverlayState extends State<AppBarOverlay>
   }
 
   void _show() {
-    _controller.forward();
+    unawaited(_controller.forward());
   }
 
   void _hide() {
     if (!widget.autoHide) {
       return;
     }
-    _controller.reverse();
+    unawaited(_controller.reverse());
   }
 
   @override

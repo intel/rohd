@@ -6,10 +6,22 @@
 # run_checks.sh
 # Run project checks.
 #
+# Usage (from repo root):
+#   tool/run_checks.sh              # Include tests and simulator prerequisites.
+#   tool/run_checks.sh --skip-tests # Keep other checks; rely on CI for tests.
+#
 # 2022 October 11
 # Author: Chykon
 
 set -euo pipefail
+
+run_tests=true
+if [[ $# -eq 1 && "$1" == '--skip-tests' ]]; then
+  run_tests=false
+elif [[ $# -ne 0 ]]; then
+  echo "Usage: $0 [--skip-tests]" >&2
+  exit 2
+fi
 
 form_bold=$(tput bold)
 color_green=$(tput setaf 46)
@@ -46,33 +58,37 @@ tool/gh_actions/analyze_source.sh
 print_step 'Check project documentation'
 tool/gh_actions/generate_documentation.sh
 
-# Check software - Icarus Verilog
-print_step 'Check software - Icarus Verilog'
-printf '"which" output: '
-if which iverilog; then
-  echo 'Icarus Verilog found!'
-else
-  declare -r exit_code=${?}
-  declare -r iverilog_recommended_version='12'
-  echo 'Icarus Verilog not found: please install Icarus Verilog'\
-    "(iverilog; recommended version: ${iverilog_recommended_version})!"
-  exit ${exit_code}
-fi
+if [[ "$run_tests" == true ]]; then
+  # Check software - Icarus Verilog
+  print_step 'Check software - Icarus Verilog'
+  printf '"which" output: '
+  if which iverilog; then
+    echo 'Icarus Verilog found!'
+  else
+    declare -r exit_code=${?}
+    declare -r iverilog_recommended_version='12'
+    echo 'Icarus Verilog not found: please install Icarus Verilog'\
+      "(iverilog; recommended version: ${iverilog_recommended_version})!"
+    exit ${exit_code}
+  fi
 
-print_step 'Check software - Verilator'
-if command -v verilator; then
-  verilator --version
-elif [[ "${ROHD_REQUIRE_VERILATOR:-0}" == '1' ]]; then
-  echo 'Verilator is required: please install Verilator!'
-  exit 1
-else
-  echo 'Verilator not found: its compilation and simulation tests will be skipped.'
-  echo 'Install Verilator for full native coverage; CI requires it.'
-fi
+  print_step 'Check software - Verilator'
+  if command -v verilator; then
+    verilator --version
+  elif [[ "${ROHD_REQUIRE_VERILATOR:-0}" == '1' ]]; then
+    echo 'Verilator is required: please install Verilator!'
+    exit 1
+  else
+    echo 'Verilator not found: its compilation and simulation tests will be skipped.'
+    echo 'Install Verilator for full native coverage; CI requires it.'
+  fi
 
-# Run project tests
-print_step 'Run project tests'
-tool/gh_actions/run_tests.sh
+  # Run project tests
+  print_step 'Run project tests'
+  tool/gh_actions/run_tests.sh
+else
+  print_step 'Skipping tests and simulator prerequisites (--skip-tests); verify CI results'
+fi
 
 # Check temporary test files
 print_step 'Check temporary test files'

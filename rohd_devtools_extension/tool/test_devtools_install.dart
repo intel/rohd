@@ -8,6 +8,7 @@
 // 2026 July
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:devtools_shared/devtools_extensions_io.dart';
@@ -215,6 +216,23 @@ Directory _installRootFor(Directory extensionDir) {
 Future<Directory> _writeProjectRootPointingTo(Directory packageRoot) async {
   final projectRoot = await Directory.systemTemp.createTemp(
     'rohd_devtools_extension_discovery_',
+  );
+  final packageConfig = File(
+    p.join(projectRoot.path, '.dart_tool', 'package_config.json'),
+  );
+  await packageConfig.parent.create(recursive: true);
+  await packageConfig.writeAsString(
+    jsonEncode({
+      'configVersion': 2,
+      'packages': [
+        {
+          'name': 'rohd',
+          'rootUri': packageRoot.uri.toString(),
+          'packageUri': 'lib/',
+          'languageVersion': '3.0',
+        },
+      ],
+    }),
   );
   return projectRoot;
 }

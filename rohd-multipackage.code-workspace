@@ -21,7 +21,7 @@
     },
     {
       "name": "rohd_devtools_widgets",
-      "path": "rohd_devtools_extension/packages/rohd_devtools_widgets"
+      "path": "packages/rohd_devtools_widgets"
     }
   ],
   "settings": {
