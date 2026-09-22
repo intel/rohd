@@ -28,7 +28,8 @@
 # Each selected sub-package gets dependency resolution, a non-writing format check,
 # and analysis (including fatal infos) in its own directory. Dart is used
 # for hierarchy/waveform/source navigator, Flutter for widgets, and dart format
-# for all sub-packages.
+# for all sub-packages. The existing Pana runner also checks hosted dependencies
+# with pub get, pub downgrade, and library analysis in an override-free copy.
 # Test suites are skipped by default; verify CI results for the release commit.
 # Add --run-tests to also run all selected package suites locally, including
 # ROHD's simulator prerequisites when ROHD is selected.
@@ -37,8 +38,9 @@
 #
 # Dart is required to read YAML metadata using the root package's dependencies.
 # Selecting ROHD also requires Node.js and npm (release CI uses Node.js 24).
-# Selecting rohd_devtools_widgets also requires Flutter. Any failed prerequisite
-# or package check stops preparation before publication dry runs.
+# Selecting rohd_devtools_widgets also requires Flutter. Selecting any sub-package
+# requires Pana (tool/gh_actions/install_pana.sh) and hosted dependencies.
+# Any failed prerequisite or package check stops preparation before dry runs.
 #
 # Examples:
 #
@@ -85,6 +87,7 @@ if [[ $# -eq 1 && "$1" == '--help' ]]; then
   echo "Test suites are skipped by default; use --run-tests to include them."
   echo "Artifact verification and its smoke test still run when ROHD is selected."
   echo "Selecting ROHD also checks VSIX packaging (requires Node.js and npm)."
+  echo "Sub-packages also require Pana and always check hosted dependency lower bounds."
   echo "Prepares metadata, runs package checks and publication dry runs; never uploads packages."
   exit 0
 fi
@@ -115,6 +118,9 @@ prepare_rohd=false
 for package in "$@"; do
   if [[ "$package" == rohd ]]; then
     prepare_rohd=true
+  elif ! PATH="$PATH:${PUB_CACHE:-$HOME/.pub-cache}/bin" command -v pana > /dev/null; then
+    echo "Pana is required; run tool/gh_actions/install_pana.sh first." >&2
+    exit 2
   fi
 done
 cd "$REPO_ROOT"
@@ -216,6 +222,7 @@ for package in "$@"; do
       echo "=== $package: tests skipped (use --run-tests) ==="
     fi
   )
+  bash "$SCRIPT_DIR/gh_actions/pana_source.sh" "$REPO_ROOT/packages/$package" "$sdk"
 done
 git diff --check
 bash "$SCRIPT_DIR/check_release.sh" "$@"

@@ -93,6 +93,8 @@ jobs:
             sdk: dart
           - package: rohd_devtools_widgets
             sdk: flutter
+          - package: rohd_source_navigator
+            sdk: dart
     defaults:
       run:
         working-directory: packages/${{ matrix.package }}
@@ -114,6 +116,9 @@ jobs:
       - name: Install package dependencies
         run: ${{ matrix.sdk }} pub get
 
+      - name: Setup Pana source analysis
+        run: bash ../../tool/gh_actions/install_pana.sh
+
       - name: Verify package formatting
         run: dart format --output=none --set-exit-if-changed .
 
@@ -122,6 +127,9 @@ jobs:
 
       - name: Run package tests
         run: ${{ matrix.sdk }} test
+
+      - name: Check hosted dependencies and run Pana
+        run: bash ../../tool/gh_actions/pana_source.sh . ${{ matrix.sdk }}
 
   deploy-documentation:
     name: Deploy Documentation

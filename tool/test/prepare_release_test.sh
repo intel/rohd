@@ -57,10 +57,27 @@ printf '%s\n' \
   'esac' > "$FIXTURE/bin/dart"
 chmod +x "$FIXTURE/bin/dart"
 ln -s dart "$FIXTURE/bin/flutter"
+ln -s /bin/true "$FIXTURE/bin/pana"
 
 cp "$REPO_ROOT/tool/prepare_release.sh" "$REPO_ROOT/tool/check_release.sh" \
   "$REPO_ROOT/tool/prepare_release_metadata.dart" "$UPSTREAM/tool/"
 cp "$REPO_ROOT/tool/gh_actions/check_tmp_test.sh" "$UPSTREAM/tool/gh_actions/"
+cat > "$UPSTREAM/tool/gh_actions/pana_source.sh" <<'EOF'
+#!/bin/bash
+set -euo pipefail
+[[ $# -eq 2 && -f "$1/pubspec.yaml" ]] || exit 99
+cd "$1"
+if [[ "${PWD##*/}" == rohd_devtools_widgets ]]; then
+  [[ "$2" == flutter ]] || exit 99
+else
+  [[ "$2" == dart ]] || exit 99
+fi
+printf 'pana|%s|pana\n' "$PWD" >> "$SDK_LOG"
+if [[ "${FAIL_PACKAGE:-}" == "${PWD##*/}" && "${FAIL_COMMAND:-}" == pana ]]; then
+  echo 'Simulated check failure: pana' >&2
+  exit 71
+fi
+EOF
 printf '%s\n' '#!/bin/bash' \
   '[[ -f "$1/build/index.html" && -f "$1/config.yaml" ]] || exit 1' \
   'printf "smoke\n" >> "$STAGE_LOG"' \
@@ -124,7 +141,8 @@ run_case() {
   local status=0
   : > "$SDK_LOG"
   : > "$STAGE_LOG"
-  PATH="$FIXTURE/bin" ROHD_ARTIFACT_REPOSITORY="$UPSTREAM" ROHD_ARTIFACT_BRANCH=artifacts \
+  PATH="$FIXTURE/bin" PUB_CACHE="$FIXTURE/pub-cache" \
+    ROHD_ARTIFACT_REPOSITORY="$UPSTREAM" ROHD_ARTIFACT_BRANCH=artifacts \
     /bin/bash "$RELEASE/tool/prepare_release.sh" "$@" > "$FIXTURE/output" 2>&1 || status=$?
   if [[ "$status" -ne "$expected" ]] || ! grep -Fq "$message" "$FIXTURE/output"; then
     cat "$FIXTURE/output"
@@ -160,7 +178,14 @@ expected_checks() {
   if [[ "$include_tests" == true ]]; then
     printf '%s|%s|%s\n' "$sdk" "$directory" test
   fi
+  printf 'pana|%s|pana\n' "$directory"
 }
+
+rm "$FIXTURE/bin/pana"
+run_case 2 'Pana is required' rohd_source_navigator
+assert_unchanged
+[[ ! -s "$STAGE_LOG" ]]
+ln -s /bin/true "$FIXTURE/bin/pana"
 
 git -C "$UPSTREAM" commit --quiet --allow-empty -m 'Fixture main advances'
 readonly MAIN_COMMIT="$(git -C "$UPSTREAM" rev-parse main)"
@@ -286,7 +311,7 @@ for package in rohd_hierarchy rohd_waveform rohd_devtools_widgets rohd_source_na
   export FAIL_PACKAGE="$package" FAIL_COMMAND=test
   run_case 0 "$package: PASSED" "$package"
   ! grep -Fq '|test' "$SDK_LOG"
-  for check_command in 'pub get' 'format --output=none --set-exit-if-changed .' 'analyze --fatal-infos' test; do
+  for check_command in 'pub get' 'format --output=none --set-exit-if-changed .' 'analyze --fatal-infos' test pana; do
     export FAIL_COMMAND="$check_command"
     check_arguments=()
     include_tests=false

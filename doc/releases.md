@@ -89,12 +89,12 @@ with a merge or rebase; the preparation PR itself does not need to be merged yet
    The non-published DevTools app therefore also declares its own local overrides.
 4. Verify the PR's CI results cover the relevant tests for the release commit,
    including DevTools app tests when shared widgets change. The General workflow
-   has separate `Check rohd_hierarchy`, `Check rohd_waveform`, and
-   `Check rohd_devtools_widgets` jobs for dependency resolution, formatting,
-   fatal-info analysis, and package tests. These run alongside the root checks
-   and DevTools app job; documentation deployment waits for all of them.
-   Source navigator is not included in that matrix; run its local checks with
-   `tool/prepare_release.sh --run-tests rohd_source_navigator`.
+   has separate `Check rohd_hierarchy`, `Check rohd_waveform`,
+   `Check rohd_devtools_widgets`, and `Check rohd_source_navigator` jobs for
+   dependency resolution, formatting, fatal-info analysis, package tests, and
+   isolated hosted dependency checks and Pana reports.
+   These run alongside the root checks and DevTools app job; documentation
+   deployment waits for all of them.
    Preparation skips local test suites by default and does not query GitHub or
    verify CI status.
    Use `--run-tests` to repeat selected package suites locally. ROHD's local
@@ -111,7 +111,9 @@ with a merge or rebase; the preparation PR itself does not need to be merged yet
    web build before preparing metadata, then runs ROHD's checks. Sub-package-only
    preparation leaves ROHD metadata and DevTools untouched. Each selected
    sub-package gets dependency resolution, formatting checks, and analysis in its
-   own directory, plus tests when `--run-tests` is supplied. Selecting ROHD also
+   own directory, plus isolated hosted dependency checks and Pana reports even
+   when tests are skipped.
+   Tests run when `--run-tests` is supplied. Selecting ROHD also
    compiles and packages a temporary VSIX using the same helper as the VS Code
    release workflow, even when test suites are skipped. Only after all
    enabled checks for selected packages pass does it run
@@ -135,8 +137,8 @@ Preparation runs the following checks before invoking `tool/check_release.sh`:
 | Selected Package | Default Checks | Added With `--run-tests` |
 | --- | --- | --- |
 | `rohd` | `tool/run_checks.sh --skip-tests`: dependencies, formatting, analysis, API docs, and temporary-file checks; then `tool/package_vscode.sh` compiles and packages a temporary VSIX. | Simulator prerequisites and ROHD tests via `tool/run_checks.sh`. |
-| `rohd_hierarchy`, `rohd_waveform`, `rohd_source_navigator` | In each package directory: `dart pub get`, `dart format --output=none --set-exit-if-changed .`, then `dart analyze --fatal-infos`. | `dart test` in each selected package. |
-| `rohd_devtools_widgets` | In its package directory: `flutter pub get`, `dart format --output=none --set-exit-if-changed .`, then `flutter analyze --fatal-infos`. | `flutter test` in the widgets package. |
+| `rohd_hierarchy`, `rohd_waveform`, `rohd_source_navigator` | In each package directory: `dart pub get`, `dart format --output=none --set-exit-if-changed .`, then `dart analyze --fatal-infos`; also isolated hosted dependency checks and a Pana report. | `dart test` in each selected package. |
+| `rohd_devtools_widgets` | In its package directory: `flutter pub get`, `dart format --output=none --set-exit-if-changed .`, then `flutter analyze --fatal-infos`; also isolated hosted dependency checks and a Pana report. | `flutter test` in the widgets package. |
 
 Artifact provenance verification and the DevTools installation smoke test always
 run when ROHD is selected, even when test suites are skipped. The VSIX packaging
@@ -153,9 +155,25 @@ fatal. The script prints each sub-package stage and stops on the first failed
 prerequisite or enabled check; no publication dry runs start unless all enabled
 checks pass. An early failure such as a nonempty `tmp_test` directory
 means later stages have not run. Review leftover test files before retrying.
-Checks use the current checkout's dependency overrides; hosted-dependency
-validation without overrides is still required as described below. Tests for the
-separate DevTools application remain a separate step when its shared widgets change.
+The ordinary package checks use the current checkout's dependency overrides.
+Both CI and preparation reuse the existing Pana runner:
+`bash tool/gh_actions/pana_source.sh packages/<package> <dart|flutter>`.
+Its package mode uses a disposable copy without checkout overrides, lockfiles,
+generated resolution/build state, or repository-relative analyzer configuration.
+Inline overrides are rejected; keep local overrides in `pubspec_overrides.yaml`.
+It runs `pub get` and `pub downgrade`, each followed by fatal-info analysis of
+`lib/`, using the selected SDK. Flutter analysis uses `--no-pub` to preserve the
+downgraded resolution. Required dependencies must already be available on pub.dev;
+there is no fallback to local packages. Command failures stop CI and preparation.
+Pana's report is printed for review, but package scoring findings such as missing
+examples or newer dependency major versions are advisory. No custom report parser
+is used. The root's existing no-argument Pana invocation and score gate are
+unchanged. Temporary copies are cleaned up on success or failure, and developers'
+overrides are never removed or rewritten.
+
+Pana does not run consumer tests. Final override-free tests and archive checks
+are still required as described below. Tests for the separate DevTools
+application remain a separate step when its shared widgets change.
 
 Preparation examples (choose one):
 
@@ -180,11 +198,17 @@ tool/prepare_release.sh rohd_hierarchy rohd_waveform
 
 # Only source navigator:
 tool/prepare_release.sh rohd_source_navigator
+
+# Source navigator and widgets, including both package test suites:
+tool/prepare_release.sh --run-tests rohd_source_navigator rohd_devtools_widgets
 ```
 
 Preparation requires Dart for YAML metadata parsing using the root package's
-dependencies. Selecting widgets also requires Flutter, including the default
-all-package selection. Selecting ROHD also requires Node.js and npm for the VSIX
+dependencies. Selecting any sub-package also requires Pana, installed with
+`bash tool/gh_actions/install_pana.sh`, and network access to hosted dependencies.
+Selecting widgets also requires Flutter, including the default all-package
+selection. The Pana runner discovers Flutter from its executable or uses
+`FLUTTER_ROOT` when set. Selecting ROHD also requires Node.js and npm for the VSIX
 check; the release workflow uses Node.js 24. Explicit sub-package-only preparation
 does not build the VSIX or require Node.js/npm.
 
@@ -222,7 +246,10 @@ The helper's isolated regression checks run with
 Both stub publication commands on a restricted PATH. Preparation tests also
 stub package-check commands to verify their order, SDK choice, and failure handling.
 They cover both the default skipped suites and the `--run-tests` mode, including
-VSIX failure before publication checks and temporary-archive cleanup. The shared
+Pana prerequisites and failure before publication checks, VSIX failure, and
+temporary-archive cleanup. The existing Pana runner's root mode, package isolation,
+and failure propagation are covered by `bash tool/test/pana_source_test.sh`,
+using stub SDK/Pana executables without network access. The shared
 VSIX helper has isolated command and failure checks in
 `bash tool/test/package_vscode_test.sh`. The root
 checker's default and `--skip-tests` paths are covered by
@@ -251,10 +278,11 @@ independently of ROHD and the Flutter packages. Once its version is available on
 pub.dev, consumers such as the ROHD Schematic Viewer can replace their Git
 dependency with `rohd_source_navigator: ^0.1.0` and remove any Git override for
 that package. Existing Dart imports remain unchanged. See the
-[package README](../packages/rohd_source_navigator/README.md) for migration details.
+[package README](../packages/rohd_source_navigator/README.md) for installation
+instructions and API examples.
 
 For each package, wait until its required dependencies are available on pub.dev,
-then validate from a clean disposable checkout of the release commit without
+then complete final validation from a clean disposable checkout of the release commit without
 local dependency overrides or reused path-based lockfiles. Remove that checkout's
 `pubspec_overrides.yaml`, run dependency resolution, analysis and tests again, and
 repeat the publish dry run. A dry run using local overrides does not prove that

@@ -28,7 +28,7 @@ Import the complete API:
 import 'package:rohd_source_navigator/rohd_source_navigator.dart';
 ```
 
-The existing focused imports remain supported:
+Use focused imports for FLC data, source-navigation utilities, or DTD integration:
 
 ```dart
 import 'package:rohd_source_navigator/flc_data.dart';
@@ -59,33 +59,12 @@ void main() {
 }
 ```
 
-This is a Dart library, not an editor extension. The
+This is a Dart library, not an editor extension. Installing this package does not
+install or activate the
 [ROHD VS Code extension](https://github.com/intel/rohd/tree/main/rohd_extension)
-continues to use its separate TypeScript implementation; installing this
-package does not install or activate that extension.
-
-## Migrating from a Git dependency
-
-Once version 0.1.0 is available on pub.dev, replace the Git dependency with:
-
-```yaml
-dependencies:
-  rohd_source_navigator: ^0.1.0
-```
-
-Also remove any Git or path entry for `rohd_source_navigator` from
-`dependency_overrides` or `pubspec_overrides.yaml`; otherwise Pub will continue
-using that override instead of the hosted package. Run `dart pub get` (or
-`flutter pub get`) to update the lockfile. Existing Dart imports do not change.
-
-If continuing to use a Git dependency at a commit containing the package move,
-change its `path` from `rohd_extension/dart` to
-`packages/rohd_source_navigator`. Dependencies pinned to older commits or tags
-keep their original path.
+or its separate TypeScript implementation.
 
 ## Development
 
 The package lives in `packages/rohd_source_navigator` in the ROHD repository. Run
 `dart pub get`, `dart analyze`, and `dart test` from that directory.
-Use `dart pub publish --dry-run` there to inspect the publication archive, or
-`tool/check_release.sh rohd_source_navigator` from the repository root.
