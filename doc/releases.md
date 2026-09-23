@@ -92,7 +92,7 @@ with a merge or rebase; the preparation PR itself does not need to be merged yet
    has separate `Check rohd_hierarchy`, `Check rohd_waveform`,
    `Check rohd_devtools_widgets`, and `Check rohd_source_navigator` jobs for
    dependency resolution, formatting, fatal-info analysis, package tests, and
-   isolated hosted dependency checks and Pana reports.
+   isolated hosted dependency checks and blocking Pana score gates.
    These run alongside the root checks and DevTools app job; documentation
    deployment waits for all of them.
    Preparation skips local test suites by default and does not query GitHub or
@@ -111,7 +111,8 @@ with a merge or rebase; the preparation PR itself does not need to be merged yet
    web build before preparing metadata, then runs ROHD's checks. Sub-package-only
    preparation leaves ROHD metadata and DevTools untouched. Each selected
    sub-package gets dependency resolution, formatting checks, and analysis in its
-   own directory, plus isolated hosted dependency checks and Pana reports even
+   own directory, plus isolated hosted dependency checks and blocking Pana score
+   gates even
    when tests are skipped.
    Tests run when `--run-tests` is supplied. Selecting ROHD also
    compiles and packages a temporary VSIX using the same helper as the VS Code
@@ -137,8 +138,8 @@ Preparation runs the following checks before invoking `tool/check_release.sh`:
 | Selected Package | Default Checks | Added With `--run-tests` |
 | --- | --- | --- |
 | `rohd` | `tool/run_checks.sh --skip-tests`: dependencies, formatting, analysis, API docs, and temporary-file checks; then `tool/package_vscode.sh` compiles and packages a temporary VSIX. | Simulator prerequisites and ROHD tests via `tool/run_checks.sh`. |
-| `rohd_hierarchy`, `rohd_waveform`, `rohd_source_navigator` | In each package directory: `dart pub get`, `dart format --output=none --set-exit-if-changed .`, then `dart analyze --fatal-infos`; also isolated hosted dependency checks and a Pana report. | `dart test` in each selected package. |
-| `rohd_devtools_widgets` | In its package directory: `flutter pub get`, `dart format --output=none --set-exit-if-changed .`, then `flutter analyze --fatal-infos`; also isolated hosted dependency checks and a Pana report. | `flutter test` in the widgets package. |
+| `rohd_hierarchy`, `rohd_waveform`, `rohd_source_navigator` | In each package directory: `dart pub get`, `dart format --output=none --set-exit-if-changed .`, then `dart analyze --fatal-infos`; also isolated hosted dependency checks and a blocking Pana score gate. | `dart test` in each selected package. |
+| `rohd_devtools_widgets` | In its package directory: `flutter pub get`, `dart format --output=none --set-exit-if-changed .`, then `flutter analyze --fatal-infos`; also isolated hosted dependency checks and a blocking Pana score gate. | `flutter test` in the widgets package. |
 
 Artifact provenance verification and the DevTools installation smoke test always
 run when ROHD is selected, even when test suites are skipped. The VSIX packaging
@@ -165,11 +166,19 @@ It runs `pub get` and `pub downgrade`, each followed by fatal-info analysis of
 `lib/`, using the selected SDK. Flutter analysis uses `--no-pub` to preserve the
 downgraded resolution. Required dependencies must already be available on pub.dev;
 there is no fallback to local packages. Command failures stop CI and preparation.
-Pana's report is printed for review, but package scoring findings such as missing
-examples or newer dependency major versions are advisory. No custom report parser
-is used. The root's existing no-argument Pana invocation and score gate are
-unchanged. Temporary copies are cleaned up on success or failure, and developers'
-overrides are never removed or rewritten.
+Pana's report is printed for review, and package scoring findings such as missing
+examples or newer dependency major versions block CI and preparation, matching
+the root package's policy. The runner passes `--exit-code-threshold 0` for every
+sub-package, requiring a full score. The sole temporary exception is
+`rohd_source_navigator`, which uses threshold `10` while its canonical
+`https://github.com/intel/rohd/tree/main/packages/rohd_source_navigator`
+repository URL cannot be validated before the path exists on upstream `main`;
+remove the exception when [#718](https://github.com/intel/rohd/pull/718) merges.
+Hosted dependency resolution, lower-bound analysis, and fatal-info library
+analysis remain mandatory for every package before Pana runs. No custom report
+parser is used. The root's existing no-argument Pana invocation and score gate
+are unchanged. Temporary copies are cleaned up on success or failure, and
+developers' overrides are never removed or rewritten.
 
 Pana does not run consumer tests. Final override-free tests and archive checks
 are still required as described below. Tests for the separate DevTools

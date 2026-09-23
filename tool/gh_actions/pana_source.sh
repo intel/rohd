@@ -28,9 +28,16 @@ if ! command -v pana > /dev/null; then
 fi
 
 package_dir="$(cd "$1" && pwd)"
+package="${package_dir##*/}"
 sdk="$2"
 analyze_arguments=(analyze --fatal-infos)
 pana_arguments=()
+pana_score_threshold=0
+if [[ "$package" == rohd_source_navigator ]]; then
+  # TODO(desmonddak): https://github.com/intel/rohd/pull/718 Remove this
+  # exception after the package move is on main and Pana can verify its URL.
+  pana_score_threshold=10
+fi
 if [[ "$sdk" == flutter ]]; then
   flutter_root="${FLUTTER_ROOT:-}"
   if [[ -z "$flutter_root" ]]; then
@@ -60,11 +67,12 @@ if grep -Eq '^[[:space:]]*dependency_overrides[[:space:]]*:' pubspec.yaml; then
   exit 2
 fi
 
-echo "=== ${package_dir##*/}: hosted dependency compatibility ==="
+echo "=== $package: hosted dependency compatibility ==="
 "$sdk" pub get
 "$sdk" "${analyze_arguments[@]}" lib
 "$sdk" pub downgrade
 "$sdk" "${analyze_arguments[@]}" lib
 
-echo "=== ${package_dir##*/}: Pana report (package scores are advisory) ==="
-PANA_ANALYSIS_INCLUDES=0 pana "${pana_arguments[@]}" .
+echo "=== $package: Pana score gate (threshold $pana_score_threshold) ==="
+PANA_ANALYSIS_INCLUDES=0 \
+  pana --exit-code-threshold "$pana_score_threshold" "${pana_arguments[@]}" .

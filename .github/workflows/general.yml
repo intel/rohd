@@ -128,7 +128,7 @@ jobs:
       - name: Run package tests
         run: ${{ matrix.sdk }} test
 
-      - name: Check hosted dependencies and run Pana
+      - name: Gate hosted dependencies and Pana score
         run: bash ../../tool/gh_actions/pana_source.sh . ${{ matrix.sdk }}
 
   deploy-documentation:

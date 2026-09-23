@@ -12,6 +12,7 @@ readonly REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 readonly FIXTURE="$(mktemp -d)"
 trap 'rm -rf "$FIXTURE"' EXIT
 export SOURCE="$FIXTURE/source package" SDK_LOG="$FIXTURE/sdk.log"
+export NAVIGATOR="$FIXTURE/rohd_source_navigator"
 export PUB_CACHE="$FIXTURE/pub cache" TMPDIR="$FIXTURE/temp space"
 export FLUTTER_ROOT="$FIXTURE/flutter sdk" PANA_ANALYSIS_INCLUDES=1
 
@@ -27,6 +28,8 @@ for file in pubspec.lock pubspec_overrides.yaml analysis_options.yaml \
   printf 'checkout-only state\n' > "$SOURCE/$file"
 done
 cp -R "$SOURCE" "$FIXTURE/original"
+cp -R "$SOURCE" "$NAVIGATOR"
+cp -R "$NAVIGATOR" "$FIXTURE/original-navigator"
 
 cat > "$FIXTURE/bin/dart" <<'EOF'
 #!/bin/bash
@@ -64,9 +67,11 @@ if [[ "$PWD" == "$SOURCE" ]]; then
 else
   [[ "$PWD" == "$TMPDIR"/rohd-pana.*/package && "$PANA_ANALYSIS_INCLUDES" == 0 ]]
   if [[ "$EXPECTED_SDK" == flutter ]]; then
-    [[ $# -eq 3 && "$1" == --flutter-sdk && "$2" == "$EXPECTED_FLUTTER_ROOT" && "$3" == . ]]
+    [[ $# -eq 5 && "$1" == --exit-code-threshold && "$2" == "$EXPECTED_THRESHOLD" &&
+      "$3" == --flutter-sdk && "$4" == "$EXPECTED_FLUTTER_ROOT" && "$5" == . ]]
   else
-    [[ $# -eq 1 && "$1" == . ]]
+    [[ $# -eq 3 && "$1" == --exit-code-threshold && "$2" == "$EXPECTED_THRESHOLD" &&
+      "$3" == . ]]
   fi
   printf 'changed by Pana\n' > pubspec.yaml
 fi
@@ -75,6 +80,7 @@ exit "${PANA_STATUS:-0}"
 EOF
 chmod +x "$PUB_CACHE/bin/pana"
 export EXPECTED_FLUTTER_ROOT="$FLUTTER_ROOT"
+export EXPECTED_THRESHOLD=0
 cd "$SOURCE"
 
 passed=0
@@ -90,6 +96,7 @@ run_case() {
     exit 1
   fi
   diff -ru "$FIXTURE/original" "$SOURCE"
+  diff -ru "$FIXTURE/original-navigator" "$NAVIGATOR"
   [[ -z "$(find "$TMPDIR" -mindepth 1 -print -quit)" ]]
   passed=$((passed + 1))
 }
@@ -103,6 +110,7 @@ run_case 2 "$FIXTURE/missing" dart
 
 for sdk in dart flutter; do
   export EXPECTED_SDK="$sdk"
+  export EXPECTED_THRESHOLD=0
   analyze='analyze --fatal-infos'
   if [[ "$sdk" == flutter ]]; then analyze+=' --no-pub'; fi
   analyze+=' lib'
@@ -117,7 +125,12 @@ for sdk in dart flutter; do
   done
 done
 
+export EXPECTED_SDK=dart EXPECTED_THRESHOLD=10
+run_case 0 "$NAVIGATOR" dart
+[[ "$(cat "$SDK_LOG")" == $'dart|pub get\ndart|analyze --fatal-infos lib\ndart|pub downgrade\ndart|analyze --fatal-infos lib\npana' ]]
+
 mv "$PUB_CACHE/bin/pana" "$FIXTURE/pana"
+export EXPECTED_THRESHOLD=0
 run_case 2 "$SOURCE" dart
 grep -q 'Pana is required' "$FIXTURE/output"
 [[ ! -s "$SDK_LOG" ]]
