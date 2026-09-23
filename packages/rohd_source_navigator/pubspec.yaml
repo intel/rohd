@@ -8,7 +8,7 @@ repository: https://github.com/intel/rohd/tree/main/packages/rohd_source_navigat
 issue_tracker: https://github.com/intel/rohd/issues
 
 environment:
-  sdk: ^3.0.0
+  sdk: '>=3.4.0 <4.0.0'
 
 dependencies:
   json_rpc_2: ^4.0.0
