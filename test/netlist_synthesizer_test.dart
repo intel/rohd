@@ -2119,7 +2119,7 @@ void main() {
       );
     });
 
-    test('struct aggregate netnames cannot span multiple drivers', () {
+    test('struct aggregate netnames allow disjoint field drivers', () {
       final ports = <String, Map<String, Object?>>{};
       final cells = <String, Map<String, Object?>>{
         'first_driver': {
@@ -2145,30 +2145,42 @@ void main() {
           },
         },
       };
-      final netnames = <String, Object?>{
-        'values': {
-          'bits': [
-            ...List<Object>.generate(8, (index) => 200 + index),
-            ...List<Object>.generate(8, (index) => 400 + index),
-          ],
-          'logic_type': {
-            'typeName': 'PairStructure',
-            'fields': [
-              {'name': 'first', 'width': 8},
-              {'name': 'second', 'width': 8},
-            ],
+      expect(
+        () => NetlistValidation.validate(ports, cells, 'struct_module'),
+        returnsNormally,
+      );
+    });
+
+    test('structured netnames reject overlapping field drivers', () {
+      final ports = <String, Map<String, Object?>>{};
+      final cells = <String, Map<String, Object?>>{
+        'first_driver': {
+          'type': r'$buf',
+          'port_directions': {'A': 'input', 'Y': 'output'},
+          'connections': {
+            'A': [100, 101],
+            'Y': [200, 201],
+          },
+        },
+        'second_driver': {
+          'type': r'$buf',
+          'port_directions': {'A': 'input', 'Y': 'output'},
+          'connections': {
+            'A': [102, 103],
+            'Y': [201, 202],
           },
         },
       };
 
       expect(
-        () => NetlistValidation.validate(
-          ports,
-          cells,
-          'struct_module',
-          netnames: netnames,
+        () => NetlistValidation.validate(ports, cells, 'struct_module'),
+        throwsA(
+          isA<NetlistValidationException>().having(
+            (error) => error.issues.map((issue) => issue.wireBit),
+            'overlapping wire bit',
+            contains(201),
+          ),
         ),
-        throwsA(isA<NetlistValidationException>()),
       );
     });
 
