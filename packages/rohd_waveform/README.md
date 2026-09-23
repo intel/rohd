@@ -10,6 +10,9 @@ that needs signal values over time.
 
 ## Service
 
+For a complete runnable example, see
+[`example/main.dart`](example/main.dart).
+
 `rohd_waveform` provides a small service layer for requesting, caching, and
 streaming waveform values:
 

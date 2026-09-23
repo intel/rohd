@@ -11,7 +11,7 @@ environment:
   sdk: ^3.0.0
 
 dependencies:
-  json_rpc_2: ^3.0.0
+  json_rpc_2: ^4.0.0
   web_socket_channel: ^3.0.0
 
 dev_dependencies:

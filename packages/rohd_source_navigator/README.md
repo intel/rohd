@@ -13,6 +13,9 @@ For Flutter applications, use `flutter pub add rohd_source_navigator`.
 
 ## API
 
+For a complete runnable example, see
+[`example/main.dart`](example/main.dart).
+
 - `FlcData`, `FlcEntry`, and `FlcFrame`: parse and look up file/line/column
   traces from v5/v6 FLC hierarchy JSON or embedded netlist trace attributes.
 - `SourceFrame` and `FrameCycler`: represent source locations and cycle through
