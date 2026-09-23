@@ -116,6 +116,9 @@ transport layer.
 
 ## Usage
 
+For a complete runnable example, see
+[`example/main.dart`](example/main.dart).
+
 ### Building a dictionary from a netlist
 
 ```dart

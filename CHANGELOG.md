@@ -1,4 +1,3 @@
-
 ## 0.6.11
 
 - Added `NetlistSynthesizer` for generating JSON netlists, with configurable synthesis passes, validation, and hierarchy support (<https://github.com/intel/rohd/pull/675>).
