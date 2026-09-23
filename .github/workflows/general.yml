@@ -78,6 +78,43 @@ jobs:
         with:
           runCmd: ROHD_REQUIRE_VERILATOR=1 tool/gh_actions/run_tests.sh
 
+  shell-regression-tests:
+    name: Shell Regression Tests
+    permissions: {}
+    timeout-minutes: 30
+    runs-on: ${{ github.repository_owner == 'intel' && 'intel-ubuntu-latest' || 'ubuntu-latest' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter SDK
+        uses: flutter-actions/setup-flutter@v2
+        with:
+          channel: stable
+          version: 3.44.0
+
+      - name: Install root Dart dependencies
+        run: dart pub get
+
+      - name: Install DevTools application dependencies
+        working-directory: rohd_devtools_extension
+        run: flutter pub get
+
+      - name: Run shell regression suites
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          suites=(tool/test/*_test.sh)
+          ((${#suites[@]})) || {
+            echo 'No shell regression suites found.' >&2
+            exit 1
+          }
+          for suite in "${suites[@]}"; do
+            echo "=== $suite ==="
+            bash "$suite"
+          done
+
   sub-package-checks:
     name: Check ${{ matrix.package }}
     permissions: {}

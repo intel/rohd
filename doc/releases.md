@@ -111,10 +111,9 @@ with a merge or rebase; the preparation PR itself does not need to be merged yet
    web build before preparing metadata, then runs ROHD's checks. Sub-package-only
    preparation leaves ROHD metadata and DevTools untouched. Each selected
    sub-package gets dependency resolution, formatting checks, and analysis in its
-   own directory, plus isolated hosted dependency checks and blocking Pana score
-   gates even
-   when tests are skipped.
-   Tests run when `--run-tests` is supplied. Selecting ROHD also
+   own directory. Tests run when `--run-tests` is supplied, and isolated hosted
+   dependency checks plus the blocking Pana score gate run when `--run-pana` is
+   supplied. Selecting ROHD also
    compiles and packages a temporary VSIX using the same helper as the VS Code
    release workflow, even when test suites are skipped. Only after all
    enabled checks for selected packages pass does it run
@@ -138,8 +137,8 @@ Preparation runs the following checks before invoking `tool/check_release.sh`:
 | Selected Package | Default Checks | Added With `--run-tests` |
 | --- | --- | --- |
 | `rohd` | `tool/run_checks.sh --skip-tests`: dependencies, formatting, analysis, API docs, and temporary-file checks; then `tool/package_vscode.sh` compiles and packages a temporary VSIX. | Simulator prerequisites and ROHD tests via `tool/run_checks.sh`. |
-| `rohd_hierarchy`, `rohd_waveform`, `rohd_source_navigator` | In each package directory: `dart pub get`, `dart format --output=none --set-exit-if-changed .`, then `dart analyze --fatal-infos`; also isolated hosted dependency checks and a blocking Pana score gate. | `dart test` in each selected package. |
-| `rohd_devtools_widgets` | In its package directory: `flutter pub get`, `dart format --output=none --set-exit-if-changed .`, then `flutter analyze --fatal-infos`; also isolated hosted dependency checks and a blocking Pana score gate. | `flutter test` in the widgets package. |
+| `rohd_hierarchy`, `rohd_waveform`, `rohd_source_navigator` | In each package directory: `dart pub get`, `dart format --output=none --set-exit-if-changed .`, then `dart analyze --fatal-infos`. | `dart test` with `--run-tests`; isolated hosted dependency checks and a blocking Pana score gate with `--run-pana`. |
+| `rohd_devtools_widgets` | In its package directory: `flutter pub get`, `dart format --output=none --set-exit-if-changed .`, then `flutter analyze --fatal-infos`. | `flutter test` with `--run-tests`; isolated hosted dependency checks and a blocking Pana score gate with `--run-pana`. |
 
 Artifact provenance verification and the DevTools installation smoke test always
 run when ROHD is selected, even when test suites are skipped. The VSIX packaging
@@ -157,7 +156,8 @@ prerequisite or enabled check; no publication dry runs start unless all enabled
 checks pass. An early failure such as a nonempty `tmp_test` directory
 means later stages have not run. Review leftover test files before retrying.
 The ordinary package checks use the current checkout's dependency overrides.
-Both CI and preparation reuse the existing Pana runner:
+CI always reuses the existing Pana runner, while local preparation runs it only
+with `--run-pana`:
 `bash tool/gh_actions/pana_source.sh packages/<package> <dart|flutter>`.
 Its package mode uses a disposable copy without checkout overrides, lockfiles,
 generated resolution/build state, or repository-relative analyzer configuration.
@@ -175,10 +175,12 @@ sub-package, requiring a full score. The sole temporary exception is
 repository URL cannot be validated before the path exists on upstream `main`;
 remove the exception when [#718](https://github.com/intel/rohd/pull/718) merges.
 Hosted dependency resolution, lower-bound analysis, and fatal-info library
-analysis remain mandatory for every package before Pana runs. No custom report
-parser is used. The root's existing no-argument Pana invocation and score gate
-are unchanged. Temporary copies are cleaned up on success or failure, and
-developers' overrides are never removed or rewritten.
+analysis remain mandatory whenever Pana runs. No custom report parser is used.
+The root's existing no-argument Pana invocation and score gate are unchanged.
+Temporary copies are cleaned up on success or failure, and developers' overrides
+are never removed or rewritten. Default local preparation reports skipped Pana
+gates explicitly; verify the CI result for the exact release commit before
+publishing when they are skipped.
 
 Pana does not run consumer tests. Final override-free tests and archive checks
 are still required as described below. Tests for the separate DevTools
@@ -192,6 +194,9 @@ tool/prepare_release.sh
 
 # All five packages, also running their test suites locally:
 tool/prepare_release.sh --run-tests
+
+# All five packages, also running hosted dependency and Pana score gates:
+tool/prepare_release.sh --run-pana
 
 # ROHD only:
 tool/prepare_release.sh rohd
@@ -208,12 +213,12 @@ tool/prepare_release.sh rohd_hierarchy rohd_waveform
 # Only source navigator:
 tool/prepare_release.sh rohd_source_navigator
 
-# Source navigator and widgets, including both package test suites:
-tool/prepare_release.sh --run-tests rohd_source_navigator rohd_devtools_widgets
+# Source navigator and widgets, including package tests and Pana score gates:
+tool/prepare_release.sh --run-tests --run-pana rohd_source_navigator rohd_devtools_widgets
 ```
 
 Preparation requires Dart for YAML metadata parsing using the root package's
-dependencies. Selecting any sub-package also requires Pana, installed with
+dependencies. `--run-pana` also requires Pana, installed with
 `bash tool/gh_actions/install_pana.sh`, and network access to hosted dependencies.
 Selecting widgets also requires Flutter, including the default all-package
 selection. The Pana runner discovers Flutter from its executable or uses
@@ -267,6 +272,11 @@ They allow real Dart execution only for the metadata helper, never for publicati
 commands.
 Its focused metadata tests run with
 `dart test test/prepare_release_metadata_test.dart`.
+The General workflow's blocking `Shell Regression Tests` job discovers and runs
+every `tool/test/*_test.sh` suite on pull requests and `main`. It installs the
+root Dart dependencies and the DevTools application's Flutter dependencies so
+the DevTools artifact-discovery regression uses the real loader; all other
+shell suites retain their own isolated fixtures.
 
 ## Publication Order
 
