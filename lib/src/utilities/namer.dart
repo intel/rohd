@@ -51,6 +51,15 @@ class Namer {
   ///
   /// Port names are reserved in the shared namespace.  Port names are
   /// guaranteed sanitary by [Module]'s `_checkForSafePortName`.
+  ///
+  /// Any [SystemVerilog.definitionParameters] are reserved as well, since a
+  /// generated parameter declaration shares the module's namespace with its
+  /// ports, signals and instances.  Reserving them means an internal signal
+  /// or instance that would otherwise pick the same name is uniquified away
+  /// from it, and a parameter that collides with a name which cannot move --
+  /// a port, or another reserved name -- throws an
+  /// [UnavailableReservedNameException] rather than generating a module with
+  /// two declarations of the same identifier.
   factory Namer.forModule(Module module) {
     final portLogics = <Logic>{
       ...module.inputs.values,
@@ -61,6 +70,12 @@ class Namer {
     final uniquifier = Uniquifier();
     for (final logic in portLogics) {
       uniquifier.getUniqueName(initialName: logic.name, reserved: true);
+    }
+
+    if (module is SystemVerilog) {
+      for (final parameter in module.definitionParameters ?? const []) {
+        uniquifier.getUniqueName(initialName: parameter.name, reserved: true);
+      }
     }
 
     return Namer._(uniquifier: uniquifier, portLogics: portLogics);
