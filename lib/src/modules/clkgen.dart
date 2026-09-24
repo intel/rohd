@@ -16,6 +16,9 @@ class SimpleClockGenerator extends Module with SystemVerilog {
   ///
   /// For example, if the [clockPeriod] is 10, then the frequency is 1/10,
   /// and the time between positive edges of the generated clock is 10.
+  ///
+  /// The clock toggles once every half period, so [clockPeriod] must be an
+  /// even number of time units greater than or equal to 2.
   final int clockPeriod;
 
   /// The generated clock.
@@ -24,8 +27,20 @@ class SimpleClockGenerator extends Module with SystemVerilog {
   /// Constructs a very simple clock generator.  Generates a non-synthesizable
   /// SystemVerilog representation.
   ///
-  /// Set the frequency via [clockPeriod].
+  /// Set the frequency via [clockPeriod], which must be an even number of
+  /// time units greater than or equal to 2.  Other values throw an
+  /// [IllegalConfigurationException].
   SimpleClockGenerator(this.clockPeriod, {super.name = 'clkgen'}) {
+    if (clockPeriod < 2 || clockPeriod.isOdd) {
+      throw IllegalConfigurationException(
+          'The clockPeriod must be an even number of time units greater than'
+          ' or equal to 2, but got $clockPeriod.  The clock toggles once every'
+          ' half period, so a period below 2 would schedule both edges within'
+          ' the same time unit and prevent the simulation from advancing, and'
+          ' an odd period would silently generate a clock whose period is'
+          ' ${clockPeriod - 1} instead.');
+    }
+
     addOutput('clk');
 
     clk.makeUnassignable(
