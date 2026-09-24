@@ -13,8 +13,9 @@
 # main into it. When selecting ROHD, wait for that main commit's DevTools build.
 # Publish from the preparation branch; merge its PR after publication succeeds.
 #
-# With no arguments, select rohd, rohd_hierarchy, rohd_waveform, and
-# rohd_devtools_widgets. Explicit package names select only those packages.
+# With no arguments, select rohd, rohd_hierarchy, rohd_waveform,
+# rohd_devtools_widgets, and rohd_source_navigator.
+# Explicit package names select only those packages.
 # Set each selected package's version in its own pubspec.yaml before running.
 # The manifests are never rewritten; each pending changelog heading is promoted
 # to its package's version (an existing version heading is also accepted).
@@ -26,24 +27,27 @@
 # The DevTools build comes from main, not from branch-only implementation changes.
 # Each selected sub-package gets dependency resolution, a non-writing format check,
 # and analysis (including fatal infos) in its own directory. Dart is used
-# for hierarchy/waveform, Flutter for widgets, and dart format for all three.
-# Test suites are skipped by default; verify CI results for the release commit.
-# Add --run-tests to also run all selected package suites locally, including
-# ROHD's simulator prerequisites when ROHD is selected.
+# for hierarchy/waveform/source navigator, Flutter for widgets, and dart format
+# for all sub-packages. Test suites and the isolated hosted Pana score gate are
+# skipped by default; verify CI results for the release commit. Add --run-tests
+# to also run all selected package suites locally, including ROHD's simulator
+# prerequisites when ROHD is selected. Add --run-pana to run hosted dependency
+# resolution, pub downgrade, library analysis, and the Pana score gate.
 # Only after all selected checks pass do publication dry runs start.
 # It never publishes, commits, tags, pushes, merges, or rebases.
 #
 # Dart is required to read YAML metadata using the root package's dependencies.
 # Selecting ROHD also requires Node.js and npm (release CI uses Node.js 24).
-# Selecting rohd_devtools_widgets also requires Flutter. Any failed prerequisite
-# or package check stops preparation before publication dry runs.
+# Selecting rohd_devtools_widgets also requires Flutter. --run-pana requires
+# Pana (tool/gh_actions/install_pana.sh) and hosted dependencies.
+# Any failed prerequisite or package check stops preparation before dry runs.
 #
 # Examples:
 #
-#   ROHD plus all three publishable sub-packages (the default):
+#   ROHD plus all four publishable sub-packages (the default):
 #     tool/prepare_release.sh
 #
-#   All four packages, including their test suites:
+#   All five packages, including their test suites:
 #     tool/prepare_release.sh --run-tests
 #
 #   ROHD only:
@@ -57,6 +61,9 @@
 #
 #   Only hierarchy and waveform (no ROHD metadata or DevTools changes):
 #     tool/prepare_release.sh rohd_hierarchy rohd_waveform
+#
+#   Only source navigator:
+#     tool/prepare_release.sh rohd_source_navigator
 #
 #   Sub-package archive checks only (no metadata preparation):
 #     tool/check_release.sh rohd_hierarchy rohd_waveform rohd_devtools_widgets
@@ -74,27 +81,31 @@ export DASH__SUPPRESS_ANALYTICS=true
 export FLUTTER_SUPPRESS_ANALYTICS=true
 
 if [[ $# -eq 1 && "$1" == '--help' ]]; then
-  echo "Usage: $0 [--run-tests] [package ...]"
-  echo "Packages: rohd rohd_hierarchy rohd_waveform rohd_devtools_widgets"
-  echo "Defaults to all four packages, using each package's pubspec.yaml version."
+  echo "Usage: $0 [--run-tests] [--run-pana] [package ...]"
+  echo "Packages: rohd rohd_hierarchy rohd_waveform rohd_devtools_widgets rohd_source_navigator"
+  echo "Defaults to all five packages, using each package's pubspec.yaml version."
   echo "Test suites are skipped by default; use --run-tests to include them."
+  echo "Pana score checks are skipped by default; use --run-pana to include them."
   echo "Artifact verification and its smoke test still run when ROHD is selected."
   echo "Selecting ROHD also checks VSIX packaging (requires Node.js and npm)."
   echo "Prepares metadata, runs package checks and publication dry runs; never uploads packages."
   exit 0
 fi
 run_tests=false
+run_pana=false
 packages=()
 for argument in "$@"; do
   if [[ "$argument" == '--run-tests' ]]; then
     run_tests=true
+  elif [[ "$argument" == '--run-pana' ]]; then
+    run_pana=true
   else
     packages+=("$argument")
   fi
 done
 set -- "${packages[@]}"
 if [[ $# -eq 0 ]]; then
-  set -- rohd rohd_hierarchy rohd_waveform rohd_devtools_widgets
+  set -- rohd rohd_hierarchy rohd_waveform rohd_devtools_widgets rohd_source_navigator
 fi
 
 # Resolve all paths and source provenance before changing the working tree.
@@ -106,10 +117,19 @@ if [[ "$run_tests" == true ]]; then
 else
   echo "Test suites skipped; verify CI results for the release commit. Use --run-tests to run them locally."
 fi
+if [[ "$run_pana" == true ]]; then
+  echo "Pana score checks enabled for selected sub-packages (--run-pana)."
+else
+  echo "Pana score checks skipped; verify CI results for the release commit. Use --run-pana to run them locally."
+fi
 prepare_rohd=false
 for package in "$@"; do
   if [[ "$package" == rohd ]]; then
     prepare_rohd=true
+  elif [[ "$run_pana" == true ]] &&
+      ! PATH="$PATH:${PUB_CACHE:-$HOME/.pub-cache}/bin" command -v pana > /dev/null; then
+    echo "Pana is required; run tool/gh_actions/install_pana.sh first." >&2
+    exit 2
   fi
 done
 cd "$REPO_ROOT"
@@ -211,6 +231,11 @@ for package in "$@"; do
       echo "=== $package: tests skipped (use --run-tests) ==="
     fi
   )
+  if [[ "$run_pana" == true ]]; then
+    bash "$SCRIPT_DIR/gh_actions/pana_source.sh" "$REPO_ROOT/packages/$package" "$sdk"
+  else
+    echo "=== $package: Pana score gate skipped (use --run-pana) ==="
+  fi
 done
 git diff --check
 bash "$SCRIPT_DIR/check_release.sh" "$@"
@@ -229,4 +254,7 @@ Selected packages passed checks and publication dry runs; nothing was uploaded.
 EOF
 if [[ "$run_tests" == false ]]; then
   echo "Test suites were not run. Verify CI results for the release commit before publishing."
+fi
+if [[ "$run_pana" == false ]]; then
+  echo "Pana score gates were not run. Verify CI results for the release commit before publishing."
 fi

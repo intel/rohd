@@ -70,6 +70,9 @@ across DevTools packages.
 
 ## Usage
 
+For a complete runnable example, see
+[`example/main.dart`](example/main.dart).
+
 Add the package to your Flutter application:
 
 ```shell
