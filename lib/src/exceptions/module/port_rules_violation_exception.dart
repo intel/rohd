@@ -23,7 +23,7 @@ class PortRulesViolationException extends RohdException {
             ' in module $module on signal $signal.'
             ' Logic within a Module should only communicate outside of itself'
             ' by consuming inputs/inouts and'
-            ' driving outputs/inouts of that itself.'
+            ' driving outputs/inouts of itself.'
             ' See https://intel.github.io/rohd-website/docs/modules/'
             ' for more information. $additionalMessage');
 
