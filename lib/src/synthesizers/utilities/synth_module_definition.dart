@@ -2814,6 +2814,27 @@ class SynthModuleDefinition {
         entry.key: entry.value.range,
     };
 
+    final outputDrivingSignals = {
+      for (final output in outputs)
+        if (!output.isArray && !output.isNet) output.resolved,
+    };
+    final outputDriverQueue = ListQueue<SynthLogic>.from(outputDrivingSignals);
+    while (outputDriverQueue.isNotEmpty) {
+      final destination = outputDriverQueue.removeFirst();
+      final driver =
+          _singleFullWidthAssignment(destination, assignmentsByDestination);
+      if (driver == null ||
+          driver is PartialSynthAssignment ||
+          driver.src.isArray ||
+          driver.src.isNet ||
+          !driver.src.isClearable) {
+        continue;
+      }
+      if (outputDrivingSignals.add(driver.src.resolved)) {
+        outputDriverQueue.add(driver.src.resolved);
+      }
+    }
+
     final replacements = <SynthAssignment, SynthAssignment>{};
     final consumedAssignments = <SynthAssignment>{};
     final outputMappingReplacements = <({
@@ -2913,6 +2934,12 @@ class SynthModuleDefinition {
               realOutputMappingsBySignal[producer.src.resolved]?.isNotEmpty ??
               false)
           .length;
+      final canMapMultipleOutputs = outputDrivingSignals.contains(output) &&
+          producers.fold<int>(
+                  0,
+                  (width, producer) =>
+                      width + _assignmentDestinationRange(producer).width) ==
+              output.width;
       final seenDestinationBits = <int>{};
       var canReplaceAll = true;
       for (final producer in producers) {
@@ -2956,10 +2983,11 @@ class SynthModuleDefinition {
             realOutputMappingsBySignal[producer.src.resolved] ?? const [];
         final producerSourceUsers =
             assignmentsBySource[producer.src.resolved] ?? const [];
-        final canMapDirectly = realMappedOutputProducerCount == 1 &&
-            (!hasConstantProducer ||
-                producerDst.lower == 0 ||
-                producerDst.upper == intermediate.width - 1);
+        final canMapDirectly =
+            (realMappedOutputProducerCount == 1 || canMapMultipleOutputs) &&
+                (!hasConstantProducer ||
+                    producerDst.lower == 0 ||
+                    producerDst.upper == intermediate.width - 1);
         if (canMapDirectly &&
             outputMappings.length == 1 &&
             producerSourceUsers.length == 1 &&
