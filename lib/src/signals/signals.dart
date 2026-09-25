@@ -1,4 +1,4 @@
-// Copyright (C) 2023 Intel Corporation
+// Copyright (C) 2023-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 
 library;
@@ -21,5 +21,7 @@ part 'logic.dart';
 part 'wire.dart';
 part 'wire_net.dart';
 part 'logic_structure.dart';
+part 'base_logic_array.dart';
 part 'logic_array.dart';
+part 'typed_logic_array.dart';
 part 'logic_net.dart';

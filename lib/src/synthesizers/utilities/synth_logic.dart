@@ -10,6 +10,7 @@
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/signals/signals.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
 import 'package:rohd/src/utilities/namer.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
@@ -105,7 +106,7 @@ class SynthLogic {
   /// Whether this represents a net.
   bool get isNet =>
       // can just look at the first since nets and non-nets cannot be merged
-      logics.first.isNet || (isArray && (logics.first as LogicArray).isNet);
+      logics.first.isNet || (isArray && (logics.first as BaseLogicArray).isNet);
 
   /// If set, then this should never pick the constant as the name.
   bool get constNameDisallowed => _constNameDisallowed;
@@ -198,7 +199,7 @@ class SynthLogic {
   /// without making the resulting signal clearable.
   bool get mergeable => !hasPreservedName && _constLogic == null;
 
-  /// True only if this represents a [LogicArray].
+  /// True only if this represents a [BaseLogicArray].
   final bool isArray;
 
   /// The chosen name of this.
@@ -216,6 +217,18 @@ class SynthLogic {
     );
 
     return _name!;
+  }
+
+  /// Returns a reference to the inclusive packed range within this signal.
+  ///
+  /// Subclasses that already represent a selected portion of another signal
+  /// override this to compose the ranges rather than emit chained part
+  /// selects.
+  String rangeName(int lowerIndex, int upperIndex) {
+    assert(lowerIndex >= 0, 'Range lower index must not be negative.');
+    assert(upperIndex >= lowerIndex, 'Range must not be reversed.');
+    assert(upperIndex < width, 'Range must fit within the signal.');
+    return '$name${_packedRangeSuffix(lowerIndex, upperIndex)}';
   }
 
   /// The chosen name of this, or `null` if a name has not been picked or this
@@ -263,7 +276,7 @@ class SynthLogic {
     required this.parentSynthModuleDefinition,
     Naming? namingOverride,
     bool constNameDisallowed = false,
-  })  : isArray = initialLogic is LogicArray,
+  })  : isArray = initialLogic is BaseLogicArray,
         _constNameDisallowed = constNameDisallowed {
     _addLogic(initialLogic, namingOverride: namingOverride);
   }
@@ -279,6 +292,13 @@ class SynthLogic {
     SynthLogic a,
     SynthLogic b,
   ) {
+    if (a.isArray != b.isArray) {
+      return null;
+    }
+    if (a.isArray && !_arrayRepresentationsCompatible(a, b)) {
+      return null;
+    }
+
     if (_constantsMergeable(a, b)) {
       // case to avoid things like a constant assigned to another constant
       a.adopt(b);
@@ -337,15 +357,8 @@ class SynthLogic {
       return false;
     }
 
-    if (a.isArray) {
-      final arrayA = a.logics.first as LogicArray;
-      final arrayB = b.logics.first as LogicArray;
-      if (arrayA.elementWidth != arrayB.elementWidth ||
-          arrayA.numUnpackedDimensions != arrayB.numUnpackedDimensions ||
-          !const ListEquality<int>()
-              .equals(arrayA.dimensions, arrayB.dimensions)) {
-        return false;
-      }
+    if (a.isArray && !_arrayRepresentationsCompatible(a, b)) {
+      return false;
     }
 
     final preservedLogics = [
@@ -356,6 +369,54 @@ class SynthLogic {
     ];
     final name = Namer.baseName(preservedLogics.first);
     return preservedLogics.every((logic) => Namer.baseName(logic) == name);
+  }
+
+  /// Whether two array signals have compatible declarations and element trees.
+  static bool _arrayRepresentationsCompatible(SynthLogic a, SynthLogic b) =>
+      _arrayLayoutsCompatible(
+        a.logics.first as BaseLogicArray,
+        b.logics.first as BaseLogicArray,
+      );
+
+  static bool _arrayLayoutsCompatible(
+    BaseLogicArray a,
+    BaseLogicArray b,
+  ) {
+    if (a.elementWidth != b.elementWidth ||
+        a.numUnpackedDimensions != b.numUnpackedDimensions ||
+        !const ListEquality<int>().equals(a.dimensions, b.dimensions) ||
+        a.elements.length != b.elements.length) {
+      return false;
+    }
+    if (a.elements.isEmpty) {
+      return true;
+    }
+    return _elementLayoutsCompatible(a.elements.first, b.elements.first);
+  }
+
+  static bool _elementLayoutsCompatible(Logic a, Logic b) {
+    if (a.width != b.width || a.isNet != b.isNet) {
+      return false;
+    }
+    if (a is BaseLogicArray || b is BaseLogicArray) {
+      return a is BaseLogicArray &&
+          b is BaseLogicArray &&
+          _arrayLayoutsCompatible(a, b);
+    }
+    if (a is LogicStructure || b is LogicStructure) {
+      if (a is! LogicStructure ||
+          b is! LogicStructure ||
+          a.runtimeType != b.runtimeType ||
+          a.elements.length != b.elements.length) {
+        return false;
+      }
+      return a.elements.indexed.every((entry) {
+        final other = b.elements[entry.$1];
+        return entry.$2.name == other.name &&
+            _elementLayoutsCompatible(entry.$2, other);
+      });
+    }
+    return true;
   }
 
   /// Merges [other] to be represented by `this` instead, and updates the
@@ -437,7 +498,15 @@ class SynthLogic {
     final logic = logics.first;
 
     if (isArray) {
-      final logicArr = logic as LogicArray;
+      final logicArr = logic as BaseLogicArray;
+      if (logicArr.elementWidth == 0 ||
+          logicArr.dimensions.any((dimension) => dimension == 0)) {
+        throw SynthException(
+          'SystemVerilog cannot represent zero-width array '
+          '${logicArr.name} with dimensions ${logicArr.dimensions} and '
+          'element width ${logicArr.elementWidth}.',
+        );
+      }
 
       final packedDimsBuf = StringBuffer();
       final unpackedDimsBuf = StringBuffer();
@@ -489,7 +558,6 @@ class SynthLogicPackedBitReference extends SynthLogic {
     required super.parentSynthModuleDefinition,
   })  : assert(
             !packedBase.isArray, 'Packed reference base must not be an array.'),
-        assert(!packedBase.isNet, 'Packed reference base must not be a net.'),
         assert(
           !packedBase.isConstant,
           'Packed reference base must not be a constant.',
@@ -500,6 +568,9 @@ class SynthLogicPackedBitReference extends SynthLogic {
           'Packed reference index must fit within its base.',
         ),
         super(Logic());
+
+  @override
+  bool get isNet => packedBase.resolved.isNet;
 
   @override
   bool get needsDeclaration => false;
@@ -525,12 +596,21 @@ class SynthLogicPackedBitReference extends SynthLogic {
       bitIndex < resolvedBase.width,
       'Packed reference index must fit within its resolved base.',
     );
-    final reference = '${resolvedBase.name}[$bitIndex]';
+    final reference = resolvedBase.rangeName(bitIndex, bitIndex);
     assert(
-      Sanitizer.isSanitary(resolvedBase.name),
+      Sanitizer.isSanitary(resolvedBase.name.split('[').first),
       'Packed reference base should be sanitary, but found $reference.',
     );
     return reference;
+  }
+
+  @override
+  String rangeName(int lowerIndex, int upperIndex) {
+    assert(
+      lowerIndex == 0 && upperIndex == 0,
+      'A packed bit reference only contains bit zero.',
+    );
+    return name;
   }
 }
 
@@ -556,7 +636,6 @@ class SynthLogicPackedRangeReference extends SynthLogic {
     required super.parentSynthModuleDefinition,
   })  : assert(
             !packedBase.isArray, 'Packed reference base must not be an array.'),
-        assert(!packedBase.isNet, 'Packed reference base must not be a net.'),
         assert(
           !packedBase.isConstant,
           'Packed reference base must not be a constant.',
@@ -571,6 +650,9 @@ class SynthLogicPackedRangeReference extends SynthLogic {
           'Packed reference index must fit within its base.',
         ),
         super(Logic(width: upperIndex - lowerIndex + 1));
+
+  @override
+  bool get isNet => packedBase.resolved.isNet;
 
   @override
   bool get needsDeclaration => false;
@@ -596,12 +678,23 @@ class SynthLogicPackedRangeReference extends SynthLogic {
       upperIndex < resolvedBase.width,
       'Packed reference index must fit within its resolved base.',
     );
-    final reference = '${resolvedBase.name}[$upperIndex:$lowerIndex]';
+    final reference = resolvedBase.rangeName(lowerIndex, upperIndex);
     assert(
-      Sanitizer.isSanitary(resolvedBase.name),
+      Sanitizer.isSanitary(resolvedBase.name.split('[').first),
       'Packed reference base should be sanitary, but found $reference.',
     );
     return reference;
+  }
+
+  @override
+  String rangeName(int lowerIndex, int upperIndex) {
+    assert(lowerIndex >= 0, 'Range lower index must not be negative.');
+    assert(upperIndex >= lowerIndex, 'Range must not be reversed.');
+    assert(upperIndex < width, 'Range must fit within the reference.');
+    return packedBase.resolved.rangeName(
+      this.lowerIndex + lowerIndex,
+      this.lowerIndex + upperIndex,
+    );
   }
 }
 
@@ -665,28 +758,30 @@ class SynthLogicArrayElement extends SynthLogic {
   }
 
   @override
-  String get name {
-    final parentArrayName = parentArray.replacement?.name ?? parentArray.name;
-    final n = '$parentArrayName[${logic.arrayIndex!}]';
-    assert(
-      Sanitizer.isSanitary(
-        n.substring(0, n.contains('[') ? n.indexOf('[') : null),
-      ),
-      'Array name should be sanitary, but found $n',
-    );
-    return n;
-  }
+  String get name => logic is BaseLogicArray &&
+          logic.parentStructure is! BaseLogicArray &&
+          !logic.isNet
+      ? super.name
+      : _synthArrayReferenceName(logic, parentSynthModuleDefinition);
+
+  @override
+  String rangeName(int lowerIndex, int upperIndex) => _synthArrayReferenceName(
+        logic,
+        parentSynthModuleDefinition,
+        lowerIndex: lowerIndex,
+        upperIndex: upperIndex,
+      );
 
   /// The element of the [parentArray].
   final Logic logic;
 
-  /// Creates an instance of an element of a [LogicArray].
+  /// Creates an instance of an element of a [BaseLogicArray].
   SynthLogicArrayElement(
     this.logic, {
     required super.parentSynthModuleDefinition,
   })  : assert(
           logic.isArrayMember,
-          'Should only be used for elements in a LogicArray',
+          'Should only be used for elements in a BaseLogicArray',
         ),
         super(logic) {
     // make sure we have created the synthLogic for the parent array
@@ -697,4 +792,267 @@ class SynthLogicArrayElement extends SynthLogic {
   String toString() => '${_name == null ? 'null' : '"$name"'},'
       ' parentArray=($parentArray), element ${logic.arrayIndex}, logic: $logic'
       ' logics contained: ${logics.map((e) => e.name).toList()}';
+}
+
+/// Represents a scalar field within a structured [BaseLogicArray] element.
+///
+/// The field has no standalone declaration: it is selected from the packed
+/// array element that contains it.
+@internal
+class SynthLogicArrayStructureElement extends SynthLogic {
+  /// The scalar field represented by this synthesized signal.
+  final Logic logic;
+
+  /// The synthesized nearest array containing [logic].
+  SynthLogic get parentArray {
+    var parent = logic.parentStructure;
+    while (parent != null && parent is! BaseLogicArray) {
+      parent = parent.parentStructure;
+    }
+    if (parent == null) {
+      throw StateError('Structured array field has no array ancestor.');
+    }
+    return parentSynthModuleDefinition.getSynthLogic(parent)!;
+  }
+
+  /// The synthesized outermost array ancestor containing [logic].
+  SynthLogic get rootArray {
+    BaseLogicArray? rootArray;
+    var parent = logic.parentStructure;
+    while (parent != null) {
+      if (parent is BaseLogicArray) {
+        rootArray = parent;
+      }
+      parent = parent.parentStructure;
+    }
+    if (rootArray == null) {
+      throw StateError('Structured array field has no array ancestor.');
+    }
+    return parentSynthModuleDefinition.getSynthLogic(rootArray)!;
+  }
+
+  @override
+  bool get needsDeclaration => false;
+
+  @override
+  bool get mergeable => false;
+
+  @override
+  bool isPort([Module? module]) => rootArray.isPort(module);
+
+  @override
+  bool hasSrcConnectionsPresent() =>
+      super.hasSrcConnectionsPresent() || rootArray.hasSrcConnectionsPresent();
+
+  @override
+  bool hasDstConnectionsPresent() =>
+      super.hasDstConnectionsPresent() || rootArray.hasDstConnectionsPresent();
+
+  @override
+  String get name =>
+      _synthArrayReferenceName(logic, parentSynthModuleDefinition);
+
+  @override
+  String rangeName(int lowerIndex, int upperIndex) => _synthArrayReferenceName(
+        logic,
+        parentSynthModuleDefinition,
+        lowerIndex: lowerIndex,
+        upperIndex: upperIndex,
+      );
+
+  /// Creates a synthesized reference for a scalar structured-array field.
+  SynthLogicArrayStructureElement(
+    this.logic, {
+    required super.parentSynthModuleDefinition,
+  })  : assert(
+          _arrayLeafAncestor(logic) != null,
+          'Structured array field must have an array ancestor',
+        ),
+        super(logic);
+
+  /// Returns the configured array leaf that contains [logic], if any.
+  static Logic? _arrayLeafAncestor(Logic logic) {
+    var current = logic;
+    var parent = current.parentStructure;
+    while (parent != null) {
+      if (parent is BaseLogicArray) {
+        return current;
+      }
+      current = parent;
+      parent = current.parentStructure;
+    }
+    return null;
+  }
+}
+
+/// Renders an array descendant using the declaration shape of its root array.
+///
+/// Nested arrays are represented as packed payloads of the root element, so
+/// their coordinates become a packed range instead of additional SV indices.
+String _synthArrayReferenceName(
+  Logic target,
+  SynthModuleDefinition parentSynthModuleDefinition, {
+  int? lowerIndex,
+  int? upperIndex,
+}) {
+  assert(
+    (lowerIndex == null) == (upperIndex == null),
+    'Both range bounds must be provided together.',
+  );
+  assert(
+    lowerIndex == null || lowerIndex >= 0,
+    'Range lower index must not be negative.',
+  );
+  assert(
+    upperIndex == null ||
+        (upperIndex >= lowerIndex! && upperIndex < target.width),
+    'Range must be ordered and fit within its target.',
+  );
+
+  var current = target;
+  BaseLogicArray? rootArray;
+  while (current.parentStructure != null) {
+    final parent = current.parentStructure!;
+    if (parent is BaseLogicArray) {
+      rootArray = parent;
+    }
+    current = parent;
+  }
+  if (rootArray == null) {
+    throw StateError('Array descendant has no array ancestor.');
+  }
+
+  final nestedArray =
+      rootArray.isNet ? null : _nearestNestedArray(target, rootArray);
+  if (nestedArray != null) {
+    return _synthRepresentedArrayReference(
+      target,
+      nestedArray,
+      parentSynthModuleDefinition,
+      lowerIndex: lowerIndex,
+      upperIndex: upperIndex,
+    );
+  }
+
+  return _synthRepresentedArrayReference(
+    target,
+    rootArray,
+    parentSynthModuleDefinition,
+    lowerIndex: lowerIndex,
+    upperIndex: upperIndex,
+  );
+}
+
+/// Renders [target] relative to the declaration represented by [array].
+String _synthRepresentedArrayReference(
+  Logic target,
+  BaseLogicArray array,
+  SynthModuleDefinition parentSynthModuleDefinition, {
+  int? lowerIndex,
+  int? upperIndex,
+}) {
+  final indices = <int>[];
+  var current = target;
+  while (!identical(current, array)) {
+    if (current.isArrayMember) {
+      indices.add(current.arrayIndex!);
+    }
+    current = current.parentStructure!;
+  }
+  final orderedIndices = indices.reversed.toList(growable: false);
+  final arrayRank = array.dimensions.length;
+  final arraySynth = parentSynthModuleDefinition.getSynthLogic(array)!;
+  final arrayName = arraySynth.replacement?.name ?? arraySynth.name;
+  if (orderedIndices.length < arrayRank) {
+    if (target is! BaseLogicArray) {
+      throw StateError('Array descendant is missing declared array indices.');
+    }
+    final partialReference =
+        '$arrayName${orderedIndices.map((index) => '[$index]').join()}';
+    return lowerIndex == null
+        ? partialReference
+        : '$partialReference${_packedRangeSuffix(lowerIndex, upperIndex!)}';
+  }
+
+  final declarationIndices =
+      orderedIndices.take(arrayRank).map((index) => '[$index]').join();
+  final arrayElement = _arrayElementAt(array, orderedIndices, arrayRank);
+  if (identical(target, arrayElement) && lowerIndex == null) {
+    return '$arrayName$declarationIndices';
+  }
+
+  final offset = _packedOffset(arrayElement, target);
+  final lower = offset + (lowerIndex ?? 0);
+  final upper = offset + (upperIndex ?? target.width - 1);
+  final range = _packedRangeSuffix(lower, upper);
+  final rendered = '$arrayName$declarationIndices$range';
+  assert(
+    Sanitizer.isSanitary(arrayName),
+    'Array name should be sanitary, but found $rendered',
+  );
+  return rendered;
+}
+
+String _packedRangeSuffix(int lowerIndex, int upperIndex) =>
+    upperIndex == lowerIndex ? '[$lowerIndex]' : '[$upperIndex:$lowerIndex]';
+
+/// Finds the nearest nested array that is an array-valued structure field.
+BaseLogicArray? _nearestNestedArray(
+  Logic target,
+  BaseLogicArray rootArray,
+) {
+  var current = target;
+  while (true) {
+    if (current is BaseLogicArray &&
+        !identical(current, rootArray) &&
+        current.parentStructure is LogicStructure &&
+        current.parentStructure is! BaseLogicArray) {
+      return current;
+    }
+    final parent = current.parentStructure;
+    if (parent == null) {
+      return null;
+    }
+    current = parent;
+  }
+}
+
+/// Finds the root element containing a target from row-major array indices.
+Logic _arrayElementAt(
+  BaseLogicArray rootArray,
+  List<int> indices,
+  int rootRank,
+) {
+  Logic current = rootArray;
+  for (final index in indices.take(rootRank)) {
+    current = (current as LogicStructure).elements[index];
+  }
+  return current;
+}
+
+/// Returns the packed offset of [target] within [container].
+int _packedOffset(Logic container, Logic target) {
+  if (identical(container, target)) {
+    return 0;
+  }
+  if (container is! LogicStructure) {
+    throw StateError('Target is not contained in ${container.name}.');
+  }
+
+  var offset = 0;
+  for (final element in container.elements) {
+    if (_containsLogic(element, target)) {
+      return offset + _packedOffset(element, target);
+    }
+    offset += element.width;
+  }
+  throw StateError('Target is not contained in ${container.name}.');
+}
+
+bool _containsLogic(Logic container, Logic target) {
+  if (identical(container, target)) {
+    return true;
+  }
+  return container is LogicStructure &&
+      container.elements.any((element) => _containsLogic(element, target));
 }

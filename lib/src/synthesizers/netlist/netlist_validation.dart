@@ -64,9 +64,9 @@ class NetlistValidation {
       }
       issues.add(NetlistValidationIssue(
         'wire bit ${entry.key} has multiple drivers: '
-        '${entry.value.join(', ')}',
+        '${entry.value.map((driver) => driver.description).join(', ')}',
         wireBit: entry.key,
-        drivers: entry.value,
+        drivers: entry.value.map((driver) => driver.description),
       ));
     }
 
@@ -82,17 +82,18 @@ class NetlistValidation {
           continue;
         }
         final bits = (netname['bits'] as List?)?.whereType<int>() ?? const [];
-        final aggregateDrivers = <String>{
-          for (final bit in bits) ...driversByBit[bit] ?? const <String>[],
+        final aggregateDrivers = <({String description, bool isTriState})>{
+          for (final bit in bits) ...driversByBit[bit] ?? const [],
         };
-        if (aggregateDrivers.length <= 1) {
+        if (aggregateDrivers.length <= 1 ||
+            aggregateDrivers.every((driver) => driver.isTriState)) {
           continue;
         }
         issues.add(NetlistValidationIssue(
           'aggregate net "${entry.key}" is reached from multiple drivers: '
-          '${aggregateDrivers.join(', ')}',
+          '${aggregateDrivers.map((driver) => driver.description).join(', ')}',
           netname: entry.key,
-          drivers: aggregateDrivers.toList(),
+          drivers: aggregateDrivers.map((driver) => driver.description),
         ));
       }
     }
@@ -103,14 +104,17 @@ class NetlistValidation {
   }
 
   /// Collects the port and cell output drivers for each integer bit ID.
-  static Map<int, List<String>> _driversByBit(
+  static Map<int, List<({String description, bool isTriState})>> _driversByBit(
     Map<String, Map<String, Object?>> ports,
     Map<String, Map<String, Object?>> cells,
   ) {
-    final drivers = <int, List<String>>{};
+    final drivers = <int, List<({String description, bool isTriState})>>{};
 
-    void addDriver(int bit, String driver) =>
-        (drivers[bit] ??= <String>[]).add(driver);
+    void addDriver(int bit, String description, {bool isTriState = false}) =>
+        (drivers[bit] ??= []).add((
+          description: description,
+          isTriState: isTriState,
+        ));
 
     for (final entry in ports.entries) {
       final direction = entry.value['direction'] as String?;
@@ -137,13 +141,15 @@ class NetlistValidation {
       }
       for (final port in connections.entries) {
         final direction = directions[port.key] as String?;
-        final isTriStateOutput = type == r'$tribuf' && direction == 'inout';
+        final isTriStateOutput = type == r'$tribuf' &&
+            (direction == 'output' || direction == 'inout');
         if (direction != 'output' && !isTriStateOutput) {
           continue;
         }
         for (final bit in (port.value as List?) ?? const []) {
           if (bit is int) {
-            addDriver(bit, 'cell ${entry.key}.${port.key} ($type)');
+            addDriver(bit, 'cell ${entry.key}.${port.key} ($type)',
+                isTriState: isTriStateOutput);
           }
         }
       }

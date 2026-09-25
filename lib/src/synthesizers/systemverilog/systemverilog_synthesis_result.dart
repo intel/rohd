@@ -9,6 +9,7 @@
 
 import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/signals/signals.dart';
 import 'package:rohd/src/synthesizers/systemverilog/systemverilog_synth_module_definition.dart';
 import 'package:rohd/src/synthesizers/systemverilog/systemverilog_synth_sub_module_instantiation.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
@@ -125,7 +126,20 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
       _synthModuleDefinition.outputs.map((sig) {
         assert(module.tryOutput(sig.name) != null,
             'Named output ${sig.name} not found in module ${module.name}.');
-        return _verilogPort('output', 'var', configuration.outputPortType, sig);
+        final useIverilogWorkaround =
+            configuration.iverilogWorkaroundForUnpackedArrayVariables &&
+                _isUnpackedArray(sig);
+        final portType = useIverilogWorkaround
+            ? SystemVerilogPortTypeConfiguration(
+                dataType: configuration.outputPortType.dataType,
+              )
+            : configuration.outputPortType;
+        return _verilogPort(
+          'output',
+          useIverilogWorkaround ? 'wire' : 'var',
+          portType,
+          sig,
+        );
       });
 
   /// Representation of all inout port declarations in generated SV.
@@ -145,13 +159,45 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
         sig.definitionName(),
       ].join(' ');
 
+  /// Whether [sig] represents an array with an unpacked dimension.
+  bool _isUnpackedArray(SynthLogic sig) {
+    final array = sig.logics.whereType<BaseLogicArray>().firstOrNull;
+    return array != null && array.numUnpackedDimensions > 0;
+  }
+
+  /// Whether [sig] is driven by a submodule output.
+  bool _isDrivenBySubmoduleOutput(SynthLogic sig) {
+    final target = sig.resolved;
+    return _synthModuleDefinition.subModuleInstantiations.any(
+      (instantiation) => instantiation.outputMapping.values.any(
+        (mapped) => identical(_referenceRoot(mapped), target),
+      ),
+    );
+  }
+
+  SynthLogic _referenceRoot(SynthLogic signal) {
+    final resolved = signal.resolved;
+    return switch (resolved) {
+      SynthLogicArrayElement() => _referenceRoot(resolved.parentArray),
+      SynthLogicArrayStructureElement() => _referenceRoot(resolved.rootArray),
+      SynthLogicPackedBitReference() => _referenceRoot(resolved.packedBase),
+      SynthLogicPackedRangeReference() => _referenceRoot(resolved.packedBase),
+      _ => resolved,
+    };
+  }
+
   /// Representation of all internal net declarations in generated SV.
   String _verilogInternalSignals() {
     final declarations = <String>[];
     for (final sig in _synthModuleDefinition.internalSignals
         .where((e) => e.needsDeclaration)
         .sorted((a, b) => a.name.compareTo(b.name))) {
-      declarations.add('${sig.definitionType()} ${sig.definitionName()};');
+      final useIverilogWorkaround =
+          configuration.iverilogWorkaroundForUnpackedArrayVariables &&
+              _isUnpackedArray(sig) &&
+              _isDrivenBySubmoduleOutput(sig);
+      final type = useIverilogWorkaround ? 'wire' : sig.definitionType();
+      declarations.add('$type ${sig.definitionName()};');
     }
     return declarations.join('\n');
   }
@@ -159,10 +205,6 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
   /// Representation of all assignments in generated SV.
   String _verilogAssignments() {
     final assignmentLines = <String>[];
-    String rangeString(int upperIndex, int lowerIndex) =>
-        upperIndex == lowerIndex
-            ? '[$upperIndex]'
-            : '[$upperIndex:$lowerIndex]';
 
     for (final assignment in _synthModuleDefinition.assignments) {
       assert(
@@ -170,26 +212,25 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
           'Net connections should have been implemented as'
           ' bidirectional net connections.');
 
-      var dstSliceString = '';
-      var srcSliceString = '';
+      var destination = assignment.dst.name;
+      var source = assignment.src.name;
       if (assignment is RangeSynthAssignment) {
-        dstSliceString = rangeString(
-          assignment.dstUpperIndex,
+        destination = assignment.dst.rangeName(
           assignment.dstLowerIndex,
+          assignment.dstUpperIndex,
         );
-        srcSliceString = rangeString(
-          assignment.srcUpperIndex,
+        source = assignment.src.rangeName(
           assignment.srcLowerIndex,
+          assignment.srcUpperIndex,
         );
       } else if (assignment is PartialSynthAssignment && assignment.width > 1) {
-        dstSliceString = rangeString(
-          assignment.dstUpperIndex,
+        destination = assignment.dst.rangeName(
           assignment.dstLowerIndex,
+          assignment.dstUpperIndex,
         );
       }
 
-      assignmentLines.add('assign ${assignment.dst.name}$dstSliceString'
-          ' = ${assignment.src.name}$srcSliceString;');
+      assignmentLines.add('assign $destination = $source;');
     }
     return assignmentLines.join('\n');
   }

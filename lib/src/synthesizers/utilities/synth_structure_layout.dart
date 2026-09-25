@@ -8,6 +8,7 @@
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/signals/signals.dart';
 
 /// An exclusive-end bit range within a packed [LogicStructure].
 typedef SynthStructureBitRange = ({int start, int end});
@@ -53,7 +54,7 @@ class SynthStructureLayout {
         fieldPath: fieldPath,
         indexInParent: index,
       ));
-      if (element is LogicStructure && element is! LogicArray) {
+      if (element is LogicStructure && element is! BaseLogicArray) {
         _addStructure(element, offset, path, fieldPath);
       }
       offset = end;

@@ -56,6 +56,41 @@ class _PortTypesModule extends Module {
   }
 }
 
+class _NestedPortTypesModule extends Module {
+  _NestedPortTypesModule() {
+    final source =
+        TypedLogicArray<TypedLogicArray<Logic, LogicValue>, LogicValue>(
+      [2],
+      ({name}) => TypedLogicArray<Logic, LogicValue>(
+        [3],
+        ({name}) => Logic(name: name, width: 3),
+        name: name,
+      ),
+      numUnpackedDimensions: 1,
+    );
+    final valuesIn = addTypedInput('valuesIn', source);
+    final child = _NestedPortTypesChild(valuesIn);
+    addTypedOutput('valuesOut', source.clone).gets(child.valuesOut);
+  }
+}
+
+class _NestedPortTypesChild extends Module {
+  late final TypedLogicArray<TypedLogicArray<Logic, LogicValue>, LogicValue>
+      valuesOut;
+
+  _NestedPortTypesChild(
+      TypedLogicArray<TypedLogicArray<Logic, LogicValue>, LogicValue>
+          valuesIn) {
+    valuesIn = addTypedInput('valuesIn', valuesIn);
+    valuesOut = addTypedOutput('valuesOut', valuesIn.clone);
+    for (var outer = 0; outer < 2; outer++) {
+      for (var inner = 0; inner < 3; inner++) {
+        valuesOut.at([outer]).at([inner]) <= valuesIn.at([outer]).at([inner]);
+      }
+    }
+  }
+}
+
 void main() {
   tearDown(() async {
     await Simulator.reset();
@@ -165,4 +200,87 @@ void main() {
       );
     });
   }
+
+  // Icarus 12.0 compiles the variable modes below, but a child-driven
+  // unpacked output remains X. Verilator 5.020 simulates every mode.
+  test('nested outputs honor configured object and data types', () async {
+    final module = _NestedPortTypesModule();
+    await module.build();
+    final input = LogicValue.ofIterable([
+      for (var value = 1; value <= 6; value++) LogicValue.ofInt(value, 3),
+    ]);
+    final vectors = [
+      Vector({'valuesIn': input}, {'valuesOut': input}),
+    ];
+    final configurations = [
+      (
+        name: 'implicit variable',
+        configuration: const SystemVerilogSynthesizerConfiguration(),
+        declaration: 'output logic [8:0] valuesOut [1:0]',
+        expectedCount: 2,
+        checkIverilog: false,
+      ),
+      (
+        name: 'explicit variable',
+        configuration: const SystemVerilogSynthesizerConfiguration(
+          outputPortType: SystemVerilogPortTypeConfiguration(),
+        ),
+        declaration: 'output var logic [8:0] valuesOut [1:0]',
+        expectedCount: 2,
+        checkIverilog: false,
+      ),
+      (
+        name: 'implicit net',
+        configuration: const SystemVerilogSynthesizerConfiguration(
+          outputPortType: SystemVerilogPortTypeConfiguration(
+            objectType: SystemVerilogPortType.implicit,
+            dataType: SystemVerilogPortType.implicit,
+          ),
+        ),
+        declaration: 'output [8:0] valuesOut [1:0]',
+        expectedCount: 2,
+        checkIverilog: true,
+      ),
+      (
+        name: 'Icarus unpacked variable workaround',
+        configuration: const SystemVerilogSynthesizerConfiguration(
+          outputPortType: SystemVerilogPortTypeConfiguration(),
+          iverilogWorkaroundForUnpackedArrayVariables: true,
+        ),
+        declaration: 'output wire logic [8:0] valuesOut [1:0]',
+        expectedCount: 2,
+        checkIverilog: true,
+      ),
+    ];
+
+    for (final configuration in configurations) {
+      final sv = module.generateSynth(
+        configuration: configuration.configuration,
+      );
+      expect(
+        RegExp(RegExp.escape(configuration.declaration)).allMatches(sv),
+        hasLength(configuration.expectedCount),
+        reason: configuration.name,
+      );
+      if (configuration.checkIverilog) {
+        SimCompare.checkIverilogVector(
+          module,
+          vectors,
+          synthesizerConfiguration: configuration.configuration,
+        );
+      } else {
+        SimCompare.checkIverilogVector(
+          module,
+          const [],
+          buildOnly: true,
+          synthesizerConfiguration: configuration.configuration,
+        );
+      }
+      SimCompare.checkVerilatorVector(
+        module,
+        vectors,
+        synthesizerConfiguration: configuration.configuration,
+      );
+    }
+  }, tags: ['verilator']);
 }

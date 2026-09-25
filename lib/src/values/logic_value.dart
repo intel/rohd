@@ -47,6 +47,12 @@ abstract class LogicValue implements Comparable<LogicValue> {
   const LogicValue._(this.width)
       : assert(width >= 0, 'Width must be greater than or equal to 0.');
 
+  /// Returns the ordinary packed representation of this value.
+  ///
+  /// Shaped value subtypes override this to provide their bit-level fallback.
+  // ignore: avoid_returning_this - ordinary values are already packed.
+  LogicValue get packed => this;
+
   /// Converts `bool` [value] to a valid [LogicValue] with 1 bits either
   /// one or zero.
   // ignore: avoid_positional_boolean_parameters
@@ -311,7 +317,8 @@ abstract class LogicValue implements Comparable<LogicValue> {
 
     // shift small chunks in together before shifting BigInt's, since
     // shifting BigInt's is expensive
-    for (final lv in it) {
+    for (final value in it) {
+      final lv = value.packed;
       final lvPlusSmall = lv.width + smallBuffer.width;
       if (lvPlusSmall <= INT_BITS) {
         smallBuffer = lv._concatenate(smallBuffer);
@@ -541,11 +548,13 @@ abstract class LogicValue implements Comparable<LogicValue> {
       return false;
     }
 
-    if (other.width != width) {
+    final left = packed;
+    final right = other.packed;
+    if (right.width != left.width) {
       return false;
     }
 
-    return _equals(other);
+    return left._equals(right);
   }
 
   /// Returns true iff all bits of `this` are equal to [other].
@@ -1204,13 +1213,15 @@ abstract class LogicValue implements Comparable<LogicValue> {
 
   LogicValue _twoInputBitwiseOp(
       LogicValue other, LogicValue Function(LogicValue, LogicValue) op) {
-    if (width != other.width) {
+    final left = packed;
+    final right = other.packed;
+    if (left.width != right.width) {
       throw Exception('Widths must match, but found $this and $other');
     }
-    if (other is _FilledLogicValue && this is! _FilledLogicValue) {
-      return op(other, this);
+    if (right is _FilledLogicValue && left is! _FilledLogicValue) {
+      return op(right, left);
     }
-    return op(this, other);
+    return op(left, right);
   }
 
   /// Calculates the absolute value, assuming that the

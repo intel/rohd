@@ -618,7 +618,7 @@ void main() {
     expect(reference.name, '${replacement.name}[11:3]');
   });
 
-  test('packed range reference rejects invalid bounds and unsupported bases',
+  test('packed range reference rejects invalid bounds, arrays, and constants',
       () async {
     final module = Producer(Logic(width: 16));
     await module.build();
@@ -641,7 +641,6 @@ void main() {
     }
     for (final unsupported in [
       LogicArray([16], 1),
-      LogicNet(width: 16),
       Const(0, width: 16),
     ]) {
       expect(
@@ -654,6 +653,32 @@ void main() {
         throwsA(isA<AssertionError>()),
       );
     }
+  });
+
+  test('packed references support net bases', () async {
+    final module = Producer(Logic(width: 16));
+    await module.build();
+    final definition = SynthModuleDefinition(module);
+    final base = SynthLogic(
+      LogicNet(name: 'netBase', width: 16),
+      parentSynthModuleDefinition: definition,
+    )..pickName();
+    final bit = SynthLogicPackedBitReference(
+      base,
+      5,
+      parentSynthModuleDefinition: definition,
+    );
+    final range = SynthLogicPackedRangeReference(
+      base,
+      3,
+      11,
+      parentSynthModuleDefinition: definition,
+    );
+
+    expect(bit.isNet, isTrue);
+    expect(bit.name, '${base.name}[5]');
+    expect(range.isNet, isTrue);
+    expect(range.name, '${base.name}[11:3]');
   });
 
   test('isolated source bit survives beside collapsed ranges', () async {
