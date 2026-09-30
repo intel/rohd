@@ -125,8 +125,9 @@ class VcdWaveformWriter implements WaveformWriter {
     this.flushBufferSize = 100000,
     this.overwritePolicy = OverwritePolicy.overwrite,
     this.memoryBuffer,
+    this.writeToFile = true,
   }) {
-    if (overwritePolicy == OverwritePolicy.failIfExists) {
+    if (writeToFile && overwritePolicy == OverwritePolicy.failIfExists) {
       final existingFile = File(outputPath);
       if (existingFile.existsSync()) {
         throw FileSystemException(
@@ -137,8 +138,10 @@ class VcdWaveformWriter implements WaveformWriter {
       }
     }
 
-    _outputFile = File(outputPath)..createSync(recursive: true);
-    _outFileSink = _outputFile.openWrite();
+    if (writeToFile) {
+      _outFileSink =
+          (File(outputPath)..createSync(recursive: true)).openWrite();
+    }
     _writeHeader();
   }
 
@@ -157,8 +160,10 @@ class VcdWaveformWriter implements WaveformWriter {
   /// Optional buffer receiving a complete copy of the VCD output.
   final StringBuffer? memoryBuffer;
 
-  late final File _outputFile;
-  late final IOSink _outFileSink;
+  /// Whether VCD bytes are written to [outputPath].
+  final bool writeToFile;
+
+  IOSink? _outFileSink;
   final StringBuffer _fileBuffer = StringBuffer();
   final StringBuffer _scopeBuffer = StringBuffer();
   final Map<Object, int> _handleWidths = <Object, int>{};
@@ -228,8 +233,8 @@ class VcdWaveformWriter implements WaveformWriter {
     }
     _closed = true;
     _flushBuffer();
-    await _outFileSink.flush();
-    await _outFileSink.close();
+    await _outFileSink?.flush();
+    await _outFileSink?.close();
   }
 
   @override
@@ -266,15 +271,19 @@ class VcdWaveformWriter implements WaveformWriter {
 
   void _writeToBuffer(String contents) {
     memoryBuffer?.write(contents);
-    _fileBuffer.write(contents);
-    if (_fileBuffer.length > flushBufferSize) {
+    if (writeToFile) {
+      _fileBuffer.write(contents);
+    }
+    if (writeToFile && _fileBuffer.length > flushBufferSize) {
       _flushBuffer();
     }
   }
 
   void _flushBuffer() {
-    _outFileSink.write(_fileBuffer.toString());
-    _fileBuffer.clear();
+    if (writeToFile) {
+      _outFileSink!.write(_fileBuffer.toString());
+      _fileBuffer.clear();
+    }
   }
 }
 
