@@ -8,6 +8,7 @@
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 import 'dart:collection';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:meta/meta.dart';
@@ -72,11 +73,18 @@ class WaveformService extends ArtifactProducingService {
   /// Whether to register this service with [ModuleServices] for inspection.
   final bool register;
 
+  /// Whether waveform bytes are written to [outputPath].
+  final bool writeToFile;
+
   /// Whether to retain a complete in-memory copy for debugging consumers.
   final bool retainInMemory;
 
-  /// Whether this service can provide waveform data to a consumer.
-  bool canSendWaveforms() => retainInMemory || format.supportsOnDiskQueries;
+  /// Whether this service can service debugger waveform-data queries.
+  ///
+  /// A `true` result promises waveform-value queries, not artifact-byte
+  /// transfer. VCD requires [retainInMemory]; FST can query a written file.
+  bool canSendWaveforms() =>
+      retainInMemory || (writeToFile && format.supportsOnDiskQueries);
 
   /// The retained VCD waveform, or `null` when retention is disabled.
   String? get inMemoryOutput => _writer.inMemoryOutput;
@@ -128,14 +136,19 @@ class WaveformService extends ArtifactProducingService {
     this.flushBufferSize = 100000,
     this.overwritePolicy = OverwritePolicy.overwrite,
     this.register = true,
-    this.retainInMemory = false,
+    this.writeToFile = false,
+    bool? retainInMemory,
     this.fstConfig,
-  }) : super(module) {
+  })  : retainInMemory = retainInMemory ?? !writeToFile,
+        super(module) {
     if (!module.hasBuilt) {
-      throw Exception(
-        'Module must be built before creating WaveformService. '
-        'Call build() first.',
-      );
+      throw ModuleNotBuiltException(module);
+    }
+    if (format == WaveOutputFormat.fst && !writeToFile) {
+      throw UnsupportedError('FST capture requires writeToFile: true.');
+    }
+    if (format == WaveOutputFormat.fst && this.retainInMemory) {
+      throw UnsupportedError('FST capture does not support retainInMemory.');
     }
 
     _writer = _createWriter();
@@ -186,7 +199,7 @@ class WaveformService extends ArtifactProducingService {
     int flushBufferSize = 100000,
     OverwritePolicy overwritePolicy = OverwritePolicy.overwrite,
     bool register = true,
-    bool retainInMemory = false,
+    bool? retainInMemory,
     FstWriterConfig? fstConfig,
   }) {
     final normalized = outputPath.replaceAll(r'\', '/');
@@ -209,6 +222,7 @@ class WaveformService extends ArtifactProducingService {
       flushBufferSize: flushBufferSize,
       overwritePolicy: overwritePolicy,
       register: register,
+      writeToFile: true,
       retainInMemory: retainInMemory,
       fstConfig: fstConfig,
     );
@@ -250,6 +264,7 @@ class WaveformService extends ArtifactProducingService {
           flushBufferSize: flushBufferSize,
           overwritePolicy: overwritePolicy,
           memoryBuffer: retainInMemory ? StringBuffer() : null,
+          writeToFile: writeToFile,
         );
       case WaveOutputFormat.fst:
         return FstWaveformWriter(
@@ -344,9 +359,7 @@ class WaveformService extends ArtifactProducingService {
     }
     _changedThisTimestamp.clear();
 
-    if (snapshot.isNotEmpty) {
-      onTimestampCapture(timestamp, snapshot);
-    }
+    onTimestampCapture(timestamp, snapshot);
   }
 
   void _writeWindowSnapshotIfNeeded(int timestamp) {
@@ -370,9 +383,7 @@ class WaveformService extends ArtifactProducingService {
     for (final signal in snapshot) {
       onValueChange(signal, startTime!);
     }
-    if (snapshot.isNotEmpty) {
-      onTimestampCapture(startTime!, snapshot);
-    }
+    onTimestampCapture(startTime!, snapshot);
   }
 
   String _binaryValue(Logic signal) => signal.value.reversed
@@ -382,17 +393,33 @@ class WaveformService extends ArtifactProducingService {
 
   Future<void> _terminate() => _writer.close();
 
-  /// The artifacts this service produces.
+  /// The waveform artifact produced by this service.
   ///
-  /// The waveform is written on-the-fly through [WaveformWriter], so this
-  /// service does not retain artifacts to report.
+  /// It is complete after simulation finalization. During capture,
+  /// file-backed reads expose only data already flushed, and each file-backed
+  /// [ModuleServiceArtifact.openRead] opens the current file rather than a
+  /// snapshot or live tail.
   @override
-  Iterable<ModuleServiceArtifact> get artifacts => const [];
+  Iterable<ModuleServiceArtifact> get artifacts sync* {
+    if (!writeToFile && !retainInMemory) {
+      return;
+    }
+
+    yield ModuleServiceArtifact(
+      fileName: outputFileName ?? '$outputBaseName.${format.fileExtension}',
+      mediaType: format.mediaType,
+      openRead: writeToFile
+          ? () => File(outputPath).openRead()
+          : () => Stream.value(utf8.encode(inMemoryOutput!)),
+    );
+  }
 
   /// Returns a JSON-serialisable summary of this service.
   @override
   Map<String, Object?> toJson() => <String, Object?>{
         'outputPath': outputPath,
+        'writeToFile': writeToFile,
+        'retainInMemory': retainInMemory,
         'format': format.name,
         'signalCount': _signalHandles.length,
         'timescale': timescale,

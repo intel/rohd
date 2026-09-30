@@ -39,8 +39,6 @@ class _HistoryWaveformService extends WaveformService {
 
   _HistoryWaveformService(
     super.module, {
-    super.outputDirectory,
-    super.outputBaseName,
     super.startTime,
     super.register,
   });
@@ -87,6 +85,7 @@ void createTemporaryDump(Module module, String name) {
     module,
     outputDirectory: tempDumpDir,
     outputBaseName: 'temp_dump_$name',
+    writeToFile: true,
   );
 }
 
@@ -102,12 +101,15 @@ void main() {
     ModuleServices.instance.reset();
   });
 
-  test('dumpWaves can retain history for debugging', () async {
+  test('file-backed debugging capture can retain history', () async {
     final mod = _SimpleWaveModule(Logic());
     await mod.build();
 
-    final service = mod.dumpWaves(
-      outputPath: temporaryDumpPath('debugDump'),
+    final service = WaveformService(
+      mod,
+      outputDirectory: tempDumpDir,
+      outputBaseName: 'temp_dump_debugDump',
+      writeToFile: true,
       retainInMemory: true,
     );
 
@@ -142,12 +144,8 @@ void main() {
     await mod.build();
     mod.a.put(0);
 
-    Directory(_tempDumpDir).createSync(recursive: true);
-    final dumpPath = _temporaryVcdPath('windowHookSnapshot');
     final service = _HistoryWaveformService(
       mod,
-      outputDirectory: _tempDumpDir,
-      outputBaseName: 'temp_wave_windowHookSnapshot',
       startTime: 10,
       register: false,
     );
@@ -157,15 +155,18 @@ void main() {
     Simulator.registerAction(20, () {});
     await Simulator.run();
 
-    final vcdContents = File(dumpPath).readAsStringSync();
+    final vcdContents = utf8.decode(
+      await service.artifacts.single
+          .openRead()
+          .expand((bytes) => bytes)
+          .toList(),
+    );
     expect(
       VcdParser.confirmValue(vcdContents, 'a', 10, LogicValue.one),
       isTrue,
     );
     expect(service.history[mod.a], equals([(0, '0'), (10, '1')]));
     expect(service.capturedTimestamps, contains(10));
-
-    File(dumpPath).deleteSync();
   });
 
   test('captures waveform to VCD output path', () async {
@@ -220,6 +221,64 @@ void main() {
 
     fstFile.deleteSync();
   });
+
+  test(
+    'FST converted to VCD preserves values and window snapshots',
+    () async {
+      final a = Logic(name: 'a');
+      final mod = _SimpleWaveModule(a);
+      await mod.build();
+      a.put(0);
+
+      Directory(_tempDumpDir).createSync(recursive: true);
+      final fstPath = _temporaryFstPath('convertedValues');
+      WaveformService.fromOutputPath(
+        mod,
+        outputPath: fstPath,
+        format: WaveOutputFormat.fst,
+        startTime: 10,
+        register: false,
+      );
+
+      Simulator.registerAction(5, () => a.put(1));
+      Simulator.registerAction(15, () => a.put(0));
+      Simulator.registerAction(20, () {});
+      await Simulator.run();
+
+      final conversion = Process.runSync('fst2vcd', [fstPath]);
+      expect(
+        conversion.exitCode,
+        equals(0),
+        reason: 'fst2vcd failed: ${conversion.stdout}\n${conversion.stderr}',
+      );
+      final vcdContents = conversion.stdout as String;
+      expect(
+        VcdParser.confirmValue(vcdContents, 'a', 10, LogicValue.one),
+        isTrue,
+        reason: 'the recording-window snapshot must retain the value at t=10',
+      );
+      expect(
+        VcdParser.confirmValue(vcdContents, 'a', 15, LogicValue.zero),
+        isTrue,
+        reason: 'the later input transition must retain its timestamp',
+      );
+      expect(
+        VcdParser.confirmValue(vcdContents, 'b', 10, LogicValue.zero),
+        isTrue,
+        reason: 'the inverted output must match the input at the window start',
+      );
+      expect(
+        VcdParser.confirmValue(vcdContents, 'b', 15, LogicValue.one),
+        isTrue,
+        reason: 'the inverted output must match the later input transition',
+      );
+
+      File(fstPath).deleteSync();
+    },
+    skip: Process.runSync('which', ['fst2vcd']).exitCode != 0
+        ? 'fst2vcd is not installed'
+        : false,
+  );
 
   test('VCD and FST contain matching value-change events', () async {
     final vcdPath = _temporaryVcdPath('parity');
