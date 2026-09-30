@@ -87,9 +87,13 @@ class NetlistService extends ArtifactProducingService {
     synthesizer = NetlistSynthesizer(configuration: configuration);
     this.packageRoot = effectiveRoot;
     synthBuilder = SynthBuilder(module, synthesizer);
-    _fullJson = synthesizer.generateCombinedJson(synthBuilder, module);
+    final completeJson =
+        synthesizer.generateCombinedJson(synthBuilder, module, slimMode: false);
+    _fullJson = configuration.slimMode
+        ? synthesizer.generateCombinedJson(synthBuilder, module, slimMode: true)
+        : completeJson;
 
-    final decoded = jsonDecode(_fullJson) as Map<String, dynamic>;
+    final decoded = jsonDecode(completeJson) as Map<String, dynamic>;
     _modulesMap =
         (decoded['modules'] as Map<String, dynamic>?) ?? <String, dynamic>{};
     _loadedVersion = decoded['version'] as String?;
@@ -136,7 +140,13 @@ class NetlistService extends ArtifactProducingService {
   /// Whether the loaded netlist JSON is compatible with the current format.
   bool get isCompatible => isCompatibleVersion(version);
 
-  /// Returns the full netlist hierarchy as a JSON string.
+  /// Returns the netlist hierarchy JSON selected by the constructor's
+  /// configuration.
+  ///
+  /// When [NetlistSynthesizerConfiguration.slimMode] is enabled, this is the
+  /// slim initial payload without cell connections. [moduleJson] continues to
+  /// return full per-module connectivity from the retained complete synthesis
+  /// results.
   String get json => _fullJson;
 
   /// Writes this service's artifacts to [outputDirectory].

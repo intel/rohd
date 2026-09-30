@@ -400,6 +400,35 @@ void main() {
       );
     });
 
+    test('slim configured output retains full module connections', () async {
+      final mod = SimpleModule(Logic());
+      await mod.build();
+      final netlist = NetlistService(
+        mod,
+        configuration: const NetlistSynthesizerConfiguration(slimMode: true),
+      );
+
+      final initialJson = jsonDecode(netlist.json) as Map<String, dynamic>;
+      final initialModule = (initialJson['modules']
+          as Map<String, dynamic>)[mod.definitionName] as Map<String, dynamic>;
+      final initialNotCell = (initialModule['cells'] as Map<String, dynamic>)
+          .values
+          .cast<Map<String, dynamic>>()
+          .singleWhere((cell) => cell['type'] == r'$not');
+      expect(initialNotCell.containsKey('connections'), isFalse);
+
+      final fullModuleJson = jsonDecode(netlist.moduleJson(mod.definitionName))
+          as Map<String, dynamic>;
+      final fullModule = (fullModuleJson['modules']
+          as Map<String, dynamic>)[mod.definitionName] as Map<String, dynamic>;
+      final fullNotCell = (fullModule['cells'] as Map<String, dynamic>)
+          .values
+          .cast<Map<String, dynamic>>()
+          .singleWhere((cell) => cell['type'] == r'$not');
+      expect(fullNotCell['connections'], isA<Map<String, dynamic>>());
+      expect(fullNotCell['connections'] as Map<String, dynamic>, isNotEmpty);
+    });
+
     test('construction does not write configured output', () async {
       final mod = SimpleModule(Logic());
       await mod.build();
