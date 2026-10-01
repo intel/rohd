@@ -63,6 +63,64 @@ class MultiportStage extends Module {
   }
 }
 
+class CustomMultiportStage extends Module with SystemVerilog {
+  @override
+  final bool acceptsEmptyPortConnections;
+
+  CustomMultiportStage(Logic data, {required this.acceptsEmptyPortConnections})
+      : super(name: 'custom_multiport_stage') {
+    data = addInput('data', data, width: 3);
+    for (var index = 0; index < 3; index++) {
+      addOutput('result$index') <= ~data[index];
+    }
+  }
+
+  @override
+  String definitionVerilog(String definitionType) => '''
+module $definitionType(input logic [2:0] data,
+    output logic result0, result1, result2);
+assign result0 = ~data[0];
+assign result1 = ~data[1];
+assign result2 = ~data[2];
+endmodule
+''';
+}
+
+class CustomRetentionTop extends Module {
+  CustomRetentionTop({
+    required bool acceptsEmptyPortConnections,
+    required bool fanout,
+    required AssignmentOrder order,
+    bool legacy = false,
+  }) : super(name: 'custom_retention_top') {
+    final data = addInput('data', Logic(width: 3), width: 3);
+    final stage = legacy
+        ? LegacyMultiportStage(data)
+        : CustomMultiportStage(data,
+            acceptsEmptyPortConnections: acceptsEmptyPortConnections);
+    final observed = addOutput('observed', width: 2);
+    assignBits(
+        observed, [stage.output('result0'), stage.output('result1')], order);
+    if (fanout) {
+      addOutput('tap') <= BitStage(stage.output('result1')).output('result');
+    }
+  }
+}
+
+// ignore: deprecated_member_use_from_same_package - backwards compatibility with CustomSystemVerilog
+class LegacyMultiportStage extends MultiportStage with CustomSystemVerilog {
+  LegacyMultiportStage(super.data);
+
+  @override
+  String instantiationVerilog(String instanceType, String instanceName,
+          Map<String, String> inputs, Map<String, String> outputs) =>
+      List.generate(3, (index) {
+        final output = outputs['result$index'];
+        return 'not ${instanceName}_$index('
+            '$output, ${inputs['data']}[$index]);';
+      }).join('\n');
+}
+
 List<Logic> stageOutputs(Logic data, ProducerKind kind) {
   if (kind == ProducerKind.multiport) {
     final stage = MultiportStage(data);
@@ -271,9 +329,6 @@ void main() {
                     reason: body);
               }
               expect(body, isNot(matches(r'assign\s+observed\[')));
-              if (producer != ProducerKind.custom) {
-                expect(body, isNot(matches(r'logic\s+result\w*;')));
-              }
 
               NetlistSynthesizer().synthesizeToJson(module);
               expect(topBody(module), body);
@@ -291,6 +346,9 @@ void main() {
               ];
               await SimCompare.checkFunctionalVector(module, vectors);
               SimCompare.checkIverilogVector(module, vectors);
+              expect(body, isNot(matches(r'logic\s+result\w*;')),
+                  reason: 'Directly mapped outputs should not leave unused '
+                      'intermediate declarations.\n$body');
             });
           }
         }
@@ -302,7 +360,8 @@ void main() {
     for (final guard in MappingGuard.values) {
       for (final producer in [
         ProducerKind.independent,
-        ProducerKind.multiport
+        ProducerKind.multiport,
+        ProducerKind.custom,
       ]) {
         for (final order in [AssignmentOrder.batch, AssignmentOrder.reverse]) {
           test('${guard.name} ${producer.name} ${order.name}', () async {
@@ -354,6 +413,64 @@ void main() {
                   if (guard == MappingGuard.siblingFanout)
                     'tap': input[1].isValid ? input[1] : LogicValue.x,
                   if (guard == MappingGuard.wholeBusFanout) 'mirror': ~input,
+                }),
+            ];
+            await SimCompare.checkFunctionalVector(module, vectors);
+            SimCompare.checkIverilogVector(module, vectors);
+          });
+        }
+      }
+    }
+  });
+
+  group('custom output declaration retention', () {
+    for (final (legacy, acceptsEmptyPortConnections) in [
+      (false, false),
+      (false, true),
+      (true, false),
+    ]) {
+      for (final fanout in [false, true]) {
+        for (final order in AssignmentOrder.values) {
+          test(
+              'legacy=$legacy empty=$acceptsEmptyPortConnections '
+              'fanout=$fanout ${order.name}', () async {
+            final module = CustomRetentionTop(
+              acceptsEmptyPortConnections: acceptsEmptyPortConnections,
+              fanout: fanout,
+              order: order,
+              legacy: legacy,
+            );
+            await module.build();
+            final body = topBody(module);
+            String connection(int index, String target) =>
+                legacy ? '($target, data[$index])' : '.result$index($target)';
+
+            expect(body, contains(connection(0, 'observed[0]')));
+            expect(body, isNot(contains('logic result0;')));
+            if (fanout) {
+              expect(body, contains('logic result1;'));
+              expect(body, contains(connection(1, 'result1')));
+            } else {
+              expect(body, isNot(contains('logic result1;')));
+              expect(body, contains(connection(1, 'observed[1]')));
+            }
+            if (acceptsEmptyPortConnections) {
+              expect(body, contains('.result2()'));
+              expect(body, isNot(contains('logic result2;')));
+            } else {
+              expect(body, contains(connection(2, 'result2')));
+              expect(body, contains('logic result2;'));
+            }
+            NetlistSynthesizer().synthesizeToJson(module);
+            expect(topBody(module), body);
+
+            final vectors = [
+              for (final input in inputPatterns(3))
+                Vector({
+                  'data': input
+                }, {
+                  'observed': ~input.getRange(0, 2),
+                  if (fanout) 'tap': input[1].isValid ? input[1] : LogicValue.x,
                 }),
             ];
             await SimCompare.checkFunctionalVector(module, vectors);

@@ -984,16 +984,26 @@ class SynthModuleDefinition {
           continue;
         }
 
-        final isCustomSvModPort = logics.any(
-          (logic) =>
-              logic.isPort &&
-              isSubmoduleAndPresent(logic.parentModule) &&
-              ((logic.parentModule! is SystemVerilog &&
-                      !(logic.parentModule! as SystemVerilog)
-                          .acceptsEmptyPortConnections) ||
-                  // ignore: deprecated_member_use_from_same_package - backwards compatibility with CustomSystemVerilog
-                  logic.parentModule! is CustomSystemVerilog),
-        );
+        final isCustomSvModPort = logics.any((logic) {
+          if (!logic.isPort || !isSubmoduleAndPresent(logic.parentModule)) {
+            return false;
+          }
+
+          final instantiation =
+              moduleToSubModuleInstantiationMap[logic.parentModule]!;
+          final mappedOutput =
+              logic.isOutput ? instantiation.outputMapping[logic.name] : null;
+          if (mappedOutput != null &&
+              _referenceBase(mappedOutput) != _referenceBase(internalSignal)) {
+            return false;
+          }
+
+          return (logic.parentModule! is SystemVerilog &&
+                  !(logic.parentModule! as SystemVerilog)
+                      .acceptsEmptyPortConnections) ||
+              // ignore: deprecated_member_use_from_same_package - backwards compatibility with CustomSystemVerilog
+              logic.parentModule! is CustomSystemVerilog;
+        });
 
         if (!isCustomSvModPort) {
           if (internalSignal.isNet) {
