@@ -2299,6 +2299,131 @@ class AssignSubsetPartial extends Module {
   }
 }
 
+class SplitPackedOutputChild extends Module {
+  Logic get result => output('result');
+
+  SplitPackedOutputChild(Logic source) {
+    source = addInput('source', source, width: 8);
+    addOutput('result', width: 8) <= source;
+  }
+}
+
+class CustomSplitPackedOutputChild extends SplitPackedOutputChild
+    with SystemVerilog {
+  CustomSplitPackedOutputChild(super.source);
+
+  @override
+  String definitionVerilog(String definitionType) => '''
+module $definitionType(input logic [7:0] source, output logic [7:0] result);
+assign result = source;
+endmodule
+''';
+}
+
+class SplitPackedOutputTop extends Module {
+  SplitPackedOutputTop({
+    Naming naming = Naming.mergeable,
+    bool custom = false,
+    bool singleBits = false,
+    bool useAssignSubset = false,
+    bool exposeIntermediate = false,
+    bool extraReader = false,
+    bool mappedReader = false,
+    bool incomplete = false,
+    bool overlap = false,
+    bool netSource = false,
+    bool inoutDestination = false,
+  }) {
+    final source = addInput('source', Logic(width: 8), width: 8);
+    final intermediate = netSource
+        ? LogicNet(width: 8, name: 'splitStage', naming: naming)
+        : Logic(width: 8, name: 'splitStage', naming: naming);
+    intermediate <=
+        (custom
+                ? CustomSplitPackedOutputChild(source)
+                : SplitPackedOutputChild(source))
+            .result;
+    if (singleBits) {
+      for (var index = 0; index < 8; index++) {
+        addOutput('bit$index') <= intermediate[index];
+      }
+    } else {
+      final high = inoutDestination
+          ? addInOut('high', LogicNet(width: 7), width: 7)
+          : addOutput('high', width: 7);
+      if (useAssignSubset) {
+        for (var index = 0; index < 7; index++) {
+          high.assignSubset([intermediate[index + 1]], start: index);
+        }
+      } else {
+        high <= intermediate.getRange(1, 8);
+      }
+      if (!incomplete) {
+        addOutput('low') <= intermediate[0];
+      }
+      if (overlap) {
+        addOutput('duplicate') <= intermediate[1];
+      }
+    }
+    if (exposeIntermediate) {
+      addOutput('mirror', width: 8) <= intermediate;
+    }
+    if (extraReader) {
+      addOutput('inverted', width: 8) <= ~intermediate;
+    }
+    if (mappedReader) {
+      addOutput('forwarded', width: 8) <=
+          SplitPackedOutputChild(intermediate).result;
+    }
+  }
+}
+
+class SplitPackedArrayOutputTop extends Module {
+  SplitPackedArrayOutputTop({
+    required int numUnpackedDimensions,
+    bool permuted = false,
+    bool internalArray = false,
+  }) {
+    final source = addInput('source', Logic(width: 8), width: 8);
+    final intermediate =
+        Logic(width: 8, name: 'splitStage', naming: Naming.mergeable);
+    intermediate <= SplitPackedOutputChild(source).result;
+    final parts = internalArray
+        ? LogicArray([2, 2], 2,
+            name: 'parts', numUnpackedDimensions: numUnpackedDimensions)
+        : addOutputArray('parts',
+            dimensions: [2, 2],
+            elementWidth: 2,
+            numUnpackedDimensions: numUnpackedDimensions);
+    final order = permuted ? [2, 0, 3, 1] : [0, 1, 2, 3];
+    for (var index = 0; index < 4; index++) {
+      parts.leafElements[order[index]] <=
+          intermediate.getRange(2 * index, 2 * index + 2);
+    }
+    if (internalArray) {
+      addOutput('observed', width: 8) <= parts.leafElements.rswizzle();
+    }
+  }
+}
+
+class SplitPackedMixedOutputTop extends Module {
+  SplitPackedMixedOutputTop({required bool unpacked}) {
+    final source = addInput('source', Logic(width: 8), width: 8);
+    final intermediate =
+        Logic(width: 8, name: 'splitStage', naming: Naming.mergeable);
+    intermediate <= SplitPackedOutputChild(source).result;
+    final low = addOutputArray('low', dimensions: [2], elementWidth: 2);
+    final high = addOutputArray('high',
+        dimensions: [1],
+        elementWidth: 3,
+        numUnpackedDimensions: unpacked ? 1 : 0);
+    low.elements[0] <= intermediate.getRange(0, 2);
+    low.elements[1] <= intermediate.getRange(2, 4);
+    high.elements[0] <= intermediate.getRange(4, 7);
+    addOutput('flag') <= intermediate[7];
+  }
+}
+
 /// Returns the body of the last (top-level) module declaration in [sv],
 /// avoiding false matches inside `endmodule`.
 String _topModuleBody(String sv) {
@@ -2335,6 +2460,191 @@ void main() {
   tearDown(() async {
     await Simulator.reset();
   });
+
+  test('packed child output split maps seven bits and one bit directly',
+      () async {
+    final mod = SplitPackedOutputTop();
+    await mod.build();
+    final topBody = _topModuleBody(mod.generateSynth());
+    expect(topBody, contains('.result({high,low})'));
+    expect(topBody, isNot(contains('splitStage')));
+    expect(topBody, isNot(contains('assign ')));
+    final vectors = [
+      for (final pattern in [0, 1, 2, 0x55, 0xaa, 0x80, 0xff])
+        Vector({'source': pattern}, {'high': pattern >> 1, 'low': pattern & 1}),
+    ];
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
+  });
+
+  test('packed child output split maps singleton destinations', () async {
+    final mod = SplitPackedOutputTop(singleBits: true);
+    await mod.build();
+    final topBody = _topModuleBody(mod.generateSynth());
+    expect(topBody,
+        contains('.result({bit7,bit6,bit5,bit4,bit3,bit2,bit1,bit0})'));
+    expect(topBody, isNot(contains('splitStage')));
+    expect(topBody, isNot(contains('assign ')));
+    final vectors = [
+      for (final pattern in [0, 0xff, 0x55, 0xaa, 1, 0x80])
+        Vector({
+          'source': pattern
+        }, {
+          for (var index = 0; index < 8; index++)
+            'bit$index': (pattern >> index) & 1,
+        }),
+    ];
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
+  });
+
+  test('packed child output split maps range assignment consumers', () async {
+    final mod = SplitPackedOutputTop(useAssignSubset: true, custom: true);
+    await mod.build();
+    final topBody = _topModuleBody(mod.generateSynth());
+    expect(topBody, contains('.result({high,low})'));
+    expect(topBody, isNot(contains('splitStage')));
+    expect(topBody, isNot(contains('assign ')));
+    final vectors = [
+      for (final text in ['00000000', '11111111', '10100101', 'xz10zx01'])
+        Vector({
+          'source': LogicValue.ofString(text)
+        }, {
+          'high': LogicValue.ofString(text.substring(0, 7)),
+          'low': LogicValue.ofString(text.substring(7)),
+        }),
+    ];
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
+  });
+
+  for (final configuration in [
+    (unpacked: 0, permuted: false, internal: false),
+    (unpacked: 0, permuted: true, internal: false),
+    (unpacked: 1, permuted: true, internal: false),
+    (unpacked: 2, permuted: false, internal: false),
+    (unpacked: 0, permuted: true, internal: true),
+  ]) {
+    test('packed child output split maps array leaves $configuration',
+        () async {
+      final mod = SplitPackedArrayOutputTop(
+        numUnpackedDimensions: configuration.unpacked,
+        permuted: configuration.permuted,
+        internalArray: configuration.internal,
+      );
+      await mod.build();
+      final topBody = _topModuleBody(mod.generateSynth());
+      final concat = configuration.permuted
+          ? '{parts[0][1],parts[1][1],parts[0][0],parts[1][0]}'
+          : '{parts[1][1],parts[1][0],parts[0][1],parts[0][0]}';
+      expect(topBody, contains('.result($concat)'));
+      expect(topBody, isNot(contains('splitStage')));
+      expect(topBody, isNot(contains('assign parts')));
+      NetlistSynthesizer().synthesizeToJson(mod);
+      expect(_topModuleBody(mod.generateSynth()), topBody);
+      final vectors = [
+        for (final text in [
+          for (final pattern in [0, 0xff, 0xe4, 0x1b, 0x55, 0xaa])
+            pattern.toRadixString(2).padLeft(8, '0'),
+          'xz10zx01',
+          'z01x10xz',
+        ])
+          Vector({
+            'source': LogicValue.ofString(text)
+          }, {
+            configuration.internal ? 'observed' : 'parts':
+                LogicValue.ofString(configuration.permuted
+                    ? '${text.substring(2, 4)}${text.substring(6, 8)}'
+                        '${text.substring(0, 2)}${text.substring(4, 6)}'
+                    : text),
+          }),
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      if (configuration.unpacked > 0) {
+        SimCompare.checkVerilatorVector(mod, vectors.take(6).toList());
+      } else {
+        SimCompare.checkIverilogVector(mod, vectors);
+      }
+    });
+  }
+
+  for (final unpacked in [false, true]) {
+    test('packed child output split mixes array and scalar sinks $unpacked',
+        () async {
+      final mod = SplitPackedMixedOutputTop(unpacked: unpacked);
+      await mod.build();
+      final topBody = _topModuleBody(mod.generateSynth());
+      expect(topBody, contains('.result({flag,high[0],low[1],low[0]})'));
+      expect(topBody, isNot(contains('splitStage')));
+      expect(topBody, isNot(contains('assign ')));
+      final vectors = [
+        for (final pattern in [0, 0xff, 0x1b, 0xe4, 0x55, 0xaa])
+          Vector({
+            'source': pattern
+          }, {
+            'low': pattern & 0xf,
+            'high': (pattern >> 4) & 7,
+            'flag': pattern >> 7,
+          }),
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      if (unpacked) {
+        SimCompare.checkVerilatorVector(mod, vectors);
+      } else {
+        SimCompare.checkIverilogVector(mod, vectors);
+      }
+    });
+  }
+
+  for (final guard in [
+    'reserved',
+    'renameable',
+    'whole fanout',
+    'inline reader',
+    'mapped reader',
+    'incomplete',
+    'overlap',
+    'net source',
+    'inout destination',
+  ]) {
+    test('packed child output split preserves $guard guard', () async {
+      final mod = SplitPackedOutputTop(
+        naming: guard == 'reserved'
+            ? Naming.reserved
+            : guard == 'renameable'
+                ? Naming.renameable
+                : Naming.mergeable,
+        exposeIntermediate: guard == 'whole fanout',
+        extraReader: guard == 'inline reader',
+        mappedReader: guard == 'mapped reader',
+        incomplete: guard == 'incomplete',
+        overlap: guard == 'overlap',
+        netSource: guard == 'net source',
+        inoutDestination: guard == 'inout destination',
+      );
+      await mod.build();
+      final topBody = _topModuleBody(mod.generateSynth());
+      expect(topBody, isNot(contains('.result({')));
+      if (guard == 'reserved' || guard == 'renameable') {
+        expect(topBody, contains('splitStage'));
+      }
+      final vectors = [
+        for (final pattern in [0, 1, 2, 0x55, 0xaa, 0x80, 0xff])
+          Vector({
+            'source': pattern
+          }, {
+            'high': pattern >> 1,
+            if (guard != 'incomplete') 'low': pattern & 1,
+            if (guard == 'overlap') 'duplicate': (pattern >> 1) & 1,
+            if (guard == 'whole fanout') 'mirror': pattern,
+            if (guard == 'inline reader') 'inverted': (~pattern) & 0xff,
+            if (guard == 'mapped reader') 'forwarded': pattern,
+          }),
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    });
+  }
 
   test('simple 1d collapse', () async {
     final mod = SimpleLAPassthrough(LogicArray([4], 1));
@@ -2969,7 +3279,7 @@ void main() {
     final sv = mod.generateSynth();
     final topBody = _topModuleBody(sv);
 
-    expect(topBody, contains('assign dst[44:13] = src[31:0];'));
+    expect(topBody, contains('assign dst[44:13] = src;'));
     expect(topBody, isNot(contains('srcStage')));
     expect(topBody, isNot(contains('srcLow')));
     expect(topBody, isNot(contains('srcHigh')));
@@ -3003,7 +3313,7 @@ void main() {
     final sv = mod.generateSynth();
     final topBody = _topModuleBody(sv);
 
-    expect(topBody, contains('assign dst[44:13] = srcStage[31:0];'));
+    expect(topBody, contains('assign dst[44:13] = srcStage;'));
     expect(topBody, isNot(contains('srcLow')));
     expect(topBody, isNot(contains('srcHigh')));
     expect(topBody, isNot(contains('_subset')));

@@ -269,6 +269,63 @@ List<LogicValue> _patterns(int width) => [
 void main() {
   tearDown(Simulator.reset);
 
+  for (final sourceWidth in [1, 2]) {
+    test('full-width scalar rendering at width $sourceWidth', () async {
+      for (final useRange in [false, true]) {
+        final module = Top(
+          useRange: useRange,
+          sourceWidth: sourceWidth,
+          lower: 0,
+          width: sourceWidth,
+          sourceKind: SourceKind.input,
+        );
+        await module.build();
+        final body = _topBody(module);
+        expect(body, isNot(contains('seed[')));
+        if (!useRange && sourceWidth > 1) {
+          expect(body, contains('assign data_in[1:0] = seed;'));
+        }
+        final vectors = [
+          for (final seed in _patterns(sourceWidth))
+            Vector({'seed': seed}, {'observed': seed}),
+        ];
+        await SimCompare.checkFunctionalVector(module, vectors);
+        SimCompare.checkIverilogVector(module, vectors);
+        await Simulator.reset();
+      }
+    });
+  }
+
+  test('reversed full-width scalar selection retains bit order', () async {
+    for (final useRange in [false, true]) {
+      final module = Top(
+        useRange: useRange,
+        sourceWidth: 4,
+        width: 4,
+        sourceKind: SourceKind.input,
+        sourceIndices: [3, 2, 1, 0],
+      );
+      await module.build();
+      expect(
+          _topBody(module),
+          contains(RegExp(r'seed\[0\].*seed\[1\].*seed\[2\].*seed\[3\]',
+              dotAll: true)));
+      final vectors = [
+        for (final seed in _patterns(4))
+          Vector({
+            'seed': seed
+          }, {
+            'observed': [
+              for (final index in [3, 2, 1, 0]) seed[index]
+            ].rswizzle(),
+          }),
+      ];
+      await SimCompare.checkFunctionalVector(module, vectors);
+      SimCompare.checkIverilogVector(module, vectors);
+      await Simulator.reset();
+    }
+  });
+
   test('full-width four-state sibling mapping matches both representations',
       () async {
     final vectors = [
@@ -347,6 +404,10 @@ void main() {
             expect(body, contains('.data_in(('));
           } else {
             expect(body, isNot(contains('.data_in()')));
+            expect(
+                body,
+                isNot(contains(
+                    RegExp('=\\s+\\w+\\[${selectedSourceWidth - 1}:0\\];'))));
           }
           expect(_topBody(module), body);
           await SimCompare.checkFunctionalVector(module, vectors);

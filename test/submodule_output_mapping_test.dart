@@ -13,11 +13,16 @@ import 'package:test/test.dart';
 
 enum ProducerKind { independent, multiport, hierarchical, custom }
 
-enum AssignmentOrder { batch, forward, reverse }
+enum AssignmentOrder { batch, forward, reverse, swizzle, rswizzle }
+
+enum SwizzleUse { slice, wholeAndSlice, partialDestination, filledDestination }
+
+enum OperandRanges { slice, reordered, overlapping, nested }
 
 enum MappingGuard {
   outputFanout,
   siblingFanout,
+  busFanout,
   repeatedBit,
   wholeBusFanout,
   renameableBus,
@@ -142,7 +147,11 @@ List<Logic> stageOutputs(Logic data, ProducerKind kind) {
 }
 
 void assignBits(Logic destination, List<Logic> bits, AssignmentOrder order) {
-  if (order == AssignmentOrder.batch) {
+  if (order == AssignmentOrder.swizzle) {
+    destination <= bits.reversed.toList().swizzle();
+  } else if (order == AssignmentOrder.rswizzle) {
+    destination <= bits.rswizzle();
+  } else if (order == AssignmentOrder.batch) {
     destination.assignSubset(bits);
   } else {
     final indices = List.generate(bits.length, (index) => index);
@@ -159,6 +168,7 @@ class OutputMappingTop extends Module {
     required ProducerKind producer,
     required AssignmentOrder order,
     required int aliasDepth,
+    Naming? bitNaming,
   }) : super(name: 'output_mapping_top') {
     final data = addInput('data', Logic(width: width), width: width);
     final observed = addOutput('observed', width: width);
@@ -169,7 +179,16 @@ class OutputMappingTop extends Module {
       destination = alias;
     }
     final results = stageOutputs(data, producer);
-    assignBits(destination, results.reversed.toList(), order);
+    assignBits(
+        destination,
+        [
+          for (final (index, result) in results.reversed.indexed)
+            if (bitNaming == null)
+              result
+            else
+              result.named('bit_alias$index', naming: bitNaming),
+        ],
+        order);
   }
 }
 
@@ -191,6 +210,9 @@ class GuardedOutputTop extends Module {
         addOutput('tap') <= results[1];
       case MappingGuard.siblingFanout:
         addOutput('tap') <= BitStage(results[1]).output('result');
+      case MappingGuard.busFanout:
+        assignBits(addOutput('secondary', width: 3),
+            [results[1], Const(0), Const(1)], order);
       case MappingGuard.repeatedBit:
         results.add(results[1]);
       case MappingGuard.wholeBusFanout:
@@ -240,6 +262,18 @@ class WideStage extends Module {
   }
 }
 
+class CustomWideStage extends WideStage with SystemVerilog {
+  CustomWideStage(super.data);
+
+  @override
+  String definitionVerilog(String definitionType) => '''
+module $definitionType(input logic [${input('data').width - 1}:0] data,
+    output logic [${input('data').width - 1}:0] wide_result);
+assign wide_result = ~data;
+endmodule
+''';
+}
+
 class MixedRangeTop extends Module {
   MixedRangeTop({
     required bool wideProducer,
@@ -253,21 +287,122 @@ class MixedRangeTop extends Module {
     final middle = wideProducer
         ? WideStage(data.getRange(1, 4)).output('wide_result')
         : data.getRange(1, 4);
-    assignBits(observed, [low, ...middle.elements, high], order);
+    assignBits(
+        observed,
+        [
+          low,
+          if (order == AssignmentOrder.swizzle ||
+              order == AssignmentOrder.rswizzle)
+            middle
+          else
+            ...middle.elements,
+          high,
+        ],
+        order);
     if (fanout) {
       addOutput('tap', width: 3) <= middle;
     }
   }
 }
 
+class SlicedSwizzleTop extends Module {
+  SlicedSwizzleTop({
+    required ProducerKind producer,
+    required AssignmentOrder order,
+    required Naming naming,
+    required SwizzleUse use,
+    required bool fanout,
+    required int lower,
+    required int upper,
+  }) : super(name: 'sliced_swizzle_top') {
+    final data = addInput('data', Logic(width: 4), width: 4);
+    final sources = stageOutputs(data, producer);
+    final operands = [
+      for (final (index, source) in sources.indexed)
+        source.named('operand$index', naming: naming),
+    ];
+    final combined = order == AssignmentOrder.swizzle
+        ? operands.swizzle()
+        : operands.rswizzle();
+    final selected = combined.getRange(lower, upper);
+    final partial = use == SwizzleUse.partialDestination ||
+        use == SwizzleUse.filledDestination;
+    final observed =
+        addOutput('observed', width: upper - lower + (partial ? 2 : 0));
+    if (partial) {
+      observed.assignSubset(selected.elements, start: 1);
+      if (use == SwizzleUse.filledDestination) {
+        observed.assignSubset([Const(0)]);
+        observed.assignSubset([Const(1)], start: observed.width - 1);
+      }
+    } else {
+      observed <= selected;
+    }
+    if (use == SwizzleUse.wholeAndSlice) {
+      addOutput('whole', width: 4) <= combined;
+    }
+    if (fanout) {
+      addOutput('tap') <= BitStage(operands[1]).output('result');
+    }
+  }
+}
+
+class RangeOperandSwizzleTop extends Module {
+  RangeOperandSwizzleTop({
+    required ProducerKind producer,
+    required AssignmentOrder order,
+    required Naming naming,
+    required OperandRanges ranges,
+    required String constant,
+    required int constantPosition,
+    required bool fanout,
+  }) : super(name: 'range_operand_swizzle_top') {
+    final data = addInput('data', Logic(width: 4), width: 4);
+    final sources = stageOutputs(data, producer);
+    final wideStage = producer == ProducerKind.custom
+        ? CustomWideStage(data)
+        : WideStage(data);
+    final wide =
+        wideStage.output('wide_result').named('wide_alias', naming: naming);
+    final pieces = switch (ranges) {
+      OperandRanges.slice => [wide.getRange(1, 3)],
+      OperandRanges.reordered => [wide.getRange(2, 4), wide.getRange(0, 2)],
+      OperandRanges.overlapping => [wide.getRange(0, 2), wide.getRange(1, 3)],
+      OperandRanges.nested => [wide.getRange(1, 4).getRange(1, 2)],
+    };
+    final low = sources.first.named('low_alias', naming: naming);
+    final operands = [
+      low,
+      for (final (index, piece) in pieces.indexed)
+        piece.named('range$index', naming: naming),
+      sources.last.named('high_alias', naming: naming),
+    ];
+    operands.insert(constantPosition < 0 ? operands.length : constantPosition,
+        Const(LogicValue.ofString(constant)).named('tie', naming: naming));
+    final combined = order == AssignmentOrder.swizzle
+        ? operands.swizzle()
+        : operands.rswizzle();
+    addOutput('observed', width: combined.width) <= combined;
+    if (fanout) {
+      addOutput('wide_tap', width: 4) <= wide;
+      addOutput('bit_tap') <= BitStage(low).output('result');
+      addOutput('window', width: combined.width - 2) <=
+          combined.getRange(1, combined.width - 1);
+    }
+  }
+}
+
 class OutputHierarchyTop extends Module {
-  OutputHierarchyTop({required int unpackedDimensions, required bool slice})
-      : super(name: 'output_hierarchy_top') {
+  OutputHierarchyTop({
+    required int unpackedDimensions,
+    required bool slice,
+    required AssignmentOrder order,
+  }) : super(name: 'output_hierarchy_top') {
     final data = addInput('data', Logic(width: 4), width: 4);
     final inner = OutputMappingTop(
       width: 4,
       producer: ProducerKind.multiport,
-      order: AssignmentOrder.reverse,
+      order: order,
       aliasDepth: 3,
     );
     inner.inputSource('data') <= data;
@@ -297,6 +432,29 @@ Iterable<LogicValue> inputPatterns(int width) sync* {
           if (bit == index) state else (bit % 2).toString(),
       ].join());
     }
+  }
+}
+
+Iterable<LogicValue> fourStateInputPatterns(int width,
+    {bool exhaustive = false}) sync* {
+  if (!exhaustive) {
+    yield* inputPatterns(width);
+    yield LogicValue.filled(width, LogicValue.x);
+    yield LogicValue.filled(width, LogicValue.z);
+    for (final inverted in [false, true]) {
+      yield LogicValue.ofString([
+        for (var bit = width - 1; bit >= 0; bit--)
+          if ((bit.isEven) != inverted) 'x' else 'z',
+      ].join());
+    }
+    return;
+  }
+  const states = ['0', '1', 'x', 'z'];
+  for (var value = 0; value < 1 << (2 * width); value++) {
+    yield LogicValue.ofString([
+      for (var bit = width - 1; bit >= 0; bit--)
+        states[(value >> (2 * bit)) & 3],
+    ].join());
   }
 }
 
@@ -356,6 +514,53 @@ void main() {
     }
   });
 
+  group('concatenated output alias naming', () {
+    for (final producer in [ProducerKind.independent, ProducerKind.custom]) {
+      for (final order in [AssignmentOrder.swizzle, AssignmentOrder.rswizzle]) {
+        for (final naming in Naming.values) {
+          test('${producer.name} ${order.name} ${naming.name}', () async {
+            final module = OutputMappingTop(
+              width: 3,
+              producer: producer,
+              order: order,
+              aliasDepth: 3,
+              bitNaming: naming,
+            );
+            await module.build();
+            final body = topBody(module);
+            final preserve =
+                naming == Naming.reserved || naming == Naming.renameable;
+            for (var index = 0; index < 3; index++) {
+              if (preserve) {
+                expect(body, contains('logic bit_alias$index;'));
+                expect(body, contains('.result(bit_alias$index)'));
+              } else {
+                expect(body, contains('.result(observed[$index])'),
+                    reason: body);
+                expect(body, isNot(contains('logic bit_alias$index;')));
+              }
+            }
+            NetlistSynthesizer().synthesizeToJson(module);
+            expect(topBody(module), body);
+            final vectors = [
+              for (final input in inputPatterns(3))
+                Vector({
+                  'data': input
+                }, {
+                  'observed': LogicValue.ofString([
+                    for (var index = 0; index < 3; index++)
+                      invertedBit(input, index),
+                  ].join()),
+                }),
+            ];
+            await SimCompare.checkFunctionalVector(module, vectors);
+            SimCompare.checkIverilogVector(module, vectors);
+          });
+        }
+      }
+    }
+  });
+
   group('output mapping safety cross-products', () {
     for (final guard in MappingGuard.values) {
       for (final producer in [
@@ -363,7 +568,14 @@ void main() {
         ProducerKind.multiport,
         ProducerKind.custom,
       ]) {
-        for (final order in [AssignmentOrder.batch, AssignmentOrder.reverse]) {
+        for (final order in [
+          AssignmentOrder.batch,
+          AssignmentOrder.reverse,
+          if (guard != MappingGuard.partial) ...[
+            AssignmentOrder.swizzle,
+            AssignmentOrder.rswizzle,
+          ],
+        ]) {
           test('${guard.name} ${producer.name} ${order.name}', () async {
             final module = GuardedOutputTop(
               guard: guard,
@@ -412,6 +624,9 @@ void main() {
                     'tap': LogicValue.ofString(invertedBit(input, 1)),
                   if (guard == MappingGuard.siblingFanout)
                     'tap': input[1].isValid ? input[1] : LogicValue.x,
+                  if (guard == MappingGuard.busFanout)
+                    'secondary':
+                        LogicValue.ofString('10${invertedBit(input, 1)}'),
                   if (guard == MappingGuard.wholeBusFanout) 'mirror': ~input,
                 }),
             ];
@@ -487,7 +702,9 @@ void main() {
         for (final namedConstant in [false, true]) {
           for (final order in [
             AssignmentOrder.batch,
-            AssignmentOrder.reverse
+            AssignmentOrder.reverse,
+            AssignmentOrder.swizzle,
+            AssignmentOrder.rswizzle,
           ]) {
             test(
                 '$constant at $constantIndex '
@@ -502,7 +719,7 @@ void main() {
               final body = topBody(module);
               expect(body, isNot(contains('.result()')), reason: body);
               if (constant != 'z') {
-                for (final index in [0, 4]) {
+                for (var index = 0; index < 5; index++) {
                   if (index != constantIndex) {
                     expect(body, contains('.result(observed[$index])'),
                         reason: body);
@@ -579,18 +796,251 @@ void main() {
     }
   });
 
+  group('sliced swizzle equivalence cross-products', () {
+    for (final producer in ProducerKind.values) {
+      for (final order in [AssignmentOrder.swizzle, AssignmentOrder.rswizzle]) {
+        for (final naming in Naming.values) {
+          for (final use in SwizzleUse.values) {
+            for (final fanout in [false, true]) {
+              for (final (lower, upper) in [(0, 1), (1, 3), (3, 4)]) {
+                test(
+                    '${producer.name} ${order.name} ${naming.name} '
+                    '${use.name} fanout=$fanout [$lower:$upper]', () async {
+                  final module = SlicedSwizzleTop(
+                    producer: producer,
+                    order: order,
+                    naming: naming,
+                    use: use,
+                    fanout: fanout,
+                    lower: lower,
+                    upper: upper,
+                  );
+                  await module.build();
+                  final body = topBody(module);
+                  printOnFailure(body);
+                  NetlistSynthesizer().synthesizeToJson(module);
+                  expect(topBody(module), body);
+                  final vectors = [
+                    for (final input in fourStateInputPatterns(4,
+                        exhaustive: producer == ProducerKind.multiport &&
+                            order == AssignmentOrder.rswizzle &&
+                            naming == Naming.unnamed &&
+                            use == SwizzleUse.wholeAndSlice &&
+                            fanout))
+                      Vector({
+                        'data': input
+                      }, {
+                        'observed': LogicValue.ofString([
+                          if (use == SwizzleUse.partialDestination) 'z',
+                          if (use == SwizzleUse.filledDestination) '1',
+                          for (var bit = upper - 1; bit >= lower; bit--)
+                            invertedBit(
+                                input,
+                                order == AssignmentOrder.swizzle
+                                    ? 3 - bit
+                                    : bit),
+                          if (use == SwizzleUse.partialDestination) 'z',
+                          if (use == SwizzleUse.filledDestination) '0',
+                        ].join()),
+                        if (use == SwizzleUse.wholeAndSlice)
+                          'whole': LogicValue.ofString([
+                            for (var bit = 3; bit >= 0; bit--)
+                              invertedBit(
+                                  input,
+                                  order == AssignmentOrder.swizzle
+                                      ? 3 - bit
+                                      : bit),
+                          ].join()),
+                        if (fanout)
+                          'tap': input[1].isValid ? input[1] : LogicValue.x,
+                      }),
+                  ];
+                  await SimCompare.checkFunctionalVector(module, vectors);
+                  SimCompare.checkIverilogVector(module, vectors);
+                });
+              }
+            }
+          }
+        }
+      }
+    }
+  });
+
+  for (final filled in [false, true]) {
+    test('partial destination of a swizzle slice filled=$filled', () async {
+      final module = SlicedSwizzleTop(
+        producer: ProducerKind.independent,
+        order: AssignmentOrder.rswizzle,
+        naming: Naming.mergeable,
+        use: filled
+            ? SwizzleUse.filledDestination
+            : SwizzleUse.partialDestination,
+        fanout: false,
+        lower: 1,
+        upper: 3,
+      );
+      await module.build();
+      printOnFailure(topBody(module));
+      final vectors = [
+        Vector({'data': 0},
+            {'observed': LogicValue.ofString(filled ? '1110' : 'z11z')}),
+      ];
+      await SimCompare.checkFunctionalVector(module, vectors);
+      SimCompare.checkIverilogVector(module, vectors);
+    });
+  }
+
+  test('preserved Z constant beside child output slices', () async {
+    final module = RangeOperandSwizzleTop(
+      producer: ProducerKind.custom,
+      order: AssignmentOrder.rswizzle,
+      naming: Naming.reserved,
+      ranges: OperandRanges.slice,
+      constant: 'z',
+      constantPosition: 1,
+      fanout: false,
+    );
+    await module.build();
+    printOnFailure(topBody(module));
+    final vectors = [
+      Vector({'data': 0}, {'observed': LogicValue.ofString('111z1')}),
+    ];
+    await SimCompare.checkFunctionalVector(module, vectors);
+    SimCompare.checkIverilogVector(module, vectors);
+  });
+
+  group('range operand equivalence cross-products', () {
+    for (final producer in [ProducerKind.independent, ProducerKind.custom]) {
+      for (final order in [AssignmentOrder.swizzle, AssignmentOrder.rswizzle]) {
+        for (final naming in Naming.values) {
+          for (final ranges in OperandRanges.values) {
+            for (final fanout in [false, true]) {
+              for (final constant in [
+                '0',
+                '1',
+                'x',
+                'z',
+              ]) {
+                for (final constantPosition in [0, 1, -1]) {
+                  test(
+                      '${producer.name} ${order.name} ${naming.name} '
+                      '${ranges.name} fanout=$fanout '
+                      '$constant at $constantPosition', () async {
+                    final module = RangeOperandSwizzleTop(
+                      producer: producer,
+                      order: order,
+                      naming: naming,
+                      ranges: ranges,
+                      constant: constant,
+                      constantPosition: constantPosition,
+                      fanout: fanout,
+                    );
+                    await module.build();
+                    final body = topBody(module);
+                    printOnFailure(body);
+                    if (naming == Naming.reserved ||
+                        naming == Naming.renameable) {
+                      expect(body, contains('wide_alias'));
+                      expect(body, contains('range0'));
+                    } else if (constantPosition != -1) {
+                      expect(body, matches(r'\.result\(observed\[\d+\]\)'));
+                    }
+                    if (constant == '1' && constantPosition == 1) {
+                      NetlistSynthesizer().synthesizeToJson(module);
+                      expect(topBody(module), body);
+                    }
+                    final sourceIndices = switch (ranges) {
+                      OperandRanges.slice => [
+                          [1, 2]
+                        ],
+                      OperandRanges.reordered => [
+                          [2, 3],
+                          [0, 1]
+                        ],
+                      OperandRanges.overlapping => [
+                          [0, 1],
+                          [1, 2]
+                        ],
+                      OperandRanges.nested => [
+                          [2]
+                        ],
+                    };
+                    final vectors = <Vector>[];
+                    for (final input in fourStateInputPatterns(4,
+                        exhaustive: producer == ProducerKind.custom &&
+                            order == AssignmentOrder.rswizzle &&
+                            naming == Naming.mergeable &&
+                            !fanout &&
+                            constant == 'z' &&
+                            constantPosition == 1)) {
+                      final expectedOperands = [
+                        [invertedBit(input, 0)],
+                        for (final indices in sourceIndices)
+                          [
+                            for (final index in indices)
+                              invertedBit(input, index)
+                          ],
+                        [invertedBit(input, 3)],
+                      ];
+                      expectedOperands.insert(
+                          constantPosition < 0
+                              ? expectedOperands.length
+                              : constantPosition,
+                          [constant]);
+                      final expectedBits = (order == AssignmentOrder.swizzle
+                              ? expectedOperands.reversed
+                              : expectedOperands)
+                          .expand((operand) => operand)
+                          .toList();
+                      vectors.add(Vector({
+                        'data': input
+                      }, {
+                        'observed':
+                            LogicValue.ofString(expectedBits.reversed.join()),
+                        if (fanout) ...{
+                          'wide_tap': ~input,
+                          'bit_tap': input[0].isValid ? input[0] : LogicValue.x,
+                          'window': LogicValue.ofString(expectedBits
+                              .sublist(1, expectedBits.length - 1)
+                              .reversed
+                              .join()),
+                        },
+                      }));
+                    }
+                    await SimCompare.checkFunctionalVector(module, vectors);
+                    SimCompare.checkIverilogVector(module, vectors);
+                  });
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  });
+
   group('packed word boundaries and deep aliases', () {
-    for (final width in [33, 65]) {
+    for (final (width, order) in [
+      for (final width in [33, 65])
+        for (final order in [
+          AssignmentOrder.reverse,
+          AssignmentOrder.swizzle,
+          AssignmentOrder.rswizzle,
+        ])
+          (width, order),
+    ]) {
       for (final producer in [
         ProducerKind.independent,
         ProducerKind.multiport
       ]) {
         for (final aliasDepth in [0, 16]) {
-          test('width=$width ${producer.name} aliases=$aliasDepth', () async {
+          test(
+              'width=$width ${producer.name} ${order.name} aliases=$aliasDepth',
+              () async {
             final module = OutputMappingTop(
               width: width,
               producer: producer,
-              order: AssignmentOrder.reverse,
+              order: order,
               aliasDepth: aliasDepth,
             );
             await module.build();
@@ -637,14 +1087,36 @@ void main() {
   });
 
   group('optimized child in array hierarchy', () {
-    for (final slice in [false, true]) {
+    for (final (slice, order) in [
+      for (final slice in [false, true])
+        for (final order in [
+          AssignmentOrder.reverse,
+          AssignmentOrder.swizzle,
+          AssignmentOrder.rswizzle,
+        ])
+          (slice, order),
+    ]) {
       for (final unpackedDimensions in [0, 1, if (!slice) 2]) {
-        test('slice=$slice unpacked=$unpackedDimensions', () async {
+        final unpackedOrder = slice
+            ? AssignmentOrder.rswizzle
+            : unpackedDimensions == 1
+                ? AssignmentOrder.reverse
+                : AssignmentOrder.swizzle;
+        if (unpackedDimensions != 0 && order != unpackedOrder) {
+          continue;
+        }
+        test('slice=$slice unpacked=$unpackedDimensions ${order.name}',
+            () async {
           final module = OutputHierarchyTop(
             unpackedDimensions: unpackedDimensions,
             slice: slice,
+            order: order,
           );
           await module.build();
+          final body = topBody(module);
+          printOnFailure(body);
+          NetlistSynthesizer().synthesizeToJson(module);
+          expect(topBody(module), body);
           final vectors = [
             for (final input in inputPatterns(4))
               Vector({

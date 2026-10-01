@@ -11,6 +11,30 @@ import 'package:rohd/rohd.dart';
 import 'package:rohd/src/synthesizers/systemverilog/systemverilog_synth_sub_module_instantiation.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
 
+/// A non-owning, MSB-first concatenation of writable output destinations.
+class _SynthLogicOutputConcat extends SynthLogic {
+  final List<SynthLogic> destinations;
+
+  _SynthLogicOutputConcat(this.destinations,
+      {required super.parentSynthModuleDefinition})
+      : super(Logic(
+            width: destinations.fold(
+                0, (width, destination) => width + destination.width)));
+
+  @override
+  bool get needsDeclaration => false;
+
+  @override
+  bool get mergeable => false;
+
+  @override
+  String get name {
+    final names =
+        destinations.map((destination) => destination.resolved.name).join(',');
+    return '{$names}';
+  }
+}
+
 /// A special [SynthModuleDefinition] for SystemVerilog modules.
 class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
   /// Creates a new [SystemVerilogSynthModuleDefinition] for the given [module].
@@ -27,6 +51,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
 
   @override
   void process() {
+    _inlinePackedRangesFromSubmoduleOutputs();
     _inlinePackedRangesIntoSubmoduleInputs();
     _collapseAggregateConnections();
     _collapseWholeNetBuses();
@@ -209,6 +234,206 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
         internalSignals.remove(signal);
       }
     }
+  }
+
+  /// Replaces an exclusively produced packed bus with its complete split sinks.
+  void _inlinePackedRangesFromSubmoduleOutputs() {
+    final readers = <SynthLogic, List<SynthSubModuleInstantiation>>{};
+    final writers = <SynthLogic,
+        List<({SynthSubModuleInstantiation instantiation, String port})>>{};
+    final inouts = <SynthLogic>{};
+    for (final instantiation in subModuleInstantiations) {
+      if (!instantiation.needsInstantiation) {
+        continue;
+      }
+      for (final signal in instantiation.inputMapping.values) {
+        readers
+            .putIfAbsent(_referenceBase(signal), () => [])
+            .add(instantiation);
+      }
+      for (final entry in instantiation.outputMapping.entries) {
+        writers.putIfAbsent(_referenceBase(entry.value), () => []).add((
+          instantiation: instantiation,
+          port: entry.key,
+        ));
+      }
+      inouts.addAll(instantiation.inOutMapping.values.map(_referenceBase));
+    }
+    final assignmentsBySignal = <SynthLogic, List<SynthAssignment>>{};
+    for (final assignment in assignments) {
+      for (final signal in {
+        assignment.src.resolved,
+        assignment.dst.resolved,
+        _referenceBase(assignment.src),
+        _referenceBase(assignment.dst),
+      }) {
+        assignmentsBySignal.putIfAbsent(signal, () => []).add(assignment);
+      }
+    }
+    final removedAssignments = <SynthAssignment>{};
+    for (final entry in writers.entries) {
+      final bus = entry.key;
+      final producer = entry.value.singleOrNull;
+      if (producer == null ||
+          producer.instantiation.module is InlineSystemVerilog ||
+          producer.instantiation.outputMapping[producer.port] != bus ||
+          bus.isArray ||
+          bus.isNet ||
+          bus.isConstant ||
+          !bus.isClearable ||
+          !internalSignals.contains(bus) ||
+          _isPort(bus) ||
+          bus.logics.any((logic) =>
+              logic is LogicStructure || logic.parentStructure != null) ||
+          inouts.contains(bus)) {
+        continue;
+      }
+
+      final slices = <({int lower, int upper, SynthLogic destination})>[];
+      final consumedAssignments = <SynthAssignment>{};
+      final consumedSubsets = <SynthSubModuleInstantiation>{};
+      final consumedSignals = <SynthLogic>{};
+      var valid = true;
+      for (final assignment
+          in assignmentsBySignal[bus] ?? <SynthAssignment>[]) {
+        if (assignment.src != bus || assignment is! RangeSynthAssignment) {
+          valid = false;
+          break;
+        }
+        var destination = assignment.dst;
+        if (destination.isArray ||
+            destination.isNet ||
+            destination.isConstant) {
+          valid = false;
+          break;
+        }
+        if (assignment.dstLowerIndex != 0 ||
+            assignment.dstUpperIndex != destination.width - 1) {
+          destination = assignment.width == 1
+              ? SynthLogicPackedBitReference(
+                  destination, assignment.dstLowerIndex,
+                  parentSynthModuleDefinition: this)
+              : SynthLogicPackedRangeReference(destination,
+                  assignment.dstLowerIndex, assignment.dstUpperIndex,
+                  parentSynthModuleDefinition: this);
+        }
+        slices.add((
+          lower: assignment.srcLowerIndex,
+          upper: assignment.srcUpperIndex,
+          destination: destination,
+        ));
+        consumedAssignments.add(assignment);
+      }
+      for (final reader in readers[bus] ?? <SynthSubModuleInstantiation>[]) {
+        final subset = reader.module;
+        if (subset is! BusSubset ||
+            subset.original.isNet ||
+            reader.inputMapping[subset.original.name] != bus ||
+            subset.startIndex > subset.endIndex) {
+          valid = false;
+          break;
+        }
+        var destination = reader.outputMapping[subset.subset.name]!.resolved;
+        final uses = assignmentsBySignal[destination] ?? <SynthAssignment>[];
+        if (destination.isClearable &&
+            internalSignals.contains(destination) &&
+            !_isPort(destination) &&
+            uses.length == 1 &&
+            uses.single is! PartialSynthAssignment &&
+            uses.single.src == destination &&
+            (readers[_referenceBase(destination)]?.isEmpty ?? true) &&
+            writers[_referenceBase(destination)]?.length == 1 &&
+            !inouts.contains(_referenceBase(destination))) {
+          consumedAssignments.add(uses.single);
+          consumedSignals.add(destination);
+          destination = uses.single.dst;
+        }
+        slices.add((
+          lower: subset.startIndex,
+          upper: subset.endIndex,
+          destination: destination,
+        ));
+        consumedSubsets.add(reader);
+      }
+
+      slices.sort((first, second) => first.lower.compareTo(second.lower));
+      var nextBit = 0;
+      final destinationRanges = <SynthLogic, List<({int lower, int upper})>>{};
+      for (final slice in slices) {
+        final destination = slice.destination;
+        final base = _referenceBase(destination);
+        final span = _outputDestinationSpan(destination);
+        final previousRanges =
+            destinationRanges.putIfAbsent(span.base, () => []);
+        if (slice.lower != nextBit ||
+            slice.upper < slice.lower ||
+            slice.upper >= bus.width ||
+            destination.width != slice.upper - slice.lower + 1 ||
+            destination.isArray ||
+            destination.isNet ||
+            destination.isConstant ||
+            base == bus ||
+            destination.declarationCleared ||
+            span.base.declarationCleared ||
+            span.base.isConstant ||
+            span.base.isNet ||
+            inouts.contains(base) ||
+            inouts.contains(span.base) ||
+            previousRanges.any((previous) =>
+                previous.lower <= span.upper && span.lower <= previous.upper) ||
+            span.base.logics.any((logic) =>
+                logic.parentModule == module &&
+                (logic.isInput || logic.isInOut)) ||
+            (writers[base]?.any((writer) =>
+                    !consumedSubsets.contains(writer.instantiation)) ??
+                false)) {
+          valid = false;
+          break;
+        }
+        previousRanges.add((lower: span.lower, upper: span.upper));
+        nextBit = slice.upper + 1;
+      }
+      if (!valid || slices.length < 2 || nextBit != bus.width) {
+        continue;
+      }
+
+      producer.instantiation.setOutputMapping(
+        producer.port,
+        _SynthLogicOutputConcat(
+          slices.reversed.map((slice) => slice.destination).toList(),
+          parentSynthModuleDefinition: this,
+        ),
+        replace: true,
+      );
+      removedAssignments.addAll(consumedAssignments);
+      chainableModulesToCollapse.removeAll(consumedSubsets);
+      for (final subset in consumedSubsets) {
+        subset.clearInstantiation();
+      }
+      for (final signal in {bus, ...consumedSignals}) {
+        signal.clearDeclaration();
+        internalSignals.remove(signal);
+      }
+    }
+    assignments.removeWhere(removedAssignments.contains);
+  }
+
+  ({SynthLogic base, int lower, int upper}) _outputDestinationSpan(
+      SynthLogic destination) {
+    var base = destination.resolved;
+    var lower = 0;
+    if (base is SynthLogicPackedBitReference) {
+      lower = base.bitIndex;
+      base = base.packedBase.resolved;
+    } else if (base is SynthLogicPackedRangeReference) {
+      lower = base.lowerIndex;
+      base = base.packedBase.resolved;
+    }
+    while (base is SynthLogicArrayElement) {
+      lower += base.logic.arrayIndex! * base.width;
+      base = base.parentArray.resolved;
+    }
+    return (base: base, lower: lower, upper: lower + destination.width - 1);
   }
 
   /// Returns the lower destination bit selected by [assignment].

@@ -94,9 +94,10 @@ class SynthLogic {
   /// The [Logic] whose value represents a constant, if there is one.
   Const? _constLogic;
 
-  /// Assignments should be eliminated rather than assign to `z`, so this
-  /// indicates if this [SynthLogic] is actually pointing to a [Const] that
-  /// is floating.
+  /// Whether this represents an entirely floating [Const].
+  ///
+  /// Floating assignments can be omitted for nets, but logic variables may
+  /// require an explicit assignment to preserve `z` instead of undriven `x`.
   bool get isFloatingConstant => _constLogic?.value.isFloating ?? false;
 
   /// Whether this represents a constant.
