@@ -693,6 +693,18 @@ a  /*  7:0 */
     <Logic>[].swizzle();
   });
 
+  test('swizzle with one non-zero-width signal skips Swizzle module', () {
+    final a = Logic(name: 'a', width: 4);
+    final result = [Const(0, width: 0), a].swizzle();
+    expect(identical(result, a), isTrue);
+  });
+
+  test('rswizzle with one non-zero-width signal skips Swizzle module', () {
+    final a = Logic(name: 'a', width: 4);
+    final result = [a, Const(0, width: 0)].rswizzle();
+    expect(identical(result, a), isTrue);
+  });
+
   test('zero-width swizzle module', () async {
     final mod = SwizzlyEmpty(Logic());
     await mod.build();

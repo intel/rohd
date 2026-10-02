@@ -887,6 +887,11 @@ class Logic {
       throw Exception(
           'New width $newWidth must be greater than or equal to width $width.');
     }
+    // Nothing to extend: reuse the original signal instead of building a
+    // zero-width Const + Swizzle (matches signExtend's same-width path).
+    if (newWidth == width) {
+      return this;
+    }
     return [
       Const(0, width: newWidth - width),
       this,
