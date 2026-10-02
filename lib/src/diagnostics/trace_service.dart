@@ -70,7 +70,11 @@ enum ScOutputMode {
 /// - [write] / [writeHtml] — write JSON / HTML to a directory.
 class TraceService extends ArtifactProducingService {
   /// The most recently registered [TraceService], or `null`.
-  static TraceService? current;
+  ///
+  /// This is backed by [ModuleServices], so it is cleared by unregistering
+  /// this service type or resetting the registry.
+  static TraceService? get current =>
+      ModuleServices.instance.lookup<TraceService>();
 
   /// The [SystemVerilogService] whose line maps enrich the FLC output.
   ///
@@ -139,14 +143,10 @@ class TraceService extends ArtifactProducingService {
                 : ScOutputMode.perModule),
         super(module) {
     if (!module.hasBuilt) {
-      throw Exception(
-        'Module must be built before creating TraceService. '
-        'Call build() first.',
-      );
+      throw ModuleNotBuiltException(module);
     }
 
     if (register) {
-      current = this;
       ModuleServices.instance.register<TraceService>(this);
     }
   }
