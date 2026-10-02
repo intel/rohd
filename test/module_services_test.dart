@@ -181,6 +181,16 @@ void main() {
       expect(NetlistService.current, isNull);
       expect(SystemVerilogService.current, isNull);
     });
+
+    test('reset clears TraceService current accessor', () async {
+      final mod = SimpleModule(Logic());
+      await mod.build();
+      final trace = TraceService(mod);
+
+      expect(TraceService.current, same(trace));
+      ModuleServices.instance.reset();
+      expect(TraceService.current, isNull);
+    });
   });
 
   group('SystemVerilogService', () {
