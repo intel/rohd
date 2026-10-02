@@ -635,15 +635,15 @@ void main() {
     for (final indexPermutation in indexPermutations) {
       var l = priorityList();
 
-      final expectedName = l
-          .lastWhereIndexedOrNull(
-              (index, element) => indexPermutation.contains(index))!
-          .name;
+      final expectedSignal = l.lastWhereIndexedOrNull(
+          (index, element) => indexPermutation.contains(index))!;
 
       l = indexPermutation.map((i) => l[i]).toList();
 
+      late final Logic driver;
       final dut = FunctionGeneratedModule((in1, in2, out1) {
-        var prev = flop(in2, ~in1);
+        driver = flop(in2, ~in1);
+        var prev = driver;
         for (final s in l) {
           s <= prev;
           prev = s;
@@ -653,6 +653,9 @@ void main() {
       await dut.build();
       final sv = dut.generateSynth();
 
+      final expectedName = expectedSignal.naming == Naming.unnamed
+          ? driver.name
+          : expectedSignal.name;
       expect(sv, contains(expectedName),
           reason: 'Amongst ${l.map((e) => e.name).toList()},'
               ' should have had present $expectedName');

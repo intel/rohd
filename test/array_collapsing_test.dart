@@ -2659,8 +2659,8 @@ void main() {
     await mod.build();
     final sv = mod.generateSynth();
 
-    expect(sv, contains(RegExp(r'ArraySubModIn.*\.inp\(inp\)')));
-    expect(sv, contains(RegExp(r'ArraySubModOut.*\.arrOut\(inp\)')));
+    expect(sv, contains(RegExp(r'ArraySubModIn.*\.inp\(arrOut\)')));
+    expect(sv, contains(RegExp(r'ArraySubModOut.*\.arrOut\(arrOut\)')));
   });
 
   test('array nets with intermediate collapse', () async {
