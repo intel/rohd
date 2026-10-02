@@ -52,26 +52,44 @@ temp_dir="$(mktemp -d "${TMPDIR:-/tmp}/rohd-pana.XXXXXXXX")"
 trap 'rm -rf "$temp_dir"' EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
-mkdir "$temp_dir/package"
-# Checkout lint includes are repository-relative; compatibility analysis below
-# checks the library, while normal CI retains the full repository lint policy.
-tar -C "$package_dir" \
-  --exclude=.git --exclude=.dart_tool --exclude=.packages \
-  --exclude=build --exclude=coverage --exclude=analysis_options.yaml \
-  --exclude=pubspec.lock --exclude=pubspec_overrides.yaml \
-  --exclude=.flutter-plugins --exclude=.flutter-plugins-dependencies \
-  -cf - . | tar -C "$temp_dir/package" -xf -
+uses_local_hierarchy=false
+copy_package() {
+  local source_dir="$1" destination_dir="$2"
+  mkdir "$destination_dir"
+  # Checkout lint includes are repository-relative; compatibility analysis below
+  # checks the library, while normal CI retains the full repository lint policy.
+  tar -C "$source_dir" \
+    --exclude=.git --exclude=.dart_tool --exclude=.packages \
+    --exclude=build --exclude=coverage --exclude=analysis_options.yaml \
+    --exclude=pubspec.lock --exclude=pubspec_overrides.yaml \
+    --exclude=.flutter-plugins --exclude=.flutter-plugins-dependencies \
+    -cf - . | tar -C "$destination_dir" -xf -
+}
+
+copy_package "$package_dir" "$temp_dir/package"
+if grep -A 1 -E '^[[:space:]]*rohd_hierarchy:[[:space:]]*$' \
+  "$package_dir/pubspec.yaml" |
+  grep -Eq '^[[:space:]]*path:[[:space:]]*\.\./rohd_hierarchy[[:space:]]*$'; then
+  hierarchy_dir="$(cd "$package_dir/../rohd_hierarchy" && pwd)"
+  copy_package "$hierarchy_dir" "$temp_dir/rohd_hierarchy"
+  uses_local_hierarchy=true
+fi
 cd "$temp_dir/package"
 if grep -Eq '^[[:space:]]*dependency_overrides[[:space:]]*:' pubspec.yaml; then
   echo "Move inline dependency overrides to pubspec_overrides.yaml before hosted checks." >&2
   exit 2
 fi
 
-echo "=== $package: hosted dependency compatibility ==="
+echo "=== $package: dependency compatibility ==="
 "$sdk" pub get
 "$sdk" "${analyze_arguments[@]}" lib
 "$sdk" pub downgrade
 "$sdk" "${analyze_arguments[@]}" lib
+
+if "$uses_local_hierarchy"; then
+  echo "=== $package: Pana score gate skipped for local rohd_hierarchy ==="
+  exit 0
+fi
 
 echo "=== $package: Pana score gate (threshold $pana_score_threshold) ==="
 PANA_ANALYSIS_INCLUDES=0 \
