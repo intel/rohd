@@ -11,7 +11,8 @@ environment:
 dependencies:
   collection: ^1.15.0
   equatable: ^2.0.5
-  rohd_hierarchy: ^0.2.0
+  rohd_hierarchy:
+    path: ../rohd_hierarchy
 
 dev_dependencies:
   lints: ^3.0.0
