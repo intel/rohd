@@ -52,7 +52,7 @@ class HierarchyOccurrence {
 
   /// Hierarchical address for this occurrence.
   /// Assigned by [buildAddresses] to enable efficient navigation.
-  /// Format: [child0, child1, ..., childN] for nested occurrences.
+  /// Format: `[child0, child1, ..., childN]` for nested occurrences.
   OccurrenceAddress? get address => _address;
   OccurrenceAddress? _address;
 

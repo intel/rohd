@@ -15,8 +15,8 @@ import 'package:rohd_hierarchy/src/hierarchy_occurrence.dart';
 
 /// Efficient hierarchical address using indices instead of strings.
 ///
-/// Format: [index0, index1, ...] or [] for root.
-/// Example: [0, 2, 4] means root's 0th child, then 2nd child of that, then
+/// Format: `[index0, index1, ...]` or `[]` for root.
+/// Example: `[0, 2, 4]` means root's 0th child, then 2nd child of that, then
 /// the 4th child (occurrence) or 4th signal, depending on context.
 ///
 /// Advantages:
