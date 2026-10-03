@@ -42,14 +42,12 @@ extension LogicSwizzle on List<Logic> {
     if (onlyNonZero != null) {
       return onlyNonZero;
     }
-    return length == 1
-        ? first
-        : Swizzle(reversed.toList(growable: false)).out;
+    return length == 1 ? first : Swizzle(reversed.toList(growable: false)).out;
   }
 
   /// Returns the sole non-zero-width signal when this list has exactly one,
   /// otherwise `null`. Avoids creating a [Swizzle] for `{a}`-style cases that
-  /// include zero-width companions (for example a same-width [Logic.zeroExtend]).
+  /// include zero-width companions.
   Logic? _onlyNonZeroWidthSignal() {
     Logic? only;
     for (final signal in this) {
