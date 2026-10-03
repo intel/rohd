@@ -532,9 +532,23 @@ class NetlistSynthesizer extends Synthesizer {
         }
       }
 
-      // Redirect other cells: any input port bit that matches an old ID
-      // gets replaced with the corresponding fresh ID.
+      // Redirect module outputs and other cell inputs that consume the old
+      // slice output IDs to the corresponding fresh IDs.
       if (arraySliceOldToNew.isNotEmpty) {
+        for (final port in ports.values) {
+          if (port['direction'] != 'output') {
+            continue;
+          }
+          final bits = (port['bits']! as List).cast<Object>();
+          final newBits = [
+            for (final bit in bits)
+              if (bit is int) arraySliceOldToNew[bit] ?? bit else bit,
+          ];
+          if (bits.indexed.any((entry) => entry.$2 != newBits[entry.$1])) {
+            port['bits'] = newBits;
+          }
+        }
+
         for (final cellEntry in cells.entries) {
           if (NetlistCell.hasOrigin(
             cellEntry.value,

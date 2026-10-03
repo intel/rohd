@@ -275,6 +275,33 @@ class ArrayOutputChildModule extends Module {
   }
 }
 
+/// Child with a driven array output for testing element-level connectivity.
+class DrivenArrayOutputChildModule extends Module {
+  LogicArray get values => output('values') as LogicArray;
+
+  DrivenArrayOutputChildModule()
+      : super(
+          name: 'source',
+          definitionName: 'DrivenArrayOutputChildModule',
+        ) {
+    final values = addOutputArray('values', dimensions: [4], elementWidth: 8);
+    for (final (index, element) in values.elements.indexed) {
+      element <= Const(index + 1, width: element.width);
+    }
+  }
+}
+
+/// Exposes each element of a child array output as a scalar output port.
+class ArrayElementsToScalarOutputsModule extends Module {
+  ArrayElementsToScalarOutputsModule()
+      : super(definitionName: 'ArrayElementsToScalarOutputsModule') {
+    final source = DrivenArrayOutputChildModule();
+    for (final (index, element) in source.values.elements.indexed) {
+      addOutput('element$index', width: element.width) <= element;
+    }
+  }
+}
+
 /// Provides multiple array outputs to verify synthesized concat cell names.
 class MultipleArrayOutputModule extends Module {
   MultipleArrayOutputModule()
@@ -1929,6 +1956,62 @@ void main() {
             (connections['Y'] as List<dynamic>).whereType<int>().toSet();
 
         expect(inputBits.intersection(outputBits), isEmpty);
+      }
+    });
+
+    test('array element outputs retain slice connectivity', () async {
+      for (final enableDce in [false, true]) {
+        final module = ArrayElementsToScalarOutputsModule();
+        final json = await _synthToMap(
+          module,
+          configuration: NetlistSynthesizerConfiguration(
+            enableDeadCellElimination: enableDce,
+          ),
+        );
+        final moduleDef =
+            _modules(json)[module.definitionName] as Map<String, dynamic>;
+        final cells = _cells(moduleDef);
+        final ports = _ports(moduleDef);
+        final source = cells['source'] as Map<String, dynamic>;
+        final sourceConnections = source['connections'] as Map<String, dynamic>;
+        final sourceBits = (sourceConnections['values'] as List).cast<int>();
+        final slices = cells.entries
+            .where(
+              (entry) =>
+                  (entry.value as Map<String, dynamic>)['synthetic_origin'] ==
+                  'arraySlice',
+            )
+            .toList();
+        final connectivity = _connectivityReport(moduleDef);
+
+        expect(
+          slices,
+          hasLength(4),
+          reason: 'enableDeadCellElimination=$enableDce',
+        );
+        for (var index = 0; index < 4; index++) {
+          final outputBits =
+              ((ports['element$index'] as Map<String, dynamic>)['bits'] as List)
+                  .cast<int>();
+          final slice = slices.singleWhere((entry) {
+            final cell = entry.value as Map<String, dynamic>;
+            final parameters = cell['parameters'] as Map<String, dynamic>;
+            return parameters['OFFSET'] == index * 8;
+          });
+          final sliceConnections = (slice.value
+              as Map<String, dynamic>)['connections'] as Map<String, dynamic>;
+
+          expect(sliceConnections['A'], sourceBits);
+          expect(sliceConnections['Y'], outputBits);
+          for (final bit in outputBits) {
+            expect(
+              connectivity.driversByBit[bit],
+              contains('cell ${slice.key}.Y'),
+              reason: 'element$index bit $bit should remain driven when '
+                  'enableDeadCellElimination=$enableDce',
+            );
+          }
+        }
       }
     });
 
