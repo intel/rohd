@@ -82,9 +82,10 @@ enum OverwritePolicy {
 ///
 /// - [onSignalCollected] — called once per tracked signal at startup; use
 ///   it to register signals in a VM-service index.
-/// - [onValueChange] — called once for each signal in a captured timestamp's
-///   coalesced final-value set; use it to feed an in-memory store for
-///   streaming.
+/// - [onValueChange] — called once for each signal in a captured callback
+///   batch's coalesced final-value set; use it to feed an in-memory store for
+///   streaming. A window-entry snapshot is a separate batch from captured
+///   changes and may share their timestamp.
 /// - [onTimestampCapture] — called after each captured timestamp batch,
 ///   including the possibly empty finalization batch.
 /// - [onSimulationEnd] — called after the final timestamp is written and
@@ -321,14 +322,19 @@ class WaveformService extends ArtifactProducingService {
   @protected
   void onSignalCollected(Logic signal) {}
 
-  /// Called once for each signal's final captured value at [timestamp].
+  /// Called once for each signal's final value in a callback batch at
+  /// [timestamp].
   ///
   /// Multiple changes to the same signal within a simulation timestamp are
-  /// coalesced, so this hook receives that signal once with its final value.
+  /// coalesced within a value-change batch, so this hook receives that signal
+  /// once with its final value for that batch.
   ///
   /// When [startTime] is set, this includes one window-entry value for every
   /// tracked signal at [startTime]. Those calls describe the state entering
-  /// the recording window, rather than physical transitions.
+  /// the recording window, rather than physical transitions, and form a
+  /// separate callback batch. A signal that then changes at [startTime] is
+  /// delivered again in the following value-change batch with the same
+  /// timestamp.
   ///
   /// Override in a subclass to feed an in-memory waveform store or
   /// streaming buffer.  Always call `super` first.
@@ -338,8 +344,9 @@ class WaveformService extends ArtifactProducingService {
   /// Called once after each captured timestamp batch.
   ///
   /// When [startTime] is set, the complete window-entry signal snapshot is
-  /// delivered as a batch at [startTime] before later value-change batches.
-  /// Finalization invokes this hook even when its [changed] set is empty.
+  /// delivered as a batch at [startTime] before the value-change batch, which
+  /// may have the same timestamp. Finalization invokes this hook even when its
+  /// [changed] set is empty.
   ///
   /// Override in a subclass to flush incremental streaming payloads.
   /// Always call `super` first.

@@ -392,6 +392,11 @@ void main() {
           as Map<String, dynamic>;
       final slim = jsonDecode(netlist.slimJson) as Map<String, dynamic>;
 
+      expect(
+        NetlistService.formatVersion,
+        equals(NetlistSynthesizer.formatVersion),
+      );
+      expect(full['version'], equals(NetlistService.formatVersion));
       expect(netlist.version, equals(full['version']));
       expect(module['version'], equals(full['version']));
       expect(

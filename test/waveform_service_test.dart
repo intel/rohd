@@ -368,6 +368,23 @@ void main() {
     expect(service.capturedTimestamps, contains(10));
   });
 
+  test('window entry and boundary change are separate hook batches', () async {
+    final mod = WindowWaveModule();
+    await mod.build();
+    mod.a.put(0);
+    final service = HistoryWaveformService(mod, startTime: 10);
+
+    Simulator.registerAction(5, () => mod.a.put(1));
+    Simulator.registerAction(10, () => mod.a.put(0));
+    await Simulator.run();
+
+    expect(
+      service.history[mod.a],
+      equals([(0, '0'), (10, '1'), (10, '0')]),
+    );
+    expect(service.capturedTimestamps, equals([10, 10]));
+  });
+
   test('rejects formats without a matching waveform writer', () async {
     final mod = SimpleModule(Logic());
     await mod.build();

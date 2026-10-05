@@ -33,8 +33,12 @@ import 'package:rohd/src/diagnostics/output_file_writer.dart'
 /// print(netlist.moduleJson('FilterChannel'));
 /// ```
 class NetlistService extends ArtifactProducingService {
-  /// The current format version for netlist JSON produced by this service.
-  static const String formatVersion = '0.0.5';
+  /// The netlist JSON format version supported by this service.
+  ///
+  /// This compatibility alias uses [NetlistSynthesizer.formatVersion], the
+  /// authoritative version emitted by the synthesizer and preserved by every
+  /// JSON view exposed by this service.
+  static const String formatVersion = NetlistSynthesizer.formatVersion;
 
   /// The most recently registered [NetlistService], or `null`.
   ///
