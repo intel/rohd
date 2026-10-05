@@ -114,19 +114,14 @@ class SignalOccurrence {
   /// Creates a signal occurrence from the legacy DevTools map format.
   factory SignalOccurrence.fromMap(Map<String, dynamic> map) =>
       SignalOccurrence(
-        name: map['name'] as String,
-        direction: map['direction'] as String,
-        value: map['value'] as String,
-        width: map['width'] as int,
-      );
+          name: map['name'] as String,
+          direction: map['direction'] as String,
+          value: map['value'] as String,
+          width: map['width'] as int);
 
   /// Converts this occurrence to the legacy DevTools map format.
-  Map<String, dynamic> toMap() => {
-        'name': name,
-        'direction': direction,
-        'value': value,
-        'width': width,
-      };
+  Map<String, dynamic> toMap() =>
+      {'name': name, 'direction': direction, 'value': value, 'width': width};
 
   /// Whether this signal is a LogicStructure (has named sub-fields).
   bool get isStruct => logicType != null && logicType!.containsKey('fields');

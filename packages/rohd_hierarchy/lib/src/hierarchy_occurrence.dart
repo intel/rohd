@@ -62,40 +62,35 @@ class HierarchyOccurrence {
   HierarchyOccurrence? _parent;
 
   /// Creates a [HierarchyOccurrence] with the given properties.
-  HierarchyOccurrence({
-    required this.name,
-    this.definition,
-    this.isPrimitive = false,
-    List<SignalOccurrence>? signals,
-    List<HierarchyOccurrence>? children,
-    int? portCount,
-    List<SignalOccurrence>? inputs,
-    List<SignalOccurrence>? outputs,
-    List<SignalOccurrence>? inouts,
-    List<HierarchyOccurrence>? subModules,
-  })  : assert(
-          portCount == null ||
-              (portCount >= 0 && portCount <= (signals?.length ?? 0)),
-          'portCount must be non-negative and no greater than the signal '
-          'count.',
-        ),
+  HierarchyOccurrence(
+      {required this.name,
+      this.definition,
+      this.isPrimitive = false,
+      List<SignalOccurrence>? signals,
+      List<HierarchyOccurrence>? children,
+      int? portCount,
+      List<SignalOccurrence>? inputs,
+      List<SignalOccurrence>? outputs,
+      List<SignalOccurrence>? inouts,
+      List<HierarchyOccurrence>? subModules})
+      : assert(
+            portCount == null ||
+                (portCount >= 0 && portCount <= (signals?.length ?? 0)),
+            'portCount must be non-negative and no greater than the signal '
+            'count.'),
         assert(
-          signals == null ||
-              (inputs == null && outputs == null && inouts == null),
-          'Provide either signals or directional port lists, not both.',
-        ),
+            signals == null ||
+                (inputs == null && outputs == null && inouts == null),
+            'Provide either signals or directional port lists, not both.'),
+        assert(children == null || subModules == null,
+            'Provide either children or subModules, not both.'),
         assert(
-          children == null || subModules == null,
-          'Provide either children or subModules, not both.',
-        ),
-        assert(
-          portCount == null ||
-              (portCount >= 0 &&
-                  portCount <=
-                      (signals?.length ??
-                          _legacySignals(inputs, outputs, inouts).length)),
-          'portCount must be within the available signal range.',
-        ),
+            portCount == null ||
+                (portCount >= 0 &&
+                    portCount <=
+                        (signals?.length ??
+                            _legacySignals(inputs, outputs, inouts).length)),
+            'portCount must be within the available signal range.'),
         signals = signals ?? _legacySignals(inputs, outputs, inouts),
         _explicitPortCount = portCount,
         children = children ?? subModules ?? [];
@@ -110,30 +105,24 @@ class HierarchyOccurrence {
           'name': entry.key,
           'direction': direction,
           'value': value['value'],
-          'width': value['width'],
+          'width': value['width']
         });
       }).toList();
     }
 
     return HierarchyOccurrence(
-      name: json['name'] as String,
-      inputs: parsePorts('inputs', 'Input'),
-      outputs: parsePorts('outputs', 'Output'),
-      inouts: parsePorts('inouts', 'Inout'),
-      subModules: (json['subModules'] as List)
-          .map(
-            (subModule) =>
-                HierarchyOccurrence.fromJson(subModule as Map<String, dynamic>),
-          )
-          .toList(),
-    );
+        name: json['name'] as String,
+        inputs: parsePorts('inputs', 'Input'),
+        outputs: parsePorts('outputs', 'Output'),
+        inouts: parsePorts('inouts', 'Inout'),
+        subModules: (json['subModules'] as List)
+            .map((subModule) =>
+                HierarchyOccurrence.fromJson(subModule as Map<String, dynamic>))
+            .toList());
   }
 
-  static List<SignalOccurrence> _legacySignals(
-    List<SignalOccurrence>? inputs,
-    List<SignalOccurrence>? outputs,
-    List<SignalOccurrence>? inouts,
-  ) =>
+  static List<SignalOccurrence> _legacySignals(List<SignalOccurrence>? inputs,
+          List<SignalOccurrence>? outputs, List<SignalOccurrence>? inouts) =>
       [...?inputs, ...?outputs, ...?inouts];
 
   /// Compute the full hierarchical path by walking up the parent chain.

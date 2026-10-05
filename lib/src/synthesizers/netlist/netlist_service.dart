@@ -329,10 +329,8 @@ class NetlistService extends ArtifactProducingService {
           throw const FormatException(
               'Slim netlist JSON contained no netlist.');
         }
-        return NetlistHierarchyAdapter.fromMap(
-          netlist,
-          rootNameOverride: netlist['rootInstanceName'] as String?,
-        );
+        return NetlistHierarchyAdapter.fromMap(netlist,
+            rootNameOverride: netlist['rootInstanceName'] as String?);
       }();
 
   /// Returns the directly connected driving signals for [signal].
@@ -340,46 +338,31 @@ class NetlistService extends ArtifactProducingService {
   /// When [transparent] is true, crosses hierarchical output ports until it
   /// reaches leaf occurrences. Primitive and arbitrary logic boundaries are
   /// never inferred through.
-  List<SignalOccurrence> fanin(
-    SignalOccurrence signal, {
-    bool transparent = false,
-  }) =>
-      _traverseConnectivity(
-        signal,
-        selectTargets: false,
-        transparent: transparent,
-      );
+  List<SignalOccurrence> fanin(SignalOccurrence signal,
+          {bool transparent = false}) =>
+      _traverseConnectivity(signal,
+          selectTargets: false, transparent: transparent);
 
   /// Returns the directly connected consuming signals for [signal].
   ///
   /// When [transparent] is true, crosses hierarchical input ports until it
   /// reaches leaf occurrences. Primitive and arbitrary logic boundaries are
   /// never inferred through.
-  List<SignalOccurrence> fanout(
-    SignalOccurrence signal, {
-    bool transparent = false,
-  }) =>
-      _traverseConnectivity(
-        signal,
-        selectTargets: true,
-        transparent: transparent,
-      );
+  List<SignalOccurrence> fanout(SignalOccurrence signal,
+          {bool transparent = false}) =>
+      _traverseConnectivity(signal,
+          selectTargets: true, transparent: transparent);
 
-  List<SignalOccurrence> _traverseConnectivity(
-    SignalOccurrence signal, {
-    required bool selectTargets,
-    required bool transparent,
-  }) {
+  List<SignalOccurrence> _traverseConnectivity(SignalOccurrence signal,
+      {required bool selectTargets, required bool transparent}) {
     final endpoints = <SignalOccurrence>[];
     final visited = <SignalOccurrence>{};
     void collect(SignalOccurrence current) {
       if (!visited.add(current)) {
         return;
       }
-      for (final endpoint in _directConnectivity(
-        current,
-        selectTargets: selectTargets,
-      )) {
+      for (final endpoint
+          in _directConnectivity(current, selectTargets: selectTargets)) {
         final owner = endpoint.parent;
         if (!transparent || owner == null || owner.children.isEmpty) {
           endpoints.add(endpoint);
@@ -394,10 +377,8 @@ class NetlistService extends ArtifactProducingService {
     return endpoints;
   }
 
-  List<SignalOccurrence> _directConnectivity(
-    SignalOccurrence signal, {
-    required bool selectTargets,
-  }) {
+  List<SignalOccurrence> _directConnectivity(SignalOccurrence signal,
+      {required bool selectTargets}) {
     final owner = signal.parent;
     final definition = owner?.definition;
     if (owner == null || definition == null) {
@@ -438,10 +419,7 @@ class NetlistService extends ArtifactProducingService {
   }
 
   List<_NetConnection> _connectionsForBit(
-    HierarchyOccurrence owner,
-    Map<String, dynamic> moduleData,
-    int bit,
-  ) {
+      HierarchyOccurrence owner, Map<String, dynamic> moduleData, int bit) {
     final connections = <_NetConnection>[];
     final ports = moduleData['ports'] as Map<String, dynamic>? ?? {};
     for (final entry in ports.entries) {
@@ -455,12 +433,9 @@ class NetlistService extends ArtifactProducingService {
         continue;
       }
       final direction = portData['direction']?.toString() ?? 'inout';
-      connections.add(
-        _NetConnection(
+      connections.add(_NetConnection(
           signal: owner.signals[signalIndex],
-          isSource: direction == 'input' || direction == 'inout',
-        ),
-      );
+          isSource: direction == 'input' || direction == 'inout'));
     }
 
     final cells = moduleData['cells'] as Map<String, dynamic>? ?? {};
@@ -484,12 +459,9 @@ class NetlistService extends ArtifactProducingService {
           continue;
         }
         final direction = portDirections[port.key]?.toString() ?? 'inout';
-        connections.add(
-          _NetConnection(
+        connections.add(_NetConnection(
             signal: child.signals[signalIndex],
-            isSource: direction == 'output',
-          ),
-        );
+            isSource: direction == 'output'));
       }
     }
     return connections;

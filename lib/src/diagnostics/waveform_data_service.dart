@@ -38,11 +38,8 @@ class ValueChange {
 /// A waveform value sampled at or immediately before a requested time.
 class WaveformSignalValue {
   /// Creates a sampled waveform value.
-  const WaveformSignalValue({
-    required this.time,
-    required this.value,
-    this.sampleTime,
-  });
+  const WaveformSignalValue(
+      {required this.time, required this.value, this.sampleTime});
 
   /// Simulation time requested for the lookup.
   final int time;
@@ -249,17 +246,15 @@ class WaveformDataService {
     }
     if (isFstBacked) {
       return WaveformSignalValue(
-        time: requestedTime,
-        value: _getValueAtTimeFst(signalId, requestedTime) ?? 'x',
-      );
+          time: requestedTime,
+          value: _getValueAtTimeFst(signalId, requestedTime) ?? 'x');
     }
     final changes = _signalData[signalId] ?? const <ValueChange>[];
     if (changes.isEmpty) {
       final logic = _idToLogicMap[signalId];
       return WaveformSignalValue(
-        time: requestedTime,
-        value: logic == null ? 'x' : _formatLogicValue(logic),
-      );
+          time: requestedTime,
+          value: logic == null ? 'x' : _formatLogicValue(logic));
     }
     var lower = 0;
     var upper = changes.length - 1;
@@ -278,10 +273,7 @@ class WaveformDataService {
     }
     final change = changes[result];
     return WaveformSignalValue(
-      time: requestedTime,
-      value: change.value,
-      sampleTime: change.time,
-    );
+        time: requestedTime, value: change.value, sampleTime: change.time);
   }
 
   /// Debug accessor for signal data (for diagnostics only).
