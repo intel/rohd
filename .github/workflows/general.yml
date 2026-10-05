@@ -14,9 +14,23 @@ permissions: {}
 jobs:
   run-checks:
     name: Run Checks
+    needs: [source-checks, project-tests, devcontainer-tests]
+    if: ${{ always() }}
     permissions: {}
-    env:
-      ROHD_REQUIRE_VERILATOR: '1'
+    timeout-minutes: 5
+    runs-on: ${{ github.repository_owner == 'intel' && 'intel-ubuntu-latest' || 'ubuntu-latest' }}
+    steps:
+      - name: Require all checks to pass
+        env:
+          SOURCE_RESULT: ${{ needs.source-checks.result }}
+          TEST_RESULT: ${{ needs.project-tests.result }}
+          CONTAINER_RESULT: ${{ needs.devcontainer-tests.result }}
+        run: |
+          [[ "$SOURCE_RESULT" == success && "$TEST_RESULT" == success && "$CONTAINER_RESULT" == success ]]
+
+  source-checks:
+    name: Source Checks
+    permissions: {}
     timeout-minutes: 60
     runs-on: ${{ github.repository_owner == 'intel' && 'intel-ubuntu-latest' || 'ubuntu-latest' }}
     steps:
@@ -37,11 +51,6 @@ jobs:
       - name: Setup Dart
         uses: dart-lang/setup-dart@v1
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-
       - name: Setup Pana source analysis
         run: tool/gh_actions/install_pana.sh
 
@@ -60,23 +69,70 @@ jobs:
       - name: Check project documentation
         run: tool/gh_actions/generate_documentation.sh
 
+  project-tests:
+    name: Project Tests (${{ matrix.platform }})
+    permissions: {}
+    env:
+      ROHD_REQUIRE_VERILATOR: '1'
+    timeout-minutes: 60
+    runs-on: ${{ github.repository_owner == 'intel' && 'intel-ubuntu-latest' || 'ubuntu-latest' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [vm, node]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Dart
+        uses: dart-lang/setup-dart@v1
+
+      - name: Setup Node
+        if: matrix.platform == 'node'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install project dependencies
+        run: tool/gh_actions/install_dependencies.sh
+
       - name: Install software - Icarus Verilog
+        if: matrix.platform == 'vm'
         run: tool/gh_actions/install_iverilog.sh
 
       - name: Install software - Verilator
+        if: matrix.platform == 'vm'
         run: bash tool/gh_actions/install_verilator.sh
 
       - name: Run project tests
-        run: tool/gh_actions/run_tests.sh
+        run: tool/gh_actions/run_tests.sh ${{ matrix.platform }}
 
       - name: Check temporary test files
+        if: always()
         run: tool/gh_actions/check_tmp_test.sh
-      
+
+  devcontainer-tests:
+    name: Dev Container Tests (${{ matrix.platform }})
+    permissions: {}
+    timeout-minutes: 60
+    runs-on: ${{ github.repository_owner == 'intel' && 'intel-ubuntu-latest' || 'ubuntu-latest' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [vm, node]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       # https://github.com/devcontainers/ci/blob/main/docs/github-action.md
       - name: Build dev container and run tests in it
         uses: devcontainers/ci@v0.3
         with:
-          runCmd: ROHD_REQUIRE_VERILATOR=1 tool/gh_actions/run_tests.sh
+          push: never
+          runCmd: |
+            set -eu
+            ROHD_REQUIRE_VERILATOR=1 tool/gh_actions/run_tests.sh ${{ matrix.platform }}
+            tool/gh_actions/check_tmp_test.sh
 
   shell-regression-tests:
     name: Shell Regression Tests

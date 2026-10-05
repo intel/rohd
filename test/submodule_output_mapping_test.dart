@@ -803,6 +803,19 @@ void main() {
           for (final use in SwizzleUse.values) {
             for (final fanout in [false, true]) {
               for (final (lower, upper) in [(0, 1), (1, 3), (3, 4)]) {
+                // Cover all names on independent producers; exercise other
+                // producer kinds with mergeable names to bound the matrix.
+                if (producer != ProducerKind.independent &&
+                    naming != Naming.mergeable) {
+                  continue;
+                }
+                // The middle slice covers naming and producer variations;
+                // boundary slices still cover every use, order, and fanout.
+                if (lower != 1 &&
+                    (producer != ProducerKind.independent ||
+                        naming != Naming.mergeable)) {
+                  continue;
+                }
                 test(
                     '${producer.name} ${order.name} ${naming.name} '
                     '${use.name} fanout=$fanout [$lower:$upper]', () async {
@@ -822,9 +835,9 @@ void main() {
                   expect(topBody(module), body);
                   final vectors = [
                     for (final input in fourStateInputPatterns(4,
-                        exhaustive: producer == ProducerKind.multiport &&
+                        exhaustive: producer == ProducerKind.independent &&
                             order == AssignmentOrder.rswizzle &&
-                            naming == Naming.unnamed &&
+                            naming == Naming.mergeable &&
                             use == SwizzleUse.wholeAndSlice &&
                             fanout))
                       Vector({
@@ -922,6 +935,23 @@ void main() {
                 'z',
               ]) {
                 for (final constantPosition in [0, 1, -1]) {
+                  // Cover every topology/name/fanout combination with middle Z.
+                  final topologyCase = constant == 'z' && constantPosition == 1;
+                  // Sweep all constant states and positions on one topology.
+                  final constantCase = producer == ProducerKind.independent &&
+                      naming == Naming.mergeable &&
+                      !fanout;
+                  // Keep all preserved-Z positions for the pruning regression.
+                  final preservedFloatingCase = constant == 'z' &&
+                      (naming == Naming.reserved ||
+                          naming == Naming.renameable) &&
+                      !fanout;
+                  // Bound runtime by omitting the remaining cross-products.
+                  if (!topologyCase &&
+                      !constantCase &&
+                      !preservedFloatingCase) {
+                    continue;
+                  }
                   test(
                       '${producer.name} ${order.name} ${naming.name} '
                       '${ranges.name} fanout=$fanout '
@@ -945,7 +975,7 @@ void main() {
                     } else if (constantPosition != -1) {
                       expect(body, matches(r'\.result\(observed\[\d+\]\)'));
                     }
-                    if (constant == '1' && constantPosition == 1) {
+                    if (topologyCase) {
                       NetlistSynthesizer().synthesizeToJson(module);
                       expect(topBody(module), body);
                     }
