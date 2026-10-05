@@ -1137,15 +1137,11 @@ abstract class Module {
   ///
   /// For file output, multiple files, artifacts, or access to synthesis
   /// results, use [SystemVerilogService] directly.
-  String dumpSystemVerilog({
-    SystemVerilogSynthesizerConfiguration configuration =
-        const SystemVerilogSynthesizerConfiguration(),
-  }) =>
-      SystemVerilogService(
-        this,
-        configuration: configuration,
-        register: false,
-      ).output;
+  String dumpSystemVerilog(
+          {SystemVerilogSynthesizerConfiguration configuration =
+              const SystemVerilogSynthesizerConfiguration()}) =>
+      SystemVerilogService(this, configuration: configuration, register: false)
+          .output;
 
   /// Attaches waveform dumping for this [Module] to a VCD at [outputPath].
   ///
@@ -1157,16 +1153,14 @@ abstract class Module {
     final outputDirectory = switch (separatorIndex) {
       -1 => '.',
       0 => '/',
-      _ => normalized.substring(0, separatorIndex),
+      _ => normalized.substring(0, separatorIndex)
     };
     final outputFileName = normalized.substring(separatorIndex + 1);
 
-    return WaveformService(
-      this,
-      outputDirectory: outputDirectory,
-      outputFileName: outputFileName,
-      writeToFile: true,
-    );
+    return WaveformService(this,
+        outputDirectory: outputDirectory,
+        outputFileName: outputFileName,
+        writeToFile: true);
   }
 
   /// Returns a synthesized version of this [Module].

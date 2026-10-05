@@ -113,10 +113,7 @@ class ModuleTree {
   String get hierarchyJson {
     final rootModule = _rootModule;
     return rootModule?.buildModuleTreeJsonSchema(rootModule) ??
-        json.encode({
-          'status': 'fail',
-          'reason': 'module not yet build',
-        });
+        json.encode({'status': 'fail', 'reason': 'module not yet build'});
   }
 
   /// Returns the built module hierarchy as JSON.

@@ -120,11 +120,8 @@ class NetlistValidation {
         }
         for (final bit in (port.value as List?) ?? const []) {
           if (bit is int) {
-            addDriver(
-              bit,
-              'cell ${entry.key}.${port.key} ($type)',
-              isTriState: isTriStateOutput,
-            );
+            addDriver(bit, 'cell ${entry.key}.${port.key} ($type)',
+                isTriState: isTriStateOutput);
           }
         }
       }

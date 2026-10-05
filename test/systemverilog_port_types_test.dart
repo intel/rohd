@@ -125,10 +125,9 @@ void main() {
       final module = _PortTypesModule();
       await module.build();
 
-      final sv = SystemVerilogService(
-        module,
-        configuration: testCase.configuration,
-      ).output;
+      final sv =
+          SystemVerilogService(module, configuration: testCase.configuration)
+              .output;
 
       final declarations = {
         testCase.inputPrefix: [
