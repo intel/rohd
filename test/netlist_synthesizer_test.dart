@@ -11,8 +11,11 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/synthesizers/netlist/netlist_cell_mapper.dart';
+import 'package:rohd/src/synthesizers/netlist/netlist_module_translation.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_passes.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_validation.dart';
+import 'package:rohd/src/synthesizers/utilities/synth_logic.dart';
 import 'package:rohd/src/synthesizers/utilities/synth_structure_concat.dart';
 import 'package:test/test.dart';
 
@@ -22,6 +25,7 @@ import '../example/fir_filter.dart';
 import '../example/logic_array.dart';
 import '../example/oven_fsm.dart';
 import '../example/tree.dart';
+import 'array_collapsing_test.dart' show SplitPackedArrayOutputTop;
 
 // ────────────────────────────────────────────────────────────────────
 // Tiny helper modules for targeted gate-level tests
@@ -788,6 +792,101 @@ void main() {
   tearDown(() async {
     await Simulator.reset();
   });
+
+  test('connection views reuse ordered wire IDs through replacements',
+      () async {
+    final module = AndModule(Logic(), Logic());
+    await module.build();
+    final translation = NetlistModuleTranslation(
+      module,
+      netlistCellMapper: NetlistCellMapper.withDefaults(),
+      generatesDefinition: (_) => true,
+      getInstanceTypeOfModule: (module) => module.definitionName,
+    );
+    final definition = translation.synthDef!;
+    final storage =
+        SynthLogic(Logic(width: 8), parentSynthModuleDefinition: definition);
+    final low = SynthLogicPackedBitReference(storage, 0,
+        parentSynthModuleDefinition: definition);
+    final middle = SynthLogicPackedRangeReference(storage, 2, 5,
+        parentSynthModuleDefinition: definition);
+    final high = SynthLogicPackedBitReference(storage, 7,
+        parentSynthModuleDefinition: definition);
+    final connection = SynthLogicConcat([
+      high,
+      SynthLogicConcat([middle, low], parentSynthModuleDefinition: definition),
+    ], parentSynthModuleDefinition: definition);
+
+    final connectionIds = translation.getIds(connection);
+    final storageIds = translation.getIds(storage);
+    expect(connectionIds, [
+      for (final index in [0, 2, 3, 4, 5, 7]) storageIds[index],
+    ]);
+    expect(connection.width, 6);
+    expect(connection.needsDeclaration, isFalse);
+    expect(connection.nameOrNull, isNull);
+    expect(connection.parts.clear, throwsUnsupportedError);
+
+    final replacement =
+        SynthLogic(Logic(width: 8), parentSynthModuleDefinition: definition);
+    storage.replacement = replacement;
+    final replacementIds = translation.getIds(replacement);
+    expect(translation.getIds(connection), [
+      for (final index in [0, 2, 3, 4, 5, 7]) replacementIds[index],
+    ]);
+    expect(replacementIds, isNot(equals(storageIds)));
+  });
+
+  for (final unpackedDimensions in [0, 2]) {
+    test('split packed child drives permuted array bits $unpackedDimensions',
+        () async {
+      final module = SplitPackedArrayOutputTop(
+        numUnpackedDimensions: unpackedDimensions,
+        permuted: true,
+      );
+      final json = await _synthToMap(module);
+      final definition =
+          _modules(json)[module.definitionName] as Map<String, dynamic>;
+      final cells = _cells(definition).values.cast<Map<String, dynamic>>();
+      final child = cells.singleWhere((cell) =>
+          (cell['connections'] as Map<String, dynamic>).containsKey('result'));
+      final childBits =
+          (child['connections'] as Map<String, dynamic>)['result'] as List;
+      final concatSources = <int, int>{};
+      for (final cell in cells.where((cell) => cell['type'] == r'$concat')) {
+        final connections = cell['connections'] as Map<String, dynamic>;
+        final outputBits = (connections['Y'] as List).cast<int>();
+        final inputBits = connections.entries
+            .where((entry) => entry.key != 'Y')
+            .expand((entry) => (entry.value as List).cast<int>())
+            .toList();
+        expect(inputBits.length, outputBits.length);
+        for (var index = 0; index < outputBits.length; index++) {
+          concatSources[outputBits[index]] = inputBits[index];
+        }
+      }
+
+      int sourceBit(int bit) {
+        final visited = <int>{};
+        while (concatSources.containsKey(bit)) {
+          expect(visited.add(bit), isTrue, reason: 'Concat cycle at bit $bit');
+          bit = concatSources[bit]!;
+        }
+        return bit;
+      }
+
+      final outputBits =
+          (_ports(definition)['parts'] as Map<String, dynamic>)['bits'] as List;
+      expect(outputBits.cast<int>().map(sourceBit), [
+        for (final index in [2, 3, 6, 7, 0, 1, 4, 5]) childBits[index],
+      ]);
+      expect(cells.any((cell) => cell['type'] == r'$slice'), isFalse);
+      final report = _connectivityReport(definition);
+      expect(report.undrivenInputs, isEmpty);
+      expect(report.driversByBit.values.every((drivers) => drivers.length == 1),
+          isTrue);
+    });
+  }
 
   // ── Group 1: Leaf cell mapper — individual gate mappings ───────────
 

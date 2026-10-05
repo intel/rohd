@@ -177,14 +177,20 @@ void main() {
   });
 
   test('missing optional Verilator explicitly skips', () {
+    final reasons = <String>[];
     expect(
         SimCompare.checkVerilatorVector(
             ArrayConnectionFixture("{2'h0}"), const [],
             buildOnly: true,
             verilatorExecutable: '/rohd/nonexistent/verilator',
-            requireTool: false),
+            requireTool: false,
+            onSkip: reasons.add),
         isFalse);
-  });
+    expect(reasons, [
+      contains('Verilator executable '
+          '"/rohd/nonexistent/verilator" not found.')
+    ]);
+  }, testOn: 'vm');
 
   test('missing required Verilator fails', () {
     expect(
@@ -199,13 +205,21 @@ void main() {
   }, testOn: 'vm');
 
   test('missing Verilator follows the environment policy', () {
+    final reasons = <String>[];
     bool check() => SimCompare.checkVerilatorVector(
         ArrayConnectionFixture("{2'h0}"), const [],
-        buildOnly: true, verilatorExecutable: '/rohd/nonexistent/verilator');
+        buildOnly: true,
+        verilatorExecutable: '/rohd/nonexistent/verilator',
+        onSkip: reasons.add);
     if (Platform.environment['ROHD_REQUIRE_VERILATOR'] == '1') {
       expect(check, throwsA(isA<TestFailure>()));
+      expect(reasons, isEmpty);
     } else {
       expect(check(), isFalse);
+      expect(reasons, [
+        contains('Verilator executable '
+            '"/rohd/nonexistent/verilator" not found.')
+      ]);
     }
   }, testOn: 'vm');
 
@@ -273,10 +287,15 @@ esac
   test('extra arguments select the warning policy and top module', () async {
     final module = ArrayConnectionFixture("{2'h0}");
     await module.build();
-    if (!SimCompare.checkVerilatorVector(module, const [],
-        buildOnly: true, verilatorExtraArgs: ['-Wall'])) {
+    if (!SimCompare.checkVerilatorVector(module, const [], buildOnly: true)) {
       return;
     }
+    expect(
+        () => expect(
+            SimCompare.checkVerilatorVector(module, const [],
+                buildOnly: true, verilatorExtraArgs: ['-Wall']),
+            isTrue),
+        prints(contains('%Warning-DECLFILENAME')));
     expect(
         () => SimCompare.checkVerilatorVector(module, const [],
             buildOnly: true,

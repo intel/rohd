@@ -94,9 +94,10 @@ class SynthLogic {
   /// The [Logic] whose value represents a constant, if there is one.
   Const? _constLogic;
 
-  /// Assignments should be eliminated rather than assign to `z`, so this
-  /// indicates if this [SynthLogic] is actually pointing to a [Const] that
-  /// is floating.
+  /// Whether this represents an entirely floating [Const].
+  ///
+  /// Floating assignments can be omitted for nets, but logic variables may
+  /// require an explicit assignment to preserve `z` instead of undriven `x`.
   bool get isFloatingConstant => _constLogic?.value.isFloating ?? false;
 
   /// Whether this represents a constant.
@@ -468,6 +469,30 @@ class SynthLogic {
       unpackedDims,
     ].where((e) => e.isNotEmpty).join(' ');
   }
+}
+
+/// A non-owning, most-significant-part-first concatenation of signals.
+///
+/// Used for port connections spanning several signals or selections. It has
+/// no independent declaration or name: backends must interpret [parts] as
+/// connections to existing storage, not allocate a new signal for this view.
+/// Dependency accounting must likewise follow the parts.
+@internal
+class SynthLogicConcat extends SynthLogic {
+  /// The ordered signals or selections comprising the connection.
+  final List<SynthLogic> parts;
+
+  /// Creates a connection view over [parts], from most to least significant.
+  SynthLogicConcat(List<SynthLogic> parts,
+      {required super.parentSynthModuleDefinition})
+      : parts = List.unmodifiable(parts),
+        super(Logic(width: parts.fold(0, (width, part) => width + part.width)));
+
+  @override
+  bool get needsDeclaration => false;
+
+  @override
+  bool get mergeable => false;
 }
 
 /// A non-owning reference to one bit of a packed [SynthLogic].

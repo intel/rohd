@@ -86,3 +86,60 @@ run_case 2 --skip-tests unexpected
 [[ ! -s "$CHECK_LOG" ]]
 
 echo "$passed project-check cases passed using isolated stubs."
+
+cp "$REPO_ROOT/tool/gh_actions/run_tests.sh" "$FIXTURE/tool/gh_actions/"
+printf '%s\n' '#!/bin/bash' \
+  'printf "dart %s NODE_OPTIONS=%s\n" "$*" "${NODE_OPTIONS:-unset}" >> "$CHECK_LOG"' \
+  'if [[ "$*" == "test --platform node" ]]; then exit "${NODE_STATUS:-0}"; fi' \
+  'exit "${VM_STATUS:-0}"' > "$FIXTURE/bin/dart"
+chmod +x "$FIXTURE/bin/dart"
+
+run_tests_case() {
+  local expected="$1"
+  shift
+  local status=0
+  : > "$CHECK_LOG"
+  PATH="$FIXTURE/bin" NODE_OPTIONS=existing /bin/bash tool/gh_actions/run_tests.sh "$@" \
+    > "$FIXTURE/output" 2>&1 || status=$?
+  if [[ "$status" -ne "$expected" ]]; then
+    cat "$FIXTURE/output"
+    echo "Expected exit $expected, got $status for test platform: $*" >&2
+    exit 1
+  fi
+}
+
+readonly VM_CALL='dart test NODE_OPTIONS=existing'
+readonly NODE_CALL='dart test --platform node NODE_OPTIONS=--max-old-space-size=8192'
+for platform in '' all vm node; do
+  if [[ -z "$platform" ]]; then
+    run_tests_case 0
+  else
+    run_tests_case 0 "$platform"
+  fi
+  case "$platform" in
+    vm) [[ "$(cat "$CHECK_LOG")" == "$VM_CALL" ]] ;;
+    node) [[ "$(cat "$CHECK_LOG")" == "$NODE_CALL" ]] ;;
+    *) [[ "$(cat "$CHECK_LOG")" == "$VM_CALL"$'\n'"$NODE_CALL" ]] ;;
+  esac
+done
+
+run_tests_case 2 unknown
+[[ ! -s "$CHECK_LOG" ]]
+run_tests_case 2 vm node
+[[ ! -s "$CHECK_LOG" ]]
+
+export VM_STATUS=71
+run_tests_case 71 vm
+run_tests_case 71
+[[ "$(cat "$CHECK_LOG")" == "$VM_CALL" ]]
+run_tests_case 0 node
+unset VM_STATUS
+
+export NODE_STATUS=72
+run_tests_case 72 node
+run_tests_case 72
+[[ "$(cat "$CHECK_LOG")" == "$VM_CALL"$'\n'"$NODE_CALL" ]]
+run_tests_case 0 vm
+unset NODE_STATUS
+
+echo '12 test-platform cases passed using isolated stubs.'

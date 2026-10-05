@@ -185,6 +185,7 @@ abstract class SimCompare {
   /// Returns true on success, or false when the test is explicitly skipped.
   /// Web tests always skip. If [verilatorExecutable] is absent, skips unless
   /// [requireTool] is true (defaulting to `ROHD_REQUIRE_VERILATOR=1`).
+  /// [onSkip] reports the reason, marking the current test skipped by default.
   /// Execution, compilation, and simulation failures always fail the test.
   /// Warnings are visible but nonfatal by default.
   static bool checkVerilatorVector(
@@ -192,6 +193,7 @@ abstract class SimCompare {
     List<Vector> vectors, {
     String? moduleName,
     bool? requireTool,
+    void Function(String) onSkip = markTestSkipped,
     String verilatorExecutable = 'verilator',
     List<String> verilatorExtraArgs = const [],
     bool dontDeleteTmpFiles = false,
@@ -201,7 +203,7 @@ abstract class SimCompare {
         const SystemVerilogSynthesizerConfiguration(),
   }) {
     if (kIsWeb) {
-      markTestSkipped('Verilator checks require the Dart VM.');
+      onSkip('Verilator checks require the Dart VM.');
       return false;
     }
 
@@ -242,7 +244,7 @@ abstract class SimCompare {
       if (required) {
         fail(message);
       }
-      markTestSkipped(message);
+      onSkip(message);
       return false;
     }
     expect(version.exitCode, 0,
