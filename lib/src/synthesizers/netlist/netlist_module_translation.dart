@@ -744,11 +744,8 @@ class NetlistModuleTranslation {
     }
   }
 
-  /// Separates passthrough outputs and removes dead cells when requested.
-  void processCellCleanup({
-    required bool enableDce,
-    required Set<int> preservedNameBits,
-  }) {
+  /// Separates module outputs that share wires with module inputs.
+  void insertPassthroughBuffers() {
     final inputBitIds = ports.values
         .where(
           (port) =>
@@ -777,7 +774,13 @@ class NetlistModuleTranslation {
       port.value['bits'] = freshBits;
       bufferIndex++;
     }
+  }
 
+  /// Removes dead cells after their constant drivers have been emitted.
+  void processCellCleanup({
+    required bool enableDce,
+    required Set<int> preservedNameBits,
+  }) {
     if (!enableDce) {
       return;
     }
