@@ -1878,6 +1878,7 @@ cupertino_ui
 material_ui
 pointer_interceptor
 pointer_interceptor_ios
+url_launcher
 url_launcher_android
 url_launcher_ios
 url_launcher_linux
@@ -6281,12 +6282,11 @@ misrepresented as being the original software.
 --------------------------------------------------------------------------------
 frontend_server_client
 
-Copyright 2020, the Dart project authors. 
+Copyright 2012, the Dart project authors.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
 met:
-
     * Redistributions of source code must retain the above copyright
       notice, this list of conditions and the following disclaimer.
     * Redistributions in binary form must reproduce the above
@@ -25296,7 +25296,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 plugin_platform_interface
 pointer_interceptor_platform_interface
 pointer_interceptor_web
-url_launcher
 url_launcher_platform_interface
 
 Copyright 2013 The Flutter Authors. All rights reserved.
