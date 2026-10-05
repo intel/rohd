@@ -609,6 +609,29 @@ class _NamedConstModule extends Module {
   }
 }
 
+class _ConstantPaths extends Module {
+  _ConstantPaths(Logic data) : super(definitionName: 'ConstantPaths') {
+    data = addInput('data', data, width: 8);
+    final buffered = [Const(0xa5, width: 8)].swizzle();
+    addOutput('buffered', width: 8) <= buffered;
+    addOutput('concatenated', width: 8) <=
+        [Const(0xb, width: 4), Const(0x4, width: 4)].swizzle();
+    addOutput('sliced', width: 4) <= Const(0xa6, width: 8).getRange(2, 6);
+    addOutput('sum', width: 8) <= data + buffered;
+    addOutput('forwarded', width: 8) <= data;
+  }
+}
+
+class _ConstantPathsParent extends Module {
+  _ConstantPathsParent() : super(definitionName: 'ConstantPathsParent') {
+    final data = addInput('data', Logic(width: 8), width: 8);
+    final child = _ConstantPaths(data);
+    for (final port in child.outputs.entries) {
+      addOutput(port.key, width: port.value.width) <= port.value;
+    }
+  }
+}
+
 // ────────────────────────────────────────────────────────────────────
 // Helpers
 // ────────────────────────────────────────────────────────────────────
@@ -2477,6 +2500,39 @@ void main() {
   // ── Group 9: DCE (dead-cell elimination) verification ──────────────
 
   group('dead-cell elimination', () {
+    for (final enableDce in [false, true]) {
+      for (final collapse in [false, true]) {
+        test('constant-fed paths (DCE=$enableDce, collapse=$collapse)',
+            () async {
+          final json = await _synthToMap(
+            _ConstantPathsParent(),
+            configuration: NetlistSynthesizerConfiguration(
+              enableDeadCellElimination: enableDce,
+              collapseTransparentClusters: collapse,
+            ),
+          );
+          for (final entry in _modules(json).entries) {
+            final module = entry.value as Map<String, dynamic>;
+            final report = _connectivityReport(module);
+            expect(report.undrivenInputs, isEmpty, reason: entry.key);
+            for (final portEntry in _ports(module).entries) {
+              final port = portEntry.value as Map<String, dynamic>;
+              if (port['direction'] != 'output') {
+                continue;
+              }
+              for (final bit in (port['bits'] as List).whereType<int>()) {
+                expect(
+                  report.driversByBit.containsKey(bit),
+                  isTrue,
+                  reason: 'Undriven ${entry.key}.${portEntry.key} bit $bit',
+                );
+              }
+            }
+          }
+        });
+      }
+    }
+
     test('DCE enabled produces fewer cells than DCE disabled', () async {
       final fbDce = _buildFilterBank();
       final jsonDce = await _synthToMap(fbDce);

@@ -71,9 +71,9 @@ class NetlistSynthesizerConfiguration {
   @internal
   final bool collapseTransparentClusters;
 
-  /// When `true`, dead-cell elimination is performed after aliasing to
-  /// remove cells whose inputs are entirely undriven or whose outputs
-  /// are entirely unconsumed.
+  /// When `true`, dead-cell elimination is performed after aliasing and
+  /// constant-driver emission to remove cells whose inputs are entirely
+  /// undriven or whose outputs are entirely unconsumed.
   @internal
   final bool enableDeadCellElimination;
 

@@ -822,14 +822,17 @@ class NetlistSynthesizer extends Synthesizer {
     }
 
     final preservedNameBits = translation.preservedNameBits(applyAlias);
+    // Preserve buffer/constant cell order while making constant drivers
+    // visible to dead-cell elimination.
     translation
-      ..processCellCleanup(
-        enableDce: configuration.enableDeadCellElimination,
-        preservedNameBits: preservedNameBits,
-      )
+      ..insertPassthroughBuffers()
       ..processConstants(
         applyAlias: applyAlias,
         pruneFloating: configuration.enableDeadCellElimination,
+        preservedNameBits: preservedNameBits,
+      )
+      ..processCellCleanup(
+        enableDce: configuration.enableDeadCellElimination,
         preservedNameBits: preservedNameBits,
       );
 
