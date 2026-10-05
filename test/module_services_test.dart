@@ -37,19 +37,12 @@ class FakeService implements ModuleService {
 
 final _waveformOutputDirectories = <Directory>[];
 
-WaveformService _createWaveformService(
-  Module module, {
-  bool register = true,
-}) {
-  final directory = Directory.systemTemp.createTempSync(
-    'rohd_module_services_waveform_',
-  );
+WaveformService _createWaveformService(Module module, {bool register = true}) {
+  final directory =
+      Directory.systemTemp.createTempSync('rohd_module_services_waveform_');
   _waveformOutputDirectories.add(directory);
-  return WaveformService.fromOutputPath(
-    module,
-    outputPath: '${directory.path}/capture.vcd',
-    register: register,
-  );
+  return WaveformService.fromOutputPath(module,
+      outputPath: '${directory.path}/capture.vcd', register: register);
 }
 
 void main() {
