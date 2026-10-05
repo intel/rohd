@@ -113,16 +113,14 @@ class _SequentialTriggerRaceTracker {
   /// Registers a post-tick event to clear the flags.
   void _registerPostTick() {
     if (!_registeredPostTick) {
-      unawaited(
-        Simulator.postTick.first.then((value) {
-          _registeredPostTick = false;
-          _triggerOccurred = false;
-          _nonTriggerOccurred = false;
-          _preNonTriggerClearAction?.call();
-          _nonTriggeredInputs.clear();
-          _preNonTriggerClearAction = null;
-        }),
-      );
+      unawaited(Simulator.postTick.first.then((value) {
+        _registeredPostTick = false;
+        _triggerOccurred = false;
+        _nonTriggerOccurred = false;
+        _preNonTriggerClearAction?.call();
+        _nonTriggeredInputs.clear();
+        _preNonTriggerClearAction = null;
+      }));
 
       _registeredPostTick = true;
     }
@@ -236,10 +234,8 @@ class Sequential extends Always {
 
   /// Registers either positive or negative edge trigger inputs for
   /// [providedTriggers] based on [isPosedge].
-  void _registerInputTriggers(
-    List<Logic> providedTriggers, {
-    required bool isPosedge,
-  }) {
+  void _registerInputTriggers(List<Logic> providedTriggers,
+      {required bool isPosedge}) {
     for (var i = 0; i < providedTriggers.length; i++) {
       final trigger = providedTriggers[i];
       if (trigger.width != 1) {
@@ -250,19 +246,13 @@ class Sequential extends Always {
         _driverInputsThatAreTriggers.add(assignedDriverToInputMap[trigger]!);
       }
 
-      _triggers.add(
-        _SequentialTrigger(
+      _triggers.add(_SequentialTrigger(
           addInput(
-            portUniquifier.getUniqueName(
-              initialName: Sanitizer.sanitizeSV(
-                Naming.unpreferredName('trigger${i}_${trigger.name}'),
-              ),
-            ),
-            trigger,
-          ),
-          isPosedge: isPosedge,
-        ),
-      );
+              portUniquifier.getUniqueName(
+                  initialName: Sanitizer.sanitizeSV(
+                      Naming.unpreferredName('trigger${i}_${trigger.name}'))),
+              trigger),
+          isPosedge: isPosedge));
     }
   }
 
@@ -289,10 +279,8 @@ class Sequential extends Always {
   ///
   /// Returns `true` only if the map was updated.  If `false`, then the input
   /// was a trigger.
-  bool _updateInputToPreTickInputValue(
-    Logic driverInput, {
-    LogicValue? overrideValue,
-  }) {
+  bool _updateInputToPreTickInputValue(Logic driverInput,
+      {LogicValue? overrideValue}) {
     if (_driverInputsThatAreTriggers.contains(driverInput)) {
       // triggers should be sampled at the new value, not the previous value
       return false;
@@ -335,21 +323,17 @@ class Sequential extends Always {
           // driving it, so hold onto it for later
           _driverInputsPendingPostUpdate.add(driverInput);
           if (!_pendingPostUpdate) {
-            unawaited(
-              Simulator.postTick.first.then((value) {
-                // once the tick has completed,
-                // we can update the override maps
-                _driverInputsPendingPostUpdate
-                  ..forEach(_updateInputToPreTickInputValue)
-                  ..clear();
-                _pendingPostUpdate = false;
-              }).catchError(test: (error) => error is Exception, (
-                Object err,
-                StackTrace stackTrace,
-              ) {
-                Simulator.throwException(err as Exception, stackTrace);
-              }),
-            );
+            unawaited(Simulator.postTick.first.then((value) {
+              // once the tick has completed,
+              // we can update the override maps
+              _driverInputsPendingPostUpdate
+                ..forEach(_updateInputToPreTickInputValue)
+                ..clear();
+              _pendingPostUpdate = false;
+            }).catchError(test: (error) => error is Exception,
+                (Object err, StackTrace stackTrace) {
+              Simulator.throwException(err as Exception, stackTrace);
+            }));
           }
           _pendingPostUpdate = true;
         }
@@ -367,23 +351,18 @@ class Sequential extends Always {
         }
 
         if (!_pendingExecute) {
-          unawaited(
-            Simulator.clkStable.first.then<void>(
-              (value) {
-                // once the clocks are stable, execute the contents of the seq
-                _execute();
-                _pendingExecute = false;
-              },
-              onError: (Object err, StackTrace stackTrace) {
-                if (err is StateError) {
-                  // Reset closes the stream before `first` receives an event.
-                  _pendingExecute = false;
-                  return;
-                }
-                Error.throwWithStackTrace(err, stackTrace);
-              },
-            ).onError<Exception>(Simulator.throwException),
-          );
+          unawaited(Simulator.clkStable.first.then<void>((value) {
+            // once the clocks are stable, execute the contents of the seq
+            _execute();
+            _pendingExecute = false;
+          }, onError: (Object err, StackTrace stackTrace) {
+            if (err is StateError) {
+              // Reset closes the stream before `first` receives an event.
+              _pendingExecute = false;
+              return;
+            }
+            Error.throwWithStackTrace(err, stackTrace);
+          }).onError<Exception>(Simulator.throwException));
         }
         _pendingExecute = true;
       });
@@ -407,18 +386,11 @@ class Sequential extends Always {
       if (_raceTracker.isInViolation) {
         _raceTracker
           // update affected inputs to have an overridden value of X
-          ..applyToNonTriggeredInputs(
-            (nti) => _updateInputToPreTickInputValue(
-              nti,
-              overrideValue: LogicValue.x,
-            ),
-          )
+          ..applyToNonTriggeredInputs((nti) =>
+              _updateInputToPreTickInputValue(nti, overrideValue: LogicValue.x))
           // now, remember to change the values back to safe values after exec
-          ..registerPreNonTriggerClearAction(
-            () => _raceTracker.applyToNonTriggeredInputs(
-              _updateInputToPreTickInputValue,
-            ),
-          );
+          ..registerPreNonTriggerClearAction(() => _raceTracker
+              .applyToNonTriggeredInputs(_updateInputToPreTickInputValue));
       }
 
       if (allowMultipleAssignments) {
@@ -447,10 +419,8 @@ class Sequential extends Always {
   @override
   String alwaysVerilogStatement(Map<String, String> inputs) {
     final svTriggers = _triggers
-        .map(
-          (trigger) =>
-              '${trigger.verilogTriggerKeyword} ${inputs[trigger.signal.name]}',
-        )
+        .map((trigger) =>
+            '${trigger.verilogTriggerKeyword} ${inputs[trigger.signal.name]}')
         .join(' or ');
     return 'always_ff @($svTriggers)';
   }
