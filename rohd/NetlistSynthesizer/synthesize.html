@@ -531,9 +531,23 @@ SynthesisResult synthesize(
       }
     }
 
-    &#47;&#47; Redirect other cells: any input port bit that matches an old ID
-    &#47;&#47; gets replaced with the corresponding fresh ID.
+    &#47;&#47; Redirect module outputs and other cell inputs that consume the old
+    &#47;&#47; slice output IDs to the corresponding fresh IDs.
     if (arraySliceOldToNew.isNotEmpty) {
+      for (final port in ports.values) {
+        if (port[&#39;direction&#39;] != &#39;output&#39;) {
+          continue;
+        }
+        final bits = (port[&#39;bits&#39;]! as List).cast&lt;Object&gt;();
+        final newBits = [
+          for (final bit in bits)
+            if (bit is int) arraySliceOldToNew[bit] ?? bit else bit,
+        ];
+        if (bits.indexed.any((entry) =&gt; entry.$2 != newBits[entry.$1])) {
+          port[&#39;bits&#39;] = newBits;
+        }
+      }
+
       for (final cellEntry in cells.entries) {
         if (NetlistCell.hasOrigin(
           cellEntry.value,
@@ -807,14 +821,17 @@ SynthesisResult synthesize(
   }
 
   final preservedNameBits = translation.preservedNameBits(applyAlias);
+  &#47;&#47; Preserve buffer&#47;constant cell order while making constant drivers
+  &#47;&#47; visible to dead-cell elimination.
   translation
-    ..processCellCleanup(
-      enableDce: configuration.enableDeadCellElimination,
-      preservedNameBits: preservedNameBits,
-    )
+    ..insertPassthroughBuffers()
     ..processConstants(
       applyAlias: applyAlias,
       pruneFloating: configuration.enableDeadCellElimination,
+      preservedNameBits: preservedNameBits,
+    )
+    ..processCellCleanup(
+      enableDce: configuration.enableDeadCellElimination,
       preservedNameBits: preservedNameBits,
     );
 
@@ -966,7 +983,7 @@ SynthesisResult synthesize(
   final netnames = translation.netnames;
 
   &#47;&#47; -- Structural validation -------------------------------------------
-  NetlistValidation.validate(ports, cells, module.name, netnames: netnames);
+  NetlistValidation.validate(ports, cells, module.name);
 
   return NetlistSynthesisResult(module, getInstanceTypeOfModule,
       ports: ports, cells: cells, netnames: netnames, attributes: attr);
