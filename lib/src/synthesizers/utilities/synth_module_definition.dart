@@ -84,6 +84,62 @@ typedef _SubmoduleSignalUseIndex = ({
   Map<SynthLogic, Set<SynthSubModuleInstantiation>> byReferenceBase,
 });
 
+/// A proposed swizzle collapse with producer destinations in `range.base`.
+///
+/// Generated helpers have a disposable `intermediate`; ordinary output
+/// swizzles leave it null and require at least one direct child-output mapping.
+/// Replacement destinations are relative to `range.lower` in `output`.
+typedef _SwizzleRangeCandidate = ({
+  SynthLogic? intermediate,
+  SynthLogic output,
+  _SynthRangeRef range,
+  SynthSubModuleInstantiation inst,
+  List<SynthAssignment> inputAssignments,
+  Map<SynthAssignment, _SynthRangeRef> destinations,
+});
+
+/// Pre-rewrite indexes and known ranges used to collect and plan swizzles.
+///
+/// Assignment destinations have both exact-signal and reference-base indexes:
+/// alias traversal needs the former, while array producers need the latter.
+typedef _SwizzleRangeContext = ({
+  Map<SynthLogic, List<SynthAssignment>> assignmentsByDestination,
+  Map<SynthLogic, List<SynthAssignment>> assignmentsByBaseDestination,
+  Map<SynthLogic, List<SynthAssignment>> assignmentsBySource,
+  _SubmoduleSignalUseIndex submoduleSignalUses,
+  Map<
+      SynthLogic,
+      List<
+          ({
+            SynthSubModuleInstantiation instantiation,
+            String portName
+          })>> realOutputMappingsBySignal,
+  Map<SynthLogic, _SynthRangeRef> knownSourceRanges,
+  Map<
+      SynthLogic,
+      ({
+        _SynthRangeRef range,
+        SynthSubModuleInstantiation inst,
+        List<SynthAssignment> inputAssignments,
+      })> packedSwizzleSourceRanges,
+  Set<SynthLogic> outputDrivingSignals,
+});
+
+/// Validated assignment and port-mapping edits for one swizzle candidate.
+///
+/// Removed input aliases and directly mapped producer assignments are recorded
+/// separately from assignments that must be replaced with composed ranges.
+typedef _SwizzleRangeRewrite = ({
+  Map<SynthAssignment, SynthAssignment> replacements,
+  Set<SynthAssignment> consumedAssignments,
+  List<
+      ({
+        SynthSubModuleInstantiation instantiation,
+        String portName,
+        SynthLogicPackedBitReference reference,
+      })> outputMappingReplacements,
+});
+
 /// Yields maximal contiguous runs in [sortedItems] according to
 /// [continuesRun].
 Iterable<({int start, int end})> _contiguousRuns<T>(
@@ -2759,50 +2815,75 @@ class SynthModuleDefinition {
 
   /// Collapses packed output swizzles and generated `assignSubset` helpers.
   ///
-  /// `Logic.assignSubset` builds a temporary array and then swizzles that array
-  /// back into a packed value. When every producer bit for that helper is
-  /// accounted for, the helper and swizzle can be replaced with direct packed
-  /// range assignments to the swizzle output. This is a specialized helper
-  /// pass: it requires full coverage so partially driven helpers keep their
-  /// original undriven/floating behavior.
+  /// Generated helpers compose their producer ranges into the swizzle output.
+  /// Ordinary output swizzles require a direct child-output mapping to justify
+  /// replacing the swizzle. Every replacement must preserve bit positions and
+  /// avoid overlap; array-member destinations need full coverage, while scalar
+  /// destinations may retain undriven bits.
+  ///
+  /// Candidates are collected before any rewrites. Accepted candidates clear
+  /// their helpers immediately, but mapping and assignment edits are batched
+  /// until all candidates have been visited. Preserve this ordering so later
+  /// candidates see the same source-liveness state.
   void _collapseGeneratedSubsetSwizzleRangeAssignments() {
-    final assignmentsByDestination =
-        _assignmentsBy(assignments, (assignment) => assignment.dst.resolved);
-    final assignmentsBySourceBase = _assignmentsBy(
-        assignments, (assignment) => _referenceBase(assignment.src));
+    final context = _indexSwizzleRangeUses();
+    final candidates = [
+      ..._collectGeneratedSubsetSwizzles(context),
+      ..._collectOutputDrivingSwizzles(context),
+    ];
 
-    final allSwizzleSourceRanges =
-        _fullPackedSwizzleSourceRanges(assignmentsByDestination);
-    final generatedSubsetIntermediates = _generatedSubsetIntermediatesFrom(
-      allSwizzleSourceRanges,
-      assignmentsBySourceBase,
-    );
-    final swizzleSourceRanges = {
-      for (final entry in allSwizzleSourceRanges.entries)
-        if (generatedSubsetIntermediates.contains(entry.value.range.base))
-          entry.key: entry.value,
-    };
-    final swizzlesByBase = <SynthLogic,
-        List<
-            ({
-              SynthLogic output,
-              _SynthRangeRef range,
-              SynthSubModuleInstantiation inst,
-              List<SynthAssignment> inputAssignments,
-            })>>{};
-    for (final entry in swizzleSourceRanges.entries) {
-      swizzlesByBase.putIfAbsent(entry.value.range.base, () => []).add((
-        output: entry.key,
-        range: entry.value.range,
-        inst: entry.value.inst,
-        inputAssignments: entry.value.inputAssignments,
-      ));
+    final replacements = <SynthAssignment, SynthAssignment>{};
+    final consumedAssignments = <SynthAssignment>{};
+    final outputMappingReplacements = <({
+      SynthSubModuleInstantiation instantiation,
+      String portName,
+      SynthLogicPackedBitReference reference,
+    })>[];
+    for (final candidate in candidates) {
+      final rewrite = _planSwizzleRangeRewrite(candidate, context);
+      if (rewrite == null) {
+        continue;
+      }
+
+      replacements.addAll(rewrite.replacements);
+      consumedAssignments.addAll(rewrite.consumedAssignments);
+      outputMappingReplacements.addAll(rewrite.outputMappingReplacements);
+      candidate.intermediate?.clearDeclaration();
+      candidate.inst.clearInstantiation();
     }
 
-    final assignmentsByBaseDestination = _assignmentsBy(
-        assignments, (assignment) => _referenceBase(assignment.dst));
+    if (replacements.isEmpty && outputMappingReplacements.isEmpty) {
+      return;
+    }
+    for (final replacement in outputMappingReplacements) {
+      replacement.instantiation.setOutputMapping(
+        replacement.portName,
+        replacement.reference,
+        replace: true,
+      );
+    }
+    final updatedAssignments = [
+      for (final assignment in assignments)
+        if (replacements.containsKey(assignment))
+          replacements[assignment]!
+        else if (!consumedAssignments.contains(assignment))
+          assignment,
+    ];
+    assignments
+      ..clear()
+      ..addAll(updatedAssignments);
+  }
+
+  /// Captures assignment uses, active child outputs, and known source ranges.
+  _SwizzleRangeContext _indexSwizzleRangeUses() {
+    final assignmentsByDestination =
+        _assignmentsBy(assignments, (assignment) => assignment.dst.resolved);
     final assignmentsBySource = _assignmentsBy(
         assignments, (assignment) => _referenceBase(assignment.src));
+    final packedSwizzleSourceRanges =
+        _fullPackedSwizzleSourceRanges(assignmentsByDestination);
+    final assignmentsByBaseDestination = _assignmentsBy(
+        assignments, (assignment) => _referenceBase(assignment.dst));
     final submoduleSignalUses = _submoduleSignalUseIndex();
     final realOutputMappingsBySignal = <SynthLogic,
         List<
@@ -2826,6 +2907,21 @@ class SynthModuleDefinition {
         entry.key: entry.value.range,
     };
 
+    return (
+      assignmentsByDestination: assignmentsByDestination,
+      assignmentsByBaseDestination: assignmentsByBaseDestination,
+      assignmentsBySource: assignmentsBySource,
+      submoduleSignalUses: submoduleSignalUses,
+      realOutputMappingsBySignal: realOutputMappingsBySignal,
+      knownSourceRanges: knownSourceRanges,
+      packedSwizzleSourceRanges: packedSwizzleSourceRanges,
+      outputDrivingSignals: _findPackedOutputDrivers(assignmentsByDestination),
+    );
+  }
+
+  /// Finds packed outputs and their clearable, full-width scalar alias drivers.
+  Set<SynthLogic> _findPackedOutputDrivers(
+      Map<SynthLogic, List<SynthAssignment>> assignmentsByDestination) {
     final outputDrivingSignals = {
       for (final output in outputs)
         if (!output.isArray && !output.isNet) output.resolved,
@@ -2846,23 +2942,46 @@ class SynthModuleDefinition {
         outputDriverQueue.add(driver.src.resolved);
       }
     }
+    return outputDrivingSignals;
+  }
 
-    final candidates = <({
-      SynthLogic? intermediate,
-      SynthLogic output,
-      _SynthRangeRef range,
-      SynthSubModuleInstantiation inst,
-      List<SynthAssignment> inputAssignments,
-      Map<SynthAssignment, _SynthRangeRef> destinations,
-    })>[];
+  /// Collects disposable generated helpers consumed only by one packed swizzle.
+  ///
+  /// All producer destinations remain in the helper's coordinates until the
+  /// rewrite planner translates them into the swizzle output's coordinates.
+  List<_SwizzleRangeCandidate> _collectGeneratedSubsetSwizzles(
+      _SwizzleRangeContext context) {
+    final generatedSubsetIntermediates = _generatedSubsetIntermediatesFrom(
+      context.packedSwizzleSourceRanges,
+      context.assignmentsBySource,
+    );
+    final swizzlesByBase = <SynthLogic,
+        List<
+            ({
+              SynthLogic output,
+              _SynthRangeRef range,
+              SynthSubModuleInstantiation inst,
+              List<SynthAssignment> inputAssignments,
+            })>>{};
+    for (final entry in context.packedSwizzleSourceRanges.entries) {
+      if (!generatedSubsetIntermediates.contains(entry.value.range.base)) {
+        continue;
+      }
+      swizzlesByBase.putIfAbsent(entry.value.range.base, () => []).add((
+        output: entry.key,
+        range: entry.value.range,
+        inst: entry.value.inst,
+        inputAssignments: entry.value.inputAssignments,
+      ));
+    }
+
+    final candidates = <_SwizzleRangeCandidate>[];
     for (final entry in swizzlesByBase.entries) {
       final intermediate = entry.key;
-      final swizzles = entry.value;
-      final swizzle = swizzles.singleOrNull;
-      final sourceUsers = assignmentsBySource[intermediate] ?? const [];
-      final producers = assignmentsByBaseDestination[intermediate];
-      if (swizzles.length != 1 ||
-          swizzle == null ||
+      final swizzle = entry.value.singleOrNull;
+      final sourceUsers = context.assignmentsBySource[intermediate] ?? const [];
+      final producers = context.assignmentsByBaseDestination[intermediate];
+      if (swizzle == null ||
           producers == null ||
           producers.isEmpty ||
           sourceUsers.any(
@@ -2890,7 +3009,16 @@ class SynthModuleDefinition {
         },
       ));
     }
+    return candidates;
+  }
 
+  /// Collects ordinary output swizzles with at least one real child producer.
+  ///
+  /// Input order fixes the destination offsets. Only exclusive, disposable
+  /// full-width aliases may be bypassed while tracing their producer drivers.
+  List<_SwizzleRangeCandidate> _collectOutputDrivingSwizzles(
+      _SwizzleRangeContext context) {
+    final candidates = <_SwizzleRangeCandidate>[];
     for (final instantiation in subModuleInstantiations) {
       final swizzle = instantiation.module;
       if (swizzle is! Swizzle ||
@@ -2901,8 +3029,8 @@ class SynthModuleDefinition {
       final output =
           instantiation.outputMapping[swizzle.resultSignalName]?.resolved;
       if (output == null ||
-          !outputDrivingSignals.contains(output) ||
-          allSwizzleSourceRanges.containsKey(output)) {
+          !context.outputDrivingSignals.contains(output) ||
+          context.packedSwizzleSourceRanges.containsKey(output)) {
         continue;
       }
       final indexedInputs = [
@@ -2918,8 +3046,8 @@ class SynthModuleDefinition {
       final inputAssignments = <SynthAssignment>[];
       var offset = 0;
       for (final (index, input) in indexedInputs.indexed) {
-        final inputDriver =
-            _singleFullWidthAssignment(input.signal, assignmentsByDestination);
+        final inputDriver = _singleFullWidthAssignment(
+            input.signal, context.assignmentsByDestination);
         if (input.index != index ||
             inputDriver == null ||
             inputDriver is PartialSynthAssignment ||
@@ -2935,9 +3063,10 @@ class SynthModuleDefinition {
         while (visited.add(driver.src.resolved) &&
             _isRangeChainIntermediate(driver.src,
                 allowedInstantiation: instantiation) &&
-            assignmentsBySource[driver.src.resolved]?.singleOrNull == driver) {
+            context.assignmentsBySource[driver.src.resolved]?.singleOrNull ==
+                driver) {
           final sourceDriver = _singleFullWidthAssignment(
-              driver.src.resolved, assignmentsByDestination);
+              driver.src.resolved, context.assignmentsByDestination);
           if (sourceDriver == null ||
               sourceDriver is PartialSynthAssignment ||
               sourceDriver.src.isArray ||
@@ -2955,8 +3084,9 @@ class SynthModuleDefinition {
           offset != output.width) {
         continue;
       }
-      if (!destinations.keys.any((producer) =>
-          realOutputMappingsBySignal.containsKey(producer.src.resolved))) {
+      if (!destinations.keys.any((producer) => context
+          .realOutputMappingsBySignal
+          .containsKey(producer.src.resolved))) {
         continue;
       }
       candidates.add((
@@ -2968,221 +3098,195 @@ class SynthModuleDefinition {
         destinations: destinations,
       ));
     }
+    return candidates;
+  }
+
+  /// Plans one complete candidate without changing assignments or the graph.
+  ///
+  /// Sources must be live and supported; destination ranges must be in bounds,
+  /// width-matched, and disjoint. Missing destination bits are allowed only
+  /// when neither the output nor its assignment consumers are array members.
+  /// A rejected candidate leaves all of its original wiring intact.
+  _SwizzleRangeRewrite? _planSwizzleRangeRewrite(
+      _SwizzleRangeCandidate candidate, _SwizzleRangeContext context) {
+    final intermediate = candidate.range.base;
+    final producers = candidate.destinations.keys;
+    final output = candidate.output.resolved;
+    if (output.isNet || output.isConstant) {
+      return null;
+    }
+
+    final resolvedProducerSources = {
+      for (final producer in producers)
+        producer: _resolveKnownRangeThroughFullWidthDrivers(
+          _assignmentSourceRange(producer),
+          context.assignmentsByDestination,
+          context.knownSourceRanges,
+        ),
+    };
+    if (_preservesWholePackedArray(candidate, resolvedProducerSources)) {
+      return null;
+    }
+    final hasConstantProducer = resolvedProducerSources.values.any(
+      (source) => _isConstantBackedSource(
+        source.base,
+        context.assignmentsByDestination,
+      ),
+    );
+    final realMappedOutputProducerCount = producers
+        .where((producer) =>
+            context.realOutputMappingsBySignal[producer.src.resolved]
+                ?.isNotEmpty ??
+            false)
+        .length;
+    final canMapMultipleOutputs =
+        context.outputDrivingSignals.contains(output) &&
+            candidate.destinations.values.fold<int>(
+                    0, (width, destination) => width + destination.width) ==
+                output.width;
 
     final replacements = <SynthAssignment, SynthAssignment>{};
-    final consumedAssignments = <SynthAssignment>{};
+    final consumedAssignments = {...candidate.inputAssignments};
     final outputMappingReplacements = <({
       SynthSubModuleInstantiation instantiation,
       String portName,
       SynthLogicPackedBitReference reference,
     })>[];
-    for (final swizzle in candidates) {
-      final intermediate = swizzle.range.base;
-      final producers = swizzle.destinations.keys;
-      final output = swizzle.output.resolved;
-      if (output.isNet || output.isConstant) {
-        continue;
+    final seenDestinationBits = <int>{};
+    for (final producer in producers) {
+      final source = resolvedProducerSources[producer]!;
+      final destination = candidate.destinations[producer]!;
+      if (destination.base != intermediate ||
+          !candidate.range.contains(destination) ||
+          source.base == output ||
+          source.base.isNet ||
+          (source.base.isConstant &&
+              (source.lower != 0 || source.upper != source.base.width - 1))) {
+        return null;
+      }
+      if (!source.base.isConstant && !_isLiveRangeSource(source.base)) {
+        return null;
       }
 
-      final producerReplacements = <SynthAssignment, SynthAssignment>{};
-      final mappedProducerAssignments = <SynthAssignment>{};
-      final producerOutputMappingReplacements = <({
-        SynthSubModuleInstantiation instantiation,
-        String portName,
-        SynthLogicPackedBitReference reference,
-      })>[];
-      final resolvedProducerSources = {
-        for (final producer in producers)
-          producer: _resolveKnownRangeThroughFullWidthDrivers(
-            _assignmentSourceRange(producer),
-            assignmentsByDestination,
-            knownSourceRanges,
-          ),
-      };
-      final commonSourceBase = resolvedProducerSources.values
-          .map((source) => source.base)
-          .toSet()
-        ..removeWhere((source) => !source.isArray);
-      final packedArraySource = commonSourceBase.singleOrNull;
-      final coveredPackedArrayBits = <int>{};
-      var preservesWholePackedArray =
-          packedArraySource != null && packedArraySource.width == output.width;
-      if (preservesWholePackedArray) {
-        for (final producer in producers) {
-          final source = resolvedProducerSources[producer]!;
-          final destination = swizzle.destinations[producer]!;
-          if (source.base != packedArraySource ||
-              destination.base != intermediate ||
-              source.width != destination.width ||
-              !swizzle.range.contains(destination) ||
-              source.lower != destination.lower - swizzle.range.lower) {
-            preservesWholePackedArray = false;
-            break;
-          }
-          for (var bit = source.lower; bit <= source.upper; bit++) {
-            if (!coveredPackedArrayBits.add(bit)) {
-              preservesWholePackedArray = false;
-              break;
-            }
-          }
-          if (!preservesWholePackedArray) {
-            break;
-          }
+      final dstLower = destination.lower - candidate.range.lower;
+      final dstUpper = destination.upper - candidate.range.lower;
+      if (source.width != dstUpper - dstLower + 1 ||
+          dstLower < 0 ||
+          dstUpper >= output.width) {
+        return null;
+      }
+      for (var index = dstLower; index <= dstUpper; index++) {
+        if (!seenDestinationBits.add(index)) {
+          return null;
         }
       }
-      if (preservesWholePackedArray &&
-          coveredPackedArrayBits.length == output.width) {
-        // Keep complete ordered packed arrays on the existing swizzle path,
-        // which renders the array's packed selection without an unnecessary
-        // destination selection.
-        continue;
-      }
-      final hasConstantProducer = resolvedProducerSources.values.any(
-        (source) => _isConstantBackedSource(
-          source.base,
-          assignmentsByDestination,
-        ),
-      );
-      final realMappedOutputProducerCount = producers
-          .where((producer) =>
-              realOutputMappingsBySignal[producer.src.resolved]?.isNotEmpty ??
-              false)
-          .length;
-      final canMapMultipleOutputs = outputDrivingSignals.contains(output) &&
-          producers.fold<int>(
-                  0,
-                  (width, producer) =>
-                      width + swizzle.destinations[producer]!.width) ==
-              output.width;
-      final seenDestinationBits = <int>{};
-      var canReplaceAll = true;
-      for (final producer in producers) {
-        final producerSrc = resolvedProducerSources[producer]!;
-        final producerDst = swizzle.destinations[producer]!;
-        if (producerDst.base != intermediate ||
-            !swizzle.range.contains(producerDst) ||
-            producerSrc.base == output ||
-            producerSrc.base.isNet ||
-            (producerSrc.base.isConstant &&
-                (producerSrc.lower != 0 ||
-                    producerSrc.upper != producerSrc.base.width - 1))) {
-          canReplaceAll = false;
-          break;
-        }
-        if (!producerSrc.base.isConstant &&
-            !_isLiveRangeSource(producerSrc.base)) {
-          canReplaceAll = false;
-          break;
-        }
 
-        final dstLower = producerDst.lower - swizzle.range.lower;
-        final dstUpper = producerDst.upper - swizzle.range.lower;
-        if (producerSrc.width != dstUpper - dstLower + 1 ||
-            dstLower < 0 ||
-            dstUpper >= output.width) {
-          canReplaceAll = false;
-          break;
-        }
-        for (var index = dstLower; index <= dstUpper; index++) {
-          if (!seenDestinationBits.add(index)) {
-            canReplaceAll = false;
-            break;
-          }
-        }
-        if (!canReplaceAll) {
-          break;
-        }
-
-        final outputMappings =
-            realOutputMappingsBySignal[producer.src.resolved] ?? const [];
-        final producerSourceUsers =
-            assignmentsBySource[producer.src.resolved] ?? const [];
-        final canMapDirectly =
-            (realMappedOutputProducerCount == 1 || canMapMultipleOutputs) &&
-                (!hasConstantProducer ||
-                    canMapMultipleOutputs ||
-                    producerDst.lower == 0 ||
-                    producerDst.upper == intermediate.width - 1);
-        if (canMapDirectly &&
-            outputMappings.length == 1 &&
-            producerSourceUsers.length == 1 &&
-            producerSourceUsers.single == producer &&
-            producerSrc.width == 1 &&
-            producerDst.width == 1 &&
-            !_hasSubmoduleSignalUse(
-              producer.src.resolved,
-              submoduleSignalUses,
-              allowedInstantiation: outputMappings.single.instantiation,
-            )) {
-          final packedReference = SynthLogicPackedBitReference(
-            output,
-            dstLower,
-            parentSynthModuleDefinition: this,
+      final outputMappings =
+          context.realOutputMappingsBySignal[producer.src.resolved] ?? const [];
+      final producerSourceUsers =
+          context.assignmentsBySource[producer.src.resolved] ?? const [];
+      final allowsDirectMapping =
+          (realMappedOutputProducerCount == 1 || canMapMultipleOutputs) &&
+              (!hasConstantProducer ||
+                  canMapMultipleOutputs ||
+                  destination.lower == 0 ||
+                  destination.upper == intermediate.width - 1);
+      final canMapDirectly = allowsDirectMapping &&
+          outputMappings.length == 1 &&
+          producerSourceUsers.length == 1 &&
+          producerSourceUsers.single == producer &&
+          source.width == 1 &&
+          destination.width == 1 &&
+          !_hasSubmoduleSignalUse(
+            producer.src.resolved,
+            context.submoduleSignalUses,
+            allowedInstantiation: outputMappings.single.instantiation,
           );
-          producerOutputMappingReplacements.add((
-            instantiation: outputMappings.single.instantiation,
-            portName: outputMappings.single.portName,
-            reference: packedReference,
-          ));
-          mappedProducerAssignments.add(producer);
-        } else {
-          producerReplacements[producer] =
-              producerSrc.base.width == 1 || producerSrc.base.isConstant
-                  ? PartialSynthAssignment(
-                      producerSrc.base,
-                      output,
-                      dstUpperIndex: dstUpper,
-                      dstLowerIndex: dstLower,
-                    )
-                  : RangeSynthAssignment(
-                      producerSrc.base,
-                      output,
-                      srcUpperIndex: producerSrc.upper,
-                      srcLowerIndex: producerSrc.lower,
-                      dstUpperIndex: dstUpper,
-                      dstLowerIndex: dstLower,
-                    );
+      if (canMapDirectly) {
+        final packedReference = SynthLogicPackedBitReference(
+          output,
+          dstLower,
+          parentSynthModuleDefinition: this,
+        );
+        outputMappingReplacements.add((
+          instantiation: outputMappings.single.instantiation,
+          portName: outputMappings.single.portName,
+          reference: packedReference,
+        ));
+        consumedAssignments.add(producer);
+      } else {
+        replacements[producer] =
+            source.base.width == 1 || source.base.isConstant
+                ? PartialSynthAssignment(
+                    source.base,
+                    output,
+                    dstUpperIndex: dstUpper,
+                    dstLowerIndex: dstLower,
+                  )
+                : RangeSynthAssignment(
+                    source.base,
+                    output,
+                    srcUpperIndex: source.upper,
+                    srcLowerIndex: source.lower,
+                    dstUpperIndex: dstUpper,
+                    dstLowerIndex: dstLower,
+                  );
+      }
+    }
+
+    if (candidate.intermediate == null && outputMappingReplacements.isEmpty) {
+      return null;
+    }
+    final hasIncompleteArrayCoverage =
+        seenDestinationBits.length != output.width &&
+            (output.logics.any((logic) => logic.isArrayMember) ||
+                _hasArrayMemberConsumer(output, context.assignmentsBySource));
+    if (hasIncompleteArrayCoverage) {
+      return null;
+    }
+    return (
+      replacements: replacements,
+      consumedAssignments: consumedAssignments,
+      outputMappingReplacements: outputMappingReplacements,
+    );
+  }
+
+  /// Whether a swizzle reconstructs one complete packed array in bit order.
+  ///
+  /// Keep these on the existing swizzle path, which renders the array's packed
+  /// selection without an unnecessary destination selection.
+  bool _preservesWholePackedArray(
+    _SwizzleRangeCandidate candidate,
+    Map<SynthAssignment, _SynthRangeRef> resolvedSources,
+  ) {
+    final sourceArrays = {
+      for (final source in resolvedSources.values)
+        if (source.base.isArray) source.base,
+    };
+    final packedArraySource = sourceArrays.singleOrNull;
+    final outputWidth = candidate.output.resolved.width;
+    if (packedArraySource == null || packedArraySource.width != outputWidth) {
+      return false;
+    }
+
+    final coveredBits = <int>{};
+    for (final entry in candidate.destinations.entries) {
+      final source = resolvedSources[entry.key]!;
+      final destination = entry.value;
+      if (source.base != packedArraySource ||
+          destination.base != candidate.range.base ||
+          source.width != destination.width ||
+          !candidate.range.contains(destination) ||
+          source.lower != destination.lower - candidate.range.lower) {
+        return false;
+      }
+      for (var bit = source.lower; bit <= source.upper; bit++) {
+        if (!coveredBits.add(bit)) {
+          return false;
         }
       }
-      if (!canReplaceAll ||
-          (swizzle.intermediate == null &&
-              producerOutputMappingReplacements.isEmpty)) {
-        continue;
-      }
-      if (seenDestinationBits.length != output.width &&
-          (output.logics.any((logic) => logic.isArrayMember) ||
-              _hasArrayMemberConsumer(output, assignmentsBySource))) {
-        continue;
-      }
-
-      replacements.addAll(producerReplacements);
-      consumedAssignments
-        ..addAll(swizzle.inputAssignments)
-        ..addAll(mappedProducerAssignments);
-      outputMappingReplacements.addAll(producerOutputMappingReplacements);
-      swizzle.intermediate?.clearDeclaration();
-      swizzle.inst.clearInstantiation();
     }
-
-    if (replacements.isNotEmpty || outputMappingReplacements.isNotEmpty) {
-      for (final replacement in outputMappingReplacements) {
-        replacement.instantiation.setOutputMapping(
-          replacement.portName,
-          replacement.reference,
-          replace: true,
-        );
-      }
-      final updatedAssignments = [
-        for (final assignment in assignments)
-          if (replacements.containsKey(assignment))
-            replacements[assignment]!
-          else if (!consumedAssignments.contains(assignment))
-            assignment,
-      ];
-      assignments
-        ..clear()
-        ..addAll(updatedAssignments);
-    }
+    return coveredBits.length == outputWidth;
   }
 
   /// Whether [source] drives any array member assignment.
