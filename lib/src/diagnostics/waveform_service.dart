@@ -367,7 +367,7 @@ class WaveformService extends ArtifactProducingService {
     final snapshot = Set<Logic>.of(_signalHandles.keys);
     _writer.emitValueChanges(startTime!, [
       for (final signal in snapshot)
-        WaveformValueChange(_signalHandles[signal]!, _binaryValue(signal)),
+        WaveformValueChange(_signalHandles[signal]!, _binaryValue(signal))
     ]);
     _hasWrittenWindowSnapshot = true;
 
