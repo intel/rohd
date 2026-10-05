@@ -227,18 +227,28 @@ class WaveformService extends ArtifactProducingService {
   @protected
   void onSignalCollected(Logic signal) {}
 
-  /// Called for every captured value on [signal] at [timestamp].
+  /// Called once for each signal's final value in a callback batch at
+  /// [timestamp].
+  ///
+  /// Multiple changes to the same signal within a simulation timestamp are
+  /// coalesced within a value-change batch, so this hook receives that signal
+  /// once with its final value for that batch.
   ///
   /// When [startTime] is set, this includes one window-entry value for every
   /// tracked signal at [startTime]. Those calls describe the state entering
-  /// the recording window, rather than physical transitions.
+  /// the recording window, rather than physical transitions, and form a
+  /// separate callback batch. A signal that then changes at [startTime] is
+  /// delivered again in the following value-change batch with the same
+  /// timestamp.
   @protected
   void onValueChange(Logic signal, int timestamp) {}
 
-  /// Called once after each batch of captured values at [timestamp].
+  /// Called once after each captured timestamp batch.
   ///
   /// When [startTime] is set, the complete window-entry signal snapshot is
-  /// delivered as a batch at [startTime] before later value-change batches.
+  /// delivered as a batch at [startTime] before the value-change batch, which
+  /// may have the same timestamp. Finalization invokes this hook even when its
+  /// [changed] set is empty.
   @protected
   void onTimestampCapture(int timestamp, Set<Logic> changed) {}
 
