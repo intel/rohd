@@ -532,9 +532,23 @@ class NetlistSynthesizer extends Synthesizer {
         }
       }
 
-      // Redirect other cells: any input port bit that matches an old ID
-      // gets replaced with the corresponding fresh ID.
+      // Redirect module outputs and other cell inputs that consume the old
+      // slice output IDs to the corresponding fresh IDs.
       if (arraySliceOldToNew.isNotEmpty) {
+        for (final port in ports.values) {
+          if (port['direction'] != 'output') {
+            continue;
+          }
+          final bits = (port['bits']! as List).cast<Object>();
+          final newBits = [
+            for (final bit in bits)
+              if (bit is int) arraySliceOldToNew[bit] ?? bit else bit,
+          ];
+          if (bits.indexed.any((entry) => entry.$2 != newBits[entry.$1])) {
+            port['bits'] = newBits;
+          }
+        }
+
         for (final cellEntry in cells.entries) {
           if (NetlistCell.hasOrigin(
             cellEntry.value,
@@ -808,14 +822,17 @@ class NetlistSynthesizer extends Synthesizer {
     }
 
     final preservedNameBits = translation.preservedNameBits(applyAlias);
+    // Preserve buffer/constant cell order while making constant drivers
+    // visible to dead-cell elimination.
     translation
-      ..processCellCleanup(
-        enableDce: configuration.enableDeadCellElimination,
-        preservedNameBits: preservedNameBits,
-      )
+      ..insertPassthroughBuffers()
       ..processConstants(
         applyAlias: applyAlias,
         pruneFloating: configuration.enableDeadCellElimination,
+        preservedNameBits: preservedNameBits,
+      )
+      ..processCellCleanup(
+        enableDce: configuration.enableDeadCellElimination,
         preservedNameBits: preservedNameBits,
       );
 
@@ -967,7 +984,7 @@ class NetlistSynthesizer extends Synthesizer {
     final netnames = translation.netnames;
 
     // -- Structural validation -------------------------------------------
-    NetlistValidation.validate(ports, cells, module.name, netnames: netnames);
+    NetlistValidation.validate(ports, cells, module.name);
 
     return NetlistSynthesisResult(module, getInstanceTypeOfModule,
         ports: ports, cells: cells, netnames: netnames, attributes: attr);

@@ -275,6 +275,33 @@ class ArrayOutputChildModule extends Module {
   }
 }
 
+/// Child with a driven array output for testing element-level connectivity.
+class DrivenArrayOutputChildModule extends Module {
+  LogicArray get values => output('values') as LogicArray;
+
+  DrivenArrayOutputChildModule()
+      : super(
+          name: 'source',
+          definitionName: 'DrivenArrayOutputChildModule',
+        ) {
+    final values = addOutputArray('values', dimensions: [4], elementWidth: 8);
+    for (final (index, element) in values.elements.indexed) {
+      element <= Const(index + 1, width: element.width);
+    }
+  }
+}
+
+/// Exposes each element of a child array output as a scalar output port.
+class ArrayElementsToScalarOutputsModule extends Module {
+  ArrayElementsToScalarOutputsModule()
+      : super(definitionName: 'ArrayElementsToScalarOutputsModule') {
+    final source = DrivenArrayOutputChildModule();
+    for (final (index, element) in source.values.elements.indexed) {
+      addOutput('element$index', width: element.width) <= element;
+    }
+  }
+}
+
 /// Provides multiple array outputs to verify synthesized concat cell names.
 class MultipleArrayOutputModule extends Module {
   MultipleArrayOutputModule()
@@ -579,6 +606,29 @@ class _NamedConstModule extends Module {
     final myConst = Logic(name: 'myConst', width: 8)..gets(Const(0, width: 8));
 
     Combinational([result < mux(dataIn.or(), dataIn, myConst)]);
+  }
+}
+
+class _ConstantPaths extends Module {
+  _ConstantPaths(Logic data) : super(definitionName: 'ConstantPaths') {
+    data = addInput('data', data, width: 8);
+    final buffered = [Const(0xa5, width: 8)].swizzle();
+    addOutput('buffered', width: 8) <= buffered;
+    addOutput('concatenated', width: 8) <=
+        [Const(0xb, width: 4), Const(0x4, width: 4)].swizzle();
+    addOutput('sliced', width: 4) <= Const(0xa6, width: 8).getRange(2, 6);
+    addOutput('sum', width: 8) <= data + buffered;
+    addOutput('forwarded', width: 8) <= data;
+  }
+}
+
+class _ConstantPathsParent extends Module {
+  _ConstantPathsParent() : super(definitionName: 'ConstantPathsParent') {
+    final data = addInput('data', Logic(width: 8), width: 8);
+    final child = _ConstantPaths(data);
+    for (final port in child.outputs.entries) {
+      addOutput(port.key, width: port.value.width) <= port.value;
+    }
   }
 }
 
@@ -1932,6 +1982,62 @@ void main() {
       }
     });
 
+    test('array element outputs retain slice connectivity', () async {
+      for (final enableDce in [false, true]) {
+        final module = ArrayElementsToScalarOutputsModule();
+        final json = await _synthToMap(
+          module,
+          configuration: NetlistSynthesizerConfiguration(
+            enableDeadCellElimination: enableDce,
+          ),
+        );
+        final moduleDef =
+            _modules(json)[module.definitionName] as Map<String, dynamic>;
+        final cells = _cells(moduleDef);
+        final ports = _ports(moduleDef);
+        final source = cells['source'] as Map<String, dynamic>;
+        final sourceConnections = source['connections'] as Map<String, dynamic>;
+        final sourceBits = (sourceConnections['values'] as List).cast<int>();
+        final slices = cells.entries
+            .where(
+              (entry) =>
+                  (entry.value as Map<String, dynamic>)['synthetic_origin'] ==
+                  'arraySlice',
+            )
+            .toList();
+        final connectivity = _connectivityReport(moduleDef);
+
+        expect(
+          slices,
+          hasLength(4),
+          reason: 'enableDeadCellElimination=$enableDce',
+        );
+        for (var index = 0; index < 4; index++) {
+          final outputBits =
+              ((ports['element$index'] as Map<String, dynamic>)['bits'] as List)
+                  .cast<int>();
+          final slice = slices.singleWhere((entry) {
+            final cell = entry.value as Map<String, dynamic>;
+            final parameters = cell['parameters'] as Map<String, dynamic>;
+            return parameters['OFFSET'] == index * 8;
+          });
+          final sliceConnections = (slice.value
+              as Map<String, dynamic>)['connections'] as Map<String, dynamic>;
+
+          expect(sliceConnections['A'], sourceBits);
+          expect(sliceConnections['Y'], outputBits);
+          for (final bit in outputBits) {
+            expect(
+              connectivity.driversByBit[bit],
+              contains('cell ${slice.key}.Y'),
+              reason: 'element$index bit $bit should remain driven when '
+                  'enableDeadCellElimination=$enableDce',
+            );
+          }
+        }
+      }
+    });
+
     test('array concat output names use unique destination addresses',
         () async {
       final module = MultipleArrayOutputModule();
@@ -2119,7 +2225,7 @@ void main() {
       );
     });
 
-    test('struct aggregate netnames cannot span multiple drivers', () {
+    test('struct aggregate netnames allow disjoint field drivers', () {
       final ports = <String, Map<String, Object?>>{};
       final cells = <String, Map<String, Object?>>{
         'first_driver': {
@@ -2145,30 +2251,42 @@ void main() {
           },
         },
       };
-      final netnames = <String, Object?>{
-        'values': {
-          'bits': [
-            ...List<Object>.generate(8, (index) => 200 + index),
-            ...List<Object>.generate(8, (index) => 400 + index),
-          ],
-          'logic_type': {
-            'typeName': 'PairStructure',
-            'fields': [
-              {'name': 'first', 'width': 8},
-              {'name': 'second', 'width': 8},
-            ],
+      expect(
+        () => NetlistValidation.validate(ports, cells, 'struct_module'),
+        returnsNormally,
+      );
+    });
+
+    test('structured netnames reject overlapping field drivers', () {
+      final ports = <String, Map<String, Object?>>{};
+      final cells = <String, Map<String, Object?>>{
+        'first_driver': {
+          'type': r'$buf',
+          'port_directions': {'A': 'input', 'Y': 'output'},
+          'connections': {
+            'A': [100, 101],
+            'Y': [200, 201],
+          },
+        },
+        'second_driver': {
+          'type': r'$buf',
+          'port_directions': {'A': 'input', 'Y': 'output'},
+          'connections': {
+            'A': [102, 103],
+            'Y': [201, 202],
           },
         },
       };
 
       expect(
-        () => NetlistValidation.validate(
-          ports,
-          cells,
-          'struct_module',
-          netnames: netnames,
+        () => NetlistValidation.validate(ports, cells, 'struct_module'),
+        throwsA(
+          isA<NetlistValidationException>().having(
+            (error) => error.issues.map((issue) => issue.wireBit),
+            'overlapping wire bit',
+            contains(201),
+          ),
         ),
-        throwsA(isA<NetlistValidationException>()),
       );
     });
 
@@ -2394,6 +2512,39 @@ void main() {
   // ── Group 9: DCE (dead-cell elimination) verification ──────────────
 
   group('dead-cell elimination', () {
+    for (final enableDce in [false, true]) {
+      for (final collapse in [false, true]) {
+        test('constant-fed paths (DCE=$enableDce, collapse=$collapse)',
+            () async {
+          final json = await _synthToMap(
+            _ConstantPathsParent(),
+            configuration: NetlistSynthesizerConfiguration(
+              enableDeadCellElimination: enableDce,
+              collapseTransparentClusters: collapse,
+            ),
+          );
+          for (final entry in _modules(json).entries) {
+            final module = entry.value as Map<String, dynamic>;
+            final report = _connectivityReport(module);
+            expect(report.undrivenInputs, isEmpty, reason: entry.key);
+            for (final portEntry in _ports(module).entries) {
+              final port = portEntry.value as Map<String, dynamic>;
+              if (port['direction'] != 'output') {
+                continue;
+              }
+              for (final bit in (port['bits'] as List).whereType<int>()) {
+                expect(
+                  report.driversByBit.containsKey(bit),
+                  isTrue,
+                  reason: 'Undriven ${entry.key}.${portEntry.key} bit $bit',
+                );
+              }
+            }
+          }
+        });
+      }
+    }
+
     test('DCE enabled produces fewer cells than DCE disabled', () async {
       final fbDce = _buildFilterBank();
       final jsonDce = await _synthToMap(fbDce);
