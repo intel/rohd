@@ -513,9 +513,7 @@ class SynthLogicPackedBitReference extends SynthLogic {
     this.bitIndex, {
     required super.parentSynthModuleDefinition,
   })  : assert(
-          !packedBase.isArray,
-          'Packed reference base must not be an array.',
-        ),
+            !packedBase.isArray, 'Packed reference base must not be an array.'),
         assert(!packedBase.isNet, 'Packed reference base must not be a net.'),
         assert(
           !packedBase.isConstant,

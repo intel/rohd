@@ -175,19 +175,13 @@ void main() {
       final samples = List.generate(2, (ch) => FilterSample(name: 'sample$ch'));
       final inputDone = Logic(name: 'inputDone');
 
-      final dut = FilterBank(
-        clk,
-        reset,
-        start,
-        samples,
-        inputDone,
-        numTaps: numTaps,
-        dataWidth: dataWidth,
-        coefficients: [
-          [1, 2, 1],
-          [1, -2, 1],
-        ],
-      );
+      final dut = FilterBank(clk, reset, start, samples, inputDone,
+          numTaps: numTaps,
+          dataWidth: dataWidth,
+          coefficients: [
+            [1, 2, 1],
+            [1, -2, 1],
+          ]);
       await dut.build();
 
       expect(dut.namer.signalNameOfBest([dut.input('clk')]), equals('clk'));

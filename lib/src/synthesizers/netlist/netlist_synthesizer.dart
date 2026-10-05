@@ -85,8 +85,7 @@ class NetlistSynthesizer extends Synthesizer {
     this.configuration = const NetlistSynthesizerConfiguration(),
   })  : _moduleStopPolicy = configuration.moduleStopPolicy ??
             SynthModuleStopPolicy.netlist(
-              leafModulePredicate: configuration.leafModulePredicate,
-            ),
+                leafModulePredicate: configuration.leafModulePredicate),
         _netlistCellMapper =
             configuration.netlistCellMapper ?? NetlistCellMapper.withDefaults();
 
@@ -103,12 +102,10 @@ class NetlistSynthesizer extends Synthesizer {
   }) {
     final attr = <String, Object?>{'src': 'generated'};
 
-    final translation = NetlistModuleTranslation(
-      module,
-      netlistCellMapper: netlistCellMapper,
-      generatesDefinition: generatesDefinition,
-      getInstanceTypeOfModule: getInstanceTypeOfModule,
-    )
+    final translation = NetlistModuleTranslation(module,
+        netlistCellMapper: netlistCellMapper,
+        generatesDefinition: generatesDefinition,
+        getInstanceTypeOfModule: getInstanceTypeOfModule)
       ..processPorts()
       ..processInternalWires()
       ..processCells();
@@ -141,7 +138,7 @@ class NetlistSynthesizer extends Synthesizer {
       int width,
       Logic elemLogic,
       Logic parentLogic,
-      List<int> fullParentIds,
+      List<int> fullParentIds
     })>[];
 
     // Pending $struct_pack fields: for output struct ports, instead of
@@ -154,7 +151,7 @@ class NetlistSynthesizer extends Synthesizer {
       int dstLowerIndex,
       int dstUpperIndex,
       SynthLogic srcSynthLogic,
-      SynthLogic dstSynthLogic,
+      SynthLogic dstSynthLogic
     })>[];
 
     // Track struct ports (both output ports of the current module AND
@@ -202,9 +199,8 @@ class NetlistSynthesizer extends Synthesizer {
         }
       }
 
-      for (final assignment in synthDef.assignments.where(
-        (a) => a is! PartialSynthAssignment,
-      )) {
+      for (final assignment
+          in synthDef.assignments.where((a) => a is! PartialSynthAssignment)) {
         final srcIds = getIds(assignment.src);
         final dstIds = getIds(assignment.dst);
         final len =
@@ -637,7 +633,7 @@ class NetlistSynthesizer extends Synthesizer {
                 int width,
                 Logic elemLogic,
                 Logic parentLogic,
-                List<int> fullParentIds,
+                List<int> fullParentIds
               })>>{};
       for (final sf in structFieldCells) {
         (groups[sf.parentLogic] ??= []).add(sf);
@@ -658,16 +654,14 @@ class NetlistSynthesizer extends Synthesizer {
                 resolvedElemBits: resolvedElemBits,
                 offset: sf.offset,
                 width: sf.width,
-                elemLogic: sf.elemLogic,
+                elemLogic: sf.elemLogic
               );
             })
-            .where(
-              (f) => !f.resolvedElemBits.indexed.every((e) {
-                final (i, bit) = e;
-                return f.offset + i < resolvedParentBits.length &&
-                    bit == resolvedParentBits[f.offset + i];
-              }),
-            )
+            .where((f) => !f.resolvedElemBits.indexed.every((e) {
+                  final (i, bit) = e;
+                  return f.offset + i < resolvedParentBits.length &&
+                      bit == resolvedParentBits[f.offset + i];
+                }))
             .toList();
 
         if (nonTrivialFields.isEmpty) {
@@ -689,11 +683,8 @@ class NetlistSynthesizer extends Synthesizer {
 
         for (var i = 0; i < nonTrivialFields.length; i++) {
           final f = nonTrivialFields[i];
-          final fieldName = structLayout?.fieldNameAt(
-                f.offset,
-                fallbackName: f.elemLogic.name,
-                anonymousUnpreferred: true,
-              ) ??
+          final fieldName = structLayout?.fieldNameAt(f.offset,
+                  fallbackName: f.elemLogic.name, anonymousUnpreferred: true) ??
               f.elemLogic.name;
           // Disambiguate duplicate field names with index suffix.
           var portName = fieldName;
@@ -711,11 +702,8 @@ class NetlistSynthesizer extends Synthesizer {
         };
         for (var i = 0; i < nonTrivialFields.length; i++) {
           final f = nonTrivialFields[i];
-          params['FIELD_${i}_NAME'] = structLayout?.fieldNameAt(
-                f.offset,
-                fallbackName: f.elemLogic.name,
-                anonymousUnpreferred: true,
-              ) ??
+          params['FIELD_${i}_NAME'] = structLayout?.fieldNameAt(f.offset,
+                  fallbackName: f.elemLogic.name, anonymousUnpreferred: true) ??
               f.elemLogic.name;
           params['FIELD_${i}_OFFSET'] = f.offset;
           params['FIELD_${i}_WIDTH'] = f.width;
@@ -764,23 +752,19 @@ class NetlistSynthesizer extends Synthesizer {
             .map((sc) {
               final resolvedSrcBits = applyAlias(sc.srcIds.cast<Object>());
               final yBits = resolvedDstBits.sublist(
-                sc.dstLowerIndex,
-                sc.dstUpperIndex + 1,
-              );
+                  sc.dstLowerIndex, sc.dstUpperIndex + 1);
               return (
                 resolvedSrcBits: resolvedSrcBits,
                 yBits: yBits,
                 dstLowerIndex: sc.dstLowerIndex,
                 dstUpperIndex: sc.dstUpperIndex,
-                srcSynthLogic: sc.srcSynthLogic,
+                srcSynthLogic: sc.srcSynthLogic
               );
             })
-            .where(
-              (f) => !f.resolvedSrcBits
-                  .take(f.yBits.length)
-                  .indexed
-                  .every((e) => e.$2 == f.yBits[e.$1]),
-            )
+            .where((f) => !f.resolvedSrcBits
+                .take(f.yBits.length)
+                .indexed
+                .every((e) => e.$2 == f.yBits[e.$1]))
             .toList();
 
         if (nonTrivialFields.isEmpty) {
@@ -806,10 +790,8 @@ class NetlistSynthesizer extends Synthesizer {
 
         for (var i = 0; i < nonTrivialFields.length; i++) {
           final f = nonTrivialFields[i];
-          final fieldName = structLayout?.fieldNameAt(
-                f.dstLowerIndex,
-                fallbackName: f.srcSynthLogic.resolved.name,
-              ) ??
+          final fieldName = structLayout?.fieldNameAt(f.dstLowerIndex,
+                  fallbackName: f.srcSynthLogic.resolved.name) ??
               f.srcSynthLogic.resolved.name;
           var portName = fieldName;
           if (portDirs.containsKey(portName)) {
@@ -830,10 +812,8 @@ class NetlistSynthesizer extends Synthesizer {
         };
         for (var i = 0; i < nonTrivialFields.length; i++) {
           final f = nonTrivialFields[i];
-          params['FIELD_${i}_NAME'] = structLayout?.fieldNameAt(
-                f.dstLowerIndex,
-                fallbackName: f.srcSynthLogic.resolved.name,
-              ) ??
+          params['FIELD_${i}_NAME'] = structLayout?.fieldNameAt(f.dstLowerIndex,
+                  fallbackName: f.srcSynthLogic.resolved.name) ??
               f.srcSynthLogic.resolved.name;
           params['FIELD_${i}_OFFSET'] = f.dstLowerIndex;
           params['FIELD_${i}_WIDTH'] = f.dstUpperIndex - f.dstLowerIndex + 1;
@@ -899,11 +879,9 @@ class NetlistSynthesizer extends Synthesizer {
         }
         final oldBits = (portEntry.value as List).cast<Object>();
         final oldBitSet = oldBits.whereType<int>().toSet();
-        if (outputPortBitSets.any(
-          (outputBits) =>
-              outputBits.length == oldBitSet.length &&
-              outputBits.containsAll(oldBitSet),
-        )) {
+        if (outputPortBitSets.any((outputBits) =>
+            outputBits.length == oldBitSet.length &&
+            outputBits.containsAll(oldBitSet))) {
           continue;
         }
         final newBits = [
@@ -911,11 +889,8 @@ class NetlistSynthesizer extends Synthesizer {
             if (b is int) translation.allocateWireId() else b,
         ];
         conns[portEntry.key] = newBits;
-        arrayConcatReplacements.add((
-          cellKey: cellEntry.key,
-          oldBits: oldBits,
-          newBits: newBits,
-        ));
+        arrayConcatReplacements
+            .add((cellKey: cellEntry.key, oldBits: oldBits, newBits: newBits));
       }
     }
 
@@ -937,9 +912,8 @@ class NetlistSynthesizer extends Synthesizer {
             replacement.oldBits.length != bits.length) {
           continue;
         }
-        if (bits.indexed.every(
-          (entry) => entry.$2 == replacement.oldBits[entry.$1],
-        )) {
+        if (bits.indexed
+            .every((entry) => entry.$2 == replacement.oldBits[entry.$1])) {
           return replacement.newBits;
         }
       }
@@ -952,10 +926,8 @@ class NetlistSynthesizer extends Synthesizer {
           continue;
         }
         final producerIndices = arrayConcatOutputProducers[bit]
-            ?.where(
-              (index) =>
-                  arrayConcatReplacements[index].cellKey != consumingCellKey,
-            )
+            ?.where((index) =>
+                arrayConcatReplacements[index].cellKey != consumingCellKey)
             .toList();
         if (producerIndices == null || producerIndices.length != 1) {
           newBits.add(bit);
@@ -998,10 +970,8 @@ class NetlistSynthesizer extends Synthesizer {
             continue;
           }
           final bits = (portEntry.value as List).cast<Object>();
-          final newBits = rewriteArrayConcatConsumerBits(
-            bits,
-            consumingCellKey: cellEntry.key,
-          );
+          final newBits = rewriteArrayConcatConsumerBits(bits,
+              consumingCellKey: cellEntry.key);
           if (bits.indexed.any((e) => e.$2 != newBits[e.$1])) {
             conns[portEntry.key] = newBits;
           }
@@ -1010,32 +980,22 @@ class NetlistSynthesizer extends Synthesizer {
     }
 
     translation.processNetnames(
-      applyAlias: applyAlias,
-      arraySliceOldToNew: arraySliceOldToNew,
-      arrayConcatOldToNew: arrayConcatOldToNew,
-      pruneUndriven: configuration.enableDeadCellElimination,
-      drivenBits: configuration.enableDeadCellElimination
-          ? NetlistValidation.connectedBits(
-              ports,
-              cells,
-              portDirections: const {'input', 'inout'},
-              cellDirection: 'output',
-            )
-          : const {},
-    );
+        applyAlias: applyAlias,
+        arraySliceOldToNew: arraySliceOldToNew,
+        arrayConcatOldToNew: arrayConcatOldToNew,
+        pruneUndriven: configuration.enableDeadCellElimination,
+        drivenBits: configuration.enableDeadCellElimination
+            ? NetlistValidation.connectedBits(ports, cells,
+                portDirections: const {'input', 'inout'},
+                cellDirection: 'output')
+            : const {});
     final netnames = translation.netnames;
 
     // -- Structural validation -------------------------------------------
     NetlistValidation.validate(ports, cells, module.name);
 
-    return NetlistSynthesisResult(
-      module,
-      getInstanceTypeOfModule,
-      ports: ports,
-      cells: cells,
-      netnames: netnames,
-      attributes: attr,
-    );
+    return NetlistSynthesisResult(module, getInstanceTypeOfModule,
+        ports: ports, cells: cells, netnames: netnames, attributes: attr);
   }
 
   /// Apply all post-processing passes to the modules map.
@@ -1063,21 +1023,15 @@ class NetlistSynthesizer extends Synthesizer {
   /// attribute a shared, netlist-wide file dictionary instead of an
   /// independent one per module (see `doc/netlist_json_format.md`).
   Map<String, Map<String, Object?>> buildModulesMap(
-    SynthBuilder synth,
-    Module top, {
-    String? packageRoot,
-    bool? slimMode,
-    SourceTraceFileTable? fileTable,
-  }) {
+      SynthBuilder synth, Module top,
+      {String? packageRoot, bool? slimMode, SourceTraceFileTable? fileTable}) {
     final effectiveSlimMode = slimMode ?? configuration.slimMode;
     final swEntries = Stopwatch()..start();
-    final modules = NetlistPasses.collectModuleEntries(
-      synth.synthesisResults,
-      topModule: top,
-      packageRoot: packageRoot,
-      includeCellConnections: !effectiveSlimMode,
-      fileTable: fileTable,
-    );
+    final modules = NetlistPasses.collectModuleEntries(synth.synthesisResults,
+        topModule: top,
+        packageRoot: packageRoot,
+        includeCellConnections: !effectiveSlimMode,
+        fileTable: fileTable);
     swEntries.stop();
 
     final swPasses = Stopwatch()..start();
@@ -1095,24 +1049,15 @@ class NetlistSynthesizer extends Synthesizer {
   /// that table's deduplicated file list is embedded once as a top-level
   /// `"files"` array (see `doc/netlist_json_format.md`) rather than
   /// duplicated inside each module's own attributes.
-  String generateCombinedJson(
-    SynthBuilder synth,
-    Module top, {
-    String? packageRoot,
-    bool? slimMode,
-  }) {
+  String generateCombinedJson(SynthBuilder synth, Module top,
+      {String? packageRoot, bool? slimMode}) {
     final fileTable = packageRoot != null && SourceTracer.hasTraces
         ? SourceTraceFileTable(packageRoot)
         : null;
 
     final swCollect = Stopwatch()..start();
-    final modules = buildModulesMap(
-      synth,
-      top,
-      packageRoot: packageRoot,
-      slimMode: slimMode,
-      fileTable: fileTable,
-    );
+    final modules = buildModulesMap(synth, top,
+        packageRoot: packageRoot, slimMode: slimMode, fileTable: fileTable);
     swCollect.stop();
 
     final swCompress = Stopwatch()..start();
@@ -1125,7 +1070,7 @@ class NetlistSynthesizer extends Synthesizer {
       'creator': 'NetlistSynthesizer (rohd)',
       'version': formatVersion,
       if (fileTable != null && !fileTable.isEmpty) 'files': fileTable.files,
-      'modules': modules,
+      'modules': modules
     };
 
     final swEncode = Stopwatch()..start();
@@ -1229,11 +1174,7 @@ class NetlistSynthesizer extends Synthesizer {
   String synthesizeToJson(Module top, {String? packageRoot, bool? slimMode}) {
     final effectiveRoot = packageRoot ?? configuration.effectivePackageRoot;
     final sb = SynthBuilder(top, this);
-    return generateCombinedJson(
-      sb,
-      top,
-      packageRoot: effectiveRoot,
-      slimMode: slimMode,
-    );
+    return generateCombinedJson(sb, top,
+        packageRoot: effectiveRoot, slimMode: slimMode);
   }
 }

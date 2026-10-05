@@ -160,23 +160,19 @@ class WaveformService extends ArtifactProducingService {
     _writer = _createWriter();
     _collectSignals(module);
     _writer.finishDeclarations(
-      _signalHandles.entries.map(
-        (entry) => WaveformInitialValue(entry.value, _binaryValue(entry.key)),
-      ),
-      timestamp: Simulator.time,
-    );
+        _signalHandles.entries.map((entry) =>
+            WaveformInitialValue(entry.value, _binaryValue(entry.key))),
+        timestamp: Simulator.time);
     _hasWrittenWindowSnapshot = startTime == null || startTime == 0;
     if (enableDevToolsStreaming) {
       WaveformDataService.init(module);
       _dataService = WaveformDataService.instance;
       if (_writer case final FstWaveformWriter fstWriter) {
-        _dataService!.attachFstQuery(
-          fstWriter.createQuery(),
-          <Logic, FstSignalHandle>{
-            for (final entry in _signalHandles.entries)
-              entry.key: entry.value as FstSignalHandle,
-          },
-        );
+        _dataService!
+            .attachFstQuery(fstWriter.createQuery(), <Logic, FstSignalHandle>{
+          for (final entry in _signalHandles.entries)
+            entry.key: entry.value as FstSignalHandle
+        });
       }
       for (final signal in _signalHandles.keys) {
         _dataService!.recordLogicChange(signal, Simulator.time);
@@ -209,43 +205,39 @@ class WaveformService extends ArtifactProducingService {
   /// delegates to the main constructor. Provided so that pre-services-API
   /// callers of the form `WaveformService(module, outputPath: '/tmp/foo.vcd')`
   /// still compile.
-  factory WaveformService.fromOutputPath(
-    Module module, {
-    required String outputPath,
-    WaveOutputFormat format = WaveOutputFormat.vcd,
-    bool Function(Logic signal)? signalFilter,
-    String timescale = '1ps',
-    int? startTime,
-    int? stopTime,
-    int flushBufferSize = 100000,
-    OverwritePolicy overwritePolicy = OverwritePolicy.overwrite,
-    bool register = true,
-    bool? retainInMemory,
-    bool enableDevToolsStreaming = false,
-    FstWriterConfig? fstConfig,
-  }) {
+  factory WaveformService.fromOutputPath(Module module,
+      {required String outputPath,
+      WaveOutputFormat format = WaveOutputFormat.vcd,
+      bool Function(Logic signal)? signalFilter,
+      String timescale = '1ps',
+      int? startTime,
+      int? stopTime,
+      int flushBufferSize = 100000,
+      OverwritePolicy overwritePolicy = OverwritePolicy.overwrite,
+      bool register = true,
+      bool? retainInMemory,
+      bool enableDevToolsStreaming = false,
+      FstWriterConfig? fstConfig}) {
     final normalized = outputPath.replaceAll(r'\', '/');
     final sep = normalized.lastIndexOf('/');
     final directory =
         switch (sep) { -1 => '.', 0 => '/', _ => normalized.substring(0, sep) };
     final filename = normalized.substring(sep + 1);
-    return WaveformService(
-      module,
-      outputDirectory: directory,
-      outputFileName: filename,
-      format: format,
-      signalFilter: signalFilter,
-      timescale: timescale,
-      startTime: startTime,
-      stopTime: stopTime,
-      flushBufferSize: flushBufferSize,
-      overwritePolicy: overwritePolicy,
-      register: register,
-      writeToFile: true,
-      retainInMemory: retainInMemory,
-      enableDevToolsStreaming: enableDevToolsStreaming,
-      fstConfig: fstConfig,
-    );
+    return WaveformService(module,
+        outputDirectory: directory,
+        outputFileName: filename,
+        format: format,
+        signalFilter: signalFilter,
+        timescale: timescale,
+        startTime: startTime,
+        stopTime: stopTime,
+        flushBufferSize: flushBufferSize,
+        overwritePolicy: overwritePolicy,
+        register: register,
+        writeToFile: true,
+        retainInMemory: retainInMemory,
+        enableDevToolsStreaming: enableDevToolsStreaming,
+        fstConfig: fstConfig);
   }
 
   /// The concrete output writer used by this service.

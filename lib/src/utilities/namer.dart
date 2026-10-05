@@ -43,10 +43,8 @@ class Namer {
   /// not from the order in which a backend asks for names. This keeps helper
   /// operation names stable across output formats that traverse a module in
   /// different orders.
-  static String synthOperationInstanceName({
-    required String operationName,
-    required Logic destination,
-  }) =>
+  static String synthOperationInstanceName(
+          {required String operationName, required Logic destination}) =>
       '${Sanitizer.sanitizeSV(operationName)}_'
       '${_synthOperationDestinationSuffix(destination)}';
 
@@ -101,7 +99,7 @@ class Namer {
   static String _synthOperationDestinationSuffix(Logic destination) {
     final parts = <int>[
       ..._modulePathIndices(destination.parentModule),
-      ..._logicLocationIndices(destination),
+      ..._logicLocationIndices(destination)
     ];
 
     return parts.isEmpty ? '0' : parts.join('_');
@@ -118,9 +116,8 @@ class Namer {
     }
 
     final siblings = parent.subModules.toList();
-    final index = siblings.indexWhere(
-      (submodule) => identical(submodule, module),
-    );
+    final index =
+        siblings.indexWhere((submodule) => identical(submodule, module));
     return [..._modulePathIndices(parent), if (index < 0) 0 else index];
   }
 
@@ -129,9 +126,8 @@ class Namer {
     var root = destination;
     while (root.parentStructure != null) {
       final parent = root.parentStructure!;
-      final index = parent.elements.indexWhere(
-        (element) => identical(element, root),
-      );
+      final index =
+          parent.elements.indexWhere((element) => identical(element, root));
       elementPath.insert(0, index < 0 ? root.arrayIndex ?? 0 : index);
       root = parent;
     }
@@ -278,10 +274,8 @@ class Namer {
     if (constValue != null && !constNameDisallowed) {
       final preferredRadix = constValue.preferredRadix;
       if (preferredRadix != null && constValue.value.isValid) {
-        return constValue.value.toRadixString(
-          radix: preferredRadix,
-          sepChar: '',
-        );
+        return constValue.value
+            .toRadixString(radix: preferredRadix, sepChar: '');
       }
 
       return constValue.value.toString();

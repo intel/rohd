@@ -48,10 +48,9 @@ class NetlistPasses {
         }
         if (injectTraces) {
           final traceAttributes = SourceTracer.traceAttributesForModule(
-            result.module,
-            packageRoot: packageRoot,
-            fileTable: fileTable,
-          );
+              result.module,
+              packageRoot: packageRoot,
+              fileTable: fileTable);
           if (traceAttributes != null) {
             attrs['rohd.src_trace'] = traceAttributes;
           }

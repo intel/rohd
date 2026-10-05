@@ -49,43 +49,34 @@ class SystemVerilogSynthesizer extends Synthesizer {
   /// If [parameters] is provided, then the module will be instantiated with
   /// all of the keys as parameter names set to the corresponding values
   /// provided.
-  static String instantiationVerilogFor({
-    required Module module,
-    required String instanceType,
-    required String instanceName,
-    required Map<String, String> ports,
-    Map<String, String>? parameters,
-    bool forceStandardInstantiation = false,
-    Map<String, int>? outputPortColumns,
-  }) {
+  static String instantiationVerilogFor(
+      {required Module module,
+      required String instanceType,
+      required String instanceName,
+      required Map<String, String> ports,
+      Map<String, String>? parameters,
+      bool forceStandardInstantiation = false,
+      Map<String, int>? outputPortColumns}) {
     if (!forceStandardInstantiation) {
       if (module is SystemVerilog) {
         return module.instantiationVerilog(instanceType, instanceName, ports) ??
             instantiationVerilogFor(
-              module: module,
-              instanceType: instanceType,
-              instanceName: instanceName,
-              ports: ports,
-              outputPortColumns: outputPortColumns,
-              forceStandardInstantiation: true,
-            );
+                module: module,
+                instanceType: instanceType,
+                instanceName: instanceName,
+                ports: ports,
+                outputPortColumns: outputPortColumns,
+                forceStandardInstantiation: true);
       }
       // ignore: deprecated_member_use_from_same_package - backwards compatibility with CustomSystemVerilog
       else if (module is CustomSystemVerilog) {
         return module.instantiationVerilog(
-          instanceType,
-          instanceName,
-          Map.fromEntries(
-            ports.entries.where(
-              (element) => module.inputs.containsKey(element.key),
-            ),
-          ),
-          Map.fromEntries(
-            ports.entries.where(
-              (element) => module.outputs.containsKey(element.key),
-            ),
-          ),
-        );
+            instanceType,
+            instanceName,
+            Map.fromEntries(ports.entries
+                .where((element) => module.inputs.containsKey(element.key))),
+            Map.fromEntries(ports.entries
+                .where((element) => module.outputs.containsKey(element.key))));
       }
     }
 
@@ -143,15 +134,14 @@ class SystemVerilogSynthesizer extends Synthesizer {
   /// outputs: `{ 'c' : 'sig_c' }`
   @Deprecated('Use `instantiationVerilogFor` instead.')
   static String instantiationVerilogWithParameters(
-    Module module,
-    String instanceType,
-    String instanceName,
-    Map<String, String> inputs,
-    Map<String, String> outputs, {
-    Map<String, String> inOuts = const {},
-    Map<String, String>? parameters,
-    bool forceStandardInstantiation = false,
-  }) =>
+          Module module,
+          String instanceType,
+          String instanceName,
+          Map<String, String> inputs,
+          Map<String, String> outputs,
+          {Map<String, String> inOuts = const {},
+          Map<String, String>? parameters,
+          bool forceStandardInstantiation = false}) =>
       instantiationVerilogFor(
         module: module,
         instanceType: instanceType,
@@ -163,21 +153,16 @@ class SystemVerilogSynthesizer extends Synthesizer {
 
   @override
   SynthesisResult synthesize(
-    Module module,
-    String Function(Module module) getInstanceTypeOfModule,
-  ) {
+      Module module, String Function(Module module) getInstanceTypeOfModule) {
     assert(
-      module is! SystemVerilog ||
-          module.generatedDefinitionType != DefinitionGenerationType.none,
-      'SystemVerilog modules synthesized must generate a definition.',
-    );
+        module is! SystemVerilog ||
+            module.generatedDefinitionType != DefinitionGenerationType.none,
+        'SystemVerilog modules synthesized must generate a definition.');
 
     return module is SystemVerilog &&
             module.generatedDefinitionType == DefinitionGenerationType.custom
         ? SystemVerilogCustomDefinitionSynthesisResult(
-            module,
-            getInstanceTypeOfModule,
-          )
+            module, getInstanceTypeOfModule)
         : SystemVerilogSynthesisResult(
             module,
             getInstanceTypeOfModule,

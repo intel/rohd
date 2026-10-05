@@ -33,8 +33,7 @@ class SystemVerilogSynthSubModuleInstantiation
   /// Provides a mapping from ports of this module to a string that can be fed
   /// into that port, which may include inline SV modules as well.
   Map<String, String> _modulePortsMapWithInline(
-    Map<String, SynthLogic> plainPorts,
-  ) =>
+          Map<String, SynthLogic> plainPorts) =>
       plainPorts.map(
         (name, synthLogic) => MapEntry(
           name,
@@ -66,12 +65,11 @@ class SystemVerilogSynthSubModuleInstantiation
     );
 
     assert(
-      (module is SystemVerilog &&
-              (module as SystemVerilog).acceptsEmptyPortConnections) ||
-          portNameToValueMapping.values.none((e) => e.isEmpty),
-      'Inline modules should not ever receive empty port values,'
-      ' only module instantiations can get something like `.port_name()`.',
-    );
+        (module is SystemVerilog &&
+                (module as SystemVerilog).acceptsEmptyPortConnections) ||
+            portNameToValueMapping.values.none((e) => e.isEmpty),
+        'Inline modules should not ever receive empty port values,'
+        ' only module instantiations can get something like `.port_name()`.');
 
     final inlineSvRepresentation =
         (module as InlineSystemVerilog).inlineVerilog(portNameToValueMapping);
@@ -83,23 +81,17 @@ class SystemVerilogSynthSubModuleInstantiation
   ///
   /// If [outputPortColumns] is provided, it is populated with
   /// wire-name → 1-based column mappings for output port connections.
-  String? instantiationVerilog(
-    String instanceType, {
-    Map<String, int>? outputPortColumns,
-  }) {
+  String? instantiationVerilog(String instanceType,
+      {Map<String, int>? outputPortColumns}) {
     if (!needsInstantiation) {
       return null;
     }
     return SystemVerilogSynthesizer.instantiationVerilogFor(
-      module: module,
-      instanceType: instanceType,
-      instanceName: name,
-      outputPortColumns: outputPortColumns,
-      ports: _modulePortsMapWithInline({
-        ...inputMapping,
-        ...outputMapping,
-        ...inOutMapping,
-      }),
-    );
+        module: module,
+        instanceType: instanceType,
+        instanceName: name,
+        outputPortColumns: outputPortColumns,
+        ports: _modulePortsMapWithInline(
+            {...inputMapping, ...outputMapping, ...inOutMapping}));
   }
 }

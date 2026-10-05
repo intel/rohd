@@ -110,15 +110,11 @@ class SynthBuilder {
     } else {
       _synthesisResults.add(newSynthesisResult);
       newName = _instanceTypeUniquifier.getUniqueName(
-        initialName: newName,
-        reserved: module.reserveDefinitionName,
-      );
+          initialName: newName, reserved: module.reserveDefinitionName);
     }
 
-    assert(
-      Sanitizer.isSanitary(newName),
-      'Module definition names should be sanitary.',
-    );
+    assert(Sanitizer.isSanitary(newName),
+        'Module definition names should be sanitary.');
 
     _moduleToInstanceTypeMap[module] = newName;
 

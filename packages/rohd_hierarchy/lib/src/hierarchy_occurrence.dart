@@ -70,11 +70,10 @@ class HierarchyOccurrence {
     List<HierarchyOccurrence>? children,
     int? portCount,
   })  : assert(
-          portCount == null ||
-              (portCount >= 0 && portCount <= (signals?.length ?? 0)),
-          'portCount must be non-negative and no greater than the signal '
-          'count.',
-        ),
+            portCount == null ||
+                (portCount >= 0 && portCount <= (signals?.length ?? 0)),
+            'portCount must be non-negative and no greater than the signal '
+            'count.'),
         signals = signals ?? [],
         _explicitPortCount = portCount,
         children = children ?? [];
@@ -116,11 +115,9 @@ class HierarchyOccurrence {
   /// internal signals when [portCount] was provided by the producer.
   List<SignalOccurrence> get ports {
     final portCount = _explicitPortCount;
-    return _ports ??= List.unmodifiable(
-      portCount == null
-          ? signals.where((signal) => signal.isPort)
-          : signals.take(portCount),
-    );
+    return _ports ??= List.unmodifiable(portCount == null
+        ? signals.where((signal) => signal.isPort)
+        : signals.take(portCount));
   }
 
   /// Return the offset (index) of the child with [name] in [children],
@@ -230,10 +227,8 @@ class HierarchyOccurrence {
   /// Production code should use [signalCount], [computedSignalCount], or
   /// a recursive visitor instead of materializing the full list.
   @visibleForTesting
-  List<SignalOccurrence> depthFirstSignals() => [
-        ...signals,
-        ...children.expand((c) => c.depthFirstSignals()),
-      ];
+  List<SignalOccurrence> depthFirstSignals() =>
+      [...signals, ...children.expand((c) => c.depthFirstSignals())];
 
   /// Total number of signals in this subtree (O(n) recursive count).
   ///

@@ -220,13 +220,11 @@ void main() {
     Directory(_tempDumpDir).createSync(recursive: true);
     final dumpPath = _temporaryFstPath('fstCapture');
 
-    WaveformService.fromOutputPath(
-      mod,
-      outputPath: dumpPath,
-      format: WaveOutputFormat.fst,
-      register: false,
-      enableDevToolsStreaming: true,
-    );
+    WaveformService.fromOutputPath(mod,
+        outputPath: dumpPath,
+        format: WaveOutputFormat.fst,
+        register: false,
+        enableDevToolsStreaming: true);
 
     a.inject(1);
     Simulator.registerAction(10, () => a.put(0));
@@ -286,21 +284,16 @@ void main() {
 
     Directory(_tempDumpDir).createSync(recursive: true);
     final dumpPath = _temporaryVcdPath('dataService');
-    WaveformService.fromOutputPath(
-      mod,
-      outputPath: dumpPath,
-      register: false,
-      enableDevToolsStreaming: true,
-    );
+    WaveformService.fromOutputPath(mod,
+        outputPath: dumpPath, register: false, enableDevToolsStreaming: true);
 
     a.inject(1);
     Simulator.registerAction(10, () => a.put(0));
     await Simulator.run();
 
     final dataService = WaveformDataService.instance;
-    final signalId = dataService.signalAddressMap.keys.firstWhere(
-      (id) => id.endsWith('/a'),
-    );
+    final signalId =
+        dataService.signalAddressMap.keys.firstWhere((id) => id.endsWith('/a'));
     final snapshot =
         jsonDecode(dataService.getSnapshotJSON(10)) as Map<String, dynamic>;
     final signals = snapshot['signals'] as Map<String, dynamic>;
@@ -320,25 +313,22 @@ void main() {
 
     Directory(_tempDumpDir).createSync(recursive: true);
     final dumpPath = _temporaryFstPath('dataService');
-    WaveformService.fromOutputPath(
-      mod,
-      outputPath: dumpPath,
-      format: WaveOutputFormat.fst,
-      register: false,
-      enableDevToolsStreaming: true,
-    );
+    WaveformService.fromOutputPath(mod,
+        outputPath: dumpPath,
+        format: WaveOutputFormat.fst,
+        register: false,
+        enableDevToolsStreaming: true);
 
     a.inject(1);
     Simulator.registerAction(10, () => a.put(0));
     await Simulator.run();
 
     final dataService = WaveformDataService.instance;
-    final signalId = dataService.signalAddressMap.keys.firstWhere(
-      (id) => id.endsWith('/a'),
-    );
-    final waveform = jsonDecode(
-      dataService.getWaveformsJSON(jsonEncode([signalId]), 0, 10),
-    ) as List<dynamic>;
+    final signalId =
+        dataService.signalAddressMap.keys.firstWhere((id) => id.endsWith('/a'));
+    final waveform =
+        jsonDecode(dataService.getWaveformsJSON(jsonEncode([signalId]), 0, 10))
+            as List<dynamic>;
     final signalData = waveform.single as Map<String, dynamic>;
 
     expect(dataService.isFstBacked, isTrue);

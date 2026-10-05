@@ -102,19 +102,11 @@ class NetlistService extends ArtifactProducingService {
     synthesizer = NetlistSynthesizer(configuration: configuration);
     this.packageRoot = effectiveRoot;
     synthBuilder = SynthBuilder(module, synthesizer);
-    final completeJson = synthesizer.generateCombinedJson(
-      synthBuilder,
-      module,
-      packageRoot: effectiveRoot,
-      slimMode: false,
-    );
+    final completeJson = synthesizer.generateCombinedJson(synthBuilder, module,
+        packageRoot: effectiveRoot, slimMode: false);
     _fullJson = configuration.slimMode
-        ? synthesizer.generateCombinedJson(
-            synthBuilder,
-            module,
-            packageRoot: effectiveRoot,
-            slimMode: true,
-          )
+        ? synthesizer.generateCombinedJson(synthBuilder, module,
+            packageRoot: effectiveRoot, slimMode: true)
         : completeJson;
 
     final decoded = jsonDecode(completeJson) as Map<String, dynamic>;
@@ -240,10 +232,8 @@ class NetlistService extends ArtifactProducingService {
     if (packageRoot == null || !SourceTracer.hasTraces) {
       return null;
     }
-    return SourceTracer.traceJsonForHierarchy(
-      module,
-      packageRoot: packageRoot!,
-    );
+    return SourceTracer.traceJsonForHierarchy(module,
+        packageRoot: packageRoot!);
   }
 
   /// Returns the FLC hierarchy as a JSON string, or an unavailable status.
@@ -267,13 +257,13 @@ class NetlistService extends ArtifactProducingService {
         if (modules == null || !modules.containsKey(definitionName)) {
           return jsonEncode(<String, String>{
             'status': 'unavailable',
-            'reason': 'module "$definitionName" not in FLC hierarchy',
+            'reason': 'module "$definitionName" not in FLC hierarchy'
           });
         }
         return jsonEncode(<String, Object>{
           'version': hierarchy['version'] ?? 6,
           'files': hierarchy['files'] ?? <Object>[],
-          'modules': <String, Object>{definitionName: modules[definitionName]!},
+          'modules': <String, Object>{definitionName: modules[definitionName]!}
         });
       });
 
@@ -285,11 +275,9 @@ class NetlistService extends ArtifactProducingService {
     if (hierarchy == null) {
       return null;
     }
-    return SourceTracer.flcHtmlViewer(
-      jsonEncode(hierarchy),
-      title: '${module.definitionName} Netlist FLC Viewer',
-      packageRoot: packageRoot ?? '',
-    );
+    return SourceTracer.flcHtmlViewer(jsonEncode(hierarchy),
+        title: '${module.definitionName} Netlist FLC Viewer',
+        packageRoot: packageRoot ?? '');
   }
 
   /// Writes the FLC hierarchy JSON to [directory] as
@@ -300,10 +288,8 @@ class NetlistService extends ArtifactProducingService {
     if (hierarchy == null) {
       return;
     }
-    writeOutputTextFile(
-      '$directory/${module.definitionName}.flc.json',
-      const JsonEncoder.withIndent('  ').convert(hierarchy),
-    );
+    writeOutputTextFile('$directory/${module.definitionName}.flc.json',
+        const JsonEncoder.withIndent('  ').convert(hierarchy));
   }
 
   /// Writes the HTML viewer to [directory].

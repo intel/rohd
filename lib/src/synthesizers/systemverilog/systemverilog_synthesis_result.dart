@@ -27,13 +27,12 @@ class SystemVerilogCustomDefinitionSynthesisResult extends SynthesisResult {
   /// Creates a new [SystemVerilogCustomDefinitionSynthesisResult] for the given
   /// [module].
   SystemVerilogCustomDefinitionSynthesisResult(
-    super.module,
-    super.getInstanceTypeOfModule,
-  ) : assert(
-          module is SystemVerilog &&
-              module.generatedDefinitionType == DefinitionGenerationType.custom,
-          'This should only be used for custom system verilog definitions.',
-        );
+      super.module, super.getInstanceTypeOfModule)
+      : assert(
+            module is SystemVerilog &&
+                module.generatedDefinitionType ==
+                    DefinitionGenerationType.custom,
+            'This should only be used for custom system verilog definitions.');
 
   @override
   int get matchHashCode =>
@@ -46,18 +45,15 @@ class SystemVerilogCustomDefinitionSynthesisResult extends SynthesisResult {
           (other.module as SystemVerilog).definitionVerilog('*PLACEHOLDER*')!;
 
   @override
-  String toFileContents() => (module as SystemVerilog).definitionVerilog(
-        getInstanceTypeOfModule(module),
-      )!;
+  String toFileContents() => (module as SystemVerilog)
+      .definitionVerilog(getInstanceTypeOfModule(module))!;
 
   @override
   List<SynthFileContents> toSynthFileContents() => List.unmodifiable([
         SynthFileContents(
-          name: instanceTypeName,
-          contents: (module as SystemVerilog).definitionVerilog(
-            getInstanceTypeOfModule(module),
-          )!,
-        ),
+            name: instanceTypeName,
+            contents: (module as SystemVerilog)
+                .definitionVerilog(getInstanceTypeOfModule(module))!)
       ]);
 }
 
@@ -84,17 +80,12 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
       _synthModuleDefinition.supportingModules;
 
   /// Creates a new [SystemVerilogSynthesisResult] for the given [module].
-  SystemVerilogSynthesisResult(
-    super.module,
-    super.getInstanceTypeOfModule, {
-    this.configuration = const SystemVerilogSynthesizerConfiguration(),
-    bool embedSourceTraceComments = true,
-  }) : _synthModuleDefinition = SystemVerilogSynthModuleDefinition(module) {
-    _traceHelper = _SvTraceHelper(
-      module,
-      _synthModuleDefinition,
-      embedSourceTraceComments: embedSourceTraceComments,
-    );
+  SystemVerilogSynthesisResult(super.module, super.getInstanceTypeOfModule,
+      {this.configuration = const SystemVerilogSynthesizerConfiguration(),
+      bool embedSourceTraceComments = true})
+      : _synthModuleDefinition = SystemVerilogSynthModuleDefinition(module) {
+    _traceHelper = _SvTraceHelper(module, _synthModuleDefinition,
+        embedSourceTraceComments: embedSourceTraceComments);
     _portsString = _verilogPorts();
     _moduleContentsString = _verilogModuleContents(getInstanceTypeOfModule);
     _parameterString = _verilogParameters(module);
@@ -125,34 +116,28 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
           name: instanceTypeName,
           description: 'SystemVerilog module definition for $instanceTypeName',
           contents: _toVerilog(),
-        ),
+        )
       ]);
 
   /// Representation of all input port declarations in generated SV.
   Iterable<String> _verilogInputs() => _synthModuleDefinition.inputs.map((sig) {
-        assert(
-          module.tryInput(sig.name) != null,
-          'Named input ${sig.name} not found in module ${module.name}.',
-        );
+        assert(module.tryInput(sig.name) != null,
+            'Named input ${sig.name} not found in module ${module.name}.');
         return _verilogPort('input', 'wire', configuration.inputPortType, sig);
       });
 
   /// Representation of all output port declarations in generated SV.
   Iterable<String> _verilogOutputs() =>
       _synthModuleDefinition.outputs.map((sig) {
-        assert(
-          module.tryOutput(sig.name) != null,
-          'Named output ${sig.name} not found in module ${module.name}.',
-        );
+        assert(module.tryOutput(sig.name) != null,
+            'Named output ${sig.name} not found in module ${module.name}.');
         return _verilogPort('output', 'var', configuration.outputPortType, sig);
       });
 
   /// Representation of all inout port declarations in generated SV.
   Iterable<String> _verilogInOuts() => _synthModuleDefinition.inOuts.map((sig) {
-        assert(
-          module.tryInOut(sig.name) != null,
-          'Named inOut ${sig.name} not found in module ${module.name}.',
-        );
+        assert(module.tryInOut(sig.name) != null,
+            'Named inOut ${sig.name} not found in module ${module.name}.');
         return _verilogPort('inout', 'wire', configuration.inOutPortType, sig);
       });
 
@@ -163,12 +148,8 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
       _synthModuleDefinition.assignments.map((a) => a.dst.name).toSet();
 
   /// Representation of a port declaration in generated SV.
-  String _verilogPort(
-    String direction,
-    String objectType,
-    SystemVerilogPortTypeConfiguration portType,
-    SynthLogic sig,
-  ) =>
+  String _verilogPort(String direction, String objectType,
+          SystemVerilogPortTypeConfiguration portType, SynthLogic sig) =>
       [
         direction,
         if (portType.objectType == SystemVerilogPortType.explicit) objectType,
@@ -209,10 +190,9 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
 
     for (final assignment in _synthModuleDefinition.assignments) {
       assert(
-        !(assignment.src.isNet && assignment.dst.isNet),
-        'Net connections should have been implemented as'
-        ' bidirectional net connections.',
-      );
+          !(assignment.src.isNet && assignment.dst.isNet),
+          'Net connections should have been implemented as'
+          ' bidirectional net connections.');
 
       var dstSliceString = '';
       var srcSliceString = '';
@@ -252,37 +232,30 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
 
   /// Representation of all sub-module instantiations in generated SV.
   String _verilogSubModuleInstantiations(
-    String Function(Module module) getInstanceTypeOfModule,
-  ) {
+      String Function(Module module) getInstanceTypeOfModule) {
     final subModuleLines = <String>[];
     for (final subModuleInstantiation
         in _synthModuleDefinition.subModuleInstantiations) {
-      final instanceType = getInstanceTypeOfModule(
-        subModuleInstantiation.module,
-      );
+      final instanceType =
+          getInstanceTypeOfModule(subModuleInstantiation.module);
 
       subModuleInstantiation as SystemVerilogSynthSubModuleInstantiation;
 
-      final instantiationVerilog = subModuleInstantiation.instantiationVerilog(
-        instanceType,
-      );
+      final instantiationVerilog =
+          subModuleInstantiation.instantiationVerilog(instanceType);
       if (instantiationVerilog != null) {
-        final comment = _traceHelper.moduleComment(
-          subModuleInstantiation.module,
-        );
+        final comment =
+            _traceHelper.moduleComment(subModuleInstantiation.module);
         if (comment.isNotEmpty && instantiationVerilog.contains('\n')) {
           // Multi-line block (e.g. always_comb/always_ff): put trace on
           // the name-comment line rather than dangling after `end`.
           final firstNl = instantiationVerilog.indexOf('\n');
           final nameLine = instantiationVerilog.substring(0, firstNl);
-          subModuleLines.add(
-            '${_SvTraceHelper._pad(nameLine, comment)}'
-            '${instantiationVerilog.substring(firstNl)}',
-          );
+          subModuleLines.add('${_SvTraceHelper._pad(nameLine, comment)}'
+              '${instantiationVerilog.substring(firstNl)}');
         } else {
-          subModuleLines.add(
-            _SvTraceHelper._pad(instantiationVerilog, comment),
-          );
+          subModuleLines
+              .add(_SvTraceHelper._pad(instantiationVerilog, comment));
         }
       }
     }
@@ -292,20 +265,18 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
   /// The contents of this module converted to SystemVerilog without module
   /// declaration, ports, etc.
   String _verilogModuleContents(
-    String Function(Module module) getInstanceTypeOfModule,
-  ) {
+      String Function(Module module) getInstanceTypeOfModule) {
     // Generate body parts first so the trace helper's file table is populated.
     final body = [
       _verilogInternalSignals(),
       _verilogAssignments(), // order matters!
-      _verilogSubModuleInstantiations(getInstanceTypeOfModule),
+      _verilogSubModuleInstantiations(getInstanceTypeOfModule)
     ].where((element) => element.isNotEmpty);
 
     // Prepend the file index comment (empty when no traces exist).
-    return [
-      _traceHelper.fileIndexComment(),
-      ...body,
-    ].where((element) => element.isNotEmpty).join('\n');
+    return [_traceHelper.fileIndexComment(), ...body]
+        .where((element) => element.isNotEmpty)
+        .join('\n');
   }
 
   /// The representation of all port declarations.
@@ -345,8 +316,7 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
   /// each assignment LHS recorded in textual (source) order.
   @override
   Map<String, List<String>> get svLineMap => Map.unmodifiable(
-        _svLineMap.map((k, v) => MapEntry(k, List<String>.unmodifiable(v))),
-      );
+      _svLineMap.map((k, v) => MapEntry(k, List<String>.unmodifiable(v))));
   final Map<String, List<String>> _svLineMap = {};
 
   /// The full SV representation of this module.
@@ -361,7 +331,7 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
       _portsString,
       ');',
       _moduleContentsString,
-      'endmodule : $verilogModuleName',
+      'endmodule : $verilogModuleName'
     ].join('\n');
 
     if (SourceTracer.hasTraces) {
@@ -443,11 +413,8 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
     // Assignments — scan for 'assign <dst.name>'.
     // Append assignment positions so cross-probing can offer each.
     for (final assignment in _synthModuleDefinition.assignments) {
-      scanAndRecord(
-        assignment.dst.name,
-        'assign ${assignment.dst.name}',
-        append: true,
-      );
+      scanAndRecord(assignment.dst.name, 'assign ${assignment.dst.name}',
+          append: true);
     }
 
     // Sub-module instantiations
@@ -465,10 +432,8 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
       final instanceType = getInstanceTypeOfModule(smi.module);
       smi as SystemVerilogSynthSubModuleInstantiation;
       final outputPortColumns = <String, int>{};
-      final sv = smi.instantiationVerilog(
-        instanceType,
-        outputPortColumns: outputPortColumns,
-      );
+      final sv = smi.instantiationVerilog(instanceType,
+          outputPortColumns: outputPortColumns);
       if (sv != null) {
         // Save scan position before this instantiation.
         final preInstIdx = lineIdx;
@@ -489,9 +454,8 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
             // Use the declaration (first) entry as the canonical instance
             // line for output-port wiring records.
             final instEntry = instEntries.first;
-            final instLine = int.parse(
-              instEntry.substring(0, instEntry.indexOf(':')),
-            );
+            final instLine =
+                int.parse(instEntry.substring(0, instEntry.indexOf(':')));
             for (final outputEntry in smi.outputMapping.entries) {
               final synthLogic = outputEntry.value;
               if (synthLogic.declarationCleared ||
@@ -530,8 +494,7 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
           lineIdx = preInstIdx;
           scanAndRecord(ffMatch.group(1)!, sv, append: true);
         } else if (svLines.any(
-          (l) => l.startsWith('always_ff') || l.startsWith('always_comb'),
-        )) {
+            (l) => l.startsWith('always_ff') || l.startsWith('always_comb'))) {
           // Multi-line always_ff / always_comb block.
           // Scan inner lines for LHS of = or <=, recording each
           // destination at the line where its first assignment appears.
@@ -585,15 +548,11 @@ class _SvTraceHelper {
   /// Local trace-time mapping from synthesized nets to their source [Logic].
   final Map<SynthLogic, Logic> _sourceLogics;
 
-  _SvTraceHelper(
-    Module module,
-    SynthModuleDefinition synthModuleDefinition, {
-    this.embedSourceTraceComments = true,
-  })  : _module = module,
-        _sourceLogics = SourceTracer.synthLogicSourceMap(
-          module,
-          synthModuleDefinition,
-        );
+  _SvTraceHelper(Module module, SynthModuleDefinition synthModuleDefinition,
+      {this.embedSourceTraceComments = true})
+      : _module = module,
+        _sourceLogics =
+            SourceTracer.synthLogicSourceMap(module, synthModuleDefinition);
 
   /// Convert a stack-frame URI to a repo-relative path.
   String _relPath(String uri) {
@@ -707,11 +666,8 @@ class _SvTraceHelper {
     if (!SourceTracer.hasTraces || !embedSourceTraceComments) {
       return '';
     }
-    final trace = SourceTracer.synthLogicTrace(
-      _module,
-      synthLogic,
-      sourceLogics: _sourceLogics,
-    );
+    final trace = SourceTracer.synthLogicTrace(_module, synthLogic,
+        sourceLogics: _sourceLogics);
     return trace != null ? _formatTrace(trace) : '';
   }
 

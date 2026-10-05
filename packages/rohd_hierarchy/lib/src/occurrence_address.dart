@@ -141,8 +141,6 @@ class OccurrenceAddress {
     }
 
     return segments.fold<({HierarchyOccurrence node, OccurrenceAddress addr})?>(
-      (node: root, addr: rootAddr),
-      step,
-    )?.addr;
+        (node: root, addr: rootAddr), step)?.addr;
   }
 }

@@ -199,9 +199,8 @@ void main() {
       });
 
       test('nested address returns correct node', () {
-        final node = service.occurrenceByAddress(
-          const OccurrenceAddress([0, 0]),
-        );
+        final node =
+            service.occurrenceByAddress(const OccurrenceAddress([0, 0]));
         expect(node?.name, equals('alu'));
       });
 

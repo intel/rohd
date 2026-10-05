@@ -162,10 +162,8 @@ class SystemVerilogService extends CodeGenService {
             for (final entry in result.svLineMap.entries)
               entry.key: [
                 for (final position in entry.value)
-                  _offsetLineCol(
-                    position,
-                    moduleLineOffsets[result.module.definitionName] ?? 0,
-                  ),
+                  _offsetLineCol(position,
+                      moduleLineOffsets[result.module.definitionName] ?? 0),
               ],
           },
       };

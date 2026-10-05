@@ -290,10 +290,8 @@ void main() {
       await mod.build();
       final sv = SystemVerilogService(mod);
 
-      expect(
-        sv.contentsByDefinitionName[mod.definitionName],
-        equals(sv.fileContents.single.contents),
-      );
+      expect(sv.contentsByDefinitionName[mod.definitionName],
+          equals(sv.fileContents.single.contents));
     });
 
     test('toJson lists generated modules', () async {
