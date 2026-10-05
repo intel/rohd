@@ -154,11 +154,9 @@ class WaveformService extends ArtifactProducingService {
     _writer = _createWriter();
     _collectSignals(module);
     _writer.finishDeclarations(
-      _signalHandles.entries.map(
-        (entry) => WaveformInitialValue(entry.value, _binaryValue(entry.key)),
-      ),
-      timestamp: Simulator.time,
-    );
+        _signalHandles.entries.map((entry) =>
+            WaveformInitialValue(entry.value, _binaryValue(entry.key))),
+        timestamp: Simulator.time);
     _hasWrittenWindowSnapshot = startTime == null || startTime == 0;
 
     Simulator.preTick.listen((_) {
@@ -188,44 +186,37 @@ class WaveformService extends ArtifactProducingService {
   /// delegates to the main constructor. Provided so that pre-services-API
   /// callers of the form `WaveformService(module, outputPath: '/tmp/foo.vcd')`
   /// still compile.
-  factory WaveformService.fromOutputPath(
-    Module module, {
-    required String outputPath,
-    WaveOutputFormat format = WaveOutputFormat.vcd,
-    bool Function(Logic signal)? signalFilter,
-    String timescale = '1ps',
-    int? startTime,
-    int? stopTime,
-    int flushBufferSize = 100000,
-    OverwritePolicy overwritePolicy = OverwritePolicy.overwrite,
-    bool register = true,
-    bool? retainInMemory,
-    FstWriterConfig? fstConfig,
-  }) {
+  factory WaveformService.fromOutputPath(Module module,
+      {required String outputPath,
+      WaveOutputFormat format = WaveOutputFormat.vcd,
+      bool Function(Logic signal)? signalFilter,
+      String timescale = '1ps',
+      int? startTime,
+      int? stopTime,
+      int flushBufferSize = 100000,
+      OverwritePolicy overwritePolicy = OverwritePolicy.overwrite,
+      bool register = true,
+      bool? retainInMemory,
+      FstWriterConfig? fstConfig}) {
     final normalized = outputPath.replaceAll(r'\', '/');
     final sep = normalized.lastIndexOf('/');
-    final directory = switch (sep) {
-      -1 => '.',
-      0 => '/',
-      _ => normalized.substring(0, sep),
-    };
+    final directory =
+        switch (sep) { -1 => '.', 0 => '/', _ => normalized.substring(0, sep) };
     final filename = normalized.substring(sep + 1);
-    return WaveformService(
-      module,
-      outputDirectory: directory,
-      outputFileName: filename,
-      format: format,
-      signalFilter: signalFilter,
-      timescale: timescale,
-      startTime: startTime,
-      stopTime: stopTime,
-      flushBufferSize: flushBufferSize,
-      overwritePolicy: overwritePolicy,
-      register: register,
-      writeToFile: true,
-      retainInMemory: retainInMemory,
-      fstConfig: fstConfig,
-    );
+    return WaveformService(module,
+        outputDirectory: directory,
+        outputFileName: filename,
+        format: format,
+        signalFilter: signalFilter,
+        timescale: timescale,
+        startTime: startTime,
+        stopTime: stopTime,
+        flushBufferSize: flushBufferSize,
+        overwritePolicy: overwritePolicy,
+        register: register,
+        writeToFile: true,
+        retainInMemory: retainInMemory,
+        fstConfig: fstConfig);
   }
 
   /// The concrete output writer used by this service.
@@ -258,19 +249,15 @@ class WaveformService extends ArtifactProducingService {
   WaveformWriter _createWriter() {
     switch (format) {
       case WaveOutputFormat.vcd:
-        return VcdWaveformWriter(
-          outputPath,
-          timescale: timescale,
-          flushBufferSize: flushBufferSize,
-          overwritePolicy: overwritePolicy,
-          memoryBuffer: retainInMemory ? StringBuffer() : null,
-          writeToFile: writeToFile,
-        );
+        return VcdWaveformWriter(outputPath,
+            timescale: timescale,
+            flushBufferSize: flushBufferSize,
+            overwritePolicy: overwritePolicy,
+            memoryBuffer: retainInMemory ? StringBuffer() : null,
+            writeToFile: writeToFile);
       case WaveOutputFormat.fst:
-        return FstWaveformWriter(
-          outputPath,
-          config: fstConfig ?? const FstWriterConfig(),
-        );
+        return FstWaveformWriter(outputPath,
+            config: fstConfig ?? const FstWriterConfig());
     }
   }
 
@@ -294,11 +281,8 @@ class WaveformService extends ArtifactProducingService {
         initialName: baseName,
         reserved: sig.isPort,
       );
-      final handle = _writer.declareSignal(
-        signalName,
-        sig.width,
-        direction: _directionOf(sig),
-      );
+      final handle = _writer.declareSignal(signalName, sig.width,
+          direction: _directionOf(sig));
       _signalHandles[sig] = handle;
       onSignalCollected(sig);
 
@@ -371,13 +355,10 @@ class WaveformService extends ArtifactProducingService {
     }
 
     final snapshot = Set<Logic>.of(_signalHandles.keys);
-    _writer.emitValueChanges(
-      startTime!,
-      [
-        for (final signal in snapshot)
-          WaveformValueChange(_signalHandles[signal]!, _binaryValue(signal)),
-      ],
-    );
+    _writer.emitValueChanges(startTime!, [
+      for (final signal in snapshot)
+        WaveformValueChange(_signalHandles[signal]!, _binaryValue(signal)),
+    ]);
     _hasWrittenWindowSnapshot = true;
 
     for (final signal in snapshot) {

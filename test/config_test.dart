@@ -25,7 +25,7 @@ class SimpleModule extends Module {
     final c = addOutput('c');
 
     Combinational([
-      If(a, then: [c < a], orElse: [c < b]),
+      If(a, then: [c < a], orElse: [c < b])
     ]);
   }
 }
@@ -54,20 +54,19 @@ void main() {
   });
 
   test(
-    'should contains ROHD version number when deprecated synth is generated.',
-    () async {
-      const version = Config.version;
+      'should contains ROHD version number when deprecated synth is generated.',
+      () async {
+    const version = Config.version;
 
-      final mod = SimpleModule(Logic(), Logic());
-      await mod.build();
+    final mod = SimpleModule(Logic(), Logic());
+    await mod.build();
 
-      // This test verifies that the deprecated API still includes the version.
-      // ignore: deprecated_member_use_from_same_package
-      final sv = mod.generateSynth();
+    // This test verifies that the deprecated API still includes the version.
+    // ignore: deprecated_member_use_from_same_package
+    final sv = mod.generateSynth();
 
-      expect(sv, contains(version));
-    },
-  );
+    expect(sv, contains(version));
+  });
 
   if (!kIsWeb) {
     test(
