@@ -162,6 +162,24 @@ void main() {
     expect(service.capturedTimestamps, contains(10));
   });
 
+  test('window entry and boundary change are separate hook batches', () async {
+    final mod = _WindowWaveModule();
+    await mod.build();
+    mod.a.put(0);
+    final service =
+        _HistoryWaveformService(mod, startTime: 10, register: false);
+
+    Simulator.registerAction(5, () => mod.a.put(1));
+    Simulator.registerAction(10, () => mod.a.put(0));
+    await Simulator.run();
+
+    expect(
+      service.history[mod.a],
+      equals([(0, '0'), (10, '1'), (10, '0')]),
+    );
+    expect(service.capturedTimestamps, equals([10, 10]));
+  });
+
   test('captures waveform to VCD output path', () async {
     final a = Logic(name: 'a');
     final mod = _SimpleWaveModule(a);
@@ -170,7 +188,12 @@ void main() {
     Directory(_tempDumpDir).createSync(recursive: true);
     final dumpPath = _temporaryVcdPath('serviceCapture');
 
-    WaveformService.fromOutputPath(mod, outputPath: dumpPath, register: false);
+    final service = WaveformService.fromOutputPath(
+      mod,
+      outputPath: dumpPath,
+      register: false,
+    );
+    expect(service.outputFilePath, dumpPath);
 
     a.inject(1);
     Simulator.registerAction(10, () => a.put(0));
