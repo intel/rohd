@@ -140,6 +140,24 @@ typedef _SwizzleRangeRewrite = ({
       })> outputMappingReplacements,
 });
 
+/// Pre-rewrite uses needed to establish ownership of a split output bus.
+typedef _OutputSplitUses = ({
+  Map<SynthLogic, List<SynthSubModuleInstantiation>> readers,
+  Map<SynthLogic,
+      List<({SynthSubModuleInstantiation instantiation, String port})>> writers,
+  Set<SynthLogic> inouts,
+  Map<SynthLogic, List<SynthAssignment>> assignmentsBySignal,
+});
+
+/// A proposed split and its removable uses; collection alone does not prove
+/// complete coverage or destination safety.
+typedef _OutputSplitPlan = ({
+  List<({int lower, int upper, SynthLogic destination})> slices,
+  Set<SynthAssignment> consumedAssignments,
+  Set<SynthSubModuleInstantiation> consumedSubsets,
+  Set<SynthLogic> consumedSignals,
+});
+
 /// Yields maximal contiguous runs in [sortedItems] according to
 /// [continuesRun].
 Iterable<({int start, int end})> _contiguousRuns<T>(
@@ -704,7 +722,273 @@ class SynthModuleDefinition {
     // process/collapse the marked objects.
     _prepareForNaming();
     _pickNames();
+    _inlinePackedRangesFromSubmoduleOutputs();
     process();
+  }
+
+  /// Replaces an exclusively produced packed bus with its complete split sinks.
+  ///
+  /// Every source use must be accounted for, source ranges must tile the bus,
+  /// and destinations must be writable and non-overlapping. Collection and
+  /// validation do not change the graph; unsupported candidates stay intact.
+  /// This runs after pruning and naming, before backend-specific processing.
+  void _inlinePackedRangesFromSubmoduleOutputs() {
+    final uses = _indexOutputSplitUses();
+    final removedAssignments = <SynthAssignment>{};
+    for (final entry in uses.writers.entries) {
+      final bus = entry.key;
+      final producer = entry.value.singleOrNull;
+      if (producer == null ||
+          producer.instantiation.module is InlineSystemVerilog ||
+          producer.instantiation.outputMapping[producer.port] != bus ||
+          !_isDisposablePackedOutputBus(bus, uses.inouts)) {
+        continue;
+      }
+
+      final plan = _collectOutputSplit(bus, uses);
+      if (plan == null || !_isValidOutputSplit(bus, plan, uses)) {
+        continue;
+      }
+
+      _applyOutputSplit(bus, producer, plan);
+      removedAssignments.addAll(plan.consumedAssignments);
+    }
+    assignments.removeWhere(removedAssignments.contains);
+  }
+
+  /// Captures uses before rewriting, including whole-base uses of selections.
+  ///
+  /// Submodule mappings use reference bases; assignments are indexed by both
+  /// exact signals and reference bases so alias checks and bus checks agree.
+  _OutputSplitUses _indexOutputSplitUses() {
+    final readers = <SynthLogic, List<SynthSubModuleInstantiation>>{};
+    final writers = <SynthLogic,
+        List<({SynthSubModuleInstantiation instantiation, String port})>>{};
+    final inouts = <SynthLogic>{};
+    for (final instantiation in subModuleInstantiations) {
+      if (!instantiation.needsInstantiation) {
+        continue;
+      }
+      for (final signal in instantiation.inputMapping.values) {
+        readers
+            .putIfAbsent(_referenceBase(signal), () => [])
+            .add(instantiation);
+      }
+      for (final entry in instantiation.outputMapping.entries) {
+        writers.putIfAbsent(_referenceBase(entry.value), () => []).add((
+          instantiation: instantiation,
+          port: entry.key,
+        ));
+      }
+      inouts.addAll(instantiation.inOutMapping.values.map(_referenceBase));
+    }
+    final assignmentsBySignal = <SynthLogic, List<SynthAssignment>>{};
+    for (final assignment in assignments) {
+      for (final signal in {
+        assignment.src.resolved,
+        assignment.dst.resolved,
+        _referenceBase(assignment.src),
+        _referenceBase(assignment.dst),
+      }) {
+        assignmentsBySignal.putIfAbsent(signal, () => []).add(assignment);
+      }
+    }
+    return (
+      readers: readers,
+      writers: writers,
+      inouts: inouts,
+      assignmentsBySignal: assignmentsBySignal,
+    );
+  }
+
+  /// Only internal packed logic without a preserved identity can disappear.
+  bool _isDisposablePackedOutputBus(SynthLogic bus, Set<SynthLogic> inouts) =>
+      !bus.isArray &&
+      !bus.isNet &&
+      !bus.isConstant &&
+      bus.isClearable &&
+      internalSignals.contains(bus) &&
+      !bus.resolved.isPort(module) &&
+      !bus.resolved.isStructPortElement(module) &&
+      !bus.logics.any((logic) =>
+          logic is LogicStructure || logic.parentStructure != null) &&
+      !inouts.contains(bus);
+
+  /// Collects range-assignment and subset destinations without rewiring them.
+  ///
+  /// Returns null for any unrecognized use, rather than dropping a consumer.
+  /// A subset's alias is bypassed only if its name and all uses are disposable.
+  /// The returned slices are sorted from the least-significant source bit.
+  _OutputSplitPlan? _collectOutputSplit(SynthLogic bus, _OutputSplitUses uses) {
+    final slices = <({int lower, int upper, SynthLogic destination})>[];
+    final consumedAssignments = <SynthAssignment>{};
+    final consumedSubsets = <SynthSubModuleInstantiation>{};
+    final consumedSignals = <SynthLogic>{};
+
+    for (final assignment
+        in uses.assignmentsBySignal[bus] ?? <SynthAssignment>[]) {
+      if (assignment.src != bus || assignment is! RangeSynthAssignment) {
+        return null;
+      }
+      var destination = assignment.dst;
+      if (destination.isArray || destination.isNet || destination.isConstant) {
+        return null;
+      }
+      if (assignment.dstLowerIndex != 0 ||
+          assignment.dstUpperIndex != destination.width - 1) {
+        destination = assignment.width == 1
+            ? SynthLogicPackedBitReference(
+                destination, assignment.dstLowerIndex,
+                parentSynthModuleDefinition: this)
+            : SynthLogicPackedRangeReference(
+                destination, assignment.dstLowerIndex, assignment.dstUpperIndex,
+                parentSynthModuleDefinition: this);
+      }
+      slices.add((
+        lower: assignment.srcLowerIndex,
+        upper: assignment.srcUpperIndex,
+        destination: destination,
+      ));
+      consumedAssignments.add(assignment);
+    }
+    for (final reader in uses.readers[bus] ?? <SynthSubModuleInstantiation>[]) {
+      final subset = reader.module;
+      if (subset is! BusSubset ||
+          subset.original.isNet ||
+          reader.inputMapping[subset.original.name] != bus ||
+          subset.startIndex > subset.endIndex) {
+        return null;
+      }
+      var destination = reader.outputMapping[subset.subset.name]!.resolved;
+      final aliasUses =
+          uses.assignmentsBySignal[destination] ?? <SynthAssignment>[];
+      final canBypassAlias = destination.isClearable &&
+          internalSignals.contains(destination) &&
+          !destination.resolved.isPort(module) &&
+          !destination.resolved.isStructPortElement(module) &&
+          aliasUses.length == 1 &&
+          aliasUses.single is! PartialSynthAssignment &&
+          aliasUses.single.src == destination &&
+          (uses.readers[_referenceBase(destination)]?.isEmpty ?? true) &&
+          uses.writers[_referenceBase(destination)]?.length == 1 &&
+          !uses.inouts.contains(_referenceBase(destination));
+      if (canBypassAlias) {
+        consumedAssignments.add(aliasUses.single);
+        consumedSignals.add(destination);
+        destination = aliasUses.single.dst;
+      }
+      slices.add((
+        lower: subset.startIndex,
+        upper: subset.endIndex,
+        destination: destination,
+      ));
+      consumedSubsets.add(reader);
+    }
+
+    slices.sort((first, second) => first.lower.compareTo(second.lower));
+    return (
+      slices: slices,
+      consumedAssignments: consumedAssignments,
+      consumedSubsets: consumedSubsets,
+      consumedSignals: consumedSignals,
+    );
+  }
+
+  /// Requires exact source coverage and distinct, live writable destinations.
+  ///
+  /// Destination overlap is checked in the owning array's flattened bit space,
+  /// so different views of the same storage cannot hide an overlap.
+  bool _isValidOutputSplit(
+      SynthLogic bus, _OutputSplitPlan plan, _OutputSplitUses uses) {
+    var nextBit = 0;
+    final destinationRanges = <SynthLogic, List<({int lower, int upper})>>{};
+    for (final slice in plan.slices) {
+      final destination = slice.destination;
+      final base = _referenceBase(destination);
+      final span = _outputDestinationSpan(destination);
+      final previousRanges = destinationRanges.putIfAbsent(span.base, () => []);
+
+      final isNextSourceRange = slice.lower == nextBit &&
+          slice.upper >= slice.lower &&
+          slice.upper < bus.width &&
+          destination.width == slice.upper - slice.lower + 1;
+      if (!isNextSourceRange) {
+        return false;
+      }
+
+      final isWritableDestination = !destination.isArray &&
+          !destination.isNet &&
+          !destination.isConstant &&
+          base != bus &&
+          !destination.declarationCleared &&
+          !span.base.declarationCleared &&
+          !span.base.isConstant &&
+          !span.base.isNet &&
+          !uses.inouts.contains(base) &&
+          !uses.inouts.contains(span.base) &&
+          !span.base.logics.any((logic) =>
+              logic.parentModule == module && (logic.isInput || logic.isInOut));
+      if (!isWritableDestination) {
+        return false;
+      }
+
+      final overlapsDestination = previousRanges.any((previous) =>
+          previous.lower <= span.upper && span.lower <= previous.upper);
+      final hasOtherWriter = uses.writers[base]?.any((writer) =>
+              !plan.consumedSubsets.contains(writer.instantiation)) ??
+          false;
+      if (overlapsDestination || hasOtherWriter) {
+        return false;
+      }
+      previousRanges.add((lower: span.lower, upper: span.upper));
+      nextBit = slice.upper + 1;
+    }
+    return plan.slices.length >= 2 && nextBit == bus.width;
+  }
+
+  /// Applies a validated split, clearing only the uses recorded in its plan.
+  ///
+  /// Assignment removal is deferred by the caller until all candidates have
+  /// been visited, matching the use index's pre-rewrite snapshot.
+  void _applyOutputSplit(
+      SynthLogic bus,
+      ({SynthSubModuleInstantiation instantiation, String port}) producer,
+      _OutputSplitPlan plan) {
+    producer.instantiation.setOutputMapping(
+      producer.port,
+      SynthLogicConcat(
+        plan.slices.reversed.map((slice) => slice.destination).toList(),
+        parentSynthModuleDefinition: this,
+      ),
+      replace: true,
+    );
+    chainableModulesToCollapse.removeAll(plan.consumedSubsets);
+    for (final subset in plan.consumedSubsets) {
+      subset.clearInstantiation();
+    }
+    for (final signal in {bus, ...plan.consumedSignals}) {
+      signal.clearDeclaration();
+      internalSignals.remove(signal);
+    }
+  }
+
+  /// Resolves a destination selection to its owning signal and bit interval.
+  ({SynthLogic base, int lower, int upper}) _outputDestinationSpan(
+      SynthLogic destination) {
+    var base = destination.resolved;
+    var lower = 0;
+    if (base is SynthLogicPackedBitReference) {
+      lower = base.bitIndex;
+      base = base.packedBase.resolved;
+    } else if (base is SynthLogicPackedRangeReference) {
+      lower = base.lowerIndex;
+      base = base.packedBase.resolved;
+    }
+    while (base is SynthLogicArrayElement) {
+      lower += base.logic.arrayIndex! * base.width;
+      base = base.parentArray.resolved;
+    }
+    return (base: base, lower: lower, upper: lower + destination.width - 1);
   }
 
   /// Performs base-owned preparation before names are picked.
@@ -3651,6 +3935,7 @@ class SynthModuleDefinition {
   SynthLogic _referenceBase(SynthLogic signal) => switch (signal) {
         SynthLogicArrayElement() => signal.parentArray.resolved,
         SynthLogicPackedBitReference() => signal.packedBase.resolved,
+        SynthLogicPackedRangeReference() => signal.packedBase.resolved,
         _ => signal.resolved,
       };
 

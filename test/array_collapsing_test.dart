@@ -7,6 +7,8 @@
 // 2024 June 5
 // Author: Shankar Sharma <shankar.sharma@intel.com>
 
+import 'dart:convert';
+
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
@@ -2469,6 +2471,25 @@ void main() {
     expect(topBody, contains('.result({high,low})'));
     expect(topBody, isNot(contains('splitStage')));
     expect(topBody, isNot(contains('assign ')));
+    final netlist = jsonDecode(NetlistSynthesizer().synthesizeToJson(mod))
+        as Map<String, dynamic>;
+    final top = (netlist['modules'] as Map<String, dynamic>)
+        .values
+        .cast<Map<String, dynamic>>()
+        .singleWhere((definition) =>
+            (definition['ports'] as Map<String, dynamic>).containsKey('high'));
+    final ports = top['ports'] as Map<String, dynamic>;
+    final cells = (top['cells'] as Map<String, dynamic>)
+        .values
+        .cast<Map<String, dynamic>>();
+    final child = cells.singleWhere((cell) =>
+        (cell['connections'] as Map<String, dynamic>).containsKey('result'));
+    expect((child['connections'] as Map<String, dynamic>)['result'], [
+      ...(ports['low'] as Map<String, dynamic>)['bits'] as List<dynamic>,
+      ...(ports['high'] as Map<String, dynamic>)['bits'] as List<dynamic>,
+    ]);
+    expect(cells.any((cell) => cell['type'] == r'$slice'), isFalse);
+    expect(_topModuleBody(mod.generateSynth()), topBody);
     final vectors = [
       for (final pattern in [0, 1, 2, 0x55, 0xaa, 0x80, 0xff])
         Vector({'source': pattern}, {'high': pattern >> 1, 'low': pattern & 1}),

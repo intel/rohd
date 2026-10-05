@@ -471,6 +471,30 @@ class SynthLogic {
   }
 }
 
+/// A non-owning, most-significant-part-first concatenation of signals.
+///
+/// Used for port connections spanning several signals or selections. It has
+/// no independent declaration or name: backends must interpret [parts] as
+/// connections to existing storage, not allocate a new signal for this view.
+/// Dependency accounting must likewise follow the parts.
+@internal
+class SynthLogicConcat extends SynthLogic {
+  /// The ordered signals or selections comprising the connection.
+  final List<SynthLogic> parts;
+
+  /// Creates a connection view over [parts], from most to least significant.
+  SynthLogicConcat(List<SynthLogic> parts,
+      {required super.parentSynthModuleDefinition})
+      : parts = List.unmodifiable(parts),
+        super(Logic(width: parts.fold(0, (width, part) => width + part.width)));
+
+  @override
+  bool get needsDeclaration => false;
+
+  @override
+  bool get mergeable => false;
+}
+
 /// A non-owning reference to one bit of a packed [SynthLogic].
 ///
 /// This exists for port mappings that must render an indexed packed signal,

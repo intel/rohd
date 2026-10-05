@@ -39,7 +39,18 @@ class SystemVerilogSynthSubModuleInstantiation
           synthLogicToInlineableSynthSubmoduleMap?[synthLogic]
                   ?.inlineVerilog() ??
               // if cleared, then empty port
-              (synthLogic.declarationCleared ? '' : synthLogic.name)));
+              (synthLogic.declarationCleared
+                  ? ''
+                  : _connectionName(synthLogic))));
+
+  /// Renders connection views without giving them an independent signal name.
+  String _connectionName(SynthLogic signal) {
+    if (signal is SynthLogicConcat) {
+      final names = signal.parts.map((part) => _connectionName(part.resolved));
+      return '{${names.join(',')}}';
+    }
+    return signal.name;
+  }
 
   /// Provides the inline SV representation for this module.
   ///

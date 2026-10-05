@@ -78,8 +78,23 @@ class NetlistModuleTranslation {
   int allocateWireId() => _nextId++;
 
   /// Allocates or returns the wire identifiers for [synthLogic].
+  ///
+  /// Connection views reuse their underlying IDs; netlist bits are ordered
+  /// least-significant first, unlike the parts of a concatenation.
   List<int> getIds(SynthLogic synthLogic) {
     final resolved = synthLogic.isConstant ? synthLogic : synthLogic.resolved;
+    if (resolved is SynthLogicConcat) {
+      return [
+        for (final part in resolved.parts.reversed) ...getIds(part),
+      ];
+    }
+    if (resolved is SynthLogicPackedBitReference) {
+      return [getIds(resolved.packedBase)[resolved.bitIndex]];
+    }
+    if (resolved is SynthLogicPackedRangeReference) {
+      return getIds(resolved.packedBase)
+          .sublist(resolved.lowerIndex, resolved.upperIndex + 1);
+    }
     return _synthLogicIds.putIfAbsent(
       resolved,
       () => List<int>.generate(resolved.width, (_) => allocateWireId()),
