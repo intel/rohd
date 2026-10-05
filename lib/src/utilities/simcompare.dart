@@ -699,84 +699,64 @@ abstract class SimCompare {
       _SystemCSimCompare.cleanupSystemCCache(keepPch: keepPch);
 
   /// Builds a SystemC executable for [module] using the supplied options.
-  static SystemCVectorExecutable? buildSystemCVectorExecutable(
-    Module module, {
-    String? moduleName,
-    String? clockName,
-    String? resetName,
-    String? systemcHome,
-    String? systemcLib,
-  }) =>
-      _SystemCSimCompare.buildSystemCVectorExecutable(
-        module,
-        moduleName: moduleName,
-        clockName: clockName,
-        resetName: resetName,
-        systemcHome: systemcHome,
-        systemcLib: systemcLib,
-      );
+  static SystemCVectorExecutable? buildSystemCVectorExecutable(Module module,
+          {String? moduleName,
+          String? clockName,
+          String? resetName,
+          String? systemcHome,
+          String? systemcLib}) =>
+      _SystemCSimCompare.buildSystemCVectorExecutable(module,
+          moduleName: moduleName,
+          clockName: clockName,
+          resetName: resetName,
+          systemcHome: systemcHome,
+          systemcLib: systemcLib);
 
   /// Runs [vectors] against a built SystemC [executable].
   static bool runSystemCVectors(
-    SystemCVectorExecutable executable,
-    List<Vector> vectors,
-  ) =>
+          SystemCVectorExecutable executable, List<Vector> vectors) =>
       _SystemCSimCompare.runSystemCVectors(executable, vectors);
 
   /// Checks [vectors] against a built SystemC [executable].
   static void checkSystemCVectors(
-    SystemCVectorExecutable executable,
-    List<Vector> vectors,
-  ) =>
+          SystemCVectorExecutable executable, List<Vector> vectors) =>
       _SystemCSimCompare.checkSystemCVectors(executable, vectors);
 
   /// Checks SystemC vectors generated from [module].
-  static void checkSystemCVector(
-    Module module,
-    List<Vector> vectors, {
-    String? moduleName,
-    bool dontDeleteTmpFiles = false,
-    String? clockName,
-    String? resetName,
-    String? systemcHome,
-    String? systemcLib,
-    bool buildOnly = false,
-  }) =>
-      _SystemCSimCompare.checkSystemCVector(
-        module,
-        vectors,
-        moduleName: moduleName,
-        dontDeleteTmpFiles: dontDeleteTmpFiles,
-        clockName: clockName,
-        resetName: resetName,
-        systemcHome: systemcHome,
-        systemcLib: systemcLib,
-        buildOnly: buildOnly,
-      );
+  static void checkSystemCVector(Module module, List<Vector> vectors,
+          {String? moduleName,
+          bool dontDeleteTmpFiles = false,
+          String? clockName,
+          String? resetName,
+          String? systemcHome,
+          String? systemcLib,
+          bool buildOnly = false}) =>
+      _SystemCSimCompare.checkSystemCVector(module, vectors,
+          moduleName: moduleName,
+          dontDeleteTmpFiles: dontDeleteTmpFiles,
+          clockName: clockName,
+          resetName: resetName,
+          systemcHome: systemcHome,
+          systemcLib: systemcLib,
+          buildOnly: buildOnly);
 
   /// Compares [module] behavior with SystemC using [stimulus].
-  static Future<bool> systemcSimCompare(
-    Module module,
-    Logic clk, {
-    required Future<void> Function() stimulus,
-    List<String>? inputNames,
-    List<String>? outputNames,
-    String? clockName,
-    String? resetName,
-    bool dontDeleteTmpFiles = false,
-    String? systemcHome,
-    String? systemcLib,
-  }) =>
-      _SystemCSimCompare.systemcSimCompare(
-        module,
-        clk,
-        stimulus: stimulus,
-        inputNames: inputNames,
-        outputNames: outputNames,
-        clockName: clockName,
-        resetName: resetName,
-        dontDeleteTmpFiles: dontDeleteTmpFiles,
-        systemcHome: systemcHome,
-        systemcLib: systemcLib,
-      );
+  static Future<bool> systemcSimCompare(Module module, Logic clk,
+          {required Future<void> Function() stimulus,
+          List<String>? inputNames,
+          List<String>? outputNames,
+          String? clockName,
+          String? resetName,
+          bool dontDeleteTmpFiles = false,
+          String? systemcHome,
+          String? systemcLib}) =>
+      _SystemCSimCompare.systemcSimCompare(module, clk,
+          stimulus: stimulus,
+          inputNames: inputNames,
+          outputNames: outputNames,
+          clockName: clockName,
+          resetName: resetName,
+          dontDeleteTmpFiles: dontDeleteTmpFiles,
+          systemcHome: systemcHome,
+          systemcLib: systemcLib);
 }
