@@ -65,7 +65,7 @@ void main() {
         expect(module.output('observed').value.toInt(), value ^ 15);
       }
 
-      final verilog = module.generateSynth();
+      final verilog = module.dumpSystemVerilog();
       if (kind == DestinationKind.wholeBus) {
         expect(verilog, matches(r'\.result\(\s*observed\s*\)'),
             reason: verilog);

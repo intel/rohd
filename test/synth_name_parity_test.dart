@@ -303,7 +303,7 @@ void main() {
           if (netlist) {
             module.generateNetlist();
           } else {
-            final verilog = module.generateSynth();
+            final verilog = module.dumpSystemVerilog();
             expect(verilog, contains('logic sent;'));
             expect(verilog, contains('.sent(sent)'));
             expect(verilog, contains('.received(sent)'));
