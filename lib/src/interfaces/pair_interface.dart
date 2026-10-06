@@ -277,6 +277,8 @@ class PairInterface extends Interface<PairDirection> {
     String? structName,
   }) {
     final nonNullUniquify = uniquify ?? (original) => original;
+    // Keep the deprecated callback effective for backwards compatibility
+    // while callers migrate to `uniquify`.
     // ignore: deprecated_member_use_from_same_package
     final nonNullModify = modify ?? (original) => original;
     String newUniquify(String original) =>
