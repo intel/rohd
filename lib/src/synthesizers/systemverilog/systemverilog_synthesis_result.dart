@@ -457,13 +457,26 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
             final instLine =
                 int.parse(instEntry.substring(0, instEntry.indexOf(':')));
             for (final outputEntry in smi.outputMapping.entries) {
-              final synthLogic = outputEntry.value;
-              if (synthLogic.declarationCleared ||
-                  synthLogic.replacement != null) {
-                continue;
+              Iterable<SynthLogic> mappedSignals(SynthLogic signal) sync* {
+                if (signal is SynthLogicConcat) {
+                  for (final part in signal.parts) {
+                    yield* mappedSignals(part);
+                  }
+                } else {
+                  yield signal;
+                }
               }
-              final wireName = synthLogic.name;
-              if (wireName != smi.module.uniqueInstanceName) {
+
+              for (final synthLogic in mappedSignals(outputEntry.value)) {
+                if (synthLogic.declarationCleared ||
+                    synthLogic.replacement != null) {
+                  continue;
+                }
+                final wireName = synthLogic.nameOrNull;
+                if (wireName == null ||
+                    wireName == smi.module.uniqueInstanceName) {
+                  continue;
+                }
                 final col = outputPortColumns[wireName] ?? 1;
                 final pos = '$instLine:$col';
                 final list = _svLineMap[wireName];
