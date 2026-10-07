@@ -31,6 +31,22 @@ class _FlcTop extends Module {
   }
 }
 
+class _FlcWideLeaf extends Module {
+  _FlcWideLeaf(Logic data) : super(name: 'flcWideLeaf') {
+    data = addInput('data', data, width: 4);
+    addOutput('result', width: 4) <= ~data;
+  }
+}
+
+class _FlcWideTop extends Module {
+  _FlcWideTop() : super(name: 'flcWideTop') {
+    final data = addInput('data', Logic(width: 4), width: 4);
+    final result = _FlcWideLeaf(data).output('result');
+    addOutput('low', width: 2) <= result.getRange(0, 2);
+    addOutput('high', width: 2) <= result.getRange(2, 4);
+  }
+}
+
 void _expectLineMapsResolve(
   Map<String, Map<String, List<String>>> lineMaps,
   Map<String, String> contents,
@@ -109,5 +125,22 @@ void main() {
     } finally {
       directory.deleteSync(recursive: true);
     }
+  });
+
+  test('FLC line maps handle split packed submodule outputs', () async {
+    SourceTracer.activate();
+    final dut = _FlcWideTop();
+    await dut.build();
+
+    final service = SystemVerilogService(dut, register: false);
+    final trace = TraceService(dut, svService: service, register: false);
+    final topLineMap = trace.singleFileSvLineMaps[dut.definitionName]!;
+
+    expect(topLineMap['low']!.length, greaterThan(1));
+    expect(topLineMap['high']!.length, greaterThan(1));
+    expect(
+      SystemCService(dut, register: false).systemCResults,
+      isNotEmpty,
+    );
   });
 }
