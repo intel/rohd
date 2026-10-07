@@ -17,6 +17,9 @@ class SystemCSynthModuleDefinition extends SynthModuleDefinition {
   SystemCSynthModuleDefinition(super.module);
 
   @override
+  bool get supportsPackedOutputPortConcatenation => false;
+
+  @override
   void process() {
     // For now, do not collapse inline modules. Each InlineSystemVerilog gate
     // remains as a sub-module instantiation and gets emitted as an assign-style
