@@ -28,7 +28,7 @@ printf '%s\n' '#!/bin/bash' 'printf "iverilog\n" >> "$CHECK_LOG"' \
   'exit "${IVERILOG_STATUS:-0}"' > "$FIXTURE/bin/which"
 printf '%s\n' '#!/bin/bash' 'printf "verilator\n" >> "$CHECK_LOG"' > "$FIXTURE/bin/verilator"
 chmod +x "$FIXTURE/bin/"*
-for step in install_dependencies verify_formatting analyze_source generate_documentation run_tests check_tmp_test; do
+for step in install_dependencies verify_formatting analyze_source generate_documentation run_tests cleanup_systemc_tmp check_tmp_test; do
   printf '%s\n' '#!/bin/bash' \
     'step="${0##*/}"' \
     'printf "%s\n" "$step" >> "$CHECK_LOG"' \
@@ -55,10 +55,10 @@ run_case() {
 
 readonly COMMON_STEPS=$'install_dependencies.sh\nverify_formatting.sh\nanalyze_source.sh\ngenerate_documentation.sh'
 run_case 0
-[[ "$(cat "$CHECK_LOG")" == "$COMMON_STEPS"$'\niverilog\nverilator\nrun_tests.sh\ncheck_tmp_test.sh' ]]
+[[ "$(cat "$CHECK_LOG")" == "$COMMON_STEPS"$'\niverilog\nverilator\nrun_tests.sh\ncleanup_systemc_tmp.sh\ncheck_tmp_test.sh' ]]
 
 run_case 0 --skip-tests
-[[ "$(cat "$CHECK_LOG")" == "$COMMON_STEPS"$'\ncheck_tmp_test.sh' ]]
+[[ "$(cat "$CHECK_LOG")" == "$COMMON_STEPS"$'\ncleanup_systemc_tmp.sh\ncheck_tmp_test.sh' ]]
 grep -Fq 'Skipping tests and simulator prerequisites' "$FIXTURE/output"
 
 export FAIL_STEP=run_tests.sh
@@ -70,7 +70,7 @@ unset FAIL_STEP
 rm "$FIXTURE/bin/verilator"
 export IVERILOG_STATUS=1 ROHD_REQUIRE_VERILATOR=1
 run_case 0 --skip-tests
-[[ "$(cat "$CHECK_LOG")" == "$COMMON_STEPS"$'\ncheck_tmp_test.sh' ]]
+[[ "$(cat "$CHECK_LOG")" == "$COMMON_STEPS"$'\ncleanup_systemc_tmp.sh\ncheck_tmp_test.sh' ]]
 run_case 1
 [[ "$(cat "$CHECK_LOG")" == "$COMMON_STEPS"$'\niverilog' ]]
 unset IVERILOG_STATUS ROHD_REQUIRE_VERILATOR
@@ -90,7 +90,7 @@ echo "$passed project-check cases passed using isolated stubs."
 cp "$REPO_ROOT/tool/gh_actions/run_tests.sh" "$FIXTURE/tool/gh_actions/"
 printf '%s\n' '#!/bin/bash' \
   'printf "dart %s NODE_OPTIONS=%s\n" "$*" "${NODE_OPTIONS:-unset}" >> "$CHECK_LOG"' \
-  'if [[ "$*" == "test --platform node" ]]; then exit "${NODE_STATUS:-0}"; fi' \
+  'if [[ "$*" == "test --platform node --preset no-ffi" ]]; then exit "${NODE_STATUS:-0}"; fi' \
   'exit "${VM_STATUS:-0}"' > "$FIXTURE/bin/dart"
 chmod +x "$FIXTURE/bin/dart"
 
@@ -108,8 +108,8 @@ run_tests_case() {
   fi
 }
 
-readonly VM_CALL='dart test NODE_OPTIONS=existing'
-readonly NODE_CALL='dart test --platform node NODE_OPTIONS=--max-old-space-size=8192'
+readonly VM_CALL='dart test --preset no-ffi NODE_OPTIONS=existing'
+readonly NODE_CALL='dart test --platform node --preset no-ffi NODE_OPTIONS=--max-old-space-size=8192'
 for platform in '' all vm node; do
   if [[ -z "$platform" ]]; then
     run_tests_case 0

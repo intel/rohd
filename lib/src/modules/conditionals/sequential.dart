@@ -135,6 +135,14 @@ class Sequential extends Always {
   /// The input edge triggers used in this block.
   final List<_SequentialTrigger> _triggers = [];
 
+  /// Returns the edge polarity for each trigger input port.
+  ///
+  /// Each entry pairs the trigger input port name with whether the trigger
+  /// fires on a positive edge (`true`) or negative edge (`false`).
+  List<({String portName, bool isPosedge})> get triggerEdges => _triggers
+      .map((t) => (portName: t.signal.name, isPosedge: t.isPosedge))
+      .toList();
+
   /// When `false`, an [SignalRedrivenException] will be thrown during
   /// simulation if the same signal is driven multiple times within this
   /// [Sequential].
@@ -315,23 +323,17 @@ class Sequential extends Always {
           // driving it, so hold onto it for later
           _driverInputsPendingPostUpdate.add(driverInput);
           if (!_pendingPostUpdate) {
-            unawaited(
-              Simulator.postTick.first.then(
-                (value) {
-                  // once the tick has completed,
-                  // we can update the override maps
-                  _driverInputsPendingPostUpdate
-                    ..forEach(_updateInputToPreTickInputValue)
-                    ..clear();
-                  _pendingPostUpdate = false;
-                },
-              ).catchError(
-                test: (error) => error is Exception,
+            unawaited(Simulator.postTick.first.then((value) {
+              // once the tick has completed,
+              // we can update the override maps
+              _driverInputsPendingPostUpdate
+                ..forEach(_updateInputToPreTickInputValue)
+                ..clear();
+              _pendingPostUpdate = false;
+            }).catchError(test: (error) => error is Exception,
                 (Object err, StackTrace stackTrace) {
-                  Simulator.throwException(err as Exception, stackTrace);
-                },
-              ),
-            );
+              Simulator.throwException(err as Exception, stackTrace);
+            }));
           }
           _pendingPostUpdate = true;
         }
@@ -386,7 +388,6 @@ class Sequential extends Always {
           // update affected inputs to have an overridden value of X
           ..applyToNonTriggeredInputs((nti) =>
               _updateInputToPreTickInputValue(nti, overrideValue: LogicValue.x))
-
           // now, remember to change the values back to safe values after exec
           ..registerPreNonTriggerClearAction(() => _raceTracker
               .applyToNonTriggeredInputs(_updateInputToPreTickInputValue));

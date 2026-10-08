@@ -557,6 +557,13 @@ class SynthLogicPackedBitReference extends SynthLogic {
     );
     return reference;
   }
+
+  @override
+  String? get nameOrNull {
+    final resolvedBase = packedBase.resolved;
+    final baseName = resolvedBase.nameOrNull;
+    return baseName == null ? null : '$baseName[$bitIndex]';
+  }
 }
 
 /// A non-owning reference to a range of a packed [SynthLogic].
@@ -627,6 +634,13 @@ class SynthLogicPackedRangeReference extends SynthLogic {
       'Packed reference base should be sanitary, but found $reference.',
     );
     return reference;
+  }
+
+  @override
+  String? get nameOrNull {
+    final resolvedBase = packedBase.resolved;
+    final baseName = resolvedBase.nameOrNull;
+    return baseName == null ? null : '$baseName[$upperIndex:$lowerIndex]';
   }
 }
 
