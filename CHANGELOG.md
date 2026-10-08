@@ -12,8 +12,9 @@
 - **Migration:** plain `Const` and `LogicNet` sources no longer infer
   driveable outputs for operations that construct hardware. Request
   `<Logic>`, for example `flop<Logic>(clk, Const(1))`, to normalize them.
-  Use an operation `outputGenerator` when an explicit output representation is
-  required, including mixed packed and structured `cases` branches.
+  Use an operation `outputGenerator` (or `Passthrough.withOutput`) when an
+  explicit output representation is required, including mixed packed and
+  structured `cases` branches.
 - Added public `cloneTyped()` and `namedTyped()` conveniences for retaining a
   receiver's static type. `Const.cloneTyped()` remains a literal clone;
   `Const.namedTyped()` is rejected because a named alias must be driveable.

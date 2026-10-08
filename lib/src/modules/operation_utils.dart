@@ -20,6 +20,7 @@ LogicType createOperationOutput<LogicType extends Logic>({
   required String name,
   required String operation,
   int? width,
+  Naming? naming,
   LogicType? prototype,
   LogicType Function({String? name})? outputGenerator,
 }) {
@@ -36,7 +37,7 @@ LogicType createOperationOutput<LogicType extends Logic>({
         '$operation requires a width for a normalized Logic output.',
       );
     }
-    output = Logic(name: name, width: width) as LogicType;
+    output = Logic(name: name, width: width, naming: naming) as LogicType;
   } else if (prototype != null) {
     output = prototype.cloneTyped(name: name);
   } else {
