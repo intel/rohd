@@ -84,7 +84,10 @@ in chunks of 4 digits.</p>
 a <a href="../../rohd/LogicValueConstructionException-class.html">LogicValueConstructionException</a> will be thrown.  This can be caused by
 illegal characters
 in the string or too long of a value string.</p>
-<p>Strings created by <a href="../../rohd/LogicValue/toRadixString.html">toRadixString</a> are parsed by <a href="../../rohd/LogicValue/ofRadixString.html">ofRadixString</a>.</p>
+<p>Strings created by <a href="../../rohd/LogicValue/toRadixString.html">toRadixString</a> are parsed by <a href="../../rohd/LogicValue/ofRadixString.html">ofRadixString</a>.
+<code>sepChar</code> is interpreted literally and must match the separator used when
+formatting the string. An empty <code>sepChar</code> is allowed for strings without
+separators.</p>
 <p>If the LogicValue width is not encoded as round number of radix
 characters, the leading character must be small enough to be encoded
 in the remaining width:</p>
@@ -101,12 +104,13 @@ in the remaining width:</p>
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">static LogicValue ofRadixString(String valueString, {String sepChar = &#39;_&#39;}) {
-  if (radixStringChars.contains(sepChar)) {
+  if (sepChar.isNotEmpty &amp;&amp; radixStringChars.contains(sepChar)) {
     throw LogicValueConstructionException(&#39;separation character invalid&#39;);
   }
+  final escapedSeparator = RegExp.escape(sepChar);
   if (RegExp(r&#39;^\d+&#39;).firstMatch(valueString) != null) {
     final formatStr =
-        RegExp(&quot;^(\\d+)&#39;([bqodh])([0-9aAbBcCdDeEfFzZxX&lt;&gt;$sepChar]*)&quot;)
+        RegExp(&quot;^(\\d+)&#39;([bqodh])([0-9aAbBcCdDeEfFzZxX&lt;&gt;$escapedSeparator]*)&quot;)
             .firstMatch(valueString);
     if (formatStr != null) {
       if (valueString.length != formatStr.group(0)!.length) {
