@@ -13,6 +13,12 @@
       "pattern":"^https://github.com"
     },
     {
+      "pattern":"^https://marketplace\\.visualstudio\\.com"
+    },
+    {
+      "pattern":"^https://pub\\.dev"
+    },
+    {
       "pattern":"^https://pymtl3.readthedocs.io/en/latest/$"
     },
     {
