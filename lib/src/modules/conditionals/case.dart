@@ -149,6 +149,7 @@ class Case extends Conditional {
   String get caseType => 'case';
 
   @override
+  @protected
   void execute(Set<Logic>? drivenSignals, [void Function(Logic)? guard]) {
     if (guard != null) {
       guard(expression);
