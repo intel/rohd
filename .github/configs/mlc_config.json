@@ -29,6 +29,9 @@
     },
     {
       "pattern":"^https://.*\\.fandom\\.com"
+    },
+    {
+      "pattern": "^https://intel\\.github\\.io/rohd/rohd/"
     }
   ]
 }
