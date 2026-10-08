@@ -166,7 +166,7 @@ class Case extends Conditional {
     CaseItem? foundMatch;
 
     for (final item in items) {
-      // match on the first matchinig item
+      // match on the first matching item
       if (isMatch(driverValue(item.value), driverValue(expression))) {
         for (final conditional in item.then) {
           conditional.execute(drivenSignals, guard);

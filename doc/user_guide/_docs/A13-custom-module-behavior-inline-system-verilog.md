@@ -6,7 +6,7 @@ last_modified_at: 2024-6-3
 toc: true
 ---
 
-Many of the basic built-in gates in Dart implement custom behavior.  An implementation of the `NotGate` is shown below as an example.  There is different syntax for functions which can be inlined versus those which cannot (the `~` can be inlined).  In this case, the `InlineSystemVerilog` mixin is used, but if it were not inlineable, you could use the `SystemVerilog` mixin instead.  Note that it is mandatory to provide an initial value computation when the module is first created for non-sequential modules.
+Many of the basic built-in gates in ROHD implement custom behavior.  An implementation of the `NotGate` is shown below as an example.  There is different syntax for functions which can be inlined versus those which cannot (the `~` can be inlined).  In this case, the `InlineSystemVerilog` mixin is used, but if it were not inlineable, you could use the `SystemVerilog` mixin instead.  Note that it is mandatory to provide an initial value computation when the module is first created for non-sequential modules.
 
 ```dart
 /// A gate [Module] that performs bit-wise inversion.

@@ -1,6 +1,9 @@
 {
   "ignorePatterns": [
     {
+      "pattern": "^https://standards.ieee.org/ieee/1800/7743/$"
+    },
+    {
       "pattern": "^https://www.cadence.com/en_US/home/tools/digital-design-and-signoff/synthesis/stratus-high-level-synthesis.html$"
     },
     {
