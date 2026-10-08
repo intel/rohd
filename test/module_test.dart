@@ -126,7 +126,7 @@ class StructWithOutputAsElementMod extends Module {
     b = addInput('b', b);
 
     final s = SimpleLogicStructure(
-      a: mux(a, Const(0), Const(1)),
+      a: mux<Logic>(a, Const(0), Const(1)),
       b: Const(1),
     );
 

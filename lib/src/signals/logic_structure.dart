@@ -96,38 +96,67 @@ void validateMatchingLogicStructure(
 }) =>
     _validateMatchingStructure(first, second, operation, 'root');
 
-/// Clones [source] while preserving its concrete [LogicStructure] type.
-///
-/// Throws a [LogicConstructionException] when [LogicStructure.clone] is not
-/// implemented covariantly by the concrete type.
-LogicType typedClone<LogicType extends LogicStructure>(
+LogicType _checkedTypedClone<LogicType extends Logic>(
   LogicType source, {
   String? name,
 }) {
   final cloned = source.clone(name: name);
   if (cloned is! LogicType) {
     throw LogicConstructionException(
-      'Structure clone did not preserve its concrete type.',
+      'Clone did not preserve the requested $LogicType type.',
     );
   }
   return cloned;
 }
 
-/// Creates a named, connected alias while preserving [source]'s concrete type.
-LogicType typedNamed<LogicType extends LogicStructure>(
-  LogicType source,
-  String name,
-) =>
-    typedClone(source, name: name)..gets(source);
+void _validateTypedNamedClone(Logic source, String name) {
+  if (source is! LogicStructure) {
+    return;
+  }
 
-/// Type-preserving conveniences for concrete [LogicStructure] values.
-extension TypedLogicStructureUtilities<LogicType extends LogicStructure>
-    on LogicType {
-  /// Equivalent to [LogicStructure.clone], with a concrete return type.
-  LogicType cloneTyped({String? name}) => typedClone(this, name: name);
+  final clone = source.clone(name: name);
+  if (clone is Const || clone.hasConsts) {
+    throw LogicConstructionException(
+      'A named typed alias requires driveable cloned fields.',
+    );
+  }
+}
 
-  /// Equivalent to [LogicStructure.named], with a concrete return type.
-  LogicType namedTyped(String name) => typedNamed(this, name);
+/// Type-preserving conveniences for concrete [Logic] values.
+///
+/// The static receiver type determines the static result type. If a value has
+/// already been widened to [Logic], this extension cannot recover its original
+/// subtype.
+extension TypedLogicUtilities<LogicType extends Logic> on LogicType {
+  /// Equivalent to [Logic.clone], preserving the receiver's static type.
+  ///
+  /// Literal cloning is legal: a concrete [Const] receiver returns another
+  /// [Const] rather than a driveable alias.
+  LogicType cloneTyped({String? name}) => _checkedTypedClone(this, name: name);
+
+  /// Creates a named driveable alias while preserving the static result type.
+  ///
+  /// A concrete [Const] receiver cannot satisfy this contract because
+  /// [Const.clone] is immutable while [Const.named] creates an ordinary
+  /// [Logic] alias. Use [Logic.named] when an ordinary [Logic] alias is
+  /// intended.
+  LogicType namedTyped(String name, {Naming? naming}) {
+    if (this is Const && LogicType == Const) {
+      throw LogicConstructionException(
+        'Const.namedTyped cannot preserve Const because a named alias must be '
+        'driveable. Use named() to create a Logic alias.',
+      );
+    }
+
+    _validateTypedNamedClone(this, name);
+    final named = this.named(name, naming: naming);
+    if (named is! LogicType) {
+      throw LogicConstructionException(
+        'Named alias did not preserve the requested $LogicType type.',
+      );
+    }
+    return named;
+  }
 }
 
 /// Collects a group of [Logic] signals into one entity which can be manipulated
@@ -774,8 +803,18 @@ class LogicStructure implements Logic {
   }
 
   @override
-  Logic selectFrom(List<Logic> busList, {Logic? defaultValue}) =>
-      packed.selectFrom(busList, defaultValue: defaultValue);
+  LogicType selectFrom<LogicType extends Logic>(
+    List<LogicType> busList, {
+    dynamic defaultValue,
+    LogicType Function({String? name})? outputGenerator,
+    String name = 'selectFrom',
+  }) =>
+      packed.selectFrom(
+        busList,
+        defaultValue: defaultValue,
+        outputGenerator: outputGenerator,
+        name: name,
+      );
 
   @override
   bool get isNet => _isNet;
