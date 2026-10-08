@@ -90,12 +90,12 @@ class If extends Conditional {
       if (iff is Else) {
         if (iff != iffs.last) {
           throw InvalidConditionalException(
-              'Else must come last in an IfBlock.');
+              'Else must come last in an If.block.');
         }
 
         if (iff == iffs.first) {
           throw InvalidConditionalException(
-              'Else cannot be the first in an IfBlock.');
+              'Else cannot be the first in an If.block.');
         }
       }
     }
