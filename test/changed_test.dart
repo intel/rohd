@@ -371,7 +371,7 @@ void main() {
     final clk = SimpleClockGenerator(200).clk;
 
     // faster clk just to add more events to the Simulator
-    SimpleClockGenerator(17).clk;
+    SimpleClockGenerator(16).clk;
 
     final posedgeChangingSignal = Logic()..put(0);
     final negedgeChangingSignal = Logic()..put(0);
