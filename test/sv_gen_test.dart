@@ -487,6 +487,14 @@ class LogicToPackedArray extends Module {
   }
 }
 
+class ComputedLogicToPackedArray extends Module {
+  ComputedLogicToPackedArray(Logic data) {
+    data = addInput('data', data, width: 8);
+    final computed = (data + Const(1, width: 8)).named('computed');
+    addOutputArray('out', dimensions: [4], elementWidth: 2) <= computed;
+  }
+}
+
 class ReversedPackedArrayToLogic extends Module {
   ReversedPackedArrayToLogic(LogicArray array) {
     array = addInputArray(
@@ -948,6 +956,19 @@ void main() {
       Vector({'data': 0x00}, {'out': 0x00}),
       Vector({'data': 0xa5}, {'out': 0xa5}),
       Vector({'data': 0xff}, {'out': 0xff}),
+    ];
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
+  });
+
+  test('computed Logic remains declared for packed array assignment', () async {
+    final mod = ComputedLogicToPackedArray(Logic(width: 8));
+    await mod.build();
+
+    final vectors = [
+      Vector({'data': 0x00}, {'out': 0x01}),
+      Vector({'data': 0xa5}, {'out': 0xa6}),
+      Vector({'data': 0xff}, {'out': 0x00}),
     ];
     await SimCompare.checkFunctionalVector(mod, vectors);
     SimCompare.checkIverilogVector(mod, vectors);
