@@ -164,16 +164,16 @@ class FiniteStateMachine<StateIdentifier extends Enum> {
           defaultItem: [
             nextState < currentState,
 
-            // zero out all other receivers from state actions...
-            // even though out-of-state is unreachable,
-            // we don't want any inferred latches
+            // Satisfy lint and synthesis checks for the unreachable default.
             ..._states
                 .map((state) => state.actions)
                 .flattened
                 .map((conditional) => conditional.receivers)
                 .flattened
                 .toSet()
-                .map((receiver) => receiver < 0)
+                .map((receiver) => receiver is LogicEnum
+                    ? receiver < receiver.mapping.keys.first
+                    : receiver < 0)
           ])
     ]);
 

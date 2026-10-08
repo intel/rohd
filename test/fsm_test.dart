@@ -113,12 +113,13 @@ class TrafficTestModule extends Module {
   late final LogicEnum<LightColor> northLight;
   late final LogicEnum<LightColor> eastLight;
 
-  TrafficTestModule(Logic traffic, Logic reset) {
+  TrafficTestModule(Logic traffic, Logic reset,
+      {Map<LightColor, int>? mapping}) {
     traffic = addInput('traffic', traffic, width: traffic.width);
     reset = addInput('reset', reset);
 
-    final lightType = LogicEnum(
-      LightColor.values,
+    final lightType = LogicEnum<LightColor>.withMapping(
+      mapping ?? {for (final color in LightColor.values) color: color.value},
       width: traffic.width,
       definitionName: 'LightColor',
     );
@@ -341,6 +342,56 @@ void main() {
         verifyMermaidStateDiagram(fsmPath);
       }
     });
+
+    for (final mapping in [
+      {LightColor.red: 3, LightColor.green: 1, LightColor.yellow: 2},
+      {LightColor.red: 2, LightColor.green: 0, LightColor.yellow: 1},
+    ]) {
+      test('enum output defaults use first member for $mapping', () async {
+        final mod =
+            TrafficTestModule(Logic(width: 2), Logic(), mapping: mapping);
+        await mod.build();
+
+        final vectors = [
+          Vector({'reset': 1, 'traffic': 0}, {}),
+          Vector({
+            'reset': 0
+          }, {
+            'northLight': mapping[LightColor.green],
+            'eastLight': mapping[LightColor.red],
+          }),
+          Vector({'traffic': TrafficPresence.eastTraffic.value}, {}),
+          Vector({}, {
+            'northLight': mapping[LightColor.yellow],
+            'eastLight': mapping[LightColor.red],
+          }),
+          Vector({}, {
+            'northLight': mapping[LightColor.red],
+            'eastLight': mapping[LightColor.green],
+          }),
+        ];
+        await SimCompare.checkFunctionalVector(mod, vectors);
+
+        for (final generateEnums in [true, false]) {
+          final configuration = SystemVerilogSynthesizerConfiguration(
+              generateEnums: generateEnums);
+          final sv = mod.dumpSystemVerilog(configuration: configuration);
+          final fallback = sv.substring(sv.lastIndexOf('default'));
+          if (generateEnums) {
+            expect(fallback, contains('northLight_enum = red;'));
+            expect(fallback, contains('eastLight_enum = red;'));
+          } else {
+            expect(sv, isNot(contains('typedef enum')));
+            expect(fallback,
+                contains("northLight = 2'h${mapping[LightColor.red]};"));
+            expect(fallback,
+                contains("eastLight = 2'h${mapping[LightColor.red]};"));
+          }
+          SimCompare.checkIverilogVector(mod, vectors,
+              synthesizerConfiguration: configuration);
+        }
+      });
+    }
 
     test('traffic light fsm', () async {
       final mod = TrafficTestModule(Logic(width: 2), Logic());

@@ -695,10 +695,13 @@ void main() {
     final incompatibleType = LogicEnum(OtherEnum.values);
 
     expect(() => logicEnum < 3, throwsA(isA<ArgumentError>()));
+    expect(() => logicEnum < Const(3, width: logicEnum.width),
+        throwsA(isA<ArgumentError>()));
     expect(() => logicEnum < OtherEnum.a, throwsA(isA<ArgumentError>()));
     expect(() => logicEnum < incompatibleType, throwsA(isA<ArgumentError>()));
     expect(logicEnum < TestEnum.b, isA<Conditional>());
     expect(logicEnum < 2, isA<Conditional>());
+    expect(logicEnum < Const(2, width: logicEnum.width), isA<Conditional>());
   });
 
   test('untyped Logic rejects enum conditional values', () {
@@ -712,6 +715,47 @@ void main() {
         ),
       ),
     );
+  });
+
+  test('direct conditional enum assignments validate constants', () {
+    final logicEnum = LogicEnum(TestEnum.values);
+    expect(() => ConditionalAssign(logicEnum, Const(3, width: logicEnum.width)),
+        throwsA(isA<ArgumentError>()));
+    expect(ConditionalAssign(logicEnum, Const(2, width: logicEnum.width)),
+        isA<Conditional>());
+    expect(
+      () => logicEnum < Const(2, width: logicEnum.width + 1),
+      throwsA(isA<PortWidthMismatchException>()),
+    );
+  });
+
+  test('sequential enum resets validate constants and require a legal default',
+      () {
+    for (final asyncReset in [false, true]) {
+      for (final resetValue in [TestEnum.b, 1, Const(1, width: 2)]) {
+        final receiver =
+            LogicEnum<TestEnum>.withMapping({TestEnum.b: 1}, width: 2);
+        expect(
+          Sequential(Logic(), [receiver < TestEnum.b],
+              reset: Logic(),
+              asyncReset: asyncReset,
+              resetValues: {receiver: resetValue}),
+          isA<Sequential>(),
+        );
+      }
+
+      for (final resetValue in [null, 0, Const(0, width: 2)]) {
+        final receiver =
+            LogicEnum<TestEnum>.withMapping({TestEnum.b: 1}, width: 2);
+        expect(
+          () => Sequential(Logic(), [receiver < TestEnum.b],
+              reset: Logic(),
+              asyncReset: asyncReset,
+              resetValues: resetValue == null ? null : {receiver: resetValue}),
+          throwsA(isA<ArgumentError>()),
+        );
+      }
+    }
   });
 
   test('cases rejects enum keys outside the expression mapping', () {

@@ -220,17 +220,10 @@ class LogicEnum<T extends Enum> extends LogicDef {
         return super < (clone()..gets(rawBridge));
       }
       return super < other;
-    } else if (other is Logic) {
-      return super < other;
     } else if (other is Enum) {
       throw ArgumentError.value(other, 'other', 'Must be a value of $T.');
     } else {
-      final constant = Const(other, width: width);
-      if (!mapping.containsValue(constant.value)) {
-        throw ArgumentError.value(
-            other, 'other', 'Not present in the mapping for $T.');
-      }
-      return super < constant;
+      return super < other;
     }
   }
 
