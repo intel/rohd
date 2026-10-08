@@ -21,7 +21,7 @@ class TopModule extends Module {
     Combinational([internalNet < inPort]);
     Combinational([outPort < internalNet]);
 
-    Passthrough(internalNet);
+    Passthrough<Logic>(internalNet);
   }
 }
 

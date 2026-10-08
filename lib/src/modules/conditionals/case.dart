@@ -11,6 +11,7 @@ import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/modules/conditionals/ssa.dart';
+import 'package:rohd/src/modules/operation_utils.dart';
 
 /// Represents a single case within a [Case] block.
 class CaseItem {
@@ -32,20 +33,30 @@ class CaseItem {
 /// It is used to assign a signal based on a condition with multiple cases to
 /// consider. For e.g., this can be used instead of a nested [mux].
 ///
-/// The result is of type [Logic] and it is determined by conditionaly matching
-/// the expression with the values of each item in conditions. If width of the
-/// input is not provided, then the width of  the result is inferred from the
-/// width of the entries.
-Logic cases(
+/// The result is of type [LogicType] and is determined by conditionally
+/// matching [expression] with values in [conditions].
+///
+/// When [outputGenerator] is omitted, a requested [Logic] result is
+/// normalized to ordinary [Logic]. For a more specific [LogicType], the first
+/// matching typed branch supplies the output prototype. Supply
+/// [outputGenerator] to establish an explicit result representation when
+/// sources are mixed or no typed branch is available.
+LogicType cases<LogicType extends Logic>(
   Logic expression,
   Map<dynamic, dynamic> conditions, {
   int? width,
   ConditionalType conditionalType = ConditionalType.none,
   dynamic defaultValue,
+  LogicType Function({String? name})? outputGenerator,
+  String name = 'result',
 }) {
-  for (final conditionValue in [
+  final resultValues = [
     ...conditions.values,
     if (defaultValue != null) defaultValue,
+  ];
+
+  for (final conditionValue in [
+    ...resultValues,
   ]) {
     int? inferredWidth;
 
@@ -66,9 +77,19 @@ Logic cases(
     width ??= inferredWidth;
   }
 
-  if (width == null) {
+  final prototype = resultValues.whereType<LogicType>().firstOrNull;
+  if (width == null && prototype == null && outputGenerator == null) {
     throw SignalWidthMismatchException.forNull(conditions);
   }
+
+  final result = createOperationOutput<LogicType>(
+    width: width ?? prototype?.width,
+    name: name,
+    operation: 'cases<$LogicType>',
+    prototype: prototype,
+    outputGenerator: outputGenerator,
+  );
+  width = result.width;
 
   for (final condition in conditions.entries) {
     if (condition.key is Logic) {
@@ -92,91 +113,21 @@ Logic cases(
     }
   }
 
-  final result = Logic(name: 'result', width: width, naming: Naming.mergeable);
-
-  Combinational([
-    Case(
-      expression,
-      [
-        for (final condition in conditions.entries)
-          CaseItem(
-            condition.key is Logic
-                ? condition.key as Logic
-                : Const(condition.key, width: expression.width),
-            [result < condition.value],
-          ),
-      ],
-      conditionalType: conditionalType,
-      defaultItem: defaultValue != null ? [result < defaultValue] : null,
-    ),
-  ]);
-
-  return result;
-}
-
-/// Selects a matching [LogicStructure] value using a hardware case expression.
-///
-/// Every condition value must have the same concrete type and recursive shape.
-/// [defaultValue] may be another matching structure or any packed value
-/// accepted by [LogicStructure.operator <]. If omitted, unmatched expression
-/// values follow the same incomplete-assignment and latch semantics as [cases].
-/// [ConditionalType.unique] and [ConditionalType.priority] do not make an
-/// otherwise incomplete case exhaustive.
-LogicType typedCases<LogicType extends LogicStructure>(
-  Logic expression,
-  Map<dynamic, LogicType> conditions, {
-  ConditionalType conditionalType = ConditionalType.none,
-  dynamic defaultValue,
-  String name = 'result',
-}) {
-  if (conditions.isEmpty) {
-    throw LogicConstructionException(
-      'typedCases requires at least one typed condition value.',
-    );
-  }
-
-  final prototype = conditions.values.first;
-  for (final value in conditions.values.skip(1)) {
-    validateMatchingLogicStructure(value, prototype, operation: 'typedCases');
-  }
-  for (final condition in conditions.keys) {
-    if (condition is Logic && condition.width != expression.width) {
+  for (final conditionValue in resultValues) {
+    if (conditionValue is Logic) {
+      validateOperationSource(
+        conditionValue,
+        result,
+        operation: 'cases branch',
+      );
+    } else if (conditionValue is LogicValue &&
+        conditionValue.width != result.width) {
       throw SignalWidthMismatchException.forDynamic(
-        condition,
-        expression.width,
-        condition.width,
+        conditionValue,
+        result.width,
+        conditionValue.width,
       );
     }
-    if (condition is LogicValue && condition.width != expression.width) {
-      throw SignalWidthMismatchException.forDynamic(
-        condition,
-        expression.width,
-        condition.width,
-      );
-    }
-  }
-  if (defaultValue is LogicStructure) {
-    validateMatchingLogicStructure(
-      defaultValue,
-      prototype,
-      operation: 'typedCases default',
-    );
-  } else if (defaultValue is Logic && defaultValue.width != prototype.width) {
-    throw PortWidthMismatchException.equalWidth(defaultValue, prototype);
-  } else if (defaultValue is LogicValue &&
-      defaultValue.width != prototype.width) {
-    throw SignalWidthMismatchException.forDynamic(
-      defaultValue,
-      prototype.width,
-      defaultValue.width,
-    );
-  }
-
-  final result = typedClone(prototype, name: name);
-  if (result.hasConsts || result.hasNets) {
-    throw LogicConstructionException(
-      'typedCases result clones cannot contain constants or nets.',
-    );
   }
 
   Combinational([

@@ -8,4 +8,3 @@ export 'gates.dart';
 export 'passthrough.dart';
 export 'pipeline.dart';
 export 'tristate.dart';
-export 'typed_op.dart';

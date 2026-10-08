@@ -233,19 +233,22 @@ Use the existing `addTypedInput`, `addTypedOutput`, and `addTypedInOut` methods 
 
 ## Type-preserving operations
 
-Use `StructureMux`, `StructureFlipFlop`, and `StructurePassthrough` when the
-output must retain the array's concrete type, dimensions, and specialized leaf
-type:
+Use generic `Mux`, `FlipFlop`, and `Passthrough` when the output must retain
+the array's concrete type, dimensions, and specialized leaf type:
 
 ```dart
-final selected = StructureMux(select, samplesA, samplesB).out;
-final delayed = StructureFlipFlop(clk, selected, reset: reset).q;
-final forwarded = StructurePassthrough(delayed).out;
+final selected = Mux(select, samplesA, samplesB).out;
+final delayed = FlipFlop(clk, selected, reset: reset).q;
+final forwarded = Passthrough(delayed).out;
 
 final bottomRightData = forwarded.elementAt([1, 2]).data;
 ```
 
-The mux inputs must have matching concrete array types and geometry, including dimensions, leaf widths, packed/unpacked configuration, and leaf structure. Use `typedCases`, `selectIndexTyped`, or `selectFromTyped` when selecting one complete typed array from multiple choices. Specify the array type parameter on `StructurePipeline<T>` when its stages use inline transforms.
+The mux inputs must have matching concrete array types and geometry, including
+dimensions, leaf widths, packed/unpacked configuration, and leaf structure.
+Use generic `cases`, `selectIndex`, or `selectFrom` when selecting one complete
+typed array from multiple choices. Specify the array type parameter on
+`StructurePipeline<T>` when its stages use inline transforms.
 
 ## Elements of arrays
 

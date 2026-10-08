@@ -49,7 +49,7 @@ class StructurePipelineStageInfo<LogicType extends LogicStructure> {
 ///
 /// Every transform receives a [StructurePipelineStageInfo] whose `value` is the
 /// typed value entering that stage. The returned matching structure is
-/// registered through [StructureFlipFlop]. [values] contains the original
+/// registered through [FlipFlop]. [values] contains the original
 /// input followed by every registered stage output, so `stageCount` matches
 /// [Pipeline]'s boundary-count convention and `latency` is one less.
 class StructurePipeline<LogicType extends LogicStructure> {
@@ -102,7 +102,7 @@ class StructurePipeline<LogicType extends LogicStructure> {
         throw PortWidthMismatchException(stall, 1);
       }
       generatedValues.add(
-        StructureFlipFlop<LogicType>(
+        FlipFlop<LogicType>(
           clk,
           transformed,
           en: stall == null ? null : ~stall,
