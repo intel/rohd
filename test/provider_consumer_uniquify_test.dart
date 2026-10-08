@@ -1,7 +1,7 @@
 // Copyright (C) 2023-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
-// provider_consumer_w_modify_test.dart
+// provider_consumer_uniquify_test.dart
 // Tests PairInterface provider and consumer naming with explicit uniquifiers.
 //
 // 2023 March 9

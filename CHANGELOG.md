@@ -17,6 +17,12 @@
   Use an operation `outputGenerator` (or `Passthrough.withOutput`) when an
   explicit output representation is required, including mixed packed and
   structured `cases` branches.
+- **Breaking:** Removed deprecated compatibility APIs. Use the canonical
+  `ExternalSystemVerilogModule`, `FiniteStateMachine`, `Sequential`,
+  `If.block`, `Logic.port`, `LogicValue` `of...` constructors, `SystemVerilog`,
+  `SynthFileContents`, and instance `clone()` APIs. Apply interface port names
+  at connection time with `uniquify`; use canonical operation outputs such as
+  `out` and `sum`; and access signal values through `value`.
 - Added public `cloneTyped()` and `namedTyped()` conveniences for retaining a
   receiver's static type. `Const.cloneTyped()` remains a literal clone;
   `Const.namedTyped()` is rejected because a named alias must be driveable.

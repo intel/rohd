@@ -225,7 +225,12 @@ With `multiFile: true`, `SystemVerilogService` writes one `.sv` file per
 generated module definition. For custom synthesis flows,
 [`SynthBuilder`](https://intel.github.io/rohd/rohd/SynthBuilder-class.html)
 accepts a `Module` and a `Synthesizer` (usually a
-`SystemVerilogSynthesizer`).
+`SystemVerilogSynthesizer`). It provides `SynthFileContents` objects through
+`getSynthFileContents`; each includes its contents, file name, and context
+about the `module` it refers to and its `instanceTypeName`. With these APIs,
+you can generate named files, add file headers, ignore generation of some
+modules, and generate file lists for other tools. `SynthBuilder.multi` makes
+it convenient to generate outputs for multiple independent hierarchies.
 
 ## Capturing waveforms
 
