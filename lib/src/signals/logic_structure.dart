@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Intel Corporation
+// Copyright (C) 2023-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // logic_structure.dart
@@ -639,6 +639,10 @@ class LogicStructure implements Logic {
   late final bool _hasNets =
       elements.any((e) => e.isNet || (e is LogicStructure && e.hasNets)) ||
           isNet;
+
+  /// Indicates whether this structure contains a [Const] at any depth.
+  bool get hasConsts => _hasConsts;
+  late final bool _hasConsts = leafElements.any((element) => element is Const);
 
   @override
   Iterable<Logic> get srcConnections => {

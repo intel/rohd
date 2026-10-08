@@ -206,10 +206,15 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
             assignment.dstLowerIndex,
           );
         }
-        srcSliceString = rangeString(
-          assignment.srcUpperIndex,
-          assignment.srcLowerIndex,
-        );
+        if (assignment.src.isArray ||
+            assignment.src.width <= 1 ||
+            assignment.srcLowerIndex != 0 ||
+            assignment.srcUpperIndex != assignment.src.width - 1) {
+          srcSliceString = rangeString(
+            assignment.srcUpperIndex,
+            assignment.srcLowerIndex,
+          );
+        }
       } else if (assignment is PartialSynthAssignment &&
           assignment.width > 1 &&
           !normalizesWholeEnumDestination) {

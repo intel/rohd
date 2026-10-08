@@ -1,4 +1,13 @@
-// ignore_for_file: avoid_print
+// Copyright (C) 2023-2026 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// full_adder.dart
+// Chapter 3 full-adder tutorial example.
+//
+// 2023 March 3
+// Author: Yao Jing Quek <yao.jing.quek@intel.com>
+
+// ignore_for_file: avoid_print - tutorial
 
 import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
@@ -24,7 +33,7 @@ void main() async {
 
   faOps(a, b, cIn, xorAB, sum, cOut);
 
-  test('should return xor results correctly in a xor b.', () async {
+  test('should return xor results correctly in a xor b.', () {
     for (var i = 0; i <= 1; i++) {
       for (var j = 0; j <= 1; j++) {
         a.put(i);
@@ -35,7 +44,7 @@ void main() async {
     }
   });
 
-  test('should return true if result sum similar to truth table.', () async {
+  test('should return true if result sum similar to truth table.', () {
     for (var i = 0; i <= 1; i++) {
       for (var j = 0; j <= 1; j++) {
         for (var k = 0; k <= 1; k++) {
@@ -54,8 +63,7 @@ void main() async {
     }
   });
 
-  test('should return true if result c-out is similar to truth table.',
-      () async {
+  test('should return true if result c-out is similar to truth table.', () {
     for (var i = 0; i <= 1; i++) {
       for (var j = 0; j <= 1; j++) {
         for (var k = 0; k <= 1; k++) {
@@ -77,5 +85,5 @@ void main() async {
   final mod = FullAdderModule(a, b, cIn, faOps);
   await mod.build();
 
-  print(mod.generateSynth());
+  print(mod.dumpSystemVerilog());
 }

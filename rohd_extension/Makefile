@@ -71,6 +71,9 @@ install-remote: compile
 	@if [ -d "$(REMOTE_EXT_DIR)" ]; then \
 		echo "Installing to $(REMOTE_EXT_DIR)/out/..."; \
 		cp out/*.js out/*.js.map "$(REMOTE_EXT_DIR)/out/"; \
+		cp package.json "$(REMOTE_EXT_DIR)/package.json"; \
+		mkdir -p "$(REMOTE_EXT_DIR)/resources"; \
+		cp resources/* "$(REMOTE_EXT_DIR)/resources/"; \
 		echo "Done. Reload the VS Code window to pick up changes."; \
 	else \
 		echo "ERROR: Extension not found at $(REMOTE_EXT_DIR)"; \
@@ -82,6 +85,9 @@ install-local: compile
 	@if [ -d "$(LOCAL_EXT_DIR)" ]; then \
 		echo "Installing to $(LOCAL_EXT_DIR)/out/..."; \
 		cp out/*.js out/*.js.map "$(LOCAL_EXT_DIR)/out/"; \
+		cp package.json "$(LOCAL_EXT_DIR)/package.json"; \
+		mkdir -p "$(LOCAL_EXT_DIR)/resources"; \
+		cp resources/* "$(LOCAL_EXT_DIR)/resources/"; \
 		echo "Done. Reload the VS Code window to pick up changes."; \
 	else \
 		echo "ERROR: Extension not found at $(LOCAL_EXT_DIR)"; \

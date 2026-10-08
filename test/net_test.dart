@@ -1,4 +1,4 @@
-// Copyright (C) 2024-2025 Intel Corporation
+// Copyright (C) 2024-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // net_test.dart
@@ -461,7 +461,7 @@ void main() {
 
     await mod.build();
 
-    final sv = mod.generateSynth();
+    final sv = mod.dumpSystemVerilog();
     expect(sv, contains('intermediate1'));
     expect(sv, contains('intermediate2'));
     expect(sv, contains('intermediate3'));
@@ -504,7 +504,7 @@ void main() {
 
       await mod.build();
 
-      final sv = mod.generateSynth();
+      final sv = mod.dumpSystemVerilog();
       expect('SubModInoutOnly  submod'.allMatches(sv).length, 1);
     });
 
@@ -515,7 +515,7 @@ void main() {
 
       await mod.build();
 
-      final sv = mod.generateSynth();
+      final sv = mod.dumpSystemVerilog();
       expect('SubModInoutOnly  submod'.allMatches(sv).length, 1);
     });
 
@@ -526,7 +526,7 @@ void main() {
 
       await mod.build();
 
-      final sv = mod.generateSynth();
+      final sv = mod.dumpSystemVerilog();
       expect('  submod'.allMatches(sv).length, 2);
     });
   });
@@ -611,7 +611,7 @@ void main() {
           isNotNull);
     }
 
-    final sv = mod.generateSynth();
+    final sv = mod.dumpSystemVerilog();
 
     // test that " _b;" is not present (indication that a leftover internal
     // signal was there)
@@ -631,7 +631,7 @@ void main() {
       final mod = NetArrayTopMod(Logic(width: 8), NetArrayIntf());
       await mod.build();
 
-      final sv = mod.generateSynth();
+      final sv = mod.dumpSystemVerilog();
       // print(sv);
       expect(sv, contains('wire [1:0][1:0][7:0] bd3'));
     });
@@ -677,7 +677,7 @@ void main() {
     );
     await mod.build();
 
-    final sv = mod.generateSynth();
+    final sv = mod.dumpSystemVerilog();
     expect(sv, contains('assign c = _a_and_b;'));
     expect(sv, contains('assign d = _aIntermediate_or_bIntermediate;'));
 
@@ -691,11 +691,10 @@ void main() {
     SimCompare.checkIverilogVector(mod, vectors);
   });
 
-  test('build fails with missing inout port', () async {
+  test('build fails with missing inout port', () {
     final mod = MissingPortTop(LogicNet());
 
-    expect(
-        () async => mod.build(), throwsA(isA<PortRulesViolationException>()));
+    expect(mod.build, throwsA(isA<PortRulesViolationException>()));
   });
 
   test('double connected port mod', () async {

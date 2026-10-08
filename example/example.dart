@@ -9,7 +9,7 @@
 
 // Though we usually avoid them, for this example,
 // allow `print` messages (disable lint):
-// ignore_for_file: avoid_print
+// ignore_for_file: avoid_print - example
 
 // Import necessary dart packages for this file.
 import 'dart:async';
@@ -61,7 +61,7 @@ Future<void> main({bool noPrint = false}) async {
 
   // Let's see what this module looks like as SystemVerilog, so we can pass it
   // to other tools.
-  final systemVerilogCode = counter.generateSynth();
+  final systemVerilogCode = counter.dumpSystemVerilog();
   if (!noPrint) {
     print(systemVerilogCode);
   }
@@ -70,7 +70,7 @@ Future<void> main({bool noPrint = false}) async {
 
   // Attach a waveform dumper so we can see what happens.
   if (!noPrint) {
-    WaveDumper(counter);
+    counter.dumpWaves();
   }
 
   // Let's also print a message every time the value on the counter changes,

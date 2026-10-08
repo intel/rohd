@@ -75,10 +75,8 @@ class SimpleStructModuleContainer extends Module {
   SimpleStructModuleContainer(Logic a1, Logic a2,
       {super.name = 'simple_struct_mod_container', bool asNet = false}) {
     final Logic Function(String, Logic) inMaker = asNet ? addInOut : addInput;
-    // ignore: omit_local_variable_types
-    final Logic Function(String name) outMaker = asNet
-        ? (name) => addInOut(name, LogicNet(name: 'ext$name'))
-        : addOutput;
+    Logic makeOutput(String name) =>
+        asNet ? addInOut(name, LogicNet(name: 'ext$name')) : addOutput(name);
 
     a1 = inMaker('a1', a1);
     a2 = inMaker('a2', a2);
@@ -87,8 +85,8 @@ class SimpleStructModuleContainer extends Module {
     upperStruct.valid <= a2;
     final sub = SimpleStructModule(upperStruct);
 
-    outMaker('b1') <= sub.myOut.ready;
-    outMaker('b2') <= sub.myOut.valid;
+    makeOutput('b1') <= sub.myOut.ready;
+    makeOutput('b2') <= sub.myOut.valid;
   }
 }
 
@@ -229,7 +227,7 @@ void main() {
     final mod = SimpleStructModuleContainer(Logic(), Logic());
     await mod.build();
 
-    final sv = mod.generateSynth();
+    final sv = mod.dumpSystemVerilog();
 
     expect(sv, isNot(contains('internal_struct')));
 
@@ -251,7 +249,7 @@ void main() {
 
     expect(mod.anyOut, isA<LogicArray>());
 
-    final sv = mod.generateSynth();
+    final sv = mod.dumpSystemVerilog();
 
     expect(sv, contains('input logic [3:0][1:0] anyIn'));
     expect(sv, contains('output logic [3:0][1:0] anyOut'));
@@ -277,7 +275,7 @@ void main() {
     final mod = ParentModuleWithStructsContainingPorts(Logic());
     await mod.build();
 
-    final sv = mod.generateSynth();
+    final sv = mod.dumpSystemVerilog();
 
     // if naming is wrong, these names will appear in the SV in ports
     expect(
@@ -357,7 +355,7 @@ void main() {
           SimpleStructModuleContainer(LogicNet(), LogicNet(), asNet: true);
       await mod.build();
 
-      final sv = mod.generateSynth();
+      final sv = mod.dumpSystemVerilog();
 
       expect(sv, isNot(contains('internal_struct')));
 
@@ -502,7 +500,7 @@ void main() {
     final mod = ModuleWithOneBitStructPort(OneBitStruct());
     await mod.build();
 
-    final sv = mod.generateSynth();
+    final sv = mod.dumpSystemVerilog();
 
     // no slicing on single-bit signals
     expect(sv, contains('assign outStruct = outStruct_oneBit'));

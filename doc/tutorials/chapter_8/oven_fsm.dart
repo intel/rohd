@@ -1,10 +1,19 @@
-// ignore_for_file: avoid_print
+// Copyright (C) 2023-2026 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// oven_fsm.dart
+// Chapter 8 oven FSM tutorial example.
+//
+// 2023 February 24
+// Author: Yao Jing Quek <yao.jing.quek@intel.com>
+
+// ignore_for_file: avoid_print - tutorial
 
 // Import the ROHD package.
 import 'package:rohd/rohd.dart';
 
 // Import the counter module interface.
-import './counter_interface.dart';
+import 'counter_interface.dart';
 
 // Enumerated type named `OvenState` with four possible states:
 // `standby`, `cooking`,`paused`, and `completed`.
@@ -192,7 +201,7 @@ Future<void> main({bool noPrint = false}) async {
 
   // Attach a waveform dumper so we can see what happens.
   if (!noPrint) {
-    WaveDumper(oven, outputPath: 'doc/tutorials/chapter_8/oven.vcd');
+    oven.dumpWaves(outputPath: 'doc/tutorials/chapter_8/oven.vcd');
   }
 
   if (!noPrint) {

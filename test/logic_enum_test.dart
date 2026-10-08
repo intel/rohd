@@ -1086,7 +1086,7 @@ void main() {
 
       expect(
         module.generateSynth(),
-        contains("assign state = TestEnum'(source[1:0]);"),
+        contains("assign state = TestEnum'(source);"),
       );
     });
 
@@ -1264,14 +1264,14 @@ void main() {
       final sv = module.generateSynth();
       expect(
         sv,
-        contains("assign stateOut_enum = TypedRangeEnum'(source[1:0]);"),
+        contains("assign stateOut_enum = TypedRangeEnum'(source);"),
       );
       expect(sv, contains('assign stateOut = stateOut_enum;'));
 
       const configuration =
           SystemVerilogSynthesizerConfiguration(generateEnums: false);
       final untypedSv = module.generateSynth(configuration: configuration);
-      expect(untypedSv, contains('assign stateOut = source[1:0];'));
+      expect(untypedSv, contains('assign stateOut = source;'));
       expect(untypedSv, isNot(contains('stateOut_enum')));
     });
 

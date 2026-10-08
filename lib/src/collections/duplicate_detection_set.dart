@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2023 Intel Corporation
+// Copyright (C) 2022-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // redriven_monitor_set.dart
@@ -11,11 +11,13 @@ import 'dart:collection';
 import 'dart:core';
 
 import 'package:collection/collection.dart';
+import 'package:meta/meta.dart';
 
 /// A Set collection that monitor for duplication.
 ///
 /// The [DuplicateDetectionSet] is used to identify
 /// duplicate elements in the Set.
+@internal
 class DuplicateDetectionSet<T> extends SetBase<T> {
   /// The [Set] which contains unique values.
   final Set<T> _set = HashSet<T>();

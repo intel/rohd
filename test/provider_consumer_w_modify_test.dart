@@ -8,7 +8,8 @@
 // 2023 March 9
 // Author: Max Korbel <max.korbel@intel.com>
 
-// ignore_for_file: deprecated_member_use_from_same_package
+// ignore_for_file: deprecated_member_use_from_same_package - this tests a
+//  deprecated feature
 
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
@@ -146,7 +147,7 @@ void main() {
       Vector({}, {'rsp_data': 9}),
     ];
 
-    final sv = mod.generateSynth();
+    final sv = mod.dumpSystemVerilog();
 
     expect(
         sv,

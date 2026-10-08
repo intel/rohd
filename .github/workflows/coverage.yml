@@ -12,6 +12,8 @@ permissions:
 jobs:
   coverage:
     name: Code Coverage
+    env:
+      ROHD_REQUIRE_VERILATOR: '1'
     timeout-minutes: 60
     permissions:
       contents: write
@@ -28,6 +30,9 @@ jobs:
 
       - name: Install Icarus Verilog
         run: tool/gh_actions/install_iverilog.sh
+
+      - name: Install Verilator
+        run: bash tool/gh_actions/install_verilator.sh
 
       - name: Generate coverage and badge
         run: tool/generate_coverage.sh --generate-svg

@@ -4,6 +4,7 @@
 .dart_tool/
 .packages
 pubspec.lock
+pubspec_overrides.yaml
 
 # Conventional directory for build outputs
 build/
@@ -12,7 +13,9 @@ build/
 doc/api/
 
 # Other stuff
+/reviews/
 tmp_test/
+coverage/
 *.sv
 *.vcd
 *_fsm.md

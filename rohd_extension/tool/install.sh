@@ -6,38 +6,48 @@
 #   ./tool/install.sh          # build + install
 #   ./tool/install.sh --skip-build   # install existing .vsix only
 #
-# Requires: node >= 22, npm, code CLI
+# Requires: node >= 24, npm, code CLI
 # ---------------------------------------------------------------------------
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 EXT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-VERSION=$(node -p "require('$EXT_DIR/package.json').version")
-VSIX="$EXT_DIR/rohd-${VERSION}.vsix"
 
-# Ensure Node >= 22 is available.
+# Ensure Node >= 24 is available.
 node_major=0
 if command -v node &>/dev/null; then
   node_version=$(node --version)
   node_major=${node_version#v}
   node_major=${node_major%%.*}
 fi
-if (( node_major < 22 )) && [[ -d "$HOME/.nvm/versions/node" ]]; then
-  NODE_DIR=$(ls -d "$HOME/.nvm/versions/node"/v2* 2>/dev/null | sort -V | tail -1)
+if (( node_major < 24 )) && [[ -d "$HOME/.nvm/versions/node" ]]; then
+  NODE_DIR=$(ls -d "$HOME/.nvm/versions/node"/v24* 2>/dev/null | sort -V | tail -1 || true)
   if [[ -n "$NODE_DIR" ]]; then
     export PATH="$NODE_DIR/bin:$PATH"
     echo "Using node from $NODE_DIR"
   fi
 fi
 
+# If nvm is unavailable, obtain a temporary Node 24 runtime through npm.
+# Put it first on PATH so npm lifecycle scripts use the same runtime.
+node_major=$(node --version 2>/dev/null | sed -E 's/^v([0-9]+).*/\1/' || echo 0)
+if (( node_major < 24 )) && command -v npm &>/dev/null; then
+  NODE_BIN=$(npm exec --yes --package=node@24 -- node -p "process.execPath")
+  export PATH="$(dirname "$NODE_BIN"):$PATH"
+  echo "Using temporary Node runtime at $NODE_BIN"
+fi
+
 node_ver=$(node --version 2>/dev/null || echo "none")
 echo "Node: $node_ver"
 node_major=${node_ver#v}
 node_major=${node_major%%.*}
-if [[ ! "$node_major" =~ ^[0-9]+$ ]] || (( node_major < 22 )); then
-  echo "ERROR: Node.js >= 22 is required to package the extension." >&2
+if [[ ! "$node_major" =~ ^[0-9]+$ ]] || (( node_major < 24 )); then
+  echo "ERROR: Node.js >= 24 is required to package the extension." >&2
   exit 1
 fi
+
+VERSION=$(node -p "require('$EXT_DIR/package.json').version")
+VSIX="$EXT_DIR/rohd-${VERSION}.vsix"
 
 # ── Build ──
 if [[ "${1:-}" != "--skip-build" ]]; then

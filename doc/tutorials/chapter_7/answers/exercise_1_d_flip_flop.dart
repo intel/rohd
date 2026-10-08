@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2024 Intel Corporation
+// Copyright (C) 2023-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // exercise_1_d_flip_flop.dart
@@ -7,7 +7,7 @@
 // 2023 April 17
 // Author: Yao Jing Quek <yao.jing.quek@intel.com>
 
-// ignore_for_file: avoid_print
+// ignore_for_file: avoid_print - tutorial
 
 import 'dart:async';
 
@@ -44,7 +44,7 @@ Future<void> main() async {
     final dff = DFlipFlop(data, reset, clk);
     await dff.build();
 
-    print(dff.generateSynth());
+    print(dff.dumpSystemVerilog());
 
     data.inject(1);
     reset.inject(1);
@@ -60,7 +60,7 @@ Future<void> main() async {
 
     unawaited(Simulator.run());
 
-    WaveDumper(dff,
+    dff.dumpWaves(
         outputPath: 'doc/tutorials/chapter_7/answers/d_flip_flop.vcd');
 
     printFlop('Before');

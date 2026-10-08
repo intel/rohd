@@ -20,9 +20,9 @@ import 'package:rohd/src/utilities/sanitizer.dart';
 class SynthLogic {
   /// All [Logic]s represented, regardless of type.
   List<Logic> get logics => UnmodifiableListView([
-        if (_reservedLogic != null) _reservedLogic!,
+        ..._reservedLogics,
         if (_constLogic != null) _constLogic!,
-        if (_renameableLogic != null) _renameableLogic!,
+        ..._renameableLogics,
         ..._mergeableLogics,
         ..._unnamedLogics,
       ]);
@@ -63,11 +63,8 @@ class SynthLogic {
       );
 
   /// Indicates if this signal is a port, optionally for a specific [module].
-  bool isPort([Module? module]) =>
-      // we can rely on ports being the reserved logic (optimization)
-      _reservedLogic != null &&
-      _reservedLogic!.isPort &&
-      (module == null || _reservedLogic!.parentModule == module);
+  bool isPort([Module? module]) => _reservedLogics.any((logic) =>
+      logic.isPort && (module == null || logic.parentModule == module));
 
   /// The direct replacement of this [SynthLogic].
   SynthLogic? _replacement;
@@ -76,18 +73,18 @@ class SynthLogic {
   int get width => logics.first.width;
 
   /// Indicates that this has a reserved name.
-  bool get isReserved => _reservedLogic != null;
+  bool get isReserved => _reservedLogics.isNotEmpty;
 
   /// Whether this contains a renameable or reserved name that must remain in
   /// generated output.
   bool get hasPreservedName =>
-      _reservedLogic != null || _renameableLogic != null;
+      _reservedLogics.isNotEmpty || _renameableLogics.isNotEmpty;
 
-  /// The [Logic] whose name is reserved, if there is one.
-  Logic? _reservedLogic;
+  /// All represented [Logic]s whose names are reserved in this module.
+  final Set<Logic> _reservedLogics = {};
 
-  /// The [Logic] whose name is renameable, if there is one.
-  Logic? _renameableLogic;
+  /// All represented [Logic]s whose names are renameable in this module.
+  final Set<Logic> _renameableLogics = {};
 
   /// A [LogicEnum] that is characteristic of any merged [LogicEnum]s into this.
   LogicEnum? get characteristicEnum => _characteristicEnum;
@@ -114,9 +111,10 @@ class SynthLogic {
   /// The [Logic] whose value represents a constant, if there is one.
   Const? _constLogic;
 
-  /// Assignments should be eliminated rather than assign to `z`, so this
-  /// indicates if this [SynthLogic] is actually pointing to a [Const] that
-  /// is floating.
+  /// Whether this represents an entirely floating [Const].
+  ///
+  /// Floating assignments can be omitted for nets, but logic variables may
+  /// require an explicit assignment to preserve `z` instead of undriven `x`.
   bool get isFloatingConstant => _constLogic?.value.isFloating ?? false;
 
   /// Whether this represents a constant.
@@ -214,11 +212,12 @@ class SynthLogic {
             parentSynthModuleDefinition.logicHasPresentSynthLogic,
           ));
 
-  /// Two [SynthLogic]s that are not [mergeable] cannot be merged with each
-  /// other. If only one of them is not [mergeable], it can adopt the elements
-  /// from the other.
-  bool get mergeable =>
-      _reservedLogic == null && _constLogic == null && _renameableLogic == null;
+  /// Whether this can be merged without preserving its name or value literal.
+  ///
+  /// A non-mergeable signal can adopt a mergeable one. Two non-mergeable
+  /// signals can merge only under the pair-specific exceptions in [tryMerge],
+  /// without making the resulting signal clearable.
+  bool get mergeable => !hasPreservedName && _constLogic == null;
 
   /// True only if this represents a [LogicArray].
   final bool isArray;
@@ -238,6 +237,21 @@ class SynthLogic {
     );
 
     return _name!;
+  }
+
+  /// The chosen name of this, or `null` if a name has not been picked or this
+  /// has been replaced.
+  String? get nameOrNull {
+    if (_name == null || _replacement != null) {
+      return null;
+    }
+
+    assert(
+      isConstant || Sanitizer.isSanitary(_name!),
+      'Signal names should be sanitary, but found $_name.',
+    );
+
+    return _name;
   }
 
   /// The name of this, if it has been picked.
@@ -298,6 +312,11 @@ class SynthLogic {
 
   /// Returns `null` if the merge did not occur, and a pair of the `removed` and
   /// `kept` [SynthLogic]s otherwise.
+  ///
+  /// The caller must establish whole-signal equivalence through connectivity.
+  /// Preserved signals may share a declaration when all their preserved base
+  /// names match before uniquification. This does not permit merging distinct
+  /// module ports, array elements, or other non-owning signal references.
   static ({SynthLogic removed, SynthLogic kept})? tryMerge(
     SynthLogic a,
     SynthLogic b,
@@ -328,7 +347,12 @@ class SynthLogic {
     }
 
     if (!a.mergeable && !b.mergeable) {
-      return null;
+      if (!_preservedNamesMergeable(a, b)) {
+        return null;
+      }
+
+      a.adopt(b);
+      return (removed: b, kept: a);
     }
 
     if (b.mergeable) {
@@ -369,6 +393,48 @@ class SynthLogic {
             .contains(constantLogic._constLogic!.value);
   }
 
+  /// Whether whole signals can merge without losing any preserved base name.
+  ///
+  /// Only owning [SynthLogic] instances qualify; subclasses may forbid merging
+  /// for structural reasons unrelated to naming. Arrays must have identical
+  /// declaration shapes, not merely equal total widths.
+  static bool _preservedNamesMergeable(SynthLogic a, SynthLogic b) {
+    if (a.runtimeType != SynthLogic ||
+        b.runtimeType != SynthLogic ||
+        a.parentSynthModuleDefinition != b.parentSynthModuleDefinition ||
+        !a.hasPreservedName ||
+        !b.hasPreservedName ||
+        a.isConstant ||
+        b.isConstant ||
+        a.isNet != b.isNet ||
+        a.width != b.width ||
+        a.isArray != b.isArray ||
+        (a.isPort(a.parentSynthModuleDefinition.module) &&
+            b.isPort(b.parentSynthModuleDefinition.module))) {
+      return false;
+    }
+
+    if (a.isArray) {
+      final arrayA = a.logics.first as LogicArray;
+      final arrayB = b.logics.first as LogicArray;
+      if (arrayA.elementWidth != arrayB.elementWidth ||
+          arrayA.numUnpackedDimensions != arrayB.numUnpackedDimensions ||
+          !const ListEquality<int>()
+              .equals(arrayA.dimensions, arrayB.dimensions)) {
+        return false;
+      }
+    }
+
+    final preservedLogics = [
+      ...a._reservedLogics,
+      ...a._renameableLogics,
+      ...b._reservedLogics,
+      ...b._renameableLogics,
+    ];
+    final name = Namer.baseName(preservedLogics.first);
+    return preservedLogics.every((logic) => Namer.baseName(logic) == name);
+  }
+
   /// Merges [other] to be represented by `this` instead, and updates the
   /// [other] that it has been replaced.
   ///
@@ -378,7 +444,8 @@ class SynthLogic {
       force ||
           other.mergeable ||
           _constantsMergeable(this, other) ||
-          _enumAndConstMergeable(this, other),
+          _enumAndConstMergeable(this, other) ||
+          _preservedNamesMergeable(this, other),
       'Cannot merge a non-mergeable into this.',
     );
     assert(other.isArray == isArray, 'Cannot merge arrays and non-arrays');
@@ -395,8 +462,6 @@ class SynthLogic {
 
     // only take one of the other's items if we don't have it already
     _constLogic ??= other._constLogic;
-    _reservedLogic ??= other._reservedLogic;
-    _renameableLogic ??= other._renameableLogic;
     if (other._characteristicEnum?.reserveDefinitionName ?? false) {
       assert(
         _characteristicEnum == null ||
@@ -411,6 +476,8 @@ class SynthLogic {
     }
 
     // the rest, take them all
+    _reservedLogics.addAll(other._reservedLogics);
+    _renameableLogics.addAll(other._renameableLogics);
     _mergeableLogics.addAll(other._mergeableLogics);
     _unnamedLogics.addAll(other._unnamedLogics);
 
@@ -426,9 +493,9 @@ class SynthLogic {
     } else {
       switch (naming) {
         case Naming.reserved:
-          _reservedLogic = logic;
+          _reservedLogics.add(logic);
         case Naming.renameable:
-          _renameableLogic = logic;
+          _renameableLogics.add(logic);
         case Naming.mergeable:
           _mergeableLogics.add(logic);
         case Naming.unnamed:
@@ -517,6 +584,30 @@ class SynthLogic {
   }
 }
 
+/// A non-owning, most-significant-part-first concatenation of signals.
+///
+/// Used for port connections spanning several signals or selections. It has
+/// no independent declaration or name: backends must interpret [parts] as
+/// connections to existing storage, not allocate a new signal for this view.
+/// Dependency accounting must likewise follow the parts.
+@internal
+class SynthLogicConcat extends SynthLogic {
+  /// The ordered signals or selections comprising the connection.
+  final List<SynthLogic> parts;
+
+  /// Creates a connection view over [parts], from most to least significant.
+  SynthLogicConcat(List<SynthLogic> parts,
+      {required super.parentSynthModuleDefinition})
+      : parts = List.unmodifiable(parts),
+        super(Logic(width: parts.fold(0, (width, part) => width + part.width)));
+
+  @override
+  bool get needsDeclaration => false;
+
+  @override
+  bool get mergeable => false;
+}
+
 /// A non-owning reference to one bit of a packed [SynthLogic].
 ///
 /// This exists for port mappings that must render an indexed packed signal,
@@ -581,6 +672,77 @@ class SynthLogicPackedBitReference extends SynthLogic {
   }
 }
 
+/// A non-owning reference to a range of a packed [SynthLogic].
+///
+/// This exists for port mappings that must render a selected packed range,
+/// such as `.data(dataOut[41:40])`.
+class SynthLogicPackedRangeReference extends SynthLogic {
+  /// The packed signal containing the referenced range.
+  final SynthLogic packedBase;
+
+  /// The least-significant selected bit in [packedBase].
+  final int lowerIndex;
+
+  /// The most-significant selected bit in [packedBase].
+  final int upperIndex;
+
+  /// Creates a reference to `[upperIndex:lowerIndex]` of [packedBase].
+  SynthLogicPackedRangeReference(
+    this.packedBase,
+    this.lowerIndex,
+    this.upperIndex, {
+    required super.parentSynthModuleDefinition,
+  })  : assert(
+            !packedBase.isArray, 'Packed reference base must not be an array.'),
+        assert(!packedBase.isNet, 'Packed reference base must not be a net.'),
+        assert(
+          !packedBase.isConstant,
+          'Packed reference base must not be a constant.',
+        ),
+        assert(lowerIndex >= 0, 'Packed reference index must not be negative.'),
+        assert(
+          upperIndex >= lowerIndex,
+          'Packed reference range must not be reversed.',
+        ),
+        assert(
+          upperIndex < packedBase.width,
+          'Packed reference index must fit within its base.',
+        ),
+        super(Logic(width: upperIndex - lowerIndex + 1));
+
+  @override
+  bool get needsDeclaration => false;
+
+  @override
+  bool get mergeable => false;
+
+  @override
+  bool isPort([Module? module]) => packedBase.resolved.isPort(module);
+
+  @override
+  bool hasSrcConnectionsPresent() =>
+      packedBase.resolved.hasSrcConnectionsPresent();
+
+  @override
+  bool hasDstConnectionsPresent() =>
+      packedBase.resolved.hasDstConnectionsPresent();
+
+  @override
+  String get name {
+    final resolvedBase = packedBase.resolved;
+    assert(
+      upperIndex < resolvedBase.width,
+      'Packed reference index must fit within its resolved base.',
+    );
+    final reference = '${resolvedBase.name}[$upperIndex:$lowerIndex]';
+    assert(
+      Sanitizer.isSanitary(resolvedBase.name),
+      'Packed reference base should be sanitary, but found $reference.',
+    );
+    return reference;
+  }
+}
+
 /// Represents an element of a [LogicArray].
 ///
 /// Does not fully override or properly implement all characteristics of
@@ -602,7 +764,7 @@ class SynthLogicArrayElement extends SynthLogic {
   bool isPort([Module? module]) =>
       super.isPort(module) ||
       // we cannot just use `super.isPort` since we can't rely on only using
-      // `_reservedLogic`
+      // `_reservedLogics`
       logics.any(
         (l) => l.isPort && (module == null || l.parentModule == module),
       ) ||

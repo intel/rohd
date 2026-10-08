@@ -1,7 +1,16 @@
+// Copyright (C) 2023-2026 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// basic_generation_sv.dart
+// Chapter 4 basic SystemVerilog generation tutorial example.
+//
+// 2023 April 11
+// Author: Yao Jing Quek <yao.jing.quek@intel.com>
+
 import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
 
-// ignore_for_file: avoid_print
+// ignore_for_file: avoid_print - tutorial
 
 class FullAdderResult {
   final sum = Logic(name: 'sum');
@@ -78,9 +87,9 @@ void main() async {
 
   await nbitAdder.build();
 
-  print(nbitAdder.generateSynth());
+  print(nbitAdder.dumpSystemVerilog());
 
-  test('should return 10 when both inputs are 5.', () async {
+  test('should return 10 when both inputs are 5.', () {
     a.put(5);
     b.put(5);
 

@@ -1,7 +1,16 @@
+// Copyright (C) 2023-2026 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// exercise_1_sv.dart
+// Chapter 4 SystemVerilog exercise answer.
+//
+// 2023 April 11
+// Author: Yao Jing Quek <yao.jing.quek@intel.com>
+
 import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
 
-// ignore_for_file: avoid_print, prefer_asserts_in_initializer_lists
+// ignore_for_file: avoid_print, prefer_asserts_in_initializer_lists - tutorial
 
 void main() async {
   final a = Logic(name: 'a', width: 8);
@@ -10,7 +19,7 @@ void main() async {
   final mod = NBitAdder(a, b);
   await mod.build();
 
-  print(mod.generateSynth());
+  print(mod.dumpSystemVerilog());
 
   test('should return 255 when both inputs are added', () {
     a.put(127);

@@ -1,24 +1,34 @@
-// Copyright (C) 2021-2025 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // name_validator.dart
 // Performs validation on naming.
 //
-// 2023 October 24
+// 2026 September 15
 
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 
-//// Configuration options and utilities for naming and renaming signals.
+/// Configuration options and utilities for naming and renaming signals.
+///
+/// Connected, equivalent whole signals with compatible types may share one
+/// generated signal when their preserved names match exactly in the generated
+/// module's namespace, before uniquification. This applies to both [reserved]
+/// and [renameable] signals, including connections to ports. The name remains
+/// present, but each original signal need not have a separate declaration.
+/// Matching names alone do not establish equivalence.
 enum Naming {
   /// The signal will be present in generated output and the name will not be
   /// changed.
   ///
-  /// If this is not achievable, an [Exception] will be thrown.
+  /// Equivalent signals requesting this same name may share a declaration.
+  /// If the exact name cannot be preserved, including a collision with an
+  /// unrelated signal, an [Exception] will be thrown.
   reserved,
 
   /// The signal will be present in generated output, but the signal may be
-  /// renamed for uniqueness. It will not be merged into any other signals.
+  /// renamed for uniqueness. Equivalent signals requesting this same name may
+  /// share a declaration, but distinct preserved names will not be merged.
   renameable,
 
   /// The signal may be merged with other equivalent signals in generated

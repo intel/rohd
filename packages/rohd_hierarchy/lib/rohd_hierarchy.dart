@@ -44,6 +44,7 @@ library;
 
 export 'src/base_hierarchy_adapter.dart';
 export 'src/hierarchy_models.dart';
+export 'src/hierarchy_occurrence_traversal.dart';
 export 'src/hierarchy_query.dart';
 export 'src/hierarchy_search_controller.dart';
 export 'src/hierarchy_service.dart';

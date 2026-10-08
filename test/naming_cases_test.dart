@@ -12,8 +12,9 @@
 // ════════════════════════════════════════════════════════
 //
 // Axis 1 — Naming enum (set at Logic construction time):
-//   reserved    Exact name required; collision → exception.
-//   renameable  Keeps name, uniquified on collision; never merged.
+//   reserved    Exact name required; unrelated collision → exception.
+//   renameable  Keeps name, uniquified on collision.
+//               Both may share a declaration with same-name equivalent signals.
 //   mergeable   May merge with equivalent signals; any merged name chosen.
 //   unnamed     No user name; system generates one.
 //
@@ -115,6 +116,8 @@
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
 import 'package:test/test.dart';
+
+import 'naming_test_utils.dart';
 
 // ── Leaf sub-modules ──────────────────────────────
 
@@ -252,8 +255,7 @@ class _AllNamingCases extends Module {
     // ── Row 21: constant with name disallowed (expressionlessInput)
     constDisallowed =
         Const(0x09, width: 8).named('const_wire', naming: Naming.mergeable);
-    // ignore: unused_local_variable
-    final exprSub = _ExpressionlessSub(constDisallowed, inp);
+    _ExpressionlessSub(constDisallowed, inp);
 
     // ── ST: structure element (structureName = "parent.field") ────
     structPort = _SimpleStruct();
@@ -300,28 +302,6 @@ class _SimpleStruct extends LogicStructure {
 
 // ── Helpers ───────────────────────────────────────
 
-/// Collects a map from Logic → picked name for all SynthLogics.
-Map<Logic, String> _collectNames(SynthModuleDefinition def) {
-  final names = <Logic, String>{};
-  for (final sl in [
-    ...def.inputs,
-    ...def.outputs,
-    ...def.inOuts,
-    ...def.internalSignals,
-  ]) {
-    try {
-      final n = sl.name;
-      for (final logic in sl.logics) {
-        names[logic] = n;
-      }
-      // ignore: avoid_catches_without_on_clauses
-    } catch (_) {
-      // name not picked (pruned/replaced)
-    }
-  }
-  return names;
-}
-
 /// Finds a SynthLogic that contains [logic].
 SynthLogic? _findSynthLogic(SynthModuleDefinition def, Logic logic) {
   for (final sl in [
@@ -348,7 +328,7 @@ void main() {
     mod = _AllNamingCases();
     await mod.build();
     def = SynthModuleDefinition(mod);
-    names = _collectNames(def);
+    names = collectSynthNames(def);
   });
 
   group('naming cases', () {
@@ -554,7 +534,7 @@ void main() {
     // ── Golden SV snapshot ──────────────────────────────────────
 
     test('golden SV output snapshot', () {
-      final sv = mod.generateSynth();
+      final sv = mod.dumpSystemVerilog();
 
       // Port declarations.
       expect(sv, contains('input logic [7:0] inp'));

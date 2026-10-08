@@ -12,6 +12,7 @@ build/
 doc/api/
 
 # Other stuff
+/reviews/
 tmp_test/
 coverage/
 *.sv

@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2024 Intel Corporation
+// Copyright (C) 2023-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // shift_register.dart
@@ -7,7 +7,7 @@
 // 2023 April 17
 // Author: Yao Jing Quek <yao.jing.quek@intel.com>
 
-// ignore_for_file: avoid_print
+// ignore_for_file: avoid_print - tutorial
 
 import 'dart:async';
 
@@ -42,7 +42,7 @@ class ShiftRegister extends Module {
   }
 }
 
-void main() async {
+void main() {
   tearDown(() async {
     await Simulator.reset();
   });
@@ -69,7 +69,7 @@ void main() async {
     // kick-off the simulator, but we don't want to wait
     unawaited(Simulator.run());
 
-    WaveDumper(shiftReg,
+    shiftReg.dumpWaves(
         outputPath: 'doc/tutorials/chapter_7/shift_register.vcd');
 
     printFlop('Before');

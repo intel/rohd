@@ -1,4 +1,4 @@
-// Copyright (C) 2024-2025 Intel Corporation
+// Copyright (C) 2024-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // signal_table.dart
@@ -8,7 +8,7 @@
 // Author: Yao Jing Quek <yao.jing.quek@intel.com>
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/cubit/snapshot_cubit.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/models/signal_model.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/models/tree_model.dart';
@@ -60,9 +60,9 @@ class SignalTable extends StatefulWidget {
     properties
       ..add(DiagnosticsProperty<TreeModel>('selectedModule', selectedModule))
       ..add(StringProperty('searchTerm', searchTerm))
-      ..add(FlagProperty('inputSelectedVal', value: inputSelectedVal))
-      ..add(FlagProperty('outputSelectedVal', value: outputSelectedVal))
-      ..add(FlagProperty('inoutSelectedVal', value: inoutSelectedVal))
+      ..add(DiagnosticsProperty<bool>('inputSelectedVal', inputSelectedVal))
+      ..add(DiagnosticsProperty<bool>('outputSelectedVal', outputSelectedVal))
+      ..add(DiagnosticsProperty<bool>('inoutSelectedVal', inoutSelectedVal))
       ..add(DiagnosticsProperty<SnapshotLoaded?>('snapshot', snapshot))
       ..add(DiagnosticsProperty<SimulationTimeDisplay>(
           'timeDisplay', timeDisplay));

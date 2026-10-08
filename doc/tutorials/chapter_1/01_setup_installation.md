@@ -96,7 +96,7 @@ code .
 Delete all the content in `bin/rohd_project.dart` and replace with:
 
 ```dart
-// ignore_for_file: avoid_print
+// ignore_for_file: avoid_print - tutorial
 
 // Import the ROHD package
 import 'package:rohd/rohd.dart';
@@ -162,7 +162,7 @@ Future<void> main({bool noPrint = false}) async {
 
   // Let's see what this module looks like as SystemVerilog, so we can pass it
   // to other tools.
-  final systemVerilogCode = counter.generateSynth();
+  final systemVerilogCode = counter.dumpSystemVerilog();
   if (!noPrint) {
     print(systemVerilogCode);
   }
@@ -175,7 +175,7 @@ Future<void> main({bool noPrint = false}) async {
 
   // Attach a waveform dumper so we can see what happens.
   if (!noPrint) {
-    WaveDumper(counter);
+    counter.dumpWaves();
   }
 
   // Drop reset at time 25.

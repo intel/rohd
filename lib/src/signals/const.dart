@@ -75,28 +75,20 @@ class Const extends Logic {
   /// outputs and its normalized name. Supported values are 2, 8, 10, and 16.
   /// If omitted, generated outputs select a radix automatically and the name
   /// uses decimal. Values containing `x` or `z` may fall back to binary.
-  Const(
-    dynamic val, {
-    int? width,
-    bool fill = false,
-    int? preferredRadix,
-  }) : this._(
-          LogicValue.of(
-            val,
-            width: width ?? (val is LogicValue ? val.width : 1),
-            fill: fill,
-          ),
-          preferredRadix: _validatePreferredRadix(preferredRadix),
-        );
+  Const(dynamic val, {int? width, bool fill = false, int? preferredRadix})
+      : this._(
+            LogicValue.of(val,
+                width: width ?? (val is LogicValue ? val.width : 1),
+                fill: fill),
+            preferredRadix: _validatePreferredRadix(preferredRadix));
 
   /// Constructs a [Const] from an already normalized [value].
   Const._(LogicValue value, {required this.preferredRadix})
       : super(
-          name: _constName(value, preferredRadix),
-          width: value.width,
-          // we don't care about maintaining this node unless necessary
-          naming: Naming.unnamed,
-        ) {
+            name: _constName(value, preferredRadix),
+            width: value.width,
+            // we don't care about maintaining this node unless necessary
+            naming: Naming.unnamed) {
     _wire
       ..put(value, signalName: name)
       ..makeImmutable(this, reason: _unassignableMessage);

@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2025 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // interface.dart
@@ -176,8 +176,9 @@ class Interface<TagType extends Enum> {
   void _setPort(Logic port, {Iterable<TagType>? tags, String? portName}) {
     portName ??= port.name;
 
-    assert(!_ports.containsKey(portName),
-        'Port named $portName already exists on this interface.');
+    if (_ports.containsKey(portName)) {
+      throw DuplicatePortNameException(portName);
+    }
 
     _ports[portName] = port;
     if (tags != null) {

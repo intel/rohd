@@ -6,7 +6,7 @@ Anyone interested in participating in ROHD is more than welcome to help!
 
 ## Code of Conduct
 
-ROHD adopts the [Contributor Covenant](https://www.contributor-covenant.org/) v2.1 for the code of conduct. It can be accessed [here](CODE_OF_CONDUCT.md).
+ROHD adopts the [Contributor Covenant](https://www.contributor-covenant.org/) v2.1 for the  [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## Getting Help
 
@@ -43,6 +43,8 @@ The [ROHD Forum](https://intel.github.io/rohd-website/forum/rohd-forum/) is a pe
 You must have [Dart](https://dart.dev/) installed on your system to use ROHD. You can find detailed instructions for how to install Dart here: <https://dart.dev/get-dart>
 
 To run the complete ROHD test suite for development, you need to install [Icarus Verilog](https://steveicarus.github.io/iverilog/). It is used to compare SystemVerilog functionality with the ROHD simulator functionality. Installation instructions are available here: <https://iverilog.fandom.com/wiki/Installation_Guide>
+
+Some tests also use [Verilator](https://verilator.org/guide/latest/install.html). It is optional for local development: tests that need it are skipped when it is not installed. CI requires it, and the Codespaces setup installs it for you.
 
 ### Setup Recommendations
 
@@ -124,7 +126,7 @@ Please include the SPDX tag near the top of any new files you create:
 Here is an example of a recommended file header template:
 
 ```dart
-// Copyright (C) 2021-2023 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // example.dart
@@ -141,6 +143,9 @@ You may find that reading the [Architecture](doc/architecture.md) document will 
 Not every new contribution has to go directly into the ROHD framework! If you have an idea for a reusable piece of hardware, tooling, verification collateral, or anything else that helps the ROHD ecosystem but is somewhat standalone, you can make your own package that depends on ROHD. Building an ecosystem of reusable components is important to the success of ROHD. Reach out if you want some help or guidance deciding if or how you should create a new package.
 
 ## Style
+
+For package versions, changelogs, publication checks, and GitHub tags and releases,
+see the [release guide](doc/releases.md).
 
 ROHD follows the official Dart recommended style guides and lints. The analyzer will help ensure that your code is written consistently with the rest of ROHD.
 
