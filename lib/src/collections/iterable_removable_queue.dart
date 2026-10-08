@@ -53,12 +53,13 @@ class IterableRemovableQueue<T> {
       return;
     }
 
-    if (_removeWhere == null) {
+    final removeWhere = _removeWhere;
+    if (removeWhere == null) {
       // Nothing to remove.
       return;
     }
 
-    if (_first == _last && _removeWhere!(_first!.item)) {
+    if (_first == _last && removeWhere(_first!.item)) {
       // if size is 1 and its removable, then we can just clear the queue and be
       // done with it
       clear();
@@ -77,7 +78,7 @@ class IterableRemovableQueue<T> {
     }
 
     while (_patrol != null) {
-      if (_removeWhere!(_patrol!.item)) {
+      if (removeWhere(_patrol!.item)) {
         assert(size > 0, 'Should not be removing if size is already 0.');
 
         if (_patrol == _first && _first == _last) {
@@ -118,7 +119,8 @@ class IterableRemovableQueue<T> {
   /// Also may remove items from the queue if they are indicated by
   /// [_removeWhere].
   void add(T item) {
-    if (_removeWhere != null && _removeWhere!(item)) {
+    final removeWhere = _removeWhere;
+    if (removeWhere != null && removeWhere(item)) {
       // If the item should be removed, we don't add it.
       return;
     }
@@ -183,8 +185,9 @@ class IterableRemovableQueue<T> {
 
     var element = _first;
     _IterableRemovableElement<T>? previous;
+    final removeWhere = _removeWhere;
     while (element != null) {
-      if (_removeWhere != null && _removeWhere!(element.item)) {
+      if (removeWhere != null && removeWhere(element.item)) {
         assert(size > 0, 'Should not be removing if size is already 0.');
 
         previous?.next = element.next;

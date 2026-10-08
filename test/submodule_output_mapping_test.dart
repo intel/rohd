@@ -417,7 +417,7 @@ class OutputHierarchyTop extends Module {
 }
 
 String topBody(Module module) {
-  final verilog = module.generateSynth();
+  final verilog = module.dumpSystemVerilog();
   return verilog.substring(verilog.indexOf('module ${module.definitionName} '));
 }
 

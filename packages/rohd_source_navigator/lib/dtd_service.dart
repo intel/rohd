@@ -70,7 +70,7 @@ class DtdService {
     } on Exception catch (e) {
       _peer = null;
       _channel = null;
-      // DTD connections can run without a host-provided logger.
+      // Report the failed optional DTD connection without requiring a logger.
       // ignore: avoid_print
       print('[DtdService] Failed to connect to DTD at $uri: $e');
       return false;
