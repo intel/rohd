@@ -10,6 +10,7 @@
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/modules/operation_utils.dart';
+import 'package:rohd/src/signals/logic_structure_signature.dart';
 
 /// A gate [Module] that performs bit-wise inversion.
 class NotGate extends Module with InlineSystemVerilog {

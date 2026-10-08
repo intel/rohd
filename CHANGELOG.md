@@ -1,5 +1,7 @@
 ## Next Release
 
+## 0.7.0
+
 - Fixed `LogicValue.ofRadixString` round trips with empty separators and separators containing regular-expression metacharacters (<https://github.com/intel/rohd/issues/722>).
 - Added `TypedLogicArray<TLogic, TValue>` for multidimensional arrays with fixed typed hardware elements and associated semantic values, including typed snapshots and ports, traversal, cloning, net support, and synthesis. Added shaped `LogicValueArray` and codec-backed `TypedLogicValueArray<TValue>` values with nested construction, packed `LogicValue` interoperability, and hardware-array assignment. Existing `LogicArray`, `LogicValueArray`, and concrete array port APIs remain available as specializations (<https://github.com/intel/rohd/pull/686>).
 - Refined the typed-array hierarchy so `LogicArray` directly specializes `TypedLogicArray<Logic, LogicValue>`, and strengthened custom `TypedLogicArray` cloning to preserve runtime types, codecs, unpacked dimensions, and constructor-only naming prefixes without exposing them as public axis metadata (<https://github.com/intel/rohd/pull/686>).

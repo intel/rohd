@@ -9,35 +9,6 @@
 
 part of 'signals.dart';
 
-String _logicShapeSignature(Logic logic) {
-  if (logic is BaseLogicArray) {
-    final signatures =
-        logic.arrayElements.map(_logicShapeSignature).toList(growable: false);
-    final elementSignature = signatures.isEmpty
-        ? 'E'
-        : signatures.every((signature) => signature == signatures.first)
-            ? 'R${signatures.length}_${signatures.first}'
-            : 'H${signatures.join('_')}';
-    return 'A${logic.dimensions.join('x')}_W${logic.elementWidth}_'
-        'U${logic.numUnpackedDimensions}_${logic.isNet ? 'N' : 'L'}_'
-        '$elementSignature';
-  }
-  if (logic is LogicStructure) {
-    return 'S${logic.elements.length}_'
-        '${logic.elements.map(_logicShapeSignature).join('_')}';
-  }
-  return '${logic is Const ? 'C' : logic.isNet ? 'N' : 'L'}${logic.width}';
-}
-
-/// Returns a deterministic signature of [structure]'s recursive geometry.
-///
-/// The signature includes field counts and widths plus array dimensions,
-/// packing hints, leaf geometry, and net or constant distinctions. Signal
-/// instance names are intentionally excluded. It can be embedded in a module
-/// definition name when generated hardware depends on structure shape.
-String logicStructureShapeSignature(LogicStructure structure) =>
-    _logicShapeSignature(structure);
-
 void _validateMatchingStructure(
   Logic first,
   Logic second,

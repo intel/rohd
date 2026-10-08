@@ -6,6 +6,7 @@
 
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/modules/operation_utils.dart';
+import 'package:rohd/src/signals/logic_structure_signature.dart';
 
 /// A no-op module that preserves [LogicType].
 ///
