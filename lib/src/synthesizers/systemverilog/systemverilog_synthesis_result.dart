@@ -219,10 +219,13 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
           assignment.dstLowerIndex,
           assignment.dstUpperIndex,
         );
-        source = assignment.src.rangeName(
-          assignment.srcLowerIndex,
-          assignment.srcUpperIndex,
-        );
+        source = assignment.srcLowerIndex == 0 &&
+                assignment.srcUpperIndex == assignment.src.width - 1
+            ? assignment.src.name
+            : assignment.src.rangeName(
+                assignment.srcLowerIndex,
+                assignment.srcUpperIndex,
+              );
       } else if (assignment is PartialSynthAssignment && assignment.width > 1) {
         destination = assignment.dst.rangeName(
           assignment.dstLowerIndex,
