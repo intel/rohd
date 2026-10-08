@@ -7,8 +7,7 @@ toc: true
 
 Use [`LogicArray`](https://intel.github.io/rohd/rohd/LogicArray-class.html)
 for multidimensional arrays of ordinary `Logic`. Use
-`TypedLogicArray`
-<!-- [`TypedLogicArray`](https://intel.github.io/rohd/rohd/TypedLogicArray-class.html) -->
+[`TypedLogicArray`](https://intel.github.io/rohd/rohd/TypedLogicArray-class.html)
 when each array position has a specialized hardware type and semantic value
 type. Both are `LogicStructure`s, so they can be indexed as arrays while still
 participating in ordinary packed `Logic` assignments and operations.
@@ -88,8 +87,7 @@ representations.
 should decode every four-state value that can appear in its hardware.
 `dimensionNames` controls child naming during construction and cloning; it is
 not public axis metadata. See the
-`TypedLogicArray` API documentation
-<!-- [`TypedLogicArray` API documentation](https://intel.github.io/rohd/rohd/TypedLogicArray-class.html) -->
+[`TypedLogicArray` API documentation](https://intel.github.io/rohd/rohd/TypedLogicArray-class.html)
 for the complete constructor and cloning contracts.
 
 Hardware shape changes should use ordinary construction and connection APIs rather than specialized typed-array adapters. Construct a new `TypedLogicArray` with the desired dimensions and builder, then connect it with `gets`/`<=` when row-major assignment is sufficient. For a transpose, connect corresponding coordinates explicitly with `indexedElements` and `at`; whole-array assignment does not infer a permutation. This keeps construction disconnected and leaves driver ownership with the caller.
@@ -128,13 +126,15 @@ Icarus Verilog 12.0 can leave child-driven unpacked array variables unknown
 during simulation. When targeting that tool, enable
 `SystemVerilogSynthesizerConfiguration.iverilogWorkaroundForUnpackedArrayVariables`.
 
-Custom typed-array subclasses should override `createClone` to preserve their
-runtime type and constructor configuration. See the API documentation for the
-full subclassing contract.
+See the [`TypedLogicArray` API documentation](https://intel.github.io/rohd/rohd/TypedLogicArray-class.html)
+for subclassing and cloning details.
 
 ## Value-domain arrays
 
-Use `LogicValueArray` for fixed-width array data outside the hardware graph. Nested lists are the ordinary construction form and describe the shape directly. Flat row-major values use an explicitly named `fromFlat` constructor with shape metadata:
+Use `LogicValueArray` for fixed-width array data outside the hardware graph.
+Nested lists are the ordinary construction form and describe the shape
+directly. Flat row-major values use an explicitly named `fromFlat` constructor
+with shape metadata:
 
 ```dart
 final values = LogicValueArray.fromInts(
@@ -156,15 +156,20 @@ final transposed = values.transpose2D(); // Dimensions: [3, 2]
 final signals = values.toLogicArray(name: 'values'); // signals are driven by values
 ```
 
-Nested constructors reject ragged rows, inconsistent nesting depth, and mismatched element widths. Empty nested input cannot reveal the element width or trailing dimensions, so it must use `fromFlat`. `majorSlices` iterates the outer dimension rather than the total element count, so a `[2, 0]` value contains two empty `[0]` slices and can round-trip through `stack`.
+Nested lists infer shape and reject ragged or inconsistent input. Use `fromFlat`
+for row-major data, empty arrays, or list-valued semantic elements whose
+nesting would be ambiguous. Empty input needs explicit dimensions and element
+width. `stack` requires arrays to share the same codec instance.
 
-`TypedLogicValueArray<T>` adds a `LogicValueCodec<T>` for application-level values. `LogicValueArray` remains its `TypedLogicValueArray<LogicValue>` specialization with the existing convenience constructors and concrete transform return types. Construction immediately encodes and decodes every value: the packed representation is authoritative, and a lossy codec therefore exposes normalized semantic values from the start. Decoded semantic elements are exposed by reference, so mutating a mutable element does not update the stored packed bits; callers using mutable semantic values are responsible for treating them consistently with snapshot semantics. Shape-only operations preserve those normalized values without re-encoding them. `stack` requires every typed value array to use the identical codec object because codec functions cannot be compared for semantic equivalence.
-
-The root list of a nested constructor always represents an array dimension. Below the root, an object matching `T` is treated as one semantic value before it is considered as another list dimension. This permits list-valued semantic elements; use `fromFlat` when the intended interpretation would otherwise be ambiguous.
-
-Both value-array classes are `LogicValue`s. Their `width` and deprecated `length` count packed bits, while `arrayValues.length` counts array positions. `arrayValues` has one entry for each configured array position in row-major order. Bit indexing, equality, hashing, arithmetic, and bitwise operations use the packed value and do not consider shape. The `packed` getter exposes the ordinary `LogicValue` representation.
-
-`TypedLogicArray<TLogic, TValue>.value` and `previousValue` return `TypedLogicValueArray<TValue>` snapshots without adding hardware to the graph. `LogicArray` overrides these with the concrete `LogicValueArray` return type. The standard `changed`, `glitch`, and edge APIs remain packed `LogicValueChanged` events, so typed arrays retain the normal `Logic` event contract. Since all value arrays are `LogicValue`s, use the target-side `put` API for immediate assignment or `inject` for scheduled assignment. Both follow the ordinary packed-value contract, so same-width values remain assignable regardless of their shape metadata.
+Decoded semantic values are exposed by reference; mutating a mutable value does
+not update its packed bits, so immutable semantic values are usually the
+simplest choice. Both value-array types retain packed `LogicValue` behavior:
+same-width assignment is based on packed bits, not shape. See the
+[`LogicValueArray`](https://intel.github.io/rohd/rohd/LogicValueArray-class.html)
+and
+[`TypedLogicValueArray`](https://intel.github.io/rohd/rohd/TypedLogicValueArray-class.html)
+API documentation for codec normalization, shape operations, packed-value
+semantics, and snapshots.
 
 ## Unpacked arrays
 
