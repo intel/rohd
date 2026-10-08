@@ -1,3 +1,7 @@
+## Next Release
+
+- Fixed `LogicValue.ofRadixString` round trips with empty separators and separators containing regular-expression metacharacters (<https://github.com/intel/rohd/issues/722>).
+
 ## 0.6.11
 
 - Added `NetlistSynthesizer` for generating JSON netlists, with configurable synthesis passes, validation, and hierarchy support (<https://github.com/intel/rohd/pull/675>).

@@ -763,7 +763,10 @@ abstract class LogicValue implements Comparable<LogicValue> {
   /// illegal characters
   /// in the string or too long of a value string.
   ///
-  ///  Strings created by [toRadixString] are parsed by [ofRadixString].
+  /// Strings created by [toRadixString] are parsed by [ofRadixString].
+  /// [sepChar] is interpreted literally and must match the separator used when
+  /// formatting the string. An empty [sepChar] is allowed for strings without
+  /// separators.
   ///
   /// If the LogicValue width is not encoded as round number of radix
   /// characters, the leading character must be small enough to be encoded
@@ -773,12 +776,13 @@ abstract class LogicValue implements Comparable<LogicValue> {
   ///  - 11'h4aa
   ///  - 12'haa
   static LogicValue ofRadixString(String valueString, {String sepChar = '_'}) {
-    if (radixStringChars.contains(sepChar)) {
+    if (sepChar.isNotEmpty && radixStringChars.contains(sepChar)) {
       throw LogicValueConstructionException('separation character invalid');
     }
+    final escapedSeparator = RegExp.escape(sepChar);
     if (RegExp(r'^\d+').firstMatch(valueString) != null) {
       final formatStr =
-          RegExp("^(\\d+)'([bqodh])([0-9aAbBcCdDeEfFzZxX<>$sepChar]*)")
+          RegExp("^(\\d+)'([bqodh])([0-9aAbBcCdDeEfFzZxX<>$escapedSeparator]*)")
               .firstMatch(valueString);
       if (formatStr != null) {
         if (valueString.length != formatStr.group(0)!.length) {
