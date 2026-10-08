@@ -1146,7 +1146,8 @@ abstract class Module {
   /// Attaches waveform dumping for this [Module] to a VCD at [outputPath].
   ///
   /// This quick file-dump API uses bounded memory. For debugger capture,
-  /// filtering, or retained history, create a [WaveformService] directly.
+  /// filtering, alternative formats, or retained history, create a
+  /// [WaveformService] directly.
   WaveformService dumpWaves({String outputPath = 'waves.vcd'}) {
     final normalized = outputPath.replaceAll(r'\', '/');
     final separatorIndex = normalized.lastIndexOf('/');
