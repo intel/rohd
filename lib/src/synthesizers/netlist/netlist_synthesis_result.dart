@@ -63,10 +63,6 @@ class NetlistSynthesisResult extends SynthesisResult {
   int get matchHashCode => _cachedJson.hashCode;
 
   @override
-  @Deprecated('Use `toSynthFileContents()` instead.')
-  String toFileContents() => toSynthFileContents().first.contents;
-
-  @override
   List<SynthFileContents> toSynthFileContents() {
     final typeName = instanceTypeName;
     final moduleEntry = <String, Object?>{

@@ -24,11 +24,8 @@ class SystemVerilogSynthesizer extends Synthesizer {
   });
 
   @override
-  bool generatesDefinition(Module module) =>
-      // ignore: deprecated_member_use_from_same_package - backwards compatibility with CustomSystemVerilog
-      !((module is CustomSystemVerilog) ||
-          (module is SystemVerilog &&
-              module.generatedDefinitionType == DefinitionGenerationType.none));
+  bool generatesDefinition(Module module) => !(module is SystemVerilog &&
+      module.generatedDefinitionType == DefinitionGenerationType.none);
 
   /// Creates a line of SystemVerilog that instantiates [module].
   ///
@@ -70,17 +67,6 @@ class SystemVerilogSynthesizer extends Synthesizer {
                 ports: ports,
                 forceStandardInstantiation: true);
       }
-      // ignore: deprecated_member_use_from_same_package - backwards compatibility with CustomSystemVerilog
-      else if (module is CustomSystemVerilog) {
-        return module.instantiationVerilog(
-          instanceType,
-          instanceName,
-          Map.fromEntries(ports.entries
-              .where((element) => module.inputs.containsKey(element.key))),
-          Map.fromEntries(ports.entries
-              .where((element) => module.outputs.containsKey(element.key))),
-        );
-      }
     }
 
     //non-custom needs more details
@@ -109,39 +95,6 @@ class SystemVerilogSynthesizer extends Synthesizer {
 
     return '$instanceType $parameterString $instanceName($connectionsStr);';
   }
-
-  /// Creates a line of SystemVerilog that instantiates [module].
-  ///
-  /// The instantiation will create it as type [instanceType] and name
-  /// [instanceName].
-  ///
-  /// [inputs] and [outputs] map `module` input/output name to a verilog signal
-  /// name.
-  ///
-  /// For example:
-  /// To generate this SystemVerilog:  `sig_c = sig_a & sig_b`
-  /// Based on this module definition: `c <= a & b`
-  /// The values for [inputs] and [outputs] should be:
-  /// inputs:  `{ 'a' : 'sig_a', 'b' : 'sig_b'}`
-  /// outputs: `{ 'c' : 'sig_c' }`
-  @Deprecated('Use `instantiationVerilogFor` instead.')
-  static String instantiationVerilogWithParameters(
-          Module module,
-          String instanceType,
-          String instanceName,
-          Map<String, String> inputs,
-          Map<String, String> outputs,
-          {Map<String, String> inOuts = const {},
-          Map<String, String>? parameters,
-          bool forceStandardInstantiation = false}) =>
-      instantiationVerilogFor(
-        module: module,
-        instanceType: instanceType,
-        instanceName: instanceName,
-        ports: {...inputs, ...outputs, ...inOuts},
-        parameters: parameters,
-        forceStandardInstantiation: forceStandardInstantiation,
-      );
 
   @override
   SynthesisResult synthesize(

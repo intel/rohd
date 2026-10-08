@@ -16,10 +16,6 @@ import 'package:rohd/src/collections/traverseable_collection.dart';
 import 'package:rohd/src/modules/conditionals/always.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 
-/// Deprecated: use [Sequential] instead.
-@Deprecated('Use Sequential instead')
-typedef FF = Sequential;
-
 /// A tracking construct for triggers of [Sequential]s.
 class _SequentialTrigger {
   /// The signal for this trigger.

@@ -340,17 +340,10 @@ class SynthModuleDefinition {
           parentSynthModuleDefinition: this,
         );
       } else {
+        final parentModule = logic.parentModule;
         final disallowConstName = (logic.isInput || logic.isInOut) &&
-            // ignore: deprecated_member_use_from_same_package - backwards compatibility with CustomSystemVerilog
-            ((logic.parentModule is CustomSystemVerilog &&
-                    // ignore: deprecated_member_use_from_same_package - backwards compatibility with CustomSystemVerilog
-                    (logic.parentModule! as CustomSystemVerilog)
-                        .expressionlessInputs
-                        .contains(logic.name)) ||
-                (logic.parentModule is SystemVerilog &&
-                    (logic.parentModule! as SystemVerilog)
-                        .expressionlessInputs
-                        .contains(logic.name)));
+            parentModule is SystemVerilog &&
+            parentModule.expressionlessInputs.contains(logic.name);
 
         final Naming? namingOverride;
         if (logic.isPort) {
@@ -1199,14 +1192,6 @@ class SynthModuleDefinition {
                 instantiation.inputMapping[e] ?? instantiation.inOutMapping[e],
           ),
         );
-        // ignore: deprecated_member_use_from_same_package - backwards compatibility with CustomSystemVerilog
-      } else if (subModule is CustomSystemVerilog) {
-        singleUseSignals.removeAll(
-          subModule.expressionlessInputs.map(
-            (e) =>
-                instantiation.inputMapping[e] ?? instantiation.inOutMapping[e],
-          ),
-        );
       }
     }
 
@@ -1378,11 +1363,9 @@ class SynthModuleDefinition {
             return false;
           }
 
-          return (logic.parentModule! is SystemVerilog &&
-                  !(logic.parentModule! as SystemVerilog)
-                      .acceptsEmptyPortConnections) ||
-              // ignore: deprecated_member_use_from_same_package - backwards compatibility with CustomSystemVerilog
-              logic.parentModule! is CustomSystemVerilog;
+          return logic.parentModule! is SystemVerilog &&
+              !(logic.parentModule! as SystemVerilog)
+                  .acceptsEmptyPortConnections;
         });
 
         if (!isCustomSvModPort) {

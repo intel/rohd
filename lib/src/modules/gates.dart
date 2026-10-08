@@ -78,12 +78,6 @@ class _OneInputUnaryGate extends Module with InlineSystemVerilog {
   /// The output of this gate (width is always 1).
   late final Logic out = output(_outName);
 
-  /// The output of this gate (width is always 1).
-  ///
-  /// Deprecated: use [out] instead.
-  @Deprecated('Use `out` instead.')
-  Logic get y => out;
-
   final LogicValue Function(LogicValue a) _op;
   final String _opStr;
 
@@ -151,12 +145,6 @@ abstract class _TwoInputBitwiseGate extends Module with InlineSystemVerilog {
       // this is sub-optimal, but it's tricky to make special SV for it
       ? BusSubset(output(_outName), 0, width - _outputSvWidthExpansion).subset
       : output(_outName);
-
-  /// The output of this gate.
-  ///
-  /// Deprecated: use [out] instead.
-  @Deprecated('Use `out` instead.')
-  Logic get y => out;
 
   /// The functional operation to perform for this gate.
   final LogicValue Function(LogicValue in0, LogicValue in1) _op;
@@ -266,12 +254,6 @@ abstract class _TwoInputComparisonGate extends Module with InlineSystemVerilog {
 
   /// The output of this gate.
   late final Logic out = output(_outName);
-
-  /// The output of this gate.
-  ///
-  /// Deprecated: use [out] instead.
-  @Deprecated('Use `out` instead.')
-  Logic get y => out;
 
   /// The functional operation to perform for this gate.
   final LogicValue Function(LogicValue in0, LogicValue in1) _op;
@@ -560,18 +542,6 @@ class Add extends Module with SystemVerilog {
 
   /// The calculated carry bit output of this addition.
   late final Logic carry = output(_carryName);
-
-  /// The output of this gate.
-  ///
-  /// Deprecated: use [sum] instead.
-  @Deprecated('Use `sum` instead.')
-  Logic get out => sum;
-
-  /// The output of this gate.
-  ///
-  /// Deprecated: use [sum] instead.
-  @Deprecated('Use `sum` instead.')
-  Logic get y => sum;
 
   /// The functional operation to perform for this gate.
   LogicValue _addOp(LogicValue in0, LogicValue in1) => in0 + in1;
@@ -966,12 +936,6 @@ class _ScalarMux extends Mux<Logic> with InlineSystemVerilog {
   /// Output port of the mux.
   @override
   late final Logic out;
-
-  /// Output port of the [Mux].
-  ///
-  /// Use [out] or  [mux] instead.
-  @Deprecated('Use `out` or `mux` instead.')
-  Logic get y => out;
 
   _ScalarMux(
     Logic control,

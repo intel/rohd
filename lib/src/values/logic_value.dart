@@ -9,11 +9,6 @@
 
 part of 'values.dart';
 
-/// Deprecated: use [LogicValue] instead.
-@Deprecated('Use `LogicValue` instead.'
-    '  `LogicValues` and `LogicValue` have been merged into one type.')
-typedef LogicValues = LogicValue;
-
 /// An immutable 4-value representation of an arbitrary number of bits.
 ///
 /// Each bit of [LogicValue] can be represented as a [LogicValue]
@@ -40,10 +35,6 @@ abstract class LogicValue implements Comparable<LogicValue> {
   /// The number of bits in this `LogicValue`.
   final int width;
 
-  /// The number of bits in this `LogicValue`.
-  @Deprecated('Use `width` instead.')
-  int get length => width;
-
   const LogicValue._(this.width)
       : assert(width >= 0, 'Width must be greater than or equal to 0.');
 
@@ -58,12 +49,6 @@ abstract class LogicValue implements Comparable<LogicValue> {
   // ignore: avoid_positional_boolean_parameters
   static LogicValue ofBool(bool value) => value ? one : zero;
 
-  /// Converts `bool` [value] to a valid [LogicValue] with 1 bits either
-  /// one or zero.
-  @Deprecated('Use `ofBool` instead.')
-  // ignore: avoid_positional_boolean_parameters - literally it's "fromBool"
-  static LogicValue fromBool(bool value) => ofBool(value);
-
   /// Converts `int` [value] to a valid [LogicValue] with [width] number
   /// of bits.
   ///
@@ -73,13 +58,6 @@ abstract class LogicValue implements Comparable<LogicValue> {
           BigInt.from(value).toUnsigned(INT_BITS), BigInt.zero, width)
       : _smallLogicValueOrFilled(value, 0, width);
 
-  /// Converts `int` [value] to a valid [LogicValue] with [width]
-  /// number of bits.
-  ///
-  /// [width] must be greater than or equal to 0.
-  @Deprecated('Use `ofInt` instead.')
-  static LogicValue fromInt(int value, int width) => ofInt(value, width);
-
   /// Converts `BigInt` [value] to a valid [LogicValue] with [width]
   /// number of bits.
   ///
@@ -87,14 +65,6 @@ abstract class LogicValue implements Comparable<LogicValue> {
   static LogicValue ofBigInt(BigInt value, int width) => width > INT_BITS
       ? _bigLogicValueOrFilled(value, BigInt.zero, width)
       : _smallLogicValueOrFilled(value.toIntUnsigned(width), 0, width);
-
-  /// Converts `BigInt` [value] to a valid [LogicValue] with [width]
-  /// number of bits.
-  ///
-  /// [width] must be greater than or equal to 0.
-  @Deprecated('Use `ofBigInt` instead.')
-  static LogicValue fromBigInt(BigInt value, int width) =>
-      ofBigInt(value, width);
 
   /// Constructs a [LogicValue] with the [width] number of bits, where every
   /// bit has the same value of [fill].
@@ -382,20 +352,6 @@ abstract class LogicValue implements Comparable<LogicValue> {
   /// Returns `_invalid` in the form of an [int].
   int get _intInvalid;
 
-  /// Constructs a [LogicValue] from [it].
-  ///
-  /// The order of the created [LogicValue] will be such that the `i`th entry
-  /// in [it] corresponds to the `i`th bit.  That is, the 0th element of [it]
-  /// will be the 0th bit of the returned [LogicValue].
-  ///
-  /// ```dart
-  /// var it = [LogicValue.zero, LogicValue.x, LogicValue.one];
-  /// var lv = LogicValue.from(it);
-  /// print(lv); // This prints `3b'1x0`
-  /// ```
-  @Deprecated('Use `of` instead.')
-  static LogicValue from(Iterable<LogicValue> it) => ofIterable(it);
-
   /// Returns true if bits in [x] are all 0
   static bool _bigIntIs0(BigInt x, int width) =>
       (x & _BigLogicValue._maskOfWidth(width)) == BigInt.zero;
@@ -433,8 +389,8 @@ abstract class LogicValue implements Comparable<LogicValue> {
   /// The [stringRepresentation] should only contain bit values (e.g. no `0b`
   /// at the start). The order of the created [LogicValue] will be such that
   /// the `i`th character in [stringRepresentation] corresponds to the
-  /// `length - i - 1`th bit.  That is, the last character of
-  /// [stringRepresentation] will be the 0th bit of the returned [LogicValue].
+  /// `width - i - 1`th bit. That is, the last character in
+  /// [stringRepresentation] is the 0th bit of the returned [LogicValue].
   ///
   /// ```dart
   /// var stringRepresentation = '1x0';
@@ -522,24 +478,6 @@ abstract class LogicValue implements Comparable<LogicValue> {
     }
     return null;
   }
-
-  /// Converts a binary [String] representation of a [LogicValue] into a
-  /// [LogicValue].
-  ///
-  /// The [stringRepresentation] should only contain bit values (e.g. no `0b`
-  /// at the start). The order of the created [LogicValue] will be such that
-  /// the `i`th character in [stringRepresentation] corresponds to the
-  /// `length - i - 1`th bit.  That is, the last character of
-  /// [stringRepresentation] will be the 0th bit of the returned [LogicValue].
-  ///
-  /// ```dart
-  /// var stringRepresentation = '1x0';
-  /// var lv = LogicValue.fromString(stringRepresentation);
-  /// print(lv); // This prints `3b'1x0`
-  /// ```
-  @Deprecated('Use `ofString` instead.')
-  static LogicValue fromString(String stringRepresentation) =>
-      ofString(stringRepresentation);
 
   /// Returns true iff the width and all bits of `this` are equal to [other].
   @override
@@ -1115,18 +1053,6 @@ abstract class LogicValue implements Comparable<LogicValue> {
 
   /// True iff all bits are `z`.
   bool get isFloating;
-
-  /// The current active value of this, if it has width 1, as a [LogicValue].
-  ///
-  /// Throws an Exception if width is not 1.
-  @Deprecated('Check `width` separately to see if single-bit.')
-  LogicValue get bit {
-    if (width != 1) {
-      throw Exception('Width must be 1, but was $width.');
-    }
-    // ignore: avoid_returning_this - deprecated but supported for now
-    return this;
-  }
 
   /// Converts valid a [LogicValue] to an [int].
   ///

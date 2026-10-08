@@ -44,35 +44,6 @@ class Logic {
   /// The current active value of this signal.
   LogicValue get value => _wire.value;
 
-  /// The current active value of this signal if it has width 1, as
-  /// a [LogicValue].
-  ///
-  /// Throws an Exception if width is not 1.
-  @Deprecated('Use `value` instead.'
-      '  Check `width` separately to confirm single-bit.')
-  LogicValue get bit => value.bit;
-
-  /// The current valid active value of this signal as an [int].
-  ///
-  /// Throws an exception if the signal is not valid or can't be represented
-  /// as an [int].
-  @Deprecated('Use value.toInt() instead.')
-  int get valueInt => value.toInt();
-
-  /// The current valid active value of this signal as a [BigInt].
-  ///
-  /// Throws an exception if the signal is not valid.
-  @Deprecated('Use value.toBigInt() instead.')
-  BigInt get valueBigInt => value.toBigInt();
-
-  /// Returns `true` iff the value of this signal is valid (no `x` or `z`).
-  @Deprecated('Use value.isValid instead.')
-  bool hasValidValue() => value.isValid;
-
-  /// Returns `true` iff *all* bits of the current value are floating (`z`).
-  @Deprecated('Use value.isFloating instead.')
-  bool isFloating() => value.isFloating;
-
   /// The [Logic] signal that is driving `this`, if any.
   ///
   /// If there are multiple drivers (e.g. this is an instance of a special

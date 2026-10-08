@@ -197,11 +197,6 @@ class _PipeStage {
 
 /// A simple pipeline, separating arbitrary combinational logic by flop stages.
 class Pipeline {
-  /// The clock whose positive edge triggers the flops in this pipeline when
-  /// single-triggered. Otherwise, the first clock.
-  @Deprecated('Do not reference the clock from the `Pipeline`.')
-  Logic get clk => _clks.first;
-
   /// The clocks whose positive edges trigger the flops in this pipeline.
   final List<Logic> _clks;
 

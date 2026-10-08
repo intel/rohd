@@ -46,7 +46,3 @@ abstract class ExternalSystemVerilogModule extends Module with SystemVerilog {
         forceStandardInstantiation: true,
       );
 }
-
-/// Deprecated - Use [ExternalSystemVerilogModule] instead.
-@Deprecated('Use ExternalSystemVerilogModule instead.')
-typedef ExternalModule = ExternalSystemVerilogModule;

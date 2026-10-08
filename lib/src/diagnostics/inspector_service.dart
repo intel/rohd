@@ -39,15 +39,11 @@ extension _ModuleDevToolUtils on Module {
       'outputs': outputs.map((key, value) => MapEntry(key, value.toMap())),
     };
 
-    // ignore: deprecated_member_use_from_same_package - backwards compatibility with CustomSystemVerilog
-    final isCustomModule = this is CustomSystemVerilog || this is SystemVerilog;
+    final isCustomModule = this is SystemVerilog;
 
     if (!isCustomModule || !skipCustomModules) {
       json['subModules'] = subModules
-          .where((module) =>
-              // ignore: deprecated_member_use_from_same_package - backwards compatibility with CustomSystemVerilog
-              !((module is CustomSystemVerilog || module is SystemVerilog) &&
-                  skipCustomModules))
+          .where((module) => !(module is SystemVerilog && skipCustomModules))
           .map((module) => module.toJson(skipCustomModules: skipCustomModules))
           .toList();
     }

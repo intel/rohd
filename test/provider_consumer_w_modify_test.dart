@@ -2,14 +2,10 @@
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // provider_consumer_w_modify_test.dart
-// Tests for PairInterface with an example of provider and consumer
-// (testing deprecated modify)
+// Tests PairInterface provider and consumer naming with explicit uniquifiers.
 //
 // 2023 March 9
 // Author: Max Korbel <max.korbel@intel.com>
-
-// ignore_for_file: deprecated_member_use_from_same_package - this tests a
-//  deprecated feature
 
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
@@ -20,43 +16,42 @@ class DataInterface extends PairInterface {
   Logic get valid => port('valid');
   Logic get ready => port('ready');
 
-  final String? prefix;
-
-  DataInterface({this.prefix})
+  DataInterface()
       : super(
-            portsFromProvider: [Logic.port('data', 32), Logic.port('valid')],
-            portsFromConsumer: [Logic.port('ready')],
-            modify: (original) => [
-                  if (prefix != null) prefix,
-                  original,
-                ].join('_'));
+          portsFromProvider: [Logic.port('data', 32), Logic.port('valid')],
+          portsFromConsumer: [Logic.port('ready')],
+        );
   @override
-  DataInterface clone() => DataInterface(prefix: prefix);
+  DataInterface clone() => DataInterface();
 }
 
 class RequestInterface extends PairInterface {
   final List<DataInterface> writeDatas = [];
   final String name;
   final int numWd;
-  RequestInterface({this.numWd = 2, this.name = 'req'})
-      : super(modify: (original) => '${original}_$name') {
+  RequestInterface({this.numWd = 2, this.name = 'req'}) {
     for (var wd = 0; wd < numWd; wd++) {
-      writeDatas.add(
-          addSubInterface('write_data$wd', DataInterface(prefix: 'wd$wd')));
+      writeDatas.add(addSubInterface(
+        'write_data$wd',
+        DataInterface(),
+        uniquify: (original) => 'wd${wd}_$original',
+      ));
     }
   }
 
-  RequestInterface.clone(RequestInterface other)
-      : this(numWd: other.numWd, name: other.name);
   @override
   RequestInterface clone() => RequestInterface(numWd: numWd, name: name);
 }
 
 class ResponseInterface extends PairInterface {
   late final DataInterface readData;
-  ResponseInterface() : super(modify: (original) => '${original}_rsp') {
-    readData = addSubInterface('read_data', DataInterface(prefix: 'rd'),
-        reverse: true);
+  ResponseInterface() {
+    readData = addSubInterface(
+      'read_data',
+      DataInterface(),
+      reverse: true,
+      uniquify: (original) => 'rd_$original',
+    );
   }
   @override
   ResponseInterface clone() => ResponseInterface();
@@ -78,10 +73,21 @@ class Provider extends Module {
       ResponseInterface rspIntf) {
     clk = addInput('clk', clk);
     reset = addInput('reset', reset);
-    reqIntf = RequestInterface.clone(reqIntf)
-      ..pairConnectIO(this, reqIntf, PairRole.provider);
-    rspIntf = ResponseInterface()
-      ..pairConnectIO(this, rspIntf, PairRole.provider);
+    final requestName = reqIntf.name;
+    reqIntf = reqIntf.clone()
+      ..pairConnectIO(
+        this,
+        reqIntf,
+        PairRole.provider,
+        uniquify: (original) => '${original}_$requestName',
+      );
+    rspIntf = rspIntf.clone()
+      ..pairConnectIO(
+        this,
+        rspIntf,
+        PairRole.provider,
+        uniquify: (original) => '${original}_rsp',
+      );
 
     reqIntf.writeDatas[0].valid <= Const(1);
     reqIntf.writeDatas[1].valid <= Const(1);
@@ -98,10 +104,21 @@ class Consumer extends Module {
       ResponseInterface rspIntf) {
     clk = addInput('clk', clk);
     reset = addInput('reset', reset);
-    reqIntf = RequestInterface.clone(reqIntf)
-      ..pairConnectIO(this, reqIntf, PairRole.consumer);
-    rspIntf = ResponseInterface()
-      ..pairConnectIO(this, rspIntf, PairRole.consumer);
+    final requestName = reqIntf.name;
+    reqIntf = reqIntf.clone()
+      ..pairConnectIO(
+        this,
+        reqIntf,
+        PairRole.consumer,
+        uniquify: (original) => '${original}_$requestName',
+      );
+    rspIntf = rspIntf.clone()
+      ..pairConnectIO(
+        this,
+        rspIntf,
+        PairRole.consumer,
+        uniquify: (original) => '${original}_rsp',
+      );
 
     rspIntf.readData.valid <= Const(1);
 
