@@ -875,17 +875,23 @@ class Logic {
     return slice(modifiedEndIndex - 1, modifiedStartIndex);
   }
 
-  /// Returns a new [Logic] with width [newWidth] where new bits added are zeros
+  /// Returns a [Logic] with width [newWidth] where new bits added are zeros
   /// as the most significant bits.
   ///
   /// The [newWidth] must be greater than or equal to the current width or an
-  /// exception will be thrown.
+  /// exception will be thrown. When [newWidth] equals the current width, this
+  /// returns the original signal (same object identity).
   ///
   /// If [isNet], then the result will also be a net.
   Logic zeroExtend(int newWidth) {
     if (newWidth < width) {
       throw Exception(
           'New width $newWidth must be greater than or equal to width $width.');
+    }
+    // Nothing to extend: reuse the original signal instead of building a
+    // zero-width Const + Swizzle (matches signExtend's same-width path).
+    if (newWidth == width) {
+      return this;
     }
     return [
       Const(0, width: newWidth - width),

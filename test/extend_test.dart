@@ -61,6 +61,10 @@ void main() {
           Vector({'a': 0x5a}, {'b': 0x5a}),
         ], 8, ExtendType.zero);
       });
+      test('zero extend with same width returns identical signal', () {
+        final original = Logic(width: 8);
+        expect(identical(original.zeroExtend(8), original), isTrue);
+      });
       test('zero extend with less width throws exception', () {
         expect(() => extendVectors([], 6, ExtendType.zero), throwsException);
       });
