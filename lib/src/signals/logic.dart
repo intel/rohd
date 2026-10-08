@@ -420,6 +420,12 @@ class Logic {
     // then, replace the wire
     _wire = newWire._adopt(_wire);
 
+    // apply constraints if there are any
+    final constrainedValue = _wire._applyValueConstraints(_wire.value);
+    if (constrainedValue != _wire.value) {
+      _wire.put(constrainedValue, signalName: name);
+    }
+
     // tell all downstream signals to update to the new wire as well
     final Iterable<Logic> toUpdateWire;
     if (this is LogicNet) {

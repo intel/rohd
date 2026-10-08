@@ -287,15 +287,19 @@ class _Wire {
       newValue = LogicValue.filled(width, LogicValue.x);
     }
 
-    for (final constraint in _valueConstraints) {
-      newValue = constraint(newValue);
-    }
-
-    _updateValue(newValue, signalName: signalName);
+    _updateValue(_applyValueConstraints(newValue), signalName: signalName);
   }
 
   /// Value transformations applied in registration order before an update.
   final List<_LogicValueConstraint> _valueConstraints = [];
+
+  /// Applies constraints without writing a value or emitting events.
+  LogicValue _applyValueConstraints(LogicValue value) {
+    for (final constraint in _valueConstraints) {
+      value = constraint(value);
+    }
+    return value;
+  }
 
   /// Adds a transformation that constrains every value written to this wire.
   void _constrainValue(_LogicValueConstraint constraint) {

@@ -791,6 +791,60 @@ void main() {
     expect(logicEnum.value, LogicValue.filled(logicEnum.width, LogicValue.x));
   });
 
+  test('enum constraints normalize a pre-driven shared wire', () {
+    final source = Logic(width: 2)..put(3);
+    final sibling = Logic(width: 2)..gets(source);
+    final isThree = source.eq(3);
+    final sourceChanges = <LogicValueChanged>[];
+    source.glitch.listen(sourceChanges.add);
+    final logicEnum = MyListLogicEnum()..gets(source);
+
+    expect([source.value, sibling.value, logicEnum.value],
+        everyElement(LogicValue.filled(2, LogicValue.x)));
+    expect(isThree.value, LogicValue.x);
+    expect(sourceChanges.single.previousValue, LogicValue.ofInt(3, 2));
+    expect(sourceChanges.single.newValue, LogicValue.filled(2, LogicValue.x));
+
+    source.put(2);
+    expect([source.value, sibling.value, logicEnum.value],
+        everyElement(LogicValue.ofInt(2, 2)));
+    expect(logicEnum.valueEnum, TestEnum.c);
+
+    sibling.put(3);
+    expect([source.value, sibling.value, logicEnum.value],
+        everyElement(LogicValue.filled(2, LogicValue.x)));
+  });
+
+  test('enum constraints normalize a downstream wire reconnection', () {
+    final intermediate = Logic(width: 2);
+    final sibling = Logic(width: 2)..gets(intermediate);
+    final logicEnum = MyListLogicEnum()..gets(intermediate);
+    final isThree = sibling.eq(3);
+    final source = Logic(width: 2)..put(3);
+
+    intermediate.gets(source);
+
+    expect([source.value, intermediate.value, sibling.value, logicEnum.value],
+        everyElement(LogicValue.filled(2, LogicValue.x)));
+    expect(isThree.value, LogicValue.x);
+
+    source.put(1);
+    expect([source.value, intermediate.value, sibling.value, logicEnum.value],
+        everyElement(LogicValue.ofInt(1, 2)));
+    expect(logicEnum.valueEnum, TestEnum.b);
+  });
+
+  test('enum wire adoption preserves legal immutable sources', () {
+    final source = Const(2, width: 2);
+    final alias = Logic(width: 2)..gets(source);
+    final logicEnum = MyListLogicEnum()..gets(alias);
+
+    expect([source.value, alias.value, logicEnum.value],
+        everyElement(LogicValue.ofInt(2, 2)));
+    expect(logicEnum.valueEnum, TestEnum.c);
+    expect(() => alias.put(3), throwsA(isA<UnassignableException>()));
+  });
+
   test('enum puts with enums', () {
     final e = MyListLogicEnum()..put(TestEnum.b);
     expect(e.value.toInt(), TestEnum.b.index);
