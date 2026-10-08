@@ -424,7 +424,7 @@ void main() {
       await SimCompare.checkFunctionalVector(mod, vectors);
       SimCompare.checkIverilogVector(mod, vectors);
 
-      final sv = mod.generateSynth();
+      final sv = mod.dumpSystemVerilog();
       expect(sv, contains('} LightColor;'));
       expect(sv, contains('LightColor northLight_enum;'));
       expect(sv, contains('LightColor eastLight_enum;'));
@@ -433,7 +433,8 @@ void main() {
 
       const untypedConfiguration =
           SystemVerilogSynthesizerConfiguration(generateEnums: false);
-      final untypedSv = mod.generateSynth(configuration: untypedConfiguration);
+      final untypedSv =
+          mod.dumpSystemVerilog(configuration: untypedConfiguration);
       expect(untypedSv, isNot(contains('typedef enum')));
       expect(untypedSv, isNot(contains('northLight_enum')));
       SimCompare.checkIverilogVector(

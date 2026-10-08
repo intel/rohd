@@ -474,13 +474,13 @@ Future<void> checkEnumModeParity(Module module, List<Vector> vectors) async {
   await module.build();
   await SimCompare.checkFunctionalVector(module, vectors);
 
-  final typedSv = module.generateSynth();
+  final typedSv = module.dumpSystemVerilog();
   expect(typedSv, contains('typedef enum'));
   SimCompare.checkIverilogVector(module, vectors);
 
   const configuration =
       SystemVerilogSynthesizerConfiguration(generateEnums: false);
-  final untypedSv = module.generateSynth(configuration: configuration);
+  final untypedSv = module.dumpSystemVerilog(configuration: configuration);
   expect(untypedSv, isNot(contains('typedef enum')));
   expect(untypedSv, isNot(matches(RegExp(r"[A-Za-z_]\w*'\("))));
   SimCompare.checkIverilogVector(
@@ -956,7 +956,7 @@ void main() {
       final mod = SimpleModWithEnum(Logic(width: 3));
       await mod.build();
 
-      final sv = mod.generateSynth();
+      final sv = mod.dumpSystemVerilog();
 
       expect(
           sv,
@@ -969,7 +969,7 @@ void main() {
       final mod = ConflictingEnumMod(Logic(width: 3));
       await mod.build();
 
-      final sv = mod.generateSynth();
+      final sv = mod.dumpSystemVerilog();
 
       // Allocation order may choose either enum for the unsuffixed names.
       expect(
@@ -994,7 +994,7 @@ void main() {
       final mod = ModWithEnumConstAssignment(Logic(width: 2));
       await mod.build();
 
-      final sv = mod.generateSynth();
+      final sv = mod.dumpSystemVerilog();
 
       expect(
           sv,
@@ -1022,8 +1022,8 @@ void main() {
       final module = EnumNameCollisionModule();
       await module.build();
 
-      final firstSv = module.generateSynth();
-      final secondSv = module.generateSynth();
+      final firstSv = module.dumpSystemVerilog();
+      final secondSv = module.dumpSystemVerilog();
 
       const typeDefinition =
           "typedef enum logic [1:0] { a_0 = 2'h0, b = 2'h1, c = 2'h2 } "
@@ -1042,10 +1042,12 @@ void main() {
 
       const configuration =
           SystemVerilogSynthesizerConfiguration(generateEnums: false);
-      final simpleSv = simpleModule.generateSynth(configuration: configuration);
+      final simpleSv =
+          simpleModule.dumpSystemVerilog(configuration: configuration);
       final constantSv =
-          constantModule.generateSynth(configuration: configuration);
-      final casesSv = casesModule.generateSynth(configuration: configuration);
+          constantModule.dumpSystemVerilog(configuration: configuration);
+      final casesSv =
+          casesModule.dumpSystemVerilog(configuration: configuration);
 
       expect(simpleSv, isNot(contains('typedef enum')));
       expect(simpleSv, contains('logic [2:0] elephant;'));
@@ -1070,7 +1072,7 @@ void main() {
 
       expect(module.selected, isNot(isA<LogicEnum<TestEnum>>()));
       expect(module.result, isA<LogicEnum<TestEnum>>());
-      expect(module.generateSynth(), contains("TestEnum'(selector)"));
+      expect(module.dumpSystemVerilog(), contains("TestEnum'(selector)"));
       final vectors = [
         Vector({'selector': 0}, {'result': 1}),
         Vector({'selector': 1}, {'result': 2}),
@@ -1084,7 +1086,7 @@ void main() {
       final module = EnumSubsetAssignmentModule(Logic(width: 2));
       await module.build();
 
-      final sv = module.generateSynth();
+      final sv = module.dumpSystemVerilog();
       expect(
         sv,
         contains(
@@ -1109,7 +1111,7 @@ void main() {
 
       const configuration =
           SystemVerilogSynthesizerConfiguration(generateEnums: false);
-      final untypedSv = module.generateSynth(configuration: configuration);
+      final untypedSv = module.dumpSystemVerilog(configuration: configuration);
       expect(untypedSv, isNot(contains('typedef enum')));
       expect(untypedSv, contains('assign broad = narrow;'));
       SimCompare.checkIverilogVector(
@@ -1123,7 +1125,7 @@ void main() {
       final module = EnumSubsetConditionalAssignmentModule(Logic(width: 2));
       await module.build();
 
-      final sv = module.generateSynth();
+      final sv = module.dumpSystemVerilog();
       expect(sv, contains("BroadEnum'(narrow)"));
 
       final vectors = [
@@ -1135,7 +1137,7 @@ void main() {
 
       const configuration =
           SystemVerilogSynthesizerConfiguration(generateEnums: false);
-      final untypedSv = module.generateSynth(configuration: configuration);
+      final untypedSv = module.dumpSystemVerilog(configuration: configuration);
       expect(untypedSv, isNot(contains('typedef enum')));
       expect(untypedSv, isNot(contains("BroadEnum'(")));
       SimCompare.checkIverilogVector(
@@ -1156,13 +1158,13 @@ void main() {
       ];
       await SimCompare.checkFunctionalVector(module, vectors);
 
-      final sv = module.generateSynth();
+      final sv = module.dumpSystemVerilog();
       expect(sv, contains("TestEnum'("));
       SimCompare.checkIverilogVector(module, vectors);
 
       const configuration =
           SystemVerilogSynthesizerConfiguration(generateEnums: false);
-      final untypedSv = module.generateSynth(configuration: configuration);
+      final untypedSv = module.dumpSystemVerilog(configuration: configuration);
       expect(untypedSv, isNot(contains('typedef enum')));
       expect(untypedSv, isNot(contains("TestEnum'(")));
       SimCompare.checkIverilogVector(
@@ -1183,7 +1185,7 @@ void main() {
       await checkEnumModeParity(module, vectors);
 
       expect(
-        module.generateSynth(),
+        module.dumpSystemVerilog(),
         contains("assign state = TestEnum'(source);"),
       );
     });
@@ -1212,7 +1214,7 @@ void main() {
         ],
       );
 
-      expect(module.generateSynth(), contains('enum logic [0:0]'));
+      expect(module.dumpSystemVerilog(), contains('enum logic [0:0]'));
     });
 
     test('wide sparse enum synthesizes in both modes', () async {
@@ -1222,7 +1224,7 @@ void main() {
       ];
       await checkEnumModeParity(module, vectors);
 
-      final sv = module.generateSynth();
+      final sv = module.dumpSystemVerilog();
       expect(sv, contains('enum logic [80:0]'));
       expect(sv, contains("c = 81'h100000000000000000000"));
     });
@@ -1245,7 +1247,7 @@ void main() {
       ];
       await checkEnumModeParity(module, vectors);
 
-      expect(module.generateSynth(), contains("TestEnum'("));
+      expect(module.dumpSystemVerilog(), contains("TestEnum'("));
     });
 
     test('raw unpacked array lane feeds enum in both modes', () async {
@@ -1257,7 +1259,7 @@ void main() {
       ];
       await checkEnumModeParity(module, vectors);
 
-      expect(module.generateSynth(), contains("TestEnum'("));
+      expect(module.dumpSystemVerilog(), contains("TestEnum'("));
     });
 
     test('enum metadata crosses a submodule boundary in both modes', () async {
@@ -1268,7 +1270,7 @@ void main() {
       ];
       await checkEnumModeParity(module, vectors);
 
-      final sv = module.generateSynth();
+      final sv = module.dumpSystemVerilog();
       expect(sv, contains('ChildNarrowEnum'));
       expect(sv, contains('ParentBroadEnum'));
     });
@@ -1295,7 +1297,7 @@ void main() {
       ];
       await checkEnumModeParity(module, vectors);
 
-      final sv = module.generateSynth();
+      final sv = module.dumpSystemVerilog();
       expect(sv, contains('input logic [1:0] stateIn'));
       expect(sv, contains('output logic [1:0] stateOut'));
       expect(sv, contains('} TypedPortEnum;'));
@@ -1310,7 +1312,7 @@ void main() {
 
       const configuration =
           SystemVerilogSynthesizerConfiguration(generateEnums: false);
-      final untypedSv = module.generateSynth(configuration: configuration);
+      final untypedSv = module.dumpSystemVerilog(configuration: configuration);
       expect(untypedSv, isNot(contains('stateIn_enum')));
       expect(untypedSv, isNot(contains('stateOut_enum')));
     });
@@ -1331,7 +1333,7 @@ void main() {
       ];
       await checkEnumModeParity(module, vectors);
 
-      final sv = module.generateSynth();
+      final sv = module.dumpSystemVerilog();
       expect(sv, contains('assign packedValue[1] = stateIn_enum;'));
       expect(
         sv,
@@ -1340,7 +1342,7 @@ void main() {
 
       const configuration =
           SystemVerilogSynthesizerConfiguration(generateEnums: false);
-      final untypedSv = module.generateSynth(configuration: configuration);
+      final untypedSv = module.dumpSystemVerilog(configuration: configuration);
       expect(untypedSv, contains('assign packedValue[1] = stateIn;'));
       expect(untypedSv, isNot(contains('stateIn_enum')));
     });
@@ -1359,7 +1361,7 @@ void main() {
       ];
       await checkEnumModeParity(module, vectors);
 
-      final sv = module.generateSynth();
+      final sv = module.dumpSystemVerilog();
       expect(
         sv,
         contains("assign stateOut_enum = TypedRangeEnum'(source);"),
@@ -1368,7 +1370,7 @@ void main() {
 
       const configuration =
           SystemVerilogSynthesizerConfiguration(generateEnums: false);
-      final untypedSv = module.generateSynth(configuration: configuration);
+      final untypedSv = module.dumpSystemVerilog(configuration: configuration);
       expect(untypedSv, contains('assign stateOut = source;'));
       expect(untypedSv, isNot(contains('stateOut_enum')));
     });
@@ -1385,7 +1387,7 @@ void main() {
       expect(module.child.stateIn.mapping.keys, [TestEnum.a, TestEnum.c]);
       expect(module.child.stateOut.mapping, module.child.stateIn.mapping);
 
-      final sv = module.generateSynth();
+      final sv = module.dumpSystemVerilog();
       expect(sv, contains('TypedChildNarrowEnum'));
       expect(sv, contains('ParentTypedBroadEnum'));
       expect(sv, contains("ParentTypedBroadEnum'("));
@@ -1408,14 +1410,14 @@ void main() {
       ];
       await checkEnumModeParity(module, vectors);
 
-      final sv = module.generateSynth();
+      final sv = module.dumpSystemVerilog();
       expect(sv, contains('case (stateIn_enum)'));
       expect(sv, contains('stateOut_enum = c;'));
       expect(sv, contains('stateOut_enum = a;'));
 
       const configuration =
           SystemVerilogSynthesizerConfiguration(generateEnums: false);
-      final untypedSv = module.generateSynth(configuration: configuration);
+      final untypedSv = module.dumpSystemVerilog(configuration: configuration);
       expect(untypedSv, isNot(contains('stateIn_enum')));
       expect(untypedSv, isNot(contains('stateOut_enum')));
     });
@@ -1436,8 +1438,8 @@ void main() {
       ];
       await checkEnumModeParity(module, vectors);
 
-      final firstSv = module.generateSynth();
-      final secondSv = module.generateSynth();
+      final firstSv = module.dumpSystemVerilog();
+      final secondSv = module.dumpSystemVerilog();
       for (final sv in [firstSv, secondSv]) {
         expect(sv, contains('logic [1:0] stateIn_enum;'));
         expect(sv, contains('TypedCollisionEnum stateIn_enum_0;'));
@@ -1465,13 +1467,13 @@ void main() {
       ];
       await checkEnumModeParity(module, vectors);
 
-      final sv = module.generateSynth();
+      final sv = module.dumpSystemVerilog();
       expect(sv, contains("stateIn_enum ^ 2'h1"));
       expect(sv, contains('.stateIn(stateIn_enum)'));
 
       const configuration =
           SystemVerilogSynthesizerConfiguration(generateEnums: false);
-      final untypedSv = module.generateSynth(configuration: configuration);
+      final untypedSv = module.dumpSystemVerilog(configuration: configuration);
       expect(untypedSv, isNot(contains('stateIn_enum')));
     });
 
@@ -1501,7 +1503,7 @@ void main() {
       ];
       await checkEnumModeParity(module, vectors);
 
-      final sv = module.generateSynth();
+      final sv = module.dumpSystemVerilog();
       expect(sv, contains('if(select)'));
       expect(sv, contains('else begin'));
     });
@@ -1510,7 +1512,7 @@ void main() {
       final mod = ModWithCaseAndEnumCondAssign(Logic());
       await mod.build();
 
-      final sv = mod.generateSynth();
+      final sv = mod.dumpSystemVerilog();
 
       expect(sv, contains(' a : begin'));
       expect(sv, contains('nextState = a;'));

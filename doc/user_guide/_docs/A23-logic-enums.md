@@ -98,7 +98,7 @@ By default, SystemVerilog generation emits enum typedefs and symbolic values for
 Enum generation can be disabled for tools or flows that require ordinary packed logic:
 
 ```dart
-final generatedSv = module.generateSynth(
+final generatedSv = module.dumpSystemVerilog(
   configuration: const SystemVerilogSynthesizerConfiguration(
     generateEnums: false,
   ),

@@ -118,7 +118,7 @@ when using `SynthBuilder`.
 [`LogicEnum`](https://intel.github.io/rohd-website/docs/logic-enums/) signals generate SystemVerilog enum typedefs and symbolic values by default. Enum generation can be disabled for compatibility with tools or flows that require packed logic:
 
 ```dart
-final generatedSv = myModule.generateSynth(
+final generatedSv = myModule.dumpSystemVerilog(
   configuration: const SystemVerilogSynthesizerConfiguration(
     generateEnums: false,
   ),
