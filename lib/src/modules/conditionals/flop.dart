@@ -231,11 +231,11 @@ class _ScalarFlipFlop extends FlipFlop<Logic> with SystemVerilog {
     Logic d,
     Logic outputSchema, {
     required this.asyncReset,
+    required bool usesOutputGenerator,
     Logic? en,
     Logic? reset,
     dynamic resetValue,
     super.name = 'flipflop',
-    required bool usesOutputGenerator,
   }) : super._() {
     addInput(_clkName, clk);
     addInput(_dName, d, width: d.width);

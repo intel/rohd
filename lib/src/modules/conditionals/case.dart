@@ -111,6 +111,7 @@ LogicType cases<LogicType extends Logic>(
     width: width ?? prototype?.width,
     name: name,
     operation: 'cases<$LogicType>',
+    naming: Naming.mergeable,
     prototype: prototype,
     outputGenerator: outputGenerator,
   );
