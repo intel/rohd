@@ -9,6 +9,7 @@
 
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/modules/operation_utils.dart';
 
 /// A gate [Module] that performs bit-wise inversion.
 class NotGate extends Module with InlineSystemVerilog {
@@ -843,46 +844,103 @@ class LShift extends _ShiftGate {
 /// ```
 ///
 /// If [control] is a valid [Const], returns the selected input directly.
-Logic mux(Logic control, Logic d1, Logic d0) {
+LogicType mux<LogicType extends Logic>(
+  Logic control,
+  LogicType d1,
+  LogicType d0, {
+  LogicType Function({String? name})? outputGenerator,
+}) {
   if (control.width != 1) {
     throw PortWidthMismatchException(control, 1);
   }
   if (d0.width != d1.width) {
     throw PortWidthMismatchException.equalWidth(d0, d1);
   }
+  if (d0 is LogicStructure && d1 is LogicStructure) {
+    validateMatchingLogicStructure(d1, d0, operation: 'mux');
+  }
 
-  if (control is Const && control.value.isValid) {
+  if (outputGenerator == null && control is Const && control.value.isValid) {
     return control.value == LogicValue.one ? d1 : d0;
   }
 
-  return Mux(control, d1, d0).out;
+  return Mux<LogicType>(
+    control,
+    d1,
+    d0,
+    outputGenerator: outputGenerator,
+  ).out;
 }
+
+String _muxSchemaSignature(Logic logic) => logic is LogicStructure
+    ? logicStructureShapeSignature(logic)
+    : '${logic.runtimeType}_W${logic.width}';
 
 /// A multiplexer with an output represented by [LogicType].
 ///
-/// Implementations decide how inputs are normalized into an output of the
-/// promised type. For example, [Mux] accepts constants and nets as sources but
-/// produces an ordinary single-driver [Logic], while [StructureMux] preserves
-/// the concrete structure type and recursively selects corresponding leaves.
-abstract class TypedMux<LogicType extends Logic> extends TypedOp<LogicType> {
+/// The false/default data operand `d0` supplies the output representation when
+/// `outputGenerator` is omitted. A supplied `outputGenerator` overrides that
+/// default and is invoked exactly once to create the output schema.
+///
+/// Plain [Logic] results normalize scalar constants and nets into driveable
+/// outputs. A concrete [Const] or [LogicNet] result type is rejected because a
+/// dynamic mux output must be driveable.
+abstract class Mux<LogicType extends Logic> extends Module {
   /// Output selected by the control input.
-  @override
   LogicType get out;
 
-  /// Creates a typed multiplexer implementation.
-  TypedMux({
-    super.name = 'typed_mux',
-    super.reserveName,
-    super.definitionName,
-    super.reserveDefinitionName,
-  });
+  /// Constructs a mux preserving [LogicType].
+  factory Mux(
+    Logic control,
+    LogicType d1,
+    LogicType d0, {
+    LogicType Function({String? name})? outputGenerator,
+    String name = 'mux',
+  }) {
+    if (control.width != 1) {
+      throw PortWidthMismatchException(control, 1);
+    }
+    if (d0.width != d1.width) {
+      throw PortWidthMismatchException.equalWidth(d0, d1);
+    }
+    if (d0 is LogicStructure && d1 is LogicStructure) {
+      validateMatchingLogicStructure(d1, d0, operation: 'Mux');
+    }
+
+    final outputSchema = createOperationOutput<LogicType>(
+      width: d0.width,
+      name: 'out',
+      operation: 'Mux<$LogicType>',
+      prototype: d0,
+      outputGenerator: outputGenerator,
+    );
+    validateOperationSource(d0, outputSchema, operation: 'Mux d0');
+    validateOperationSource(d1, outputSchema, operation: 'Mux d1');
+
+    if (LogicType == Logic) {
+      return _ScalarMux(
+        control,
+        d1,
+        d0,
+        outputSchema as Logic,
+        usesOutputGenerator: outputGenerator != null,
+        name: name,
+      ) as Mux<LogicType>;
+    }
+    return _DomainMux<LogicType>(
+      control,
+      d1,
+      d0,
+      outputSchema,
+      name: name,
+    );
+  }
+
+  Mux._({super.name, super.definitionName});
 }
 
-/// A mux (multiplexer) module.
-///
-/// If [_control] has value `1`, then [out] gets [_d1].
-/// If [_control] has value `0`, then [out] gets [_d0].
-class Mux extends TypedMux<Logic> with InlineSystemVerilog {
+/// A scalar inline implementation of [Mux].
+class _ScalarMux extends Mux<Logic> with InlineSystemVerilog {
   /// Name for the control signal of this mux.
   late final String _controlName;
 
@@ -904,9 +962,9 @@ class Mux extends TypedMux<Logic> with InlineSystemVerilog {
   /// [Mux] input propagated when [out] is `1`.
   late final Logic _d1 = input(_d1Name);
 
-  /// Output port of the [Mux].
+  /// Output port of the mux.
   @override
-  late final Logic out = output(_outName);
+  late final Logic out;
 
   /// Output port of the [Mux].
   ///
@@ -914,16 +972,14 @@ class Mux extends TypedMux<Logic> with InlineSystemVerilog {
   @Deprecated('Use `out` or `mux` instead.')
   Logic get y => out;
 
-  /// Constructs a multiplexer which passes [d0] or [d1] to [out] depending
-  /// on if [control] is 0 or 1, respectively.
-  Mux(Logic control, Logic d1, Logic d0, {super.name = 'mux'}) {
-    if (control.width != 1) {
-      throw PortWidthMismatchException(control, 1);
-    }
-    if (d0.width != d1.width) {
-      throw PortWidthMismatchException.equalWidth(d0, d1);
-    }
-
+  _ScalarMux(
+    Logic control,
+    Logic d1,
+    Logic d0,
+    Logic outputSchema, {
+    required bool usesOutputGenerator,
+    super.name = 'mux',
+  }) : super._() {
     _controlName = Naming.unpreferredName('control_${control.name}');
     _d0Name = Naming.unpreferredName('d0_${d0.name}');
     _d1Name = Naming.unpreferredName('d1_${d1.name}');
@@ -932,10 +988,16 @@ class Mux extends TypedMux<Logic> with InlineSystemVerilog {
     addInput(_controlName, control);
     addInput(_d0Name, d0, width: d0.width);
     addInput(_d1Name, d1, width: d1.width);
-    addOutput(
-      _outName,
-      width: d0.width,
-    ).makeUnassignable(reason: 'Output of a gate $this cannot be assigned.');
+    out = (usesOutputGenerator
+        ? addTypedOutput(
+            _outName,
+            operationOutputClone(outputSchema),
+          )
+        : addOutput(
+            _outName,
+            width: d0.width,
+          ))
+      ..makeUnassignable(reason: 'Output of a gate $this cannot be assigned.');
 
     _setup();
   }
@@ -977,16 +1039,8 @@ class Mux extends TypedMux<Logic> with InlineSystemVerilog {
   }
 }
 
-String _structureMuxDefinitionName(LogicStructure structure) =>
-    'StructureMux_${logicStructureShapeSignature(structure)}';
-
-/// A multiplexer that preserves a concrete [LogicStructure] type.
-///
-/// Both operands must have identical recursive structure and legal typed-port
-/// clones. Each corresponding leaf is selected independently, preserving
-/// nested [LogicArray] and [LogicArrayOf] boundaries at the output.
-class StructureMux<LogicType extends LogicStructure>
-    extends TypedMux<LogicType> {
+/// A non-inline implementation preserving a non-scalar [LogicType].
+class _DomainMux<LogicType extends Logic> extends Mux<LogicType> {
   late final Logic _control;
   late final LogicType _d0;
   late final LogicType _d1;
@@ -994,49 +1048,41 @@ class StructureMux<LogicType extends LogicStructure>
   @override
   late final LogicType out;
 
-  /// Creates a structure-preserving multiplexer.
-  StructureMux(
+  _DomainMux(
     Logic control,
     LogicType d1,
-    LogicType d0, {
-    super.name = 'structure_mux',
-  }) : super(definitionName: _structureMuxDefinitionName(d0)) {
-    if (control.width != 1) {
-      throw PortWidthMismatchException(control, 1);
-    }
-    validateMatchingLogicStructure(d1, d0, operation: 'StructureMux');
-
-    LogicType cloneOutput({String name = 'out'}) => typedClone(d0, name: name);
-
+    LogicType d0,
+    LogicType outputSchema, {
+    super.name = 'mux',
+  }) : super._(
+          definitionName: 'Mux_${_muxSchemaSignature(outputSchema)}',
+        ) {
     _control = addInput('control', control);
     _d0 = addTypedInput('d0', d0);
     _d1 = addTypedInput('d1', d1);
-    out = addTypedOutput('out', cloneOutput);
+    out = addTypedOutput(
+      'out',
+      operationOutputClone(outputSchema),
+    );
 
-    for (var index = 0; index < out.leafElements.length; index++) {
-      out.leafElements[index] <=
-          mux(_control, _d1.leafElements[index], _d0.leafElements[index]);
+    if (out is LogicStructure &&
+        _d0 is LogicStructure &&
+        _d1 is LogicStructure) {
+      final structuredOut = out as LogicStructure;
+      final structuredD0 = _d0 as LogicStructure;
+      final structuredD1 = _d1 as LogicStructure;
+      for (var index = 0; index < structuredOut.leafElements.length; index++) {
+        structuredOut.leafElements[index] <=
+            mux<Logic>(
+              _control,
+              structuredD1.leafElements[index],
+              structuredD0.leafElements[index],
+            );
+      }
+    } else {
+      out <= mux<Logic>(_control, _d1, _d0);
     }
   }
-}
-
-/// Selects between matching structures while preserving their concrete type.
-///
-/// If [control] is a valid [Const], returns the selected operand directly.
-/// Otherwise, returns [StructureMux.out].
-LogicType typedMux<LogicType extends LogicStructure>(
-  Logic control,
-  LogicType d1,
-  LogicType d0,
-) {
-  if (control.width != 1) {
-    throw PortWidthMismatchException(control, 1);
-  }
-  validateMatchingLogicStructure(d1, d0, operation: 'typedMux');
-  if (control is Const && control.value.isValid) {
-    return control.value == LogicValue.one ? d1 : d0;
-  }
-  return StructureMux<LogicType>(control, d1, d0).out;
 }
 
 /// A two-input bit index gate [Module].

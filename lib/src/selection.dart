@@ -9,10 +9,10 @@
 
 import 'package:rohd/rohd.dart';
 
-/// Allows a lists of [Logic]s to have its elemets picked
-/// by a [Logic] index value.
-extension IndexedLogic on List<Logic> {
-  /// Performs a [index] based selection on an [List] of [Logic].
+/// Allows a list of [LogicType]s to have an element selected by a [Logic]
+/// index.
+extension IndexedLogic<LogicType extends Logic> on List<LogicType> {
+  /// Performs an [index]-based selection on this list.
   ///
   /// Given a [List] of [Logic] say `logicList` on which we apply [selectIndex]
   /// and an element [index] as argument , we can select any valid element
@@ -27,46 +27,16 @@ extension IndexedLogic on List<Logic> {
   /// selected <= logicList.selectIndex(index);
   /// ```
   ///
-  Logic selectIndex(Logic index, {Logic? defaultValue}) =>
-      index.selectFrom(this, defaultValue: defaultValue);
-}
-
-/// Allows lists of matching structures to retain their type when selected.
-extension TypedIndexedLogic<LogicType extends LogicStructure>
-    on List<LogicType> {
-  /// Selects one structure using [index], preserving its concrete type.
-  ///
-  /// An out-of-range index produces zero unless [defaultValue] is supplied.
-  LogicType selectIndexTyped(
+  LogicType selectIndex(
     Logic index, {
-    LogicType? defaultValue,
-    String name = 'selectFrom',
-  }) {
-    if (isEmpty) {
-      throw LogicConstructionException(
-        'selectIndexTyped requires at least one value.',
-      );
-    }
-    return typedCases(
-      index,
-      {
-        for (var valueIndex = 0; valueIndex < length; valueIndex++)
-          valueIndex: this[valueIndex],
-      },
-      conditionalType: ConditionalType.unique,
-      defaultValue: defaultValue ?? 0,
-      name: name,
-    );
-  }
-}
-
-/// Allows a hardware index to select from a typed structure list.
-extension TypedSelectionLogic on Logic {
-  /// Selects one value from [values], preserving its concrete structure type.
-  LogicType selectFromTyped<LogicType extends LogicStructure>(
-    List<LogicType> values, {
-    LogicType? defaultValue,
+    dynamic defaultValue,
+    LogicType Function({String? name})? outputGenerator,
     String name = 'selectFrom',
   }) =>
-      values.selectIndexTyped(this, defaultValue: defaultValue, name: name);
+      index.selectFrom(
+        this,
+        defaultValue: defaultValue,
+        outputGenerator: outputGenerator,
+        name: name,
+      );
 }

@@ -19,36 +19,43 @@ Ports with matching types to the original `LogicStructure` can be created using 
 
 ## Type-preserving operations
 
-`StructureMux`, `StructureFlipFlop`, and `StructurePassthrough` preserve a
-concrete `LogicStructure` type when their structure operands match:
+`Mux`, `FlipFlop`, and `Passthrough` preserve a concrete `Logic` subtype when
+their operands establish a compatible output representation:
 
 ```dart
-final selected = StructureMux(select, packet1, packet0).out;
-final registered =
-    StructureFlipFlop(clk, selected, reset: reset).q;
-final forwarded = StructurePassthrough(registered).out;
+final selected = Mux(select, packet1, packet0).out;
+final registered = FlipFlop(clk, selected, reset: reset).q;
+final forwarded = Passthrough(registered).out;
 
 // All three values have type Packet.
 forwarded.valid <= selected.valid;
 ```
 
-The same behavior applies to `LogicArray` and `LogicArrayOf<T>`, including nested typed arrays. Both mux operands must have the same concrete type and recursive shape: field widths, array dimensions, and packing hints must match.
+The same behavior applies to `LogicArray` and `LogicArrayOf<T>`, including
+nested typed arrays. A mux uses its `d0` operand as the default output
+prototype. Both operands must have matching concrete types and recursive
+geometry: field widths, array dimensions, packing hints, and leaf structure.
+Pass an `outputGenerator` to `Mux`, `FlipFlop`, `mux`, `flop`, or `cases` to
+select a different result representation. Use `Passthrough.withOutput` for
+the corresponding pass-through override while retaining the historical
+positional `name` argument of `Passthrough`.
 
-Typed operations can consume a structure containing `Const` leaves when its
+These operations can consume a structure containing `Const` leaves when its
 `clone()` implementation returns the same concrete structure type with
 driveable `Logic` leaves. The operation preserves the structure type while
 normalizing its input port and output to driveable logic. This supports
 domain-specific constant structures, such as a floating-point structure
-assembled from constant sign, exponent, and mantissa fields.
-
-The existing `Mux`, `FlipFlop`, and `Passthrough` APIs always produce ordinary
-`Logic`. They accept structures as packed inputs when widths match, but do not
-preserve named fields:
+assembled from constant sign, exponent, and mantissa fields. Plain `Const` and
+`LogicNet` sources cannot infer a driveable result type, so normalize them
+explicitly:
 
 ```dart
-final Logic selected = Mux(select, packet1, packet0).out;
-final Logic registered = FlipFlop(clk, selected).q;
+final Logic registered = flop<Logic>(clk, Const(0x5a, width: 8));
 ```
+
+For a valid constant mux control without an `outputGenerator`, `mux` returns
+the selected source directly. Supplying an `outputGenerator` always constructs
+a fresh driveable output, including for a constant control.
 
 ### Case selection
 
@@ -70,25 +77,37 @@ Direct structure assignments require matching total widths and map bits in
 packed leaf order. They do not require the source and destination to have the
 same concrete structure type.
 
-Use `typedCases` when the operation should construct and return a value while
-preserving its concrete type:
+Use generic `cases` when the operation should construct and return a value
+while preserving its concrete type:
 
 ```dart
-final Packet selected = typedCases(
+final selected = cases(
   selector,
   {0: packet0, 1: packet1},
   defaultValue: fallback,
+  outputGenerator: packet0.clone,
 );
 ```
 
-All structured values passed to `typedCases` must have the same concrete type
-and recursive shape. The legacy `cases` helper accepts structures as packed
-values but always returns an ordinary `Logic`.
+The output generator is also how a structured result can accept deliberately
+packed branch values. A packed source is interpreted using the generated
+output's representation. Different structured domain types should be converted
+to `packed` explicitly before that bit reinterpretation.
 
-Use `selectIndexTyped` and `selectFromTyped` for structure-preserving indexed
-selection. `StructurePipeline<T>` preserves the same concrete type at every
+Use `selectIndex` and `selectFrom` for structure-preserving indexed selection.
+`StructurePipeline<T>` preserves the same concrete type at every
 registered pipeline boundary. Specify `T` when creating a pipeline with inline
 stage transforms so Dart can type the transform parameter.
+
+### Migrating type-preserving operations
+
+The former `StructureMux`, `StructureFlipFlop`, `StructurePassthrough`,
+`typedCases`, `typedMux`, `typedFlop`, `selectIndexTyped`, and
+`selectFromTyped` entry points are replaced by the corresponding established
+generic APIs. Use `cloneTyped()` and `namedTyped()` when the receiver's static
+type should be retained without a cast. `Const.cloneTyped()` remains a literal
+clone, while `Const.namedTyped()` is rejected because a named alias is
+driveable; use `Const.named()` when an ordinary `Logic` alias is intended.
 
 ## Using `LogicStructure` to group signals
 
