@@ -615,14 +615,6 @@ class LogicStructure implements Logic {
   @override
   Logic xor() => packed.xor();
 
-  @Deprecated(
-    'Use `value` instead.'
-    '  Check `width` separately to confirm single-bit.',
-  )
-  @override
-  // Can rely on `packed` here because it must be 1 bit.
-  LogicValue get bit => packed.bit;
-
   @override
   late final Stream<LogicValueChanged> changed = _internalPacked.changed;
 
@@ -669,14 +661,6 @@ class LogicStructure implements Logic {
   @override
   Logic lte(dynamic other) => packed.lte(other);
 
-  @Deprecated('Use value.isValid instead.')
-  @override
-  bool hasValidValue() => value.isValid;
-
-  @Deprecated('Use value.isFloating instead.')
-  @override
-  bool isFloating() => value.isFloating;
-
   @override
   Logic isIn(List<dynamic> list) => packed.isIn(list);
 
@@ -713,17 +697,6 @@ class LogicStructure implements Logic {
 
   @override
   Logic zeroExtend(int newWidth) => packed.zeroExtend(newWidth);
-
-  @Deprecated(
-    'Use `value` instead.'
-    '  Check `width` separately to confirm single-bit.',
-  )
-  @override
-  BigInt get valueBigInt => value.toBigInt();
-
-  @Deprecated('Use value.toInt() instead.')
-  @override
-  int get valueInt => value.toInt();
 
   @override
   Logic? get _srcConnection => throw UnsupportedError('Delegated to elements');

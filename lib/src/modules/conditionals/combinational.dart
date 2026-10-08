@@ -129,10 +129,7 @@ class Combinational extends Always {
 
       signalToSsaDrivers.putIfAbsent(tpi, () => <SsaLogic>{}).add(ssaDriver);
 
-      if (tpi.isInput &&
-          // ignore: deprecated_member_use_from_same_package - backwards compatibility with CustomSystemVerilog
-          ((tpi.parentModule! is CustomSystemVerilog) ||
-              tpi.parentModule! is SystemVerilog)) {
+      if (tpi.isInput && tpi.parentModule! is SystemVerilog) {
         toParse.addAll(tpi.parentModule!.outputs.values);
       } else {
         toParse.addAll(tpi.dstConnections);
