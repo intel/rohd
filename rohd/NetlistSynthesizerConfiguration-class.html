@@ -57,14 +57,17 @@
   <p>Configuration for netlist synthesis.</p>
 <p>The netlist synthesizer serves two main consumer flows, both configured
 through this configuration:</p>
-<p><strong>Flow 1 — Slim JSON</strong> (<code>NetlistService.slimJson</code>):
+<p><strong>Flow 1 — Slim JSON</strong> (<a href="../rohd/NetlistSynthesizer/synthesizeToJson.html">NetlistSynthesizer.synthesizeToJson</a> with
+<code>slimMode: true</code>):
   Batch synthesis of the entire design, producing a lightweight
   representation with ports, signals, and cell stubs but <strong>no cell
   connections</strong>.  Used for the initial DevTools hierarchy load.</p>
-<p><strong>Flow 2 — Full JSON, incremental</strong> (<code>NetlistService.moduleJson</code>):
-  Returns the complete netlist (with cell connections) for a single
-  module definition on demand.  Results are cached; the first call
-  may trigger a lazy <code>SynthBuilder</code> run on the requested subtree.</p>
+<p><strong>Flow 2 — Full JSON</strong> (<a href="../rohd/NetlistSynthesizer/synthesizeToJson.html">NetlistSynthesizer.synthesizeToJson</a> with
+<code>slimMode: false</code>):
+  Synthesizes the entire design with complete cell connections.</p>
+<p><a href="../rohd/NetlistService-class.html">NetlistService</a> exposes these projections through <a href="../rohd/NetlistService/slimJson.html">NetlistService.slimJson</a>
+and <a href="../rohd/NetlistService/moduleJson.html">NetlistService.moduleJson</a>, preserving a shared netlist representation
+across the two flows.</p>
 <p>Both flows retain complete per-module synthesis results. Flow 1 skips cell
 connection copying while collecting the emitted JSON projection. This keeps
 slim output lightweight while guaranteeing a later expanded request has the

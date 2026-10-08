@@ -26,7 +26,7 @@
   <ol class="breadcrumbs gt-separated dark hidden-xs">
     <li><a href="../index.html">rohd</a></li>
     <li><a href="../rohd/">rohd.dart</a></li>
-    <li class="self-crumb">WaveDumper class</li>
+    <li class="self-crumb"><span class="deprecated">WaveDumper</span> class</li>
   </ol>
   <div class="self-name">WaveDumper</div>
   <form class="search navbar-right" role="search">
@@ -54,24 +54,62 @@
 
     
 <section class="desc markdown">
-  <p>A waveform dumper for simulations.</p>
-<p>Outputs to vcd format at <a href="../rohd/WaveDumper/outputPath.html">outputPath</a>.  <a href="../rohd/WaveDumper/module.html">module</a> must be built prior to
-attaching the <a href="../rohd/WaveDumper-class.html">WaveDumper</a>.</p>
-<p>The waves will only dump to the file periodically and then once the
-simulation has completed.</p>
+  <p>Deprecated: use <a href="../rohd/Module/dumpWaves.html">Module.dumpWaves</a> instead.</p>
+<p><a class="deprecated" href="../rohd/WaveDumper-class.html">WaveDumper</a> is a simple wrapper around <a href="../rohd/WaveformService-class.html">WaveformService</a> for backward
+compatibility. It provides the legacy API for recording all signal changes
+in a simulation to a VCD file without retaining the complete VCD in memory.</p>
+<p><strong>Migration guide:</strong></p>
+<p>Replace:</p>
+<pre class="language-dart"><code class="language-dart">var dumper = WaveDumper(module, outputPath: 'output.vcd');
+</code></pre>
+<p>With:</p>
+<pre class="language-dart"><code class="language-dart">var service = module.dumpWaves(outputPath: 'output.vcd');
+</code></pre>
+<p>For more control over filtering, timescale, and recording windows, create a
+<a href="../rohd/WaveformService-class.html">WaveformService</a> directly:</p>
+<pre class="language-dart"><code class="language-dart">final service = WaveformService(
+  module,
+  outputDirectory: 'build',
+  outputBaseName: 'debug',
+  writeToFile: true,
+  timescale: '1ns',
+  startTime: 100,
+  signalFilter: (signal) =&gt; signal.name.startsWith('debug_'),
+);
+</code></pre>
 </section>
 
 
+    <section>
+      <dl class="dl-horizontal">
+        
+
+        
+        
+
+
+        
+        
+  <dt>Annotations</dt>
+  <dd>
+    <ul class="annotation-list clazz-relationships">
+        <li>@<a href="https://api.dart.dev/stable/3.13.5/dart-core/Deprecated/Deprecated.html">Deprecated</a>(&#39;Use Module.dumpWaves() for simple VCD output, or &#39; &#39;WaveformService for advanced waveform configuration.&#39;)</li>
+    </ul>
+  </dd>
+
+
+      </dl>
+    </section>
 
     
   <section class="summary offset-anchor" id="constructors">
     <h2>Constructors</h2>
     <dl class="constructor-summary-list">
         <dt id="WaveDumper.new" class="callable">
-          <span class="name"><a href="../rohd/WaveDumper/WaveDumper.html">WaveDumper</a></span><span class="signature">(<span class="parameter" id="param-module"><span class="type-annotation"><a href="../rohd/Module-class.html">Module</a></span> <span class="parameter-name">module</span>, {</span><span class="parameter" id="param-outputPath"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">outputPath</span> = <span class="default-value">&#39;waves.vcd&#39;</span></span>})</span>
+          <span class="name"><a class="deprecated" href="../rohd/WaveDumper/WaveDumper.html">WaveDumper</a></span><span class="signature">(<span class="parameter" id="param-module"><span class="type-annotation"><a href="../rohd/Module-class.html">Module</a></span> <span class="parameter-name">module</span>, {</span><span class="parameter" id="param-outputPath"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">outputPath</span> = <span class="default-value">&#39;waves.vcd&#39;</span></span>})</span>
         </dt>
         <dd>
-          Attaches a <a href="../rohd/WaveDumper-class.html">WaveDumper</a> to record all signal changes in a simulation of
+          Attaches a <a class="deprecated" href="../rohd/WaveDumper-class.html">WaveDumper</a> to record all signal changes in a simulation of
 <code>module</code> in a VCD file at <code>outputPath</code>.
         </dd>
     </dl>
@@ -102,7 +140,7 @@ simulation has completed.</p>
 </dt>
 <dd>
   The <a href="../rohd/Module-class.html">Module</a> being dumped.
-  <div class="features"><span class="feature">final</span></div>
+  <div class="features"><span class="feature">no setter</span></div>
 
 </dd>
 
@@ -114,7 +152,7 @@ simulation has completed.</p>
 </dt>
 <dd>
   The output filepath of the generated waveforms.
-  <div class="features"><span class="feature">final</span></div>
+  <div class="features"><span class="feature">no setter</span></div>
 
 </dd>
 
@@ -135,7 +173,7 @@ simulation has completed.</p>
 
     
   <section
-      class="summary offset-anchor"
+      class="summary offset-anchor inherited"
       id="instance-methods">
     <h2>Methods</h2>
     <dl class="callables">
@@ -203,7 +241,7 @@ simulation has completed.</p>
 <ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
     <li><a href="../index.html">rohd</a></li>
     <li><a href="../rohd/">rohd</a></li>
-    <li class="self-crumb">WaveDumper class</li>
+    <li class="self-crumb"><span class="deprecated">WaveDumper</span> class</li>
 </ol>
 
     <h5>rohd library</h5>

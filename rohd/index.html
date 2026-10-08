@@ -96,6 +96,14 @@
   An arithmetic right-shift module.
 </dd>
 
+          <dt id="ArtifactProducingService">
+  <span class="name "><a href="../rohd/ArtifactProducingService-class.html">ArtifactProducingService</a></span> 
+
+</dt>
+<dd>
+  A <a href="../rohd/ModuleService-class.html">ModuleService</a> that produces named output artifacts.
+</dd>
+
           <dt id="BusSubset">
   <span class="name "><a href="../rohd/BusSubset-class.html">BusSubset</a></span> 
 
@@ -128,6 +136,14 @@ is executed.
 <dd>
   A special version of <a href="../rohd/Case-class.html">Case</a> which can do wildcard matching via <code>z</code> in
 the expression.
+</dd>
+
+          <dt id="CodeGenService">
+  <span class="name "><a href="../rohd/CodeGenService-class.html">CodeGenService</a></span> 
+
+</dt>
+<dd>
+  An <a href="../rohd/ArtifactProducingService-class.html">ArtifactProducingService</a> that generates source-code text.
 </dd>
 
           <dt id="Combinational">
@@ -361,6 +377,31 @@ in a similar way as an individual <a href="../rohd/Logic-class.html">Logic</a>.
 boundaries.
 </dd>
 
+          <dt id="ModuleService">
+  <span class="name "><a href="../rohd/ModuleService-class.html">ModuleService</a></span> 
+
+</dt>
+<dd>
+  The common contract implemented by every module-scoped service that
+registers with <a href="../rohd/ModuleServices-class.html">ModuleServices</a>.
+</dd>
+
+          <dt id="ModuleServiceArtifact">
+  <span class="name "><a href="../rohd/ModuleServiceArtifact-class.html">ModuleServiceArtifact</a></span> 
+
+</dt>
+<dd>
+  A named artifact produced by an <a href="../rohd/ArtifactProducingService-class.html">ArtifactProducingService</a>.
+</dd>
+
+          <dt id="ModuleServices">
+  <span class="name "><a href="../rohd/ModuleServices-class.html">ModuleServices</a></span> 
+
+</dt>
+<dd>
+  A slim, type-keyed registry of <a href="../rohd/ModuleService-class.html">ModuleService</a>s.
+</dd>
+
           <dt id="Modulo">
   <span class="name "><a href="../rohd/Modulo-class.html">Modulo</a></span> 
 
@@ -383,6 +424,15 @@ boundaries.
 </dt>
 <dd>
   A mux (multiplexer) module.
+</dd>
+
+          <dt id="NetlistService">
+  <span class="name "><a href="../rohd/NetlistService-class.html">NetlistService</a></span> 
+
+</dt>
+<dd>
+  A service that wraps netlist (Yosys JSON) synthesis of a <a href="../rohd/Module-class.html">Module</a>
+hierarchy.
 </dd>
 
           <dt id="NetlistSynthesizer">
@@ -607,6 +657,14 @@ declaration of a module definition.
   Configuration for types in a SystemVerilog port declaration.
 </dd>
 
+          <dt id="SystemVerilogService">
+  <span class="name "><a href="../rohd/SystemVerilogService-class.html">SystemVerilogService</a></span> 
+
+</dt>
+<dd>
+  A service that wraps SystemVerilog synthesis of a <a href="../rohd/Module-class.html">Module</a> hierarchy.
+</dd>
+
           <dt id="SystemVerilogSynthesizer">
   <span class="name "><a href="../rohd/SystemVerilogSynthesizer-class.html">SystemVerilogSynthesizer</a></span> 
 
@@ -633,11 +691,19 @@ given <a href="../rohd/Module-class.html">Module</a>.
 </dd>
 
           <dt id="WaveDumper">
-  <span class="name "><a href="../rohd/WaveDumper-class.html">WaveDumper</a></span> 
+  <span class="name deprecated"><a class="deprecated" href="../rohd/WaveDumper-class.html">WaveDumper</a></span> 
 
 </dt>
 <dd>
-  A waveform dumper for simulations.
+  Deprecated: use <a href="../rohd/Module/dumpWaves.html">Module.dumpWaves</a> instead.
+</dd>
+
+          <dt id="WaveformService">
+  <span class="name "><a href="../rohd/WaveformService-class.html">WaveformService</a></span> 
+
+</dt>
+<dd>
+  A waveform capture service that records signal changes.
 </dd>
 
           <dt id="Xor2Gate">
@@ -686,6 +752,14 @@ given <a href="../rohd/Module-class.html">Module</a>.
   Configuration options and utilities for naming and renaming signals.
 </dd>
 
+          <dt id="OverwritePolicy">
+  <span class="name "><a href="../rohd/OverwritePolicy.html">OverwritePolicy</a></span> 
+
+</dt>
+<dd>
+  Policy applied when the output file already exists at construction time.
+</dd>
+
           <dt id="PairDirection">
   <span class="name "><a href="../rohd/PairDirection.html">PairDirection</a></span> 
 
@@ -716,6 +790,14 @@ given <a href="../rohd/Module-class.html">Module</a>.
 </dt>
 <dd>
   Controls whether a type is included in a SystemVerilog port declaration.
+</dd>
+
+          <dt id="WaveOutputFormat">
+  <span class="name "><a href="../rohd/WaveOutputFormat.html">WaveOutputFormat</a></span> 
+
+</dt>
+<dd>
+  The output format for waveform capture.
 </dd>
 
       </dl>
@@ -907,13 +989,13 @@ by a <a href="../rohd/Logic-class.html">Logic</a> index value.
           
   <dt id="Dumper" class="">
   <span class="name deprecated"><a class="deprecated" href="../rohd/Dumper.html">Dumper</a></span>
-    = <a href="../rohd/WaveDumper-class.html">WaveDumper</a>
+    = <a class="deprecated" href="../rohd/WaveDumper-class.html">WaveDumper</a>
   </span>
   
 
 </dt>
 <dd>
-  Deprecated: use <a href="../rohd/WaveDumper-class.html">WaveDumper</a> instead.
+  Deprecated: use <a href="../rohd/Module/dumpWaves.html">Module.dumpWaves</a> instead.
   
 
 </dd>

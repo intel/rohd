@@ -27,7 +27,7 @@
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/">rohd.dart</a></li>
     <li><a href="../../rohd/WaveDumper-class.html">WaveDumper</a></li>
-    <li class="self-crumb">WaveDumper.new constructor</li>
+    <li class="self-crumb"><span class="deprecated">WaveDumper.new</span> constructor</li>
   </ol>
   <div class="self-name">WaveDumper.new</div>
   <form class="search navbar-right" role="search">
@@ -54,50 +54,33 @@
 
     <section class="multi-line-signature">
       
-      <span class="name ">WaveDumper</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="param-module"><span class="type-annotation"><a href="../../rohd/Module-class.html">Module</a></span> <span class="parameter-name">module</span>, {</span></li>
+  <div>
+    <ol class="annotation-list">
+        <li>@<a href="https://api.dart.dev/stable/3.13.5/dart-core/Deprecated/Deprecated.html">Deprecated</a>(&#39;Use Module.dumpWaves() for simple VCD output, or &#39; &#39;WaveformService for advanced waveform configuration.&#39;)</li>
+    </ol>
+  </div>
+      <span class="name deprecated">WaveDumper</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="param-module"><span class="type-annotation"><a href="../../rohd/Module-class.html">Module</a></span> <span class="parameter-name">module</span>, {</span></li>
 <li><span class="parameter" id="param-outputPath"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">outputPath</span> = <span class="default-value">&#39;waves.vcd&#39;</span>, </span></li>
 </ol>})
     </section>
     
 <section class="desc markdown">
-  <p>Attaches a <a href="../../rohd/WaveDumper-class.html">WaveDumper</a> to record all signal changes in a simulation of
+  <p>Attaches a <a class="deprecated" href="../../rohd/WaveDumper-class.html">WaveDumper</a> to record all signal changes in a simulation of
 <code>module</code> in a VCD file at <code>outputPath</code>.</p>
+<p><code>module</code> must be built prior to construction.</p>
+<p><strong>Deprecated:</strong> Use <a href="../../rohd/Module/dumpWaves.html">Module.dumpWaves</a> for simple VCD output, or
+<a href="../../rohd/WaveformService-class.html">WaveformService</a> for signal filtering, custom timescale, recording
+windows, and extensibility hooks for streaming applications.</p>
 </section>
 
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">WaveDumper(this.module, {this.outputPath = &#39;waves.vcd&#39;})
-    : _outputFile = File(outputPath)..createSync(recursive: true) {
-  if (!module.hasBuilt) {
-    throw Exception(
-        &#39;Module must be built before passed to dumper.  Call build() first.&#39;);
-  }
-
-  _outFileSink = _outputFile.openWrite();
-
-  _collectAllSignals();
-
-  _writeHeader();
-  _writeScope();
-
-  Simulator.preTick.listen((args) {
-    if (Simulator.time != _currentDumpingTimestamp) {
-      if (_changedLogicsThisTimestamp.isNotEmpty) {
-        &#47;&#47; no need to write blank timestamps
-        _captureTimestamp(_currentDumpingTimestamp);
-      }
-      _currentDumpingTimestamp = Simulator.time;
-    }
-  });
-
-  Simulator.registerEndOfSimulationAction(() async {
-    _captureTimestamp(Simulator.time);
-
-    await _terminate();
-  });
-}</code></pre>
+  <pre class="language-dart"><code class="language-dart">@Deprecated(&#39;Use Module.dumpWaves() for simple VCD output, or &#39;
+    &#39;WaveformService for advanced waveform configuration.&#39;)
+WaveDumper(Module module, {String outputPath = &#39;waves.vcd&#39;})
+    : _service = module.dumpWaves(outputPath: outputPath);</code></pre>
 </section>
 
 
@@ -113,7 +96,7 @@
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/">rohd</a></li>
     <li><a href="../../rohd/WaveDumper-class.html">WaveDumper</a></li>
-    <li class="self-crumb">WaveDumper.new constructor</li>
+    <li class="self-crumb"><span class="deprecated">WaveDumper.new</span> constructor</li>
 </ol>
 
     <h5>WaveDumper class</h5>

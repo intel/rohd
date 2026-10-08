@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the SystemVerilogService class from the rohd library, for the Dart programming language.">
+  <title>SystemVerilogService class - rohd library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">rohd</a></li>
+    <li><a href="../rohd/">rohd.dart</a></li>
+    <li class="self-crumb">SystemVerilogService class</li>
+  </ol>
+  <div class="self-name">SystemVerilogService</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="rohd&#47;rohd-library-sidebar.html"
+    data-below-sidebar="rohd&#47;SystemVerilogService-class-sidebar.html">
+    <div>
+<h1><span class="kind-class">SystemVerilogService</span> class 
+ 
+</h1></div>
+
+    
+<section class="desc markdown">
+  <p>A service that wraps SystemVerilog synthesis of a <a href="../rohd/Module-class.html">Module</a> hierarchy.</p>
+<p>Provides access to the generated SV file contents and per-module
+synthesis results, and optionally registers with <a href="../rohd/ModuleServices-class.html">ModuleServices</a>
+for DevTools inspection.</p>
+<p>Example:</p>
+<pre class="language-dart"><code class="language-dart">final dut = MyModule(...);
+await dut.build();
+final sv = SystemVerilogService(
+  dut,
+  outputDirectory: 'build',
+  multiFile: true,
+);
+
+// Write individual .sv files:
+sv.writeOutputs();
+
+// Or get the concatenated output (like generateSynth):
+print(sv.output);
+</code></pre>
+</section>
+
+
+    <section>
+      <dl class="dl-horizontal">
+        
+  <dt>Inheritance</dt>
+  <dd>
+    <ul class="gt-separated dark clazz-relationships">
+      <li><a href="https://api.dart.dev/stable/3.13.5/dart-core/Object-class.html">Object</a></li>
+        <li><a href="../rohd/ArtifactProducingService-class.html">ArtifactProducingService</a></li>
+        <li><a href="../rohd/CodeGenService-class.html">CodeGenService</a></li>
+      <li>SystemVerilogService</li>
+    </ul>
+  </dd>
+
+        
+        
+
+
+        
+        
+
+
+      </dl>
+    </section>
+
+    
+  <section class="summary offset-anchor" id="constructors">
+    <h2>Constructors</h2>
+    <dl class="constructor-summary-list">
+        <dt id="SystemVerilogService.new" class="callable">
+          <span class="name"><a href="../rohd/SystemVerilogService/SystemVerilogService.html">SystemVerilogService</a></span><span class="signature">(<span class="parameter" id="param-module"><span class="type-annotation"><a href="../rohd/Module-class.html">Module</a></span> <span class="parameter-name">module</span>, {</span><span class="parameter" id="param-outputDirectory"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">outputDirectory</span> = <span class="default-value">&#39;.&#39;</span>, </span><span class="parameter" id="param-outputBaseName"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">outputBaseName</span>, </span><span class="parameter" id="param-multiFile"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">multiFile</span> = <span class="default-value">false</span>, </span><span class="parameter" id="param-includeHeader"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">includeHeader</span>, </span><span class="parameter" id="param-configuration"><span class="type-annotation"><a href="../rohd/SystemVerilogSynthesizerConfiguration-class.html">SystemVerilogSynthesizerConfiguration</a></span> <span class="parameter-name">configuration</span> = <span class="default-value">const SystemVerilogSynthesizerConfiguration()</span>, </span><span class="parameter" id="param-register"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">register</span> = <span class="default-value">true</span></span>})</span>
+        </dt>
+        <dd>
+          Creates a <a href="../rohd/SystemVerilogService-class.html">SystemVerilogService</a> for <code>module</code>.
+        </dd>
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-properties">
+    <h2>Properties</h2>
+    <dl class="properties">
+        <dt id="allContents" class="property">
+  <span class="name"><a href="../rohd/SystemVerilogService/allContents.html">allContents</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Returns the concatenated SystemVerilog module definitions as a single
+string, without the generation header.
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="artifacts" class="property">
+  <span class="name"><a href="../rohd/SystemVerilogService/artifacts.html">artifacts</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/ModuleServiceArtifact-class.html">ModuleServiceArtifact</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  The artifacts generated by this service.
+  <div class="features"><span class="feature">no setter</span><span class="feature">override</span></div>
+
+</dd>
+
+        <dt id="configuration" class="property">
+  <span class="name"><a href="../rohd/SystemVerilogService/configuration.html">configuration</a></span>
+  <span class="signature">&#8594; <a href="../rohd/SystemVerilogSynthesizerConfiguration-class.html">SystemVerilogSynthesizerConfiguration</a></span>
+  
+
+</dt>
+<dd>
+  Configuration controlling generated SystemVerilog.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="contentsByName" class="property">
+  <span class="name"><a class="deprecated" href="../rohd/SystemVerilogService/contentsByName.html">contentsByName</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Returns a map from generated module instance type name to its SV contents.
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="fileContents" class="property">
+  <span class="name"><a href="../rohd/SystemVerilogService/fileContents.html">fileContents</a></span>
+  <span class="signature">&#8596; <a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/SynthFileContents-class.html">SynthFileContents</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  The generated file contents (one per unique module definition).
+  <div class="features"><span class="feature">late</span><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="hashCode" class="property inherited">
+  <span class="name"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Object/hashCode.html">hashCode</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  The hash code for this object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="header" class="property">
+  <span class="name"><a href="../rohd/SystemVerilogService/header.html">header</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  The generation header included in each emitted SV file, when enabled.
+  <div class="features"><span class="feature">late</span><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="includeHeader" class="property">
+  <span class="name"><a href="../rohd/SystemVerilogService/includeHeader.html">includeHeader</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  Whether generated SV files include the ROHD generation header.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="module" class="property inherited">
+  <span class="name"><a href="../rohd/ArtifactProducingService/module.html">module</a></span>
+  <span class="signature">&#8594; <a href="../rohd/Module-class.html">Module</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  The top-level <a href="../rohd/Module-class.html">Module</a> this service operates on.
+  <div class="features"><span class="feature">final</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="multiFile" class="property">
+  <span class="name"><a href="../rohd/SystemVerilogService/multiFile.html">multiFile</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  Whether the artifact layout emits one <code>.sv</code> file per module definition
+(<code>true</code>) or a single concatenated file (<code>false</code>).
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="output" class="property">
+  <span class="name"><a href="../rohd/SystemVerilogService/output.html">output</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Returns the full single-file SystemVerilog output with header,
+identical to <code>Module.generateSynth()</code>.
+  <div class="features"><span class="feature">late</span><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="outputBaseName" class="property inherited">
+  <span class="name"><a href="../rohd/ArtifactProducingService/outputBaseName.html">outputBaseName</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  Filename stem used for primary artifacts.
+  <div class="features"><span class="feature">final</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="outputDirectory" class="property inherited">
+  <span class="name"><a href="../rohd/ArtifactProducingService/outputDirectory.html">outputDirectory</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  Directory receiving filesystem artifacts when this service writes them.
+  <div class="features"><span class="feature">final</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="runtimeType" class="property inherited">
+  <span class="name"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Object/runtimeType.html">runtimeType</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/Type-class.html">Type</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  A representation of the runtime type of the object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="synthBuilder" class="property">
+  <span class="name"><a href="../rohd/SystemVerilogService/synthBuilder.html">synthBuilder</a></span>
+  <span class="signature">&#8596; <a href="../rohd/SynthBuilder-class.html">SynthBuilder</a></span>
+  
+
+</dt>
+<dd>
+  The underlying <a href="../rohd/SynthBuilder-class.html">SynthBuilder</a> that drove synthesis.
+  <div class="features"><span class="feature">late</span><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="synthesisResults" class="property">
+  <span class="name"><a href="../rohd/SystemVerilogService/synthesisResults.html">synthesisResults</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/SynthesisResult-class.html">SynthesisResult</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  All <a href="../rohd/SynthesisResult-class.html">SynthesisResult</a>s produced by synthesis.
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="synthHeader" class="property">
+  <span class="name"><a href="../rohd/SystemVerilogService/synthHeader.html">synthHeader</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  The ROHD generation header prepended to single-file output.
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-methods">
+    <h2>Methods</h2>
+    <dl class="callables">
+        <dt id="instanceTypeOutput" class="callable">
+  <span class="name"><a href="../rohd/SystemVerilogService/instanceTypeOutput.html">instanceTypeOutput</a></span><span class="signature">(<wbr><span class="parameter" id="instanceTypeOutput-param-instanceTypeName"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">instanceTypeName</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a>?</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Returns SV output for a generated module <code>instanceTypeName</code>, or <code>null</code>
+when that instance type was not generated.
+  
+
+</dd>
+
+        <dt id="noSuchMethod" class="callable inherited">
+  <span class="name"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
+    <span class="returntype parameter">&#8594; dynamic</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Invoked when a nonexistent method or property is accessed.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toJson" class="callable">
+  <span class="name"><a href="../rohd/SystemVerilogService/toJson.html">toJson</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Object-class.html">Object</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Returns a JSON-serialisable summary of the SV synthesis.
+  <div class="features"><span class="feature">override</span></div>
+
+</dd>
+
+        <dt id="toString" class="callable inherited">
+  <span class="name"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Object/toString.html">toString</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  A string representation of this object.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="writeLegacyOutputPath" class="callable">
+  <span class="name"><a href="../rohd/SystemVerilogService/writeLegacyOutputPath.html">writeLegacyOutputPath</a></span><span class="signature">(<wbr><span class="parameter" id="writeLegacyOutputPath-param-outputPath"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">outputPath</span></span>)
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Writes the single-file output to an exact legacy <code>outputPath</code>.
+  
+
+</dd>
+
+        <dt id="writeOutputs" class="callable">
+  <span class="name"><a href="../rohd/SystemVerilogService/writeOutputs.html">writeOutputs</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Writes this service's artifacts to <a href="../rohd/ArtifactProducingService/outputDirectory.html">outputDirectory</a>.
+  
+
+</dd>
+
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor inherited"
+      id="operators">
+    <h2>Operators</h2>
+    <dl class="callables">
+        <dt id="operator ==" class="callable inherited">
+  <span class="name"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Object/operator_equals.html">operator ==</a></span><span class="signature">(<wbr><span class="parameter" id="==-param-other"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">other</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  The equality operator.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+  <section class="summary offset-anchor" id="static-properties">
+    <h2>Static Properties</h2>
+    <dl class="properties">
+        <dt id="current" class="property">
+  <span class="name"><a href="../rohd/SystemVerilogService/current.html">current</a></span>
+  <span class="signature">&#8594; <a href="../rohd/SystemVerilogService-class.html">SystemVerilogService</a>?</span>
+  
+
+</dt>
+<dd>
+  The most recently registered <a href="../rohd/SystemVerilogService-class.html">SystemVerilogService</a>, or <code>null</code>.
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+    
+
+  <section class="summary offset-anchor" id="constants">
+    <h2>Constants</h2>
+    <dl class="properties">
+        <dt id="moduleSeparator" class="constant">
+    <span class="name "><a href="../rohd/SystemVerilogService/moduleSeparator-constant.html">moduleSeparator</a></span>
+  <span class="signature">&#8594; const <a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  The separator inserted between module definitions in the
+concatenated single-file output from <a href="../rohd/SystemVerilogService/allContents.html">allContents</a>.
+  
+
+</dd>
+
+    </dl>
+  </section>
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">rohd</a></li>
+    <li><a href="../rohd/">rohd</a></li>
+    <li class="self-crumb">SystemVerilogService class</li>
+</ol>
+
+    <h5>rohd library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    rohd
+      0.6.11
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+
