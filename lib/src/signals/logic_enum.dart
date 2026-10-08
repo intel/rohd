@@ -37,7 +37,7 @@ class LogicEnum<T extends Enum> extends LogicDef {
     }
 
     // check that any `int` or `BigInt` mappings actually ended up matching
-    for (final MapEntry(key: key, value: computedValue)
+    for (final MapEntry(:key, value: computedValue)
         in computedMapping.entries) {
       final originalValue = mapping[key];
       if (originalValue is int || originalValue is BigInt) {
@@ -257,6 +257,7 @@ class LogicEnum<T extends Enum> extends LogicDef {
         throw ArgumentError.value(val, 'val', 'Not present in the mapping.');
       }
 
+      // we just checked that mapping contains the key
       // ignore: unnecessary_null_checks
       super.put(mapping[val]!);
     } else {
