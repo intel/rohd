@@ -116,6 +116,10 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
       if (packedSource == null) {
         continue;
       }
+      if (!packedSource.source.isPort(module) ||
+          !inputs.contains(packedSource.source.resolved)) {
+        continue;
+      }
 
       assignments.add(SynthAssignment(packedSource.source, arraySynth));
       for (final subset in packedSource.subsets) {
