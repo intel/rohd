@@ -969,7 +969,7 @@ void main() {
         final module = _TypedInputModule(values);
         await module.build();
         expect(
-          module.generateSynth,
+          module.dumpSystemVerilog,
           throwsA(
             isA<SynthException>().having(
               (exception) => exception.message,
@@ -1740,7 +1740,7 @@ void main() {
       ];
 
       await SimCompare.checkFunctionalVector(module, vectors);
-      final sv = module.generateSynth();
+      final sv = module.dumpSystemVerilog();
       expect(sv, contains('input logic [1:0][26:0] values'));
       expect(sv, contains('assign selected = values[1][19:18];'));
       expect(sv, isNot(contains('values[1][2][1:0]')));
@@ -1772,7 +1772,7 @@ void main() {
       ];
 
       await SimCompare.checkFunctionalVector(module, vectors);
-      final sv = module.generateSynth();
+      final sv = module.dumpSystemVerilog();
       expect(sv, contains('logic [1:0][8:0] values_1__matrix;'));
       expect(sv, contains('values_1__matrix[1][8:7]'));
       expect(sv, isNot(contains('values_1__matrix[1][2][8:7]')));
@@ -1813,7 +1813,7 @@ void main() {
       ];
 
       await SimCompare.checkFunctionalVector(module, vectors);
-      final sv = module.generateSynth();
+      final sv = module.dumpSystemVerilog();
       expect(sv, contains('logic [8:0] values_1__matrix [1:0];'));
       expect(sv, contains('values_1__matrix[1][8:7]'));
       expect(sv, isNot(contains('values_1__matrix[1][2][8:7]')));
@@ -1854,7 +1854,7 @@ void main() {
       ];
 
       await SimCompare.checkFunctionalVector(module, vectors);
-      final sv = module.generateSynth();
+      final sv = module.dumpSystemVerilog();
       expect(sv, contains('logic [1:0][1:0][8:0] values_1__matrix;'));
       expect(sv, contains('values_1__matrix[1][0][8:7]'));
       expect(sv, isNot(contains('values_1__matrix[1][0][2][8:7]')));
@@ -1888,7 +1888,7 @@ void main() {
       ];
 
       await SimCompare.checkFunctionalVector(module, vectors);
-      final sv = module.generateSynth();
+      final sv = module.dumpSystemVerilog();
       expect(sv, contains('values_1__matrix[1][8:7]'));
       expect(sv, contains('values_1__matrix[1][0]'));
       expect(sv, isNot(contains('values_1__matrix[1][2][8:7]')));
@@ -1954,7 +1954,7 @@ void main() {
       ];
 
       await SimCompare.checkFunctionalVector(module, vectors);
-      final sv = module.generateSynth();
+      final sv = module.dumpSystemVerilog();
       expect(sv, contains('valuesIn[1][31:30]'));
       expect(sv, contains('valuesOut[0][31:30]'));
       expect(
@@ -2075,7 +2075,7 @@ void main() {
       await mixedModule.build();
 
       await SimCompare.checkFunctionalVector(mixedModule, vectors);
-      final mixedSv = mixedModule.generateSynth();
+      final mixedSv = mixedModule.dumpSystemVerilog();
       expect(
         mixedSv,
         contains('input logic [44:0] valuesIn [1:0]'),
@@ -2092,7 +2092,7 @@ void main() {
         mixedSv,
         contains('logic [2:0] valuesIn_0__0__samples [1:0];'),
       );
-      final workaroundSv = mixedModule.generateSynth(
+      final workaroundSv = mixedModule.dumpSystemVerilog(
         configuration: _iverilogUnpackedArrayWorkaround,
       );
       expect(
@@ -2148,7 +2148,7 @@ void main() {
         Vector({'valuesIn': input}, {'valuesOut': expected})
       ];
       await SimCompare.checkFunctionalVector(module, vectors);
-      final sv = module.generateSynth();
+      final sv = module.dumpSystemVerilog();
       expect(
         sv,
         contains('input logic [2:0][159:0] valuesIn [1:0]'),
@@ -2162,7 +2162,7 @@ void main() {
         contains('valuesOut[1][2][159:152] = '
             'valuesIn[1][2][7:0]'),
       );
-      final workaroundSv = module.generateSynth(
+      final workaroundSv = module.dumpSystemVerilog(
         configuration: _iverilogUnpackedArrayWorkaround,
       );
       expect(
