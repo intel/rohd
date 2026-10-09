@@ -11,6 +11,7 @@ import 'dart:collection';
 
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/signals/signals.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 
 /// A direction for signals between a pair of components.
@@ -92,6 +93,8 @@ class PairInterface extends Interface<PairDirection> {
                         p.numUnpackedDimensions)
                     : LogicArray.port(name, p.dimensions, p.elementWidth,
                         p.numUnpackedDimensions);
+              case BaseLogicArray():
+                return p.clone();
               case LogicNet():
                 return LogicNet.port(name, p.width);
               default:

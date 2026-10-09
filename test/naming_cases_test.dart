@@ -110,6 +110,10 @@
 //         = "parent.field" → sanitized ("_")
 //   AR    Array element: isArrayMember
 //         → uses logic.name (index-based)
+//   TY    Typed array: root port and configured element names
+//         → exact port name and retained dimension prefixes
+//   TN    Nested typed-array fields in sibling elements
+//         → indexed, collision-free synthesized names
 //
 // ════════════════════════════════════════════════════════
 
@@ -150,6 +154,35 @@ class _UnprefSub extends Module {
   }
 }
 
+class _TypedNamingStructure extends LogicStructure {
+  final Logic before;
+  final TypedLogicArray<_SimpleStruct, LogicValue> samples;
+  final Logic after;
+
+  factory _TypedNamingStructure({String? name}) => _TypedNamingStructure._(
+        Logic(name: 'before'),
+        TypedLogicArray<_SimpleStruct, LogicValue>(
+          [2],
+          ({name}) => _SimpleStruct(name: name ?? 'sample'),
+          name: 'samples',
+          dimensionNames: const ['sample_'],
+        ),
+        Logic(name: 'after'),
+        name: name ?? 'typedElement',
+      );
+
+  _TypedNamingStructure._(
+    this.before,
+    this.samples,
+    this.after, {
+    required String name,
+  }) : super([before, samples, after], name: name);
+
+  @override
+  _TypedNamingStructure clone({String? name}) =>
+      _TypedNamingStructure(name: name ?? this.name);
+}
+
 // ── Main test module ──────────────────────────────
 // One module that exercises every valid naming case in a minimal design.
 // Each signal is tagged with the row number from the table above.
@@ -183,6 +216,7 @@ class _AllNamingCases extends Module {
   // Structure/array elements (ST, AR):
   late final LogicStructure structPort;
   late final LogicArray arrayPort;
+  late final TypedLogicArray<_TypedNamingStructure, LogicValue> typedArrayPort;
 
   _AllNamingCases() : super(name: 'allcases') {
     // ── Row 1: reserved + this-port + preferred ──────────────────
@@ -264,6 +298,17 @@ class _AllNamingCases extends Module {
     // ── AR: array element (isArrayMember, uses logic.name) ───────
     arrayPort = LogicArray([3], 8, name: 'arIn');
     addInputArray('arIn', arrayPort, dimensions: [3], elementWidth: 8);
+
+    // ── TY/TN: typed root, configured leaves, and nested fields ──
+    typedArrayPort = addTypedInput(
+      'typedIn',
+      TypedLogicArray<_TypedNamingStructure, LogicValue>(
+        [2],
+        _TypedNamingStructure.new,
+        name: 'typedSource',
+        dimensionNames: const ['entry_'],
+      ),
+    );
 
     // Drive output to use all signals (prevents pruning).
     out <=
@@ -518,6 +563,37 @@ void main() {
       expect(n, 'arIn');
     });
 
+    // ── TY: typed-array root and element hierarchy ──────────────
+
+    test('TY: typed array keeps port and configured element names', () {
+      expect(names[mod.typedArrayPort], 'typedIn');
+
+      final first = mod.typedArrayPort.at([0]);
+      expect(first.name, 'entry_0');
+      expect(first.structureName, 'typedIn[0]');
+      // `before` is a SystemVerilog keyword and is sanitized at construction.
+      expect(first.before.structureName, 'typedIn[0].before_');
+      expect(first.samples.structureName, 'typedIn[0].samples');
+      expect(
+        first.samples.at([1]).structureName,
+        'typedIn[0].samples[1]',
+      );
+      expect(
+        first.samples.at([1]).field1.structureName,
+        'typedIn[0].samples[1].a',
+      );
+    });
+
+    // ── TN: nested typed-array field synthesis names ────────────
+
+    test('TN: sibling nested typed-array fields get distinct names', () {
+      final firstSamples = mod.typedArrayPort.at([0]).samples;
+      final secondSamples = mod.typedArrayPort.at([1]).samples;
+      expect(names[firstSamples], 'typedIn_0__samples');
+      expect(names[secondSamples], 'typedIn_1__samples');
+      expect(names[firstSamples], isNot(names[secondSamples]));
+    });
+
     // ── Impossible cases ────────────────────────────────────────
 
     test('unnamed + reserved throws at construction time', () {
@@ -542,6 +618,9 @@ void main() {
       expect(sv, contains('_uinp'));
       expect(sv, contains('mport'));
       expect(sv, contains('_muprt'));
+      expect(sv, contains('typedIn'));
+      expect(sv, contains('typedIn_0__samples'));
+      expect(sv, contains('typedIn_1__samples'));
 
       // Reserved internals.
       expect(sv, contains('resv'));

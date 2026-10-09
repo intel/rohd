@@ -53,8 +53,9 @@ class NetlistValidation {
   static void validate(
     Map<String, Map<String, Object?>> ports,
     Map<String, Map<String, Object?>> cells,
-    String moduleName,
-  ) {
+    String moduleName, {
+    Map<String, Object?>? netnames,
+  }) {
     final issues = <NetlistValidationIssue>[];
 
     final driversByBit = _driversByBit(ports, cells);
@@ -70,6 +71,34 @@ class NetlistValidation {
         wireBit: entry.key,
         drivers: drivers,
       ));
+    }
+
+    if (netnames != null) {
+      for (final entry in netnames.entries) {
+        final netname = entry.value;
+        if (netname is! Map<String, Object?>) {
+          continue;
+        }
+        final logicType = netname['logic_type'];
+        if (logicType is! Map ||
+            (logicType['arrayDims'] is! List && logicType['fields'] is! List)) {
+          continue;
+        }
+        final bits = (netname['bits'] as List?)?.whereType<int>() ?? const [];
+        final aggregateDrivers = <({String description, bool isTriState})>{
+          for (final bit in bits) ...driversByBit[bit] ?? const [],
+        };
+        if (aggregateDrivers.length <= 1 ||
+            aggregateDrivers.every((driver) => driver.isTriState)) {
+          continue;
+        }
+        issues.add(NetlistValidationIssue(
+          'aggregate net "${entry.key}" is reached from multiple drivers: '
+          '${aggregateDrivers.map((driver) => driver.description).join(', ')}',
+          netname: entry.key,
+          drivers: aggregateDrivers.map((driver) => driver.description),
+        ));
+      }
     }
 
     if (issues.isNotEmpty) {
