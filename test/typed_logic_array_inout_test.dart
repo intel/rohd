@@ -272,7 +272,7 @@ void main() {
       ];
 
       await _checkRohdAndIverilogVectors(module, vectors);
-      final sv = module.generateSynth();
+      final sv = module.dumpSystemVerilog();
       expect(sv, contains('inout wire [1:0][8:0] bus'));
       _expectCompatibleNetConnectDefinition(sv);
       expect(source.numUnpackedDimensions, 0);
@@ -340,7 +340,7 @@ void main() {
       ];
 
       await _checkRohdAndIverilogVectors(module, vectors);
-      final sv = module.generateSynth();
+      final sv = module.dumpSystemVerilog();
       expect(sv, contains('inout wire [1:0][20:0] bus'));
       _expectCompatibleNetConnectDefinition(sv);
 

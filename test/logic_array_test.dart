@@ -670,7 +670,7 @@ void main() {
         final module = _TypedInputModule(array);
         await module.build();
         expect(
-          module.generateSynth,
+          module.dumpSystemVerilog,
           throwsA(
             isA<SynthException>().having(
               (exception) => exception.message,

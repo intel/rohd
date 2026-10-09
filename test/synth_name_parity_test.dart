@@ -591,7 +591,7 @@ void main() {
 
       final svModule = _NestedNameModule();
       await svModule.build();
-      final sv = svModule.generateSynth();
+      final sv = svModule.dumpSystemVerilog();
       final svNames = names(svModule);
 
       expect(svNames, equals(netlistNames));
