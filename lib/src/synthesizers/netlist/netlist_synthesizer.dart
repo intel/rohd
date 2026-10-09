@@ -47,7 +47,7 @@ class NetlistSynthesizer extends Synthesizer {
   /// Consumers of ROHD-generated netlists must reject an unsupported version.
   /// This version changes when ROHD adds or changes fields that affect how a
   /// consumer interprets the netlist.
-  static const String formatVersion = '0.0.1';
+  static const String formatVersion = '0.1.0';
 
   /// The configuration controlling netlist synthesis.
   ///

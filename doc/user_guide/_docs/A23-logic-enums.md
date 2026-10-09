@@ -121,3 +121,9 @@ final generatedSv = module.dumpSystemVerilog(
 ```
 
 Disabling enum generation changes only the generated representation; simulation behavior and the ROHD model remain typed.
+
+## Netlist Metadata
+
+Netlist JSON format `0.1.0` preserves enum information using Yosys-style `netnames.attributes`: `wiretype` identifies the generated enum type, and `enum_value_<bits>` maps each width-padded binary encoding to its generated member name. Type and member names use Yosys's leading-backslash identifier convention.
+
+These attributes describe retained signals and constant uses without changing bit connectivity or adding enum cells. A shared packed constant can have distinct enum-typed uses without assigning an enum type to raw uses. Full and slim netlist views retain this metadata; unused enums are not recorded separately.

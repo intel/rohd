@@ -74,10 +74,15 @@ class ConflictingEnumMod extends Module {
 }
 
 class ModWithEnumConstAssignment extends Module {
-  ModWithEnumConstAssignment(Logic carrot) {
+  ModWithEnumConstAssignment(Logic carrot, {bool includeUnusedEnum = false}) {
     carrot = addInput('carrot', carrot, width: 2);
     final e = MyListLogicEnum(name: 'elephant')..getsEnum(TestEnum.b);
     addOutput('banana', width: 2) <= carrot & e;
+    if (includeUnusedEnum) {
+      final unused = LogicEnum(OtherEnum.values, definitionName: 'UnusedEnum')
+        ..getsEnum(OtherEnum.a);
+      carrot | unused;
+    }
   }
 }
 
@@ -189,8 +194,11 @@ class ModWithCaseAndEnumCondAssign extends Module {
 }
 
 class EnumNameCollisionModule extends Module {
-  EnumNameCollisionModule() {
+  EnumNameCollisionModule({Logic? source}) {
     final enumSignal = MyListLogicEnum(name: 'a');
+    if (source != null) {
+      enumSignal.gets(addInput('source', source, width: 2));
+    }
     addOutput('TestEnum', width: enumSignal.width) <= enumSignal;
     addOutput('a');
   }
@@ -1336,9 +1344,161 @@ void main() {
             expect(
                 (ports[name] as Map<String, dynamic>)['direction'], 'output');
           }
+          final netnames = definition['netnames'] as Map<String, dynamic>;
+          final netAttributes = netnames.map((name, netname) => MapEntry(
+              name, (netname as Map)['attributes'] as Map<String, dynamic>));
+          for (final name in ['first', 'second']) {
+            final attributes = netAttributes[name]!;
+            expect(attributes, contains('wiretype'));
+            expect(
+                attributes.keys,
+                containsAll(
+                    ['enum_value_00', 'enum_value_01', 'enum_value_10']));
+          }
+          expect(netAttributes['raw'], isNot(contains('wiretype')));
+          expect(netAttributes['first']!['wiretype'], r'\TestEnum');
+          expect(netAttributes['second']!['wiretype'], r'\OtherEnum');
+          expect(netAttributes['first']!['enum_value_01'],
+              isNot(netAttributes['second']!['enum_value_01']));
         }
       }
     });
+
+    test('enum netlist retains constant literal metadata', () async {
+      final module =
+          ModWithEnumConstAssignment(Logic(width: 2), includeUnusedEnum: true);
+      await module.build();
+      final json = jsonDecode(NetlistSynthesizer().synthesizeToJson(module))
+          as Map<String, dynamic>;
+      final definition = (json['modules'] as Map).values.single as Map;
+      final netnames = definition['netnames'] as Map;
+      final enumNets = netnames.values.cast<Map<String, dynamic>>().where(
+          (netname) => (netname['attributes'] as Map).containsKey('wiretype'));
+      expect(enumNets, hasLength(1));
+      expect(enumNets.single['attributes'],
+          containsPair('wiretype', r'\TestEnum'));
+      expect(
+          enumNets.single['attributes'], containsPair('enum_value_00', r'\a'));
+      expect(
+          enumNets.single['attributes'], containsPair('enum_value_01', r'\b'));
+      expect(
+          enumNets.single['attributes'], containsPair('enum_value_10', r'\c'));
+      final constantBits = (definition['cells'] as Map)
+          .values
+          .cast<Map<String, dynamic>>()
+          .where((cell) => cell['type'] == r'$const')
+          .expand((cell) => (cell['connections'] as Map).values)
+          .expand((bits) => bits as List)
+          .toSet();
+      expect(enumNets.single['bits'], everyElement(isIn(constantBits)));
+      expect(json.keys, unorderedEquals(['creator', 'version', 'modules']));
+    });
+
+    test('enum netlist preserves sparse and wide encodings', () async {
+      for (final (module, typeName, members) in [
+        (SingleValueEnumModule(), r'\SingleState', {'0': r'\only'}),
+        (
+          WideSparseEnumModule(),
+          r'\WideSparseState',
+          {
+            '0' * 81: r'\a',
+            '1${'0' * 80}': r'\c',
+          }
+        ),
+      ]) {
+        await module.build();
+        final json = jsonDecode(NetlistSynthesizer(
+                configuration: NetlistSynthesizerConfiguration(
+                    moduleStopPolicy: SynthModuleStopPolicy()))
+            .synthesizeToJson(module)) as Map<String, dynamic>;
+        final definition = (json['modules'] as Map).values.single as Map;
+        final netnames = definition['netnames'] as Map;
+        final enumAttributes = netnames.values
+            .cast<Map<String, dynamic>>()
+            .map((netname) => netname['attributes'] as Map)
+            .where((attributes) => attributes.containsKey('wiretype'));
+        expect(enumAttributes, isNotEmpty);
+        for (final attributes in enumAttributes) {
+          expect(attributes['wiretype'], typeName);
+          expect(
+              Map.fromEntries(attributes.entries.where(
+                  (entry) => (entry.key as String).startsWith('enum_value_'))),
+              {
+                for (final entry in members.entries)
+                  'enum_value_${entry.key}': entry.value
+              });
+        }
+      }
+    });
+
+    test('enum netlist names use the shared synthesis namespace', () async {
+      final module = EnumNameCollisionModule(source: Logic(width: 2));
+      await module.build();
+      final json = jsonDecode(NetlistSynthesizer(
+              configuration: NetlistSynthesizerConfiguration(
+                  enableDeadCellElimination: false,
+                  moduleStopPolicy: SynthModuleStopPolicy()))
+          .synthesizeToJson(module)) as Map<String, dynamic>;
+      final definition = (json['modules'] as Map).values.single as Map;
+      final enumAttributes = (definition['netnames'] as Map)
+          .values
+          .cast<Map<String, dynamic>>()
+          .map((netname) => netname['attributes'] as Map)
+          .where((attributes) => attributes.containsKey('wiretype'));
+      expect(enumAttributes, isNotEmpty);
+      for (final attributes in enumAttributes) {
+        expect(attributes, containsPair('wiretype', r'\TestEnum_0'));
+        expect(attributes, containsPair('enum_value_00', r'\a_0'));
+      }
+    });
+
+    for (final slimMode in [false, true]) {
+      for (final eliminateDeadCells in [false, true]) {
+        test('enum netlist service slim=$slimMode prune=$eliminateDeadCells',
+            () async {
+          for (final module in [
+            ModWithEnumConstAssignment(Logic(width: 2)),
+            TypedEnumPortsModule(LogicEnum<TestEnum>.withMapping(
+                {TestEnum.a: 4, TestEnum.c: 7},
+                width: 4)),
+          ]) {
+            await module.build();
+            final service = NetlistService(module,
+                register: false,
+                configuration: NetlistSynthesizerConfiguration(
+                    slimMode: slimMode,
+                    enableDeadCellElimination: eliminateDeadCells,
+                    moduleStopPolicy: SynthModuleStopPolicy()));
+            final typeName = module.definitionName;
+            final full = jsonDecode(service.moduleJson(typeName))
+                as Map<String, dynamic>;
+            final fullModules = full['modules'] as Map;
+            final netnames = (fullModules[typeName] as Map)['netnames'] as Map;
+            expect(
+                netnames.values.cast<Map<String, dynamic>>().where((netname) =>
+                    (netname['attributes'] as Map).containsKey('wiretype')),
+                isNotEmpty);
+            if (module is TypedEnumPortsModule) {
+              final inputAttributes =
+                  (netnames['stateIn'] as Map)['attributes'];
+              final outputAttributes =
+                  (netnames['stateOut'] as Map)['attributes'];
+              expect(inputAttributes, outputAttributes);
+              expect(inputAttributes, containsPair('enum_value_0100', r'\a'));
+              expect(inputAttributes, containsPair('enum_value_0111', r'\c'));
+            }
+            for (final view in [
+              jsonDecode(service.json) as Map,
+              (jsonDecode(service.slimJson) as Map)['netlist'] as Map,
+            ]) {
+              expect(view['version'], full['version']);
+              final modules = view['modules'] as Map;
+              expect((modules[typeName] as Map)['netnames'], netnames);
+            }
+          }
+        });
+      }
+    }
 
     test('shared enum constant compiles with Verilator', () async {
       final module = SharedEnumConstantModule(Logic(),
