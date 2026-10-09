@@ -111,26 +111,18 @@ class SharedEnumConstantModule extends Module {
   }
 }
 
-class PairedEnumConstantModule extends Module with SystemVerilog {
+class PairedEnumConstantModule extends Module {
   PairedEnumConstantModule(Logic source) {
-    final firstInput = addInput('firstInput', source, width: 2);
-    final secondInput = addInput('secondInput', source, width: 2);
-    final rawInput = addInput('rawInput', source, width: 2);
+    final firstInput = addTypedInput<Logic>('firstInput', source);
+    final secondInput = addTypedInput<Logic>('secondInput', source);
+    final rawInput = addTypedInput<Logic>('rawInput', source);
     final first = addTypedOutput('first', LogicEnum(TestEnum.values).clone);
     final second = addTypedOutput('second', LogicEnum(OtherEnum.values).clone);
     final raw = addOutput('raw', width: 2);
     first <= firstInput;
     second <= secondInput;
     raw <= rawInput;
-    portTypePairs.addAll({firstInput: first, secondInput: second});
   }
-
-  @override
-  String instantiationVerilog(String instanceType, String instanceName,
-          Map<String, String> ports) =>
-      'assign ${ports['first']} = ${ports['firstInput']};\n'
-      'assign ${ports['second']} = ${ports['secondInput']};\n'
-      'assign ${ports['raw']} = ${ports['rawInput']};';
 }
 
 class SharedConstantFanoutModule extends Module {
@@ -220,6 +212,38 @@ class EnumCasesModule extends Module {
     });
     result = MyListLogicEnum(name: 'result')..gets(selected);
     addOutput('result', width: 2) <= result;
+  }
+}
+
+class EnumCasePatternModule extends Module {
+  EnumCasePatternModule(Logic selector, Logic pattern,
+      {bool wildcard = true, bool? wildcardFirst, Logic? clock}) {
+    selector = addInput('selector', selector, width: 2);
+    final enumSelector = LogicEnum(TestEnum.values)..gets(selector);
+    final matched = addOutput('matched');
+    addOutput('pattern', width: 2) <= pattern;
+    final caseConstructor = wildcard ? CaseZ.new : Case.new;
+    final conditionals = <Conditional>[
+      caseConstructor(enumSelector, [
+        CaseItem(pattern, [matched < 1]),
+      ], defaultItem: [
+        matched < 0
+      ]),
+    ];
+    if (wildcardFirst != null) {
+      final strictMatched = addOutput('strictMatched');
+      final strictCase = Case(enumSelector, [
+        CaseItem(pattern, [strictMatched < 1]),
+      ], defaultItem: [
+        strictMatched < 0
+      ]);
+      conditionals.insert(wildcardFirst ? 1 : 0, strictCase);
+    }
+    if (clock == null) {
+      Combinational(conditionals);
+    } else {
+      Sequential(addInput('clock', clock), conditionals);
+    }
   }
 }
 
@@ -1320,6 +1344,111 @@ void main() {
         ],
         synthesizerConfiguration: configuration,
       );
+    });
+
+    for (final generateEnums in [false, true]) {
+      final configuration =
+          SystemVerilogSynthesizerConfiguration(generateEnums: generateEnums);
+      for (final entry in {
+        '1z': [0, 0, 1],
+        'z0': [1, 0, 1],
+        'zz': [1, 1, 1],
+        '10': [0, 0, 1],
+      }.entries) {
+        for (final alias in [false, true]) {
+          test(
+              'enum case pattern ${entry.key} alias=$alias'
+              ' enums=$generateEnums', () async {
+            final value = LogicValue.ofString(entry.key);
+            final constant = Const(value);
+            final pattern = alias
+                ? (Logic(name: 'patternAlias', width: 2)..gets(constant))
+                : constant;
+            final module = EnumCasePatternModule(Logic(width: 2), pattern);
+            await module.build();
+            final vectors = [
+              for (var selector = 0; selector < 3; selector++)
+                Vector({'selector': selector},
+                    {'matched': entry.value[selector], 'pattern': value}),
+            ];
+            await SimCompare.checkFunctionalVector(module, vectors);
+            SimCompare.checkIverilogVector(module, vectors,
+                synthesizerConfiguration: configuration);
+            final firstSv =
+                module.dumpSystemVerilog(configuration: configuration);
+            if (entry.key.contains('z')) {
+              expect(firstSv, contains("2'b${entry.key}"));
+            } else if (generateEnums && !alias) {
+              expect(firstSv, contains('c : begin'));
+            }
+            String synthesize() => SynthBuilder(module,
+                    SystemVerilogSynthesizer(configuration: configuration))
+                .getSynthFileContents()
+                .join();
+            expect(synthesize(), synthesize());
+            expect(pattern.value, value);
+          });
+        }
+      }
+
+      for (final wildcard in [false, true]) {
+        for (final pattern in ['11', '1x', if (!wildcard) '1z']) {
+          test(
+              'enum case rejects $pattern wildcard=$wildcard'
+              ' enums=$generateEnums', () async {
+            final module = EnumCasePatternModule(
+                Logic(width: 2), Const(LogicValue.ofString(pattern)),
+                wildcard: wildcard);
+            await module.build();
+            expect(
+                () => module.dumpSystemVerilog(configuration: configuration),
+                throwsA(isStateError.having((error) => error.message, 'message',
+                    contains('Constant is not representable'))));
+          });
+        }
+      }
+
+      for (final wildcardFirst in [false, true]) {
+        test(
+            'enum case shared pattern remains strict'
+            ' wildcardFirst=$wildcardFirst enums=$generateEnums', () async {
+          final module = EnumCasePatternModule(
+              Logic(width: 2), Const(LogicValue.ofString('1z')),
+              wildcardFirst: wildcardFirst);
+          await module.build();
+          expect(
+              () => module.dumpSystemVerilog(configuration: configuration),
+              throwsA(isStateError.having((error) => error.message, 'message',
+                  contains('Constant is not representable'))));
+        });
+      }
+
+      test('enum case wildcard sequential enums=$generateEnums', () async {
+        final value = LogicValue.ofString('1z');
+        final pattern = Logic(width: 2)..gets(Const(value));
+        final module =
+            EnumCasePatternModule(Logic(width: 2), pattern, clock: Logic());
+        await module.build();
+        final vectors = [
+          Vector({'clock': 0, 'selector': 0}, {'pattern': value}),
+          Vector({'clock': 1}, {'matched': 0, 'pattern': value}),
+          Vector({'clock': 0, 'selector': 2}, {'matched': 0}),
+          Vector({'clock': 1}, {'matched': 1}),
+          Vector({'clock': 0, 'selector': 1}, {'matched': 1}),
+          Vector({'clock': 1}, {'matched': 0}),
+        ];
+        await SimCompare.checkFunctionalVector(module, vectors);
+        SimCompare.checkIverilogVector(module, vectors,
+            synthesizerConfiguration: configuration);
+      });
+    }
+
+    test('enum case wildcard support does not permit wildcard assignments', () {
+      final receiver = LogicEnum(TestEnum.values);
+      final wildcard = Const(LogicValue.ofString('1z'));
+      expect(() => receiver < wildcard, throwsArgumentError);
+      expect(() => ConditionalAssign(receiver, wildcard), throwsArgumentError);
+      expect(() => receiver.gets(wildcard), throwsArgumentError);
     });
 
     test('cases supports explicitly mapped enum result signals', () async {

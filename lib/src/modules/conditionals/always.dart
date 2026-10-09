@@ -31,8 +31,13 @@ abstract class Always extends Module with SystemVerilog {
   @internal
   final Map<Logic, Logic> assignedDriverToInputMap = HashMap<Logic, Logic>();
 
-  /// Input uses distinguished by their source and type-reference port.
-  final Map<(Logic, Logic), Logic> _typePairedInputs = {};
+  /// Input ports paired with their type references and owning conditionals.
+  @internal
+  final Map<Logic, ({Logic reference, Conditional conditional})> portTypePairs =
+      {};
+
+  /// Input uses distinguished by source, type reference, and conditional.
+  final Map<(Logic, Logic, Conditional), Logic> _typePairedInputs = {};
 
   /// All registered driver ports, including distinct type-specific uses.
   @protected
@@ -52,16 +57,19 @@ abstract class Always extends Module with SystemVerilog {
 
   /// Registers an input use without discarding another use's type reference.
   @internal
-  Logic registerTypePairedInput(Logic driver, Logic reference) =>
-      _typePairedInputs.putIfAbsent((driver, reference), () {
+  Logic registerTypePairedInput(
+          Logic driver, Logic reference, Conditional conditional) =>
+      _typePairedInputs.putIfAbsent((driver, reference, conditional), () {
         var port = assignedDriverToInputMap[driver]!;
-        final existingReference = portTypePairs[port];
-        if (existingReference != null && existingReference != reference) {
+        final existingPair = portTypePairs[port];
+        if (existingPair != null &&
+            (existingPair.reference != reference ||
+                existingPair.conditional != conditional)) {
           port = addInput(
               portUniquifier.getUniqueName(initialName: port.name), driver,
               width: driver.width);
         }
-        portTypePairs[port] = reference;
+        portTypePairs[port] = (reference: reference, conditional: conditional);
         return port;
       });
 

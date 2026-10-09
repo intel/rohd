@@ -82,7 +82,7 @@ abstract class Conditional {
     _parentAlways = parentAlways;
     for (final entry in portTypePairs.entries) {
       final port = parentAlways.registerTypePairedInput(
-          entry.key, registeredPort(entry.value));
+          entry.key, registeredPort(entry.value), this);
       if (port != _assignedDriverToInputMap[entry.key]) {
         if (identical(_assignedDriverToInputMap, assignedDriverToInputMap)) {
           _assignedDriverToInputMap = {...assignedDriverToInputMap};
@@ -199,6 +199,12 @@ abstract class Conditional {
   /// to be stable.
   @internal
   Map<Logic, Logic> get portTypePairs => const {};
+
+  /// Whether synthesis should apply a paired type to this input use.
+  ///
+  /// A null [constantValue] indicates a non-constant input.
+  @internal
+  bool shouldPropagateType(LogicValue? constantValue) => true;
 
   /// Returns a [String] of SystemVerilog to be used in generated output.
   ///

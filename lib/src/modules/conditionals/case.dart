@@ -421,6 +421,13 @@ ${subPadding}end
 /// Does not support SystemVerilog's `?` syntax, which is exactly functionally
 /// equivalent to `z` syntax.
 class CaseZ extends Case {
+  @override
+  bool shouldPropagateType(LogicValue? constantValue) =>
+      constantValue == null ||
+      !Iterable.generate(
+              constantValue.width, (bitIndex) => constantValue[bitIndex])
+          .contains(LogicValue.z);
+
   /// Whenever an item in [items] matches [expression], it will be executed, but
   /// the definition of matches allows for `z` to be a wildcard.
   ///

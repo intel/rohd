@@ -11,6 +11,7 @@ import 'dart:collection';
 
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/modules/conditionals/always.dart';
 import 'package:rohd/src/synthesizers/utilities/synth_enum_definition.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
 import 'package:rohd/src/utilities/namer.dart';
@@ -112,12 +113,17 @@ class SynthSubModuleInstantiation {
     _inOutMapping[name] = synthLogic;
   }
 
-  /// Propagates enum type metadata across the module's paired ports.
+  /// Propagates enum type metadata for an [Always] block's conditional uses.
   ///
   /// Input uses receive local typed representations; their shared sources
   /// are not retyped. Live inputs use assignments and constants use literals.
   @internal
   void adjustTypePairs() {
+    final alwaysBlock = module;
+    if (alwaysBlock is! Always) {
+      return;
+    }
+
     SynthLogic mappedPort(Logic port) {
       final mapping = inputMapping[port.name] ??
           outputMapping[port.name] ??
@@ -129,12 +135,19 @@ class SynthSubModuleInstantiation {
       return mapping;
     }
 
-    for (final MapEntry(key: toUpdate, value: reference)
-        in module.portTypePairs.entries) {
+    for (final entry in alwaysBlock.portTypePairs.entries) {
+      final toUpdate = entry.key;
+      final reference = entry.value.reference;
       final toUpdateSynth = mappedPort(toUpdate);
       final referenceSynth = mappedPort(reference);
 
       if (referenceSynth.isEnum) {
+        final constantValue = toUpdateSynth.isConstant
+            ? toUpdateSynth.logics.whereType<Const>().first.value
+            : null;
+        if (!entry.value.conditional.shouldPropagateType(constantValue)) {
+          continue;
+        }
         if (toUpdateSynth.isEnum &&
             SynthEnumDefinitionKey(toUpdateSynth.characteristicEnum!) ==
                 SynthEnumDefinitionKey(referenceSynth.characteristicEnum!)) {
@@ -143,39 +156,19 @@ class SynthSubModuleInstantiation {
           continue;
         }
 
-        if (module.inputs.containsValue(toUpdate)) {
-          final definition = toUpdateSynth.parentSynthModuleDefinition;
-          final typedInput = toUpdateSynth.isConstant
-              ? toUpdateSynth
-                  .constantWithEnumType(referenceSynth.characteristicEnum!)
-              : SynthLogic(referenceSynth.characteristicEnum!.clone(),
-                  parentSynthModuleDefinition: definition,
-                  generatedNameKey: (module, toUpdate, reference));
-          definition.internalSignals.add(typedInput);
-          if (!toUpdateSynth.isConstant) {
-            definition.assignments
-                .add(SynthAssignment(toUpdateSynth, typedInput));
-          }
-          setInputMapping(toUpdate.name, typedInput, replace: true);
-          continue;
+        final definition = toUpdateSynth.parentSynthModuleDefinition;
+        final typedInput = toUpdateSynth.isConstant
+            ? toUpdateSynth
+                .constantWithEnumType(referenceSynth.characteristicEnum!)
+            : SynthLogic(referenceSynth.characteristicEnum!.clone(),
+                parentSynthModuleDefinition: definition,
+                generatedNameKey: (module, toUpdate, reference));
+        definition.internalSignals.add(typedInput);
+        if (!toUpdateSynth.isConstant) {
+          definition.assignments
+              .add(SynthAssignment(toUpdateSynth, typedInput));
         }
-
-        final mergeResult = SynthLogic.tryMerge(
-          toUpdateSynth,
-          SynthLogic(
-            referenceSynth.characteristicEnum!.clone(name: 'reference'),
-            parentSynthModuleDefinition:
-                toUpdateSynth.parentSynthModuleDefinition,
-          ),
-        );
-        if (mergeResult == null) {
-          throw StateError(
-              'Cannot propagate enum type ${referenceSynth.characteristicEnum}'
-              ' from port ${reference.name} to ${toUpdate.name} on '
-              '${module.name}.');
-        }
-        assert(identical(mergeResult.kept, toUpdateSynth),
-            'We should not be replacing the original one.');
+        setInputMapping(toUpdate.name, typedInput, replace: true);
       }
     }
   }
