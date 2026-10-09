@@ -11,8 +11,8 @@ import 'dart:collection';
 
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/signals/signals.dart';
 import 'package:rohd/src/interfaces/interface_structure.dart';
+import 'package:rohd/src/signals/signals.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 
 /// A direction for signals between a pair of components.
@@ -52,6 +52,7 @@ class PairInterface extends Interface<PairDirection> {
     List<Logic>? portsFromProvider,
     List<Logic>? sharedInputPorts,
     List<Logic>? commonInOutPorts,
+    super.definitionName,
   }) {
     if (portsFromConsumer != null) {
       setPorts(portsFromConsumer, [PairDirection.fromConsumer]);
@@ -98,38 +99,13 @@ class PairInterface extends Interface<PairDirection> {
   void pairConnectIO(
       Module module, Interface<PairDirection> srcInterface, PairRole role,
       {String Function(String original)? uniquify}) {
-    final List<PairDirection> inputTags;
-    final List<PairDirection> outputTags;
-    final inOutTags = [
-      PairDirection.commonInOuts,
-    ];
-
-    switch (role) {
-      case PairRole.consumer:
-        inputTags = [
-          PairDirection.sharedInputs,
-          PairDirection.fromProvider,
-        ];
-        outputTags = [
-          PairDirection.fromConsumer,
-        ];
-
-      case PairRole.provider:
-        inputTags = [
-          PairDirection.sharedInputs,
-          PairDirection.fromConsumer,
-        ];
-        outputTags = [
-          PairDirection.fromProvider,
-        ];
-    }
-
+    final tags = tagsForRole(role);
     connectIO(
       module,
       srcInterface,
-      inputTags: inputTags,
-      outputTags: outputTags,
-      inOutTags: inOutTags,
+      inputTags: tags.inputTags,
+      outputTags: tags.outputTags,
+      inOutTags: tags.inOutTags,
       uniquify: uniquify,
     );
   }
@@ -223,50 +199,53 @@ class PairInterface extends Interface<PairDirection> {
   }
 
   /// Like [pairConnectIO], but groups ports by direction into
-  /// [LogicStructure] ports for struct-typed SV generation.
+  /// [LogicStructure] ports for struct-typed SV generation. [definitionName]
+  /// optionally overrides the root typedef base; nested interfaces retain
+  /// their own definition names.
   void pairConnectIOAsStruct(
       Module module, Interface<PairDirection> srcInterface, PairRole role,
-      {String Function(String original)? uniquify, String? structName}) {
-    final List<PairDirection> inputTags;
-    final List<PairDirection> outputTags;
-    final inOutTags = [
-      PairDirection.commonInOuts,
-    ];
-
-    switch (role) {
-      case PairRole.consumer:
-        inputTags = [
-          PairDirection.sharedInputs,
-          PairDirection.fromProvider,
-        ];
-        outputTags = [
-          PairDirection.fromConsumer,
-        ];
-
-      case PairRole.provider:
-        inputTags = [
-          PairDirection.sharedInputs,
-          PairDirection.fromConsumer,
-        ];
-        outputTags = [
-          PairDirection.fromProvider,
-        ];
-    }
-
+      {String Function(String original)? uniquify,
+      String? name,
+      String? definitionName,
+      String? structName}) {
+    final tags = tagsForRole(role);
     connectIOAsStruct(
       module,
       srcInterface,
-      inputTags: inputTags,
-      outputTags: outputTags,
-      inOutTags: inOutTags,
+      inputTags: tags.inputTags,
+      outputTags: tags.outputTags,
+      inOutTags: tags.inOutTags,
       uniquify: uniquify,
+      name: name,
+      definitionName: definitionName,
       structName: structName,
     );
   }
 
+  /// Returns the port direction tags for a module acting in [role].
+  static ({
+    List<PairDirection> inputTags,
+    List<PairDirection> outputTags,
+    List<PairDirection> inOutTags,
+  }) tagsForRole(PairRole role) => switch (role) {
+        PairRole.consumer => (
+            inputTags: [PairDirection.sharedInputs, PairDirection.fromProvider],
+            outputTags: [PairDirection.fromConsumer],
+            inOutTags: [PairDirection.commonInOuts],
+          ),
+        PairRole.provider => (
+            inputTags: [PairDirection.sharedInputs, PairDirection.fromConsumer],
+            outputTags: [PairDirection.fromProvider],
+            inOutTags: [PairDirection.commonInOuts],
+          ),
+      };
+
   /// Builds hierarchical [InterfaceStructure] ports that mirror the
   /// sub-interface hierarchy, grouping all input-tagged ports into a single
   /// `_in` struct and all output-tagged ports into a single `_out` struct.
+  /// [definitionName] overrides the root typedef base, while nested
+  /// interfaces retain their own definition names.
+  @override
   void connectIOAsStruct(
     Module module,
     Interface<dynamic> srcInterface, {
@@ -274,22 +253,21 @@ class PairInterface extends Interface<PairDirection> {
     Iterable<PairDirection>? outputTags,
     Iterable<PairDirection>? inOutTags,
     String Function(String original)? uniquify,
+    String? name,
+    String? definitionName,
     String? structName,
   }) {
     final nonNullUniquify = uniquify ?? (original) => original;
-    // Keep the deprecated callback effective for backwards compatibility
-    // while callers migrate to `uniquify`.
-    // ignore: deprecated_member_use_from_same_package
-    final nonNullModify = modify ?? (original) => original;
-    String newUniquify(String original) =>
-        nonNullUniquify(nonNullModify(original));
 
     if (srcInterface is! PairInterface) {
       throw InterfaceTypeException(
           srcInterface, 'connectIOAsStruct requires a PairInterface source');
     }
 
-    final intfTypeName = structName ?? _deriveInterfaceTypeName(srcInterface);
+    final structBaseName = structName ?? _deriveInterfaceTypeName(srcInterface);
+    final typeName = Sanitizer.sanitizeSV(
+      definitionName ?? structBaseName,
+    );
 
     // Build hierarchical input + output structs from entire sub-interface tree
     final inputMappings = <_PortMapping>[];
@@ -298,7 +276,8 @@ class PairInterface extends Interface<PairDirection> {
       srcInterface: srcInterface,
       inputTags: inputTags ?? const [],
       outputTags: outputTags ?? const [],
-      structName: intfTypeName,
+      structName: structBaseName,
+      definitionName: typeName,
       inputMappings: inputMappings,
       outputMappings: outputMappings,
     );
@@ -315,7 +294,7 @@ class PairInterface extends Interface<PairDirection> {
 
       // Register as a single typed input on the module
       final modulePort = module.addTypedInput(
-        newUniquify(srcStruct.name),
+        name == null ? nonNullUniquify(srcStruct.name) : '${name}_in',
         srcStruct,
       );
 
@@ -332,7 +311,7 @@ class PairInterface extends Interface<PairDirection> {
 
       // Register as a single typed output on the module
       final modulePort = module.addTypedOutput(
-        newUniquify(outTemplate.name),
+        name == null ? nonNullUniquify(outTemplate.name) : '${name}_out',
         ({name = ''}) => outTemplate.clone(
           name: name.isEmpty ? outTemplate.name : name,
         ),
@@ -354,7 +333,7 @@ class PairInterface extends Interface<PairDirection> {
     // InOut ports are still connected individually (can't be in packed structs)
     if (inOutTags != null) {
       _connectInOutsHierarchically(
-          module, srcInterface, inOutTags, newUniquify);
+          module, srcInterface, inOutTags, nonNullUniquify);
     }
   }
 
@@ -368,6 +347,7 @@ class PairInterface extends Interface<PairDirection> {
     required String structName,
     required List<_PortMapping> inputMappings,
     required List<_PortMapping> outputMappings,
+    String? definitionName,
   }) {
     final inputElements = <Logic>[];
     final outputElements = <Logic>[];
@@ -422,7 +402,8 @@ class PairInterface extends Interface<PairDirection> {
     }
 
     // 3. Build structs (null if no matching ports at any depth)
-    final intfTypeName = _deriveInterfaceTypeName(srcInterface);
+    final intfTypeName =
+        definitionName ?? _deriveInterfaceTypeName(srcInterface);
 
     return (
       inputStruct: inputElements.isEmpty
@@ -537,16 +518,8 @@ class PairInterface extends Interface<PairDirection> {
   }
 
   /// Derives an interface type name from the runtime type of the interface.
-  static String _deriveInterfaceTypeName(Interface<dynamic> srcInterface) {
-    final runtimeName = srcInterface.runtimeType.toString();
-    final baseName = runtimeName.contains('<')
-        ? runtimeName.substring(0, runtimeName.indexOf('<'))
-        : runtimeName;
-    if (baseName == 'Interface' || baseName == 'PairInterface') {
-      return 'intf';
-    }
-    return baseName;
-  }
+  static String _deriveInterfaceTypeName(Interface<dynamic> srcInterface) =>
+      srcInterface.definitionName;
 
   /// A mapping from sub-interface names to instances of sub-interfaces.
   Map<String, PairInterface> get subInterfaces =>

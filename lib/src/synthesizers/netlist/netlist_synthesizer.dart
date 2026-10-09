@@ -807,6 +807,22 @@ class NetlistSynthesizer extends Synthesizer {
                 destination: dstLogic,
               )
             : SynthStructureConcat.operationName;
+        // Child instances can share a port-local destination path.
+        final destinationModule = dstLogic?.parentModule;
+        final destinationInstanceName = destinationModule == null
+            ? null
+            : synthDef
+                ?.moduleToSubModuleInstantiationMap[destinationModule]?.name;
+        final baseCellKey = [
+          cellName,
+          if (destinationInstanceName != null) destinationInstanceName,
+          structName,
+        ].join('_');
+        var cellKey = baseCellKey;
+        var collisionIndex = 0;
+        while (cells.containsKey(cellKey)) {
+          cellKey = '${baseCellKey}_${collisionIndex++}';
+        }
 
         // Build port_directions and connections.
         final portDirs = <String, NetlistPortDirection>{};
@@ -843,7 +859,7 @@ class NetlistSynthesizer extends Synthesizer {
           params['FIELD_${i}_WIDTH'] = f.dstUpperIndex - f.dstLowerIndex + 1;
         }
 
-        cells['${cellName}_$structName'] = NetlistCell(
+        cells[cellKey] = NetlistCell(
           type: r'$struct_pack',
           origin: NetlistCellOrigin.structurePack,
           parameters: params,
@@ -1031,7 +1047,6 @@ class NetlistSynthesizer extends Synthesizer {
       NetlistPasses.collapseConcatOfAdjacentSlices(modules);
       NetlistPasses.removeTrivialConcatAliases(modules);
       NetlistPasses.applyTransparentClustering(modules);
-      NetlistPasses.removeUnconsumedTransparentCells(modules);
     }
   }
 

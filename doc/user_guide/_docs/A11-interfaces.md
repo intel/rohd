@@ -16,7 +16,15 @@ When connecting an `Interface` to a `Module`, you should always create a new ins
 
 The `connectIO` function under the hood calls `addInput` and `addOutput` directly on the `Module` and connects those `Module` ports to the correct ports on the `Interface`s.  Connection is based on signal names.  You can use the `uniquify` Function argument in `connectIO` to uniquify inputs and outputs in case you have multiple instances of the same `Interface` connected to your module.
 
-`Module` has functions called `addInterfacePorts` and `addPairInterfacePorts` which conveniently call `connectIO` and `pairConnectIO` and return the "internal" copy of the interface to use within the `Module`. For these to work, all `Interface`s must implement a `clone()` method so that an internal copy can be created.
+`Module.addInterface` and `Module.addPairInterface` register an interface and return an internal clone. Module logic must use that returned clone, not the external interface. All concrete interface types must implement `clone()` so the internal copy preserves their type.
+
+The unified APIs default to `asStruct: true`: inputs and outputs are grouped into typed `LogicStructure` ports, preserving nested pair-interface hierarchy and direction reversal. Pass `asStruct: false` for individual ports. InOuts retain individually registered net ports. The optional `name` argument supplies the local prefix for grouped `_in` and `_out` ports; when omitted, existing naming through `uniquify` is retained. `name` does not rename individual ports when `asStruct` is false.
+
+Each interface has a type-oriented `definitionName`. By default, it is derived from the concrete Dart type, including generic type arguments. Interfaces whose configuration values affect their shape should override `definitionName` to include those values, as parameterized modules do. The registration APIs also accept an optional `definitionName` to override the grouped structure type independently of the grouped port `name`; it only applies when `asStruct` is `true`. For pair interfaces, this override names the root structure; nested interface structures continue to use their own definition names.
+
+`addInterfaceFrom(target, source, ...)` and `addPairInterfaceFrom(target, source, role, ...)` support deliberate local type adaptation. They register and return the supplied fresh `target` without cloning it, and also default to `asStruct: true`. Matching port names and widths are still required.
+
+The legacy `addInterfacePorts` and `addPairInterfacePorts` entrypoints remain available and retain their `asStruct: false` default. The examples below use these legacy entrypoints to preserve their individual port names.
 
 ```dart
 // Define a set of legal directions for this interface, and pass as parameter to Interface

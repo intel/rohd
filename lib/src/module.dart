@@ -1106,163 +1106,181 @@ abstract class Module {
     return inOutArr;
   }
 
-  /// Connects the [source] to this [Module] using [Interface.connectIO] and
-  /// returns a copy of the [source] that can be used within this module.
+  /// Registers [source] on this [Module] and returns its internal clone.
   ///
-  /// When [asStruct] is `true`, input and output ports are registered as
-  /// [LogicStructure] ports (named `<prefix>_in` / `<prefix>_out`) rather than
-  /// individual leaf ports. The prefix is derived from [uniquify].
-  InterfaceType addInterfacePorts<InterfaceType extends Interface<TagType>,
-          TagType extends Enum>(InterfaceType source,
-      {Iterable<TagType>? inputTags,
-      Iterable<TagType>? outputTags,
-      Iterable<TagType>? inOutTags,
-      String Function(String original)? uniquify,
-      bool asStruct = false}) {
-    if (!asStruct) {
-      return (source.clone() as InterfaceType)
-        ..connectIO(this, source,
-            inputTags: inputTags,
-            outputTags: outputTags,
-            inOutTags: inOutTags,
-            uniquify: uniquify);
-    }
-
-    return _addInterfacePortsAsStruct<InterfaceType, TagType>(
-      source,
-      inputTags: inputTags,
-      outputTags: outputTags,
-      inOutTags: inOutTags,
-      uniquify: uniquify,
-    );
-  }
-
-  /// Connects the [source] to this [Module] using [PairInterface.pairConnectIO]
-  /// and returns a copy of the [source] that can be used within this module.
-  ///
-  /// When [asStruct] is `true`, input and output ports are registered as
-  /// [LogicStructure] ports (named `<prefix>_in` / `<prefix>_out`) rather than
-  /// individual leaf ports. The prefix is derived from [uniquify].
-  InterfaceType addPairInterfacePorts<InterfaceType extends PairInterface>(
-      InterfaceType source, PairRole role,
-      {String Function(String original)? uniquify, bool asStruct = false}) {
-    if (!asStruct) {
-      return (source.clone() as InterfaceType)
-        ..pairConnectIO(this, source, role, uniquify: uniquify);
-    }
-
-    return (source.clone() as InterfaceType)
-      ..pairConnectIOAsStruct(this, source, role, uniquify: uniquify);
-  }
-
-  /// Derives a group prefix from [uniquify], or falls back to 'intf'.
-  static String _derivePrefix(String Function(String original)? uniquify) {
-    if (uniquify == null) {
-      return 'intf';
-    }
-    const sentinel = '\x00';
-    final probed = uniquify(sentinel);
-    String raw;
-    if (probed.endsWith(sentinel)) {
-      raw = probed.substring(0, probed.length - 1);
-    } else if (probed.startsWith(sentinel)) {
-      raw = probed.substring(1);
-    } else {
-      raw = probed;
-    }
-    // Strip leading/trailing underscores.
-    raw = raw.replaceAll(RegExp(r'^_+|_+$'), '');
-    return raw.isEmpty ? 'intf' : raw;
-  }
-
-  /// Implementation of struct-based interface port registration.
-  ///
-  /// Creates [LogicStructure] ports for inputs and outputs, wires them to the
-  /// [source] interface, and returns the internal (cloned) interface whose
-  /// port signals are the struct elements.
-  InterfaceType _addInterfacePortsAsStruct<InterfaceType extends Interface,
-      TagType extends Enum>(
+  /// Module logic must use the returned clone rather than [source].
+  /// By default, inputs and outputs are grouped into typed [LogicStructure]
+  /// ports. Set [asStruct] to `false` to register individual ports through
+  /// [Interface.connectIO]. InOuts retain their individual port declarations.
+  /// When [asStruct] is `true`, [definitionName] optionally overrides the
+  /// typedef base independently of the grouped port [name]. The override is
+  /// ignored when [asStruct] is `false`.
+  InterfaceType addInterface<InterfaceType extends Interface<TagType>,
+          TagType extends Enum>(
     InterfaceType source, {
     Iterable<TagType>? inputTags,
     Iterable<TagType>? outputTags,
     Iterable<TagType>? inOutTags,
     String Function(String original)? uniquify,
+    String? name,
+    String? definitionName,
+    bool asStruct = true,
+  }) =>
+      addInterfaceFrom(
+        source.clone() as InterfaceType,
+        source,
+        inputTags: inputTags,
+        outputTags: outputTags,
+        inOutTags: inOutTags,
+        uniquify: uniquify,
+        name: name,
+        definitionName: definitionName,
+        asStruct: asStruct,
+      );
+
+  /// Registers a deliberately constructed local [target] against [source].
+  ///
+  /// Prefer [addInterface] when both interfaces have the same concrete type.
+  /// This form supports intentional type adaptation and returns [target]
+  /// without cloning it. Structured registration is the default.
+  /// [definitionName] optionally overrides the typedef base; it does not
+  /// rename the grouped port and is ignored when [asStruct] is `false`.
+  InterfaceType addInterfaceFrom<InterfaceType extends Interface<TagType>,
+      TagType extends Enum>(
+    InterfaceType target,
+    Interface<TagType> source, {
+    Iterable<TagType>? inputTags,
+    Iterable<TagType>? outputTags,
+    Iterable<TagType>? inOutTags,
+    String Function(String original)? uniquify,
+    String? name,
+    String? definitionName,
+    bool asStruct = true,
   }) {
-    final prefix = _derivePrefix(uniquify);
-    final u = uniquify ?? (original) => original;
-
-    final cloned = source.clone() as InterfaceType;
-
-    // --- Inputs: build LogicStructure, register via addTypedInput ---
-    if (inputTags != null) {
-      final srcInputPorts = (source as Interface<TagType>)
-          .getPorts(inputTags)
-          .values
-          .toList(growable: false);
-
-      if (srcInputPorts.isNotEmpty) {
-        // Create elements matching source port widths/names.
-        final elements = [
-          for (final p in srcInputPorts) Logic(name: u(p.name), width: p.width),
-        ];
-        final structIn = LogicStructure(elements, name: '${prefix}_in');
-        final inPort = addTypedInput('${prefix}_in', structIn);
-
-        // Wire: cloned interface port <= struct element.
-        for (var i = 0; i < srcInputPorts.length; i++) {
-          (cloned as Interface<TagType>).port(srcInputPorts[i].name) <=
-              inPort.elements[i];
-        }
-      }
+    if (asStruct) {
+      target.connectIOAsStruct(
+        this,
+        source,
+        inputTags: inputTags,
+        outputTags: outputTags,
+        inOutTags: inOutTags,
+        uniquify: uniquify,
+        name: name,
+        definitionName: definitionName,
+      );
+    } else {
+      target.connectIO(
+        this,
+        source,
+        inputTags: inputTags,
+        outputTags: outputTags,
+        inOutTags: inOutTags,
+        uniquify: uniquify,
+      );
     }
-
-    // --- Outputs: build LogicStructure, register via addTypedOutput ---
-    if (outputTags != null) {
-      final srcOutputPorts = (source as Interface<TagType>)
-          .getPorts(outputTags)
-          .values
-          .toList(growable: false);
-
-      if (srcOutputPorts.isNotEmpty) {
-        final outPort = addTypedOutput(
-          '${prefix}_out',
-          ({name = ''}) => LogicStructure(
-            [
-              for (final p in srcOutputPorts)
-                Logic(name: u(p.name), width: p.width),
-            ],
-            name: name,
-          ),
-        );
-
-        // Wire: output struct element <= cloned interface port,
-        // and source port <= output struct element.
-        for (var i = 0; i < srcOutputPorts.length; i++) {
-          outPort.elements[i] <=
-              (cloned as Interface<TagType>).port(srcOutputPorts[i].name);
-          source.port(srcOutputPorts[i].name) <= outPort.elements[i];
-        }
-      }
-    }
-
-    // --- InOuts: fall back to leaf-level registration (structs don't
-    // support bidirectional nets) ---
-    if (inOutTags != null) {
-      final srcInOutPorts = (source as Interface<TagType>)
-          .getPorts(inOutTags)
-          .values
-          .toList(growable: false);
-
-      for (final port in srcInOutPorts) {
-        final portName = u(port.name);
-        final inOutPort =
-            addInOut(portName, source.port(port.name), width: port.width);
-        (cloned as Interface<TagType>).port(port.name) <= inOutPort;
-      }
-    }
-
-    return cloned;
+    return target;
   }
+
+  /// Registers [source] with the legacy interface-port API.
+  ///
+  /// Unlike [addInterface], this defaults to individual ports. Set [asStruct]
+  /// to `true` to group inputs and outputs into typed [LogicStructure] ports.
+  /// [definitionName] only applies to this structured form.
+  InterfaceType addInterfacePorts<InterfaceType extends Interface<TagType>,
+          TagType extends Enum>(
+    InterfaceType source, {
+    Iterable<TagType>? inputTags,
+    Iterable<TagType>? outputTags,
+    Iterable<TagType>? inOutTags,
+    String Function(String original)? uniquify,
+    String? name,
+    String? definitionName,
+    bool asStruct = false,
+  }) =>
+      addInterface(
+        source,
+        inputTags: inputTags,
+        outputTags: outputTags,
+        inOutTags: inOutTags,
+        uniquify: uniquify,
+        name: name,
+        definitionName: definitionName,
+        asStruct: asStruct,
+      );
+
+  /// Registers [source] for [role] and returns its internal clone.
+  ///
+  /// Structured registration is the default and preserves the current
+  /// [PairInterface] hierarchy and direction reversal. Set [asStruct] to
+  /// `false` to register individual ports. [definitionName] optionally
+  /// overrides the root typedef base, independently of the grouped port
+  /// [name]; nested interfaces retain their own definition names. The
+  /// override is ignored when [asStruct] is `false`.
+  InterfaceType addPairInterface<InterfaceType extends PairInterface>(
+    InterfaceType source,
+    PairRole role, {
+    String Function(String original)? uniquify,
+    String? name,
+    String? definitionName,
+    bool asStruct = true,
+  }) =>
+      addPairInterfaceFrom(
+        source.clone() as InterfaceType,
+        source,
+        role,
+        uniquify: uniquify,
+        name: name,
+        definitionName: definitionName,
+        asStruct: asStruct,
+      );
+
+  /// Registers a deliberately retyped pair [target] against [source].
+  ///
+  /// Prefer [addPairInterface] when both interfaces have the same concrete
+  /// type. This form returns [target] without cloning it and retains the
+  /// role-specific, recursive registration behavior. [definitionName]
+  /// optionally overrides the root typedef base; nested interfaces retain
+  /// their own definition names. The override is ignored when [asStruct] is
+  /// `false`.
+  InterfaceType addPairInterfaceFrom<InterfaceType extends PairInterface>(
+    InterfaceType target,
+    PairInterface source,
+    PairRole role, {
+    String Function(String original)? uniquify,
+    String? name,
+    String? definitionName,
+    bool asStruct = true,
+  }) {
+    final tags = PairInterface.tagsForRole(role);
+    return addInterfaceFrom<InterfaceType, PairDirection>(
+      target,
+      source,
+      inputTags: tags.inputTags,
+      outputTags: tags.outputTags,
+      inOutTags: tags.inOutTags,
+      uniquify: uniquify,
+      name: name,
+      definitionName: definitionName,
+      asStruct: asStruct,
+    );
+  }
+
+  /// Registers [source] with the legacy pair-interface-port API.
+  ///
+  /// Unlike [addPairInterface], this defaults to individual ports. Set
+  /// [asStruct] to `true` to preserve the hierarchy in typed structure ports.
+  /// [definitionName] only applies to this structured form.
+  InterfaceType addPairInterfacePorts<InterfaceType extends PairInterface>(
+          InterfaceType source, PairRole role,
+          {String Function(String original)? uniquify,
+          String? name,
+          String? definitionName,
+          bool asStruct = false}) =>
+      addPairInterface(source, role,
+          uniquify: uniquify,
+          name: name,
+          definitionName: definitionName,
+          asStruct: asStruct);
 
   @override
   String toString() => [

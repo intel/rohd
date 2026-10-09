@@ -10,7 +10,9 @@
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/interfaces/interface_structure.dart';
 import 'package:rohd/src/signals/signals.dart';
+import 'package:rohd/src/utilities/sanitizer.dart';
 
 /// Represents a logical interface to a [Module].
 ///
@@ -25,6 +27,41 @@ import 'package:rohd/src/signals/signals.dart';
 /// [Interface], and also breaks the rules for [Module] input and output
 /// connectivity.
 class Interface<TagType extends Enum> {
+  final String? _definitionName;
+
+  /// Creates an interface with an optional SystemVerilog definition name.
+  ///
+  /// If omitted, the concrete runtime type name is used. Generic type
+  /// arguments are included in the default name.
+  Interface({String? definitionName}) : _definitionName = definitionName;
+
+  /// The type-oriented name used for interface-derived SystemVerilog typedefs.
+  ///
+  /// Parameterized interfaces should override this getter to include any
+  /// configuration values that affect their type, similar to
+  /// [Module.definitionName]. Struct-view synthesis reuses matching type names
+  /// and layouts, and uniquifies names when different layouts share a base.
+  String get definitionName {
+    if (_definitionName case final name?) {
+      return Sanitizer.sanitizeSV(name);
+    }
+    // Runtime type text retains generic arguments for the default type name.
+    // ignore: no_runtimetype_tostring
+    final runtimeName = runtimeType.toString();
+    final genericStart = runtimeName.indexOf('<');
+    final baseName =
+        genericStart < 0 ? runtimeName : runtimeName.substring(0, genericStart);
+    if (baseName == 'Interface' || baseName == 'PairInterface') {
+      return 'intf';
+    }
+    return Sanitizer.sanitizeSV(
+      runtimeName
+          .replaceAll(RegExp(r'[<>,\s]+'), '_')
+          .replaceAll(RegExp('_+'), '_')
+          .replaceAll(RegExp(r'^_|_$'), ''),
+    );
+  }
+
   /// Internal map from the [Interface]'s defined port name to an instance
   /// of a [Logic].
   ///
@@ -203,6 +240,95 @@ class Interface<TagType extends Enum> {
         registerGroup(portName);
       }
     }
+  }
+
+  /// Connects this local interface through grouped typed structure ports.
+  ///
+  /// Selected inputs and outputs become `<prefix>_in` and `<prefix>_out`
+  /// [LogicStructure] ports, where the prefix is derived from [uniquify].
+  /// [definitionName] optionally overrides the type-name base for the
+  /// generated typedefs; it does not change the grouped port names.
+  /// Field order and types are preserved. InOuts remain individual ports.
+  /// Prefer [Module.addInterface] to create and register a local clone.
+  void connectIOAsStruct(
+    Module module,
+    Interface<dynamic> srcInterface, {
+    Iterable<TagType>? inputTags,
+    Iterable<TagType>? outputTags,
+    Iterable<TagType>? inOutTags,
+    String Function(String original)? uniquify,
+    String? name,
+    String? definitionName,
+  }) {
+    final rename = uniquify ?? (original) => original;
+    final prefix = name ?? _structurePrefix(uniquify);
+    final typeName = Sanitizer.sanitizeSV(
+      definitionName ?? srcInterface.definitionName,
+    );
+
+    if (inputTags != null) {
+      final entries = getPorts(inputTags).entries.toList(growable: false);
+      if (entries.isNotEmpty) {
+        final sourceStructure = InterfaceStructure(
+          [
+            for (final entry in entries)
+              srcInterface.port(entry.key).clone(name: rename(entry.key)),
+          ],
+          interfaceTypeName: '${typeName}_in',
+          name: '${prefix}_in',
+        );
+        for (var i = 0; i < entries.length; i++) {
+          sourceStructure.elements[i] <= srcInterface.port(entries[i].key);
+        }
+
+        final modulePort =
+            module.addTypedInput(sourceStructure.name, sourceStructure);
+        for (var i = 0; i < entries.length; i++) {
+          port(entries[i].key) <= modulePort.elements[i];
+        }
+      }
+    }
+
+    if (outputTags != null) {
+      final entries = getPorts(outputTags).entries.toList(growable: false);
+      if (entries.isNotEmpty) {
+        final template = InterfaceStructure(
+          [
+            for (final entry in entries)
+              port(entry.key).clone(name: rename(entry.key)),
+          ],
+          interfaceTypeName: '${typeName}_out',
+          name: '${prefix}_out',
+        );
+        final modulePort = module.addTypedOutput(template.name, template.clone);
+        for (var i = 0; i < entries.length; i++) {
+          modulePort.elements[i] <= port(entries[i].key);
+          srcInterface.port(entries[i].key) <= modulePort.elements[i];
+        }
+      }
+    }
+
+    if (inOutTags != null) {
+      connectIO(module, srcInterface, inOutTags: inOutTags, uniquify: uniquify);
+    }
+  }
+
+  static String _structurePrefix(String Function(String original)? uniquify) {
+    if (uniquify == null) {
+      return 'intf';
+    }
+    const sentinel = '\x00';
+    final probed = uniquify(sentinel);
+    final String prefix;
+    if (probed.endsWith(sentinel)) {
+      prefix = probed.substring(0, probed.length - 1);
+    } else if (probed.startsWith(sentinel)) {
+      prefix = probed.substring(1);
+    } else {
+      prefix = probed;
+    }
+    final trimmed = prefix.replaceAll(RegExp(r'^_+|_+$'), '');
+    return trimmed.isEmpty ? 'intf' : trimmed;
   }
 
   /// Returns all interface ports associated with the provided [tags] as a

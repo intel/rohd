@@ -93,10 +93,7 @@ abstract class NetlistUtils {
       );
     }
 
-    final parts = [
-      _rootSignalIndexInModule(module, _rootLogic(destination)),
-      ..._logicElementPathIndices(destination),
-    ];
+    final parts = _rootSignalPathInModule(module, destination);
     return parts.map((part) => part.toString()).join('_');
   }
 
@@ -108,21 +105,29 @@ abstract class NetlistUtils {
     return root;
   }
 
-  static List<int> _logicElementPathIndices(Logic destination) {
+  static List<int> _rootSignalPathInModule(
+    Module module,
+    Logic destination,
+  ) {
     final elementPath = <int>[];
     var current = destination;
-    while (current.parentStructure != null) {
+
+    while (true) {
+      final rootIndex = _rootSignalIndexInModule(module, current);
+      if (rootIndex != null) {
+        return [rootIndex, ...elementPath.reversed];
+      }
+
       final parent = current.parentStructure!;
       final index = parent.elements.indexWhere(
         (element) => identical(element, current),
       );
-      elementPath.insert(0, index < 0 ? current.arrayIndex ?? 0 : index);
+      elementPath.add(index < 0 ? current.arrayIndex ?? 0 : index);
       current = parent;
     }
-    return elementPath;
   }
 
-  static int _rootSignalIndexInModule(Module module, Logic root) {
+  static int? _rootSignalIndexInModule(Module module, Logic root) {
     final inputIndex = _identityIndex(module.inputs.values, root);
     if (inputIndex != null) {
       return inputIndex;
@@ -146,10 +151,15 @@ abstract class NetlistUtils {
           internalIndex;
     }
 
-    throw SynthException(
-      'Cannot derive a netlist cell key for ${root.name}: '
-      'the logic root is not registered with module ${module.name}.',
-    );
+    if (root.parentStructure == null) {
+      final topRoot = _rootLogic(root);
+      throw SynthException(
+        'Cannot derive a netlist cell key for ${topRoot.name}: '
+        'the logic root is not registered with module ${module.name}.',
+      );
+    }
+
+    return null;
   }
 
   static int? _identityIndex(Iterable<Logic> logics, Logic target) {
