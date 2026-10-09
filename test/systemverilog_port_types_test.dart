@@ -256,7 +256,7 @@ void main() {
     ];
 
     for (final configuration in configurations) {
-      final sv = module.generateSynth(
+      final sv = module.dumpSystemVerilog(
         configuration: configuration.configuration,
       );
       expect(
