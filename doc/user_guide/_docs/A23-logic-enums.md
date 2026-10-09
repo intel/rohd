@@ -38,6 +38,21 @@ final operation = LogicEnum<Operation>.withMapping(
 
 Mappings must be non-empty and contain unique, valid, non-negative encodings that fit within the signal width. Reading a valid but unmapped bit pattern in simulation produces `x`.
 
+## Signals, Members, and Constants
+
+`LogicEnum<T>` is a driveable signal, not a `Const`. A Dart enum member is a symbolic value, not a packed constant or a universal ordinal encoding. `getsEnum`, `put`, `inject`, and conditional assignment convert members through the receiving signal's mapping. For the explicit mapping above, `Operation.write` encodes as 3, not its Dart `.index` of 2. A different mapping can give the same member a different encoding.
+
+A packed `Const` already specifies its bits. Connecting or conditionally assigning one to an enum requires matching widths and an exact encoding present in the mapping; it is not interpreted as a member index. Unmapped members and known unmapped constant drivers are rejected. Raw values supplied through `put`, `inject`, or a live driver are constrained in simulation: unmapped encodings and partially invalid values become all `x`, while an entirely floating value remains all `z`. Connected aliases share these constraints because they represent one wire.
+
+Connecting an enum to a constant, including with `getsEnum`, fixes that wire's value without changing the signal into a `Const` subtype. Cloning it still creates an unconnected, driveable enum signal, initially floating, with the same enum type, mapping, width, `definitionName`, and `reserveDefinitionName` policy. The clone does not copy the value or the connection:
+
+```dart
+final tiedOperation = operation.clone()..getsEnum(Operation.write);
+final nextOperation = tiedOperation.clone()..put(Operation.read);
+```
+
+Here `tiedOperation` remains fixed at `Operation.write`; updating `nextOperation` does not change it.
+
 ## Using Enum Values
 
 Enum members can be used directly in conditional assignments to a compatible `LogicEnum`:

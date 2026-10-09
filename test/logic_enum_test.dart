@@ -687,6 +687,70 @@ void main() {
     expect(wideEnum.mapping[TestEnum.c]!.toBigInt(), wideValue);
   });
 
+  test('enum contract uses receiver mappings across write APIs', () async {
+    final scheduledResults = <LogicEnum<TestEnum>, LogicValue>{};
+    for (final mapping in [
+      {TestEnum.a: 4, TestEnum.b: 2, TestEnum.c: 7},
+      {TestEnum.a: 3, TestEnum.b: 6, TestEnum.c: 0},
+    ]) {
+      final mutable = LogicEnum<TestEnum>.withMapping(mapping, width: 4);
+      for (final entry in mapping.entries) {
+        final expected = LogicValue.ofInt(entry.value, 4);
+        mutable.put(entry.key);
+        expect(mutable.value, expected);
+        expect(mutable.valueEnum, entry.key);
+        final injected = mutable.clone()..inject(entry.key);
+        scheduledResults[injected] = expected;
+
+        final tied = mutable.clone()..getsEnum(entry.key);
+        expect(tied, isNot(isA<Const>()));
+        expect(tied.value, expected);
+        final packed = mutable.clone()..gets(Const(entry.value, width: 4));
+        expect(packed.value, expected);
+
+        final conditional = mutable.clone();
+        Combinational([conditional < entry.key]);
+        scheduledResults[conditional] = expected;
+      }
+    }
+    await Simulator.run();
+    for (final entry in scheduledResults.entries) {
+      expect(entry.key.value, entry.value);
+    }
+  });
+
+  test('enum contract clone stays driveable when its source is constant-driven',
+      () {
+    for (final reserveName in [false, true]) {
+      final original = LogicEnum<TestEnum>.withMapping(
+        {TestEnum.a: 4, TestEnum.b: 2, TestEnum.c: 7},
+        width: 4,
+        name: 'original',
+        definitionName: 'MappedState',
+        reserveDefinitionName: reserveName,
+      )..getsEnum(TestEnum.a);
+      final clone = original.clone(name: 'copy');
+
+      expect(clone, isA<LogicEnum<TestEnum>>());
+      expect(clone, isNot(isA<Const>()));
+      expect(clone, isNot(same(original)));
+      expect(clone.mapping, original.mapping);
+      expect(clone.width, original.width);
+      expect(clone.definitionName, original.definitionName);
+      expect(clone.reserveDefinitionName, reserveName);
+      expect(clone.value.isFloating, isTrue);
+
+      clone.put(TestEnum.b);
+      expect(clone.valueEnum, TestEnum.b);
+      final source = Logic(width: clone.width)..put(7);
+      clone.gets(source);
+      expect(clone.valueEnum, TestEnum.c);
+      source.put(2);
+      expect(clone.valueEnum, TestEnum.b);
+      expect(original.valueEnum, TestEnum.a);
+    }
+  });
+
   test('clone follows standard Logic naming policy', () {
     final original = LogicEnum(
       TestEnum.values,

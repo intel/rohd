@@ -21,6 +21,10 @@ typedef StateMachine<T extends Enum> = FiniteStateMachine<T>;
 ///
 /// Abstraction for representing Finite state machines (FSM).
 /// Contains the logic for performing the state transitions.
+///
+/// State identifiers must be Dart enum members. Encodings follow the order
+/// of [states], not necessarily [Enum.index]; use [getStateIndex] to obtain
+/// an encoding and [LogicEnum.valueEnum] to read the current enum member.
 class FiniteStateMachine<StateIdentifier extends Enum> {
   /// List of all the [State]s in this machine.
   List<State<StateIdentifier>> get states => UnmodifiableListView(_states);

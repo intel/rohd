@@ -11,8 +11,13 @@ part of 'signals.dart';
 
 /// A hardware signal constrained to values from a Dart enum [T].
 ///
-/// Each enum value has a unique bit-vector encoding in [mapping]. Values not
-/// present in that mapping become `x` when observed in simulation.
+/// Each enum member has a unique bit-vector encoding in [mapping].
+/// [getsEnum], [put], [inject], and
+/// conditional assignments encode enum members using the receiver's mapping,
+/// not their [Enum.index]. Members absent from the mapping are rejected.
+///
+/// Unmapped raw values become `x` in simulation; an entirely
+/// floating value remains `z`. Constraints apply to the shared connected wire.
 class LogicEnum<T extends Enum> extends LogicDef {
   /// The hardware encoding for each supported enum value.
   late final Map<T, LogicValue> mapping;
@@ -178,6 +183,8 @@ class LogicEnum<T extends Enum> extends LogicDef {
   }
 
   /// Connects this signal to a compatible enum, legal constant, or raw logic.
+  ///
+  /// A [Const] driver must match [width] and have an encoding in [mapping].
   @override
   void gets(Logic other) {
     if (other is LogicEnum && !_canAcceptValuesFrom(other)) {
@@ -289,7 +296,10 @@ class LogicEnum<T extends Enum> extends LogicDef {
       width == other.width &&
       other.mapping.entries.every((entry) => mapping[entry.key] == entry.value);
 
-  /// Creates another enum signal with the same mapping and definition policy.
+  /// Creates an unconnected, driveable enum signal, without copying its value.
+  ///
+  /// Preserves [T], [mapping], [width], [definitionName], and
+  /// [reserveDefinitionName], even when this signal is driven by a constant.
   @override
   LogicEnum<T> clone({String? name}) => LogicEnum<T>.withMapping(
         mapping,
