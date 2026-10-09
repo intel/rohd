@@ -34,7 +34,7 @@ void main() {
     final mod = TopModule(Logic());
     await mod.build();
 
-    final sv = mod.generateSynth();
+    final sv = mod.dumpSystemVerilog();
 
     expect(sv, contains('Passthrough'));
   });

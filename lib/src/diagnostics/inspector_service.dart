@@ -113,6 +113,7 @@ class ModuleTree {
   }
 
   /// Returns the built module hierarchy as JSON.
+  // ignore: remove_deprecations_in_breaking_versions - Introduced in 0.7.0.
   @Deprecated('Use hierarchyJson instead.')
   String get hierarchyJSON => hierarchyJson;
 }

@@ -17,7 +17,7 @@
   Use an operation `outputGenerator` (or `Passthrough.withOutput`) when an
   explicit output representation is required, including mixed packed and
   structured `cases` branches.
-- **Breaking:** Removed deprecated compatibility APIs. Use the canonical
+- **Breaking:** Removed compatibility APIs deprecated before `0.7.0`. Use the canonical
   `ExternalSystemVerilogModule`, `FiniteStateMachine`, `Sequential`,
   `If.block`, `Logic.port`, `LogicValue` `of...` constructors, `SystemVerilog`,
   `SynthFileContents`, and instance `clone()` APIs. Apply interface port names
