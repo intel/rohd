@@ -113,6 +113,9 @@ class SynthSubModuleInstantiation {
   }
 
   /// Propagates enum type metadata across the module's paired ports.
+  ///
+  /// Input uses receive local typed representations; their shared sources
+  /// are not retyped. Live inputs use assignments and constants use literals.
   @internal
   void adjustTypePairs() {
     SynthLogic mappedPort(Logic port) {
@@ -137,6 +140,23 @@ class SynthSubModuleInstantiation {
                 SynthEnumDefinitionKey(referenceSynth.characteristicEnum!)) {
           // If the types are equivalent, we can just use the original, no need
           // to do any additional merging.
+          continue;
+        }
+
+        if (module.inputs.containsValue(toUpdate)) {
+          final definition = toUpdateSynth.parentSynthModuleDefinition;
+          final typedInput = toUpdateSynth.isConstant
+              ? toUpdateSynth
+                  .constantWithEnumType(referenceSynth.characteristicEnum!)
+              : SynthLogic(referenceSynth.characteristicEnum!.clone(),
+                  parentSynthModuleDefinition: definition,
+                  generatedNameKey: (module, toUpdate, reference));
+          definition.internalSignals.add(typedInput);
+          if (!toUpdateSynth.isConstant) {
+            definition.assignments
+                .add(SynthAssignment(toUpdateSynth, typedInput));
+          }
+          setInputMapping(toUpdate.name, typedInput, replace: true);
           continue;
         }
 

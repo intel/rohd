@@ -80,6 +80,16 @@ abstract class Conditional {
     _assignedDriverToInputMap = assignedDriverToInputMap;
     _parentConditional = parentConditional;
     _parentAlways = parentAlways;
+    for (final entry in portTypePairs.entries) {
+      final port = parentAlways.registerTypePairedInput(
+          entry.key, registeredPort(entry.value));
+      if (port != _assignedDriverToInputMap[entry.key]) {
+        if (identical(_assignedDriverToInputMap, assignedDriverToInputMap)) {
+          _assignedDriverToInputMap = {...assignedDriverToInputMap};
+        }
+        _assignedDriverToInputMap[entry.key] = port;
+      }
+    }
     for (final conditional in conditionals) {
       conditional.updateRegistration(
         assignedReceiverToOutputMap: assignedReceiverToOutputMap,
@@ -180,14 +190,15 @@ abstract class Conditional {
   /// Does *not* recursively call down through sub-[Conditional]s.
   List<Conditional> get conditionals;
 
-  /// A mapping between [receivers] and [drivers] to be fed up to the enclosing
-  /// [Combinational] or [Sequential]'s [Module.portTypePairs].
+  /// Type references for this conditional's own input uses.
+  ///
+  /// Child [conditionals] register their pairs independently with the enclosing
+  /// [Combinational] or [Sequential], preserving distinct uses of one driver.
   ///
   /// NOTE: This is for internal usage only, and the API will not be guaranteed
   /// to be stable.
   @internal
-  Map<Logic, Logic> get portTypePairs =>
-      {for (final cond in conditionals) ...cond.portTypePairs};
+  Map<Logic, Logic> get portTypePairs => const {};
 
   /// Returns a [String] of SystemVerilog to be used in generated output.
   ///

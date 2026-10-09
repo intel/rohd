@@ -31,6 +31,40 @@ abstract class Always extends Module with SystemVerilog {
   @internal
   final Map<Logic, Logic> assignedDriverToInputMap = HashMap<Logic, Logic>();
 
+  /// Input uses distinguished by their source and type-reference port.
+  final Map<(Logic, Logic), Logic> _typePairedInputs = {};
+
+  /// All registered driver ports, including distinct type-specific uses.
+  @protected
+  Iterable<Logic> get registeredDriverInputs => {
+        ...assignedDriverToInputMap.values,
+        ..._typePairedInputs.values,
+      };
+
+  /// All input ports used by [driver], including type-specific uses.
+  @internal
+  Iterable<Logic> driverInputs(Logic driver) => {
+        if (assignedDriverToInputMap.containsKey(driver))
+          assignedDriverToInputMap[driver]!,
+        for (final entry in _typePairedInputs.entries)
+          if (identical(entry.key.$1, driver)) entry.value,
+      };
+
+  /// Registers an input use without discarding another use's type reference.
+  @internal
+  Logic registerTypePairedInput(Logic driver, Logic reference) =>
+      _typePairedInputs.putIfAbsent((driver, reference), () {
+        var port = assignedDriverToInputMap[driver]!;
+        final existingReference = portTypePairs[port];
+        if (existingReference != null && existingReference != reference) {
+          port = addInput(
+              portUniquifier.getUniqueName(initialName: port.name), driver,
+              width: driver.width);
+        }
+        portTypePairs[port] = reference;
+        return port;
+      });
+
   /// A uniquifier for ports generated on this [Always].
   @protected
   @internal
@@ -141,11 +175,6 @@ abstract class Always extends Module with SystemVerilog {
         parentConditional: null,
         parentAlways: this,
       );
-
-      portTypePairs.addAll(conditional.portTypePairs.map((k, v) => MapEntry(
-            conditional.registeredPort(k),
-            conditional.registeredPort(v),
-          )));
     }
   }
 

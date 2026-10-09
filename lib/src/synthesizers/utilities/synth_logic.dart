@@ -120,6 +120,19 @@ class SynthLogic {
   /// Whether this represents a constant.
   bool get isConstant => _constLogic != null;
 
+  /// Creates a use-local constant representation with [enumType]'s metadata.
+  ///
+  /// The shared source and its other consumers retain their original type.
+  SynthLogic constantWithEnumType(LogicEnum enumType) {
+    final constant = _constLogic;
+    if (constant == null || !enumType.mapping.containsValue(constant.value)) {
+      throw StateError('Constant is not representable by ${enumType.mapping}.');
+    }
+    return SynthLogic(constant.clone(),
+        parentSynthModuleDefinition: parentSynthModuleDefinition)
+      .._characteristicEnum = enumType;
+  }
+
   /// Whether this represents a net.
   bool get isNet =>
       // can just look at the first since nets and non-nets cannot be merged
@@ -257,6 +270,9 @@ class SynthLogic {
   /// The name of this, if it has been picked.
   String? _name;
 
+  /// Stable identity for naming a signal fabricated during synthesis.
+  final Object? _generatedNameKey;
+
   /// Picks a [name] using the module's signal namer.
   ///
   /// Must be called exactly once.
@@ -291,6 +307,13 @@ class SynthLogic {
           .key]!;
     }
 
+    final generatedNameKey = _generatedNameKey;
+    if (generatedNameKey != null) {
+      return parentSynthModuleDefinition.module.namer.identifierNameOf(
+          generatedNameKey,
+          initialName: Namer.baseName(logics.first));
+    }
+
     return parentSynthModuleDefinition.module.namer.signalNameOfBest(
       logics,
       constValue: _constLogic,
@@ -300,12 +323,17 @@ class SynthLogic {
 
   /// Creates an instance to represent [initialLogic] and any that merge
   /// into it.
+  ///
+  /// [generatedNameKey] provides stable naming for synthesized use-local
+  /// signals.
   SynthLogic(
     Logic initialLogic, {
     required this.parentSynthModuleDefinition,
     Naming? namingOverride,
     bool constNameDisallowed = false,
+    Object? generatedNameKey,
   })  : isArray = initialLogic is LogicArray,
+        _generatedNameKey = generatedNameKey,
         _constNameDisallowed = constNameDisallowed {
     _addLogic(initialLogic, namingOverride: namingOverride);
   }
@@ -323,6 +351,10 @@ class SynthLogic {
   ) {
     assert(a != b, 'Cannot merge a SynthLogic with itself.');
 
+    if (a.isEnum && b.isEnum && !_enumTypesCompatible(a, b)) {
+      return null;
+    }
+
     if (_constantsMergeable(a, b)) {
       // case to avoid things like a constant assigned to another constant
       a.adopt(b);
@@ -331,10 +363,6 @@ class SynthLogic {
 
     if (a.isNet != b.isNet) {
       // do not merge nets with non-nets
-      return null;
-    }
-
-    if (a.isEnum && b.isEnum && !_enumTypesCompatible(a, b)) {
       return null;
     }
 
@@ -368,6 +396,8 @@ class SynthLogic {
   static bool _constantsMergeable(SynthLogic a, SynthLogic b) =>
       a.isConstant &&
       b.isConstant &&
+      a.isEnum == b.isEnum &&
+      (!a.isEnum || _enumTypesCompatible(a, b)) &&
       a._constLogic!.value == b._constLogic!.value &&
       !a._constNameDisallowed &&
       !b._constNameDisallowed;
@@ -385,11 +415,16 @@ class SynthLogic {
 
   /// Indicates whether [a] and [b] are an enum and a legal enum constant.
   static bool _enumAndConstMergeable(SynthLogic a, SynthLogic b) {
-    final enumLogic = a.isEnum ? a : b;
     final constantLogic = a.isConstant ? a : b;
-    return enumLogic.isEnum &&
+    return a.isEnum &&
+        b.isEnum &&
+        _enumTypesCompatible(a, b) &&
         constantLogic.isConstant &&
-        enumLogic.characteristicEnum!.mapping.values
+        !a.constNameDisallowed &&
+        !b.constNameDisallowed &&
+        !a.isPort(a.parentSynthModuleDefinition.module) &&
+        !b.isPort(b.parentSynthModuleDefinition.module) &&
+        a.characteristicEnum!.mapping.values
             .contains(constantLogic._constLogic!.value);
   }
 

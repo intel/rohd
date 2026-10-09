@@ -7,6 +7,8 @@
 // 2026 July 22
 // Author: Max Korbel <max.korbel@intel.com>
 
+import 'dart:convert';
+
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
@@ -76,6 +78,99 @@ class ModWithEnumConstAssignment extends Module {
     carrot = addInput('carrot', carrot, width: 2);
     final e = MyListLogicEnum(name: 'elephant')..getsEnum(TestEnum.b);
     addOutput('banana', width: 2) <= carrot & e;
+  }
+}
+
+class SharedEnumConstantModule extends Module {
+  SharedEnumConstantModule(Logic select,
+      {required bool directAssignments, Logic? clock}) {
+    select = addInput('select', select);
+    final first = addTypedOutput('first', LogicEnum(TestEnum.values).clone);
+    final second = addTypedOutput('second', LogicEnum(OtherEnum.values).clone);
+    final raw = addOutput('raw', width: 2);
+    final zero = Const(0, width: 2);
+    final conditionals = [
+      If(select, then: [
+        if (directAssignments) ConditionalAssign(first, zero) else first < zero,
+        if (directAssignments)
+          ConditionalAssign(second, zero)
+        else
+          second < zero,
+        raw < zero,
+      ], orElse: [
+        first < 1,
+        second < 1,
+        raw < 1
+      ]),
+    ];
+    if (clock == null) {
+      Combinational(conditionals);
+    } else {
+      Sequential(addInput('clock', clock), conditionals);
+    }
+  }
+}
+
+class PairedEnumConstantModule extends Module with SystemVerilog {
+  PairedEnumConstantModule(Logic source) {
+    final firstInput = addInput('firstInput', source, width: 2);
+    final secondInput = addInput('secondInput', source, width: 2);
+    final rawInput = addInput('rawInput', source, width: 2);
+    final first = addTypedOutput('first', LogicEnum(TestEnum.values).clone);
+    final second = addTypedOutput('second', LogicEnum(OtherEnum.values).clone);
+    final raw = addOutput('raw', width: 2);
+    first <= firstInput;
+    second <= secondInput;
+    raw <= rawInput;
+    portTypePairs.addAll({firstInput: first, secondInput: second});
+  }
+
+  @override
+  String instantiationVerilog(String instanceType, String instanceName,
+          Map<String, String> ports) =>
+      'assign ${ports['first']} = ${ports['firstInput']};\n'
+      'assign ${ports['second']} = ${ports['secondInput']};\n'
+      'assign ${ports['raw']} = ${ports['rawInput']};';
+}
+
+class SharedConstantFanoutModule extends Module {
+  final source = Const(1, width: 2);
+
+  SharedConstantFanoutModule({required bool pairedModule}) {
+    if (pairedModule) {
+      final child = PairedEnumConstantModule(source);
+      for (final name in ['first', 'second', 'raw']) {
+        addOutput(name, width: 2) <= child.output(name);
+      }
+    } else {
+      final first = LogicEnum(TestEnum.values)..gets(source);
+      final second = LogicEnum(OtherEnum.values)..gets(source);
+      addOutput('first', width: 2) <= first;
+      addOutput('second', width: 2) <= second;
+      addOutput('raw', width: 2) <= source;
+    }
+  }
+}
+
+class SharedLiveFanoutModule extends Module {
+  SharedLiveFanoutModule(Logic source) {
+    source = addInput('source', source, width: 2);
+    final child = PairedEnumConstantModule(source);
+    for (final name in ['first', 'second', 'raw']) {
+      addOutput(name, width: 2) <= child.output(name);
+    }
+  }
+}
+
+class SharedConstantInstancesModule extends Module {
+  SharedConstantInstancesModule() {
+    final constant = Const(1, width: 2);
+    final alias = Logic(name: 'alias', width: 2)..gets(constant);
+    final first = PairedEnumConstantModule(constant);
+    final second = PairedEnumConstantModule(alias);
+    addOutput('first', width: 2) <= first.output('first');
+    addOutput('second', width: 2) <= second.output('second');
+    addOutput('raw', width: 2) <= alias;
   }
 }
 
@@ -729,6 +824,23 @@ void main() {
     );
   });
 
+  test('enum conditional constants preserve metadata and other drivers', () {
+    final receiver = LogicEnum(TestEnum.values);
+    final constant = Const(2, width: 2, preferredRadix: 2);
+    final assignment = ConditionalAssign(receiver, constant);
+    expect(assignment.driver, same(constant));
+    expect(assignment.driver.value, constant.value);
+    expect(
+        (assignment.driver as Const).preferredRadix, constant.preferredRadix);
+    expect(
+        () => assignment.driver.put(0), throwsA(isA<UnassignableException>()));
+    expect(ConditionalAssign(Logic(width: 2), constant).driver, same(constant));
+
+    final liveDriver = Logic(width: 2)..put(3);
+    expect(ConditionalAssign(receiver, liveDriver).driver, same(liveDriver));
+    expect(liveDriver.value.toInt(), 3);
+  });
+
   test('sequential enum resets validate constants and require a legal default',
       () {
     for (final asyncReset in [false, true]) {
@@ -944,11 +1056,35 @@ void main() {
 
     final legalEnum = synth(LogicEnum(TestEnum.values));
     final legalConstant = synth(Const(2, width: 2));
-    expect(SynthLogic.tryMerge(legalEnum, legalConstant), isNotNull);
+    expect(SynthLogic.tryMerge(legalEnum, legalConstant), isNull);
+    final typedConstant =
+        legalConstant.constantWithEnumType(legalEnum.characteristicEnum!);
+    expect(SynthLogic.tryMerge(legalEnum, typedConstant), isNotNull);
+    expect(legalConstant.isEnum, isFalse);
 
     final illegalEnum = synth(LogicEnum(TestEnum.values));
     final illegalConstant = synth(Const(3, width: 2));
     expect(SynthLogic.tryMerge(illegalEnum, illegalConstant), isNull);
+
+    final sharedConstant = synth(Const(1, width: 2));
+    final typedFirst =
+        sharedConstant.constantWithEnumType(LogicEnum(TestEnum.values));
+    final typedSecond =
+        sharedConstant.constantWithEnumType(LogicEnum(OtherEnum.values));
+    expect(SynthLogic.tryMerge(sharedConstant, typedFirst), isNull);
+    expect(SynthLogic.tryMerge(typedFirst, typedSecond), isNull);
+    expect(sharedConstant.isEnum, isFalse);
+    expect(sharedConstant.replacement, isNull);
+
+    final reservedFirst = sharedConstant.constantWithEnumType(LogicEnum(
+        TestEnum.values,
+        definitionName: 'FirstEnum',
+        reserveDefinitionName: true));
+    final reservedSecond = sharedConstant.constantWithEnumType(LogicEnum(
+        TestEnum.values,
+        definitionName: 'SecondEnum',
+        reserveDefinitionName: true));
+    expect(SynthLogic.tryMerge(reservedFirst, reservedSecond), isNull);
   });
 
   group('enum sv gen', () {
@@ -1001,6 +1137,126 @@ void main() {
           contains('typedef enum logic [1:0]'
               " { a = 2'h0, b = 2'h1, c = 2'h2 } TestEnum;"));
       expect(sv, contains('assign banana = carrot & b;'));
+    });
+
+    for (final directAssignments in [false, true]) {
+      for (final sequential in [false, true]) {
+        for (final generateEnums in [false, true]) {
+          test(
+              'shared enum constant direct=$directAssignments'
+              ' sequential=$sequential enums=$generateEnums', () async {
+            final module = SharedEnumConstantModule(Logic(),
+                directAssignments: directAssignments,
+                clock: sequential ? Logic() : null);
+            await module.build();
+            final vectors = [
+              if (sequential) Vector({'clock': 0, 'select': 0}, {}),
+              Vector({'select': 0, if (sequential) 'clock': 1},
+                  {'first': 1, 'second': 1, 'raw': 1}),
+              if (sequential)
+                Vector({'clock': 0, 'select': 1},
+                    {'first': 1, 'second': 1, 'raw': 1}),
+              Vector({'select': 1, if (sequential) 'clock': 1},
+                  {'first': 0, 'second': 0, 'raw': 0}),
+            ];
+            await SimCompare.checkFunctionalVector(module, vectors);
+            SimCompare.checkIverilogVector(module, vectors,
+                synthesizerConfiguration: SystemVerilogSynthesizerConfiguration(
+                    generateEnums: generateEnums));
+          });
+        }
+      }
+    }
+
+    for (final pairedModule in [false, true]) {
+      for (final generateEnums in [false, true]) {
+        test('shared constant fanout paired=$pairedModule enums=$generateEnums',
+            () async {
+          final module = SharedConstantFanoutModule(pairedModule: pairedModule);
+          await module.build();
+          final definition = SynthModuleDefinition(module);
+          expect(definition.getSynthLogic(module.source)!.isEnum, isFalse);
+          final vectors = [
+            Vector({}, {'first': 1, 'second': 1, 'raw': 1})
+          ];
+          await SimCompare.checkFunctionalVector(module, vectors);
+          SimCompare.checkIverilogVector(module, vectors,
+              synthesizerConfiguration: SystemVerilogSynthesizerConfiguration(
+                  generateEnums: generateEnums));
+        });
+      }
+    }
+
+    for (final generateEnums in [false, true]) {
+      test('shared live input type uses enums=$generateEnums', () async {
+        final module = SharedLiveFanoutModule(Logic(width: 2));
+        await module.build();
+        final configuration =
+            SystemVerilogSynthesizerConfiguration(generateEnums: generateEnums);
+        String synthesize() => SynthBuilder(
+                module, SystemVerilogSynthesizer(configuration: configuration))
+            .getSynthFileContents()
+            .join();
+        expect(synthesize(), synthesize());
+        final vectors = [
+          for (final value in [0, 1, 2])
+            Vector({'source': value},
+                {'first': value, 'second': value, 'raw': value}),
+        ];
+        await SimCompare.checkFunctionalVector(module, vectors);
+        SimCompare.checkIverilogVector(module, vectors,
+            synthesizerConfiguration: configuration);
+      });
+    }
+
+    for (final generateEnums in [false, true]) {
+      test('shared constant across module instances enums=$generateEnums',
+          () async {
+        final module = SharedConstantInstancesModule();
+        await module.build();
+        final vectors = [
+          Vector({}, {'first': 1, 'second': 1, 'raw': 1})
+        ];
+        await SimCompare.checkFunctionalVector(module, vectors);
+        SimCompare.checkIverilogVector(module, vectors,
+            synthesizerConfiguration: SystemVerilogSynthesizerConfiguration(
+                generateEnums: generateEnums));
+      });
+    }
+
+    test('shared source contexts preserve netlist ports and stability',
+        () async {
+      for (final module in [
+        SharedConstantFanoutModule(pairedModule: false),
+        SharedConstantFanoutModule(pairedModule: true),
+        SharedConstantInstancesModule(),
+        SharedLiveFanoutModule(Logic(width: 2)),
+      ]) {
+        await module.build();
+        final synthesizer = NetlistSynthesizer(
+            configuration: NetlistSynthesizerConfiguration(
+                moduleStopPolicy: SynthModuleStopPolicy()));
+        final first = synthesizer.synthesizeToJson(module);
+        expect(synthesizer.synthesizeToJson(module), first);
+        final json = jsonDecode(first) as Map<String, dynamic>;
+        final modules = json['modules'] as Map<String, dynamic>;
+        expect(modules, isNotEmpty);
+        for (final definition in modules.values.cast<Map<String, dynamic>>()) {
+          final ports = definition['ports'] as Map<String, dynamic>;
+          expect(ports.keys, containsAll(['first', 'second', 'raw']));
+          for (final name in ['first', 'second', 'raw']) {
+            expect(
+                (ports[name] as Map<String, dynamic>)['direction'], 'output');
+          }
+        }
+      }
+    });
+
+    test('shared enum constant compiles with Verilator', () async {
+      final module = SharedEnumConstantModule(Logic(),
+          directAssignments: true, clock: Logic());
+      await module.build();
+      SimCompare.checkVerilatorVector(module, const [], buildOnly: true);
     });
 
     test('generated enum SystemVerilog compiles and matches simulation',

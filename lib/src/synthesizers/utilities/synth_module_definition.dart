@@ -4016,7 +4016,16 @@ class SynthModuleDefinition {
         );
 
         final dst = assignment.dst;
-        final src = assignment.src;
+        var src = assignment.src;
+
+        if (src.isConstant &&
+            !src.isEnum &&
+            dst.isEnum &&
+            dst.characteristicEnum!.mapping.values
+                .contains(src.logics.whereType<Const>().first.value)) {
+          src = src.constantWithEnumType(dst.characteristicEnum!);
+          internalSignals.add(src);
+        }
 
         if (src == dst && src.isConstant) {
           // looks like this assignment does nothing -- some sort of circular
@@ -4043,7 +4052,9 @@ class SynthModuleDefinition {
                 !assignment.dst.hasPreservedName)) {
           internalSignals.remove(assignment.src);
         } else {
-          reducedAssignments.add(assignment);
+          reducedAssignments.add(identical(src, assignment.src)
+              ? assignment
+              : SynthAssignment(src, dst));
         }
       }
       prevAssignmentCount = assignments.length;
