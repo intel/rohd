@@ -722,9 +722,16 @@ class SynthModuleDefinition {
     // process/collapse the marked objects.
     _prepareForNaming();
     _pickNames();
-    _inlinePackedRangesFromSubmoduleOutputs();
+    if (supportsPackedOutputPortConcatenation) {
+      _inlinePackedRangesFromSubmoduleOutputs();
+    }
     process();
   }
+
+  /// Whether the backend can connect a packed submodule output directly to a
+  /// concatenation of signals instead of retaining its intermediate signal.
+  @protected
+  bool get supportsPackedOutputPortConcatenation => true;
 
   /// Replaces an exclusively produced packed bus with its complete split sinks.
   ///

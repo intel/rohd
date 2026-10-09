@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2023 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // comparison_test.dart
@@ -88,7 +88,7 @@ void main() {
           'a_gt_c': 0,
           'a_gte_c': 0,
           'a_gt_operator_c': 0,
-          'a_gte_operator_c': 0,
+          'a_gte_operator_c': 0
         }),
         Vector({
           'a': 5,
@@ -109,7 +109,7 @@ void main() {
           'a_gt_c': 0,
           'a_gte_c': 1,
           'a_gt_operator_c': 0,
-          'a_gte_operator_c': 1,
+          'a_gte_operator_c': 1
         }),
         Vector({
           'a': 9,
@@ -130,12 +130,13 @@ void main() {
           'a_gt_c': 1,
           'a_gte_c': 1,
           'a_gt_operator_c': 1,
-          'a_gte_operator_c': 1,
-        }),
+          'a_gte_operator_c': 1
+        })
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
       final simResult = SimCompare.iverilogVector(gtm, vectors);
       expect(simResult, equals(true));
+      SimCompare.checkSystemCVector(gtm, vectors);
     });
   });
 }

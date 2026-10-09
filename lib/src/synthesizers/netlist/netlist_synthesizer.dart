@@ -44,10 +44,21 @@ import 'package:rohd/src/utilities/sanitizer.dart';
 class NetlistSynthesizer extends Synthesizer {
   /// The version of the ROHD extensions to the Yosys JSON netlist format.
   ///
-  /// Consumers of ROHD-generated netlists must reject an unsupported version.
-  /// This version changes when ROHD adds or changes fields that affect how a
-  /// consumer interprets the netlist.
-  static const String formatVersion = '0.0.1';
+  /// Always emitted in generated netlists so consumers can identify which
+  /// ROHD-specific fields and conventions are present. Consumers should
+  /// treat this as informational/capability-gating only -- an unrecognized
+  /// or missing version must not block loading a netlist, since plain
+  /// Yosys-compatible JSON (without any ROHD branding) is also a valid
+  /// input. This version changes when ROHD adds or changes fields that
+  /// affect how a consumer interprets the netlist.
+  ///
+  /// `0.0.2` added a top-level `"files"` array shared by every module's
+  /// `rohd.src_trace` attribute (previously each module embedded its own,
+  /// independently-indexed file list).
+  ///
+  /// See `doc/netlist_json_format.md` for the full list of fields this
+  /// version adds beyond standard Yosys JSON.
+  static const String formatVersion = '0.0.2';
 
   /// The configuration controlling netlist synthesis.
   ///
@@ -522,10 +533,7 @@ class NetlistSynthesizer extends Synthesizer {
           conns[portEntry.key] = [
             for (final b in oldBits)
               if (b is int)
-                arraySliceOldToNew.putIfAbsent(
-                  b,
-                  translation.allocateWireId,
-                )
+                arraySliceOldToNew.putIfAbsent(b, translation.allocateWireId)
               else
                 b,
           ];
@@ -1010,13 +1018,20 @@ class NetlistSynthesizer extends Synthesizer {
   /// callers to retain per-module results for incremental serving while
   /// avoiding redundant re-synthesis. [slimMode] overrides the configured
   /// default for this projection without modifying the retained results.
+  ///
+  /// [fileTable], when supplied, gives every module's `rohd.src_trace`
+  /// attribute a shared, netlist-wide file dictionary instead of an
+  /// independent one per module (see `doc/netlist_json_format.md`).
   Map<String, Map<String, Object?>> buildModulesMap(
       SynthBuilder synth, Module top,
-      {bool? slimMode}) {
+      {String? packageRoot, bool? slimMode, SourceTraceFileTable? fileTable}) {
     final effectiveSlimMode = slimMode ?? configuration.slimMode;
     final swEntries = Stopwatch()..start();
     final modules = NetlistPasses.collectModuleEntries(synth.synthesisResults,
-        topModule: top, includeCellConnections: !effectiveSlimMode);
+        topModule: top,
+        packageRoot: packageRoot,
+        includeCellConnections: !effectiveSlimMode,
+        fileTable: fileTable);
     swEntries.stop();
 
     final swPasses = Stopwatch()..start();
@@ -1027,10 +1042,22 @@ class NetlistSynthesizer extends Synthesizer {
   }
 
   /// Generate the combined netlist JSON from a [SynthBuilder]'s results.
+  ///
+  /// When source tracing is active and [packageRoot] is supplied, every
+  /// module's `rohd.src_trace` attribute allocates file indices from a
+  /// single [SourceTraceFileTable] shared across the whole netlist, and
+  /// that table's deduplicated file list is embedded once as a top-level
+  /// `"files"` array (see `doc/netlist_json_format.md`) rather than
+  /// duplicated inside each module's own attributes.
   String generateCombinedJson(SynthBuilder synth, Module top,
-      {bool? slimMode}) {
+      {String? packageRoot, bool? slimMode}) {
+    final fileTable = packageRoot != null && SourceTracer.hasTraces
+        ? SourceTraceFileTable(packageRoot)
+        : null;
+
     final swCollect = Stopwatch()..start();
-    final modules = buildModulesMap(synth, top, slimMode: slimMode);
+    final modules = buildModulesMap(synth, top,
+        packageRoot: packageRoot, slimMode: slimMode, fileTable: fileTable);
     swCollect.stop();
 
     final swCompress = Stopwatch()..start();
@@ -1042,6 +1069,7 @@ class NetlistSynthesizer extends Synthesizer {
     final combined = {
       'creator': 'NetlistSynthesizer (rohd)',
       'version': formatVersion,
+      if (fileTable != null && !fileTable.isEmpty) 'files': fileTable.files,
       'modules': modules
     };
 
@@ -1144,7 +1172,9 @@ class NetlistSynthesizer extends Synthesizer {
   /// downstream trace-enabled branches. [slimMode] overrides the configured
   /// output mode for this call, allowing expansion after a slim request.
   String synthesizeToJson(Module top, {String? packageRoot, bool? slimMode}) {
+    final effectiveRoot = packageRoot ?? configuration.effectivePackageRoot;
     final sb = SynthBuilder(top, this);
-    return generateCombinedJson(sb, top, slimMode: slimMode);
+    return generateCombinedJson(sb, top,
+        packageRoot: effectiveRoot, slimMode: slimMode);
   }
 }

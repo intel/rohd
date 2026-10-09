@@ -73,6 +73,20 @@ abstract mixin class HierarchyService {
     return addr == null ? null : occurrenceByAddress(addr);
   }
 
+  /// Resolves a port by its absolute hierarchy path without inspecting
+  /// internal signals.
+  SignalOccurrence? portByPathname(String pathname) {
+    final parts = pathname
+        .replaceAll('.', hierarchyPathSeparator)
+        .split(hierarchyPathSeparator);
+    if (parts.length < 2 || parts.any((part) => part.isEmpty)) {
+      return null;
+    }
+    final portName = parts.removeLast();
+    final owner = occurrenceByPathname(parts.join(hierarchyPathSeparator));
+    return owner?.portByName(portName);
+  }
+
   /// Convert a [OccurrenceAddress] back to a `/`-separated pathname by
   /// walking the tree using child indices.
   ///
@@ -97,10 +111,8 @@ abstract mixin class HierarchyService {
 
     final walked = indices
         .sublist(0, moduleEndIdx)
-        .fold<({List<String> parts, HierarchyOccurrence node})?>((
-      parts: [root.name],
-      node: root,
-    ), (cur, idx) {
+        .fold<({List<String> parts, HierarchyOccurrence node})?>(
+            (parts: [root.name], node: root), (cur, idx) {
       if (cur == null || idx < 0 || idx >= cur.node.children.length) {
         return null;
       }
@@ -149,6 +161,76 @@ abstract mixin class HierarchyService {
     final results = <String>[];
     _searchSignalsRecursive(
         root, [root.name], parts, 0, results, effectiveLimit);
+    return results;
+  }
+
+  /// Completes full signal pathnames beginning with [partialPath].
+  ///
+  /// Unlike [searchSignalPaths], this does not search below a matched path.
+  /// It is intended for commands that resolve one exact signal occurrence.
+  List<String> autocompleteSignalPaths(String partialPath, {int? limit}) {
+    final effectiveLimit = limit ?? defaultHierarchySearchLimit;
+    final normalizedPath = _splitPath(partialPath).join(hierarchyPathSeparator);
+    final results = <String>[];
+    _autocompleteSignalsRecursive(
+        root, [root.name], normalizedPath, results, effectiveLimit);
+    return results;
+  }
+
+  /// Completes full port pathnames beginning with [partialPath].
+  ///
+  /// This traverses occurrence interface ports only, without scanning their
+  /// internal signals.
+  List<String> autocompletePortPaths(String partialPath, {int? limit}) {
+    final effectiveLimit = limit ?? defaultHierarchySearchLimit;
+    final normalized = partialPath.replaceAll('.', hierarchyPathSeparator);
+    final endsWithSeparator = normalized.endsWith(hierarchyPathSeparator);
+    final parts = _splitPath(partialPath);
+    final navigationParts = endsWithSeparator || parts.isEmpty
+        ? parts
+        : parts.sublist(0, parts.length - 1);
+    var current = root;
+    final currentPath = <String>[root.name];
+
+    for (final part in navigationParts) {
+      if (current.name == part) {
+        continue;
+      }
+      final child = current.children
+          .where((candidate) => candidate.name == part)
+          .firstOrNull;
+      if (child == null) {
+        return const [];
+      }
+      current = child;
+      currentPath.add(child.name);
+    }
+
+    final prefix = endsWithSeparator || parts.isEmpty ? '' : parts.last;
+    final results = <String>[];
+    if (prefix.isNotEmpty &&
+        currentPath.length == 1 &&
+        current == root &&
+        root.name.startsWith(prefix)) {
+      results.add('${root.name}$hierarchyPathSeparator');
+    }
+    for (final port in current.ports) {
+      if (prefix.isEmpty || port.name.startsWith(prefix)) {
+        results.add([...currentPath, port.name].join(hierarchyPathSeparator));
+        if (results.length >= effectiveLimit) {
+          return results;
+        }
+      }
+    }
+    for (final child in current.children) {
+      if (prefix.isEmpty || child.name.startsWith(prefix)) {
+        results.add([...currentPath, child.name].join(hierarchyPathSeparator) +
+            hierarchyPathSeparator);
+        if (results.length >= effectiveLimit) {
+          return results;
+        }
+      }
+    }
     return results;
   }
 
@@ -539,6 +621,34 @@ abstract mixin class HierarchyService {
         results,
         limit,
       );
+    }
+  }
+
+  /// Collects signal paths that begin with [partialPath].
+  void _autocompleteSignalsRecursive(
+      HierarchyOccurrence node,
+      List<String> pathSoFar,
+      String partialPath,
+      List<String> results,
+      int limit) {
+    if (results.length >= limit) {
+      return;
+    }
+    for (final signal in node.signals) {
+      if (results.length >= limit) {
+        return;
+      }
+      final fullPath = [...pathSoFar, signal.name].join(hierarchyPathSeparator);
+      if (fullPath.startsWith(partialPath)) {
+        results.add(fullPath);
+      }
+    }
+    for (final child in node.children) {
+      _autocompleteSignalsRecursive(
+          child, [...pathSoFar, child.name], partialPath, results, limit);
+      if (results.length >= limit) {
+        return;
+      }
     }
   }
 

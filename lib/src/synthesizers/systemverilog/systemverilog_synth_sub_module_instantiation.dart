@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2025 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // systemverilog_synth_sub_module_instantiation.dart
@@ -34,14 +34,17 @@ class SystemVerilogSynthSubModuleInstantiation
   /// into that port, which may include inline SV modules as well.
   Map<String, String> _modulePortsMapWithInline(
           Map<String, SynthLogic> plainPorts) =>
-      plainPorts.map((name, synthLogic) => MapEntry(
+      plainPorts.map(
+        (name, synthLogic) => MapEntry(
           name,
           synthLogicToInlineableSynthSubmoduleMap?[synthLogic]
                   ?.inlineVerilog() ??
               // if cleared, then empty port
               (synthLogic.declarationCleared
                   ? ''
-                  : _connectionName(synthLogic))));
+                  : _connectionName(synthLogic)),
+        ),
+      );
 
   /// Renders connection views without giving them an independent signal name.
   String _connectionName(SynthLogic signal) {
@@ -75,7 +78,11 @@ class SystemVerilogSynthSubModuleInstantiation
   }
 
   /// Provides the full SV instantiation for this module.
-  String? instantiationVerilog(String instanceType) {
+  ///
+  /// If [outputPortColumns] is provided, it is populated with
+  /// wire-name → 1-based column mappings for output port connections.
+  String? instantiationVerilog(String instanceType,
+      {Map<String, int>? outputPortColumns}) {
     if (!needsInstantiation) {
       return null;
     }
@@ -83,10 +90,8 @@ class SystemVerilogSynthSubModuleInstantiation
         module: module,
         instanceType: instanceType,
         instanceName: name,
-        ports: _modulePortsMapWithInline({
-          ...inputMapping,
-          ...outputMapping,
-          ...inOutMapping,
-        }));
+        outputPortColumns: outputPortColumns,
+        ports: _modulePortsMapWithInline(
+            {...inputMapping, ...outputMapping, ...inOutMapping}));
   }
 }

@@ -1,5 +1,3 @@
 dependency_overrides:
   rohd:
     path: ../..
-  rohd_hierarchy:
-    path: ../rohd_hierarchy

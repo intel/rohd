@@ -6,9 +6,10 @@
  * Centralised FLC (File-Location Cache) service for rohd_extension.
  *
  * Owns:
- *  - Resolving the .flc.json sidecar path from any document path
+ *  - Resolving a .flc.json sidecar or embedded ROHD source traces
  *  - Querying available source formats (rohd, sv, …) for a module
  *  - Looking up signal/instance source frames from v5/v6 FLC JSON
+ *    or a ROHD netlist's embedded source traces
  *
  * All FLC parsing logic that was previously duplicated across
  * rohd-schematic-viewer/extension.js and rohd-wave-viewer/extension.ts
@@ -95,7 +96,9 @@ export function initialize(extensionPath: string): void {
  *   Foo.fst        →  Foo.flc.json
  *   Foo.ghw        →  Foo.flc.json
  *
- * Returns the absolute path if the sidecar exists, otherwise null.
+ * Returns the absolute sidecar path when it exists. For a `.rohd.json`
+ * document with embedded `rohd.src_trace` data, returns the netlist path
+ * instead. Otherwise, returns null.
  */
 export function resolveFlcPath(documentFsPath: string): string | null {
   const dir = path.dirname(documentFsPath);
@@ -105,7 +108,10 @@ export function resolveFlcPath(documentFsPath: string): string | null {
   const fromRohdJson = base.replace(/\.rohd\.json$/i, '.flc.json');
   if (fromRohdJson !== base) {
     const p = path.join(dir, fromRohdJson);
-    return fs.existsSync(p) ? p : null;
+    if (fs.existsSync(p)) {
+      return p;
+    }
+    return hasEmbeddedSourceTraces(documentFsPath) ? documentFsPath : null;
   }
 
   // .vcd / .fst / .ghw → .flc.json
@@ -144,6 +150,7 @@ export function queryModule(flcPath: string, moduleName: string | null): ModuleI
     const flcJson = JSON.parse(raw) as Record<string, unknown>;
     const modules = (flcJson['modules'] ?? {}) as Record<string, unknown>;
     const docDir = path.dirname(flcPath);
+    const isEmbeddedTrace = isEmbeddedTraceDocument(flcJson);
 
     // `files` entries (ROHD Dart sources) are stored relative to the package
     // root (e.g. `.dart_tool/../lib/src/...`), NOT relative to the directory
@@ -154,7 +161,12 @@ export function queryModule(flcPath: string, moduleName: string | null): ModuleI
         ? (flcJson['packageRoot'] as string)
         : null;
     const resolveSourcePath = (relPath: string): string => {
-      const bases = packageRoot ? [packageRoot, docDir] : [docDir];
+      const workspaceRoots = (vscode.workspace.workspaceFolders ?? []).map(
+        folder => folder.uri.fsPath,
+      );
+      const bases = packageRoot
+        ? [packageRoot, ...workspaceRoots, docDir]
+        : [...workspaceRoots, docDir];
       for (const base of bases) {
         const candidate = path.resolve(base, relPath);
         if (fs.existsSync(candidate)) {
@@ -183,11 +195,13 @@ export function queryModule(flcPath: string, moduleName: string | null): ModuleI
     const formats: ModuleFormats = {};
 
     if (modData) {
-      // ROHD Dart source: trie tree non-empty + at least one global .dart file.
+      // ROHD Dart source: standalone FLC trie or embedded netlist trace,
+      // plus at least one global .dart source file.
       const tree = modData['tree'];
       const hasRohdTree = Array.isArray(tree) && tree.length > 0;
       const globalFiles = (flcJson['files'] ?? []) as string[];
-      const hasRohd = hasRohdTree && globalFiles.length > 0;
+      const hasEmbeddedTrace = isEmbeddedTrace && moduleHasEmbeddedTrace(modData);
+      const hasRohd = (hasRohdTree || hasEmbeddedTrace) && globalFiles.length > 0;
 
       if (hasRohd) {
         const rohdFile = globalFiles.find(f => f.endsWith('.dart'));
@@ -283,7 +297,9 @@ export function lookupSignal(
   try {
     const raw = fs.readFileSync(flcPath, 'utf8');
     const flcJson = JSON.parse(raw) as Record<string, unknown>;
-    const frames = lookupSignalInJson(flcJson, path.dirname(flcPath), moduleName, signalName);
+    const frames = isEmbeddedTraceDocument(flcJson)
+      ? lookupSignalInEmbeddedTrace(flcJson, path.dirname(flcPath), moduleName, signalName)
+      : lookupSignalInJson(flcJson, path.dirname(flcPath), moduleName, signalName);
     const filtered = format ? frames.filter(f => f.type === format) : frames;
     output.appendLine(
       '[FlcService] lookupSignal: ' + filtered.length + ' frame(s)' +
@@ -301,6 +317,111 @@ export function lookupSignal(
     output.appendLine('[FlcService] lookupSignal failed: ' + msg);
     return [];
   }
+}
+
+function lookupSignalInEmbeddedTrace(
+  netlistJson: Record<string, unknown>,
+  netlistDir: string,
+  moduleName: string | null,
+  signalName: string,
+): SourceFrame[] {
+  const modules = asRecord(netlistJson['modules']);
+  if (!modules) { return []; }
+
+  const files = Array.isArray(netlistJson['files'])
+    ? netlistJson['files'].filter((file): file is string => typeof file === 'string')
+    : [];
+  const moduleNames = moduleName
+    ? matchingModuleNames(modules, moduleName)
+    : Object.keys(modules);
+
+  for (const modName of moduleNames) {
+    const modData = asRecord(modules[modName]);
+    const trace = asRecord(asRecord(modData?.['attributes'])?.['rohd.src_trace']);
+    const signals = asRecord(trace?.['signals']);
+    const traceFrames = signals?.[signalName];
+    if (!Array.isArray(traceFrames)) { continue; }
+
+    const frames = traceFrames.flatMap(frame =>
+      typeof frame === 'string'
+        ? embeddedTraceFrameToSourceFrame(frame, files, netlistDir, signalName)
+        : [],
+    );
+    if (frames.length > 0) {
+      return frames;
+    }
+  }
+
+  return [];
+}
+
+function embeddedTraceFrameToSourceFrame(
+  frame: string,
+  files: string[],
+  netlistDir: string,
+  signalName: string,
+): SourceFrame[] {
+  const parts = frame.split(':');
+  const fileIndex = Number.parseInt(parts[0], 10);
+  if (!Number.isInteger(fileIndex) || fileIndex < 0 || fileIndex >= files.length) {
+    return [];
+  }
+
+  return [{
+    file: resolveEmbeddedSourcePath(files[fileIndex], netlistDir),
+    line: Number.parseInt(parts[1], 10) || 1,
+    col: parts.length > 2 ? (Number.parseInt(parts[2], 10) || 1) : 1,
+    desc: signalName + ' [ROHD]',
+    type: 'rohd',
+  }];
+}
+
+function resolveEmbeddedSourcePath(relativePath: string, netlistDir: string): string {
+  if (path.isAbsolute(relativePath)) {
+    return relativePath;
+  }
+
+  const workspaceRoots = (vscode.workspace.workspaceFolders ?? []).map(
+    folder => folder.uri.fsPath,
+  );
+  const bases = [...workspaceRoots, netlistDir];
+  for (const base of bases) {
+    const candidate = path.resolve(base, relativePath);
+    if (fs.existsSync(candidate)) {
+      return candidate;
+    }
+  }
+  return path.resolve(bases[0] ?? netlistDir, relativePath);
+}
+
+function hasEmbeddedSourceTraces(documentFsPath: string): boolean {
+  try {
+    const parsed = JSON.parse(fs.readFileSync(documentFsPath, 'utf8')) as Record<string, unknown>;
+    return isEmbeddedTraceDocument(parsed);
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
+    output.appendLine('[FlcService] unable to inspect netlist source traces: ' + msg);
+    return false;
+  }
+}
+
+function isEmbeddedTraceDocument(document: Record<string, unknown>): boolean {
+  const modules = asRecord(document['modules']);
+  return modules !== null && Object.values(modules).some(module => {
+    const attributes = asRecord(asRecord(module)?.['attributes']);
+    return moduleHasEmbeddedTraceAttributes(attributes);
+  });
+}
+
+function moduleHasEmbeddedTrace(modData: Record<string, unknown>): boolean {
+  return moduleHasEmbeddedTraceAttributes(asRecord(modData['attributes']));
+}
+
+function moduleHasEmbeddedTraceAttributes(
+  attributes: Record<string, unknown> | null,
+): boolean {
+  const trace = asRecord(attributes?.['rohd.src_trace']);
+  return asRecord(trace?.['signals']) !== null || asRecord(trace?.['instances']) !== null;
 }
 
 function lookupSignalInJson(

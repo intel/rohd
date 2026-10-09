@@ -12,6 +12,7 @@ import 'dart:convert';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/diagnostics/output_file_writer.dart'
     if (dart.library.io) 'package:rohd/src/diagnostics/output_file_writer_io.dart';
+import 'package:rohd_hierarchy/rohd_hierarchy.dart';
 
 /// A service that wraps netlist (Yosys JSON) synthesis of a [Module]
 /// hierarchy.
@@ -59,13 +60,24 @@ class NetlistService extends ArtifactProducingService {
   /// Cached per-module JSON, keyed by definition name.
   final Map<String, String> _moduleJsonCache = {};
 
-  /// The service-owned parsed modules map from the combined JSON.
+  /// Cached per-module FLC JSON, keyed by definition name.
+  final Map<String, String> _flcModuleJsonCache = {};
+
+  /// The parsed modules map from the combined JSON.
   late final Map<String, dynamic> _modulesMap;
 
-  /// The package root directory used for FLC trace injection.
+  /// The shared `rohd.src_trace` file dictionary from the combined JSON's
+  /// top-level `"files"` array, or `null` when tracing wasn't enabled.
   ///
-  /// When non-null, downstream trace-enabled branches use this path to embed
-  /// `rohd.src_trace` attributes in the netlist JSON.
+  /// Every module's `rohd.src_trace` attribute references this same list
+  /// by index; it is re-embedded by [moduleJson] and [slimJson] so each
+  /// standalone document remains self-contained.
+  late final List<String>? _srcTraceFiles;
+
+  /// The package root directory used for FLC output, when explicitly provided.
+  ///
+  /// Netlist JSON generation does not require filesystem access. Source/FLC
+  /// data is only available when [packageRoot] is explicitly provided.
   late final String? packageRoot;
 
   /// Creates a netlist service for a built [module].
@@ -87,23 +99,27 @@ class NetlistService extends ArtifactProducingService {
       throw ModuleNotBuiltException(module);
     }
 
-    final effectiveRoot = packageRoot;
+    final effectiveRoot = packageRoot ?? configuration.effectivePackageRoot;
     synthesizer = NetlistSynthesizer(configuration: configuration);
     this.packageRoot = effectiveRoot;
     synthBuilder = SynthBuilder(module, synthesizer);
-    final completeJson =
-        synthesizer.generateCombinedJson(synthBuilder, module, slimMode: false);
+    final completeJson = synthesizer.generateCombinedJson(synthBuilder, module,
+        packageRoot: effectiveRoot, slimMode: false);
     _fullJson = configuration.slimMode
-        ? synthesizer.generateCombinedJson(synthBuilder, module, slimMode: true)
+        ? synthesizer.generateCombinedJson(synthBuilder, module,
+            packageRoot: effectiveRoot, slimMode: true)
         : completeJson;
 
     final decoded = jsonDecode(completeJson) as Map<String, dynamic>;
     _modulesMap =
         (decoded['modules'] as Map<String, dynamic>?) ?? <String, dynamic>{};
     _loadedVersion = decoded['version'] as String?;
+    _srcTraceFiles = (decoded['files'] as List<dynamic>?)?.cast<String>();
 
     if (register) {
       ModuleServices.instance.register<NetlistService>(this);
+      WaveformDataService.init(module);
+      WaveformDataService.instance.startRecording();
     }
   }
 
@@ -129,7 +145,7 @@ class NetlistService extends ArtifactProducingService {
   /// Checks whether [version] is compatible with the current
   /// [formatVersion].
   ///
-  /// Compatible means both major and minor versions match. Returns `true` if
+  /// Compatible means the major version matches. Returns `true` if
   /// the loaded JSON can be consumed by this version of the service.
   static bool isCompatibleVersion(String version) {
     final current = formatVersion.split('.');
@@ -171,21 +187,15 @@ class NetlistService extends ArtifactProducingService {
         'modules': moduleNames.toList(),
       };
 
-  /// Returns the netlist JSON for the module named [definitionName].
+  /// Returns the netlist JSON for a single module [definitionName].
   ///
-  /// [definitionName] must be one of the generated definition names returned
-  /// by [moduleNames]. The returned JSON has this shape:
-  /// ```json
-  /// {
-  ///   "creator": "ROHD netlist synthesizer",
-  ///   "version": "...",
-  ///   "modules": {
-  ///     "DefinitionName": {"ports": {}, "cells": {}, "netnames": {}}
-  ///   }
-  /// }
-  /// ```
+  /// The returned JSON is keyed by definition name:
+  /// `{"DefinitionName": { ports, cells, netnames }}`.
   /// This matches the format expected by the DevTools schematic viewer
   /// for incremental module fetches.
+  ///
+  /// When source tracing is enabled, the netlist-wide file dictionary is
+  /// re-embedded as a top-level `"files"` array.
   ///
   /// If the module is not found, returns a JSON error object.
   String moduleJson(String definitionName) =>
@@ -200,6 +210,8 @@ class NetlistService extends ArtifactProducingService {
         return jsonEncode(<String, Object?>{
           'creator': 'ROHD netlist synthesizer',
           'version': version,
+          if (_srcTraceFiles case final files? when files.isNotEmpty)
+            'files': files,
           'modules': <String, Object?>{definitionName: modData},
         });
       });
@@ -207,44 +219,271 @@ class NetlistService extends ArtifactProducingService {
   /// Returns the set of module definition names in the netlist.
   Set<String> get moduleNames => _modulesMap.keys.toSet();
 
-  /// Read-only, zero-copy access to the parsed modules map.
+  // ─── FLC (File-Line-Column) output ────────────────
+
+  /// Returns the FLC hierarchy JSON map for the module hierarchy,
+  /// or `null` if no traces were recorded.
+  ///
+  /// Requires [packageRoot] to have been set at construction.
+  /// Unlike the inline `rohd.src_trace` attributes embedded in the
+  /// netlist, this produces the standalone FLC format (with a shared
+  /// `"files"` table) suitable for writing to `.flc.json` files.
+  @Deprecated('Use TraceService for FLC output and lookup.')
+  Map<String, Object>? get flcHierarchy {
+    if (packageRoot == null || !SourceTracer.hasTraces) {
+      return null;
+    }
+    return SourceTracer.traceJsonForHierarchy(module,
+        packageRoot: packageRoot!);
+  }
+
+  /// Returns the FLC hierarchy as a JSON string, or an unavailable status.
+  @Deprecated('Use TraceService for FLC output and lookup.')
+  String get flcJson {
+    final hierarchy = flcHierarchy;
+    return hierarchy != null
+        ? jsonEncode(hierarchy)
+        : '{"status":"unavailable","reason":"no traces or packageRoot"}';
+  }
+
+  /// Returns the FLC JSON for a single module as a JSON string.
+  @Deprecated('Use TraceService for FLC output and lookup.')
+  String flcModuleJson(String definitionName) =>
+      _flcModuleJsonCache.putIfAbsent(definitionName, () {
+        final hierarchy = flcHierarchy;
+        if (hierarchy == null) {
+          return '{"status":"unavailable","reason":"no traces or packageRoot"}';
+        }
+        final modules = hierarchy['modules'] as Map<String, Object>?;
+        if (modules == null || !modules.containsKey(definitionName)) {
+          return jsonEncode(<String, String>{
+            'status': 'unavailable',
+            'reason': 'module "$definitionName" not in FLC hierarchy'
+          });
+        }
+        return jsonEncode(<String, Object>{
+          'version': hierarchy['version'] ?? 6,
+          'files': hierarchy['files'] ?? <Object>[],
+          'modules': <String, Object>{definitionName: modules[definitionName]!}
+        });
+      });
+
+  /// Returns a self-contained HTML viewer for the FLC data, or `null`
+  /// if no traces were recorded.
+  @Deprecated('Use TraceService for FLC output and lookup.')
+  String? get flcHtml {
+    final hierarchy = flcHierarchy;
+    if (hierarchy == null) {
+      return null;
+    }
+    return SourceTracer.flcHtmlViewer(jsonEncode(hierarchy),
+        title: '${module.definitionName} Netlist FLC Viewer',
+        packageRoot: packageRoot ?? '');
+  }
+
+  /// Writes the FLC hierarchy JSON to [directory] as
+  /// `<definitionName>.flc.json`.
+  @Deprecated('Use TraceService.write for FLC output.')
+  void writeFlcFiles(String directory) {
+    final hierarchy = flcHierarchy;
+    if (hierarchy == null) {
+      return;
+    }
+    writeOutputTextFile('$directory/${module.definitionName}.flc.json',
+        const JsonEncoder.withIndent('  ').convert(hierarchy));
+  }
+
+  /// Writes the HTML viewer to [directory].
+  @Deprecated('Use TraceService.writeHtml for FLC HTML output.')
+  void writeFlcHtml(String directory) {
+    final html = flcHtml;
+    if (html != null) {
+      writeOutputTextFile('$directory/${module.definitionName}.flc.html', html);
+    }
+  }
+
+  /// Read-only access to the parsed modules map.
   ///
   /// Each key is a definition name and each value is the Yosys-style
-  /// module descriptor containing `ports`, `cells`, and `netnames`. The
-  /// outer map is unmodifiable, but its nested module/cell maps and bit lists
-  /// are shared with this service's internal representation.
-  ///
-  /// Callers must treat the complete returned object graph as immutable.
-  /// Mutating nested values is unsupported and can make uncached [moduleJson]
-  /// or [slimJson] results disagree with previously serialized or cached
-  /// service views. Create a caller-owned copy before making modifications.
+  /// module descriptor containing `ports`, `cells`, and `netnames`.
   Map<String, dynamic> get synthesizedModules =>
       Map<String, dynamic>.unmodifiable(_modulesMap);
 
   /// Cached slim JSON (lazy).
   String? _slimJsonCache;
 
-  /// Returns a slim netlist JSON string with cell `connections` stripped.
+  /// Cached hierarchy over [slimJson].
   ///
-  /// The returned JSON has this shape:
-  /// ```json
-  /// {
-  ///   "netlist": {
-  ///     "creator": "ROHD NetlistService (slim)",
-  ///     "version": "...",
-  ///     "rootInstanceName": "...",
-  ///     "modules": {
-  ///       "DefinitionName": {"ports": {}, "cells": {}, "netnames": {}}
-  ///     }
-  ///   }
-  /// }
-  /// ```
-  /// Module lookup keys are the generated definition names in [moduleNames].
+  /// This is shared by target-side clients so occurrence identity remains
+  /// stable across shell queries and schematic attachment.
+  NetlistHierarchyAdapter? _hierarchyCache;
+
+  /// Returns the shared hierarchy constructed from [slimJson].
+  ///
+  /// The public slim transport document wraps the adapter's canonical
+  /// `modules` map in a `netlist` envelope.
+  NetlistHierarchyAdapter get hierarchy => _hierarchyCache ??= () {
+        final document = jsonDecode(slimJson) as Map<String, dynamic>;
+        final netlist = document['netlist'] as Map<String, dynamic>?;
+        if (netlist == null) {
+          throw const FormatException(
+              'Slim netlist JSON contained no netlist.');
+        }
+        return NetlistHierarchyAdapter.fromMap(netlist,
+            rootNameOverride: netlist['rootInstanceName'] as String?);
+      }();
+
+  /// Returns the directly connected driving signals for [signal].
+  ///
+  /// When [transparent] is true, crosses hierarchical output ports until it
+  /// reaches leaf occurrences. Primitive and arbitrary logic boundaries are
+  /// never inferred through.
+  List<SignalOccurrence> fanin(SignalOccurrence signal,
+          {bool transparent = false}) =>
+      _traverseConnectivity(signal,
+          selectTargets: false, transparent: transparent);
+
+  /// Returns the directly connected consuming signals for [signal].
+  ///
+  /// When [transparent] is true, crosses hierarchical input ports until it
+  /// reaches leaf occurrences. Primitive and arbitrary logic boundaries are
+  /// never inferred through.
+  List<SignalOccurrence> fanout(SignalOccurrence signal,
+          {bool transparent = false}) =>
+      _traverseConnectivity(signal,
+          selectTargets: true, transparent: transparent);
+
+  List<SignalOccurrence> _traverseConnectivity(SignalOccurrence signal,
+      {required bool selectTargets, required bool transparent}) {
+    final endpoints = <SignalOccurrence>[];
+    final visited = <SignalOccurrence>{};
+    void collect(SignalOccurrence current) {
+      if (!visited.add(current)) {
+        return;
+      }
+      for (final endpoint
+          in _directConnectivity(current, selectTargets: selectTargets)) {
+        final owner = endpoint.parent;
+        if (!transparent || owner == null || owner.children.isEmpty) {
+          endpoints.add(endpoint);
+        } else {
+          collect(endpoint);
+        }
+      }
+    }
+
+    collect(signal);
+    endpoints.sort((left, right) => left.path().compareTo(right.path()));
+    return endpoints;
+  }
+
+  List<SignalOccurrence> _directConnectivity(SignalOccurrence signal,
+      {required bool selectTargets}) {
+    final owner = signal.parent;
+    final definition = owner?.definition;
+    if (owner == null || definition == null) {
+      return const [];
+    }
+    final moduleData = _modulesMap[definition] as Map<String, dynamic>?;
+    if (moduleData == null) {
+      return const [];
+    }
+    final bits = _bitsForSignal(moduleData, signal.name);
+    if (bits == null) {
+      return const [];
+    }
+
+    final endpoints = <SignalOccurrence>{};
+    for (final bit in bits.whereType<int>()) {
+      for (final connection in _connectionsForBit(owner, moduleData, bit)) {
+        if (connection.isSource == selectTargets ||
+            identical(connection.signal, signal)) {
+          continue;
+        }
+        endpoints.add(connection.signal);
+      }
+    }
+    return endpoints.toList();
+  }
+
+  List<Object?>? _bitsForSignal(Map<String, dynamic> moduleData, String name) {
+    final ports = moduleData['ports'] as Map<String, dynamic>?;
+    final port = ports?[name] as Map<String, dynamic>?;
+    final portBits = port?['bits'];
+    if (portBits is List<Object?>) {
+      return portBits;
+    }
+    final netnames = moduleData['netnames'] as Map<String, dynamic>?;
+    final net = netnames?[name] as Map<String, dynamic>?;
+    return net?['bits'] as List<Object?>?;
+  }
+
+  List<_NetConnection> _connectionsForBit(
+      HierarchyOccurrence owner, Map<String, dynamic> moduleData, int bit) {
+    final connections = <_NetConnection>[];
+    final ports = moduleData['ports'] as Map<String, dynamic>? ?? {};
+    for (final entry in ports.entries) {
+      final portData = entry.value as Map<String, dynamic>;
+      final portBits = portData['bits'] as List?;
+      if (portBits == null || !portBits.contains(bit)) {
+        continue;
+      }
+      final signalIndex = owner.signalIndexByName(entry.key);
+      if (signalIndex < 0) {
+        continue;
+      }
+      final direction = portData['direction']?.toString() ?? 'inout';
+      connections.add(_NetConnection(
+          signal: owner.signals[signalIndex],
+          isSource: direction == 'input' || direction == 'inout'));
+    }
+
+    final cells = moduleData['cells'] as Map<String, dynamic>? ?? {};
+    for (final entry in cells.entries) {
+      final cellData = entry.value as Map<String, dynamic>;
+      final portDirections =
+          cellData['port_directions'] as Map<String, dynamic>? ?? {};
+      final cellConnections =
+          cellData['connections'] as Map<String, dynamic>? ?? {};
+      final child = _childNamed(owner, entry.key);
+      if (child == null) {
+        continue;
+      }
+      for (final port in cellConnections.entries) {
+        final portBits = port.value as List?;
+        if (portBits == null || !portBits.contains(bit)) {
+          continue;
+        }
+        final signalIndex = child.signalIndexByName(port.key);
+        if (signalIndex < 0) {
+          continue;
+        }
+        final direction = portDirections[port.key]?.toString() ?? 'inout';
+        connections.add(_NetConnection(
+            signal: child.signals[signalIndex],
+            isSource: direction == 'output'));
+      }
+    }
+    return connections;
+  }
+
+  HierarchyOccurrence? _childNamed(HierarchyOccurrence owner, String name) {
+    for (final child in owner.children) {
+      if (child.name == name) {
+        return child;
+      }
+    }
+    return null;
+  }
+
+  /// Returns a slim netlist JSON string — same structure as [toJson] but
+  /// with cell `connections` stripped.
   ///
   /// The slim representation preserves ports, cells (type + port_directions
   /// + port_widths), and netnames so the DevTools extension can render the
   /// hierarchy and signal tree without the full connectivity payload.
   /// Full per-module connectivity is fetched on demand via [moduleJson].
+  /// The source-trace file dictionary is retained when present.
   String get slimJson => _slimJsonCache ??= _buildSlimJson();
 
   /// Builds the slim hierarchy JSON with per-cell connections omitted.
@@ -336,9 +575,18 @@ class NetlistService extends ArtifactProducingService {
       'netlist': <String, dynamic>{
         'creator': 'ROHD NetlistService (slim)',
         'version': version,
+        if (_srcTraceFiles case final files? when files.isNotEmpty)
+          'files': files,
         'rootInstanceName': rootName,
         'modules': slimModules,
       },
     });
   }
+}
+
+class _NetConnection {
+  const _NetConnection({required this.signal, required this.isSource});
+
+  final SignalOccurrence signal;
+  final bool isSource;
 }

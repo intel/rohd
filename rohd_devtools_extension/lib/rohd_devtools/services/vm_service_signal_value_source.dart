@@ -22,7 +22,7 @@ class VmServiceSignalValueSource implements SignalValueSource {
       'ModuleTree.instance.hierarchyJson';
 
   static const _currentTimeExpressions = <String>[
-    'WaveformService.instance.currentTime',
+    'WaveformDataService.instance.currentTime',
   ];
 
   static const _currentTimeExtension = 'ext.rohd.currentTime';
