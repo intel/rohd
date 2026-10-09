@@ -2,7 +2,7 @@
 title: "Modules"
 permalink: /docs/modules/
 excerpt: "Modules"
-last_modified_at: 2025-7-24
+last_modified_at: 2026-08-10
 toc: true
 ---
 
@@ -54,7 +54,7 @@ All gates or functionality apart from assign statements in ROHD are implemented 
 
 The default width of a port is 1.  You can control the width of ports using the `width` argument of `addInput()` and `addOutput()`.  You may choose to set them to a static number, based on some other variable, or even dynamically based on the width of input parameters.  These functions also return the input/output signal.
 
-There are also similar functions called `addTypedInput` and `addTypedOutput` which will create a port with matching widths and types.  This is especially useful for creating `LogicStructure` ports.
+There are also similar functions called `addTypedInput` and `addTypedOutput` which will create a port with matching widths and types. This is especially useful for creating `LogicStructure` and [`LogicEnum`](https://intel.github.io/rohd-website/docs/logic-enums/) ports.
 
 Available mechanisms for creating ports on a `Module` are listed below:
 
@@ -69,6 +69,8 @@ Available mechanisms for creating ports on a `Module` are listed below:
 | `addTypedInOut`    | Adds an in/out port (of any `Logic` type including `LogicArray` and `LogicStructure`) with width/dimensions and type matched to another signal. Requires an external source. |
 | `addInOut`         | Adds an in/out (bidirectional) `Logic` port to the module with explicit width. Requires an external source. |
 | `addInOutArray`    | Adds an in/out (bidirectional) `LogicArray` port to the module with explicit dimensions and element width. Requires an external source. |
+
+`LogicEnum` supports typed input and output ports. Typed enum in/out ports are not currently supported because there is no net-backed `LogicEnum` type.
 
 You can also use [`Interface`s](https://intel.github.io/rohd-website/docs/interfaces/) to create groups of ports.
 

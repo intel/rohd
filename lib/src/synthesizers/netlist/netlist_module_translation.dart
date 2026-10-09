@@ -15,6 +15,7 @@ import 'package:rohd/src/synthesizers/netlist/netlist_port_direction.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_synth_module_definition.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_utils.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_validation.dart';
+import 'package:rohd/src/synthesizers/utilities/synth_enum_definition.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 
@@ -570,26 +571,47 @@ class NetlistModuleTranslation {
       bool computed = false,
       bool preservedName = false,
       Map<String, Object?>? logicType,
+      SynthEnumDefinition? enumDefinition,
     }) {
       if (!emittedNames.add(name)) {
         return;
+      }
+      final attributes = <String, Object?>{
+        if (computed || isInlineSystemVerilog) 'computed': 1,
+        if (preservedName) 'preserved_name': 1,
+      };
+      if (enumDefinition != null) {
+        attributes['wiretype'] = '\\${enumDefinition.definitionName}';
+        for (final entry in enumDefinition.characteristicEnum.mapping.entries) {
+          final encoding = entry.value.toRadixString(
+              leadingZeros: true, includeWidth: false, sepChar: '');
+          attributes['enum_value_$encoding'] =
+              '\\${enumDefinition.enumToNameMapping[entry.key]}';
+        }
       }
       netnames[name] = {
         'bits': bits,
         if (hideName) 'hide_name': 1,
         if (logicType != null) 'logic_type': logicType,
-        'attributes': <String, Object?>{
-          if (computed || isInlineSystemVerilog) 'computed': 1,
-          if (preservedName) 'preserved_name': 1,
-        },
+        'attributes': attributes,
       };
     }
 
+    final modulePorts = {
+      ..._module.inputs,
+      ..._module.outputs,
+      ..._module.inOuts,
+    };
     for (final port in ports.entries) {
+      final portLogic = modulePorts[port.key]!;
       addNetname(
         Sanitizer.sanitizeSV(port.key),
         (port.value['bits']! as List).cast<Object>(),
         logicType: port.value['logic_type'] as Map<String, Object?>?,
+        enumDefinition: synthDef?.getSynthLogic(portLogic)?.enumDefinition ??
+            (portLogic is LogicEnum
+                ? SynthEnumDefinition(portLogic, _module.namer)
+                : null),
       );
     }
 
@@ -659,7 +681,9 @@ class NetlistModuleTranslation {
 
     if (synthDef != null) {
       for (final entry in _synthLogicIds.entries.where(
-        (entry) => !entry.key.isConstant && !entry.key.declarationCleared,
+        (entry) => entry.key.isConstant
+            ? entry.key.isEnum && !_blockedConstSynthLogics.contains(entry.key)
+            : !entry.key.declarationCleared,
       )) {
         final synthLogic = entry.key;
         final name = NetlistUtils.tryGetSynthLogicName(synthLogic);
@@ -667,6 +691,11 @@ class NetlistModuleTranslation {
           continue;
         }
         var bits = applyAlias(entry.value.cast<Object>());
+        if (pruneUndriven &&
+            synthLogic.isConstant &&
+            !bits.whereType<int>().any(drivenBits.contains)) {
+          continue;
+        }
         if (arraySliceOldToNew.isNotEmpty &&
             synthLogic is SynthLogicArrayElement) {
           bits = [
@@ -686,10 +715,12 @@ class NetlistModuleTranslation {
         addNetname(
           Sanitizer.sanitizeSV(name),
           bits,
+          computed: synthLogic.isConstant,
           preservedName: synthLogic.hasPreservedName,
           logicType: typeLogic == null
               ? null
               : NetlistUtils.buildLogicType(typeLogic, bits),
+          enumDefinition: synthLogic.enumDefinition,
         );
       }
     }

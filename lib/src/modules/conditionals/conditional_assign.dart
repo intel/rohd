@@ -13,19 +13,32 @@ import 'package:rohd/src/modules/conditionals/ssa.dart';
 
 /// An assignment that only happens under certain conditions.
 ///
-/// [Logic] has a short-hand for creating [ConditionalAssign] via the
-///  `<` operator.
+/// [Logic] has a short-hand for creating [ConditionalAssign] via the `<`
+/// operator.
 class ConditionalAssign extends Conditional {
-  /// The input to this assignment.
+  /// The receiver for this assignment.
   final Logic receiver;
 
-  /// The output of this assignment.
+  /// The driver for this assignment.
   final Logic driver;
 
+  @override
+  Map<Logic, Logic> get portTypePairs => {driver: receiver};
+
   /// Conditionally assigns [receiver] to the value of [driver].
+  ///
+  /// A constant [driver] must be in a [LogicEnum] receiver's mapping.
   ConditionalAssign(this.receiver, this.driver) {
     if (driver.width != receiver.width) {
       throw PortWidthMismatchException.equalWidth(receiver, driver);
+    }
+
+    final enumReceiver = receiver;
+    if (enumReceiver is LogicEnum &&
+        driver is Const &&
+        !enumReceiver.mapping.containsValue(driver.value)) {
+      throw ArgumentError.value(driver.value, 'driver',
+          'Not present in the mapping for ${enumReceiver.runtimeType}.');
     }
   }
 

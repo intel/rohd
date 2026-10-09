@@ -80,6 +80,16 @@ abstract class Conditional {
     _assignedDriverToInputMap = assignedDriverToInputMap;
     _parentConditional = parentConditional;
     _parentAlways = parentAlways;
+    for (final entry in portTypePairs.entries) {
+      final port = parentAlways.registerTypePairedInput(
+          entry.key, registeredPort(entry.value), this);
+      if (port != _assignedDriverToInputMap[entry.key]) {
+        if (identical(_assignedDriverToInputMap, assignedDriverToInputMap)) {
+          _assignedDriverToInputMap = {...assignedDriverToInputMap};
+        }
+        _assignedDriverToInputMap[entry.key] = port;
+      }
+    }
     for (final conditional in conditionals) {
       conditional.updateRegistration(
         assignedReceiverToOutputMap: assignedReceiverToOutputMap,
@@ -118,6 +128,18 @@ abstract class Conditional {
   @protected
   Logic receiverOutput(Logic receiver) =>
       _assignedReceiverToOutputMap[receiver]!;
+
+  /// Gets the port registered for [driverOrReceiver] by the enclosing block.
+  @internal
+  Logic registeredPort(Logic driverOrReceiver) {
+    final port = _assignedDriverToInputMap[driverOrReceiver] ??
+        _assignedReceiverToOutputMap[driverOrReceiver];
+    if (port == null) {
+      throw StateError(
+          'Logic $driverOrReceiver is not registered in this Conditional.');
+    }
+    return port;
+  }
 
   /// Executes the functionality of this [Conditional] and
   /// populates [drivenSignals] with all [Logic]s that were driven
@@ -167,6 +189,22 @@ abstract class Conditional {
   ///
   /// Does *not* recursively call down through sub-[Conditional]s.
   List<Conditional> get conditionals;
+
+  /// Type references for this conditional's own input uses.
+  ///
+  /// Child [conditionals] register their pairs independently with the enclosing
+  /// [Combinational] or [Sequential], preserving distinct uses of one driver.
+  ///
+  /// NOTE: This is for internal usage only, and the API will not be guaranteed
+  /// to be stable.
+  @internal
+  Map<Logic, Logic> get portTypePairs => const {};
+
+  /// Whether synthesis should apply a paired type to this input use.
+  ///
+  /// A null [constantValue] indicates a non-constant input.
+  @internal
+  bool shouldPropagateType(LogicValue? constantValue) => true;
 
   /// Returns a [String] of SystemVerilog to be used in generated output.
   ///

@@ -34,6 +34,9 @@ class SystemVerilogPortTypeConfiguration {
 
 /// Configuration for SystemVerilog synthesis.
 class SystemVerilogSynthesizerConfiguration {
+  /// Whether SystemVerilog enum types and symbolic values are generated.
+  final bool generateEnums;
+
   /// Type configuration for input ports.
   final SystemVerilogPortTypeConfiguration inputPortType;
 
@@ -45,6 +48,7 @@ class SystemVerilogSynthesizerConfiguration {
 
   /// Creates a new configuration for SystemVerilog synthesis.
   const SystemVerilogSynthesizerConfiguration({
+    this.generateEnums = true,
     this.inputPortType = const SystemVerilogPortTypeConfiguration(
       objectType: SystemVerilogPortType.implicit,
     ),
