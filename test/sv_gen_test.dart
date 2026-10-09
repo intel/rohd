@@ -930,7 +930,7 @@ void main() {
   test('packed one-dimensional array assigns directly to Logic', () async {
     final mod = PackedArrayToLogic(LogicArray([4], 2, name: 'array'));
     await mod.build();
-    final sv = mod.generateSynth();
+    final sv = mod.dumpSystemVerilog();
 
     expect(sv, contains('assign out = array;'), reason: sv);
     expect(sv, isNot(contains('// swizzle')), reason: sv);
@@ -947,7 +947,7 @@ void main() {
   test('Logic assigns directly to packed one-dimensional array', () async {
     final mod = LogicToPackedArray(Logic(width: 8));
     await mod.build();
-    final sv = mod.generateSynth();
+    final sv = mod.dumpSystemVerilog();
 
     expect(sv, contains('assign out = data;'), reason: sv);
 
@@ -976,7 +976,7 @@ void main() {
   test('reordered packed array assignment retains its swizzle', () async {
     final mod = ReversedPackedArrayToLogic(LogicArray([4], 2, name: 'array'));
     await mod.build();
-    final sv = mod.generateSynth();
+    final sv = mod.dumpSystemVerilog();
 
     expect(sv, isNot(contains('assign out = array;')), reason: sv);
     expect(sv, contains('// swizzle'), reason: sv);

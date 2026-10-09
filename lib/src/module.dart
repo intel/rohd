@@ -1173,6 +1173,7 @@ abstract class Module {
   /// file writing, see [SystemVerilogService] (and
   /// [SystemVerilogService.output] for the equivalent one-shot string).
   /// The [configuration] controls options specific to SystemVerilog output.
+  // ignore: remove_deprecations_in_breaking_versions - Introduced in 0.7.0.
   @Deprecated('Use Module.dumpSystemVerilog(configuration: ...) for in-memory '
       'output or SystemVerilogService for advanced options.')
   String generateSynth({
