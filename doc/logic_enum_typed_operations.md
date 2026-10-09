@@ -104,7 +104,7 @@ existing scalar-domain test double is not sufficient proof of enum behavior.
 | Cases | Enum expression/member keys, typed result signals, rejected bare result members, default behavior, mixed packed/domain branches, and output generators. |
 | Selection | `selectFrom` and `selectIndex` retain enum type and reject incompatible mappings. |
 | Passthrough | Default schema preservation and explicit output generator behavior. |
-| Arrays | `LogicArrayOf<LogicEnum<T>>` works through the relevant operations and preserves its element builder and dimensions. |
+| Arrays | `TypedLogicArray<LogicEnum<T>, LogicValue>` works through the relevant operations and preserves its element builder and dimensions. |
 | Structures | Structures with enum leaves work through mux, flop, cases, selection, and module hierarchy. |
 | Backends | ROHD functional simulation, SystemVerilog with enums enabled and disabled, Icarus, and Verilator agree. |
 

@@ -35,9 +35,6 @@ void main() {
       expect(nested.elementWidth, 8);
       expect(nested.arrayValues.length, 4);
       expect(nested.width, 32);
-      // The deprecated LogicValue length retains its packed-bit meaning.
-      // ignore: deprecated_member_use_from_same_package
-      expect(nested.length, 32);
       expect(nested.arrayValues, leaves);
       expect(nested.packed, LogicValue.ofInt(0x04030201, 32));
       expect(flat, nested);

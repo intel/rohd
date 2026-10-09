@@ -31,7 +31,7 @@ final forwarded = Passthrough(registered).out;
 forwarded.valid <= selected.valid;
 ```
 
-The same behavior applies to `LogicArray` and `LogicArrayOf<T>`, including
+The same behavior applies to `LogicArray` and `TypedLogicArray<T, V>`, including
 nested typed arrays. A mux uses its `d0` operand as the default output
 prototype. Both operands must have matching concrete types and recursive
 geometry: field widths, array dimensions, packing hints, and leaf structure.

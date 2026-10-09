@@ -39,14 +39,16 @@ class _ScalarDomainLogic extends Logic {
 
 class _TypedPacket extends LogicStructure {
   Logic get opcode => elements[0];
-  LogicArrayOf<_TypedLane> get lanes => elements[1] as LogicArrayOf<_TypedLane>;
+  TypedLogicArray<_TypedLane, LogicValue> get lanes =>
+      elements[1] as TypedLogicArray<_TypedLane, LogicValue>;
 
   final List<int> laneDimensions;
 
   _TypedPacket({this.laneDimensions = const [2], String? name})
       : super([
           Logic(name: 'opcode', width: 3),
-          LogicArrayOf<_TypedLane>(laneDimensions, _TypedLane.new,
+          TypedLogicArray<_TypedLane, LogicValue>(
+              laneDimensions, _TypedLane.new,
               name: 'lanes'),
         ], name: name ?? 'typed_packet');
 
@@ -213,8 +215,8 @@ void _expectLogicArray(LogicArray array) {
   expect(array, isA<LogicArray>());
 }
 
-void _expectTypedLaneArray(LogicArrayOf<_TypedLane> array) {
-  expect(array, isA<LogicArrayOf<_TypedLane>>());
+void _expectTypedLaneArray(TypedLogicArray<_TypedLane, LogicValue> array) {
+  expect(array, isA<TypedLogicArray<_TypedLane, LogicValue>>());
 }
 
 void _expectConst(Const value) {
@@ -434,10 +436,12 @@ void main() {
     final selector = Logic(width: 2);
     final array0 = LogicArray([2], 4, name: 'array0');
     final array1 = LogicArray([2], 4, name: 'array1');
-    final typedArray0 =
-        LogicArrayOf<_TypedLane>([2], _TypedLane.new, name: 'typed_array0');
-    final typedArray1 =
-        LogicArrayOf<_TypedLane>([2], _TypedLane.new, name: 'typed_array1');
+    final typedArray0 = TypedLogicArray<_TypedLane, LogicValue>(
+        [2], _TypedLane.new,
+        name: 'typed_array0');
+    final typedArray1 = TypedLogicArray<_TypedLane, LogicValue>(
+        [2], _TypedLane.new,
+        name: 'typed_array1');
 
     final muxedArray = Mux(selector[0], array1, array0).out;
     final floppedArray = FlipFlop(clk, array0).q;
@@ -456,14 +460,15 @@ void main() {
     final muxedTypedArray = Mux(selector[0], typedArray1, typedArray0).out;
     final floppedTypedArray = FlipFlop(clk, typedArray0).q;
     final passedTypedArray = Passthrough(typedArray0).out;
-    final LogicArrayOf<_TypedLane> casedTypedArray =
+    final TypedLogicArray<_TypedLane, LogicValue> casedTypedArray =
         cases(selector, {0: typedArray0, 1: typedArray1});
     final selectedTypedArray = [typedArray0, typedArray1].selectIndex(selector);
     final selectedFromTypedArray =
         selector.selectFrom([typedArray0, typedArray1]);
     final clonedTypedArray = typedArray0.cloneTyped();
     final namedTypedArray = typedArray0.namedTyped('named_typed_array');
-    final pipelinedTypedArray = StructurePipeline<LogicArrayOf<_TypedLane>>(
+    final pipelinedTypedArray =
+        StructurePipeline<TypedLogicArray<_TypedLane, LogicValue>>(
       clk,
       typedArray0,
       stages: [(stage) => stage.value],
@@ -493,33 +498,32 @@ void main() {
     ].forEach(_expectTypedLaneArray);
   });
 
-  test('Mux infers nested LogicArrayOf types', () async {
+  test('Mux infers nested TypedLogicArray types', () async {
     final control = Logic();
     final d1 = _TypedPacket(name: 'd1');
     final d0 = _TypedPacket(name: 'd0');
     final muxModule = Mux(control, d1, d0);
     await muxModule.build();
     expect(muxModule.out, isA<_TypedPacket>());
-    expect(muxModule.out.lanes, isA<LogicArrayOf<_TypedLane>>());
-    expect(
-        muxModule.out.lanes.typedLeafElements, everyElement(isA<_TypedLane>()));
+    expect(muxModule.out.lanes, isA<TypedLogicArray<_TypedLane, LogicValue>>());
+    expect(muxModule.out.lanes.arrayElements, everyElement(isA<_TypedLane>()));
 
     d0.opcode.put(1);
-    d0.lanes.typedLeafElements[0].data.put(0x10);
-    d0.lanes.typedLeafElements[1].data.put(0x20);
+    d0.lanes.arrayElements[0].data.put(0x10);
+    d0.lanes.arrayElements[1].data.put(0x20);
     d1.opcode.put(6);
-    d1.lanes.typedLeafElements[0].data.put(0xa0);
-    d1.lanes.typedLeafElements[1].data.put(0xb0);
+    d1.lanes.arrayElements[0].data.put(0xa0);
+    d1.lanes.arrayElements[1].data.put(0xb0);
 
     control.put(0);
     expect(muxModule.out.opcode.value.toInt(), 1);
-    expect(muxModule.out.lanes.typedLeafElements[0].data.value.toInt(), 0x10);
-    expect(muxModule.out.lanes.typedLeafElements[1].data.value.toInt(), 0x20);
+    expect(muxModule.out.lanes.arrayElements[0].data.value.toInt(), 0x10);
+    expect(muxModule.out.lanes.arrayElements[1].data.value.toInt(), 0x20);
 
     control.put(1);
     expect(muxModule.out.opcode.value.toInt(), 6);
-    expect(muxModule.out.lanes.typedLeafElements[0].data.value.toInt(), 0xa0);
-    expect(muxModule.out.lanes.typedLeafElements[1].data.value.toInt(), 0xb0);
+    expect(muxModule.out.lanes.arrayElements[0].data.value.toInt(), 0xa0);
+    expect(muxModule.out.lanes.arrayElements[1].data.value.toInt(), 0xb0);
   });
 
   test('Mux preserves structure type with a constant control', () {
@@ -685,7 +689,7 @@ void main() {
     await flipFlop.build();
     unawaited(Simulator.run());
     expect(flipFlop.q, isA<_TypedPacket>());
-    expect(flipFlop.q.lanes, isA<LogicArrayOf<_TypedLane>>());
+    expect(flipFlop.q.lanes, isA<TypedLogicArray<_TypedLane, LogicValue>>());
 
     reset.inject(1);
     enable.inject(0);
@@ -694,22 +698,22 @@ void main() {
     expect(flipFlop.q.value, LogicValue.ofInt(0, flipFlop.q.width));
 
     d.opcode.inject(5);
-    d.lanes.typedLeafElements[0].data.inject(0x12);
-    d.lanes.typedLeafElements[0].enable.inject(1);
-    d.lanes.typedLeafElements[1].data.inject(0x34);
-    d.lanes.typedLeafElements[1].enable.inject(0);
+    d.lanes.arrayElements[0].data.inject(0x12);
+    d.lanes.arrayElements[0].enable.inject(1);
+    d.lanes.arrayElements[1].data.inject(0x34);
+    d.lanes.arrayElements[1].enable.inject(0);
     enable.inject(1);
     await clk.nextPosedge;
     expect(flipFlop.q.opcode.value.toInt(), 5);
-    expect(flipFlop.q.lanes.typedLeafElements[0].data.value.toInt(), 0x12);
-    expect(flipFlop.q.lanes.typedLeafElements[1].data.value.toInt(), 0x34);
+    expect(flipFlop.q.lanes.arrayElements[0].data.value.toInt(), 0x12);
+    expect(flipFlop.q.lanes.arrayElements[1].data.value.toInt(), 0x34);
 
     d.opcode.inject(2);
-    d.lanes.typedLeafElements[0].data.inject(0xaa);
+    d.lanes.arrayElements[0].data.inject(0xaa);
     enable.inject(0);
     await clk.nextPosedge;
     expect(flipFlop.q.opcode.value.toInt(), 5);
-    expect(flipFlop.q.lanes.typedLeafElements[0].data.value.toInt(), 0x12);
+    expect(flipFlop.q.lanes.arrayElements[0].data.value.toInt(), 0x12);
     await Simulator.endSimulation();
   });
 
@@ -731,10 +735,10 @@ void main() {
     await clk.nextPosedge;
     reset.inject(0);
     expect(flipFlop.q.opcode.value.toInt(), 0x5);
-    expect(flipFlop.q.lanes.typedLeafElements[0].data.value.toInt(), 0xa5);
-    expect(flipFlop.q.lanes.typedLeafElements[0].enable.value, LogicValue.one);
-    expect(flipFlop.q.lanes.typedLeafElements[1].data.value.toInt(), 0x3c);
-    expect(flipFlop.q.lanes.typedLeafElements[1].enable.value, LogicValue.zero);
+    expect(flipFlop.q.lanes.arrayElements[0].data.value.toInt(), 0xa5);
+    expect(flipFlop.q.lanes.arrayElements[0].enable.value, LogicValue.one);
+    expect(flipFlop.q.lanes.arrayElements[1].data.value.toInt(), 0x3c);
+    expect(flipFlop.q.lanes.arrayElements[1].enable.value, LogicValue.zero);
     await Simulator.endSimulation();
   });
 
@@ -796,14 +800,15 @@ void main() {
     expect(scalar.out.runtimeType, Logic);
     expect(structured.in_, isA<_TypedPacket>());
     expect(structured.out, isA<_TypedPacket>());
-    expect(structured.out.lanes, isA<LogicArrayOf<_TypedLane>>());
+    expect(
+        structured.out.lanes, isA<TypedLogicArray<_TypedLane, LogicValue>>());
 
     input.opcode.put(5);
-    input.lanes.typedLeafElements[0].data.put(0x12);
-    input.lanes.typedLeafElements[1].data.put(0x34);
+    input.lanes.arrayElements[0].data.put(0x12);
+    input.lanes.arrayElements[1].data.put(0x34);
     expect(structured.out.opcode.value.toInt(), 5);
-    expect(structured.out.lanes.typedLeafElements[0].data.value.toInt(), 0x12);
-    expect(structured.out.lanes.typedLeafElements[1].data.value.toInt(), 0x34);
+    expect(structured.out.lanes.arrayElements[0].data.value.toInt(), 0x12);
+    expect(structured.out.lanes.arrayElements[1].data.value.toInt(), 0x34);
   });
 
   test('cases preserves structure and selects a default', () {
@@ -934,26 +939,22 @@ void main() {
         (stage) {
           final next = stage.value.cloneTyped(name: 'stage_0_next');
           next.opcode <= stage.value.opcode + 1;
-          for (var lane = 0;
-              lane < next.lanes.typedLeafElements.length;
-              lane++) {
-            next.lanes.typedLeafElements[lane].data <=
-                stage.value.lanes.typedLeafElements[lane].data;
-            next.lanes.typedLeafElements[lane].enable <=
-                stage.value.lanes.typedLeafElements[lane].enable;
+          for (var lane = 0; lane < next.lanes.arrayElements.length; lane++) {
+            next.lanes.arrayElements[lane].data <=
+                stage.value.lanes.arrayElements[lane].data;
+            next.lanes.arrayElements[lane].enable <=
+                stage.value.lanes.arrayElements[lane].enable;
           }
           return next;
         },
         (stage) {
           final next = stage.value.cloneTyped(name: 'stage_1_next');
           next.opcode <= stage.value.opcode + stage.get(-1).opcode;
-          for (var lane = 0;
-              lane < next.lanes.typedLeafElements.length;
-              lane++) {
-            next.lanes.typedLeafElements[lane].data <=
-                stage.value.lanes.typedLeafElements[lane].data;
-            next.lanes.typedLeafElements[lane].enable <=
-                stage.value.lanes.typedLeafElements[lane].enable;
+          for (var lane = 0; lane < next.lanes.arrayElements.length; lane++) {
+            next.lanes.arrayElements[lane].data <=
+                stage.value.lanes.arrayElements[lane].data;
+            next.lanes.arrayElements[lane].enable <=
+                stage.value.lanes.arrayElements[lane].enable;
           }
           return next;
         },
@@ -965,7 +966,8 @@ void main() {
     expect(pipeline.latency, 2);
     expect(pipeline.output, isA<_TypedPacket>());
     expect(pipeline.get(0), same(input));
-    expect(pipeline.output.lanes, isA<LogicArrayOf<_TypedLane>>());
+    expect(
+        pipeline.output.lanes, isA<TypedLogicArray<_TypedLane, LogicValue>>());
     expect(() => pipeline.values.add(input), throwsUnsupportedError);
 
     reset.inject(1);
@@ -974,13 +976,13 @@ void main() {
     reset.inject(0);
 
     input.opcode.inject(2);
-    input.lanes.typedLeafElements[0].data.inject(0x45);
+    input.lanes.arrayElements[0].data.inject(0x45);
     await clk.nextPosedge;
     input.opcode.inject(4);
-    input.lanes.typedLeafElements[0].data.inject(0x67);
+    input.lanes.arrayElements[0].data.inject(0x67);
     await clk.nextPosedge;
     expect(pipeline.output.opcode.value.toInt(), 7);
-    expect(pipeline.output.lanes.typedLeafElements[0].data.value.toInt(), 0x45);
+    expect(pipeline.output.lanes.arrayElements[0].data.value.toInt(), 0x45);
 
     stall.inject(1);
     input.opcode.inject(1);
