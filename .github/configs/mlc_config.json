@@ -22,6 +22,9 @@
       "pattern": "^https://code\\.visualstudio\\.com/"
     },
     {
+      "pattern": "^https://marketplace\\.visualstudio\\.com/items\\?itemName=Dart-Code\\.dart-code$"
+    },
+    {
       "pattern": "^https://www.nandland.com"
     },
     {
