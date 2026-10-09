@@ -82,47 +82,23 @@ void main() {
       final child0 = HierarchyOccurrence(
         name: 'child_0',
         signals: [
-          SignalOccurrence(
-            name: 'sig0',
-            width: 1,
-          ),
-          SignalOccurrence(
-            name: 'sig1',
-            width: 8,
-          ),
+          SignalOccurrence(name: 'sig0', width: 1),
+          SignalOccurrence(name: 'sig1', width: 8)
         ],
       );
 
       final grandchild = HierarchyOccurrence(
-        name: 'grandchild_0',
-        signals: [
-          SignalOccurrence(
-            name: 'sig0',
-            width: 1,
-          ),
-        ],
-      );
+          name: 'grandchild_0',
+          signals: [SignalOccurrence(name: 'sig0', width: 1)]);
 
       final child1 = HierarchyOccurrence(
-        name: 'child_1',
-        signals: [
-          SignalOccurrence(
-            name: 'sig0',
-            width: 4,
-          ),
-        ],
-      );
+          name: 'child_1', signals: [SignalOccurrence(name: 'sig0', width: 4)]);
 
       child0.children.add(grandchild);
 
       root = HierarchyOccurrence(
         name: 'root',
-        signals: [
-          SignalOccurrence(
-            name: 'clk',
-            width: 1,
-          ),
-        ],
+        signals: [SignalOccurrence(name: 'clk', width: 1)],
         children: [child0, child1],
       )
         // Build addresses for all nodes
@@ -200,7 +176,7 @@ void main() {
               name: 'clk', width: 1, direction: 'input', portIndex: 0),
           SignalOccurrence(name: 'internal_b', width: 4),
           SignalOccurrence(
-              name: 'out', width: 8, direction: 'output', portIndex: 1),
+              name: 'out', width: 8, direction: 'output', portIndex: 1)
         ],
       )..buildAddresses();
 
@@ -243,16 +219,35 @@ void main() {
 
     test('portCount returns correct count', () {
       final occ = HierarchyOccurrence(
-        name: 'X',
-        signals: [
-          SignalOccurrence(
-              name: 'a', width: 1, direction: 'input', portIndex: 0),
-          SignalOccurrence(name: 'b', width: 1),
-          SignalOccurrence(
-              name: 'c', width: 1, direction: 'output', portIndex: 1),
-        ],
-      );
+          name: 'X',
+          signals: [
+            SignalOccurrence(
+                name: 'a', width: 1, direction: 'input', portIndex: 0),
+            SignalOccurrence(
+                name: 'c', width: 1, direction: 'output', portIndex: 1),
+            SignalOccurrence(name: 'b', width: 1),
+          ],
+          portCount: 2);
       expect(occ.portCount, equals(2));
+    });
+
+    test('port lookup excludes internal signals', () {
+      final input = SignalOccurrence(name: 'a', width: 1, direction: 'input');
+      final occ = HierarchyOccurrence(
+          name: 'X',
+          signals: [input, SignalOccurrence(name: 'internal', width: 1)]);
+
+      expect(occ.portByName('a'), same(input));
+      expect(occ.portByName('internal'), isNull);
+    });
+
+    test('ports use the producer-provided signal prefix', () {
+      final port = SignalOccurrence(name: 'a', width: 1, direction: 'input');
+      final internal = SignalOccurrence(name: 'internal', width: 1);
+      final occ = HierarchyOccurrence(
+          name: 'X', signals: [port, internal], portCount: 1);
+
+      expect(occ.ports, [port]);
     });
 
     test('all-ports occurrence: indices match list order', () {
@@ -262,7 +257,7 @@ void main() {
           SignalOccurrence(
               name: 'in', width: 8, direction: 'input', portIndex: 0),
           SignalOccurrence(
-              name: 'out', width: 8, direction: 'output', portIndex: 1),
+              name: 'out', width: 8, direction: 'output', portIndex: 1)
         ],
       )..buildAddresses();
 
@@ -289,7 +284,7 @@ void main() {
         signals: [
           SignalOccurrence(name: 'net', width: 1),
           SignalOccurrence(
-              name: 'p', width: 1, direction: 'input', portIndex: 0),
+              name: 'p', width: 1, direction: 'input', portIndex: 0)
         ],
       );
       final root = HierarchyOccurrence(
@@ -298,7 +293,7 @@ void main() {
         signals: [
           SignalOccurrence(name: 'net_top', width: 1),
           SignalOccurrence(
-              name: 'clk', width: 1, direction: 'input', portIndex: 0),
+              name: 'clk', width: 1, direction: 'input', portIndex: 0)
         ],
       )..buildAddresses();
 

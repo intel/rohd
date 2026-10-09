@@ -61,6 +61,7 @@ class LogicStructure implements Logic {
 
         element._parentStructure = this;
       });
+    SourceTracer.recordSignal(this);
   }
 
   @override
@@ -167,6 +168,43 @@ class LogicStructure implements Logic {
   /// structure provided in index order.
   late final List<Logic> leafElements =
       UnmodifiableListView(_calculateLeafElements());
+
+  /// Promotes direct non-array child structures into a new generic structure.
+  ///
+  /// Each promoted element is cloned and connected to its source. When
+  /// [prefixFieldNames] is `true`, promoted fields are named
+  /// `${child.name}_${field.name}`. This preserves the immediate structure
+  /// path and avoids common field-name collisions. The method throws a
+  /// [LogicConstructionException] when the resulting field names collide.
+  LogicStructure flattenOuter({String? name, bool prefixFieldNames = true}) {
+    final sources = <(Logic, String)>[];
+    for (final element in elements) {
+      if (element is LogicStructure && element is! LogicArray) {
+        for (final field in element.elements) {
+          final prefix =
+              element.name.endsWith('_') ? element.name : '${element.name}_';
+          final fieldName =
+              prefixFieldNames ? '$prefix${field.name}' : field.name;
+          sources.add((field, fieldName));
+        }
+      } else {
+        sources.add((element, element.name));
+      }
+    }
+
+    final names = <String>{};
+    for (final source in sources) {
+      if (!names.add(source.$2)) {
+        throw LogicConstructionException(
+            'Flattened structure contains duplicate field name ${source.$2}.');
+      }
+    }
+
+    final flattenedElements = sources
+        .map((source) => source.$1.clone(name: source.$2)..gets(source.$1))
+        .toList(growable: false);
+    return LogicStructure(flattenedElements, name: name ?? this.name);
+  }
 
   /// Compute the list of all leaf elements, to be cached in [leafElements].
   List<Logic> _calculateLeafElements() {
@@ -391,10 +429,8 @@ class LogicStructure implements Logic {
         newElement <=
             element.withSet(
                 max(startIndex - index, 0),
-                update.getRange(
-                  max(index - startIndex, 0),
-                  min(index - startIndex + elementWidth, update.width),
-                ));
+                update.getRange(max(index - startIndex, 0),
+                    min(index - startIndex + elementWidth, update.width)));
       } else {
         newElement <= element;
       }

@@ -44,6 +44,9 @@ case "$*" in
     done
     cmp pubspec.yaml "$SOURCE/pubspec.yaml"
     cmp lib/fixture.dart "$SOURCE/lib/fixture.dart"
+    if grep -q 'path: ../rohd_hierarchy' pubspec.yaml; then
+      [[ -f ../rohd_hierarchy/pubspec.yaml ]]
+    fi
     printf 'hosted resolution\n' > pubspec.lock ;;
   'pub downgrade') printf 'downgraded resolution\n' > pubspec.lock ;;
   'analyze --fatal-infos lib'|'analyze --fatal-infos --no-pub lib')
@@ -129,8 +132,17 @@ export EXPECTED_SDK=dart EXPECTED_THRESHOLD=10
 run_case 0 "$NAVIGATOR" dart
 [[ "$(cat "$SDK_LOG")" == $'dart|pub get\ndart|analyze --fatal-infos lib\ndart|pub downgrade\ndart|analyze --fatal-infos lib\npana' ]]
 
-mv "$PUB_CACHE/bin/pana" "$FIXTURE/pana"
+mkdir -p "$FIXTURE/rohd_hierarchy/lib"
+printf 'name: rohd_hierarchy\n' > "$FIXTURE/rohd_hierarchy/pubspec.yaml"
+printf 'library rohd_hierarchy;\n' > "$FIXTURE/rohd_hierarchy/lib/rohd_hierarchy.dart"
+printf 'dependencies:\n  rohd_hierarchy:\n    path: ../rohd_hierarchy\n' >> \
+  "$SOURCE/pubspec.yaml"
+cp "$SOURCE/pubspec.yaml" "$FIXTURE/original/pubspec.yaml"
 export EXPECTED_THRESHOLD=0
+run_case 0 "$SOURCE" dart
+[[ "$(cat "$SDK_LOG")" == $'dart|pub get\ndart|analyze --fatal-infos lib\ndart|pub downgrade\ndart|analyze --fatal-infos lib' ]]
+
+mv "$PUB_CACHE/bin/pana" "$FIXTURE/pana"
 run_case 2 "$SOURCE" dart
 grep -q 'Pana is required' "$FIXTURE/output"
 [[ ! -s "$SDK_LOG" ]]

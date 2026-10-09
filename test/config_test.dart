@@ -9,11 +9,13 @@
 // Author: Yao Jing Quek <yao.jing.quek@intel.com>
 
 import 'dart:io';
+
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/config.dart';
 import 'package:rohd/src/utilities/web.dart';
 import 'package:test/test.dart';
 import 'package:yaml/yaml.dart';
+
 import 'waveform_service_test.dart';
 
 class SimpleModule extends Module {
@@ -67,8 +69,9 @@ void main() {
   });
 
   if (!kIsWeb) {
-    test('should contains ROHD version number when wavedumper is generated.',
-        () async {
+    test(
+        'should contains ROHD version number when '
+        'waveform service is generated.', () async {
       const version = Config.version;
 
       final mod = SimpleModule(Logic(), Logic());

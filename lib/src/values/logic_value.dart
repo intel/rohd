@@ -1,7 +1,7 @@
 // Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
-// logic_values.dart
+// logic_value.dart
 // Definitions for a set of logical values of any width
 //
 // 2021 August 2
@@ -800,7 +800,7 @@ abstract class LogicValue implements Comparable<LogicValue> {
           'd' => 10,
           'h' => 16,
           _ => throw LogicValueConstructionException(
-              'Unsupported radix: $radixString'),
+              'Unsupported radix: $radixString')
         };
         final span = (math.log(radix) / math.log(2)).ceil();
 
@@ -1654,10 +1654,7 @@ abstract class LogicValue implements Comparable<LogicValue> {
     if (fill.width != 1) {
       throw Exception('The fill must be 1 bit, but got $fill.');
     }
-    return [
-      LogicValue.filled(newWidth - width, fill),
-      this,
-    ].swizzle();
+    return [LogicValue.filled(newWidth - width, fill), this].swizzle();
   }
 
   /// Returns a new [LogicValue] with width [newWidth] where new bits added are

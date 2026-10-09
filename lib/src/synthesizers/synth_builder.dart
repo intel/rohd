@@ -96,16 +96,17 @@ class SynthBuilder {
       return '*NONE*';
     }
 
-    if (_moduleToInstanceTypeMap.containsKey(module)) {
-      return _moduleToInstanceTypeMap[module]!;
+    final existingName = _moduleToInstanceTypeMap[module];
+    if (existingName != null) {
+      return existingName;
     }
     var newName = module.definitionName;
 
     final newSynthesisResult = synthesizer.synthesize(module, _getInstanceType);
-    if (_synthesisResults.contains(newSynthesisResult)) {
+    final existing = _synthesisResults.lookup(newSynthesisResult);
+    if (existing != null) {
       // a name for this module already exists
-      newName = _moduleToInstanceTypeMap[
-          _synthesisResults.lookup(newSynthesisResult)!.module]!;
+      newName = _moduleToInstanceTypeMap[existing.module]!;
     } else {
       _synthesisResults.add(newSynthesisResult);
       newName = _instanceTypeUniquifier.getUniqueName(

@@ -83,7 +83,7 @@ class SignalOccurrence {
 
   /// Hierarchical address for this signal. Assigned by
   /// [HierarchyOccurrence.buildAddresses] to enable efficient navigation.
-  /// Format: [...occurrenceIndices, signalIndex]
+  /// Format: `[..., occurrenceIndices, signalIndex]`.
   OccurrenceAddress? get address => _address;
   OccurrenceAddress? _address;
 

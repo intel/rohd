@@ -1,4 +1,4 @@
-// Copyright (C) 2023 Intel Corporation
+// Copyright (C) 2023-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // arithmetic_shift_right_test.dart
@@ -36,10 +36,11 @@ void main() {
       Vector({'toShift': 0x10000000, 'shiftAmount': 4, 'maskBit': 1},
           {'result': 0x01000000}),
       Vector({'toShift': 0xe0000000, 'shiftAmount': 4, 'maskBit': 0},
-          {'result': 0}),
+          {'result': 0})
     ];
     await SimCompare.checkFunctionalVector(mod, vectors);
     final simResult = SimCompare.iverilogVector(mod, vectors);
     expect(simResult, equals(true));
+    SimCompare.checkSystemCVector(mod, vectors);
   });
 }

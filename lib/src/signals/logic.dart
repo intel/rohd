@@ -245,15 +245,8 @@ class Logic {
   ///
   /// The [naming] and [name], if unspecified, are chosen based on the rules in
   /// [Naming.chooseNaming] and [Naming.chooseName], respectively.
-  Logic({
-    String? name,
-    int width = 1,
-    Naming? naming,
-  }) : this._(
-          name: name,
-          width: width,
-          naming: naming,
-        );
+  Logic({String? name, int width = 1, Naming? naming})
+      : this._(name: name, width: width, naming: naming);
 
   /// A cloning utility for [clone] and [named].
   Logic _clone({String? name, Naming? naming}) =>
@@ -290,18 +283,15 @@ class Logic {
 
   /// An internal constructor for [Logic] which additional provides access to
   /// setting the [wire].
-  Logic._({
-    String? name,
-    int width = 1,
-    Naming? naming,
-    _Wire? wire,
-  })  : naming = Naming.chooseNaming(name, naming),
+  Logic._({String? name, int width = 1, Naming? naming, _Wire? wire})
+      : naming = Naming.chooseNaming(name, naming),
         name = Naming.chooseName(name, naming),
         _wire = wire ?? _Wire(width: width) {
     if (width < 0) {
       throw LogicConstructionException(
           'Logic width must be greater than or equal to 0.');
     }
+    SourceTracer.recordSignal(this);
   }
 
   /// Constructs a [Logic] with some additional validation for ports of
@@ -422,10 +412,7 @@ class Logic {
     // tell all downstream signals to update to the new wire as well
     final Iterable<Logic> toUpdateWire;
     if (this is LogicNet) {
-      toUpdateWire = [
-        ...dstConnections,
-        ...srcConnections,
-      ].where(
+      toUpdateWire = [...dstConnections, ...srcConnections].where(
           (connection) => connection._wire != _wire && connection is LogicNet);
     } else {
       toUpdateWire = dstConnections.where((element) => element is! LogicNet);
@@ -498,10 +485,7 @@ class Logic {
       // many SV simulators don't support shifting of nets, so default this
       final shamt = _constShiftAmount(other);
       if (shamt != null) {
-        return [
-          this[-1].replicate(shamt),
-          getRange(shamt),
-        ].swizzle();
+        return [this[-1].replicate(shamt), getRange(shamt)].swizzle();
       }
     }
 
@@ -522,10 +506,7 @@ class Logic {
       // many SV simulators don't support shifting of nets, so default this
       final shamt = _constShiftAmount(other);
       if (shamt != null) {
-        return [
-          getRange(0, -shamt),
-          Const(0, width: shamt),
-        ].swizzle();
+        return [getRange(0, -shamt), Const(0, width: shamt)].swizzle();
       }
     }
 
@@ -546,10 +527,7 @@ class Logic {
       // many SV simulators don't support shifting of nets, so default this
       final shamt = _constShiftAmount(other);
       if (shamt != null) {
-        return [
-          Const(0, width: shamt),
-          getRange(shamt),
-        ].swizzle();
+        return [Const(0, width: shamt), getRange(shamt)].swizzle();
       }
     }
 
@@ -921,10 +899,7 @@ class Logic {
     if (width == 1) {
       return replicate(newWidth);
     } else if (newWidth > width) {
-      return [
-        this[-1].replicate(newWidth - width),
-        this,
-      ].swizzle();
+      return [this[-1].replicate(newWidth - width), this].swizzle();
     } else if (newWidth == width) {
       return this;
     }
@@ -1023,18 +998,16 @@ class Logic {
         width: busList.first.width,
         naming: Naming.mergeable);
 
-    Combinational(
-      [
-        Case(
-            this,
-            [
-              for (var i = 0; i < busList.length; i++)
-                CaseItem(Const(i, width: width), [selected < busList[i]])
-            ],
-            conditionalType: ConditionalType.unique,
-            defaultItem: [selected < (defaultValue ?? 0)])
-      ],
-    );
+    Combinational([
+      Case(
+          this,
+          [
+            for (var i = 0; i < busList.length; i++)
+              CaseItem(Const(i, width: width), [selected < busList[i]])
+          ],
+          conditionalType: ConditionalType.unique,
+          defaultItem: [selected < (defaultValue ?? 0)])
+    ]);
 
     return selected;
   }

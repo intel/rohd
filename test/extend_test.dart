@@ -52,13 +52,14 @@ void main() {
         await SimCompare.checkFunctionalVector(mod, vectors);
         final simResult = SimCompare.iverilogVector(mod, vectors);
         expect(simResult, equals(true));
+        SimCompare.checkSystemCVector(mod, vectors);
       }
 
       test('zero extend with same width returns same thing', () async {
         await extendVectors([
           Vector({'a': 0}, {'b': 0}),
           Vector({'a': 0xff}, {'b': 0xff}),
-          Vector({'a': 0x5a}, {'b': 0x5a}),
+          Vector({'a': 0x5a}, {'b': 0x5a})
         ], 8, ExtendType.zero);
       });
       test('zero extend with same width returns identical signal', () {
@@ -72,7 +73,7 @@ void main() {
         await extendVectors([
           Vector({'a': 0}, {'b': 0}),
           Vector({'a': 0xff}, {'b': 0xff}),
-          Vector({'a': 0x5a}, {'b': 0x5a}),
+          Vector({'a': 0x5a}, {'b': 0x5a})
         ], 8, ExtendType.sign);
       });
       test('sign extend with less width throws exception', () {
@@ -81,33 +82,33 @@ void main() {
       test('zero extend pads 0s', () async {
         await extendVectors([
           Vector({'a': 0xff}, {'b': 0xff}),
-          Vector({'a': 0x5a}, {'b': 0x5a}),
+          Vector({'a': 0x5a}, {'b': 0x5a})
         ], 12, ExtendType.zero);
       });
       test('sign extend for positive number pads 0s', () async {
         await extendVectors([
-          Vector({'a': 0x5a}, {'b': 0x5a}),
+          Vector({'a': 0x5a}, {'b': 0x5a})
         ], 12, ExtendType.sign);
       });
       test('sign extend for negative number pads 1s', () async {
         await extendVectors([
-          Vector({'a': 0xff}, {'b': 0xfff}),
+          Vector({'a': 0xff}, {'b': 0xfff})
         ], 12, ExtendType.sign);
       });
       test('sign extend for invalid Logic pads LogicValue.x', () async {
         await extendVectors([
           Vector({'a': LogicValue.ofString('x0100100')},
-              {'b': LogicValue.ofString('xxxxx0100100')}),
+              {'b': LogicValue.ofString('xxxxx0100100')})
         ], 12, ExtendType.sign);
       });
       test('sign extend single bit(0) pads 0s', () async {
         await extendVectors([
-          Vector({'a': LogicValue.zero}, {'b': 0x000}),
+          Vector({'a': LogicValue.zero}, {'b': 0x000})
         ], 12, ExtendType.sign, originalWidth: 1);
       });
       test('sign extend single bit(1) pads 0s', () async {
         await extendVectors([
-          Vector({'a': LogicValue.one}, {'b': 0xfff}),
+          Vector({'a': LogicValue.one}, {'b': 0xfff})
         ], 12, ExtendType.sign, originalWidth: 1);
       });
     });
@@ -121,6 +122,7 @@ void main() {
         await SimCompare.checkFunctionalVector(mod, vectors);
         final simResult = SimCompare.iverilogVector(mod, vectors);
         expect(simResult, equals(true));
+        SimCompare.checkSystemCVector(mod, vectors);
       }
 
       test('setting with bigger number throws exception', () {
@@ -132,26 +134,26 @@ void main() {
       test('setting same width returns only new', () async {
         await withSetVectors([
           Vector({'a': 0x23, 'b': 0xff}, {'c': 0xff}),
-          Vector({'a': 0x45, 'b': 0x5a}, {'c': 0x5a}),
+          Vector({'a': 0x45, 'b': 0x5a}, {'c': 0x5a})
         ], 0, 8);
       });
       test('setting at front', () async {
         await withSetVectors([
           Vector({'a': 0x23, 'b': 0xf}, {'c': 0x2f}),
-          Vector({'a': 0x4a, 'b': 0x5}, {'c': 0x45}),
+          Vector({'a': 0x4a, 'b': 0x5}, {'c': 0x45})
         ], 0, 4);
       });
       test('setting at end', () async {
         await withSetVectors([
           Vector({'a': 0x23, 'b': 0xf}, {'c': 0xf3}),
-          Vector({'a': 0x4a, 'b': 0x5}, {'c': 0x5a}),
+          Vector({'a': 0x4a, 'b': 0x5}, {'c': 0x5a})
         ], 4, 4);
       });
       test('setting in the middle', () async {
         await withSetVectors([
           Vector({'a': 0xff, 'b': 0x0}, {'c': bin('11000011')}),
           Vector(
-              {'a': bin('01111110'), 'b': bin('0110')}, {'c': bin('01011010')}),
+              {'a': bin('01111110'), 'b': bin('0110')}, {'c': bin('01011010')})
         ], 2, 4);
       });
     });
