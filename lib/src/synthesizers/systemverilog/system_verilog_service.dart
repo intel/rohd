@@ -153,6 +153,7 @@ class SystemVerilogService extends CodeGenService {
   ///
   /// Keys are [SynthesisResult.instanceTypeName] (the uniquified definition
   /// name used in the generated SV).
+  // ignore: remove_deprecations_in_breaking_versions - Introduced in 0.7.0.
   @Deprecated('Use instanceTypeOutput(instanceTypeName) for lookup or '
       'fileContents for iteration instead.')
   Map<String, String> get contentsByName => {

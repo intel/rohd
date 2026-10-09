@@ -56,7 +56,7 @@ void main() {
       'Should find a z two levels deep',
     );
 
-    final synth = ftm.generateSynth();
+    final synth = ftm.dumpSystemVerilog();
 
     // "z = 1" means it correctly traversed down from inputs
     assert(
