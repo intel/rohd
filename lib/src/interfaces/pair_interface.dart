@@ -11,6 +11,7 @@ import 'dart:collection';
 
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/signals/signals.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 
 /// A direction for signals between a pair of components.
@@ -44,23 +45,12 @@ enum PairRole {
 /// It can be either directly used for simple scenarios, or extended for more
 /// complex situations.
 class PairInterface extends Interface<PairDirection> {
-  /// A function that can be used to modify all port names in a certain way.
-  @Deprecated(
-      'Use `uniquify` when connecting or adding sub interfaces instead.')
-  String Function(String original)? modify;
-
   /// Constructs an instance of a [PairInterface] with the specified ports.
-  ///
-  /// The [modify] function will allow modification of all port names, in
-  /// addition to the usual uniquification that can occur during [connectIO].
   PairInterface({
     List<Logic>? portsFromConsumer,
     List<Logic>? portsFromProvider,
     List<Logic>? sharedInputPorts,
     List<Logic>? commonInOutPorts,
-    @Deprecated(
-        'Use `uniquify` when connecting or adding sub interfaces instead.')
-    this.modify,
   }) {
     if (portsFromConsumer != null) {
       setPorts(portsFromConsumer, [PairDirection.fromConsumer]);
@@ -92,6 +82,8 @@ class PairInterface extends Interface<PairDirection> {
                         p.numUnpackedDimensions)
                     : LogicArray.port(name, p.dimensions, p.elementWidth,
                         p.numUnpackedDimensions);
+              case BaseLogicArray():
+                return p.clone();
               case LogicNet():
                 return LogicNet.port(name, p.width);
               default:
@@ -99,22 +91,6 @@ class PairInterface extends Interface<PairDirection> {
             }
           })
           .toList(growable: false);
-
-  /// Creates a new instance of a [PairInterface] with the same ports and other
-  /// characteristics.
-  @Deprecated('Use `clone()` on an instance instead')
-  PairInterface.clone(PairInterface otherInterface)
-      : this(
-          portsFromConsumer:
-              _getMatchPorts(otherInterface, PairDirection.fromConsumer),
-          portsFromProvider:
-              _getMatchPorts(otherInterface, PairDirection.fromProvider),
-          sharedInputPorts:
-              _getMatchPorts(otherInterface, PairDirection.sharedInputs),
-          commonInOutPorts:
-              _getMatchPorts(otherInterface, PairDirection.commonInOuts),
-          modify: otherInterface.modify,
-        );
 
   /// A simplified version of [connectIO] for [PairInterface]s where by only
   /// specifying the [role], the input and output tags can be inferred.
@@ -166,16 +142,12 @@ class PairInterface extends Interface<PairDirection> {
       Iterable<PairDirection>? inOutTags,
       String Function(String original)? uniquify}) {
     final nonNullUniquify = uniquify ?? (original) => original;
-    // ignore: deprecated_member_use_from_same_package - deprecated backwards compat
-    final nonNullModify = modify ?? (original) => original;
-    String newUniquify(String original) =>
-        nonNullUniquify(nonNullModify(original));
 
     super.connectIO(module, srcInterface,
         inputTags: inputTags,
         outputTags: outputTags,
         inOutTags: inOutTags,
-        uniquify: newUniquify);
+        uniquify: nonNullUniquify);
 
     if (subInterfaces.isNotEmpty) {
       if (srcInterface is! PairInterface) {
@@ -193,7 +165,7 @@ class PairInterface extends Interface<PairDirection> {
             subInterfaceEntry.value.uniquify ?? (original) => original;
 
         String newSubIntfUniquify(String original) =>
-            nonNullUniquify(nonNullSubIntfUniquify(nonNullModify(original)));
+            nonNullUniquify(nonNullSubIntfUniquify(original));
 
         if (!srcInterface._subInterfaces.containsKey(subInterfaceName)) {
           throw InterfaceTypeException(
@@ -413,8 +385,12 @@ class PairInterface extends Interface<PairDirection> {
 
   @override
   @mustBeOverridden
-  // ignore: deprecated_member_use_from_same_package - deprecated backwards compat
-  PairInterface clone() => PairInterface.clone(this);
+  PairInterface clone() => PairInterface(
+        portsFromConsumer: _getMatchPorts(this, PairDirection.fromConsumer),
+        portsFromProvider: _getMatchPorts(this, PairDirection.fromProvider),
+        sharedInputPorts: _getMatchPorts(this, PairDirection.sharedInputs),
+        commonInOutPorts: _getMatchPorts(this, PairDirection.commonInOuts),
+      );
 }
 
 /// An internal tracking object for sub-interfaces and characteristics useful

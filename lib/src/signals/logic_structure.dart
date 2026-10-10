@@ -9,6 +9,127 @@
 
 part of 'signals.dart';
 
+void _validateMatchingStructure(
+  Logic first,
+  Logic second,
+  String operation,
+  String path,
+) {
+  if (first.width != second.width) {
+    throw LogicConstructionException(
+      '$operation operands differ in width at $path.',
+    );
+  }
+
+  if (first is LogicStructure || second is LogicStructure) {
+    if (first is! LogicStructure ||
+        second is! LogicStructure ||
+        first.runtimeType != second.runtimeType ||
+        first.elements.length != second.elements.length) {
+      throw LogicConstructionException(
+        '$operation operands differ in structure at $path.',
+      );
+    }
+
+    if (first is BaseLogicArray && second is BaseLogicArray) {
+      if (!_sameDimensions(first.dimensions, second.dimensions) ||
+          first.elementWidth != second.elementWidth ||
+          first.numUnpackedDimensions != second.numUnpackedDimensions ||
+          first.isNet != second.isNet) {
+        throw LogicConstructionException(
+          '$operation array operands differ in shape at $path.',
+        );
+      }
+    }
+
+    for (var index = 0; index < first.elements.length; index++) {
+      _validateMatchingStructure(
+        first.elements[index],
+        second.elements[index],
+        operation,
+        '$path[$index]',
+      );
+    }
+  }
+}
+
+/// Verifies that [first] and [second] have identical recursive structure.
+///
+/// Compatibility requires matching concrete structure types, element counts,
+/// leaf widths, and array geometry. Field names may differ because separately
+/// constructed instances of one structure type can use different root names.
+///
+/// Throws a [LogicConstructionException] when the structures do not match.
+void validateMatchingLogicStructure(
+  LogicStructure first,
+  LogicStructure second, {
+  String operation = 'Typed operation',
+}) =>
+    _validateMatchingStructure(first, second, operation, 'root');
+
+LogicType _checkedTypedClone<LogicType extends Logic>(
+  LogicType source, {
+  String? name,
+}) {
+  final cloned = source.clone(name: name);
+  if (cloned is! LogicType) {
+    throw LogicConstructionException(
+      'Clone did not preserve the requested $LogicType type.',
+    );
+  }
+  return cloned;
+}
+
+void _validateTypedNamedClone(Logic source, String name) {
+  if (source is! LogicStructure) {
+    return;
+  }
+
+  final clone = source.clone(name: name);
+  if (clone is Const || clone.hasConsts) {
+    throw LogicConstructionException(
+      'A named typed alias requires driveable cloned fields.',
+    );
+  }
+}
+
+/// Type-preserving conveniences for concrete [Logic] values.
+///
+/// The static receiver type determines the static result type. If a value has
+/// already been widened to [Logic], this extension cannot recover its original
+/// subtype.
+extension TypedLogicUtilities<LogicType extends Logic> on LogicType {
+  /// Equivalent to [Logic.clone], preserving the receiver's static type.
+  ///
+  /// Literal cloning is legal: a concrete [Const] receiver returns another
+  /// [Const] rather than a driveable alias.
+  LogicType cloneTyped({String? name}) => _checkedTypedClone(this, name: name);
+
+  /// Creates a named driveable alias while preserving the static result type.
+  ///
+  /// A concrete [Const] receiver cannot satisfy this contract because
+  /// [Const.clone] is immutable while [Const.named] creates an ordinary
+  /// [Logic] alias. Use [Logic.named] when an ordinary [Logic] alias is
+  /// intended.
+  LogicType namedTyped(String name, {Naming? naming}) {
+    if (this is Const && LogicType == Const) {
+      throw LogicConstructionException(
+        'Const.namedTyped cannot preserve Const because a named alias must be '
+        'driveable. Use named() to create a Logic alias.',
+      );
+    }
+
+    _validateTypedNamedClone(this, name);
+    final named = this.named(name, naming: naming);
+    if (named is! LogicType) {
+      throw LogicConstructionException(
+        'Named alias did not preserve the requested $LogicType type.',
+      );
+    }
+    return named;
+  }
+}
+
 /// Collects a group of [Logic] signals into one entity which can be manipulated
 /// in a similar way as an individual [Logic].
 class LogicStructure implements Logic {
@@ -55,8 +176,9 @@ class LogicStructure implements Logic {
       ..forEach((element) {
         if (element.parentStructure != null) {
           throw LogicConstructionException(
-              '$element already is a member of a structure'
-              ' ${element.parentStructure}.');
+            '$element already is a member of a structure'
+            ' ${element.parentStructure}.',
+          );
         }
 
         element._parentStructure = this;
@@ -66,8 +188,10 @@ class LogicStructure implements Logic {
   @override
   LogicStructure _clone({String? name, Naming? naming}) =>
       // naming is not used for LogicStructure
-      LogicStructure(elements.map((e) => e.clone(name: e.name)),
-          name: name ?? this.name);
+      LogicStructure(
+        elements.map((e) => e.clone(name: e.name)),
+        name: name ?? this.name,
+      );
 
   /// Creates a new [LogicStructure] with the same structure as `this` and
   /// [clone]d [elements], optionally with the provided [name].
@@ -111,7 +235,7 @@ class LogicStructure implements Logic {
   int? _arrayIndex;
 
   @override
-  bool get isArrayMember => parentStructure is LogicArray;
+  bool get isArrayMember => parentStructure is BaseLogicArray;
 
   @override
   void put(dynamic val, {bool fill = false}) {
@@ -155,8 +279,9 @@ class LogicStructure implements Logic {
 
     var index = 0;
     for (final element in leafElements) {
-      conditionalAssigns
-          .add(element < otherLogic.getRange(index, index + element.width));
+      conditionalAssigns.add(
+        element < otherLogic.getRange(index, index + element.width),
+      );
       index += element.width;
     }
 
@@ -165,8 +290,9 @@ class LogicStructure implements Logic {
 
   /// A list of all leaf-level elements at the deepest hierarchy of this
   /// structure provided in index order.
-  late final List<Logic> leafElements =
-      UnmodifiableListView(_calculateLeafElements());
+  late final List<Logic> leafElements = UnmodifiableListView(
+    _calculateLeafElements(),
+  );
 
   /// Compute the list of all leaf elements, to be cached in [leafElements].
   List<Logic> _calculateLeafElements() {
@@ -191,10 +317,16 @@ class LogicStructure implements Logic {
   Logic getRange(int startIndex, [int? endIndex]) {
     endIndex ??= width;
 
-    final modifiedStartIndex =
-        IndexUtilities.wrapIndex(startIndex, width, allowWidth: true);
-    final modifiedEndIndex =
-        IndexUtilities.wrapIndex(endIndex, width, allowWidth: true);
+    final modifiedStartIndex = IndexUtilities.wrapIndex(
+      startIndex,
+      width,
+      allowWidth: true,
+    );
+    final modifiedEndIndex = IndexUtilities.wrapIndex(
+      endIndex,
+      width,
+      allowWidth: true,
+    );
 
     IndexUtilities.validateRange(modifiedStartIndex, modifiedEndIndex);
 
@@ -227,15 +359,18 @@ class LogicStructure implements Logic {
         final elementStartGrab = max(elementStart, modifiedStartIndex) - index;
         final elementEndGrab = min(elementEnd, modifiedEndIndex) - index;
 
-        matchingElements
-            .add(element.getRange(elementStartGrab, elementEndGrab));
+        matchingElements.add(
+          element.getRange(elementStartGrab, elementEndGrab),
+        );
       }
 
       index += element.width;
     }
 
-    assert(!(matchingElements.isEmpty && requestedWidth != 0),
-        'If the requested width is not 0, expect to get some matches.');
+    assert(
+      !(matchingElements.isEmpty && requestedWidth != 0),
+      'If the requested width is not 0, expect to get some matches.',
+    );
 
     return matchingElements.rswizzle();
   }
@@ -285,8 +420,10 @@ class LogicStructure implements Logic {
   @internal
   @override
   set parentModule(Module? newParentModule) {
-    assert(_parentModule == null || _parentModule == newParentModule,
-        'Should only set parent module once.');
+    assert(
+      _parentModule == null || _parentModule == newParentModule,
+      'Should only set parent module once.',
+    );
 
     _parentModule = newParentModule;
   }
@@ -298,8 +435,10 @@ class LogicStructure implements Logic {
   /// search.
   @internal
   void setAllParentModule(Module? newParentModule) {
-    assert(_parentModule == null || _parentModule == newParentModule,
-        'Should only set parent module once.');
+    assert(
+      _parentModule == null || _parentModule == newParentModule,
+      'Should only set parent module once.',
+    );
 
     parentModule = newParentModule;
     for (final element in elements) {
@@ -360,13 +499,16 @@ class LogicStructure implements Logic {
     final endIndex = startIndex + update.width;
 
     if (endIndex > width) {
-      throw RangeError('Width of update $update at startIndex $startIndex would'
-          ' overrun the width of the original ($width).');
+      throw RangeError(
+        'Width of update $update at startIndex $startIndex would'
+        ' overrun the width of the original ($width).',
+      );
     }
 
     if (startIndex < 0) {
       throw RangeError(
-          'Start index must be greater than zero but was $startIndex');
+        'Start index must be greater than zero but was $startIndex',
+      );
     }
 
     final newWithSet = clone();
@@ -383,18 +525,17 @@ class LogicStructure implements Logic {
       final elementStart = index;
       final elementEnd = index + elementWidth;
 
-      final elementInRange =
-          ((elementStart >= startIndex) && (elementStart < endIndex)) ||
-              ((elementEnd > startIndex) && (elementEnd <= endIndex));
+      final elementInRange = elementStart < endIndex && elementEnd > startIndex;
 
       if (elementInRange) {
         newElement <=
             element.withSet(
-                max(startIndex - index, 0),
-                update.getRange(
-                  max(index - startIndex, 0),
-                  min(index - startIndex + elementWidth, update.width),
-                ));
+              max(startIndex - index, 0),
+              update.getRange(
+                max(index - startIndex, 0),
+                min(index - startIndex + elementWidth, update.width),
+              ),
+            );
       } else {
         newElement <= element;
       }
@@ -409,7 +550,9 @@ class LogicStructure implements Logic {
   void assignSubset(List<Logic> updatedSubset, {int start = 0}) {
     if (updatedSubset.length > elements.length - start) {
       throw SignalWidthMismatchException.forWidthOverflow(
-          updatedSubset.length, elements.length - start);
+        updatedSubset.length,
+        elements.length - start,
+      );
     }
 
     // Assign Logic array from `start` index to `start+updatedSubset.length`
@@ -472,12 +615,6 @@ class LogicStructure implements Logic {
   @override
   Logic xor() => packed.xor();
 
-  @Deprecated('Use `value` instead.'
-      '  Check `width` separately to confirm single-bit.')
-  @override
-  // Can rely on `packed` here because it must be 1 bit.
-  LogicValue get bit => packed.bit;
-
   @override
   late final Stream<LogicValueChanged> changed = _internalPacked.changed;
 
@@ -524,14 +661,6 @@ class LogicStructure implements Logic {
   @override
   Logic lte(dynamic other) => packed.lte(other);
 
-  @Deprecated('Use value.isValid instead.')
-  @override
-  bool hasValidValue() => value.isValid;
-
-  @Deprecated('Use value.isFloating instead.')
-  @override
-  bool isFloating() => value.isFloating;
-
   @override
   Logic isIn(List<dynamic> list) => packed.isIn(list);
 
@@ -568,15 +697,6 @@ class LogicStructure implements Logic {
 
   @override
   Logic zeroExtend(int newWidth) => packed.zeroExtend(newWidth);
-
-  @Deprecated('Use `value` instead.'
-      '  Check `width` separately to confirm single-bit.')
-  @override
-  BigInt get valueBigInt => value.toBigInt();
-
-  @Deprecated('Use value.toInt() instead.')
-  @override
-  int get valueInt => value.toInt();
 
   @override
   Logic? get _srcConnection => throw UnsupportedError('Delegated to elements');
@@ -627,8 +747,18 @@ class LogicStructure implements Logic {
   }
 
   @override
-  Logic selectFrom(List<Logic> busList, {Logic? defaultValue}) =>
-      packed.selectFrom(busList, defaultValue: defaultValue);
+  LogicType selectFrom<LogicType extends Logic>(
+    List<LogicType> busList, {
+    dynamic defaultValue,
+    LogicType Function({String? name})? outputGenerator,
+    String name = 'selectFrom',
+  }) =>
+      packed.selectFrom(
+        busList,
+        defaultValue: defaultValue,
+        outputGenerator: outputGenerator,
+        name: name,
+      );
 
   @override
   bool get isNet => _isNet;

@@ -132,11 +132,6 @@ abstract class Conditional {
   @protected
   void execute(Set<Logic>? drivenSignals, void Function(Logic toGuard)? guard);
 
-  /// Lists *all* receivers, recursively including all sub-[Conditional]s
-  /// receivers.
-  @Deprecated('Use `receivers` instead.')
-  List<Logic> getReceivers() => receivers;
-
   /// The same as [receivers], but uncached for situations where the list of
   /// [conditionals] may still be modified or to compute the cached result
   /// for [receivers] itself.
@@ -149,18 +144,7 @@ abstract class Conditional {
   List<Logic> get receivers;
 
   /// Lists *all* drivers, recursively including all sub-[Conditional]s drivers.
-  @Deprecated('Use `drivers` instead.')
-  List<Logic> getDrivers() => drivers;
-
-  /// Lists *all* drivers, recursively including all sub-[Conditional]s drivers.
   List<Logic> get drivers;
-
-  /// Lists of *all* [Conditional]s directly contained within this [Conditional]
-  /// (not including itself).
-  ///
-  /// Does *not* recursively call down through sub-[Conditional]s.
-  @Deprecated('Use `conditionals` instead.')
-  List<Conditional> getConditionals() => conditionals;
 
   /// Lists of *all* [Conditional]s directly contained within this [Conditional]
   /// (not including itself).

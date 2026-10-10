@@ -13,6 +13,12 @@
       "pattern":"^https://github.com"
     },
     {
+      "pattern":"^https://marketplace\\.visualstudio\\.com"
+    },
+    {
+      "pattern":"^https://pub\\.dev"
+    },
+    {
       "pattern":"^https://pymtl3.readthedocs.io/en/latest/$"
     },
     {
@@ -22,10 +28,16 @@
       "pattern": "^https://code\\.visualstudio\\.com/"
     },
     {
+      "pattern": "^https://marketplace\\.visualstudio\\.com/items\\?itemName=Dart-Code\\.dart-code$"
+    },
+    {
       "pattern": "^https://www.nandland.com"
     },
     {
       "pattern":"^https://.*\\.fandom\\.com"
+    },
+    {
+      "pattern": "^https://intel\\.github\\.io/rohd/rohd/"
     }
   ]
 }

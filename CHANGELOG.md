@@ -1,6 +1,31 @@
 ## Next Release
 
+## 0.7.0
+
 - Fixed `LogicValue.ofRadixString` round trips with empty separators and separators containing regular-expression metacharacters (<https://github.com/intel/rohd/issues/722>).
+- Added `TypedLogicArray<TLogic, TValue>` for multidimensional arrays with fixed typed hardware elements and associated semantic values, including typed snapshots and ports, traversal, cloning, net support, and synthesis. Added shaped `LogicValueArray` and codec-backed `TypedLogicValueArray<TValue>` values with nested construction, packed `LogicValue` interoperability, and hardware-array assignment. Existing `LogicArray`, `LogicValueArray`, and concrete array port APIs remain available as specializations (<https://github.com/intel/rohd/pull/686>).
+- Refined the typed-array hierarchy so `LogicArray` directly specializes `TypedLogicArray<Logic, LogicValue>`, and strengthened custom `TypedLogicArray` cloning to preserve runtime types, codecs, unpacked dimensions, and constructor-only naming prefixes without exposing them as public axis metadata (<https://github.com/intel/rohd/pull/686>).
+- Expanded `TypedLogicArray` support for recursively nested typed and ordinary arrays, structures containing array fields, mixed packed/unpacked dimensions, structured net and inout ports, and recursive netlist type metadata. Fixed generated SystemVerilog for array-valued elements to use packed offsets consistent with declarations and module-port connections, avoiding invalid chained selections in Icarus and Verilator (<https://github.com/intel/rohd/pull/686>).
+- Preserved configured SystemVerilog output object types for nested arrays and added the opt-in `iverilogWorkaroundForUnpackedArrayVariables` setting for child-driven unpacked array variables that remain unknown in Icarus Verilog 12.0 (<https://github.com/intel/rohd/pull/686>).
+- Upgraded `Mux`, `FlipFlop`, `Passthrough`, `mux`, `flop`, `cases`,
+  `selectIndex`, and `selectFrom` to preserve compatible concrete `Logic`
+  subtypes, including nested `LogicArray` and `TypedLogicArray` boundaries.
+  Removed the parallel structure-only operation APIs.
+- **Migration:** plain `Const` and `LogicNet` sources no longer infer
+  driveable outputs for operations that construct hardware. Request
+  `<Logic>`, for example `flop<Logic>(clk, Const(1))`, to normalize them.
+  Use an operation `outputGenerator` (or `Passthrough.withOutput`) when an
+  explicit output representation is required, including mixed packed and
+  structured `cases` branches.
+- **Breaking:** Removed compatibility APIs deprecated before `0.7.0`. Use the canonical
+  `ExternalSystemVerilogModule`, `FiniteStateMachine`, `Sequential`,
+  `If.block`, `Logic.port`, `LogicValue` `of...` constructors, `SystemVerilog`,
+  `SynthFileContents`, and instance `clone()` APIs. Apply interface port names
+  at connection time with `uniquify`; use canonical operation outputs such as
+  `out` and `sum`; and access signal values through `value`.
+- Added public `cloneTyped()` and `namedTyped()` conveniences for retaining a
+  receiver's static type. `Const.cloneTyped()` remains a literal clone;
+  `Const.namedTyped()` is rejected because a named alias must be driveable.
 
 ## 0.6.11
 

@@ -44,35 +44,6 @@ class Logic {
   /// The current active value of this signal.
   LogicValue get value => _wire.value;
 
-  /// The current active value of this signal if it has width 1, as
-  /// a [LogicValue].
-  ///
-  /// Throws an Exception if width is not 1.
-  @Deprecated('Use `value` instead.'
-      '  Check `width` separately to confirm single-bit.')
-  LogicValue get bit => value.bit;
-
-  /// The current valid active value of this signal as an [int].
-  ///
-  /// Throws an exception if the signal is not valid or can't be represented
-  /// as an [int].
-  @Deprecated('Use value.toInt() instead.')
-  int get valueInt => value.toInt();
-
-  /// The current valid active value of this signal as a [BigInt].
-  ///
-  /// Throws an exception if the signal is not valid.
-  @Deprecated('Use value.toBigInt() instead.')
-  BigInt get valueBigInt => value.toBigInt();
-
-  /// Returns `true` iff the value of this signal is valid (no `x` or `z`).
-  @Deprecated('Use value.isValid instead.')
-  bool hasValidValue() => value.isValid;
-
-  /// Returns `true` iff *all* bits of the current value are floating (`z`).
-  @Deprecated('Use value.isFloating instead.')
-  bool isFloating() => value.isFloating;
-
   /// The [Logic] signal that is driving `this`, if any.
   ///
   /// If there are multiple drivers (e.g. this is an instance of a special
@@ -161,8 +132,13 @@ class Logic {
   LogicStructure? get parentStructure => _parentStructure;
   LogicStructure? _parentStructure;
 
-  /// True if this is a member of a [LogicArray].
-  bool get isArrayMember => parentStructure is LogicArray;
+  /// Whether the immediate [parentStructure] is a [BaseLogicArray].
+  ///
+  /// This tests direct membership, not recursive array containment. For
+  /// example, a structure configured as an element of a [TypedLogicArray] has
+  /// `isArrayMember == true`, while a field inside that structure has
+  /// `isArrayMember == false` even though the field has an array ancestor.
+  bool get isArrayMember => parentStructure is BaseLogicArray;
 
   /// Returns the name relative to the [parentStructure]-defined hierarchy, if
   /// one exists.  Otherwise, this is the same as [name].
@@ -171,7 +147,7 @@ class Logic {
   /// [LogicArray] or [LogicStructure].
   String get structureName {
     if (parentStructure != null) {
-      if (parentStructure is LogicArray) {
+      if (parentStructure is BaseLogicArray) {
         return '${parentStructure!.structureName}[${arrayIndex!}]';
       } else {
         return '${parentStructure!.structureName}.$name';
@@ -181,10 +157,12 @@ class Logic {
     }
   }
 
-  /// If this is a part of a [LogicArray], the index within that array.
-  /// Othwerise, returns `null`.
+  /// The index within the immediate parent array, if there is one.
   ///
-  /// If [isArrayMember] is true, this will be non-`null`.
+  /// This is non-`null` exactly when [isArrayMember] is true, including for
+  /// elements of a [TypedLogicArray]. A field whose immediate parent is a
+  /// non-array [LogicStructure] has no [arrayIndex], even when that structure
+  /// has an array ancestor.
   int? get arrayIndex => _arrayIndex;
   int? _arrayIndex;
 
@@ -1002,13 +980,12 @@ class Logic {
     return isLogicIn;
   }
 
-  /// Performs a [Logic] `index` based selection on an [List] of [Logic]
-  /// named [busList].
+  /// Performs a [Logic] `index` based selection on [busList].
   ///
   /// Using the [Logic] `index` on which [selectFrom] is performed on and
   /// a [List] of [Logic] named [busList] for `index` based selection, we can
-  /// select any valid element of type [Logic] within the `logicList` using
-  /// the `index` of [Logic] type.
+  /// select any valid element of type [LogicType] within the `logicList`
+  /// using the `index` of [Logic] type.
   ///
   /// Alternatively we can approach this with `busList.selectIndex(index)`
   ///
@@ -1017,26 +994,28 @@ class Logic {
   /// // ordering matches closer to array indexing with `0` index-based.
   /// selected <= index.selectFrom(busList);
   /// ```
-  Logic selectFrom(List<Logic> busList, {Logic? defaultValue}) {
-    final selected = Logic(
-        name: 'selectFrom',
-        width: busList.first.width,
-        naming: Naming.mergeable);
-
-    Combinational(
-      [
-        Case(
-            this,
-            [
-              for (var i = 0; i < busList.length; i++)
-                CaseItem(Const(i, width: width), [selected < busList[i]])
-            ],
-            conditionalType: ConditionalType.unique,
-            defaultItem: [selected < (defaultValue ?? 0)])
-      ],
+  LogicType selectFrom<LogicType extends Logic>(
+    List<LogicType> busList, {
+    dynamic defaultValue,
+    LogicType Function({String? name})? outputGenerator,
+    String name = 'selectFrom',
+  }) {
+    if (busList.isEmpty) {
+      throw LogicConstructionException(
+        'selectFrom requires at least one value.',
+      );
+    }
+    return cases<LogicType>(
+      this,
+      {
+        for (var index = 0; index < busList.length; index++)
+          index: busList[index],
+      },
+      conditionalType: ConditionalType.unique,
+      defaultValue: defaultValue ?? 0,
+      outputGenerator: outputGenerator,
+      name: name,
     );
-
-    return selected;
   }
 
   /// If [assignSubset] has been used on this signal, a reference to the

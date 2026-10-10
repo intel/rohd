@@ -13,6 +13,7 @@ import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/collections/traverseable_collection.dart';
+import 'package:rohd/src/signals/signals.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
 import 'package:rohd/src/utilities/namer.dart';
 
@@ -333,18 +334,16 @@ class SynthModuleDefinition {
           logic,
           parentSynthModuleDefinition: this,
         );
+      } else if (logic is! LogicStructure && _hasTopLevelArrayAncestor(logic)) {
+        newSynth = SynthLogicArrayStructureElement(
+          logic,
+          parentSynthModuleDefinition: this,
+        );
       } else {
+        final parentModule = logic.parentModule;
         final disallowConstName = (logic.isInput || logic.isInOut) &&
-            // ignore: deprecated_member_use_from_same_package - backwards compatibility with CustomSystemVerilog
-            ((logic.parentModule is CustomSystemVerilog &&
-                    // ignore: deprecated_member_use_from_same_package - backwards compatibility with CustomSystemVerilog
-                    (logic.parentModule! as CustomSystemVerilog)
-                        .expressionlessInputs
-                        .contains(logic.name)) ||
-                (logic.parentModule is SystemVerilog &&
-                    (logic.parentModule! as SystemVerilog)
-                        .expressionlessInputs
-                        .contains(logic.name)));
+            parentModule is SystemVerilog &&
+            parentModule.expressionlessInputs.contains(logic.name);
 
         final Naming? namingOverride;
         if (logic.isPort) {
@@ -381,13 +380,28 @@ class SynthModuleDefinition {
 
       logicToSynthMap[logic] = newSynth;
 
-      if (logic is LogicArray) {
+      if (logic is BaseLogicArray) {
         // if we are an array, make sure we go down the stack of elements too
         logic.elements.forEach(getSynthLogic);
       }
 
       return newSynth;
     }
+  }
+
+  /// Whether [logic] belongs to an array that is represented directly.
+  static bool _hasTopLevelArrayAncestor(Logic logic) {
+    var current = logic;
+    var parent = current.parentStructure;
+    BaseLogicArray? rootArray;
+    while (parent != null) {
+      if (parent is BaseLogicArray) {
+        rootArray = parent;
+      }
+      current = parent;
+      parent = current.parentStructure;
+    }
+    return rootArray != null && rootArray.parentStructure == null;
   }
 
   /// A [List] of supporting modules that need to be instantiated within this
@@ -397,8 +411,13 @@ class SynthModuleDefinition {
   /// Retains [signal] and every array ancestor needed to name and declare it.
   void _retainInternalSignal(SynthLogic signal) {
     final signalAndAncestors = <SynthLogic>[signal];
-    while (signal is SynthLogicArrayElement) {
-      signal = signal.parentArray.resolved;
+    while (signal is SynthLogicArrayElement ||
+        signal is SynthLogicArrayStructureElement) {
+      signal = switch (signal) {
+        SynthLogicArrayElement() => signal.parentArray.resolved,
+        SynthLogicArrayStructureElement() => signal.parentArray.resolved,
+        _ => throw StateError('Unexpected synthesized array signal'),
+      };
       signalAndAncestors.add(signal);
     }
 
@@ -418,7 +437,7 @@ class SynthModuleDefinition {
   /// the module, or for driving the input of a sub-module.
   @protected
   void _partialAssignStructPort(LogicStructure port) {
-    assert(port is! LogicArray, 'Should only be used on non-array structs');
+    assert(port is! BaseLogicArray, 'Should only be used on non-array structs');
 
     final portSynth = getSynthLogic(port)!;
 
@@ -495,8 +514,10 @@ class SynthModuleDefinition {
       final outputSynth = getSynthLogic(output)!;
       outputs.add(outputSynth);
 
-      if (output is LogicStructure && output is! LogicArray) {
+      if (output is LogicStructure && output is! BaseLogicArray) {
         _partialAssignStructPort(output);
+      } else if (output is BaseLogicArray) {
+        _connectNestedArrayFields(output);
       }
     }
 
@@ -505,8 +526,10 @@ class SynthModuleDefinition {
       final inputSynth = getSynthLogic(input)!;
       inputs.add(inputSynth);
 
-      if (input is LogicStructure && input is! LogicArray) {
+      if (input is LogicStructure && input is! BaseLogicArray) {
         _subsetReceiveStructPort(input);
+      } else if (input is BaseLogicArray) {
+        _connectNestedArrayFields(input, receive: true);
       }
     }
 
@@ -514,10 +537,12 @@ class SynthModuleDefinition {
     for (final inOut in module.inOuts.values) {
       inOuts.add(getSynthLogic(inOut)!);
 
-      if (inOut is LogicStructure && inOut is! LogicArray) {
+      if (inOut is LogicStructure && inOut is! BaseLogicArray) {
         // for nets, we can just use the normal bus subset here in either
         // direction!
         _subsetReceiveStructPort(inOut);
+      } else if (inOut is BaseLogicArray) {
+        _connectNestedArrayFields(inOut, receive: true);
       }
     }
 
@@ -539,18 +564,26 @@ class SynthModuleDefinition {
 
       subModule.inputs.values
           .whereType<LogicStructure>()
-          .where((e) => e is! LogicArray)
+          .where((e) => e is! BaseLogicArray)
           .forEach(_partialAssignStructPort);
-
+      subModule.inputs.values
+          .whereType<BaseLogicArray>()
+          .forEach(_connectNestedArrayFields);
       subModule.outputs.values
           .whereType<LogicStructure>()
-          .where((e) => e is! LogicArray)
+          .where((e) => e is! BaseLogicArray)
           .forEach(_subsetReceiveStructPort);
+      subModule.outputs.values
+          .whereType<BaseLogicArray>()
+          .forEach((array) => _connectNestedArrayFields(array, receive: true));
 
       subModule.inOuts.values
           .whereType<LogicStructure>()
-          .where((e) => e is! LogicArray)
+          .where((e) => e is! BaseLogicArray)
           .forEach(_subsetReceiveStructPort);
+      subModule.inOuts.values
+          .whereType<BaseLogicArray>()
+          .forEach((array) => _connectNestedArrayFields(array, receive: true));
     }
 
     // search for other modules contained within this module
@@ -1125,7 +1158,7 @@ class SynthModuleDefinition {
     }
     candidatesByArray.forEach((parentArray, arrayCandidates) {
       final allElementSynthLogics = parentArray.logics
-          .whereType<LogicArray>()
+          .whereType<BaseLogicArray>()
           .expand((logicArray) => logicArray.elements)
           .map(getSynthLogic)
           .nonNulls
@@ -1153,14 +1186,6 @@ class SynthModuleDefinition {
     for (final instantiation in subModuleInstantiations) {
       final subModule = instantiation.module;
       if (subModule is SystemVerilog) {
-        singleUseSignals.removeAll(
-          subModule.expressionlessInputs.map(
-            (e) =>
-                instantiation.inputMapping[e] ?? instantiation.inOutMapping[e],
-          ),
-        );
-        // ignore: deprecated_member_use_from_same_package - backwards compatibility with CustomSystemVerilog
-      } else if (subModule is CustomSystemVerilog) {
         singleUseSignals.removeAll(
           subModule.expressionlessInputs.map(
             (e) =>
@@ -1338,11 +1363,9 @@ class SynthModuleDefinition {
             return false;
           }
 
-          return (logic.parentModule! is SystemVerilog &&
-                  !(logic.parentModule! as SystemVerilog)
-                      .acceptsEmptyPortConnections) ||
-              // ignore: deprecated_member_use_from_same_package - backwards compatibility with CustomSystemVerilog
-              logic.parentModule! is CustomSystemVerilog;
+          return logic.parentModule! is SystemVerilog &&
+              !(logic.parentModule! as SystemVerilog)
+                  .acceptsEmptyPortConnections;
         });
 
         if (!isCustomSvModPort) {
@@ -1502,6 +1525,91 @@ class SynthModuleDefinition {
         }
       }
     }
+  }
+
+  /// Connects array-valued fields nested below an array port to the packed
+  /// array-element representation used at the module boundary.
+  ///
+  /// Nested arrays are retained as separate internal signals, while their
+  /// scalar fields occupy the containing structure's packed bits. These
+  /// connections preserve that existing representation without changing names
+  /// or declarations.
+  void _connectNestedArrayFields(
+    BaseLogicArray port, {
+    bool receive = false,
+  }) {
+    void visit(Logic current, SynthLogic packedParent) {
+      if (current is BaseLogicArray) {
+        for (final element in current.elements) {
+          visit(element, getSynthLogic(element)!);
+        }
+        return;
+      }
+
+      if (current is! LogicStructure) {
+        return;
+      }
+
+      var index = 0;
+      for (final leafElement in current.leafElements) {
+        var ancestor = leafElement.parentStructure;
+        var isNestedArrayField = false;
+        while (ancestor != null && ancestor != current) {
+          if (ancestor is BaseLogicArray) {
+            isNestedArrayField = true;
+            break;
+          }
+          ancestor = ancestor.parentStructure;
+        }
+
+        if (isNestedArrayField) {
+          final leafSynth = getSynthLogic(leafElement)!;
+          if (!port.isNet) {
+            _retainInternalSignal(leafSynth);
+          }
+          if (receive) {
+            if (port.isNet) {
+              final packedReference = leafElement.width == 1
+                  ? SynthLogicPackedBitReference(
+                      packedParent,
+                      index,
+                      parentSynthModuleDefinition: this,
+                    )
+                  : SynthLogicPackedRangeReference(
+                      packedParent,
+                      index,
+                      index + leafElement.width - 1,
+                      parentSynthModuleDefinition: this,
+                    );
+              assignments.add(SynthAssignment(leafSynth, packedReference));
+            } else {
+              assignments.add(
+                RangeSynthAssignment(
+                  packedParent,
+                  leafSynth,
+                  srcUpperIndex: index + leafElement.width - 1,
+                  srcLowerIndex: index,
+                  dstUpperIndex: leafElement.width - 1,
+                  dstLowerIndex: 0,
+                ),
+              );
+            }
+          } else {
+            assignments.add(
+              PartialSynthAssignment(
+                leafSynth,
+                packedParent,
+                dstUpperIndex: index + leafElement.width - 1,
+                dstLowerIndex: index,
+              ),
+            );
+          }
+        }
+        index += leafElement.width;
+      }
+    }
+
+    visit(port, getSynthLogic(port)!);
   }
 
   /// Updates all sub-module instantiations with information about which
@@ -1772,7 +1880,7 @@ class SynthModuleDefinition {
       return false;
     }
     final parentLogic = signal.parentArray.resolved.logics.singleOrNull;
-    return parentLogic is LogicArray &&
+    return parentLogic is BaseLogicArray &&
         parentLogic.dimensions.length == 1 &&
         parentLogic.elementWidth == 1 &&
         parentLogic.numUnpackedDimensions == 0;
@@ -2015,7 +2123,7 @@ class SynthModuleDefinition {
     }
     final srcLogic = srcArray.logics.first;
     final dstLogic = dstArray.logics.first;
-    if (srcLogic is! LogicArray || dstLogic is! LogicArray) {
+    if (srcLogic is! BaseLogicArray || dstLogic is! BaseLogicArray) {
       return false;
     }
 
@@ -2406,7 +2514,8 @@ class SynthModuleDefinition {
       }
 
       final dst = assignment.dst.resolved;
-      if (dst.width <= 1 || dst.logics.any((logic) => logic is LogicArray)) {
+      if (dst.width <= 1 ||
+          dst.logics.any((logic) => logic is BaseLogicArray)) {
         updatedAssignments.add(assignment);
         continue;
       }
@@ -2671,7 +2780,7 @@ class SynthModuleDefinition {
       return false;
     }
     final logic = base.logics.first;
-    return logic is LogicArray &&
+    return logic is BaseLogicArray &&
         logic.dimensions.length == 1 &&
         logic.elementWidth == 1 &&
         logic.numUnpackedDimensions == 0;
@@ -3780,7 +3889,7 @@ class SynthModuleDefinition {
       }
 
       final arrayLogic = parentArray.logics.first;
-      if (arrayLogic is! LogicArray ||
+      if (arrayLogic is! BaseLogicArray ||
           indexedInputs.length != arrayLogic.elements.length) {
         continue;
       }
@@ -3841,7 +3950,7 @@ class SynthModuleDefinition {
     }
 
     final logic = intermediate.logics.firstOrNull;
-    return logic is! LogicArray || logic.numUnpackedDimensions == 0;
+    return logic is! BaseLogicArray || logic.numUnpackedDimensions == 0;
   }
 
   /// Whether [intermediate] has the unnamed packed-array shape generated by
@@ -3856,7 +3965,7 @@ class SynthModuleDefinition {
     }
 
     final arrayLogic = intermediate.logics.singleOrNull;
-    return arrayLogic is LogicArray && arrayLogic.naming == Naming.unnamed;
+    return arrayLogic is BaseLogicArray && arrayLogic.naming == Naming.unnamed;
   }
 
   /// Whether [swizzleOutput] feeds a full-width disposable internal signal.
@@ -3882,7 +3991,7 @@ class SynthModuleDefinition {
         return false;
       }
 
-      return dst.logics.singleOrNull is! LogicArray;
+      return dst.logics.singleOrNull is! BaseLogicArray;
     });
   }
 
@@ -4060,12 +4169,13 @@ class SynthModuleDefinition {
 
     if (mergedAway.isArray) {
       for (final (keptElementIndex, keptElementLogic)
-          in (kept.logics.first as LogicArray).elements.indexed) {
+          in (kept.logics.first as BaseLogicArray).elements.indexed) {
         // should be safe to just check the first logic's elements since they
         // should all be the same synth, and arrays only merge with arrays
         final keptElement = getSynthLogic(keptElementLogic)!;
         final mergedAwayElement = getSynthLogic(
-          (mergedAway.logics.first as LogicArray).elements[keptElementIndex],
+          (mergedAway.logics.first as BaseLogicArray)
+              .elements[keptElementIndex],
         )!;
 
         if (keptElement == mergedAwayElement) {

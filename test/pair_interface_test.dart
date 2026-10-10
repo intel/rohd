@@ -27,10 +27,6 @@ class SimpleInterface extends PairInterface {
             LogicNet.port('io'),
             LogicArray.netPort('io_arr', [3])
           ],
-
-          // keep this around to test deprecated functionality
-          // ignore: deprecated_member_use_from_same_package
-          modify: (original) => 'simple_$original',
         );
 
   @override
@@ -76,7 +72,11 @@ class HierarchicalInterface extends PairInterface {
 class SimpleProvider extends Module {
   late final SimpleInterface _intf;
   SimpleProvider(SimpleInterface intf) {
-    _intf = addPairInterfacePorts(intf, PairRole.provider);
+    _intf = addPairInterfacePorts(
+      intf,
+      PairRole.provider,
+      uniquify: (original) => 'simple_$original',
+    );
 
     SimpleSubProvider(_intf);
   }
@@ -84,13 +84,21 @@ class SimpleProvider extends Module {
 
 class SimpleSubProvider extends Module {
   SimpleSubProvider(SimpleInterface intf) {
-    addPairInterfacePorts(intf, PairRole.provider);
+    addPairInterfacePorts(
+      intf,
+      PairRole.provider,
+      uniquify: (original) => 'simple_$original',
+    );
   }
 }
 
 class SimpleConsumer extends Module {
   SimpleConsumer(SimpleInterface intf) {
-    addPairInterfacePorts(intf, PairRole.consumer);
+    addPairInterfacePorts(
+      intf,
+      PairRole.consumer,
+      uniquify: (original) => 'simple_$original',
+    );
   }
 }
 
@@ -111,14 +119,14 @@ class PassthroughPairIntfModule extends Module {
         ? addPairInterfacePorts(
             intf1,
             PairRole.consumer,
-            uniquify: (original) => '${original}_1',
+            uniquify: (original) => 'simple_${original}_1',
           )
         : (intf1.clone()
           ..pairConnectIO(
             this,
             intf1,
             PairRole.consumer,
-            uniquify: (original) => '${original}_1',
+            uniquify: (original) => 'simple_${original}_1',
           ));
     intf2 = useConnectApi
         ? addInterfacePorts(
@@ -126,7 +134,7 @@ class PassthroughPairIntfModule extends Module {
             inputTags: {PairDirection.fromConsumer},
             outputTags: {PairDirection.fromProvider},
             inOutTags: {PairDirection.commonInOuts},
-            uniquify: (original) => '${original}_2',
+            uniquify: (original) => 'simple_${original}_2',
           )
         : (intf2.clone()
           ..connectIO(
@@ -135,7 +143,7 @@ class PassthroughPairIntfModule extends Module {
             inputTags: {PairDirection.fromConsumer},
             outputTags: {PairDirection.fromProvider},
             inOutTags: {PairDirection.commonInOuts},
-            uniquify: (original) => '${original}_2',
+            uniquify: (original) => 'simple_${original}_2',
           ));
 
     if (useConditional) {
@@ -182,6 +190,49 @@ class SubInterfaceTestModule extends Module {
   }
 }
 
+class _PairSample extends LogicStructure {
+  final Logic low;
+  final Logic high;
+
+  factory _PairSample({String? name}) => _PairSample._(
+        Logic(name: 'low'),
+        Logic(name: 'high', width: 2),
+        name: name ?? 'sample',
+      );
+
+  _PairSample._(this.low, this.high, {required String name})
+      : super([low, high], name: name);
+
+  @override
+  _PairSample clone({String? name}) => _PairSample(name: name ?? this.name);
+}
+
+class _PairValue {
+  final LogicValue value;
+
+  _PairValue(this.value);
+}
+
+_PairValue _decodePairValue(LogicValue value) => _PairValue(value);
+
+LogicValue _encodePairValue(_PairValue value) => value.value;
+
+const _pairValueCodec = LogicValueCodec<_PairValue>(
+  decode: _decodePairValue,
+  encode: _encodePairValue,
+);
+
+class _TypedPairConsumer extends Module {
+  late final TypedLogicArray<_PairSample, _PairValue> samples;
+
+  _TypedPairConsumer(PairInterface source) {
+    final internal = addPairInterfacePorts(source, PairRole.consumer);
+    samples =
+        internal.port('samples') as TypedLogicArray<_PairSample, _PairValue>;
+    addOutput('selected', width: samples.elementWidth) <= samples.at([1, 1]);
+  }
+}
+
 void main() {
   tearDown(() async {
     await Simulator.reset();
@@ -194,6 +245,43 @@ void main() {
     // Make sure the "modify" went through:
     final sv = mod.dumpSystemVerilog();
     expect(sv, contains('input logic simple_clk'));
+  });
+
+  test('clone preserves typed arrays through pair interface ports', () async {
+    final samples = TypedLogicArray<_PairSample, _PairValue>(
+      [2, 2],
+      _PairSample.new,
+      valueCodec: _pairValueCodec,
+      dimensionNames: const ['row_', 'column_'],
+      name: 'samples',
+    );
+    final source = PairInterface(portsFromProvider: [samples]);
+    final clone = source.clone();
+    final clonedSamples =
+        clone.port('samples') as TypedLogicArray<_PairSample, _PairValue>;
+
+    expect(clonedSamples, isNot(same(samples)));
+    expect(clonedSamples.dimensions, [2, 2]);
+    expect(clonedSamples.arrayElements, everyElement(isA<_PairSample>()));
+    expect(clonedSamples.at([1, 1]).high.width, 2);
+    expect(identical(clonedSamples.valueCodec, _pairValueCodec), isTrue);
+    expect(clonedSamples.value, isA<TypedLogicValueArray<_PairValue>>());
+
+    final module = _TypedPairConsumer(source);
+    await module.build();
+
+    expect(module.samples.dimensions, [2, 2]);
+    expect(module.samples.at([1, 1]), isA<_PairSample>());
+    expect(module.samples.at([1, 1]).high.width, 2);
+    expect(identical(module.samples.valueCodec, _pairValueCodec), isTrue);
+    expect(module.samples.value, isA<TypedLogicValueArray<_PairValue>>());
+
+    final vectors = [
+      Vector({'samples': 0xabc}, {'selected': 5}),
+      Vector({'samples': 0xe00}, {'selected': 7}),
+    ];
+    await SimCompare.checkFunctionalVector(module, vectors);
+    SimCompare.checkIverilogVector(module, vectors);
   });
 
   group('drive and receive other', () {

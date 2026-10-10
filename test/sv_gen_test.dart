@@ -96,16 +96,10 @@ class ModuleWithFloatingSignals extends Module {
 }
 
 class TopCustomSvWrap extends Module {
-  TopCustomSvWrap(Logic a, Logic b,
-      {bool useOld = false, bool banExpressions = false}) {
+  TopCustomSvWrap(Logic a, Logic b, {bool banExpressions = false}) {
     a = addInput('a', a);
     b = addInput('b', b);
-
-    if (useOld) {
-      SubCustomSv([a, b], banExpressions: banExpressions);
-    } else {
-      SubSv([a, b], banExpressions: banExpressions);
-    }
+    SubSv([a, b], banExpressions: banExpressions);
   }
 }
 
@@ -394,28 +388,6 @@ class SubModWithSomePortsUsed extends Module {
   }
 }
 
-/// This is for legacy deprecated testing.
-// ignore: deprecated_member_use_from_same_package - backwards compatibility with CustomSystemVerilog
-class SubCustomSv extends Module with CustomSystemVerilog {
-  final bool banExpressions;
-
-  @override
-  List<String> get expressionlessInputs =>
-      banExpressions ? inputs.keys.toList() : const [];
-
-  SubCustomSv(List<Logic> toSwizzle, {this.banExpressions = false}) {
-    addInput('fer_swizzle', toSwizzle.swizzle(), width: toSwizzle.length);
-  }
-
-  @override
-  String instantiationVerilog(String instanceType, String instanceName,
-          Map<String, String> inputs, Map<String, String> outputs) =>
-      '''
-logic my_fancy_new_signal; // $instanceName (of type $instanceType)
-assign my_fancy_new_signal <= ^${inputs['fer_swizzle']};
-''';
-}
-
 class SubSv extends Module with SystemVerilog {
   final bool banExpressions;
 
@@ -491,6 +463,46 @@ class ModWithPartialArrayAssignment extends Module {
     final b = addOutput('b', width: 8);
 
     b <= aArr.elements[0];
+  }
+}
+
+class PackedArrayToLogic extends Module {
+  PackedArrayToLogic(LogicArray array) {
+    array = addInputArray(
+      'array',
+      array,
+      dimensions: array.dimensions,
+      elementWidth: array.elementWidth,
+      numUnpackedDimensions: array.numUnpackedDimensions,
+    );
+    addOutput('out', width: array.width) <= array;
+  }
+}
+
+class LogicToPackedArray extends Module {
+  LogicToPackedArray(Logic data) {
+    data = addInput('data', data, width: 8);
+    addOutputArray('out', dimensions: [4], elementWidth: 2) <= data;
+  }
+}
+
+class ComputedLogicToPackedArray extends Module {
+  ComputedLogicToPackedArray(Logic data) {
+    data = addInput('data', data, width: 8);
+    final computed = (data + Const(1, width: 8)).named('computed');
+    addOutputArray('out', dimensions: [4], elementWidth: 2) <= computed;
+  }
+}
+
+class ReversedPackedArrayToLogic extends Module {
+  ReversedPackedArrayToLogic(LogicArray array) {
+    array = addInputArray(
+      'array',
+      array,
+      dimensions: array.dimensions,
+      elementWidth: array.elementWidth,
+    );
+    addOutput('out', width: array.width) <= array.elements.swizzle();
   }
 }
 
@@ -823,22 +835,20 @@ void main() {
   });
 
   group('properly drops in custom systemverilog', () {
-    for (final useOld in [true, false]) {
-      for (final banExpressions in [true, false]) {
-        test('(useOld=$useOld, banExpressions=$banExpressions)', () async {
-          final mod = TopCustomSvWrap(Logic(), Logic(),
-              useOld: useOld, banExpressions: banExpressions);
-          await mod.build();
-          final sv = SvCleaner.removeSwizzleAnnotationComments(
-              mod.dumpSystemVerilog());
+    for (final banExpressions in [true, false]) {
+      test('banExpressions=$banExpressions', () async {
+        final mod =
+            TopCustomSvWrap(Logic(), Logic(), banExpressions: banExpressions);
+        await mod.build();
+        final sv =
+            SvCleaner.removeSwizzleAnnotationComments(mod.dumpSystemVerilog());
 
-          if (banExpressions) {
-            expect(sv, contains('assign my_fancy_new_signal <= ^fer_swizzle;'));
-          } else {
-            expect(sv, contains('assign my_fancy_new_signal <= ^({a,b});'));
-          }
-        });
-      }
+        if (banExpressions) {
+          expect(sv, contains('assign my_fancy_new_signal <= ^fer_swizzle;'));
+        } else {
+          expect(sv, contains('assign my_fancy_new_signal <= ^({a,b});'));
+        }
+      });
     }
   });
 
@@ -915,6 +925,61 @@ void main() {
     ];
     await SimCompare.checkFunctionalVector(mod, vectors);
     SimCompare.checkIverilogVector(mod, vectors);
+  });
+
+  test('packed one-dimensional array assigns directly to Logic', () async {
+    final mod = PackedArrayToLogic(LogicArray([4], 2, name: 'array'));
+    await mod.build();
+    final sv = mod.dumpSystemVerilog();
+
+    expect(sv, contains('assign out = array;'), reason: sv);
+    expect(sv, isNot(contains('// swizzle')), reason: sv);
+
+    final vectors = [
+      Vector({'array': 0x00}, {'out': 0x00}),
+      Vector({'array': 0xa5}, {'out': 0xa5}),
+      Vector({'array': 0xff}, {'out': 0xff}),
+    ];
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
+  });
+
+  test('Logic assigns directly to packed one-dimensional array', () async {
+    final mod = LogicToPackedArray(Logic(width: 8));
+    await mod.build();
+    final sv = mod.dumpSystemVerilog();
+
+    expect(sv, contains('assign out = data;'), reason: sv);
+
+    final vectors = [
+      Vector({'data': 0x00}, {'out': 0x00}),
+      Vector({'data': 0xa5}, {'out': 0xa5}),
+      Vector({'data': 0xff}, {'out': 0xff}),
+    ];
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
+  });
+
+  test('computed Logic remains declared for packed array assignment', () async {
+    final mod = ComputedLogicToPackedArray(Logic(width: 8));
+    await mod.build();
+
+    final vectors = [
+      Vector({'data': 0x00}, {'out': 0x01}),
+      Vector({'data': 0xa5}, {'out': 0xa6}),
+      Vector({'data': 0xff}, {'out': 0x00}),
+    ];
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
+  });
+
+  test('reordered packed array assignment retains its swizzle', () async {
+    final mod = ReversedPackedArrayToLogic(LogicArray([4], 2, name: 'array'));
+    await mod.build();
+    final sv = mod.dumpSystemVerilog();
+
+    expect(sv, isNot(contains('assign out = array;')), reason: sv);
+    expect(sv, contains('// swizzle'), reason: sv);
   });
 
   group('connected ports and pruning', () {

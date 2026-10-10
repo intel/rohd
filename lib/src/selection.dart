@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2024 Intel Corporation
+// Copyright (C) 2023-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // selection.dart
@@ -9,10 +9,10 @@
 
 import 'package:rohd/rohd.dart';
 
-/// Allows a lists of [Logic]s to have its elemets picked
-/// by a [Logic] index value.
-extension IndexedLogic on List<Logic> {
-  /// Performs a [index] based selection on an [List] of [Logic].
+/// Allows a list of [LogicType]s to have an element selected by a [Logic]
+/// index.
+extension IndexedLogic<LogicType extends Logic> on List<LogicType> {
+  /// Performs an [index]-based selection on this list.
   ///
   /// Given a [List] of [Logic] say `logicList` on which we apply [selectIndex]
   /// and an element [index] as argument , we can select any valid element
@@ -27,6 +27,16 @@ extension IndexedLogic on List<Logic> {
   /// selected <= logicList.selectIndex(index);
   /// ```
   ///
-  Logic selectIndex(Logic index, {Logic? defaultValue}) =>
-      index.selectFrom(this, defaultValue: defaultValue);
+  LogicType selectIndex(
+    Logic index, {
+    dynamic defaultValue,
+    LogicType Function({String? name})? outputGenerator,
+    String name = 'selectFrom',
+  }) =>
+      index.selectFrom(
+        this,
+        defaultValue: defaultValue,
+        outputGenerator: outputGenerator,
+        name: name,
+      );
 }
