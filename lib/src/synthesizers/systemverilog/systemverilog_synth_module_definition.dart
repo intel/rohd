@@ -226,6 +226,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
       }
     }
   }
+
   /// Inlines a fully covered packed bus into its sole submodule input.
   ///
   /// Each driver must cover the next contiguous destination range and supply
