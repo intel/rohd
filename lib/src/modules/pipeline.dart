@@ -120,6 +120,133 @@ class StructurePipeline<LogicType extends LogicStructure> {
   LogicType get([int? boundary]) => values[boundary ?? values.length - 1];
 }
 
+/// A ready/valid pipeline that preserves a concrete structure type.
+///
+/// Each transform produces the payload registered at its corresponding stage.
+/// The pipeline accepts input when [readyPipeIn] is high and advances each
+/// occupied stage when the following stage can accept it.
+class ReadyValidStructurePipeline<LogicType extends LogicStructure> {
+  /// Original input followed by each registered stage output.
+  late final List<LogicType> values;
+
+  /// Indicates whether the final payload is valid.
+  late final Logic validPipeOut;
+
+  /// Indicates whether the first stage can accept an input payload.
+  late final Logic readyPipeIn;
+
+  /// Indicates whether the input payload is valid.
+  final Logic validPipeIn;
+
+  /// Indicates whether the receiver can accept the output payload.
+  final Logic readyPipeOut;
+
+  /// Number of combinational boundaries, including the input boundary.
+  int get stageCount => values.length;
+
+  /// Number of registered transform stages.
+  int get latency => values.length - 1;
+
+  /// Final typed pipeline value.
+  LogicType get output => values.last;
+
+  /// Creates a typed ready/valid pipeline.
+  ///
+  /// Every entry in [stages] creates one registered elastic stage. A pipeline
+  /// without stages passes [input] through combinationally.
+  ReadyValidStructurePipeline(
+    Logic clk,
+    LogicType input, {
+    required this.validPipeIn,
+    required this.readyPipeOut,
+    required List<StructurePipelineTransform<LogicType>> stages,
+    Logic? reset,
+    dynamic resetValue,
+    bool asyncReset = false,
+    String name = 'ready_valid_structure_pipeline',
+  }) {
+    if (clk.width != 1) {
+      throw PortWidthMismatchException(clk, 1);
+    }
+    if (validPipeIn.width != 1) {
+      throw PortWidthMismatchException(validPipeIn, 1);
+    }
+    if (readyPipeOut.width != 1) {
+      throw PortWidthMismatchException(readyPipeOut, 1);
+    }
+    if (reset != null && reset.width != 1) {
+      throw PortWidthMismatchException(reset, 1);
+    }
+
+    if (stages.isEmpty) {
+      values = List.unmodifiable([input]);
+      validPipeOut = validPipeIn;
+      readyPipeIn = readyPipeOut;
+      return;
+    }
+
+    final readyValues = List<Logic>.generate(
+      stages.length + 1,
+      (index) => index == stages.length
+          ? readyPipeOut
+          : Logic(
+              name: '${name}_ready_$index',
+              naming: Naming.mergeable,
+            ),
+    );
+    final generatedValues = <LogicType>[input];
+    final generatedValids = <Logic>[validPipeIn];
+
+    for (var stage = 0; stage < stages.length; stage++) {
+      final transformed = stages[stage](
+        StructurePipelineStageInfo<LogicType>._(stage, generatedValues),
+      );
+      validateMatchingLogicStructure(
+        transformed,
+        input,
+        operation: 'ReadyValidStructurePipeline stage $stage',
+      );
+
+      generatedValues.add(
+        FlipFlop<LogicType>(
+          clk,
+          transformed,
+          en: readyValues[stage],
+          reset: reset,
+          resetValue: resetValue,
+          asyncReset: asyncReset,
+          name: '${name}_stage_$stage',
+        ).q,
+      );
+      generatedValids.add(
+        flop<Logic>(
+          clk,
+          generatedValids.last,
+          en: readyValues[stage],
+          reset: reset,
+          resetValue: 0,
+          asyncReset: asyncReset,
+        ).named(
+          '${name}_valid_${stage + 1}',
+          naming: Naming.mergeable,
+        ),
+      );
+    }
+
+    for (var stage = stages.length - 1; stage >= 0; stage--) {
+      readyValues[stage] <=
+          ~generatedValids[stage + 1] | readyValues[stage + 1];
+    }
+
+    values = List.unmodifiable(generatedValues);
+    validPipeOut = generatedValids.last;
+    readyPipeIn = readyValues.first;
+  }
+
+  /// Returns a typed value at [boundary], defaulting to [output].
+  LogicType get([int? boundary]) => values[boundary ?? values.length - 1];
+}
+
 /// Information and accessors associated with a [Pipeline] stage.
 class PipelineStageInfo {
   /// The index of the current stage in the associated [Pipeline].
