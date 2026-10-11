@@ -165,6 +165,19 @@ class _TypedOperationsSynthesisHarness extends Module {
       ],
     ).output;
     addTypedOutput('out', piped.clone).gets(piped);
+
+    final readyValidPiped = ReadyValidStructurePipeline<_TypedPacket>(
+      clk,
+      registered,
+      validPipeIn: control,
+      readyPipeOut: reset,
+      reset: reset,
+      stages: [(stage) => stage.value],
+    );
+    addTypedOutput('ready_valid_out', readyValidPiped.output.clone)
+        .gets(readyValidPiped.output);
+    addOutput('ready_valid').gets(readyValidPiped.validPipeOut);
+    addOutput('ready_ready').gets(readyValidPiped.readyPipeIn);
   }
 }
 
@@ -1012,6 +1025,67 @@ void main() {
     await clk.nextPosedge;
     expect(running.output.opcode.value.toInt(), 6);
     expect(stalled.output.opcode.value.isValid, isFalse);
+    await Simulator.endSimulation();
+  });
+
+  test('ReadyValidStructurePipeline preserves payloads under backpressure',
+      () async {
+    final clk = SimpleClockGenerator(10).clk;
+    final reset = Logic();
+    final valid = Logic();
+    final ready = Logic();
+    final input = _TypedPacket(name: 'ready_valid_pipeline_input');
+    final pipeline = ReadyValidStructurePipeline<_TypedPacket>(
+      clk,
+      input,
+      validPipeIn: valid,
+      readyPipeOut: ready,
+      reset: reset,
+      stages: [
+        (stage) {
+          final next = stage.value.cloneTyped(name: 'ready_valid_stage_0');
+          next.opcode <= stage.value.opcode + 1;
+          next.lanes <= stage.value.lanes;
+          return next;
+        },
+        (stage) {
+          final next = stage.value.cloneTyped(name: 'ready_valid_stage_1');
+          next.opcode <= stage.value.opcode + 1;
+          next.lanes <= stage.value.lanes;
+          return next;
+        },
+      ],
+    );
+    unawaited(Simulator.run());
+
+    reset.inject(1);
+    valid.inject(0);
+    ready.inject(1);
+    await clk.nextPosedge;
+    reset.inject(0);
+
+    input.opcode.inject(2);
+    input.lanes.arrayElements[0].data.inject(0x45);
+    valid.inject(1);
+    await clk.nextPosedge;
+    expect(pipeline.validPipeOut.value.toInt(), 0);
+
+    await clk.nextPosedge;
+    expect(pipeline.validPipeOut.value.toInt(), 1);
+    expect(pipeline.output.opcode.value.toInt(), 4);
+    expect(pipeline.output.lanes.arrayElements[0].data.value.toInt(), 0x45);
+
+    ready.inject(0);
+    input.opcode.inject(5);
+    await clk.nextPosedge;
+    expect(pipeline.validPipeOut.value.toInt(), 1);
+    expect(pipeline.output.opcode.value.toInt(), 4);
+
+    ready.inject(1);
+    await clk.nextPosedge;
+    expect(pipeline.output.opcode.value.toInt(), 4);
+    await clk.nextPosedge;
+    expect(pipeline.output.opcode.value.toInt(), 7);
     await Simulator.endSimulation();
   });
 
