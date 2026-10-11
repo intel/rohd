@@ -9,6 +9,7 @@
 //
 
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/modules/operation_utils.dart';
 
 /// Builds the combinational value registered by one [StructurePipeline] stage.
 typedef StructurePipelineTransform<LogicType extends LogicStructure> = LogicType
@@ -120,12 +121,48 @@ class StructurePipeline<LogicType extends LogicStructure> {
   LogicType get([int? boundary]) => values[boundary ?? values.length - 1];
 }
 
-/// A ready/valid pipeline that preserves a concrete structure type.
+/// Builds the combinational value registered by one ready/valid pipeline
+/// stage.
+typedef ReadyValidPipelineTransform<LogicType extends Logic> = LogicType
+    Function(ReadyValidPipelineStageInfo<LogicType> stage);
+
+/// Typed values and history visible while building one ready/valid pipeline
+/// stage.
+class ReadyValidPipelineStageInfo<LogicType extends Logic> {
+  /// Zero-based transform stage being constructed.
+  final int stage;
+
+  final List<LogicType> _values;
+
+  ReadyValidPipelineStageInfo._(this.stage, this._values);
+
+  /// Typed value entering this transform stage.
+  LogicType get value => _values[stage];
+
+  /// Returns a typed value relative to this transform stage's input.
+  ///
+  /// Zero selects [value], while negative values select earlier registered
+  /// stages. Future stages cannot be referenced during construction.
+  LogicType get([int stageAdjustment = 0]) => getAbs(stage + stageAdjustment);
+
+  /// Returns a typed value at an absolute pipeline boundary.
+  ///
+  /// Boundary zero is the original input. Boundary `n + 1` is the registered
+  /// output of transform stage `n`.
+  LogicType getAbs(int boundary) {
+    if (boundary < 0 || boundary >= _values.length) {
+      throw RangeError.range(boundary, 0, _values.length - 1, 'boundary');
+    }
+    return _values[boundary];
+  }
+}
+
+/// A ready/valid pipeline that preserves its payload's concrete type.
 ///
 /// Each transform produces the payload registered at its corresponding stage.
 /// The pipeline accepts input when [readyPipeIn] is high and advances each
 /// occupied stage when the following stage can accept it.
-class ReadyValidStructurePipeline<LogicType extends LogicStructure> {
+class ReadyValidPipeline<LogicType extends Logic> {
   /// Original input followed by each registered stage output.
   late final List<LogicType> values;
 
@@ -154,12 +191,12 @@ class ReadyValidStructurePipeline<LogicType extends LogicStructure> {
   ///
   /// Every entry in [stages] creates one registered elastic stage. A pipeline
   /// without stages passes [input] through combinationally.
-  ReadyValidStructurePipeline(
+  ReadyValidPipeline(
     Logic clk,
     LogicType input, {
     required this.validPipeIn,
     required this.readyPipeOut,
-    required List<StructurePipelineTransform<LogicType>> stages,
+    required List<ReadyValidPipelineTransform<LogicType>> stages,
     Logic? reset,
     dynamic resetValue,
     bool asyncReset = false,
@@ -199,12 +236,12 @@ class ReadyValidStructurePipeline<LogicType extends LogicStructure> {
 
     for (var stage = 0; stage < stages.length; stage++) {
       final transformed = stages[stage](
-        StructurePipelineStageInfo<LogicType>._(stage, generatedValues),
+        ReadyValidPipelineStageInfo<LogicType>._(stage, generatedValues),
       );
-      validateMatchingLogicStructure(
+      validateOperationSource(
         transformed,
         input,
-        operation: 'ReadyValidStructurePipeline stage $stage',
+        operation: 'ReadyValidPipeline stage $stage',
       );
 
       generatedValues.add(
@@ -569,8 +606,12 @@ class Pipeline {
   }
 }
 
-/// A pipeline that implements Ready/Valid protocol at each stage.
-class ReadyValidPipeline extends Pipeline {
+/// Legacy multi-signal ready/valid pipeline.
+///
+/// Use [ReadyValidPipeline] for a single typed payload. This class remains
+/// available for pipelines that need the legacy arbitrary-signal [Pipeline]
+/// stage API.
+class ReadyValidSignalPipeline extends Pipeline {
   /// Indicates that valid contents are ready to be received
   /// at the output of the pipeline.
   late final Logic validPipeOut;
@@ -585,7 +626,7 @@ class ReadyValidPipeline extends Pipeline {
   /// is ready to pull out of the pipeline.
   final Logic readyPipeOut;
 
-  /// Constructs a pipeline with Ready/Valid protocol at each stage.
+  /// Constructs a legacy multi-signal ready/valid pipeline.
   ///
   /// The [validPipeIn] signal indicates that the input to the pipeline is
   /// valid.  The [readyPipeOut] signal indicates that the receiver of the
@@ -606,7 +647,7 @@ class ReadyValidPipeline extends Pipeline {
   /// Note that the [resetValues] will take effect the same way as a normal
   /// [Pipeline], but the valid indication on the output will remain at 0 until
   /// a valid input has made its way from the input to the output.
-  ReadyValidPipeline(
+  ReadyValidSignalPipeline(
     Logic clk,
     Logic validPipeIn,
     Logic readyPipeOut, {
@@ -626,8 +667,8 @@ class ReadyValidPipeline extends Pipeline {
           asyncReset: asyncReset,
         );
 
-  /// Creates a [ReadyValidPipeline] with multiple triggers.
-  ReadyValidPipeline.multi(
+  /// Creates a [ReadyValidSignalPipeline] with multiple triggers.
+  ReadyValidSignalPipeline.multi(
     super._clks,
     this.validPipeIn,
     this.readyPipeOut, {
