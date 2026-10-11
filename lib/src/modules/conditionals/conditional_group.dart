@@ -61,3 +61,24 @@ class ConditionalGroup extends Conditional {
               ))
           .join('\n');
 }
+
+/// A [ConditionalGroup] originating from one complete [LogicStructure]
+/// assignment.
+///
+/// The contained leaf assignments preserve the normal ROHD connection graph,
+/// while [receiver] and [driver] retain the aggregate operation for backends
+/// that can emit it directly.
+class StructureConditionalGroup extends ConditionalGroup {
+  /// The complete structure assigned by this group.
+  final LogicStructure receiver;
+
+  /// The source structure or packed value assigned to [receiver].
+  final Logic driver;
+
+  /// Creates leaf assignments for one aggregate structure assignment.
+  StructureConditionalGroup(
+    this.receiver,
+    this.driver,
+    super.conditionals,
+  );
+}
