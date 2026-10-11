@@ -1,5 +1,11 @@
 ## Next Release
 
+- Added structure-preserving typed operations for multiplexing, flip-flops, case and indexed selection, pipelines, naming, cloning, and pass-through modules. Nested `LogicArray` and `LogicArrayOf` boundaries remain available through the concrete output type while existing scalar operations retain their `Logic` APIs.
+- Added the `ModuleService` API for module-scoped generation, capture, and inspection services. `ModuleServices` registers and looks up services for a built module hierarchy, and `hierarchyJson` exposes its hierarchy as JSON.
+- Added `ArtifactProducingService` and `ModuleServiceArtifact` for transport-neutral output. Artifact-producing services default `outputDirectory` to the current directory and `outputBaseName` to the module definition name, and expose named, media-typed byte streams without requiring filesystem output.
+- Added `SystemVerilogService` for configured SystemVerilog synthesis, in-memory source output, artifact inspection, and explicit directory writes.
+  Added `WaveformService` for in-memory waveform capture with optional file writing through `writeToFile`.
+- Added legacy-compatible `Module.dumpSystemVerilog` and `Module.dumpWaves` convenience methods. `dumpSystemVerilog()` returns simple in-memory output; `dumpWaves()` provides standard VCD capture as the replacement for `WaveDumper`. `WaveDumper` and `generateSynth` are deprecated in favor of these `Module` methods.
 - Fixed `LogicValue.ofRadixString` round trips with empty separators and separators containing regular-expression metacharacters (<https://github.com/intel/rohd/issues/722>).
 - Added `LogicEnum<T>` hardware signals with explicit encodings, mapped member assignments, driveable cloning, SystemVerilog enum generation, and enum metadata in the JSON netlist format (<https://github.com/intel/rohd/pull/599>).
 - Added `TypedLogicArray<TLogic, TValue>` for multidimensional arrays with fixed typed hardware elements and associated semantic values. Added shaped `LogicValueArray` and codec-backed `TypedLogicValueArray<TValue>` values, including typed ports, traversal, cloning, net support, and synthesis (<https://github.com/intel/rohd/pull/686>).
