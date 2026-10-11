@@ -219,6 +219,15 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
           !inputs.contains(packedSource.source.resolved)) {
         continue;
       }
+      if (packedSource.source.logics.any(
+        (sourceLogic) => arraySynth.logics.any(
+          (arrayLogic) =>
+              sourceLogic.name == arrayLogic.name &&
+              sourceLogic.parentModule == arrayLogic.parentModule,
+        ),
+      )) {
+        continue;
+      }
 
       assignments.add(SynthAssignment(packedSource.source, arraySynth));
       for (final subset in packedSource.subsets) {
