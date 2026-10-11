@@ -189,7 +189,7 @@ class RVPipelineModule extends Module {
     reset = addInput('reset', reset);
     final b = addOutput('b', width: a.width);
 
-    final pipeline = ReadyValidPipeline(clk, validIn, readyForOut,
+    final pipeline = ReadyValidSignalPipeline(clk, validIn, readyForOut,
         reset: reset,
         stages: [
           (p) => [p.get(a) < p.get(a) + 1],

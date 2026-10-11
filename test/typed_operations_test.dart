@@ -166,7 +166,7 @@ class _TypedOperationsSynthesisHarness extends Module {
     ).output;
     addTypedOutput('out', piped.clone).gets(piped);
 
-    final readyValidPiped = ReadyValidStructurePipeline<_TypedPacket>(
+    final readyValidPiped = ReadyValidPipeline<_TypedPacket>(
       clk,
       registered,
       validPipeIn: control,
@@ -1028,14 +1028,14 @@ void main() {
     await Simulator.endSimulation();
   });
 
-  test('ReadyValidStructurePipeline preserves payloads under backpressure',
+  test('ReadyValidPipeline preserves structured payloads under backpressure',
       () async {
     final clk = SimpleClockGenerator(10).clk;
     final reset = Logic();
     final valid = Logic();
     final ready = Logic();
     final input = _TypedPacket(name: 'ready_valid_pipeline_input');
-    final pipeline = ReadyValidStructurePipeline<_TypedPacket>(
+    final pipeline = ReadyValidPipeline<_TypedPacket>(
       clk,
       input,
       validPipeIn: valid,
@@ -1086,6 +1086,36 @@ void main() {
     expect(pipeline.output.opcode.value.toInt(), 4);
     await clk.nextPosedge;
     expect(pipeline.output.opcode.value.toInt(), 7);
+    await Simulator.endSimulation();
+  });
+
+  test('ReadyValidPipeline preserves scalar payloads', () async {
+    final clk = SimpleClockGenerator(10).clk;
+    final reset = Logic();
+    final valid = Logic();
+    final ready = Logic();
+    final input = Logic(width: 4);
+    final pipeline = ReadyValidPipeline<Logic>(
+      clk,
+      input,
+      validPipeIn: valid,
+      readyPipeOut: ready,
+      reset: reset,
+      stages: [(stage) => stage.value],
+    );
+    unawaited(Simulator.run());
+
+    reset.inject(1);
+    valid.inject(0);
+    ready.inject(1);
+    await clk.nextPosedge;
+    reset.inject(0);
+
+    input.inject(0xa);
+    valid.inject(1);
+    await clk.nextPosedge;
+    expect(pipeline.validPipeOut.value.toInt(), 1);
+    expect(pipeline.output.value.toInt(), 0xa);
     await Simulator.endSimulation();
   });
 
