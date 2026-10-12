@@ -20,6 +20,31 @@ enum SingleValueEnum { only }
 
 enum OtherEnum { a, b, c }
 
+class MappingCountingLogicEnum extends LogicEnum<TestEnum> {
+  int mappingReads = 0;
+
+  MappingCountingLogicEnum(super.mapping, {super.name, super.naming})
+      : super.withMapping(width: 2);
+
+  @override
+  Map<TestEnum, LogicValue> get mapping {
+    mappingReads++;
+    return super.mapping;
+  }
+
+  @override
+  MappingCountingLogicEnum clone({String? name}) => MappingCountingLogicEnum(
+        mapping,
+        name: name ?? this.name,
+        naming: Naming.chooseCloneNaming(
+          originalName: this.name,
+          newName: name,
+          originalNaming: naming,
+          newNaming: null,
+        ),
+      );
+}
+
 class MyListLogicEnum extends LogicEnum<TestEnum> {
   MyListLogicEnum({super.name, super.naming}) : super(TestEnum.values);
 
@@ -1084,6 +1109,61 @@ void main() {
     expect([source.value, intermediate.value, sibling.value, logicEnum.value],
         everyElement(LogicValue.ofInt(1, 2)));
     expect(logicEnum.valueEnum, TestEnum.b);
+  });
+
+  test('enum constraints are not duplicated by upstream reconnections', () {
+    final logicEnum = MappingCountingLogicEnum({
+      TestEnum.a: 0,
+      TestEnum.b: 1,
+      TestEnum.c: 2,
+    });
+    Logic source = logicEnum;
+
+    for (var depth = 1; depth <= 8; depth++) {
+      final upstream = Logic(width: 2);
+      source.gets(upstream);
+      source = upstream;
+
+      logicEnum.mappingReads = 0;
+      source.put(1);
+
+      expect(logicEnum.mappingReads, 1, reason: 'Reconnection depth $depth');
+      expect(logicEnum.value, LogicValue.ofInt(1, 2));
+    }
+  });
+
+  test('enum constraints remain distinct when shared wires merge', () {
+    final firstSource = Logic(width: 2);
+    final secondSource = Logic(width: 2);
+    final first = MappingCountingLogicEnum({TestEnum.a: 0, TestEnum.b: 1})
+      ..gets(firstSource);
+    final second = MappingCountingLogicEnum({TestEnum.b: 1, TestEnum.c: 2})
+      ..gets(secondSource);
+    final sibling = Logic(width: 2)..gets(firstSource);
+    final source = Logic(width: 2);
+
+    firstSource.gets(secondSource);
+    secondSource.gets(source);
+
+    final signals = [source, firstSource, secondSource, first, second, sibling];
+    first.mappingReads = 0;
+    second.mappingReads = 0;
+    source.put(1);
+
+    expect(first.mappingReads, 1);
+    expect(second.mappingReads, 1);
+    expect(signals.map((signal) => signal.value),
+        everyElement(LogicValue.ofInt(1, 2)));
+
+    for (final value in [0, 2, '0z']) {
+      sibling.put(value);
+      expect(signals.map((signal) => signal.value),
+          everyElement(LogicValue.filled(2, LogicValue.x)));
+    }
+
+    source.put(LogicValue.z, fill: true);
+    expect(signals.map((signal) => signal.value),
+        everyElement(LogicValue.filled(2, LogicValue.z)));
   });
 
   test('enum wire adoption preserves legal immutable sources', () {

@@ -290,8 +290,9 @@ class _Wire {
     _updateValue(_applyValueConstraints(newValue), signalName: signalName);
   }
 
-  /// Value transformations applied in registration order before an update.
-  final List<_LogicValueConstraint> _valueConstraints = [];
+  /// Distinct value transformations applied in registration order before an
+  /// update.
+  final Set<_LogicValueConstraint> _valueConstraints = {};
 
   /// Applies constraints without writing a value or emitting events.
   LogicValue _applyValueConstraints(LogicValue value) {
