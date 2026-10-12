@@ -1818,12 +1818,14 @@ class SynthModuleDefinition {
   /// [Namer.instanceNameOf]. All non-constant names share a single namespace
   /// managed by the module's [Namer].
   void _pickNames() {
-    (<SynthLogic>{
-      ...inputs,
-      ...outputs,
-      ...inOuts,
-      ...internalSignals,
-    }).where((signal) => signal.isEnum).forEach(_pickDefinitionEnumName);
+    if (generateEnums) {
+      (<SynthLogic>{
+        ...inputs,
+        ...outputs,
+        ...inOuts,
+        ...internalSignals,
+      }).where((signal) => signal.isEnum).forEach(_pickDefinitionEnumName);
+    }
 
     // Name allocation order matters -- earlier claims receive the unsuffixed
     // name when there are collisions. Weak-name claimants are intentionally

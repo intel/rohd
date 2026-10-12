@@ -270,6 +270,28 @@ class EnumNameCollisionModule extends Module {
   }
 }
 
+class ReservedEnumNameCollisionModule extends Module {
+  ReservedEnumNameCollisionModule(Logic source) {
+    source = addInput('source', source, width: 2);
+    final first = LogicEnum(
+      TestEnum.values,
+      name: 'a',
+      naming: Naming.renameable,
+      definitionName: 'SharedType',
+      reserveDefinitionName: true,
+    )..gets(source);
+    final second = LogicEnum(
+      OtherEnum.values,
+      name: 'SharedType',
+      naming: Naming.renameable,
+      definitionName: 'SharedType',
+      reserveDefinitionName: true,
+    )..gets(source);
+    addOutput('first', width: 2) <= first;
+    addOutput('second', width: 2) <= second;
+  }
+}
+
 class EnumCasesModule extends Module {
   late final Logic selected;
   late final LogicEnum<TestEnum> result;
@@ -2039,10 +2061,18 @@ void main() {
       }
     });
 
-    test('enum netlist retains constant literal metadata', () async {
+    test(
+        'enum netlist retains constant literal metadata after packed synthesis',
+        () async {
       final module =
           ModWithEnumConstAssignment(Logic(width: 2), includeUnusedEnum: true);
       await module.build();
+      expect(
+        module.dumpSystemVerilog(
+            configuration: const SystemVerilogSynthesizerConfiguration(
+                generateEnums: false)),
+        isNot(contains('typedef enum')),
+      );
       final json = jsonDecode(NetlistSynthesizer().synthesizeToJson(module))
           as Map<String, dynamic>;
       final definition = (json['modules'] as Map).values.single as Map;
@@ -2067,6 +2097,7 @@ void main() {
           .toSet();
       expect(enumNets.single['bits'], everyElement(isIn(constantBits)));
       expect(json.keys, unorderedEquals(['creator', 'version', 'modules']));
+      expect(module.dumpSystemVerilog(), contains('typedef enum'));
     });
 
     test('enum netlist preserves sparse and wide encodings', () async {
@@ -2210,6 +2241,46 @@ void main() {
       expect(firstSv, contains(typeDefinition));
       expect(secondSv, contains(typeDefinition));
     });
+
+    for (final typedFirst in [false, true]) {
+      test('packed enums ignore reserved collisions typedFirst=$typedFirst',
+          () async {
+        final module = ReservedEnumNameCollisionModule(Logic(width: 2));
+        await module.build();
+        if (typedFirst) {
+          expect(module.dumpSystemVerilog,
+              throwsA(isA<UnavailableReservedNameException>()));
+        }
+
+        const configuration =
+            SystemVerilogSynthesizerConfiguration(generateEnums: false);
+        String synthesizePacked() => SynthBuilder(
+                module, SystemVerilogSynthesizer(configuration: configuration))
+            .getSynthFileContents()
+            .join();
+        final packedSv = synthesizePacked();
+        expect(packedSv, isNot(contains('typedef enum')));
+        expect(packedSv, isNot(contains("SharedType'(")));
+        if (!typedFirst) {
+          expect(packedSv, contains('logic [1:0] a;'));
+          expect(packedSv, contains('logic [1:0] SharedType;'));
+        }
+        expect(synthesizePacked(), packedSv);
+        expect(module.dumpSystemVerilog,
+            throwsA(isA<UnavailableReservedNameException>()));
+        expect(synthesizePacked(), packedSv);
+
+        final vectors = [
+          for (final value in [0, 1, 2])
+            Vector({'source': value}, {'first': value, 'second': value}),
+        ];
+        await SimCompare.checkFunctionalVector(module, vectors);
+        SimCompare.checkIverilogVector(module, vectors,
+            synthesizerConfiguration: configuration);
+        SimCompare.checkVerilatorVector(module, const [],
+            buildOnly: true, synthesizerConfiguration: configuration);
+      });
+    }
 
     test('enum generation can be disabled', () async {
       final simpleModule = SimpleModWithEnum(Logic(width: 3));
