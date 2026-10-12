@@ -143,11 +143,8 @@ class FiniteStateMachine<StateIdentifier extends Enum> {
       Case(
           currentState,
           _states
-              .map((state) => CaseItem(
-                      stateEnum()..getsEnum(state.identifier),
-                      // Const(_stateValueLookup[state], width: stateWidth)
-                      //     .named(state.identifier.toString()),
-                      [
+              .map(
+                  (state) => CaseItem(stateEnum()..getsEnum(state.identifier), [
                         ...state.actions,
                         Case(
                             Const(1),
