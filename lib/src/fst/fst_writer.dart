@@ -19,10 +19,6 @@ import 'package:rohd/rohd.dart';
 
 /// Configuration for the FST writer.
 class FstWriterConfig {
-  /// Timescale exponent. The timescale is 10^exponent seconds.
-  /// Default: -12 (picoseconds).
-  final int timescaleExponent;
-
   /// Zlib compression level (0-9). Higher = smaller but slower.
   /// Default: 4.
   final int compressionLevel;
@@ -33,9 +29,16 @@ class FstWriterConfig {
   /// File type: Verilog, VHDL, or combined.
   final FstFileType fileType;
 
+  /// Default number of value changes to buffer before auto-flushing a VcData
+  /// block to disk.
+  ///
+  /// This keeps normal waveform captures incremental while avoiding frequent
+  /// repeated frame snapshots for typical designs.
+  static const int defaultMaxChangesPerBlock = 4096;
+
   /// Maximum number of value changes to buffer before auto-flushing
-  /// a VcData block to disk. Set to 0 (default) to disable auto-flush
-  /// and write a single block at [FstWriter.finish].
+  /// a VcData block to disk. Set to 0 to disable auto-flush and write a
+  /// single block at [FstWriter.finish].
   ///
   /// When non-zero, [FstWriter.emitValueChange] automatically calls
   /// [FstWriter.flushBlock] once the buffer reaches this threshold.
@@ -45,11 +48,10 @@ class FstWriterConfig {
 
   /// Creates configuration for the FST writer.
   const FstWriterConfig({
-    this.timescaleExponent = -12,
     this.compressionLevel = 4,
     this.version = 'ROHD FST Writer',
     this.fileType = FstFileType.verilog,
-    this.maxChangesPerBlock = 0,
+    this.maxChangesPerBlock = defaultMaxChangesPerBlock,
   });
 }
 
@@ -199,6 +201,9 @@ class FstWriter {
   /// Writer configuration.
   final FstWriterConfig config;
 
+  /// Signed base-10 exponent in seconds written into the FST header.
+  final int timescaleExponent;
+
   /// All declared signals (0-indexed).
   final List<_SignalDecl> _signals = [];
 
@@ -241,7 +246,18 @@ class FstWriter {
   int _vcSectionCount = 0;
 
   /// Creates an FST writer that will write to [filePath].
-  FstWriter(this.filePath, {this.config = const FstWriterConfig()}) {
+  FstWriter(
+    this.filePath, {
+    this.config = const FstWriterConfig(),
+    this.timescaleExponent = -12,
+  }) {
+    if (timescaleExponent < -128 || timescaleExponent > 127) {
+      throw ArgumentError.value(
+        timescaleExponent,
+        'timescaleExponent',
+        'must fit in a signed 8-bit FST header field',
+      );
+    }
     final file = File(filePath)..createSync(recursive: true);
     _file = file.openSync(mode: FileMode.write);
   }
@@ -483,7 +499,7 @@ class FstWriter {
     _writeU64(_varCount); // var_count
     _writeU64(_signals.length); // max_var_id_code
     _writeU64(1); // vc_section_count (we write one block)
-    _file.writeByteSync(config.timescaleExponent & 0xFF); // timescale_exponent
+    _file.writeByteSync(timescaleExponent & 0xFF); // timescale_exponent
     _writeFixedString(config.version, _headerVersionMaxLen);
     _writeFixedString(_dateString(), _headerDateMaxLen);
     _file.writeByteSync(config.fileType.value); // file_type

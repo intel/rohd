@@ -1,7 +1,7 @@
 ---
 title: "Generating Outputs"
 permalink: /docs/generation/
-last_modified_at: 2026-10-08
+last_modified_at: 2026-10-12
 toc: true
 ---
 
@@ -262,7 +262,7 @@ final waveform = WaveformService(
   outputDirectory: 'build/waves',
   outputBaseName: 'interesting-signals',
   writeToFile: true,
-  timescale: '1ns',
+  timescale: WaveformTimeScale.oneNanosecond,
   startTime: 100,
   stopTime: 1000,
   signalFilter: (signal) => signal.name.startsWith('debug_'),
@@ -270,3 +270,9 @@ final waveform = WaveformService(
 
 final vcdArtifact = waveform.artifacts.single;
 ```
+
+`timescale` is the physical duration represented by one unit of ROHD
+simulation time. For example, `WaveformTimeScale.oneNanosecond` writes an
+event at `Simulator.time == 100` at timestamp `100` with a `1ns` timescale;
+it does not rescale timestamps or change simulator scheduling. The same
+validated scale is used for VCD and FST output.

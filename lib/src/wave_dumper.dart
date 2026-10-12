@@ -35,7 +35,7 @@ import 'package:rohd/rohd.dart';
 ///   outputDirectory: 'build',
 ///   outputBaseName: 'debug',
 ///   writeToFile: true,
-///   timescale: '1ns',
+///   timescale: WaveformTimeScale.oneNanosecond,
 ///   startTime: 100,
 ///   signalFilter: (signal) => signal.name.startsWith('debug_'),
 /// );

@@ -54,8 +54,11 @@ class WaveformService extends ArtifactProducingService {
   /// captured.
   final bool Function(Logic signal)? signalFilter;
 
-  /// VCD timescale string, e.g. `'1ps'`, `'1ns'`.
-  final String timescale;
+  /// The physical duration represented by one unit of [Simulator.time].
+  ///
+  /// This controls waveform-file metadata only; it does not rescale timestamp
+  /// numbers or affect simulator scheduling.
+  final WaveformTimeScale timescale;
 
   /// Simulation time at which recording begins.
   final int? startTime;
@@ -130,7 +133,7 @@ class WaveformService extends ArtifactProducingService {
     this.outputFileName,
     this.format = WaveOutputFormat.vcd,
     this.signalFilter,
-    this.timescale = '1ps',
+    this.timescale = WaveformTimeScale.onePicosecond,
     this.startTime,
     this.stopTime,
     this.flushBufferSize = 100000,
@@ -149,6 +152,16 @@ class WaveformService extends ArtifactProducingService {
     }
     if (format == WaveOutputFormat.fst && this.retainInMemory) {
       throw UnsupportedError('FST capture does not support retainInMemory.');
+    }
+    if (writeToFile && overwritePolicy == OverwritePolicy.failIfExists) {
+      final existingFile = File(outputPath);
+      if (existingFile.existsSync()) {
+        throw FileSystemException(
+          'Waveform output file already exists and overwritePolicy is '
+          'failIfExists.',
+          outputPath,
+        );
+      }
     }
 
     _writer = _createWriter();
@@ -190,7 +203,7 @@ class WaveformService extends ArtifactProducingService {
       {required String outputPath,
       WaveOutputFormat format = WaveOutputFormat.vcd,
       bool Function(Logic signal)? signalFilter,
-      String timescale = '1ps',
+      WaveformTimeScale timescale = WaveformTimeScale.onePicosecond,
       int? startTime,
       int? stopTime,
       int flushBufferSize = 100000,
@@ -262,12 +275,11 @@ class WaveformService extends ArtifactProducingService {
         return VcdWaveformWriter(outputPath,
             timescale: timescale,
             flushBufferSize: flushBufferSize,
-            overwritePolicy: overwritePolicy,
             memoryBuffer: retainInMemory ? StringBuffer() : null,
             writeToFile: writeToFile);
       case WaveOutputFormat.fst:
         return FstWaveformWriter(outputPath,
-            config: fstConfig ?? const FstWriterConfig());
+            timescale: timescale, config: fstConfig ?? const FstWriterConfig());
     }
   }
 
@@ -413,7 +425,7 @@ class WaveformService extends ArtifactProducingService {
         'retainInMemory': retainInMemory,
         'format': format.name,
         'signalCount': _signalHandles.length,
-        'timescale': timescale,
+        'timescale': timescale.vcdValue,
         if (startTime != null) 'startTime': startTime,
         if (stopTime != null) 'stopTime': stopTime,
         'writer': _writer.toJson(),

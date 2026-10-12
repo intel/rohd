@@ -155,6 +155,57 @@ void main() {
       File(path).deleteSync();
     });
 
+    test('default block limit flushes before finalization and retains timeline',
+        () {
+      const path = '$_tempDumpDir/fst_default_block_limit.fst';
+      Directory(_tempDumpDir).createSync(recursive: true);
+      final file = File(path);
+      addTearDown(() {
+        if (file.existsSync()) {
+          file.deleteSync();
+        }
+      });
+
+      final writer = FstWriter(path)..pushScope('top');
+      final signal = writer.declareSignal('signal', 1);
+      writer
+        ..popScope()
+        ..writeHeader();
+
+      const maxChangesPerBlock = FstWriterConfig.defaultMaxChangesPerBlock;
+      for (var time = 0; time <= maxChangesPerBlock; time++) {
+        writer.emitValueChange(
+          time,
+          signal,
+          time.isEven ? '0' : '1',
+        );
+      }
+
+      expect(writer.blockIndex, hasLength(1));
+      final query = FstWaveformQuery(writer);
+      expect(
+        query
+            .changes(
+              signal,
+              startTime: maxChangesPerBlock - 1,
+              endTime: maxChangesPerBlock,
+            )
+            .map((change) => (change.time, change.value)),
+        equals([
+          (
+            maxChangesPerBlock - 1,
+            (maxChangesPerBlock - 1).isEven ? '0' : '1',
+          ),
+          (
+            maxChangesPerBlock,
+            maxChangesPerBlock.isEven ? '0' : '1',
+          ),
+        ]),
+      );
+
+      writer.finish();
+    });
+
     test('writes valid header block', () {
       const path = '$_tempDumpDir/fst_header_test.fst';
       Directory(_tempDumpDir).createSync(recursive: true);

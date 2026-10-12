@@ -66,6 +66,12 @@ String _temporaryVcdPath(String name) => '$_tempDumpDir/temp_wave_$name.vcd';
 
 String _temporaryFstPath(String name) => '$_tempDumpDir/temp_wave_$name.fst';
 
+int _readFstTimescaleExponent(Uint8List data) {
+  const timescaleExponentOffset = 73;
+  final unsignedExponent = data[timescaleExponentOffset];
+  return unsignedExponent < 0x80 ? unsignedExponent : unsignedExponent - 0x100;
+}
+
 // ─── Public helpers used by sibling tests (e.g. config_test.dart) ────────────
 
 /// Directory into which sibling tests place their temporary waveform dumps.
@@ -232,6 +238,123 @@ void main() {
     fstFile.deleteSync();
   });
 
+  test('rejects unsupported waveform timescale exponents', () {
+    expect(
+      () => WaveformTimeScale.fromExponent(-16),
+      throwsArgumentError,
+    );
+    expect(
+      () => WaveformTimeScale.fromExponent(3),
+      throwsArgumentError,
+    );
+  });
+
+  for (final format in WaveOutputFormat.values) {
+    test(
+        '${format.name} preserves existing output with failIfExists and '
+        'overwrites by default', () async {
+      final a = Logic(name: 'a');
+      final mod = _SimpleWaveModule(a);
+      await mod.build();
+
+      Directory(_tempDumpDir).createSync(recursive: true);
+      final outputFile = File(
+        '$_tempDumpDir/temp_wave_overwritePolicy.${format.fileExtension}',
+      );
+      addTearDown(() {
+        if (outputFile.existsSync()) {
+          outputFile.deleteSync();
+        }
+      });
+
+      final originalContents = utf8.encode('existing waveform contents');
+      outputFile.writeAsBytesSync(originalContents);
+
+      expect(
+        () => WaveformService.fromOutputPath(
+          mod,
+          outputPath: outputFile.path,
+          format: format,
+          overwritePolicy: OverwritePolicy.failIfExists,
+          register: false,
+        ),
+        throwsA(isA<FileSystemException>()),
+      );
+      expect(outputFile.readAsBytesSync(), equals(originalContents));
+
+      a.put(0);
+      WaveformService.fromOutputPath(
+        mod,
+        outputPath: outputFile.path,
+        format: format,
+        register: false,
+      );
+      await Simulator.run();
+
+      expect(outputFile.readAsBytesSync(), isNot(equals(originalContents)));
+      expect(outputFile.lengthSync(), greaterThan(originalContents.length));
+    });
+  }
+
+  test('writes a shared non-default timescale to VCD and FST', () async {
+    const timescale = WaveformTimeScale.oneNanosecond;
+    Directory(_tempDumpDir).createSync(recursive: true);
+    final vcdFile = File(_temporaryVcdPath('timescale'));
+    final fstFile = File(_temporaryFstPath('timescale'));
+    addTearDown(() {
+      for (final outputFile in [vcdFile, fstFile]) {
+        if (outputFile.existsSync()) {
+          outputFile.deleteSync();
+        }
+      }
+    });
+
+    final vcdService = await _captureWaveformWithTimescale(
+      vcdFile.path,
+      WaveOutputFormat.vcd,
+      timescale,
+    );
+    final vcdMetadata = vcdService.toJson();
+    final vcdWriterMetadata = vcdMetadata['writer']! as Map<String, Object?>;
+    final vcdContents = vcdFile.readAsStringSync();
+    expect(vcdService.timescale, same(timescale));
+    expect(vcdMetadata['timescale'], equals(timescale.vcdValue));
+    expect(vcdWriterMetadata['timescale'], equals(timescale.vcdValue));
+    expect(vcdContents, contains(r'$timescale 1ns $end'));
+    expect(
+      VcdParser.confirmValue(vcdContents, 'a', 100, LogicValue.one),
+      isTrue,
+    );
+
+    await Simulator.reset();
+    ModuleServices.instance.reset();
+
+    final fstService = await _captureWaveformWithTimescale(
+      fstFile.path,
+      WaveOutputFormat.fst,
+      timescale,
+    );
+    final fstMetadata = fstService.toJson();
+    final fstWriterMetadata = fstMetadata['writer']! as Map<String, Object?>;
+    final fstEvents = _readFstEvents(
+      fstFile.path,
+      signalNames: const ['a', 'b'],
+      signalWidths: const [1, 1],
+    );
+    expect(fstService.timescale, same(timescale));
+    expect(fstMetadata['timescale'], equals(timescale.vcdValue));
+    expect(fstWriterMetadata['timescale'], equals(timescale.vcdValue));
+    expect(
+      fstWriterMetadata['maxChangesPerBlock'],
+      equals(FstWriterConfig.defaultMaxChangesPerBlock),
+    );
+    expect(
+      _readFstTimescaleExponent(fstFile.readAsBytesSync()),
+      equals(timescale.exponent),
+    );
+    expect(fstEvents['a']![100], equals('1'));
+  });
+
   test('FST converted to VCD preserves values and window snapshots', () async {
     final a = Logic(name: 'a');
     final mod = _SimpleWaveModule(a);
@@ -291,6 +414,28 @@ void main() {
     File(vcdPath).deleteSync();
     File(fstPath).deleteSync();
   });
+}
+
+Future<WaveformService> _captureWaveformWithTimescale(
+  String outputPath,
+  WaveOutputFormat format,
+  WaveformTimeScale timescale,
+) async {
+  final a = Logic(name: 'a');
+  final mod = _SimpleWaveModule(a);
+  await mod.build();
+  a.put(0);
+
+  final service = WaveformService.fromOutputPath(
+    mod,
+    outputPath: outputPath,
+    format: format,
+    timescale: timescale,
+    register: false,
+  );
+  Simulator.registerAction(100, () => a.put(1));
+  await Simulator.run();
+  return service;
 }
 
 Future<void> _dumpParityWaveform(
