@@ -55,7 +55,7 @@ class SystemVerilogSynthSubModuleInstantiation
   /// Replaces references to signals that were lowered after normal synthesis.
   void replaceMappedSignals(Map<SynthLogic, SynthLogic> replacements) {
     SynthLogic replacementFor(SynthLogic signal) =>
-        replacements[signal.resolved] ?? signal;
+        signal.replaceReferences(replacements);
 
     for (final entry in inputMapping.entries.toList()) {
       final replacement = replacementFor(entry.value);

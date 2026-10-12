@@ -102,8 +102,8 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
     SynthAssignment assignment,
     Map<SynthLogic, SynthLogic> replacements,
   ) {
-    final source = replacements[assignment.src.resolved] ?? assignment.src;
-    final destination = replacements[assignment.dst.resolved] ?? assignment.dst;
+    final source = assignment.src.replaceReferences(replacements);
+    final destination = assignment.dst.replaceReferences(replacements);
     if (identical(source, assignment.src) &&
         identical(destination, assignment.dst)) {
       return assignment;

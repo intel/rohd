@@ -41,6 +41,43 @@ class SynthLogic {
   /// Returns `this` if there is no [replacement].
   SynthLogic get resolved => replacement ?? this;
 
+  /// Rewrites use-local references, including nested packed connection views.
+  ///
+  /// Unchanged references retain their identity. Neither the original views
+  /// nor their signals' [replacement] links are modified.
+  SynthLogic replaceReferences(Map<SynthLogic, SynthLogic> replacements) {
+    final signal = resolved;
+    final replacement = replacements[signal];
+    if (replacement != null) {
+      return replacement;
+    }
+
+    if (signal is SynthLogicConcat) {
+      final parts = signal.parts
+          .map((part) => part.replaceReferences(replacements))
+          .toList(growable: false);
+      if (!const ListEquality<SynthLogic>().equals(parts, signal.parts)) {
+        return SynthLogicConcat(parts,
+            parentSynthModuleDefinition: signal.parentSynthModuleDefinition);
+      }
+    } else if (signal is SynthLogicPackedBitReference) {
+      final base = signal.packedBase.replaceReferences(replacements);
+      if (!identical(base, signal.packedBase)) {
+        return SynthLogicPackedBitReference(base, signal.bitIndex,
+            parentSynthModuleDefinition: signal.parentSynthModuleDefinition);
+      }
+    } else if (signal is SynthLogicPackedRangeReference) {
+      final base = signal.packedBase.replaceReferences(replacements);
+      if (!identical(base, signal.packedBase)) {
+        return SynthLogicPackedRangeReference(
+            base, signal.lowerIndex, signal.upperIndex,
+            parentSynthModuleDefinition: signal.parentSynthModuleDefinition);
+      }
+    }
+
+    return this;
+  }
+
   /// The parent [SynthModuleDefinition] that this [SynthLogic] belongs to.
   final SynthModuleDefinition parentSynthModuleDefinition;
 

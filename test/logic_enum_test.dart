@@ -522,6 +522,38 @@ class TypedEnumRangeDestinationModule extends Module {
   }
 }
 
+class PackedEnumBoundaryChild extends Module with SystemVerilog {
+  Logic get result => output('result');
+
+  PackedEnumBoundaryChild(Logic source) {
+    source = addInput('source', source, width: source.width);
+    addOutput('result', width: source.width) <= source;
+  }
+
+  @override
+  String? definitionVerilog(String definitionType) => null;
+}
+
+class TypedEnumSplitOutputModule extends Module {
+  TypedEnumSplitOutputModule(Logic source) {
+    source = addInput('source', source, width: 4);
+    final child = PackedEnumBoundaryChild(source);
+    addTypedOutput('stateOut', MyListLogicEnum().clone) <=
+        child.result.getRange(0, 2);
+    addOutput('other', width: 2) <= child.result.getRange(2, 4);
+  }
+}
+
+class TypedEnumSliceInputModule extends Module {
+  TypedEnumSliceInputModule(LogicEnum<TestEnum> source) {
+    final stateIn = addTypedInput('stateIn', source);
+    final packedValue = Logic(width: 3)
+      ..assignSubset([stateIn[3], ...stateIn.getRange(1, 3).elements]);
+    final child = PackedEnumBoundaryChild(packedValue);
+    addOutput('result', width: 3) <= child.result;
+  }
+}
+
 class TypedEnumHierarchyModule extends Module {
   late final TypedEnumPortsModule child;
 
@@ -1189,6 +1221,47 @@ void main() {
     await Simulator.run();
 
     expect(logicEnum.valueEnum, TestEnum.c);
+  });
+
+  test('connection reference replacement preserves nested views', () async {
+    final module = EmptyModule();
+    await module.build();
+    final definition = SynthModuleDefinition(module);
+    SynthLogic synth(int width) => SynthLogic(Logic(width: width),
+        parentSynthModuleDefinition: definition);
+    final source = synth(4);
+    final alias = synth(4)..replacement = source;
+    final backing = synth(4);
+    final untouched = synth(1);
+    final range = SynthLogicPackedRangeReference(alias, 1, 2,
+        parentSynthModuleDefinition: definition);
+    final bit = SynthLogicPackedBitReference(source, 3,
+        parentSynthModuleDefinition: definition);
+    final nested = SynthLogicConcat([bit, untouched],
+        parentSynthModuleDefinition: definition);
+    final view = SynthLogicConcat([range, nested],
+        parentSynthModuleDefinition: definition);
+
+    expect(view.replaceReferences({}), same(view));
+    final rewritten =
+        view.replaceReferences({source: backing}) as SynthLogicConcat;
+    final rewrittenRange = rewritten.parts[0] as SynthLogicPackedRangeReference;
+    final rewrittenNested = rewritten.parts[1] as SynthLogicConcat;
+    final rewrittenBit =
+        rewrittenNested.parts[0] as SynthLogicPackedBitReference;
+
+    expect(rewritten.width, view.width);
+    expect(rewrittenRange.packedBase, same(backing));
+    expect(rewrittenRange.lowerIndex, 1);
+    expect(rewrittenRange.upperIndex, 2);
+    expect(rewrittenBit.packedBase, same(backing));
+    expect(rewrittenBit.bitIndex, 3);
+    expect(rewrittenNested.parts[1], same(untouched));
+    expect(view.parts, [range, nested]);
+    expect(range.packedBase, same(alias));
+    expect(bit.packedBase, same(source));
+    expect(alias.resolved, same(source));
+    expect(source.replacement, isNull);
   });
 
   test('synthesis merge policy preserves compatible enum metadata', () async {
@@ -2062,6 +2135,41 @@ void main() {
       final untypedSv = module.dumpSystemVerilog(configuration: configuration);
       expect(untypedSv, contains('assign stateOut = source;'));
       expect(untypedSv, isNot(contains('stateOut_enum')));
+    });
+
+    test('typed enum output survives child output concatenation', () async {
+      final module = TypedEnumSplitOutputModule(Logic(width: 4));
+      final vectors = [
+        Vector({'source': 0}, {'stateOut': 0, 'other': 0}),
+        Vector({'source': 5}, {'stateOut': 1, 'other': 1}),
+        Vector({'source': 10}, {'stateOut': 2, 'other': 2}),
+        Vector({'source': 9}, {'stateOut': 1, 'other': 2}),
+      ];
+      await checkEnumModeParity(module, vectors);
+
+      final sv = module.dumpSystemVerilog();
+      expect(sv, contains('.result({other,stateOut_enum})'));
+      expect(sv, contains('assign stateOut = stateOut_enum;'));
+      SimCompare.checkVerilatorVector(module, const [], buildOnly: true);
+    });
+
+    test('typed enum input survives packed connection selections', () async {
+      final source = LogicEnum<TestEnum>.withMapping({
+        TestEnum.a: 0,
+        TestEnum.b: 10,
+        TestEnum.c: 5,
+      });
+      final module = TypedEnumSliceInputModule(source);
+      final vectors = [
+        Vector({'stateIn': 0}, {'result': 0}),
+        Vector({'stateIn': 10}, {'result': 3}),
+        Vector({'stateIn': 5}, {'result': 4}),
+      ];
+      await checkEnumModeParity(module, vectors);
+
+      final sv = module.dumpSystemVerilog();
+      expect(sv, contains('stateIn_enum[2:1]'));
+      expect(sv, contains('stateIn_enum[3]'));
     });
 
     test('typed enum ports preserve widening across hierarchy in both modes',
