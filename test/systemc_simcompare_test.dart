@@ -7,6 +7,9 @@
 // 2026 May
 // Author: Desmond A. Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
+@TestOn('vm')
+library;
+
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
