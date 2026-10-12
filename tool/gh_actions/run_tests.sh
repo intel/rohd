@@ -22,6 +22,7 @@ fi
 
 if [[ "$platform" != node ]]; then
 	dart test --preset no-ffi
+	dart test test/systemc_ffi_cosim_test.dart
 fi
 
 if [[ "$platform" != vm ]]; then

@@ -398,15 +398,6 @@ class SystemCSynthesisResult extends SynthesisResult {
   // Inline gate expressions
   // ────────────────────────────────────────────────────────────────────
 
-  /// Returns true if a module is a SystemVerilog gate that generates no
-  /// definition and should be inlined (like Add).
-  static bool _isInlinableSystemVerilogGate(Module m) =>
-      m is SystemVerilog &&
-      m is! InlineSystemVerilog &&
-      m is! Always &&
-      m is! FlipFlop &&
-      m.generatedDefinitionType == DefinitionGenerationType.none;
-
   /// Converts a [SynthLogic] to a SystemC read expression.
   /// Constants become typed literals; signals get `.read()`.
   /// Array elements become range expressions on their parent.
@@ -499,8 +490,8 @@ class SystemCSynthesisResult extends SynthesisResult {
         .where(
           (s) =>
               s.needsInstantiation &&
-              (s.module is InlineSystemVerilog ||
-                  _isInlinableSystemVerilogGate(s.module)),
+              (s.module is InlineSystemVerilog || s.module is Add) &&
+              isSystemCHandledInlineModule(s.module),
         )
         .cast<SystemCSynthSubModuleInstantiation>()
         .toList();
@@ -784,8 +775,11 @@ class SystemCSynthesisResult extends SynthesisResult {
       return '(${exprList.reversed.join(', ')})';
     }
 
-    // Fallback: use SV inline (may not be valid C++ — flag for review)
-    return '/* TODO: ${m.runtimeType} */ ${m.inlineVerilog(inputs)}';
+    throw UnsupportedSystemCModuleException(
+      m,
+      systemCUnsupportedReason(m) ??
+          'the inline module has no built-in SystemC expression translation',
+    );
   }
 
   // ────────────────────────────────────────────────────────────────────
@@ -837,9 +831,8 @@ class SystemCSynthesisResult extends SynthesisResult {
     final bodyBuf = StringBuffer();
     var idx = 0;
 
-    // Collect clocked processes for consolidation by (clock, reset) pair.
-    // Sequentials and FlipFlops sharing the same clock/reset are merged
-    // into a single SC_CTHREAD, eliminating repeated async_reset_signal_is.
+    // Collect clocked processes for consolidation by compatible clock, reset,
+    // and reset-mode tuples.
     final clockedGroups = <String, _ClockedGroupData>{};
 
     for (final ssmi
@@ -944,11 +937,14 @@ class SystemCSynthesisResult extends SynthesisResult {
           }
         }
 
-        // Build group key from all trigger signals + reset
+        // Synchronous and asynchronous reset members must remain separate:
+        // async_reset_signal_is applies to every assignment in an SC_CTHREAD.
         final triggerKey = uniqueTriggers
             .map((t) => '${t.signalName}:${t.isPosedge}')
             .join(',');
-        final groupKey = '$triggerKey|${resetEntry?.value.name ?? '_none_'}';
+        final groupKey = '$triggerKey|'
+            '${resetEntry?.value.name ?? '_none_'}|'
+            '${isAsync ? 'async' : 'sync'}';
         final group = clockedGroups.putIfAbsent(
           groupKey,
           () => _ClockedGroupData(
@@ -1007,8 +1003,9 @@ class SystemCSynthesisResult extends SynthesisResult {
             .firstOrNull;
         final qSl = ssmi.outputMapping.values.first;
 
-        final groupKey =
-            '${clkSl.name}:true|${resetEntry?.value.name ?? '_none_'}';
+        final groupKey = '${clkSl.name}:true|'
+            '${resetEntry?.value.name ?? '_none_'}|'
+            '${m.asyncReset ? 'async' : 'sync'}';
         final group = clockedGroups.putIfAbsent(
           groupKey,
           () => _ClockedGroupData(
@@ -1166,11 +1163,10 @@ class SystemCSynthesisResult extends SynthesisResult {
   /// instantiation) — i.e. it is an inline gate, Always, FlipFlop, or clock.
   static bool _isHandledInline(SystemCSynthSubModuleInstantiation ssmi) =>
       !ssmi.needsInstantiation ||
-      ssmi.module is InlineSystemVerilog ||
       ssmi.module is Always ||
       ssmi.module is FlipFlop ||
       ssmi.module is SimpleClockGenerator ||
-      _isInlinableSystemVerilogGate(ssmi.module);
+      isSystemCHandledInlineModule(ssmi.module);
 
   String _buildSubModuleMembers(
     String Function(Module module) getInstanceTypeOfModule,
@@ -1182,6 +1178,18 @@ class SystemCSynthesisResult extends SynthesisResult {
         continue;
       }
       final instanceType = getInstanceTypeOfModule(ssmi.module);
+      final unsupportedReason = systemCUnsupportedReason(ssmi.module);
+      if (unsupportedReason != null) {
+        lines
+          ..add(
+            '  // WARNING: ${ssmi.name} omits unsupported '
+            'SystemC behavior: $unsupportedReason.',
+          )
+          ..add(
+            '  // TODO: Replace this empty stub with a SystemC '
+            'implementation before relying on its behavior.',
+          );
+      }
       lines.add('  $instanceType ${ssmi.name}{"${ssmi.name}"};');
     }
     return lines.join('\n');
@@ -1817,4 +1825,74 @@ class _ClockedGroupData {
   final List<String> resetLines = [];
   final List<String> whileBodyLines = [];
   _ClockedGroupData({this.resetName, this.isAsyncReset = false});
+}
+
+/// A port-compatible SystemC definition that intentionally omits behavior.
+class SystemCStubSynthesisResult extends SynthesisResult {
+  /// Why the module behavior was omitted.
+  final String reason;
+
+  late final String _portsString = _buildPorts();
+
+  /// Creates an empty SystemC stub synthesis result.
+  SystemCStubSynthesisResult(
+    super.module,
+    super.getInstanceTypeOfModule, {
+    required this.reason,
+  });
+
+  String _buildPorts() {
+    final lines = <String>[];
+    for (final entry in module.inputs.entries) {
+      lines.add(
+        '  ${SystemCSynthesisResult.systemCInType(entry.value.width)} '
+        '${entry.key}{"${entry.key}"};',
+      );
+    }
+    for (final entry in module.outputs.entries) {
+      lines.add(
+        '  ${SystemCSynthesisResult.systemCOutType(entry.value.width)} '
+        '${entry.key}{"${entry.key}"};',
+      );
+    }
+    for (final entry in module.inOuts.entries) {
+      lines.add(
+        '  ${SystemCSynthesisResult.systemCInOutType(entry.value.width)} '
+        '${entry.key}{"${entry.key}"};',
+      );
+    }
+    return lines.join('\n');
+  }
+
+  @override
+  bool matchesImplementation(SynthesisResult other) =>
+      other is SystemCStubSynthesisResult &&
+      other._portsString == _portsString &&
+      other.reason == reason;
+
+  @override
+  int get matchHashCode => Object.hash(_portsString, reason);
+
+  @override
+  String toFileContents() {
+    final moduleName = getInstanceTypeOfModule(module);
+    return '// WARNING: Empty SystemC stub for ${module.runtimeType}; '
+        'behavior is omitted.\n'
+        '// Reason: $reason.\n'
+        '// TODO: Replace this stub with a supported SystemC implementation.\n'
+        'SC_MODULE($moduleName) {\n'
+        '${_portsString.isEmpty ? '' : '$_portsString\n'}'
+        '\n'
+        '  SC_CTOR($moduleName) {}\n'
+        '};\n';
+  }
+
+  @override
+  List<SynthFileContents> toSynthFileContents() => List.unmodifiable([
+        SynthFileContents(
+          name: instanceTypeName,
+          description: 'Empty SystemC stub for $instanceTypeName',
+          contents: toFileContents(),
+        ),
+      ]);
 }

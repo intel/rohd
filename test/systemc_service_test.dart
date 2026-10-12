@@ -10,6 +10,7 @@ library;
 import 'dart:io';
 
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
 
 class _Adder extends Module {
@@ -26,6 +27,24 @@ class _Top extends Module {
     b = addInput('b', b, width: 8);
     final adder = _Adder(a, b);
     addOutput('y', width: 8) <= adder.output('y');
+  }
+}
+
+class _ExternalLeaf extends ExternalSystemVerilogModule {
+  _ExternalLeaf(Logic dataIn, {required super.name})
+      : super(definitionName: 'ExternalLeaf') {
+    addInput('dataIn', dataIn, width: 8);
+    addOutput('dataOut', width: 8);
+  }
+}
+
+class _UnsupportedTop extends Module {
+  _UnsupportedTop() : super(name: 'unsupportedTop') {
+    final dataIn = addInput('dataIn', Logic(width: 8), width: 8);
+    final accepted = _ExternalLeaf(dataIn, name: 'accepted');
+    final rejected = _ExternalLeaf(dataIn, name: 'rejected');
+    addOutput('acceptedOutput', width: 8) <= accepted.output('dataOut');
+    addOutput('rejectedOutput', width: 8) <= rejected.output('dataOut');
   }
 }
 
@@ -116,4 +135,86 @@ void main() {
       }
     },
   );
+
+  test('unsupported SystemVerilog behavior is rejected by default', () async {
+    final top = _UnsupportedTop();
+    await top.build();
+
+    expect(
+      () => SystemCService(top, register: false),
+      throwsA(
+        isA<UnsupportedSystemCModuleException>()
+            .having(
+              (error) => error.module.runtimeType,
+              'module type',
+              _ExternalLeaf,
+            )
+            .having(
+              (error) => error.reason,
+              'reason',
+              contains('SystemVerilog'),
+            ),
+      ),
+    );
+  });
+
+  test('selective stubbing still rejects unselected instances', () async {
+    final top = _UnsupportedTop();
+    await top.build();
+
+    expect(
+      () => SystemCService(
+        top,
+        register: false,
+        configuration: SystemCSynthesizerConfiguration(
+          stubUnsupportedModule: (module, _) => module.name == 'accepted',
+        ),
+      ),
+      throwsA(
+        isA<UnsupportedSystemCModuleException>().having(
+          (error) => error.module.name,
+          'module instance',
+          'rejected',
+        ),
+      ),
+    );
+  });
+
+  test('blanket stubbing emits diagnostics and compilable definitions',
+      () async {
+    final top = _UnsupportedTop();
+    await top.build();
+    const configuration = SystemCSynthesizerConfiguration(
+      stubAllUnsupportedModules: true,
+    );
+
+    final sc = SystemCService(
+      top,
+      register: false,
+      configuration: configuration,
+    );
+
+    expect(sc.diagnostics, hasLength(2));
+    expect(
+      sc.diagnostics.map((diagnostic) => diagnostic.module.name),
+      unorderedEquals(['accepted', 'rejected']),
+    );
+    expect(sc.output, contains('WARNING: Empty SystemC stub'));
+    expect(sc.output, contains('TODO: Replace this stub'));
+    expect(sc.output, contains('SC_MODULE(ExternalLeaf)'));
+    expect(sc.output, contains('sc_in<sc_uint<8>> dataIn{"dataIn"};'));
+    expect(sc.output, contains('sc_out<sc_uint<8>> dataOut{"dataOut"};'));
+    expect(sc.output, contains('ExternalLeaf accepted{"accepted"};'));
+    expect(sc.output, contains('accepted.dataIn(dataIn);'));
+    expect(sc.output, contains('accepted.dataOut('));
+
+    expect(
+      SimCompare.checkSystemCVector(
+        top,
+        const [],
+        synthesizerConfiguration: configuration,
+      ),
+      isTrue,
+    );
+  });
 }

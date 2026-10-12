@@ -5,7 +5,10 @@ last_modified_at: 2026-10-12
 toc: true
 ---
 
-Hardware in ROHD is convertible to an output format via `Synthesizer`s. The most popular output format is SystemVerilog, with SystemC also available. Hardware in ROHD can be converted to logically equivalent, human-readable SystemVerilog or SystemC with structure, hierarchy, ports, and names maintained.
+Hardware in ROHD is convertible to an output format via `Synthesizer`s. The
+most popular output format is SystemVerilog, with SystemC also available.
+Generated output is human-readable and maintains structure, hierarchy, ports,
+and names where the target representation supports the source semantics.
 
 The simplest way to generate SystemVerilog text is with
 `dumpSystemVerilog` on `Module`:
@@ -89,23 +92,37 @@ the complete synthesized hierarchy. Each module entry contains `attributes`,
 
 ## SystemC generation
 
-ROHD can also generate SystemC (C++ with the SystemC library) from the same hardware description. Use the `generateSystemC` helper method:
+ROHD can also generate SystemC (C++ with the SystemC library) from the same
+hardware description. Use `SystemCService` directly for one-shot generation:
 
 ```dart
 void main() async {
     final myModule = MyModule();
     await myModule.build();
 
-    final generatedSc = myModule.generateSystemC();
+    final generatedSc =
+        SystemCService(myModule, register: false).output;
 
     // write it to a file
     File('myHardware.h').writeAsStringSync(generatedSc);
 }
 ```
 
-The generated SystemC uses `SC_MODULE`, `SC_METHOD`, and `SC_CTHREAD` constructs. Combinational logic becomes `SC_METHOD` processes, sequential logic (flip-flops and `Sequential` blocks) sharing the same clock and reset are consolidated into a single `SC_CTHREAD`, and sub-modules are instantiated with port bindings. All signal types map to SystemC equivalents (`bool`, `sc_uint<N>`, `sc_biguint<N>`).
+The generated SystemC uses `SC_MODULE`, `SC_METHOD`, and `SC_CTHREAD`
+constructs. Combinational logic becomes `SC_METHOD` processes, compatible
+sequential logic (flip-flops and `Sequential` blocks sharing the same clock,
+reset, and reset mode) is consolidated into an `SC_CTHREAD`, and sub-modules
+are instantiated with port bindings.
 
-For more control over SystemC generation, use `SynthBuilder` with `SystemCSynthesizer()` directly.
+ROHD's emitted SystemC representation uses two-state `bool`, `sc_uint<N>`, and
+`sc_biguint<N>` types and does not preserve X/Z semantics. If any bit of a
+constant contains X or Z, the entire emitted constant becomes zero. This is a
+limitation of ROHD's emitted two-state representation, not of SystemC
+generally, so logical equivalence is limited to two-state behavior.
+
+`SystemCService` also provides per-module output, file writing, diagnostics,
+and configuration for explicitly permitted unsupported-module stubs. For
+lower-level control, use `SynthBuilder` with `SystemCSynthesizer()` directly.
 
 ## Controlling port types
 

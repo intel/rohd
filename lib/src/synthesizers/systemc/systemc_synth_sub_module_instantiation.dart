@@ -79,13 +79,13 @@ class SystemCSynthSubModuleInstantiation extends SynthSubModuleInstantiation {
       final d0 = entries[1].value;
       final d1 = entries[2].value;
       return '$control ? $d1 : $d0';
-    } else if (m is InlineSystemVerilog) {
-      // Fallback: use the verilog inline expression as a reasonable
-      // approximation (many operators are identical between SV and C++)
-      return m.inlineVerilog(inputs);
     }
 
-    throw SynthException('Unsupported inline module type: ${m.runtimeType}');
+    throw UnsupportedSystemCModuleException(
+      m,
+      systemCUnsupportedReason(m) ??
+          'the inline module has no built-in SystemC expression translation',
+    );
   }
 
   /// Provides the full SystemC instantiation for this module as a member

@@ -91,6 +91,7 @@ cp "$REPO_ROOT/tool/gh_actions/run_tests.sh" "$FIXTURE/tool/gh_actions/"
 printf '%s\n' '#!/bin/bash' \
   'printf "dart %s NODE_OPTIONS=%s\n" "$*" "${NODE_OPTIONS:-unset}" >> "$CHECK_LOG"' \
   'if [[ "$*" == "test --platform node --preset no-ffi" ]]; then exit "${NODE_STATUS:-0}"; fi' \
+  'if [[ "$*" == "test test/systemc_ffi_cosim_test.dart" ]]; then exit "${FFI_STATUS:-0}"; fi' \
   'exit "${VM_STATUS:-0}"' > "$FIXTURE/bin/dart"
 chmod +x "$FIXTURE/bin/dart"
 
@@ -109,6 +110,7 @@ run_tests_case() {
 }
 
 readonly VM_CALL='dart test --preset no-ffi NODE_OPTIONS=existing'
+readonly FFI_CALL='dart test test/systemc_ffi_cosim_test.dart NODE_OPTIONS=existing'
 readonly NODE_CALL='dart test --platform node --preset no-ffi NODE_OPTIONS=--max-old-space-size=8192'
 for platform in '' all vm node; do
   if [[ -z "$platform" ]]; then
@@ -117,9 +119,9 @@ for platform in '' all vm node; do
     run_tests_case 0 "$platform"
   fi
   case "$platform" in
-    vm) [[ "$(cat "$CHECK_LOG")" == "$VM_CALL" ]] ;;
+    vm) [[ "$(cat "$CHECK_LOG")" == "$VM_CALL"$'\n'"$FFI_CALL" ]] ;;
     node) [[ "$(cat "$CHECK_LOG")" == "$NODE_CALL" ]] ;;
-    *) [[ "$(cat "$CHECK_LOG")" == "$VM_CALL"$'\n'"$NODE_CALL" ]] ;;
+    *) [[ "$(cat "$CHECK_LOG")" == "$VM_CALL"$'\n'"$FFI_CALL"$'\n'"$NODE_CALL" ]] ;;
   esac
 done
 
@@ -135,11 +137,18 @@ run_tests_case 71
 run_tests_case 0 node
 unset VM_STATUS
 
+export FFI_STATUS=73
+run_tests_case 73 vm
+run_tests_case 73
+[[ "$(cat "$CHECK_LOG")" == "$VM_CALL"$'\n'"$FFI_CALL" ]]
+run_tests_case 0 node
+unset FFI_STATUS
+
 export NODE_STATUS=72
 run_tests_case 72 node
 run_tests_case 72
-[[ "$(cat "$CHECK_LOG")" == "$VM_CALL"$'\n'"$NODE_CALL" ]]
+[[ "$(cat "$CHECK_LOG")" == "$VM_CALL"$'\n'"$FFI_CALL"$'\n'"$NODE_CALL" ]]
 run_tests_case 0 vm
 unset NODE_STATUS
 
-echo '12 test-platform cases passed using isolated stubs.'
+echo '15 test-platform cases passed using isolated stubs.'

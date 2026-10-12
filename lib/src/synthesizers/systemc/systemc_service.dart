@@ -19,8 +19,12 @@ import 'package:rohd/src/utilities/timestamper.dart';
 /// A service that wraps SystemC synthesis of a [Module] hierarchy.
 ///
 /// Provides access to the generated SystemC file contents and per-module
-/// synthesis results. Mirrors the SystemVerilog service shape, but for SystemC
-/// output.
+/// synthesis results.
+///
+/// ROHD's emitted SystemC representation uses two-state `bool`, `sc_uint`, and
+/// `sc_biguint` types. It does not preserve X/Z semantics. When any bit of a
+/// constant is X or Z, the emitted value for the entire constant is zero.
+/// This is a limitation of ROHD's emitted representation, not SystemC itself.
 class SystemCService extends CodeGenService {
   /// The most recently registered [SystemCService], or `null`.
   static SystemCService? current;
@@ -33,6 +37,12 @@ class SystemCService extends CodeGenService {
   /// Whether [write] emits one `.sc` file per module definition (`true`) or a
   /// single concatenated file (`false`). Defaults to `true` for SystemC.
   final bool multiFile;
+
+  /// Configuration controlling unsupported SystemC functionality.
+  final SystemCSynthesizerConfiguration configuration;
+
+  /// The synthesizer used by this service.
+  late final SystemCSynthesizer systemCSynthesizer;
 
   /// The underlying [SynthBuilder] that drove synthesis.
   late final SynthBuilder synthBuilder;
@@ -54,6 +64,7 @@ class SystemCService extends CodeGenService {
     super.outputDirectory,
     super.outputBaseName,
     this.multiFile = true,
+    this.configuration = const SystemCSynthesizerConfiguration(),
   }) : super(module) {
     if (!module.hasBuilt) {
       throw Exception(
@@ -61,7 +72,8 @@ class SystemCService extends CodeGenService {
         'Call build() first.',
       );
     }
-    synthBuilder = SynthBuilder(module, SystemCSynthesizer());
+    systemCSynthesizer = SystemCSynthesizer(configuration: configuration);
+    synthBuilder = SynthBuilder(module, systemCSynthesizer);
     fileContents = synthBuilder.getSynthFileContents();
 
     if (outputPath != null) {
@@ -97,6 +109,10 @@ class SystemCService extends CodeGenService {
   /// [SystemCSynthesisResult]).
   Iterable<SystemCSynthesisResult> get systemCResults =>
       synthBuilder.synthesisResults.whereType<SystemCSynthesisResult>();
+
+  /// Unsupported module instances whose behavior was emitted as empty stubs.
+  List<SystemCGenerationDiagnostic> get diagnostics =>
+      List.unmodifiable(systemCSynthesizer.diagnostics);
 
   /// Map from module definition name to the list of generated SC files
   /// for that module (typically one element today; future-proof for
@@ -147,8 +163,7 @@ class SystemCService extends CodeGenService {
       '#include <systemc.h>\n'
       '\n';
 
-  /// The full single-file SystemC output with header, matching the legacy
-  /// `Module.generateSystemC()` format.
+  /// The full single-file SystemC output with its generation header.
   ///
   /// Computed once and cached so the timestamped header is stable for the
   /// lifetime of this service.

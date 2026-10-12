@@ -17,6 +17,7 @@ import 'package:rohd/src/synthesizers/systemc/systemc_synthesis_result.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:rohd/src/utilities/synchronous_propagator.dart';
 import 'package:rohd/src/utilities/web.dart';
+import 'package:test/test.dart';
 
 // ============================================================================
 // FFI Type Definitions (using only dart:ffi built-in types)
@@ -56,8 +57,7 @@ typedef _AdvanceDart = void Function(Pointer<Void>, int);
 ///
 /// ## How it works
 ///
-/// 1. The ROHD module is synthesized to SystemC C++ via
-///    [Module.generateSystemC]
+/// 1. The ROHD module is synthesized to SystemC C++ via [SystemCService]
 /// 2. A C-linkage FFI wrapper is generated around the SystemC module
 /// 3. The wrapper is compiled to a `.so` shared library
 /// 4. On each [Simulator] tick (at the `clkStable` phase):
@@ -201,7 +201,10 @@ class SystemCFfiCosim {
   /// Compiles the module's SystemC output to a shared library, loads it,
   /// and begins co-simulation.
   ///
-  /// Returns `null` when SystemC is unavailable on this platform.
+  /// Returns `null` and calls [onSkip] when SystemC is optional and
+  /// unavailable.
+  /// If [requireTool] is true, or `ROHD_REQUIRE_SYSTEMC=1`, unavailability
+  /// fails the current test instead.
   ///
   /// Throws a [ProcessException] if compiling the generated wrapper fails, or a
   /// [StateError] if its native SystemC context cannot be created.
@@ -219,8 +222,11 @@ class SystemCFfiCosim {
     int clockPeriodNs = 10,
     String? systemcHome,
     String? systemcLib,
+    bool? requireTool,
+    void Function(String) onSkip = markTestSkipped,
   }) async {
     if (kIsWeb) {
+      onSkip('SystemC FFI co-simulation requires the Dart VM.');
       return null;
     }
 
@@ -230,6 +236,10 @@ class SystemCFfiCosim {
       systemcHome: systemcHome ?? '',
       systemcLib: systemcLib ?? '',
     )) {
+      _reportSystemCUnavailable(
+        requireTool: requireTool,
+        onSkip: onSkip,
+      );
       return null;
     }
 
@@ -246,7 +256,9 @@ class SystemCFfiCosim {
   /// instantiated during the elaboration phase (before `sc_start`), which
   /// avoids E113 errors when multiple configurations are tested.
   ///
-  /// Returns `false` when SystemC is unavailable on this platform.
+  /// Returns `false` and calls [onSkip] when SystemC is optional and
+  /// unavailable. If [requireTool] is true, or `ROHD_REQUIRE_SYSTEMC=1`,
+  /// unavailability fails the current test instead.
   ///
   /// Throws a [ProcessException] if compiling the generated wrapper fails, or a
   /// [StateError] if its native SystemC context cannot be created.
@@ -256,17 +268,42 @@ class SystemCFfiCosim {
     int clockPeriodNs = 10,
     String? systemcHome,
     String? systemcLib,
+    bool? requireTool,
+    void Function(String) onSkip = markTestSkipped,
   }) async {
     if (kIsWeb) {
+      onSkip('SystemC FFI co-simulation requires the Dart VM.');
       return false;
     }
 
     final cosim = SystemCFfiCosim._(module, clk, clockPeriodNs: clockPeriodNs);
 
-    return cosim._compileAndLoad(
+    final loaded = cosim._compileAndLoad(
       systemcHome: systemcHome ?? '',
       systemcLib: systemcLib ?? '',
     );
+    if (!loaded) {
+      _reportSystemCUnavailable(
+        requireTool: requireTool,
+        onSkip: onSkip,
+      );
+    }
+    return loaded;
+  }
+
+  static void _reportSystemCUnavailable({
+    required bool? requireTool,
+    required void Function(String) onSkip,
+  }) {
+    const message = 'SystemC headers and library were not found. Install '
+        'SystemC or pass valid systemcHome and systemcLib paths to run '
+        'SystemC FFI co-simulation.';
+    final required =
+        requireTool ?? Platform.environment['ROHD_REQUIRE_SYSTEMC'] == '1';
+    if (required) {
+      fail(message);
+    }
+    onSkip(message);
   }
 
   /// Compiles the SystemC wrapper to .so and loads it.
@@ -297,7 +334,7 @@ class SystemCFfiCosim {
     }
 
     // Generate wrapper C++ source
-    final generatedSC = module.generateSystemC();
+    final generatedSC = SystemCService(module, register: false).output;
 
     // Compute a content hash to distinguish modules with the same
     // definitionName but different logic (e.g., DAZ/FTZ variants).
@@ -959,8 +996,8 @@ class SystemCFfiCosim {
   static const _packageLib = '/usr/lib/x86_64-linux-gnu';
 
   static String? _resolveHome(String scHome) {
-    if (scHome.isNotEmpty && Directory(scHome).existsSync()) {
-      return scHome;
+    if (scHome.isNotEmpty) {
+      return Directory(scHome).existsSync() ? scHome : null;
     }
     for (final home in [_defaultHome, _packageHome]) {
       if (Directory(home).existsSync()) {
@@ -971,8 +1008,8 @@ class SystemCFfiCosim {
   }
 
   static String? _resolveLib(String scLib) {
-    if (scLib.isNotEmpty && Directory(scLib).existsSync()) {
-      return scLib;
+    if (scLib.isNotEmpty) {
+      return File('$scLib/libsystemc.so').existsSync() ? scLib : null;
     }
     for (final lib in [_defaultLib, _packageLib]) {
       if (File('$lib/libsystemc.so').existsSync()) {

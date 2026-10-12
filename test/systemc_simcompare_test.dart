@@ -68,6 +68,31 @@ class FlopEnModule extends Module {
   }
 }
 
+/// Flops and Sequential blocks sharing signals but using different reset modes.
+class MixedResetModesModule extends Module {
+  MixedResetModesModule(Logic clk, Logic reset, Logic d)
+      : super(name: 'MixedResetModesModule') {
+    clk = addInput('clk', clk);
+    reset = addInput('reset', reset);
+    d = addInput('d', d, width: 8);
+
+    addOutput('syncQ', width: 8) <= flop(clk, d, reset: reset);
+    addOutput('asyncQ', width: 8) <=
+        flop(clk, d, reset: reset, asyncReset: true);
+
+    final syncSequential = Logic(width: 8);
+    final asyncSequential = Logic(width: 8);
+    Sequential(clk, reset: reset, [
+      syncSequential < d,
+    ]);
+    Sequential(clk, reset: reset, asyncReset: true, [
+      asyncSequential < d,
+    ]);
+    addOutput('syncSequential', width: 8) <= syncSequential;
+    addOutput('asyncSequential', width: 8) <= asyncSequential;
+  }
+}
+
 /// A chained combinational module for checking generated sensitivity lists.
 class ChainedGateModule extends Module {
   ChainedGateModule(Logic a, Logic b, Logic c)
@@ -173,11 +198,72 @@ void main() {
       SimCompare.checkSystemCVector(mod, vectors);
     });
 
+    test('mixed reset modes remain separate compiled processes', () async {
+      final clk = SimpleClockGenerator(10).clk;
+      final reset = Logic(name: 'reset');
+      final d = Logic(name: 'd', width: 8);
+      final mod = MixedResetModesModule(clk, reset, d);
+      await mod.build();
+
+      final vectors = [
+        Vector({
+          'd': 0,
+          'reset': 1
+        }, {
+          'syncQ': 0,
+          'asyncQ': 0,
+          'syncSequential': 0,
+          'asyncSequential': 0,
+        }),
+        Vector({
+          'd': 0x5a,
+          'reset': 0
+        }, {
+          'syncQ': 0,
+          'asyncQ': 0,
+          'syncSequential': 0,
+          'asyncSequential': 0,
+        }),
+        Vector({
+          'd': 0x5a,
+          'reset': 0
+        }, {
+          'syncQ': 0x5a,
+          'asyncQ': 0x5a,
+          'syncSequential': 0x5a,
+          'asyncSequential': 0x5a,
+        }),
+        // Reset is asserted after the previous rising edge. Async members
+        // reset before this check; synchronous members retain their values.
+        Vector({
+          'd': 0x5a,
+          'reset': 1
+        }, {
+          'syncQ': 0x5a,
+          'asyncQ': 0,
+          'syncSequential': 0x5a,
+          'asyncSequential': 0,
+        }),
+        // The next rising edge resets the synchronous members.
+        Vector({
+          'd': 0x5a,
+          'reset': 1
+        }, {
+          'syncQ': 0,
+          'asyncQ': 0,
+          'syncSequential': 0,
+          'asyncSequential': 0,
+        }),
+      ];
+
+      SimCompare.checkSystemCVector(mod, vectors);
+    });
+
     test('independent inline gates share a method', () async {
       final mod = GateModule(Logic(name: 'a'), Logic(name: 'b'));
       await mod.build();
 
-      final systemc = mod.generateSystemC();
+      final systemc = SystemCService(mod, register: false).output;
       final assignMethods =
           RegExp(r'SC_METHOD\(assign_\d+\);').allMatches(systemc).toList();
 
@@ -197,7 +283,7 @@ void main() {
       );
       await mod.build();
 
-      final systemc = mod.generateSystemC();
+      final systemc = SystemCService(mod, register: false).output;
       final sensitivityBlocks = RegExp(
         r'SC_METHOD\(assign_\d+\);\n((?:    sensitive << .+;\n)+)',
       ).allMatches(systemc).map((match) => match.group(1)!).toList();

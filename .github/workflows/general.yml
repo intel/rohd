@@ -74,6 +74,7 @@ jobs:
     permissions: {}
     env:
       ROHD_REQUIRE_VERILATOR: '1'
+      ROHD_REQUIRE_SYSTEMC: '1'
     timeout-minutes: 60
     runs-on: ${{ github.repository_owner == 'intel' && 'intel-ubuntu-latest' || 'ubuntu-latest' }}
     strategy:
@@ -143,7 +144,7 @@ jobs:
           push: never
           runCmd: |
             set -eu
-            ROHD_REQUIRE_VERILATOR=1 tool/gh_actions/run_tests.sh ${{ matrix.platform }}
+            ROHD_REQUIRE_VERILATOR=1 ROHD_REQUIRE_SYSTEMC=1 tool/gh_actions/run_tests.sh ${{ matrix.platform }}
             tool/gh_actions/cleanup_systemc_tmp.sh
             tool/gh_actions/check_tmp_test.sh
 

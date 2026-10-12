@@ -139,9 +139,7 @@ void main() {
     // into the Simulator's clkStable phase.
     final cosim = await SystemCFfiCosim.create(counter, clk: clk);
 
-    // SystemC is optional in local development environments.
     if (cosim == null) {
-      markTestSkipped('SystemC is unavailable on this platform.');
       return;
     }
 
@@ -241,7 +239,6 @@ void main() {
     final cosim = await SystemCFfiCosim.create(counter, clk: clk);
 
     if (cosim == null) {
-      markTestSkipped('SystemC is unavailable on this platform.');
       return;
     }
 
@@ -255,5 +252,46 @@ void main() {
     } finally {
       await cosim.dispose();
     }
+  });
+
+  test('optional missing SystemC reports an FFI skip', () async {
+    final counter = SimpleCounter(
+      SimpleClockGenerator(10).clk,
+      Logic(name: 'reset'),
+      Logic(name: 'en'),
+    );
+    await counter.build();
+    String? skipReason;
+
+    final cosim = await SystemCFfiCosim.create(
+      counter,
+      systemcHome: '/path/that/does/not/contain/systemc',
+      systemcLib: '/path/that/does/not/contain/libsystemc',
+      requireTool: false,
+      onSkip: (reason) => skipReason = reason,
+    );
+
+    expect(cosim, isNull);
+    expect(skipReason, contains('SystemC headers and library were not found'));
+  });
+
+  test('required missing SystemC fails FFI creation', () async {
+    final counter = SimpleCounter(
+      SimpleClockGenerator(10).clk,
+      Logic(name: 'reset'),
+      Logic(name: 'en'),
+    );
+    await counter.build();
+
+    await expectLater(
+      SystemCFfiCosim.create(
+        counter,
+        systemcHome: '/path/that/does/not/contain/systemc',
+        systemcLib: '/path/that/does/not/contain/libsystemc',
+        requireTool: true,
+        onSkip: (_) => fail('Required SystemC FFI must not be skipped.'),
+      ),
+      throwsA(isA<TestFailure>()),
+    );
   });
 }

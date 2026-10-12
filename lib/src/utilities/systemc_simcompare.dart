@@ -37,7 +37,11 @@ class _SystemCSimCompare {
   /// In CI, the PCH is pre-built by `tool/gh_actions/setup_systemc_pch.sh`
   /// before tests run, so this just finds it on disk. Locally it builds
   /// on first use (safe because local runs are typically sequential).
-  static String? _ensurePch(String scHome, String cxxStd) {
+  static String? _ensurePch(
+    String scHome,
+    String cxxStd, {
+    String cxxExecutable = 'g++',
+  }) {
     if (_pchPath != null) {
       return _pchPath;
     }
@@ -65,7 +69,7 @@ class _SystemCSimCompare {
       gchFile,
       '$scHome/systemc.h',
     ];
-    final result = Process.runSync('g++', args);
+    final result = Process.runSync(cxxExecutable, args);
     if (result.exitCode != 0) {
       print('PCH compilation failed (falling back to normal headers):');
       print(result.stderr);
@@ -95,6 +99,20 @@ class _SystemCSimCompare {
       }
     }
     return (null, null);
+  }
+
+  static bool _systemCIsRequired(bool? requireTool) =>
+      requireTool ?? Platform.environment['ROHD_REQUIRE_SYSTEMC'] == '1';
+
+  static void _reportSystemCUnavailable(
+    String message, {
+    required bool? requireTool,
+    required void Function(String) onSkip,
+  }) {
+    if (_systemCIsRequired(requireTool)) {
+      fail(message);
+    }
+    onSkip(message);
   }
 
   /// Detects the C++ standard the SystemC library was compiled with
@@ -170,8 +188,15 @@ class _SystemCSimCompare {
     String? resetName,
     String? systemcHome,
     String? systemcLib,
+    bool? requireTool,
+    void Function(String) onSkip = markTestSkipped,
+    String cxxExecutable = 'g++',
+    bool usePrecompiledHeader = true,
+    SystemCSynthesizerConfiguration synthesizerConfiguration =
+        const SystemCSynthesizerConfiguration(),
   }) {
     if (kIsWeb) {
+      onSkip('SystemC checks require the Dart VM.');
       return null;
     }
 
@@ -180,15 +205,30 @@ class _SystemCSimCompare {
     final (resolvedHome, resolvedLib) = _resolveSystemCPaths(scHome, scLib);
 
     if (resolvedHome == null || resolvedLib == null) {
-      print('SystemC installation not found');
+      _reportSystemCUnavailable(
+        'SystemC headers and library were not found. Install SystemC or pass '
+        'valid systemcHome and systemcLib paths to run SystemC checks.',
+        requireTool: requireTool,
+        onSkip: onSkip,
+      );
       return null;
     }
 
     final topModule = moduleName ?? module.definitionName;
-    final generatedSystemC = module.generateSystemC();
+    final generatedSystemC = SystemCService(
+      module,
+      register: false,
+      configuration: synthesizerConfiguration,
+    ).output;
 
     // Check compilation cache
-    final cacheKey = generatedSystemC.hashCode;
+    final cacheKey = Object.hash(
+      generatedSystemC,
+      resolvedHome,
+      resolvedLib,
+      cxxExecutable,
+      usePrecompiledHeader,
+    );
     if (_compilationCache.containsKey(cacheKey)) {
       final cached = _compilationCache[cacheKey]!;
       if (File(cached.binaryPath).existsSync()) {
@@ -429,10 +469,16 @@ int sc_main(int argc, char* argv[]) {
     final cxxStd = _detectCxxStandard(resolvedLib);
 
     // Build precompiled header on first use
-    final pchDir = _ensurePch(resolvedHome, cxxStd);
+    final pchDir = usePrecompiledHeader
+        ? _ensurePch(
+            resolvedHome,
+            cxxStd,
+            cxxExecutable: cxxExecutable,
+          )
+        : null;
     final pchArgs = pchDir != null ? ['-I$pchDir'] : <String>[];
 
-    final compileResult = Process.runSync('g++', [
+    final compileArgs = [
       '-std=$cxxStd',
       '-pipe',
       ...pchArgs,
@@ -442,13 +488,15 @@ int sc_main(int argc, char* argv[]) {
       tmpCppFile,
       '-L$resolvedLib',
       '-lsystemc',
-    ]);
-    if (compileResult.exitCode != 0) {
-      print('SystemC compilation failed:');
-      print(compileResult.stdout);
-      print(compileResult.stderr);
-      return null;
-    }
+    ];
+    final compileResult = Process.runSync(cxxExecutable, compileArgs);
+    expect(
+      compileResult.exitCode,
+      0,
+      reason: 'SystemC compilation failed with $cxxExecutable '
+          '${compileArgs.join(' ')}:\n'
+          '${compileResult.stdout}\n${compileResult.stderr}',
+    );
 
     final exe = SystemCVectorExecutable._(
       binaryPath: tmpOutput,
@@ -631,7 +679,7 @@ int sc_main(int argc, char* argv[]) {
 
   /// Executes [vectors] against a SystemC simulator compiled with g++ and
   /// checks that it passes (single-shot, compiles each time).
-  static void checkSystemCVector(
+  static bool checkSystemCVector(
     Module module,
     List<Vector> vectors, {
     String? moduleName,
@@ -641,11 +689,21 @@ int sc_main(int argc, char* argv[]) {
     String? systemcHome,
     String? systemcLib,
     bool buildOnly = false,
+    bool? requireTool,
+    void Function(String) onSkip = markTestSkipped,
+    String cxxExecutable = 'g++',
+    bool usePrecompiledHeader = true,
+    SystemCSynthesizerConfiguration synthesizerConfiguration =
+        const SystemCSynthesizerConfiguration(),
   }) {
     if (buildOnly) {
       // Just verify SystemC code generation succeeds
-      module.generateSystemC();
-      return;
+      SystemCService(
+        module,
+        register: false,
+        configuration: synthesizerConfiguration,
+      ).output;
+      return true;
     }
     final exe = buildSystemCVectorExecutable(
       module,
@@ -654,19 +712,26 @@ int sc_main(int argc, char* argv[]) {
       resetName: resetName,
       systemcHome: systemcHome,
       systemcLib: systemcLib,
+      requireTool: requireTool,
+      onSkip: onSkip,
+      cxxExecutable: cxxExecutable,
+      usePrecompiledHeader: usePrecompiledHeader,
+      synthesizerConfiguration: synthesizerConfiguration,
     );
     if (exe == null) {
-      // SystemC not available — skip gracefully.
-      return;
+      return false;
     }
-    final passed = runSystemCVectors(exe, vectors);
-    if (!dontDeleteTmpFiles) {
-      // Single-shot path: clean up this process's compiled artifacts now so
-      // tests that call checkSystemCVector do not require a tearDownAll.
-      // The PCH is kept to avoid rebuilding it for subsequent calls.
-      cleanupSystemCCache();
+    try {
+      expect(runSystemCVectors(exe, vectors), true);
+      return true;
+    } finally {
+      if (!dontDeleteTmpFiles) {
+        // Single-shot path: clean up this process's compiled artifacts now so
+        // tests that call checkSystemCVector do not require a tearDownAll.
+        // The PCH is kept to avoid rebuilding it for subsequent calls.
+        cleanupSystemCCache();
+      }
     }
-    expect(passed, true);
   }
 
   /// Legacy API — returns bool.
@@ -680,8 +745,19 @@ int sc_main(int argc, char* argv[]) {
     String? systemcHome,
     String? systemcLib,
     bool buildOnly = false,
+    bool? requireTool,
+    void Function(String) onSkip = markTestSkipped,
+    String cxxExecutable = 'g++',
+    bool usePrecompiledHeader = true,
+    SystemCSynthesizerConfiguration synthesizerConfiguration =
+        const SystemCSynthesizerConfiguration(),
   }) {
-    if (kIsWeb) {
+    if (buildOnly) {
+      SystemCService(
+        module,
+        register: false,
+        configuration: synthesizerConfiguration,
+      ).output;
       return true;
     }
     final exe = buildSystemCVectorExecutable(
@@ -691,12 +767,14 @@ int sc_main(int argc, char* argv[]) {
       resetName: resetName,
       systemcHome: systemcHome,
       systemcLib: systemcLib,
+      requireTool: requireTool,
+      onSkip: onSkip,
+      cxxExecutable: cxxExecutable,
+      usePrecompiledHeader: usePrecompiledHeader,
+      synthesizerConfiguration: synthesizerConfiguration,
     );
     if (exe == null) {
       return false;
-    }
-    if (buildOnly) {
-      return true;
     }
     return runSystemCVectors(exe, vectors);
   }
@@ -715,6 +793,12 @@ int sc_main(int argc, char* argv[]) {
     bool dontDeleteTmpFiles = false,
     String? systemcHome,
     String? systemcLib,
+    bool? requireTool,
+    void Function(String) onSkip = markTestSkipped,
+    String cxxExecutable = 'g++',
+    bool usePrecompiledHeader = true,
+    SystemCSynthesizerConfiguration synthesizerConfiguration =
+        const SystemCSynthesizerConfiguration(),
   }) async {
     // Determine which signals to record
     final clkName = clockName ??
@@ -787,6 +871,11 @@ int sc_main(int argc, char* argv[]) {
       dontDeleteTmpFiles: dontDeleteTmpFiles,
       systemcHome: systemcHome,
       systemcLib: systemcLib,
+      requireTool: requireTool,
+      onSkip: onSkip,
+      cxxExecutable: cxxExecutable,
+      usePrecompiledHeader: usePrecompiledHeader,
+      synthesizerConfiguration: synthesizerConfiguration,
     );
   }
 }

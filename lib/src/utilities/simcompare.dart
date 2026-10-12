@@ -704,13 +704,24 @@ abstract class SimCompare {
           String? clockName,
           String? resetName,
           String? systemcHome,
-          String? systemcLib}) =>
+          String? systemcLib,
+          bool? requireTool,
+          void Function(String) onSkip = markTestSkipped,
+          String cxxExecutable = 'g++',
+          bool usePrecompiledHeader = true,
+          SystemCSynthesizerConfiguration synthesizerConfiguration =
+              const SystemCSynthesizerConfiguration()}) =>
       _SystemCSimCompare.buildSystemCVectorExecutable(module,
           moduleName: moduleName,
           clockName: clockName,
           resetName: resetName,
           systemcHome: systemcHome,
-          systemcLib: systemcLib);
+          systemcLib: systemcLib,
+          requireTool: requireTool,
+          onSkip: onSkip,
+          cxxExecutable: cxxExecutable,
+          usePrecompiledHeader: usePrecompiledHeader,
+          synthesizerConfiguration: synthesizerConfiguration);
 
   /// Runs [vectors] against a built SystemC [executable].
   static bool runSystemCVectors(
@@ -723,14 +734,20 @@ abstract class SimCompare {
       _SystemCSimCompare.checkSystemCVectors(executable, vectors);
 
   /// Checks SystemC vectors generated from [module].
-  static void checkSystemCVector(Module module, List<Vector> vectors,
+  static bool checkSystemCVector(Module module, List<Vector> vectors,
           {String? moduleName,
           bool dontDeleteTmpFiles = false,
           String? clockName,
           String? resetName,
           String? systemcHome,
           String? systemcLib,
-          bool buildOnly = false}) =>
+          bool buildOnly = false,
+          bool? requireTool,
+          void Function(String) onSkip = markTestSkipped,
+          String cxxExecutable = 'g++',
+          bool usePrecompiledHeader = true,
+          SystemCSynthesizerConfiguration synthesizerConfiguration =
+              const SystemCSynthesizerConfiguration()}) =>
       _SystemCSimCompare.checkSystemCVector(module, vectors,
           moduleName: moduleName,
           dontDeleteTmpFiles: dontDeleteTmpFiles,
@@ -738,7 +755,12 @@ abstract class SimCompare {
           resetName: resetName,
           systemcHome: systemcHome,
           systemcLib: systemcLib,
-          buildOnly: buildOnly);
+          buildOnly: buildOnly,
+          requireTool: requireTool,
+          onSkip: onSkip,
+          cxxExecutable: cxxExecutable,
+          usePrecompiledHeader: usePrecompiledHeader,
+          synthesizerConfiguration: synthesizerConfiguration);
 
   /// Compares [module] behavior with SystemC using [stimulus].
   static Future<bool> systemcSimCompare(Module module, Logic clk,
@@ -749,7 +771,13 @@ abstract class SimCompare {
           String? resetName,
           bool dontDeleteTmpFiles = false,
           String? systemcHome,
-          String? systemcLib}) =>
+          String? systemcLib,
+          bool? requireTool,
+          void Function(String) onSkip = markTestSkipped,
+          String cxxExecutable = 'g++',
+          bool usePrecompiledHeader = true,
+          SystemCSynthesizerConfiguration synthesizerConfiguration =
+              const SystemCSynthesizerConfiguration()}) =>
       _SystemCSimCompare.systemcSimCompare(module, clk,
           stimulus: stimulus,
           inputNames: inputNames,
@@ -758,5 +786,10 @@ abstract class SimCompare {
           resetName: resetName,
           dontDeleteTmpFiles: dontDeleteTmpFiles,
           systemcHome: systemcHome,
-          systemcLib: systemcLib);
+          systemcLib: systemcLib,
+          requireTool: requireTool,
+          onSkip: onSkip,
+          cxxExecutable: cxxExecutable,
+          usePrecompiledHeader: usePrecompiledHeader,
+          synthesizerConfiguration: synthesizerConfiguration);
 }

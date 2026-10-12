@@ -11,25 +11,64 @@ import 'package:rohd/rohd.dart';
 import 'package:rohd/src/synthesizers/systemc/systemc_synthesis_result.dart';
 
 export 'systemc_service.dart';
+export 'systemc_synthesizer_configuration.dart';
 
-/// A [Synthesizer] which generates equivalent SystemC as the given [Module].
+/// A [Synthesizer] which generates a two-state SystemC representation of the
+/// given [Module].
 ///
 /// Attempts to maintain signal naming and structure as much as possible,
 /// using the same naming strategy as the SystemVerilog synthesizer.
 class SystemCSynthesizer extends Synthesizer {
+  /// Configuration controlling unsupported SystemC functionality.
+  final SystemCSynthesizerConfiguration configuration;
+
+  /// Diagnostics for unsupported module instances emitted as stubs.
+  final List<SystemCGenerationDiagnostic> diagnostics = [];
+
+  final Map<Module, bool> _stubDecisions = {};
+
+  /// Creates a SystemC synthesizer with the specified [configuration].
+  SystemCSynthesizer({
+    this.configuration = const SystemCSynthesizerConfiguration(),
+  });
+
   @override
-  bool generatesDefinition(Module module) =>
-      // SystemC generation must still detect legacy SV-backed custom modules
-      // until the upstream API is migrated away from this deprecated type.
-      // ignore: deprecated_member_use_from_same_package
-      !((module is CustomSystemVerilog) ||
-          (module is SystemVerilog &&
-              module.generatedDefinitionType == DefinitionGenerationType.none));
+  bool generatesDefinition(Module module) {
+    final reason = systemCUnsupportedReason(module);
+    if (reason != null) {
+      final allowsStub = _stubDecisions.putIfAbsent(
+        module,
+        () => configuration.allowsStub(module, reason),
+      );
+      if (!allowsStub) {
+        throw UnsupportedSystemCModuleException(module, reason);
+      }
+      return true;
+    }
+
+    return !isSystemCHandledInlineModule(module);
+  }
 
   @override
   SynthesisResult synthesize(
     Module module,
     String Function(Module module) getInstanceTypeOfModule,
-  ) =>
-      SystemCSynthesisResult(module, getInstanceTypeOfModule);
+  ) {
+    final reason = systemCUnsupportedReason(module);
+    if (reason != null) {
+      if (!(_stubDecisions[module] ?? false)) {
+        throw UnsupportedSystemCModuleException(module, reason);
+      }
+      diagnostics.add(
+        SystemCGenerationDiagnostic(module: module, reason: reason),
+      );
+      return SystemCStubSynthesisResult(
+        module,
+        getInstanceTypeOfModule,
+        reason: reason,
+      );
+    }
+
+    return SystemCSynthesisResult(module, getInstanceTypeOfModule);
+  }
 }
