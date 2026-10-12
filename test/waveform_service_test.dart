@@ -129,7 +129,6 @@ void createTemporaryDump(Module module, String name) {
     module,
     outputDirectory: tempDumpDir,
     outputBaseName: 'temp_dump_$name',
-    writeToFile: true,
   );
 }
 
@@ -144,26 +143,6 @@ void main() {
     await Simulator.reset();
     ModuleServices.instance.reset();
     WaveformDataService.instance.clear();
-  });
-
-  test('file-backed debugging capture can retain history', () async {
-    final mod = _SimpleWaveModule(Logic());
-    await mod.build();
-
-    final service = WaveformService(
-      mod,
-      outputDirectory: tempDumpDir,
-      outputBaseName: 'temp_dump_debugDump',
-      writeToFile: true,
-      retainInMemory: true,
-    );
-
-    expect(service.retainInMemory, isTrue);
-    expect(service.canSendWaveforms(), isTrue);
-    expect(service.inMemoryOutput, isNotNull);
-
-    await Simulator.run();
-    deleteTemporaryDump('debugDump');
   });
 
   test('registers with ModuleServices by default', () async {
@@ -184,49 +163,13 @@ void main() {
     File(dumpPath).deleteSync();
   });
 
-  test('window-entry snapshot reaches waveform hooks', () async {
-    final mod = _WindowWaveModule();
+  test('does not enable DevTools streaming by default', () async {
+    final mod = _SimpleWaveModule(Logic(name: 'a'));
     await mod.build();
-    mod.a.put(0);
 
-    final service =
-        _HistoryWaveformService(mod, startTime: 10, register: false);
+    final service = WaveformService(mod, register: false);
 
-    Simulator.registerAction(5, () => mod.a.put(1));
-    Simulator.registerAction(15, () {});
-    Simulator.registerAction(20, () {});
-    await Simulator.run();
-
-    final vcdContents = utf8.decode(
-      await service.artifacts.single
-          .openRead()
-          .expand((bytes) => bytes)
-          .toList(),
-    );
-    expect(
-      VcdParser.confirmValue(vcdContents, 'a', 10, LogicValue.one),
-      isTrue,
-    );
-    expect(service.history[mod.a], equals([(0, '0'), (10, '1')]));
-    expect(service.capturedTimestamps, contains(10));
-  });
-
-  test('window entry and boundary change are separate hook batches', () async {
-    final mod = _WindowWaveModule();
-    await mod.build();
-    mod.a.put(0);
-    final service =
-        _HistoryWaveformService(mod, startTime: 10, register: false);
-
-    Simulator.registerAction(5, () => mod.a.put(1));
-    Simulator.registerAction(10, () => mod.a.put(0));
-    await Simulator.run();
-
-    expect(
-      service.history[mod.a],
-      equals([(0, '0'), (10, '1'), (10, '0')]),
-    );
-    expect(service.capturedTimestamps, equals([10, 10]));
+    expect(service.enableDevToolsStreaming, isFalse);
   });
 
   test('window-entry FST values agree live, finalized, and in fst2vcd',
@@ -301,13 +244,12 @@ void main() {
     Directory(_tempDumpDir).createSync(recursive: true);
     final dumpPath = _temporaryVcdPath('serviceCapture');
 
-    final service = WaveformService.fromOutputPath(
+    WaveformService.fromOutputPath(
       mod,
       outputPath: dumpPath,
       register: false,
       enableDevToolsStreaming: true,
     );
-    expect(service.outputFilePath, dumpPath);
 
     a.inject(1);
     Simulator.registerAction(10, () => a.put(0));
@@ -315,11 +257,13 @@ void main() {
 
     final vcdContents = File(dumpPath).readAsStringSync();
     expect(
-        VcdParser.confirmValue(vcdContents, 'a', 0, LogicValue.ofString('1')),
-        equals(true));
+      VcdParser.confirmValue(vcdContents, 'a', 0, LogicValue.ofString('1')),
+      equals(true),
+    );
     expect(
-        VcdParser.confirmValue(vcdContents, 'a', 10, LogicValue.ofString('0')),
-        equals(true));
+      VcdParser.confirmValue(vcdContents, 'a', 10, LogicValue.ofString('0')),
+      equals(true),
+    );
 
     File(dumpPath).deleteSync();
   });
@@ -607,6 +551,7 @@ void main() {
     expect(dataService.isFstBacked, isTrue);
     expect(signalData['signalId'], equals(signalId));
     expect(signalData['data'], isNotEmpty);
+
     File(dumpPath).deleteSync();
   });
 
@@ -621,8 +566,11 @@ void main() {
     ModuleServices.instance.reset();
 
     await _dumpParityWaveform(fstPath, WaveOutputFormat.fst);
-    final fstEvents = _readFstEvents(fstPath,
-        signalNames: const ['a', 'b'], signalWidths: const [4, 4]);
+    final fstEvents = _readFstEvents(
+      fstPath,
+      signalNames: const ['a', 'b'],
+      signalWidths: const [4, 4],
+    );
 
     expect(fstEvents, equals(vcdEvents));
 
@@ -654,7 +602,9 @@ Future<WaveformService> _captureWaveformWithTimescale(
 }
 
 Future<void> _dumpParityWaveform(
-    String outputPath, WaveOutputFormat format) async {
+  String outputPath,
+  WaveOutputFormat format,
+) async {
   Directory(_tempDumpDir).createSync(recursive: true);
 
   final a = Logic(name: 'a', width: 4);
@@ -662,8 +612,12 @@ Future<void> _dumpParityWaveform(
   await mod.build();
 
   a.put(0x1);
-  WaveformService.fromOutputPath(mod,
-      outputPath: outputPath, format: format, register: false);
+  WaveformService.fromOutputPath(
+    mod,
+    outputPath: outputPath,
+    format: format,
+    register: false,
+  );
 
   Simulator.registerAction(10, () => a.put(0x2));
   Simulator.registerAction(20, () => a.put(0xf));
@@ -671,16 +625,19 @@ Future<void> _dumpParityWaveform(
 }
 
 Map<String, Map<int, String>> _readVcdEvents(
-    String path, Set<String> signalNames) {
+  String path,
+  Set<String> signalNames,
+) {
   final lines = File(path).readAsLinesSync();
   final markerToSignal = <String, String>{};
   final markerToWidth = <String, int>{};
   final events = <String, Map<int, String>>{
-    for (final name in signalNames) name: <int, String>{}
+    for (final name in signalNames) name: <int, String>{},
   };
 
   final sigNameRegexp = RegExp(
-      r'\s*\$var\s(wire|reg)\s(\d+)\s(\S*)\s(\S*)\s+(\[\d+\:\d+\])?\s*\$end');
+    r'\s*\$var\s(wire|reg)\s(\d+)\s(\S*)\s(\S*)\s+(\[\d+\:\d+\])?\s*\$end',
+  );
   var currentTime = 0;
   var inValues = false;
 
@@ -727,7 +684,9 @@ Map<String, Map<int, String>> _readVcdEvents(
 }
 
 ({String marker, String value})? _parseVcdValueUpdate(
-    String line, Map<String, int> markerToWidth) {
+  String line,
+  Map<String, int> markerToWidth,
+) {
   if (line.startsWith('b')) {
     final parts = line.split(' ');
     if (parts.length != 2 || !markerToWidth.containsKey(parts[1])) {
@@ -744,11 +703,14 @@ Map<String, Map<int, String>> _readVcdEvents(
   return null;
 }
 
-Map<String, Map<int, String>> _readFstEvents(String path,
-    {required List<String> signalNames, required List<int> signalWidths}) {
+Map<String, Map<int, String>> _readFstEvents(
+  String path, {
+  required List<String> signalNames,
+  required List<int> signalWidths,
+}) {
   final data = File(path).readAsBytesSync();
   final events = <String, Map<int, String>>{
-    for (final name in signalNames) name: <int, String>{}
+    for (final name in signalNames) name: <int, String>{},
   };
 
   var blockOffset = 0;
@@ -758,8 +720,14 @@ Map<String, Map<int, String>> _readFstEvents(String path,
     final blockEnd = blockOffset + 1 + sectionLength;
 
     if (blockType == 8) {
-      _readFstVcDataBlock(data, blockOffset, blockEnd,
-          signalNames: signalNames, signalWidths: signalWidths, events: events);
+      _readFstVcDataBlock(
+        data,
+        blockOffset,
+        blockEnd,
+        signalNames: signalNames,
+        signalWidths: signalWidths,
+        events: events,
+      );
     }
 
     blockOffset = blockEnd;
@@ -768,10 +736,14 @@ Map<String, Map<int, String>> _readFstEvents(String path,
   return events;
 }
 
-void _readFstVcDataBlock(Uint8List data, int blockOffset, int blockEnd,
-    {required List<String> signalNames,
-    required List<int> signalWidths,
-    required Map<String, Map<int, String>> events}) {
+void _readFstVcDataBlock(
+  Uint8List data,
+  int blockOffset,
+  int blockEnd, {
+  required List<String> signalNames,
+  required List<int> signalWidths,
+  required Map<String, Map<int, String>> events,
+}) {
   final startTime = _readU64(data, blockOffset + 9);
   var offset = blockOffset + 33;
 
@@ -783,15 +755,17 @@ void _readFstVcDataBlock(Uint8List data, int blockOffset, int blockEnd,
   offset = maxHandle.next;
 
   final frameBytes = _inflateIfNeeded(
-      data.sublist(offset, offset + frameCompressed.value),
-      frameUncompressed.value);
+    data.sublist(offset, offset + frameCompressed.value),
+    frameUncompressed.value,
+  );
   offset += frameCompressed.value;
 
   var frameOffset = 0;
   for (var i = 0; i < signalNames.length; i++) {
     final width = signalWidths[i];
     final value = String.fromCharCodes(
-        frameBytes.sublist(frameOffset, frameOffset + width));
+      frameBytes.sublist(frameOffset, frameOffset + width),
+    );
     frameOffset += width;
     events[signalNames[i]]![startTime] = value;
   }
@@ -806,14 +780,17 @@ void _readFstVcDataBlock(Uint8List data, int blockOffset, int blockEnd,
   final timeUncompressedLength = _readU64(data, blockEnd - 24);
   final timeDataStart = blockEnd - 24 - timeCompressedLength;
   final timeBytes = _inflateIfNeeded(
-      data.sublist(timeDataStart, timeDataStart + timeCompressedLength),
-      timeUncompressedLength);
+    data.sublist(timeDataStart, timeDataStart + timeCompressedLength),
+    timeUncompressedLength,
+  );
   final timeTable = _decodeTimeTable(timeBytes, timeCount);
 
   final chainLength = _readU64(data, timeDataStart - 8);
   final chainStart = timeDataStart - 8 - chainLength;
   final signalOffsets = _decodeFstOffsetChain(
-      data.sublist(chainStart, timeDataStart - 8), valueMaxHandle.value);
+    data.sublist(chainStart, timeDataStart - 8),
+    valueMaxHandle.value,
+  );
 
   for (var signalIndex = 0; signalIndex < signalNames.length; signalIndex++) {
     final signalOffset = signalOffsets[signalIndex];
@@ -829,11 +806,13 @@ void _readFstVcDataBlock(Uint8List data, int blockOffset, int blockEnd,
     final signalDataStart = valueSectionStart + signalOffset;
     final signalDataEnd =
         nextOffset == null ? chainStart : valueSectionStart + nextOffset;
-    _decodeFstSignalData(data.sublist(signalDataStart, signalDataEnd),
-        width: signalWidths[signalIndex],
-        signalName: signalNames[signalIndex],
-        timeTable: timeTable,
-        events: events);
+    _decodeFstSignalData(
+      data.sublist(signalDataStart, signalDataEnd),
+      width: signalWidths[signalIndex],
+      signalName: signalNames[signalIndex],
+      timeTable: timeTable,
+      events: events,
+    );
   }
 }
 
@@ -871,16 +850,21 @@ List<int?> _decodeFstOffsetChain(Uint8List bytes, int maxHandle) {
   return offsets;
 }
 
-void _decodeFstSignalData(Uint8List bytes,
-    {required int width,
-    required String signalName,
-    required List<int> timeTable,
-    required Map<String, Map<int, String>> events}) {
+void _decodeFstSignalData(
+  Uint8List bytes, {
+  required int width,
+  required String signalName,
+  required List<int> timeTable,
+  required Map<String, Map<int, String>> events,
+}) {
   var offset = 0;
   final compression = _readVarint(bytes, offset);
   offset = compression.next;
-  expect(compression.value, equals(0),
-      reason: 'Only uncompressed signal chains are expected');
+  expect(
+    compression.value,
+    equals(0),
+    reason: 'Only uncompressed signal chains are expected',
+  );
 
   var timeIndex = 0;
   while (offset < bytes.length) {

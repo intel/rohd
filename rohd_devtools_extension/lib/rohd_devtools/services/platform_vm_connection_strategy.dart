@@ -11,7 +11,7 @@
 import 'package:rohd_devtools_extension/rohd_devtools/services/platform_vm_connection_strategy_stub.dart'
     if (dart.library.io) 'package:rohd_devtools_extension/rohd_devtools/services/io_vm_connection_strategy.dart'
     if (dart.library.js_interop) 'package:rohd_devtools_extension/rohd_devtools/services/web_vm_connection_strategy.dart';
-import 'package:rohd_devtools_extension/rohd_devtools/ui/ui.dart';
+import 'package:rohd_devtools_extension/rohd_devtools/services/vm_connection_strategy.dart';
 
 /// Returns the platform-appropriate [VmConnectionStrategy].
 ///

@@ -78,10 +78,7 @@ class VmServiceSignalValueSource implements SignalValueSource {
 
     for (final expression in _currentTimeExpressions) {
       try {
-        final value = await _evalInstance(
-          expression,
-          isAlive: evalDisposable,
-        );
+        final value = await _evalInstance(expression, isAlive: evalDisposable);
         final raw = value.valueAsString;
         if (raw == null || raw.isEmpty) {
           continue;
@@ -129,10 +126,7 @@ class VmServiceSignalValueSource implements SignalValueSource {
 
     for (final expression in snapshotExpressions) {
       try {
-        final value = await _evalInstance(
-          expression,
-          isAlive: evalDisposable,
-        );
+        final value = await _evalInstance(expression, isAlive: evalDisposable);
         final payload = value.valueAsString;
         if (payload == null || payload.isEmpty) {
           continue;
@@ -193,10 +187,10 @@ class VmServiceSignalValueSource implements SignalValueSource {
   }
 
   static String _waveformSnapshotExpression(int time) =>
-      'WaveformService.instance.getSnapshotCompactJson($time)';
+      'WaveformService.instance.getSnapshotCompactJSON($time)';
 
   static const _moduleTreeSignalValuesExpression =
-      'ModuleTree.instance.signalValuesJson';
+      'ModuleTree.instance.signalValuesJSON';
 
   Future<int?> _readCurrentTimeFromExtension() async {
     final response = await _callExtension(_currentTimeExtension);

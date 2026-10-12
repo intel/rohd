@@ -13,46 +13,72 @@ import 'package:material_ui/material_ui.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/cubit/theme_cubit.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/ui/devtool_appbar.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/ui/devtools_help_button.dart';
+import 'package:rohd_devtools_extension/rohd_devtools/ui/rohd_shell_help_button.dart';
 import 'package:rohd_devtools_widgets/rohd_devtools_widgets.dart';
 
 void main() {
-  testWidgets('renders persistent app bar controls and toggles the theme cubit',
-      (tester) async {
-    final cubit = DevToolsThemeCubit();
-    addTearDown(cubit.close);
+  testWidgets(
+    'renders persistent app bar controls and toggles the theme cubit',
+    (tester) async {
+      final cubit = DevToolsThemeCubit();
+      addTearDown(cubit.close);
 
-    await tester.pumpWidget(
-      BlocProvider.value(
-        value: cubit,
-        child: const MaterialApp(
-          home: Scaffold(appBar: DevtoolAppBar(hasColorEmoji: false)),
+      await tester.pumpWidget(
+        BlocProvider.value(
+          value: cubit,
+          child: const MaterialApp(
+            home: Scaffold(appBar: DevtoolAppBar(hasColorEmoji: false)),
+          ),
         ),
-      ),
-    );
+      );
 
-    expect(find.text('ROHD DevTool (Beta)'), findsOneWidget);
-    expect(find.text('Licenses'), findsOneWidget);
-    expect(find.byType(DevToolsHelpButton), findsOneWidget);
-    expect(find.byTooltip('Switch to light theme'), findsOneWidget);
-    expect(const DevtoolAppBar().preferredSize.height, kToolbarHeight);
+      expect(find.text('ROHD DevTools'), findsOneWidget);
+      expect(find.text('Licenses'), findsOneWidget);
+      expect(find.byType(DevToolsHelpButton), findsOneWidget);
+      expect(find.byTooltip('Switch to light theme'), findsOneWidget);
+      expect(const DevtoolAppBar().preferredSize.height, kToolbarHeight);
 
-    await tester.tap(find.byTooltip('Switch to light theme'));
-    await tester.pump();
+      await tester.tap(find.byTooltip('Switch to light theme'));
+      await tester.pump();
 
-    expect(cubit.state, DevToolsThemeMode.light);
-    expect(find.byTooltip('Switch to dark theme'), findsOneWidget);
-  });
+      expect(cubit.state, DevToolsThemeMode.light);
+      expect(find.byTooltip('Switch to dark theme'), findsOneWidget);
+    },
+  );
 
-  testWidgets('passes DevTools help configuration to the markdown help control',
-      (tester) async {
+  testWidgets(
+    'passes DevTools help configuration to the markdown help control',
+    (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(home: DevToolsHelpButton(isDark: true)),
+      );
+
+      final button = tester.widget<MarkdownHelpButton>(
+        find.byType(MarkdownHelpButton),
+      );
+      expect(button.assetPath, 'assets/help/devtools_help.md');
+      expect(button.isDark, isTrue);
+    },
+  );
+
+  testWidgets('bundles ROHD shell help at its configured asset path', (
+    tester,
+  ) async {
     await tester.pumpWidget(
-      const MaterialApp(home: DevToolsHelpButton(isDark: true)),
+      const MaterialApp(home: RohdShellHelpButton(isDark: true)),
     );
 
     final button = tester.widget<MarkdownHelpButton>(
       find.byType(MarkdownHelpButton),
     );
-    expect(button.assetPath, 'assets/help/devtools_help.md');
-    expect(button.isDark, isTrue);
+    expect(button.assetPath, 'assets/help/rohd_shell_help.md');
+
+    final content = await tester.runAsync(
+      () => DefaultAssetBundle.of(
+        tester.element(find.byType(RohdShellHelpButton)),
+      ).loadString(button.assetPath),
+    );
+    expect(content, contains('# ROHD Debug Shell Help'));
+    expect(content, contains('## Commands'));
   });
 }

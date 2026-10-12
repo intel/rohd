@@ -70,13 +70,10 @@ across DevTools packages.
 
 ## Usage
 
-For a complete runnable example, see
-[`example/main.dart`](example/main.dart).
-
 Add the package to your Flutter application:
 
 ```shell
-flutter pub add rohd_devtools_widgets
+flutter pub add rohd_devtools_widgets:^0.1.0
 ```
 
 Import the shared widgets you need:

@@ -42,10 +42,12 @@ void main() {
         ),
       );
 
-  testWidgets('cleans the manual URI before requesting a connection',
-      (tester) async {
-    final vmUriController =
-        TextEditingController(text: ' ws://host:8181/app=/ws ');
+  testWidgets('cleans the manual URI before requesting a connection', (
+    tester,
+  ) async {
+    final vmUriController = TextEditingController(
+      text: ' ws://host:8181/app=/ws ',
+    );
     final dtdUriController = TextEditingController();
     addTearDown(vmUriController.dispose);
     addTearDown(dtdUriController.dispose);
@@ -102,8 +104,9 @@ void main() {
     expect(discovered.single, [service]);
   });
 
-  testWidgets('connects to live services but only fills ended service URIs',
-      (tester) async {
+  testWidgets('connects to live services but only fills ended service URIs', (
+    tester,
+  ) async {
     final vmUriController = TextEditingController();
     final dtdUriController = TextEditingController();
     addTearDown(vmUriController.dispose);
@@ -137,8 +140,9 @@ void main() {
     expect(find.textContaining('(ended)'), findsOneWidget);
   });
 
-  testWidgets('explains when DTD discovery finds no VM services',
-      (tester) async {
+  testWidgets('explains when DTD discovery finds no VM services', (
+    tester,
+  ) async {
     final vmUriController = TextEditingController();
     final dtdUriController = TextEditingController();
     addTearDown(vmUriController.dispose);
@@ -152,10 +156,7 @@ void main() {
       discoverVmServices: (dtdUri) async => const [],
     );
 
-    await tester.enterText(
-      find.byType(TextField).first,
-      'ws://host:8181/dtd=',
-    );
+    await tester.enterText(find.byType(TextField).first, 'ws://host:8181/dtd=');
     await tester.tap(find.text('Discover'));
     await tester.pumpAndSettle();
 

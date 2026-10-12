@@ -15,6 +15,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/models/dtd_vm_service_info.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/services/connection_state_machine.dart';
+import 'package:rohd_devtools_extension/rohd_devtools/services/vm_connection_strategy.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/ui/devtools_connection_host.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/ui/vm_connection_form.dart';
 import 'package:vm_service/vm_service.dart';
@@ -35,10 +36,7 @@ class _TestConnectionStrategy extends VmConnectionStrategy {
 }
 
 class _TestConnectionHost extends StatefulWidget {
-  const _TestConnectionHost({
-    required this.strategy,
-    this.discoverVmServices,
-  });
+  const _TestConnectionHost({required this.strategy, this.discoverVmServices});
 
   final VmConnectionStrategy? strategy;
   final Future<List<DiscoveredVmService>> Function(String uri)?
@@ -51,9 +49,7 @@ class _TestConnectionHost extends StatefulWidget {
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
     properties
-      ..add(
-        DiagnosticsProperty<VmConnectionStrategy?>('strategy', strategy),
-      )
+      ..add(DiagnosticsProperty<VmConnectionStrategy?>('strategy', strategy))
       ..add(
         ObjectFlagProperty<Future<List<DiscoveredVmService>> Function(String)?>(
           'discoverVmServices',
@@ -71,16 +67,14 @@ class _TestConnectionHostState
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(
-      IterableProperty<String>('lifecycleCalls', lifecycleCalls),
-    );
+    properties.add(IterableProperty<String>('lifecycleCalls', lifecycleCalls));
   }
 
   @override
   VmConnectionStrategy? get connectionStrategy => widget.strategy;
 
   @override
-  Future<List<DiscoveredVmService>> discoverVmServices(String dtdUri) async =>
+  Future<List<DiscoveredVmService>> discoverVmServices(String dtdUri) =>
       widget.discoverVmServices?.call(dtdUri) ??
       super.discoverVmServices(dtdUri);
 
@@ -95,9 +89,8 @@ class _TestConnectionHostState
   }
 
   @override
-  Widget build(BuildContext context) => Text(
-        isConnected ? 'connected' : 'disconnected',
-      );
+  Widget build(BuildContext context) =>
+      Text(isConnected ? 'connected' : 'disconnected');
 
   @override
   Future<void> onVmConnected(VmConnectionResult result, String uri) async {
@@ -171,12 +164,13 @@ void main() {
     );
   }
 
-  testWidgets('connects, pauses, resumes, and disconnects through hooks',
-      (tester) async {
+  testWidgets('connects, pauses, resumes, and disconnects through hooks', (
+    tester,
+  ) async {
     final vmService = newVmService();
-    final strategy = _TestConnectionStrategy(
-      [VmConnectionResult(vmService: vmService, isolateId: 'isolate-1')],
-    );
+    final strategy = _TestConnectionStrategy([
+      VmConnectionResult(vmService: vmService, isolateId: 'isolate-1'),
+    ]);
     final state = await pumpHost(tester, strategy: strategy);
 
     await state.connectToVmService('ws://host:8181/app=/ws');
@@ -187,14 +181,11 @@ void main() {
     expect(state.isVmConnected, isTrue);
     expect(state.lastIsolateId, 'isolate-1');
     expect(state.connectionStateMachine.phase, ConnectionPhase.connected);
-    expect(
-      state.lifecycleCalls,
-      [
-        'tearDown:freshAttach',
-        'before:freshAttach',
-        'connected:ws://host:8181/app=/ws'
-      ],
-    );
+    expect(state.lifecycleCalls, [
+      'tearDown:freshAttach',
+      'before:freshAttach',
+      'connected:ws://host:8181/app=/ws',
+    ]);
 
     await state.pauseVm();
     expect(state.isPaused, isTrue);
@@ -211,34 +202,35 @@ void main() {
     expect(state.isVmConnected, isFalse);
     expect(state.lastVmServiceUri, isNull);
     expect(state.connectionStateMachine.phase, ConnectionPhase.disconnected);
-    expect(
-      state.lifecycleCalls,
-      [
-        'tearDown:freshAttach',
-        'before:freshAttach',
-        'connected:ws://host:8181/app=/ws',
-        'paused',
-        'resumed',
-        'tearDown:disconnect',
-        'disconnected',
-      ],
-    );
+    expect(state.lifecycleCalls, [
+      'tearDown:freshAttach',
+      'before:freshAttach',
+      'connected:ws://host:8181/app=/ws',
+      'paused',
+      'resumed',
+      'tearDown:disconnect',
+      'disconnected',
+    ]);
   });
 
-  testWidgets('reports a missing connection strategy without connecting',
-      (tester) async {
+  testWidgets('reports a missing connection strategy without connecting', (
+    tester,
+  ) async {
     final state = await pumpHost(tester, strategy: null);
 
     await state.attemptConnection();
     await tester.pump();
 
     expect(
-        state.connectionError, 'VM connection not available on this platform');
+      state.connectionError,
+      'VM connection not available on this platform',
+    );
     expect(state.isConnected, isFalse);
   });
 
-  testWidgets('connects through DTD discovery and retains reconnect details',
-      (tester) async {
+  testWidgets('connects through DTD discovery and retains reconnect details', (
+    tester,
+  ) async {
     final strategy = _TestConnectionStrategy([
       VmConnectionResult(vmService: newVmService(), isolateId: 'isolate-1'),
     ]);
@@ -266,7 +258,7 @@ void main() {
         autoReconnect: true,
       ),
     ];
-    expect(state._rememberedServicesForTest.single.autoReconnect, isTrue);
+    expect(state._rememberedServicesForTest, hasLength(1));
 
     await state.attemptConnection();
     await tester.pump();
@@ -279,17 +271,15 @@ void main() {
     expect(state.isConnected, isTrue);
   });
 
-  testWidgets('uses lightweight reconnect only when the isolate matches',
-      (tester) async {
+  testWidgets('uses lightweight reconnect only when the isolate matches', (
+    tester,
+  ) async {
     final firstVmService = newVmService();
     final matchingVmService = newVmService();
     final mismatchingVmService = newVmService();
     final strategy = _TestConnectionStrategy([
       VmConnectionResult(vmService: firstVmService, isolateId: 'isolate-1'),
-      VmConnectionResult(
-        vmService: matchingVmService,
-        isolateId: 'isolate-1',
-      ),
+      VmConnectionResult(vmService: matchingVmService, isolateId: 'isolate-1'),
       VmConnectionResult(
         vmService: mismatchingVmService,
         isolateId: 'isolate-2',

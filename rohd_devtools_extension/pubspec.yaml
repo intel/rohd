@@ -5,10 +5,12 @@ publish_to: 'none'
 version: 1.0.0+1
 
 environment:
- sdk: ^3.6.0
+  sdk: ^3.6.0
+  flutter: '>=3.44.0'
 
 dependencies:
   cupertino_icons: ^1.0.2
+  dart_wellen: ^0.1.0
   devtools_app_shared: ^0.5.0
   devtools_extensions: ^0.5.0
   devtools_shared: ^13.0.1
@@ -24,17 +26,20 @@ dependencies:
   flutter_web_plugins:
     sdk: flutter
   logging: ^1.2.0
+  # Keep the modern Material compatibility layer below its Dart 3.6-incompatible release.
   material_ui: ">=1.1.0 <1.3.0"
   path: ^1.9.0
   path_provider: ^2.1.0
-  rohd:
-    path: ..
-  rohd_devtools_widgets:
-    path: ../packages/rohd_devtools_widgets
-  rohd_hierarchy:
-    path: ../packages/rohd_hierarchy
-  rohd_source_navigator:
-    path: ../packages/rohd_source_navigator
+  rohd: ^0.6.11
+  rohd_devtools_widgets: ^0.1.0
+  # Version 0.2.0 is available through the development-mode local/git overrides
+  # but has not yet been published to pub.dev.
+  rohd_hierarchy: ^0.1.0
+  rohd_schematic_viewer: ^0.2.0
+  rohd_source_navigator: ^0.1.0
+  rohd_wave_viewer: ^0.1.0
+  # Shares the viewer's extended monitored-waveform model.
+  rohd_waveform: ^0.1.0
   vm_service: ^14.0.0
   web: ^1.0.0
   web_socket_channel: ^3.0.0
@@ -55,17 +60,14 @@ dev_dependencies:
 dependency_overrides:
   # Keep the transitive Cupertino UI package below the Dart 3.6-incompatible release.
   cupertino_ui: ">=1.0.0 <1.1.0"
-  rohd:
-    path: ..
-  rohd_devtools_widgets:
-    path: ../packages/rohd_devtools_widgets
-  rohd_hierarchy:
-    path: ../packages/rohd_hierarchy
-  rohd_source_navigator:
-    path: ../packages/rohd_source_navigator
 
 flutter:
   uses-material-design: true
   assets:
     - assets/help/
-    - assets/icons/
+    - assets/layout_bridge/
+    - assets/third_party/elkjs/
+    - assets/third_party/elkjs/LICENSES/elkjs_LICENSES.txt
+    - assets/rohd_icon.png
+    - assets/systemverilog_icon.png
+    - assets/systemc_icon.png
