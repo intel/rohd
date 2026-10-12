@@ -695,6 +695,21 @@ class EnumIfElseModule extends Module {
   }
 }
 
+class EnumComparisonModule extends Module {
+  EnumComparisonModule(LogicEnum<TestEnum> state) {
+    state = addTypedInput('state', state);
+    addOutput('equal') <= state.eq(TestEnum.c);
+    addOutput('notEqual') <= state.neq(TestEnum.c);
+    addOutput('less') <= state.lt(TestEnum.c);
+    addOutput('lessOrEqual') <= state.lte(TestEnum.c);
+    addOutput('greater') <= state.gt(TestEnum.c);
+    addOutput('greaterOrEqual') <= state.gte(TestEnum.c);
+    addOutput('greaterOperator') <= (state > TestEnum.c);
+    addOutput('greaterOrEqualOperator') <= (state >= TestEnum.c);
+    addOutput('member') <= state.isIn([TestEnum.a, TestEnum.c]);
+  }
+}
+
 class EmptyModule extends Module {}
 
 Future<void> checkEnumModeParity(Module module, List<Vector> vectors) async {
@@ -748,6 +763,177 @@ void main() {
       () => LogicEnum<TestEnum>.withMapping({}),
       throwsA(isA<ArgumentError>()),
     );
+  });
+
+  test('enum comparisons encode literals using the receiver mapping', () {
+    final state = LogicEnum<TestEnum>.withMapping({
+      TestEnum.a: 6,
+      TestEnum.b: 1,
+      TestEnum.c: 3,
+    }, width: 4);
+    final Logic signal = state;
+    final comparisons = [
+      signal.eq(TestEnum.c),
+      signal.neq(TestEnum.c),
+      signal.lt(TestEnum.c),
+      signal.lte(TestEnum.c),
+      signal.gt(TestEnum.c),
+      signal.gte(TestEnum.c),
+      signal > TestEnum.c,
+      signal >= TestEnum.c,
+      signal.isIn([TestEnum.a, TestEnum.c]),
+    ];
+
+    for (final (member, expected) in [
+      (TestEnum.a, [0, 1, 0, 0, 1, 1, 1, 1, 1]),
+      (TestEnum.b, [0, 1, 1, 1, 0, 0, 0, 0, 0]),
+      (TestEnum.c, [1, 0, 0, 1, 0, 1, 0, 1, 1]),
+    ]) {
+      state.put(member);
+      expect(
+          comparisons.map((comparison) => comparison.value.toInt()), expected);
+    }
+
+    for (final value in ['xxxx', 'zzzz', '00x1', 2]) {
+      state.put(value);
+      expect(comparisons.map((comparison) => comparison.value),
+          everyElement(LogicValue.x));
+    }
+  });
+
+  test('enum comparisons reject wrong enum types and unmapped members', () {
+    final state = MyMapLogicEnum();
+    final comparisons = <Logic Function(dynamic)>[
+      state.eq,
+      state.neq,
+      state.lt,
+      state.lte,
+      state.gt,
+      state.gte,
+      (other) => state > other,
+      (other) => state >= other,
+      (other) => state.isIn([TestEnum.a, other]),
+    ];
+
+    for (final compare in comparisons) {
+      expect(() => compare(OtherEnum.a), throwsA(isA<ArgumentError>()));
+      expect(() => compare(TestEnum.b), throwsA(isA<ArgumentError>()));
+    }
+  });
+
+  test('enum comparisons preserve raw operands and symmetric comparisons', () {
+    final state = LogicEnum<TestEnum>.withMapping({
+      TestEnum.a: 0,
+      TestEnum.c: 3,
+    }, width: 2)
+      ..put(TestEnum.c);
+    final raw = Logic(width: 2)..gets(state);
+    final broad = LogicEnum(TestEnum.values)..put(TestEnum.b);
+    final conflicting = LogicEnum<TestEnum>.withMapping({
+      TestEnum.a: 3,
+      TestEnum.c: 0,
+    }, width: 2)
+      ..put(TestEnum.a);
+    final otherType = LogicEnum(OtherEnum.values)..put(OtherEnum.a);
+
+    for (final operand in [
+      0,
+      1,
+      3,
+      BigInt.from(3),
+      true,
+      '11',
+      LogicValue.ofInt(3, 2),
+      Const(3, width: 2),
+      raw,
+      broad,
+      conflicting,
+      otherType,
+    ]) {
+      expect(state.eq(operand).value, raw.eq(operand).value);
+      expect(state.neq(operand).value, raw.neq(operand).value);
+      expect(state.gt(operand).value, raw.gt(operand).value);
+    }
+
+    expect(state.eq(broad).value, broad.eq(state).value);
+    expect(state.eq(conflicting).value, LogicValue.one);
+    expect(state.isIn([TestEnum.a, 1, raw]).value, LogicValue.one);
+    expect(state.isIn([]).value, LogicValue.zero);
+    expect(state.value, LogicValue.ofInt(3, 2));
+    expect(broad.value, LogicValue.ofInt(1, 2));
+    expect(state == state, isTrue);
+    expect(state == state.clone(), isFalse);
+    expect(() => state.eq(Logic()), throwsA(isA<PortWidthMismatchException>()));
+  });
+
+  test('enum comparisons support wide mapped literals', () {
+    final encoding = (BigInt.one << 80) | BigInt.from(3);
+    final state = LogicEnum<TestEnum>.withMapping({
+      TestEnum.a: encoding,
+      TestEnum.b: 5,
+    }, width: 96)
+      ..put(TestEnum.a);
+    final equal = state.eq(TestEnum.a);
+    final notEqual = state.neq(TestEnum.a);
+    final greater = state.gt(TestEnum.b);
+
+    expect(equal.value, LogicValue.one);
+    expect(notEqual.value, LogicValue.zero);
+    expect(greater.value, LogicValue.one);
+    state.put(TestEnum.b);
+    expect(equal.value, LogicValue.zero);
+    expect(notEqual.value, LogicValue.one);
+    expect(greater.value, LogicValue.zero);
+  });
+
+  test('enum comparisons synthesize mapped literals in both modes', () async {
+    final module = EnumComparisonModule(LogicEnum<TestEnum>.withMapping({
+      TestEnum.a: 6,
+      TestEnum.b: 1,
+      TestEnum.c: 3,
+    }, width: 4));
+
+    await checkEnumModeParity(module, [
+      Vector({
+        'state': 6
+      }, {
+        'equal': 0,
+        'notEqual': 1,
+        'less': 0,
+        'lessOrEqual': 0,
+        'greater': 1,
+        'greaterOrEqual': 1,
+        'greaterOperator': 1,
+        'greaterOrEqualOperator': 1,
+        'member': 1,
+      }),
+      Vector({
+        'state': 1
+      }, {
+        'equal': 0,
+        'notEqual': 1,
+        'less': 1,
+        'lessOrEqual': 1,
+        'greater': 0,
+        'greaterOrEqual': 0,
+        'greaterOperator': 0,
+        'greaterOrEqualOperator': 0,
+        'member': 0,
+      }),
+      Vector({
+        'state': 3
+      }, {
+        'equal': 1,
+        'notEqual': 0,
+        'less': 0,
+        'lessOrEqual': 1,
+        'greater': 0,
+        'greaterOrEqual': 1,
+        'greaterOperator': 0,
+        'greaterOrEqualOperator': 1,
+        'member': 1,
+      }),
+    ]);
   });
 
   test('assignment between incompatible enum mappings is rejected', () {

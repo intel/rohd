@@ -16,6 +16,10 @@ part of 'signals.dart';
 /// conditional assignments encode enum members using the receiver's mapping,
 /// not their [Enum.index]. Members absent from the mapping are rejected.
 ///
+/// Comparisons and [isIn] also encode enum members using [mapping]. Ordering
+/// comparisons use numeric encodings, not enum declaration order. Other
+/// operands follow [Logic] comparison behavior.
+///
 /// Unmapped raw values become `x` in simulation; an entirely
 /// floating value remains `z`. Constraints apply to the shared connected wire.
 class LogicEnum<T extends Enum> extends LogicDef {
@@ -217,6 +221,52 @@ class LogicEnum<T extends Enum> extends LogicDef {
       return super < other;
     }
   }
+
+  dynamic _comparisonOperand(dynamic other) {
+    if (other is T) {
+      final encoding = mapping[other];
+      if (encoding == null) {
+        throw ArgumentError.value(
+            other, 'other', 'Not present in the mapping for $T.');
+      }
+      return encoding;
+    } else if (other is Enum) {
+      throw ArgumentError.value(other, 'other', 'Must be a value of $T.');
+    }
+    return other;
+  }
+
+  /// Logical equality, encoding enum members using [mapping].
+  @override
+  Logic eq(dynamic other) => super.eq(_comparisonOperand(other));
+
+  /// Logical inequality, encoding enum members using [mapping].
+  @override
+  Logic neq(dynamic other) => super.neq(_comparisonOperand(other));
+
+  /// Less-than using the hardware encodings in [mapping].
+  @override
+  Logic lt(dynamic other) => super.lt(_comparisonOperand(other));
+
+  /// Less-than-or-equal using the hardware encodings in [mapping].
+  @override
+  Logic lte(dynamic other) => super.lte(_comparisonOperand(other));
+
+  /// Greater-than using the hardware encodings in [mapping].
+  @override
+  Logic gt(dynamic other) => super.gt(_comparisonOperand(other));
+
+  /// Greater-than-or-equal using the hardware encodings in [mapping].
+  @override
+  Logic gte(dynamic other) => super.gte(_comparisonOperand(other));
+
+  /// Greater-than using the hardware encodings in [mapping].
+  @override
+  Logic operator >(dynamic other) => gt(other);
+
+  /// Greater-than-or-equal using the hardware encodings in [mapping].
+  @override
+  Logic operator >=(dynamic other) => gte(other);
 
   /// Injects either a [T] value or a standard logic value into this signal.
   @override
