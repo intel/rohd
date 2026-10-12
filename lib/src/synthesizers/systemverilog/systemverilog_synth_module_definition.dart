@@ -44,6 +44,8 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
   }
 
   /// Lowers enum ports to packed boundaries backed by internal enum signals.
+  ///
+  /// Includes raw ports that acquire an enum type through merged aliases.
   void _lowerEnumPorts() {
     if (!generateEnums) {
       return;
@@ -53,13 +55,13 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
     for (final signal in [...inputs, ...outputs]) {
       final port =
           module.tryInput(signal.name) ?? module.tryOutput(signal.name);
-      if (port is! LogicEnum || !signal.isEnum) {
+      if (!signal.isEnum) {
         continue;
       }
 
       final initialName = '${signal.name}_enum';
       final backingSignal = SynthLogic(
-        port.clone(name: initialName),
+        signal.characteristicEnum!.clone(name: initialName),
         parentSynthModuleDefinition: this,
         namingOverride: Naming.renameable,
       )

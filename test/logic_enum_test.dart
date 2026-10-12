@@ -528,6 +528,32 @@ class EnumHierarchyModule extends Module {
   }
 }
 
+class MergedEnumPortAssignmentModule extends Module {
+  MergedEnumPortAssignmentModule(Logic source, {Logic? clock}) {
+    source = addInput('source', source, width: 3);
+    final alias = MyMapLogicEnum(
+      name: 'aliasedState',
+      naming: Naming.mergeable,
+    )..gets(source);
+    final stored = MyMapLogicEnum(
+      name: 'storedState',
+      naming: Naming.renameable,
+    );
+    final merged = MyMapLogicEnum(
+      name: 'mergedState',
+      naming: Naming.mergeable,
+    );
+    final conditionals = [stored < alias, merged < alias];
+    if (clock == null) {
+      Combinational(conditionals);
+    } else {
+      Sequential(addInput('clock', clock), conditionals);
+    }
+    addOutput('result', width: 3) <= stored;
+    addOutput('mergedResult', width: 3) <= merged;
+  }
+}
+
 class TypedEnumPortsModule extends Module {
   late final LogicEnum<TestEnum> stateIn;
   late final LogicEnum<TestEnum> stateOut;
@@ -2537,6 +2563,46 @@ void main() {
       expect(sv, contains('ChildNarrowEnum'));
       expect(sv, contains('ParentBroadEnum'));
     });
+
+    for (final sequential in [false, true]) {
+      test(
+          'raw ports merged with enum aliases in '
+          '${sequential ? 'sequential' : 'combinational'} assignments',
+          () async {
+        final module = MergedEnumPortAssignmentModule(Logic(width: 3),
+            clock: sequential ? Logic() : null);
+        final vectors = sequential
+            ? [
+                Vector({'source': 1, 'clock': 0}, {}),
+                Vector({'clock': 1}, {'result': 1, 'mergedResult': 1}),
+                Vector({'clock': 0}, {'result': 1, 'mergedResult': 1}),
+                Vector({'source': 7}, {'result': 1, 'mergedResult': 1}),
+                Vector({'clock': 1}, {'result': 7, 'mergedResult': 7}),
+              ]
+            : [
+                for (final value in [1, 7, 1])
+                  Vector({'source': value},
+                      {'result': value, 'mergedResult': value}),
+              ];
+        await checkEnumModeParity(module, vectors);
+
+        final sv = module.dumpSystemVerilog();
+        final assignment = sequential ? '<=' : '=';
+        expect(sv, contains('input logic [2:0] source'));
+        expect(sv, contains('output logic [2:0] mergedResult'));
+        expect(sv, contains("assign source_enum = TestEnum'(source);"));
+        expect(sv, contains('storedState $assignment source_enum;'));
+        expect(sv, contains('mergedResult_enum $assignment source_enum;'));
+        expect(sv, contains('assign mergedResult = mergedResult_enum;'));
+
+        for (final generateEnums in [true, false]) {
+          SimCompare.checkVerilatorVector(module, const [],
+              buildOnly: true,
+              synthesizerConfiguration: SystemVerilogSynthesizerConfiguration(
+                  generateEnums: generateEnums));
+        }
+      });
+    }
 
     test('typed enum input and output preserve type in both modes', () async {
       final source = LogicEnum<TestEnum>.withMapping(
