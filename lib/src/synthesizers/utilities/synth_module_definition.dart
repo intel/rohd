@@ -4063,6 +4063,11 @@ class SynthModuleDefinition {
         ..addAll(reducedAssignments);
     }
 
+    // clear out any duplicates
+    final assignmentEndpoints = <(SynthLogic, SynthLogic)>{};
+    assignments.removeWhere((assignment) => !assignmentEndpoints
+        .add((assignment.src.resolved, assignment.dst.resolved)));
+
     // add back all the partial assignments that were removed since they could
     // not be merged
     assignments.addAll(partialAssignments);

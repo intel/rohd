@@ -184,15 +184,56 @@ class SharedLiveFanoutModule extends Module {
   }
 }
 
+class PairedTypedEnumInputModule extends Module with SystemVerilog {
+  PairedTypedEnumInputModule(Logic source,
+      {List<int> encodings = const [0, 1, 2], bool sameEnumType = false}) {
+    final first = addTypedInput(
+        'firstInput',
+        LogicEnum<TestEnum>.withMapping(
+            Map.fromIterables(TestEnum.values, encodings),
+            width: source.width)
+          ..gets(source));
+    final secondType = sameEnumType
+        ? LogicEnum<TestEnum>.withMapping(
+            Map.fromIterables(TestEnum.values, encodings.reversed),
+            width: source.width)
+        : LogicEnum<OtherEnum>.withMapping(
+            Map.fromIterables(OtherEnum.values, encodings.reversed),
+            width: source.width);
+    final second = addTypedInput('secondInput', secondType..gets(source));
+    addOutput('first', width: source.width) <= first;
+    addOutput('second', width: source.width) <= second;
+  }
+
+  @override
+  String? definitionVerilog(String definitionType) => null;
+}
+
 class SharedConstantInstancesModule extends Module {
-  SharedConstantInstancesModule() {
-    final constant = Const(1, width: 2);
-    final alias = Logic(name: 'alias', width: 2)..gets(constant);
-    final first = PairedEnumConstantModule(constant);
-    final second = PairedEnumConstantModule(alias);
-    addOutput('first', width: 2) <= first.output('first');
-    addOutput('second', width: 2) <= second.output('second');
-    addOutput('raw', width: 2) <= alias;
+  SharedConstantInstancesModule({
+    bool typedInputs = false,
+    Logic? driver,
+    Naming? aliasNaming = Naming.mergeable,
+    List<int> enumEncodings = const [0, 1, 2],
+    bool sameEnumType = false,
+  }) {
+    var source = driver ?? Const(1, width: 2);
+    if (source is! Const) {
+      source = addInput('source', source, width: source.width);
+    }
+    final alias = aliasNaming == null
+        ? source
+        : (Logic(name: 'sharedAlias', width: source.width, naming: aliasNaming)
+          ..gets(source));
+    Module createChild(Logic source) => typedInputs
+        ? PairedTypedEnumInputModule(source,
+            encodings: enumEncodings, sameEnumType: sameEnumType)
+        : PairedEnumConstantModule(source);
+    final first = createChild(source);
+    final second = createChild(alias);
+    addOutput('first', width: source.width) <= first.output('first');
+    addOutput('second', width: source.width) <= second.output('second');
+    addOutput('raw', width: source.width) <= alias;
   }
 }
 
@@ -1470,6 +1511,85 @@ void main() {
         SimCompare.checkIverilogVector(module, vectors,
             synthesizerConfiguration: SystemVerilogSynthesizerConfiguration(
                 generateEnums: generateEnums));
+      });
+    }
+
+    for (final (constant, aliasNaming, sparse) in [
+      for (final constant in [false, true])
+        for (final aliasNaming in [null, Naming.mergeable, Naming.reserved])
+          (constant, aliasNaming, false),
+      for (final constant in [false, true]) (constant, Naming.reserved, true),
+    ]) {
+      test(
+          'shared typed inputs constant=$constant'
+          ' alias=${aliasNaming?.name ?? 'direct'} sparse=$sparse', () async {
+        final encodings = sparse ? [1, 3, 6] : [0, 1, 2];
+        final width = sparse ? 3 : 2;
+        final constantValue = sparse ? encodings.first : encodings[1];
+        final driver =
+            constant ? Const(constantValue, width: width) : Logic(width: width);
+        final module = SharedConstantInstancesModule(
+          typedInputs: true,
+          driver: driver,
+          aliasNaming: aliasNaming,
+          enumEncodings: encodings,
+          sameEnumType: sparse,
+        );
+        await module.build();
+        final definition = SynthModuleDefinition(module);
+        final endpoints = [
+          for (final assignment in definition.assignments)
+            if (assignment is! PartialSynthAssignment)
+              (assignment.src.resolved, assignment.dst.resolved),
+        ];
+        expect(endpoints.toSet(), hasLength(endpoints.length));
+        final vectors = [
+          for (final value in constant ? [constantValue] : encodings)
+            Vector(constant ? {} : {'source': value},
+                {'first': value, 'second': value, 'raw': value}),
+        ];
+        await SimCompare.checkFunctionalVector(module, vectors);
+        for (final generateEnums in [false, true]) {
+          final configuration = SystemVerilogSynthesizerConfiguration(
+              generateEnums: generateEnums);
+          String synthesize() => SynthBuilder(module,
+                  SystemVerilogSynthesizer(configuration: configuration))
+              .getSynthFileContents()
+              .join();
+          expect(synthesize(), synthesize());
+          SimCompare.checkIverilogVector(module, vectors,
+              synthesizerConfiguration: configuration);
+          if (constant && aliasNaming == Naming.mergeable) {
+            SimCompare.checkVerilatorVector(module, const [],
+                buildOnly: true, synthesizerConfiguration: configuration);
+          }
+        }
+
+        final netlist = jsonDecode(NetlistSynthesizer(
+                configuration: NetlistSynthesizerConfiguration(
+                    moduleStopPolicy: SynthModuleStopPolicy()))
+            .synthesizeToJson(module)) as Map<String, dynamic>;
+        final modules = netlist['modules'] as Map<String, dynamic>;
+        final child =
+            module.subModules.whereType<PairedTypedEnumInputModule>().first;
+        final childDefinition = modules[child.definitionName] as Map;
+        final netnames = childDefinition['netnames'] as Map;
+        final firstAttributes =
+            (netnames['firstInput'] as Map)['attributes'] as Map;
+        final secondAttributes =
+            (netnames['secondInput'] as Map)['attributes'] as Map;
+        expect(firstAttributes['wiretype'], r'\TestEnum');
+        expect(secondAttributes['wiretype'],
+            sparse ? startsWith(r'\TestEnum') : r'\OtherEnum');
+        expect(
+            secondAttributes['wiretype'], isNot(firstAttributes['wiretype']));
+        for (final encoding in encodings) {
+          final key =
+              'enum_value_${encoding.toRadixString(2).padLeft(width, '0')}';
+          expect(firstAttributes, contains(key));
+          expect(secondAttributes, contains(key));
+          expect(firstAttributes[key], isNot(secondAttributes[key]));
+        }
       });
     }
 
