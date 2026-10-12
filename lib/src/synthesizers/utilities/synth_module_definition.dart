@@ -1559,7 +1559,7 @@ class SynthModuleDefinition {
 
   /// Named enum definitions for retained signals and constant uses.
   ///
-  /// Empty when [generateEnums] is `false`.
+  /// Names are also planned for packed output to keep signal names stable.
   List<SynthEnumDefinition> get enumDefinitions =>
       _enumDefinitions.values.toList(growable: false);
 
@@ -1575,6 +1575,7 @@ class SynthModuleDefinition {
       final newDefinition = SynthEnumDefinition(
         synthEnum.characteristicEnum!,
         module.namer,
+        validateReservedNames: generateEnums,
       );
       _enumDefinitions[key] = newDefinition;
       synthEnum.enumDefinition = newDefinition;
@@ -1824,25 +1825,17 @@ class SynthModuleDefinition {
   /// [Namer.instanceNameOf]. All non-constant names share a single namespace
   /// managed by the module's [Namer].
   void _pickNames() {
-    if (generateEnums) {
-      (<SynthLogic>{
-        ...inputs,
-        ...outputs,
-        ...inOuts,
-        ...internalSignals,
-      }).where((signal) => signal.isEnum).forEach(_pickDefinitionEnumName);
-    }
-
     // Name allocation order matters -- earlier claims receive the unsuffixed
     // name when there are collisions. Weak-name claimants are intentionally
     // deferred so emitted objects receive 1st chance at the shortest basenames:
     //   1. Ports (reserved by _initNamespace, claimed via signalName)
     //   2. Reserved submodule instances
     //   3. Reserved internal signals with strong claims
-    //   4. Non-reserved submodule instances with strong claims
-    //   5. Non-reserved internal signals with strong claims
-    //   6. Weak submodule instances
-    //   7. Weak internal signals
+    //   4. Enum types and members (also protected in packed output)
+    //   5. Non-reserved submodule instances with strong claims
+    //   6. Non-reserved internal signals with strong claims
+    //   7. Weak submodule instances
+    //   8. Weak internal signals
     for (final input in inputs) {
       input.pickName();
     }
@@ -1867,12 +1860,20 @@ class SynthModuleDefinition {
     for (final signal in internalSignals) {
       if (_weakNameClaimSignals.contains(signal)) {
         weakSignals.add(signal);
-      } else if (signal.isReserved) {
+      } else if (signal.isReserved &&
+          (!signal.isConstant || signal.constNameDisallowed)) {
         signal.pickName();
       } else {
         nonReservedSignals.add(signal);
       }
     }
+
+    (<SynthLogic>{
+      ...inputs,
+      ...outputs,
+      ...inOuts,
+      ...internalSignals,
+    }).where((signal) => signal.isEnum).forEach(_pickDefinitionEnumName);
 
     // Then non-reserved submodule instances with strong name claims.
     final weakSubmodules = <SynthSubModuleInstantiation>[];

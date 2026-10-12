@@ -11,6 +11,7 @@ import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/namer.dart';
+import 'package:rohd/src/utilities/sanitizer.dart';
 
 /// Canonical synthesis metadata for an enum type in one module scope.
 @immutable
@@ -26,12 +27,21 @@ class SynthEnumDefinition<T extends Enum> {
   final Map<T, String> enumToNameMapping;
 
   /// Creates or reuses stable generated names through [namer].
+  ///
+  /// Set [validateReservedNames] to `false` to plan names for packed output
+  /// without rejecting conflicting enum declarations that will not be emitted.
   factory SynthEnumDefinition(
     LogicEnum<T> characteristicEnum,
-    Namer namer,
-  ) {
+    Namer namer, {
+    bool validateReservedNames = true,
+  }) {
     final definitionKey = SynthEnumDefinitionKey(characteristicEnum);
-    return SynthEnumDefinition._(characteristicEnum, namer, definitionKey);
+    final definition =
+        SynthEnumDefinition._(characteristicEnum, namer, definitionKey);
+    if (validateReservedNames && characteristicEnum.reserveDefinitionName) {
+      definition._validateReservedNames();
+    }
+    return definition;
   }
 
   /// Allocates or reuses type and member names for [definitionKey].
@@ -42,7 +52,6 @@ class SynthEnumDefinition<T extends Enum> {
   )   : definitionName = namer.identifierNameOf(
           definitionKey,
           initialName: characteristicEnum.definitionName,
-          reserved: characteristicEnum.reserveDefinitionName,
         ),
         enumToNameMapping = Map.unmodifiable(characteristicEnum.mapping.map(
           (enumValue, value) => MapEntry(
@@ -50,10 +59,22 @@ class SynthEnumDefinition<T extends Enum> {
             namer.identifierNameOf(
               (definitionKey, enumValue),
               initialName: enumValue.name,
-              reserved: characteristicEnum.reserveDefinitionName,
             ),
           ),
         ));
+
+  /// Verifies that planned names honor this enum's reserved identifiers.
+  void _validateReservedNames() {
+    for (final (actual, requested) in [
+      (definitionName, characteristicEnum.definitionName),
+      for (final entry in enumToNameMapping.entries)
+        (entry.value, entry.key.name),
+    ]) {
+      if (actual != Sanitizer.sanitizeSV(requested)) {
+        throw UnavailableReservedNameException(requested);
+      }
+    }
+  }
 }
 
 /// Equality key for enum definitions that may share one generated typedef.
