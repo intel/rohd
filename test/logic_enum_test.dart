@@ -751,6 +751,33 @@ void main() {
     }
   });
 
+  test('enum list constructor rejects duplicate members', () {
+    for (final values in [
+      [TestEnum.a, TestEnum.a],
+      [TestEnum.c, TestEnum.b, TestEnum.c],
+    ]) {
+      for (final width in [null, 4]) {
+        expect(() => LogicEnum(values, width: width),
+            throwsA(isA<ArgumentError>()));
+      }
+    }
+  });
+
+  test('enum list constructor preserves unique member order', () {
+    for (final width in [null, 4]) {
+      final values = [TestEnum.c, TestEnum.a, TestEnum.b];
+      final logicEnum = LogicEnum(values, width: width);
+
+      expect(logicEnum.width, width ?? 2);
+      expect(logicEnum.mapping.keys, orderedEquals(values));
+      expect(logicEnum.mapping, {
+        TestEnum.c: LogicValue.ofInt(0, logicEnum.width),
+        TestEnum.a: LogicValue.ofInt(1, logicEnum.width),
+        TestEnum.b: LogicValue.ofInt(2, logicEnum.width),
+      });
+    }
+  });
+
   test('single-value enum has a one-bit representation', () {
     final logicEnum = LogicEnum(SingleValueEnum.values);
 
@@ -763,6 +790,7 @@ void main() {
       () => LogicEnum<TestEnum>.withMapping({}),
       throwsA(isA<ArgumentError>()),
     );
+    expect(() => LogicEnum<TestEnum>([]), throwsA(isA<ArgumentError>()));
   });
 
   test('enum comparisons encode literals using the receiver mapping', () {

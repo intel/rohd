@@ -129,16 +129,28 @@ class LogicEnum<T extends Enum> extends LogicDef {
     return width;
   }
 
+  /// Converts [values] to sequential encodings in list order.
+  ///
+  /// Throws an [ArgumentError] if [values] contains duplicate members.
+  static Map<T, int> _computeDefaultMapping<T extends Enum>(List<T> values) {
+    if (values.toSet().length != values.length) {
+      throw ArgumentError.value(
+          values, 'values', 'Must not contain duplicates.');
+    }
+    return Map.fromEntries(
+        values.mapIndexed((index, value) => MapEntry(value, index)));
+  }
+
   /// Creates a signal with sequential encodings matching [values] order.
+  ///
+  /// Throws an [ArgumentError] if [values] is empty or contains duplicates.
   LogicEnum(List<T> values,
       {int? width,
       String? name,
       Naming? naming,
       String? definitionName,
       bool reserveDefinitionName = false})
-      : this.withMapping(
-            Map.fromEntries(
-                values.mapIndexed((index, value) => MapEntry(value, index))),
+      : this.withMapping(_computeDefaultMapping(values),
             width: width,
             name: name,
             naming: naming,
