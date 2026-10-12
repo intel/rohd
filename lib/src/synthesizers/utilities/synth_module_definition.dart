@@ -1545,6 +1545,7 @@ class SynthModuleDefinition {
     }
   }
 
+  /// Specializes submodule input uses for their paired enum types.
   void _adjustTypePairs() {
     for (final submoduleInstantiation
         in moduleToSubModuleInstantiationMap.values) {
@@ -1552,12 +1553,17 @@ class SynthModuleDefinition {
     }
   }
 
+  /// Enum definitions named in this module, keyed by generated type identity.
   final Map<SynthEnumDefinitionKey, SynthEnumDefinition> _enumDefinitions =
       <SynthEnumDefinitionKey, SynthEnumDefinition>{};
 
+  /// Named enum definitions for retained signals and constant uses.
+  ///
+  /// Empty when [generateEnums] is `false`.
   List<SynthEnumDefinition> get enumDefinitions =>
       _enumDefinitions.values.toList(growable: false);
 
+  /// Assigns shared generated names for [synthEnum]'s enum definition.
   void _pickDefinitionEnumName(SynthLogic synthEnum) {
     assert(synthEnum.isEnum, 'Only call this on SynthLogic that is an enum.');
     final key = SynthEnumDefinitionKey(synthEnum.characteristicEnum!);

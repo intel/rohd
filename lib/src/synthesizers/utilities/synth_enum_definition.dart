@@ -1,3 +1,12 @@
+// Copyright (C) 2025-2026 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// synth_enum_definition.dart
+// Definition for SynthEnumDefinition.
+//
+// 2025 June 27
+// Author: Max Korbel <max.korbel@intel.com>
+
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
@@ -25,6 +34,7 @@ class SynthEnumDefinition<T extends Enum> {
     return SynthEnumDefinition._(characteristicEnum, namer, definitionKey);
   }
 
+  /// Allocates or reuses type and member names for [definitionKey].
   SynthEnumDefinition._(
     this.characteristicEnum,
     Namer namer,

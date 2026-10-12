@@ -2,7 +2,7 @@
 title: "Logic Enums"
 permalink: /docs/logic-enums/
 excerpt: "Representing enumerable values as hardware signals"
-last_modified_at: 2026-08-10
+last_modified_at: 2026-10-12
 toc: true
 ---
 
@@ -78,6 +78,17 @@ expect(operation.valueEnum, Operation.read);
 ```
 
 Assignments between `LogicEnum`s require the same Dart enum type, width, and compatible encodings. A destination may have additional mapped values, but every value mapped by the source must have the same encoding in the destination.
+
+## Comparisons
+
+Comparison methods and `isIn` accept enum members and use the signal's mapping:
+
+```dart
+final isRead = operation.eq(Operation.read);
+final isActive = operation.isIn([Operation.read, Operation.write]);
+```
+
+These operations return `Logic` signals. Use `eq` and `neq` for hardware equality comparisons, rather than Dart's `==` and `!=`. Ordering methods (`lt`, `lte`, `gt`, and `gte`) compare hardware encodings, not Dart declaration order.
 
 ## Cases
 

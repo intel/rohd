@@ -100,6 +100,9 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
     }
   }
 
+  /// Rewrites assignment references while preserving range and slice bounds.
+  ///
+  /// Returns the original assignment when neither endpoint changes.
   SynthAssignment _replaceAssignmentSignals(
     SynthAssignment assignment,
     Map<SynthLogic, SynthLogic> replacements,

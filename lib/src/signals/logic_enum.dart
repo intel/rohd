@@ -35,6 +35,9 @@ class LogicEnum<T extends Enum> extends LogicDef {
               'Value $value does not correspond to any enum in $mapping'))
       .key;
 
+  /// Normalizes [mapping] to unique, valid [width]-bit encodings.
+  ///
+  /// Rejects integer encodings that would be truncated at [width].
   static Map<T, LogicValue> _computeMapping<T extends Enum>(
       {required Map<T, dynamic> mapping, required int width}) {
     final computedMapping = mapping
@@ -70,6 +73,10 @@ class LogicEnum<T extends Enum> extends LogicDef {
     return computedMapping;
   }
 
+  /// Chooses an inferred or requested width that can hold [mapping].
+  ///
+  /// Rejects empty mappings, duplicate encodings, negative integer encodings,
+  /// and requested widths smaller than the inferred minimum.
   static int _computeWidth<T extends Enum>(
       {int? requestedWidth, Map<T, dynamic>? mapping}) {
     var width = 1;
@@ -234,6 +241,9 @@ class LogicEnum<T extends Enum> extends LogicDef {
     }
   }
 
+  /// Encodes enum members through [mapping], preserving other operands.
+  ///
+  /// Rejects members of another enum type or absent from this mapping.
   dynamic _comparisonOperand(dynamic other) {
     if (other is T) {
       final encoding = mapping[other];
