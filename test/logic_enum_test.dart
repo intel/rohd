@@ -347,7 +347,7 @@ class EnumSubsetAssignmentModule extends Module {
 }
 
 class EnumSubsetConditionalAssignmentModule extends Module {
-  EnumSubsetConditionalAssignmentModule(Logic selector) {
+  EnumSubsetConditionalAssignmentModule(Logic selector, {bool direct = false}) {
     selector = addInput('selector', selector, width: 2);
     final narrow = LogicEnum<TestEnum>.withMapping(
       {
@@ -367,7 +367,9 @@ class EnumSubsetConditionalAssignmentModule extends Module {
       definitionName: 'BroadEnum',
     );
 
-    Combinational([broad < narrow]);
+    Combinational([
+      if (direct) ConditionalAssign(broad, narrow) else broad < narrow,
+    ]);
     addOutput('result', width: 2) <= broad;
   }
 }
@@ -776,6 +778,166 @@ void main() {
     expect(() => narrow.gets(broad), throwsA(isA<ArgumentError>()));
     expect(() => broad.gets(conflicting), throwsA(isA<ArgumentError>()));
   });
+
+  for (final direct in [false, true]) {
+    test('conditional enum assignment validates typed drivers direct=$direct',
+        () {
+      Conditional assign(LogicEnum<TestEnum> receiver, Logic driver) =>
+          direct ? ConditionalAssign(receiver, driver) : receiver < driver;
+      final receiver = LogicEnum(TestEnum.values);
+      final narrow = LogicEnum<TestEnum>.withMapping({
+        TestEnum.a: 0,
+        TestEnum.b: 1,
+      }, width: 2);
+      final conflicting = LogicEnum<TestEnum>.withMapping({
+        TestEnum.a: 1,
+        TestEnum.b: 0,
+        TestEnum.c: 2,
+      });
+
+      expect(() => assign(receiver, LogicEnum(OtherEnum.values)),
+          throwsA(isA<ArgumentError>()));
+      expect(
+          () => assign(receiver, conflicting), throwsA(isA<ArgumentError>()));
+      expect(() => assign(narrow, receiver), throwsA(isA<ArgumentError>()));
+      expect(assign(receiver, receiver.clone()), isA<ConditionalAssign>());
+      expect(
+          (assign(receiver, narrow) as ConditionalAssign).driver, same(narrow));
+      expect(assign(receiver, Logic(width: 2)), isA<ConditionalAssign>());
+    });
+  }
+
+  for (final direct in [false, true]) {
+    for (final sequential in [false, true]) {
+      test(
+          'subset conditional preserves normalization'
+          ' direct=$direct sequential=$sequential', () async {
+        final source = Logic(width: 2)..put(0);
+        final sibling = Logic(width: 2)..gets(source);
+        final narrow = LogicEnum<TestEnum>.withMapping({
+          TestEnum.a: 0,
+          TestEnum.b: 1,
+        }, width: 2)
+          ..gets(source);
+        final broad = LogicEnum(TestEnum.values);
+        final assignment =
+            direct ? ConditionalAssign(broad, narrow) : broad < narrow;
+        final clock = Logic()..put(0);
+        if (sequential) {
+          Sequential(clock, [assignment]);
+        } else {
+          Combinational([assignment]);
+        }
+
+        final zero = LogicValue.ofInt(0, 2);
+        final one = LogicValue.ofInt(1, 2);
+        final unknown = LogicValue.filled(2, LogicValue.x);
+        final floating = LogicValue.filled(2, LogicValue.z);
+        final cases = <(Object, LogicValue)>[
+          (1, one),
+          (2, unknown),
+          ('xx', unknown),
+          ('0x', unknown),
+          ('0z', unknown),
+          ('zz', floating),
+          (0, zero),
+        ];
+        Simulator.registerAction(1, () => clock.put(1));
+        Simulator.registerAction(2, () => expect(broad.value, zero));
+        var previousOutput = zero;
+        for (var index = 0; index < cases.length; index++) {
+          final (input, expectedSource) = cases[index];
+          final expectedOutput =
+              expectedSource.isFloating ? unknown : expectedSource;
+          final heldValue = previousOutput;
+          previousOutput = expectedOutput;
+          final time = 10 + index * 10;
+          Simulator.registerAction(time, () {
+            clock.put(0);
+            source.put(input);
+          });
+          Simulator.registerAction(time + 1, () {
+            expect([
+              source.value,
+              sibling.value,
+              narrow.value
+            ], everyElement(expectedSource), reason: 'Source value $input');
+            expect(broad.value, sequential ? heldValue : expectedOutput,
+                reason: 'Before clock edge with $input');
+          });
+          Simulator.registerAction(time + 2, () {
+            clock.put(1);
+          });
+          Simulator.registerAction(time + 3, () {
+            expect(broad.value, expectedOutput, reason: 'Sampled value $input');
+          });
+          if (sequential) {
+            Simulator.registerAction(time + 4, () => source.put(1));
+            Simulator.registerAction(time + 5, () {
+              expect(broad.value, expectedOutput,
+                  reason: 'Held value after sampling $input');
+            });
+          }
+        }
+        if (sequential) {
+          final time = 10 + cases.length * 10;
+          Simulator.registerAction(time, () {
+            clock.put(0);
+            source.put(0);
+          });
+          Simulator.registerAction(time + 1, () {
+            clock.put(1);
+            source.put(1);
+          });
+          Simulator.registerAction(time + 2, () {
+            expect(broad.value, unknown, reason: 'Clock/input race');
+          });
+        }
+        await Simulator.run();
+      });
+    }
+  }
+
+  for (final direct in [false, true]) {
+    test('subset conditional samples the previous flop value direct=$direct',
+        () async {
+      final source = Logic(width: 2)..put(0);
+      final clock = Logic()..put(0);
+      final narrow = LogicEnum<TestEnum>.withMapping({
+        TestEnum.a: 0,
+        TestEnum.b: 1,
+      }, width: 2);
+      final broad = LogicEnum(TestEnum.values);
+      Sequential(clock, [narrow < source]);
+      Sequential(clock, [
+        if (direct) ConditionalAssign(broad, narrow) else broad < narrow,
+      ]);
+      narrow.put(0);
+      broad.put(0);
+
+      var previousValue = LogicValue.ofInt(0, 2);
+      final inputs = [1, 0, 2, 1];
+      for (var index = 0; index < inputs.length; index++) {
+        final input = inputs[index];
+        final sampledValue = previousValue;
+        final nextValue = input == 2
+            ? LogicValue.filled(2, LogicValue.x)
+            : LogicValue.ofInt(input, 2);
+        previousValue = nextValue;
+        final time = 10 + index * 10;
+        Simulator.registerAction(time, () {
+          clock.put(0);
+          source.put(input);
+        });
+        Simulator.registerAction(time + 2, () => clock.put(1));
+        Simulator.registerAction(time + 3, () {
+          expect(narrow.value, nextValue);
+          expect(broad.value, sampledValue);
+        });
+      }
+      await Simulator.run();
+    });
+  }
 
   test('mapping width is inferred from integer encodings', () {
     final logicEnum = LogicEnum<TestEnum>.withMapping({
@@ -2003,31 +2165,36 @@ void main() {
       );
     });
 
-    test('conditional subset enum assignment synthesizes', () async {
-      final module = EnumSubsetConditionalAssignmentModule(Logic(width: 2));
-      await module.build();
+    for (final direct in [false, true]) {
+      test('conditional subset enum assignment synthesizes direct=$direct',
+          () async {
+        final module = EnumSubsetConditionalAssignmentModule(Logic(width: 2),
+            direct: direct);
+        await module.build();
 
-      final sv = module.dumpSystemVerilog();
-      expect(sv, contains("BroadEnum'(narrow)"));
+        final sv = module.dumpSystemVerilog();
+        expect(sv, contains("BroadEnum'(narrow)"));
 
-      final vectors = [
-        Vector({'selector': 0}, {'result': 0}),
-        Vector({'selector': 1}, {'result': 1}),
-      ];
-      await SimCompare.checkFunctionalVector(module, vectors);
-      SimCompare.checkIverilogVector(module, vectors);
+        final vectors = [
+          Vector({'selector': 0}, {'result': 0}),
+          Vector({'selector': 1}, {'result': 1}),
+        ];
+        await SimCompare.checkFunctionalVector(module, vectors);
+        SimCompare.checkIverilogVector(module, vectors);
 
-      const configuration =
-          SystemVerilogSynthesizerConfiguration(generateEnums: false);
-      final untypedSv = module.dumpSystemVerilog(configuration: configuration);
-      expect(untypedSv, isNot(contains('typedef enum')));
-      expect(untypedSv, isNot(contains("BroadEnum'(")));
-      SimCompare.checkIverilogVector(
-        module,
-        vectors,
-        synthesizerConfiguration: configuration,
-      );
-    });
+        const configuration =
+            SystemVerilogSynthesizerConfiguration(generateEnums: false);
+        final untypedSv =
+            module.dumpSystemVerilog(configuration: configuration);
+        expect(untypedSv, isNot(contains('typedef enum')));
+        expect(untypedSv, isNot(contains("BroadEnum'(")));
+        SimCompare.checkIverilogVector(
+          module,
+          vectors,
+          synthesizerConfiguration: configuration,
+        );
+      });
+    }
 
     test('enum driven from a packed slice synthesizes in both modes', () async {
       final module = EnumFromSliceModule(Logic(width: 8));

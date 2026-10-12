@@ -187,7 +187,7 @@ class LogicEnum<T extends Enum> extends LogicDef {
   /// A [Const] driver must match [width] and have an encoding in [mapping].
   @override
   void gets(Logic other) {
-    if (other is LogicEnum && !_canAcceptValuesFrom(other)) {
+    if (other is LogicEnum && !canAcceptValuesFrom(other)) {
       throw ArgumentError.value(
           other, 'other', 'Enum values must be representable in this mapping.');
     }
@@ -211,22 +211,6 @@ class LogicEnum<T extends Enum> extends LogicDef {
 
     if (other is T) {
       return super < (clone()..getsEnum(other));
-    } else if (other is LogicEnum) {
-      if (!_canAcceptValuesFrom(other)) {
-        throw ArgumentError.value(other, 'other',
-            'Enum values must be representable in this mapping.');
-      }
-      if (!isEquivalentTypeTo(other)) {
-        // here we build a bridge to convert the other enum to a raw logic
-        // signal that this enum can accept
-        final rawBridge = Logic(
-          name: '${other.name}_raw',
-          width: width,
-          naming: Naming.renameable,
-        )..gets(other);
-        return super < (clone()..gets(rawBridge));
-      }
-      return super < other;
     } else if (other is Enum) {
       throw ArgumentError.value(other, 'other', 'Must be a value of $T.');
     } else {
@@ -291,7 +275,8 @@ class LogicEnum<T extends Enum> extends LogicDef {
   }
 
   /// Whether every enum value from [other] is representable by this signal.
-  bool _canAcceptValuesFrom(LogicEnum other) =>
+  @internal
+  bool canAcceptValuesFrom(LogicEnum other) =>
       other is LogicEnum<T> &&
       width == other.width &&
       other.mapping.entries.every((entry) => mapping[entry.key] == entry.value);

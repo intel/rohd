@@ -28,12 +28,21 @@ class ConditionalAssign extends Conditional {
   /// Conditionally assigns [receiver] to the value of [driver].
   ///
   /// A constant [driver] must be in a [LogicEnum] receiver's mapping.
+  /// An enum [driver] must have the same enum type and a compatible mapping.
   ConditionalAssign(this.receiver, this.driver) {
     if (driver.width != receiver.width) {
       throw PortWidthMismatchException.equalWidth(receiver, driver);
     }
 
     final enumReceiver = receiver;
+    final enumDriver = driver;
+    if (enumReceiver is LogicEnum &&
+        enumDriver is LogicEnum &&
+        !enumReceiver.canAcceptValuesFrom(enumDriver)) {
+      throw ArgumentError.value(driver, 'driver',
+          'Enum values must be representable in this mapping.');
+    }
+
     if (enumReceiver is LogicEnum &&
         driver is Const &&
         !enumReceiver.mapping.containsValue(driver.value)) {
