@@ -73,7 +73,7 @@ Use `getsEnum` for a continuous connection to a constant enum value. In testbenc
 final constantOperation = operation.clone()
   ..getsEnum(Operation.write);
 
-operation.inject(Operation.read);
+operation.put(Operation.read);
 expect(operation.valueEnum, Operation.read);
 ```
 
