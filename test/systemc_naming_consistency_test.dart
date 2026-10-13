@@ -241,7 +241,7 @@ void main() {
       );
     });
 
-    test('generateSystemC does not crash after generateSynth', () async {
+    test('SystemCService does not crash after generateSynth', () async {
       final mod = _FlopModule(Logic(), Logic(width: 8));
       await mod.build();
 
@@ -249,16 +249,16 @@ void main() {
       final sv = SystemVerilogService(mod, register: false).synthOutput;
       expect(sv, contains('module'));
 
-      final sc = mod.generateSystemC();
+      final sc = SystemCService(mod, register: false).output;
       expect(sc, contains('SC_MODULE'));
     });
 
-    test('generateSynth does not crash after generateSystemC', () async {
+    test('generateSynth does not crash after SystemCService', () async {
       final mod = _FlopModule(Logic(), Logic(width: 8));
       await mod.build();
 
       // SC first, then SV — reverse order.
-      final sc = mod.generateSystemC();
+      final sc = SystemCService(mod, register: false).output;
       expect(sc, contains('SC_MODULE'));
 
       final sv = SystemVerilogService(mod, register: false).synthOutput;
@@ -270,7 +270,7 @@ void main() {
       await mod.build();
 
       final sv = SystemVerilogService(mod, register: false).synthOutput;
-      final sc = mod.generateSystemC();
+      final sc = SystemCService(mod, register: false).output;
 
       // Port names must appear in both outputs.
       for (final portName in [...mod.inputs.keys, ...mod.outputs.keys]) {
