@@ -389,6 +389,9 @@ class Logic {
 
   /// Handles the actual connection of this [Logic] to be driven by [other].
   void _connect(Logic other) {
+    if (other is! LogicNet) {
+      other._wire._assertCanAdopt(_wire, signalName: name);
+    }
     makeUnassignable(reason: '$this is connected to $other.');
 
     if (other is LogicNet) {

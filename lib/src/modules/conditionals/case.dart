@@ -160,6 +160,17 @@ class Case extends Conditional {
   /// Case-item values whose generated ports must match [expression]'s type.
   final Map<Logic, Logic> _itemTypePortPairs = {};
 
+  @override
+  bool shouldPropagateType(Logic reference, LogicValue? constantValue) {
+    if (reference is LogicEnum &&
+        constantValue != null &&
+        !reference.mapping.containsValue(constantValue)) {
+      throw StateError(
+          'Constant is not representable by the enum case expression.');
+    }
+    return true;
+  }
+
   /// Whenever an item in [items] matches [expression], it will be executed.
   ///
   /// If none of [items] match, then [defaultItem] is executed.
@@ -422,11 +433,15 @@ ${subPadding}end
 /// equivalent to `z` syntax.
 class CaseZ extends Case {
   @override
-  bool shouldPropagateType(LogicValue? constantValue) =>
-      constantValue == null ||
-      !Iterable.generate(
-              constantValue.width, (bitIndex) => constantValue[bitIndex])
-          .contains(LogicValue.z);
+  bool shouldPropagateType(Logic reference, LogicValue? constantValue) {
+    if (constantValue != null &&
+        Iterable.generate(
+                constantValue.width, (bitIndex) => constantValue[bitIndex])
+            .contains(LogicValue.z)) {
+      return false;
+    }
+    return super.shouldPropagateType(reference, constantValue);
+  }
 
   /// Whenever an item in [items] matches [expression], it will be executed, but
   /// the definition of matches allows for `z` to be a wildcard.

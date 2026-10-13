@@ -173,6 +173,24 @@ class _Wire {
     }
   }
 
+  /// Rejects constraint adoption that would change this immutable wire's value.
+  void _assertCanAdopt(_Wire other, {required String signalName}) {
+    if (_immutableOwner == null || other._valueConstraints.isEmpty) {
+      return;
+    }
+
+    var constrainedValue = value;
+    for (final constraint in {
+      ..._valueConstraints,
+      ...other._valueConstraints
+    }) {
+      constrainedValue = constraint(constrainedValue);
+    }
+    if (constrainedValue != value) {
+      _assertMutable(signalName: signalName);
+    }
+  }
+
   /// Tells this [_Wire] to adopt all the behavior of [other] so that
   /// it can replace [other]. Returns the [_Wire] that has adopted everything.
   _Wire _adopt(_Wire other) {

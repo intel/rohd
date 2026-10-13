@@ -116,7 +116,8 @@ class SynthSubModuleInstantiation {
   /// Propagates enum type metadata for an [Always] block's conditional uses.
   ///
   /// Input uses receive local typed representations; their shared sources
-  /// are not retyped. Live inputs use assignments and constants use literals.
+  /// are not retyped. Mapped constants use literals; other assignment inputs
+  /// use typed conversions.
   @internal
   void adjustTypePairs() {
     final alwaysBlock = module;
@@ -142,29 +143,32 @@ class SynthSubModuleInstantiation {
       final referenceSynth = mappedPort(reference);
 
       if (referenceSynth.isEnum) {
+        final enumType = referenceSynth.characteristicEnum!;
         final constantValue = toUpdateSynth.isConstant
             ? toUpdateSynth.logics.whereType<Const>().first.value
             : null;
-        if (!entry.value.conditional.shouldPropagateType(constantValue)) {
+        if (!entry.value.conditional
+            .shouldPropagateType(enumType, constantValue)) {
           continue;
         }
         if (toUpdateSynth.isEnum &&
             SynthEnumDefinitionKey(toUpdateSynth.characteristicEnum!) ==
-                SynthEnumDefinitionKey(referenceSynth.characteristicEnum!)) {
+                SynthEnumDefinitionKey(enumType)) {
           // If the types are equivalent, we can just use the original, no need
           // to do any additional merging.
           continue;
         }
 
         final definition = toUpdateSynth.parentSynthModuleDefinition;
-        final typedInput = toUpdateSynth.isConstant
-            ? toUpdateSynth
-                .constantWithEnumType(referenceSynth.characteristicEnum!)
-            : SynthLogic(referenceSynth.characteristicEnum!.clone(),
+        final useEnumLiteral = constantValue != null &&
+            enumType.mapping.containsValue(constantValue);
+        final typedInput = useEnumLiteral
+            ? toUpdateSynth.constantWithEnumType(enumType)
+            : SynthLogic(enumType.clone(),
                 parentSynthModuleDefinition: definition,
                 generatedNameKey: (module, toUpdate, reference));
         definition.internalSignals.add(typedInput);
-        if (!toUpdateSynth.isConstant) {
+        if (!useEnumLiteral) {
           definition.assignments
               .add(SynthAssignment(toUpdateSynth, typedInput));
         }

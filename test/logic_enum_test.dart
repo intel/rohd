@@ -111,6 +111,22 @@ class ModWithEnumConstAssignment extends Module {
   }
 }
 
+class RawConstantEnumAssignmentModule extends Module {
+  RawConstantEnumAssignmentModule(LogicValue value,
+      {Naming? naming, Logic? clock}) {
+    final alias = Const(value).named('namedLiteral', naming: naming);
+    final state = MyListLogicEnum(name: 'enumState', naming: Naming.reserved);
+    final conditionals = [state < alias];
+    if (clock == null) {
+      Combinational(conditionals);
+    } else {
+      Sequential(addInput('clock', clock), conditionals);
+    }
+    addOutput('result', width: state.width) <= state;
+    addOutput('raw', width: alias.width) <= alias;
+  }
+}
+
 class SharedEnumConstantModule extends Module {
   SharedEnumConstantModule(Logic select,
       {required bool directAssignments, Logic? clock}) {
@@ -1718,6 +1734,62 @@ void main() {
     expect(() => alias.put(3), throwsA(isA<UnassignableException>()));
   });
 
+  test('immutable enum adoption rejects normalization before mutation', () {
+    for (final throughUpstream in [false, true]) {
+      for (final invalidValue in [
+        LogicValue.ofInt(3, 2),
+        LogicValue.ofString('0z'),
+      ]) {
+        final logicEnum = MyListLogicEnum();
+        final receiver = throughUpstream ? Logic(width: 2) : logicEnum;
+        if (throughUpstream) {
+          logicEnum.gets(receiver);
+        }
+        receiver.put(1);
+        final sibling = Logic(width: 2)..gets(receiver);
+        final source = Const(invalidValue);
+        final alias = source.named('immutableAlias');
+        final receiverChanges = <LogicValueChanged>[];
+        final sourceChanges = <LogicValueChanged>[];
+        receiver.glitch.listen(receiverChanges.add);
+        alias.glitch.listen(sourceChanges.add);
+
+        expect(
+            () => receiver.gets(alias), throwsA(isA<UnassignableException>()));
+        expect(receiver.srcConnection, isNull);
+        expect(receiver.srcConnections, isEmpty);
+        expect(alias.dstConnections, isEmpty);
+        expect([receiver.value, logicEnum.value, sibling.value],
+            everyElement(LogicValue.ofInt(1, 2)));
+        expect([source.value, alias.value], everyElement(invalidValue));
+        expect(receiverChanges, isEmpty);
+        expect(sourceChanges, isEmpty);
+
+        receiver.put(2);
+        expect(logicEnum.valueEnum, TestEnum.c);
+        receiver.gets(Const(1, width: 2).named('validAlias'));
+        expect([receiver.value, logicEnum.value, sibling.value],
+            everyElement(LogicValue.ofInt(1, 2)));
+        expect([source.value, alias.value], everyElement(invalidValue));
+        expect(sourceChanges, isEmpty);
+      }
+    }
+  });
+
+  test('immutable enum adoption accepts unchanged mapped X and Z aliases', () {
+    for (final value in [
+      LogicValue.ofInt(2, 2),
+      LogicValue.filled(2, LogicValue.x),
+      LogicValue.filled(2, LogicValue.z),
+    ]) {
+      final alias = Const(value).named('immutableAlias');
+      final logicEnum = MyListLogicEnum()..gets(alias);
+      expect(logicEnum.srcConnection, same(alias));
+      expect([alias.value, logicEnum.value], everyElement(value));
+      expect(() => alias.put(1), throwsA(isA<UnassignableException>()));
+    }
+  });
+
   test('enum puts with enums', () {
     final e = MyListLogicEnum()..put(TestEnum.b);
     expect(e.value.toInt(), TestEnum.b.index);
@@ -1896,6 +1968,70 @@ void main() {
               " { a = 2'h0, b = 2'h1, c = 2'h2 } TestEnum;"));
       expect(sv, contains('assign banana = carrot & b;'));
     });
+
+    for (final (naming, sequential) in [
+      (Naming.mergeable, false),
+      (Naming.unnamed, true),
+      (null, false),
+    ]) {
+      test('raw constant enum assignment naming=$naming sequential=$sequential',
+          () async {
+        for (final value in [
+          LogicValue.ofInt(3, 2),
+          LogicValue.ofInt(1, 2),
+          LogicValue.ofString('0z'),
+        ]) {
+          await Simulator.reset();
+          final module = RawConstantEnumAssignmentModule(value,
+              naming: naming, clock: sequential ? Logic() : null);
+          await module.build();
+          final expectedResult = value == LogicValue.ofInt(1, 2)
+              ? value
+              : LogicValue.filled(2, LogicValue.x);
+          final vectors = [
+            if (sequential) Vector({'clock': 0}, {'raw': value}),
+            Vector({if (sequential) 'clock': 1},
+                {'result': expectedResult, 'raw': value}),
+          ];
+          await SimCompare.checkFunctionalVector(module, vectors);
+
+          final json = jsonDecode(NetlistSynthesizer(
+                  configuration: NetlistSynthesizerConfiguration(
+                      moduleStopPolicy: SynthModuleStopPolicy()))
+              .synthesizeToJson(module)) as Map<String, dynamic>;
+          final definition =
+              (json['modules'] as Map)[module.definitionName] as Map;
+          final netnames = definition['netnames'] as Map;
+          final rawAttributes = (netnames['raw'] as Map)['attributes'] as Map;
+          final enumAttributes =
+              (netnames['enumState'] as Map)['attributes'] as Map;
+          expect(rawAttributes, isNot(contains('wiretype')));
+          expect(enumAttributes, containsPair('wiretype', r'\TestEnum'));
+          expect(enumAttributes, isNot(contains('enum_value_11')));
+
+          for (final generateEnums in [false, true]) {
+            final configuration = SystemVerilogSynthesizerConfiguration(
+                generateEnums: generateEnums);
+            String synthesize() => SynthBuilder(module,
+                    SystemVerilogSynthesizer(configuration: configuration))
+                .getSynthFileContents()
+                .join();
+            final sv = synthesize();
+            expect(synthesize(), sv);
+            expect(sv.contains('logic [1:0] namedLiteral;'), naming == null);
+            if (expectedResult.isValid) {
+              SimCompare.checkIverilogVector(module, vectors,
+                  synthesizerConfiguration: configuration);
+            } else {
+              expect(sv, contains(value.toString()));
+              expect(sv.contains("TestEnum'("), generateEnums);
+            }
+            SimCompare.checkVerilatorVector(module, const [],
+                buildOnly: true, synthesizerConfiguration: configuration);
+          }
+        }
+      });
+    }
 
     for (final directAssignments in [false, true]) {
       for (final sequential in [false, true]) {

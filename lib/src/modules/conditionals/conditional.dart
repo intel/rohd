@@ -200,11 +200,12 @@ abstract class Conditional {
   @internal
   Map<Logic, Logic> get portTypePairs => const {};
 
-  /// Whether synthesis should apply a paired type to this input use.
+  /// Whether synthesis should apply [reference]'s resolved type to this use.
   ///
   /// A null [constantValue] indicates a non-constant input.
+  /// May throw if [constantValue] is invalid for the paired type in this use.
   @internal
-  bool shouldPropagateType(LogicValue? constantValue) => true;
+  bool shouldPropagateType(Logic reference, LogicValue? constantValue) => true;
 
   /// Returns a [String] of SystemVerilog to be used in generated output.
   ///
