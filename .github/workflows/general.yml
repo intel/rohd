@@ -64,7 +64,7 @@ jobs:
         run: tool/gh_actions/analyze_source.sh
 
       - name: Run Pana on project source
-        run: tool/gh_actions/pana_source.sh
+        run: tool/gh_actions/pana_source.sh . dart
 
       - name: Check project documentation
         run: tool/gh_actions/generate_documentation.sh
