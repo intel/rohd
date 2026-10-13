@@ -26,7 +26,7 @@ On activation the extension prints:
 
 ```text
 ════════════════════════════════════════════════════════════
-ROHD 0.1.0:  Extension loaded for FLC crossprobing.
+ROHD 0.2.0:  Extension loaded for FLC crossprobing.
 
 DTD:
   URI: ws://127.0.0.1:44123/token
@@ -258,12 +258,12 @@ cd rohd_extension
 npm run package
 ```
 
-This produces `rohd-0.1.0.vsix`.
+This produces `rohd-0.2.0.vsix`.
 
 ### Install
 
 ```bash
-code --install-extension rohd-0.1.0.vsix --force
+code --install-extension rohd-0.2.0.vsix --force
 ```
 
 Then reload the VS Code window (**Developer: Reload Window**).
@@ -274,7 +274,7 @@ Then reload the VS Code window (**Developer: Reload Window**).
 cd rohd_extension \
   && npm ci \
   && npm run package \
-  && code --install-extension rohd-0.1.0.vsix --force \
+  && code --install-extension rohd-0.2.0.vsix --force \
   && echo "Done — reload the VS Code window to activate."
 ```
 
@@ -290,7 +290,7 @@ Place the extension source in your repo and build it on container creation:
 ```jsonc
 // .devcontainer/devcontainer.json
 {
-  "postCreateCommand": "cd rohd_extension && npm ci && npm run package && code --install-extension rohd-0.1.0.vsix --force"
+  "postCreateCommand": "cd rohd_extension && npm ci && npm run package && code --install-extension rohd-0.2.0.vsix --force"
 }
 ```
 
@@ -300,14 +300,14 @@ Build the `.vsix` on your host or in CI, then install at container start:
 
 ```jsonc
 {
-  "postStartCommand": "code --install-extension rohd_extension/rohd-0.1.0.vsix --force"
+  "postStartCommand": "code --install-extension rohd_extension/rohd-0.2.0.vsix --force"
 }
 ```
 
 ### Option 3: Install via CLI while connected
 
 ```bash
-code --install-extension rohd-0.1.0.vsix --force
+code --install-extension rohd-0.2.0.vsix --force
 ```
 
 The `code` CLI inside a remote session targets the VS Code Server
@@ -325,9 +325,9 @@ automatically.
 If the `code` CLI is not available (e.g. in a Dockerfile `RUN` step):
 
 ```bash
-mkdir -p ~/.vscode-server/extensions/rohd.rohd-0.1.0
+mkdir -p ~/.vscode-server/extensions/rohd.rohd-0.2.0
 cp -r rohd_extension/{package.json,out,snippets,resources} \
-  ~/.vscode-server/extensions/rohd.rohd-0.1.0/
+  ~/.vscode-server/extensions/rohd.rohd-0.2.0/
 ```
 
 The directory name must follow the pattern `<publisher>.<name>-<version>`.

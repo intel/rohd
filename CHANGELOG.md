@@ -8,6 +8,13 @@
 - Released `rohd_hierarchy` 0.2.0 with the hierarchy query and netlist
   adapter APIs.
 
+- Added FST waveform writing, block reading, and query APIs.
+
+- Added SystemC generation, runtime, and module-service support.
+
+- Added source tracing, FLC output, hierarchy navigation, and the ROHD design
+  shell integration.
+
 ## 0.6.11
 
 - Added `NetlistSynthesizer` for generating JSON netlists, with configurable synthesis passes, validation, and hierarchy support (<https://github.com/intel/rohd/pull/675>).
