@@ -95,6 +95,21 @@ class SourceTracer {
     _current = this;
   }
 
+  /// Whether a tracer is currently capturing construction sites.
+  static bool get isActive => _current?._recording ?? false;
+
+  /// Deactivates [tracer] only when it is still the active tracer.
+  ///
+  /// Returns `true` when this call cleared [tracer]. This lets a scoped owner
+  /// avoid clearing a tracer activated later by another caller.
+  static bool clearIfCurrent(SourceTracer tracer) {
+    if (!identical(_current, tracer)) {
+      return false;
+    }
+    clear();
+    return true;
+  }
+
   /// Raw storage: maps a [Logic] (by identity) to the pre-stringified
   /// stack trace captured at its construction site.
   ///
@@ -1246,6 +1261,12 @@ class SourceTracer {
   /// }
   /// ```
   ///
+  /// When [moduleImplementationNames] is supplied, `modules` is keyed by the
+  /// actual generated implementation name rather than the requested source
+  /// definition name. Every entry records its source occurrences, so distinct
+  /// source modules that share an implementation retain their separate
+  /// construction provenance.
+  ///
   /// Returns `null` if no traces were recorded at all.
   static Map<String, Object>? traceJsonForHierarchy(
     Module root, {
@@ -1253,6 +1274,9 @@ class SourceTracer {
     List<String> skipPatterns = defaultSkipPatterns,
     Map<String, Map<String, Map<String, List<String>>>>? outputLineMaps,
     Map<String, Map<String, List<String>>>? outputFiles,
+    Map<Module, Map<String, Map<String, List<String>>>>? moduleOutputLineMaps,
+    Map<Module, Map<String, List<String>>>? moduleOutputFiles,
+    Map<Module, String>? moduleImplementationNames,
     Map<String, Map<String, List<String>>>? svLineMaps,
     Map<String, String>? svFileMap,
     Map<String, String>? packageMap,
@@ -1347,8 +1371,11 @@ class SourceTracer {
 
     void walk(Module module) {
       final defName = module.definitionName;
-      final lineMap = svLineMaps?[defName];
-      final scLineMap = scLineMaps?[defName];
+      final implementationName = moduleImplementationNames?[module];
+      final moduleName = implementationName ?? defName;
+      final moduleLineMaps = moduleOutputLineMaps?[module];
+      final lineMap = moduleLineMaps?['sv'] ?? svLineMaps?[moduleName];
+      final scLineMap = moduleLineMaps?['sc'] ?? scLineMaps?[moduleName];
 
       Map<String, List<String>> outputPositionsFor(String name) {
         final positions = <String, List<String>>{};
@@ -1358,9 +1385,16 @@ class SourceTracer {
         if (scLineMap != null && scLineMap.containsKey(name)) {
           positions['sc'] = scLineMap[name]!;
         }
-        if (outputLineMaps != null) {
+        if (moduleLineMaps != null) {
+          for (final entry in moduleLineMaps.entries) {
+            final languagePositions = entry.value[name];
+            if (languagePositions != null) {
+              positions[entry.key] = languagePositions;
+            }
+          }
+        } else if (outputLineMaps != null) {
           for (final entry in outputLineMaps.entries) {
-            final languagePositions = entry.value[defName]?[name];
+            final languagePositions = entry.value[moduleName]?[name];
             if (languagePositions != null) {
               positions[entry.key] = languagePositions;
             }
@@ -1369,128 +1403,153 @@ class SourceTracer {
         return positions;
       }
 
-      if (!modules.containsKey(defName)) {
-        // Per-module trie: children keyed by frame string.
-        final trieChildren = <String, _TrieNode>{};
+      // Per-module trie: children keyed by frame string.
+      final trieChildren = <String, _TrieNode>{};
 
-        /// Insert frames (reversed to outermost-first) with a leaf symbol.
-        void insertIntoTrie(List<String> frames, String symbol) {
-          final reversed = frames.reversed.toList();
-          var children = trieChildren;
-          for (var i = 0; i < reversed.length; i++) {
-            final frame = reversed[i];
-            final node = children.putIfAbsent(frame, () => _TrieNode(frame));
-            if (i == reversed.length - 1) {
-              node.symbols.add(symbol);
-            } else {
-              children = node.children;
-            }
+      /// Insert frames (reversed to outermost-first) with a leaf symbol.
+      void insertIntoTrie(List<String> frames, String symbol) {
+        final reversed = frames.reversed.toList();
+        var children = trieChildren;
+        for (var i = 0; i < reversed.length; i++) {
+          final frame = reversed[i];
+          final node = children.putIfAbsent(frame, () => _TrieNode(frame));
+          if (i == reversed.length - 1) {
+            node.symbols.add(symbol);
+          } else {
+            children = node.children;
           }
         }
+      }
 
-        // --- Signals ---
-        final useSynthDef = _canBuildSynthDef(module);
-        final synthDef = useSynthDef ? SynthModuleDefinition(module) : null;
-        final allSynthLogics = useSynthDef
-            ? [
-                ...synthDef!.inputs,
-                ...synthDef.outputs,
-                ...synthDef.inOuts,
-                ...synthDef.internalSignals,
-              ]
-            : <SynthLogic>[];
-        final sourceLogics = useSynthDef
-            ? synthLogicSourceMap(module, synthDef!)
-            : const <SynthLogic, Logic>{};
+      // --- Signals ---
+      final useSynthDef = _canBuildSynthDef(module);
+      final synthDef = useSynthDef ? SynthModuleDefinition(module) : null;
+      final allSynthLogics = useSynthDef
+          ? [
+              ...synthDef!.inputs,
+              ...synthDef.outputs,
+              ...synthDef.inOuts,
+              ...synthDef.internalSignals,
+            ]
+          : <SynthLogic>[];
+      final sourceLogics = useSynthDef
+          ? synthLogicSourceMap(module, synthDef!)
+          : const <SynthLogic, Logic>{};
 
-        if (useSynthDef) {
-          for (final sl in allSynthLogics) {
-            final logicNames = <String>{for (final l in sl.logics) l.name};
-            final frames = encodeFrames(
-              synthLogicTrace(module, sl, sourceLogics: sourceLogics),
-              module,
-            );
-            if (frames == null) {
-              continue;
-            }
-
-            final canonicalName = sl.name;
-            // Deduplicate: skip if already inserted for this definition.
-            // (Use a set to track — cheaper than searching the trie.)
-            String? origName;
-            if (!logicNames.contains(canonicalName)) {
-              final base = canonicalName.replaceFirst(RegExp(r'_\d+$'), '');
-              if (base != canonicalName && logicNames.contains(base)) {
-                origName = base;
-              } else {
-                origName = logicNames
-                    .where((n) => !n.startsWith('_'))
-                    .followedBy(logicNames)
-                    .first;
-                if (origName == canonicalName) {
-                  origName = null;
-                }
-              }
-            }
-            final needsOrig = origName != null && origName != canonicalName;
-
-            final outputPositions = outputPositionsFor(canonicalName);
-
-            insertIntoTrie(
-              frames,
-              encodeSymbol(
-                canonicalName,
-                outputPositions:
-                    outputPositions.isNotEmpty ? outputPositions : null,
-                origName: needsOrig ? origName : null,
-              ),
-            );
-          }
-        } else {
-          for (final sig in module.signals) {
-            final frames = encodeFrames(_current!._signalTraces[sig], module);
-            if (frames != null) {
-              insertIntoTrie(frames, encodeSymbol(sig.name));
-            }
-          }
-        }
-
-        // --- Instances ---
-        for (final sub in module.subModules) {
-          final frames = encodeFrames(_current!._moduleTraces[sub], module);
+      if (useSynthDef) {
+        for (final sl in allSynthLogics) {
+          final logicNames = <String>{for (final l in sl.logics) l.name};
+          final frames = encodeFrames(
+            synthLogicTrace(module, sl, sourceLogics: sourceLogics),
+            module,
+          );
           if (frames == null) {
             continue;
           }
-          final instName = sub.uniqueInstanceName;
-          final instPositions = outputPositionsFor(instName);
+
+          final canonicalName = sl.name;
+          String? origName;
+          if (!logicNames.contains(canonicalName)) {
+            final base = canonicalName.replaceFirst(RegExp(r'_\d+$'), '');
+            if (base != canonicalName && logicNames.contains(base)) {
+              origName = base;
+            } else {
+              origName = logicNames
+                  .where((n) => !n.startsWith('_'))
+                  .followedBy(logicNames)
+                  .first;
+              if (origName == canonicalName) {
+                origName = null;
+              }
+            }
+          }
+
+          final needsOrig = origName != null && origName != canonicalName;
+          final outputPositions = outputPositionsFor(canonicalName);
+
           insertIntoTrie(
             frames,
             encodeSymbol(
-              instName,
-              isInstance: true,
-              outputPositions: instPositions.isNotEmpty ? instPositions : null,
+              canonicalName,
+              outputPositions:
+                  outputPositions.isNotEmpty ? outputPositions : null,
+              origName: needsOrig ? origName : null,
             ),
           );
         }
+      } else {
+        for (final sig in module.signals) {
+          final frames = encodeFrames(_current!._signalTraces[sig], module);
+          if (frames != null) {
+            insertIntoTrie(frames, encodeSymbol(sig.name));
+          }
+        }
+      }
 
-        // Serialize trie.
-        if (trieChildren.isNotEmpty) {
-          final tree = [
-            for (final node in trieChildren.values) node.serialize(),
-          ];
-          final hasSvFile = svFileMap != null && svFileMap.containsKey(defName);
-          final hasScFile = scFileMap != null && scFileMap.containsKey(defName);
-          final moduleOutputFiles = <String, Object>{...?outputFiles?[defName]};
-          if (hasSvFile && !moduleOutputFiles.containsKey('sv')) {
-            moduleOutputFiles['sv'] = [svFileMap[defName]!];
+      // --- Instances ---
+      for (final sub in module.subModules) {
+        final frames = encodeFrames(_current!._moduleTraces[sub], module);
+        if (frames == null) {
+          continue;
+        }
+        final instName = sub.uniqueInstanceName;
+        final instPositions = outputPositionsFor(instName);
+        insertIntoTrie(
+          frames,
+          encodeSymbol(
+            instName,
+            isInstance: true,
+            outputPositions: instPositions.isNotEmpty ? instPositions : null,
+          ),
+        );
+      }
+
+      // Serialize trie.
+      if (trieChildren.isNotEmpty || modules.containsKey(moduleName)) {
+        final tree = [
+          for (final node in trieChildren.values) node.serialize(),
+        ];
+        final specificOutputFiles = moduleOutputFiles?[module];
+        final filesForModule = <String, Object>{
+          ...?specificOutputFiles ?? outputFiles?[moduleName],
+        };
+        if (specificOutputFiles == null) {
+          final hasSvFile =
+              svFileMap != null && svFileMap.containsKey(moduleName);
+          final hasScFile =
+              scFileMap != null && scFileMap.containsKey(moduleName);
+          if (hasSvFile && !filesForModule.containsKey('sv')) {
+            filesForModule['sv'] = [svFileMap[moduleName]!];
           }
-          if (hasScFile && !moduleOutputFiles.containsKey('sc')) {
-            moduleOutputFiles['sc'] = [scFileMap[defName]!];
+          if (hasScFile && !filesForModule.containsKey('sc')) {
+            filesForModule['sc'] = [scFileMap[moduleName]!];
           }
-          modules[defName] = <String, Object>{
-            if (moduleOutputFiles.isNotEmpty) 'outputFiles': moduleOutputFiles,
+        }
+        final constructionTrace =
+            encodeFrames(_current!._moduleTraces[module], module);
+        final sourceOccurrence = <String, Object>{
+          'path': module.hierarchicalName,
+          'definitionName': defName,
+          if (constructionTrace != null) 'constructionTrace': constructionTrace,
+        };
+        final existing = modules[moduleName];
+        if (existing == null) {
+          modules[moduleName] = <String, Object>{
+            if (implementationName != null)
+              'implementationName': implementationName,
+            if (filesForModule.isNotEmpty) 'outputFiles': filesForModule,
+            'sourceOccurrences': <Object>[sourceOccurrence],
             'tree': tree,
           };
+        } else {
+          final moduleData = existing as Map<String, Object>;
+          (moduleData['tree']! as List<Object>).addAll(tree);
+          (moduleData['sourceOccurrences']! as List<Object>)
+              .add(sourceOccurrence);
+          if (filesForModule.isNotEmpty &&
+              !moduleData.containsKey('outputFiles')) {
+            moduleData['outputFiles'] = filesForModule;
+          }
         }
       }
 
@@ -1505,6 +1564,9 @@ class SourceTracer {
 
     final version = outputLineMaps != null ||
             outputFiles != null ||
+            moduleOutputLineMaps != null ||
+            moduleOutputFiles != null ||
+            moduleImplementationNames != null ||
             scLineMaps != null ||
             scFileMap != null
         ? 6
@@ -1530,6 +1592,9 @@ class SourceTracer {
     List<String> skipPatterns = defaultSkipPatterns,
     Map<String, Map<String, List<String>>>? outputLineMap,
     Map<String, List<String>>? outputFile,
+    Map<String, Map<String, List<String>>>? moduleOutputLineMap,
+    Map<String, List<String>>? moduleOutputFile,
+    String? implementationName,
     String? svFile,
     Map<String, List<String>>? svLineMap,
   }) =>
@@ -1546,6 +1611,12 @@ class SourceTracer {
             : null,
         outputFiles:
             outputFile != null ? {module.definitionName: outputFile} : null,
+        moduleOutputLineMaps:
+            moduleOutputLineMap != null ? {module: moduleOutputLineMap} : null,
+        moduleOutputFiles:
+            moduleOutputFile != null ? {module: moduleOutputFile} : null,
+        moduleImplementationNames:
+            implementationName != null ? {module: implementationName} : null,
         svLineMaps:
             svLineMap != null ? {module.definitionName: svLineMap} : null,
         svFileMap: svFile != null ? {module.definitionName: svFile} : null,

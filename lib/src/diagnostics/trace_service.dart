@@ -184,9 +184,24 @@ class TraceService extends ArtifactProducingService {
           },
       };
 
+  /// Applies [_declarationLast] to every source-module-associated line map.
+  static Map<Module, Map<String, List<String>>> _declarationsLastByModule(
+    Map<Module, Map<String, List<String>>> lineMaps,
+  ) {
+    final result = Map<Module, Map<String, List<String>>>.identity();
+    for (final moduleEntry in lineMaps.entries) {
+      result[moduleEntry.key] = {
+        for (final symbolEntry in moduleEntry.value.entries)
+          symbolEntry.key: _declarationLast(symbolEntry.value),
+      };
+    }
+    return result;
+  }
+
   // ─── SV line map helpers ──────────────────────────────────────
 
-  /// Collects header-adjusted `svLineMaps` keyed by module definition name.
+  /// Collects header-adjusted `svLineMaps` keyed by generated implementation
+  /// name.
   ///
   /// Line numbers are per-module (1-based within each emitted module file),
   /// including a header when [SystemVerilogService.includeHeader] is `true`.
@@ -195,17 +210,24 @@ class TraceService extends ArtifactProducingService {
   Map<String, Map<String, List<String>>> get svLineMaps =>
       _declarationsLast(svService?.perModuleSvLineMaps ?? const {});
 
-  /// Collects `svFileMap` (definition name → `.sv` filename) from the
-  /// [SystemVerilogService] file contents.
-  Map<String, String> get svFileMap {
-    if (svService == null) {
-      return const {};
-    }
-    return {
-      for (final result in svService!.synthesisResults)
-        result.module.definitionName: '${result.instanceTypeName}.sv',
-    };
-  }
+  /// Collects per-source-module SV line maps.
+  ///
+  /// This preserves the association from every source module occurrence to
+  /// its generated implementation, including many-to-one implementation
+  /// sharing.
+  Map<Module, Map<String, List<String>>> get svLineMapsByModule =>
+      _declarationsLastByModule(
+        svService?.perModuleSvLineMapsByModule ?? const {},
+      );
+
+  /// Collects `svFileMap` (generated implementation name → `.sv` filename)
+  /// from the [SystemVerilogService] file contents.
+  Map<String, String> get svFileMap =>
+      svService?.svFileMapByInstanceType ?? const {};
+
+  /// Collects the emitted SV artifact for every source module occurrence.
+  Map<Module, String> get svFileMapByModule =>
+      svService?.svFileMapByModule ?? const {};
 
   // ─── Single-file helpers ─────────────────────────────────────
 
@@ -219,6 +241,12 @@ class TraceService extends ArtifactProducingService {
   Map<String, Map<String, List<String>>> get singleFileSvLineMaps =>
       _declarationsLast(svService?.singleFileSvLineMaps ?? const {});
 
+  /// Returns source-module SV line maps with file-global line numbers.
+  Map<Module, Map<String, List<String>>> get singleFileSvLineMapsByModule =>
+      _declarationsLastByModule(
+        svService?.singleFileSvLineMapsByModule ?? const {},
+      );
+
   /// Returns an [svFileMap] where every module maps to [filename].
   ///
   /// Use this when all modules share a single concatenated SV file.
@@ -227,10 +255,15 @@ class TraceService extends ArtifactProducingService {
       return const {};
     }
     return {
-      for (final result in svService!.synthesisResults)
-        result.module.definitionName: filename,
+      for (final instanceTypeName in svService!.svFileMapByInstanceType.keys)
+        instanceTypeName: filename,
     };
   }
+
+  /// Returns a source-module SV file map where every occurrence maps to
+  /// [filename].
+  Map<Module, String> singleFileSvFileMapByModule(String filename) =>
+      svService?.singleFileSvFileMapByModule(filename) ?? const {};
 
   /// The file path to advertise for single-file SV output.
   String get _singleFileSvPath {
@@ -251,62 +284,100 @@ class TraceService extends ArtifactProducingService {
   // ─── Mode-dependent helpers ──────────────────────────────────
 
   /// SV line maps selected by [svOutputMode].
-  Map<String, Map<String, List<String>>> get _activeSvLineMaps =>
+  Map<Module, Map<String, List<String>>> get _activeSvLineMaps =>
       svOutputMode == SvOutputMode.singleFile
-          ? singleFileSvLineMaps
-          : svLineMaps;
+          ? singleFileSvLineMapsByModule
+          : svLineMapsByModule;
 
   /// SV file map selected by [svOutputMode].
-  Map<String, String> get _activeSvFileMap =>
+  Map<Module, String> get _activeSvFileMap =>
       svOutputMode == SvOutputMode.singleFile
-          ? singleFileSvFileMap(_singleFileSvPath)
-          : svFileMap;
+          ? singleFileSvFileMapByModule(_singleFileSvPath)
+          : svFileMapByModule;
 
   /// SystemC line maps selected by [scOutputMode].
-  Map<String, Map<String, List<String>>> get _activeScLineMaps {
+  Map<Module, Map<String, List<String>>> get _activeScLineMaps {
     final service = scService;
     if (service == null) {
       return const {};
     }
-    return _declarationsLast(
+    return _declarationsLastByModule(
       scOutputMode == ScOutputMode.singleFile
-          ? service.singleFileScLineMaps
-          : service.scLineMaps,
+          ? service.singleFileScLineMapsByModule
+          : service.scLineMapsByModule,
     );
   }
 
   /// SystemC file maps selected by [scOutputMode].
-  Map<String, List<String>> get _activeScFileMap {
+  Map<Module, List<String>> get _activeScFileMap {
     final service = scService;
     if (service == null) {
       return const {};
     }
     return scOutputMode == ScOutputMode.singleFile
-        ? service.singleFileScFileMap(_singleFileScPath)
-        : service.scFileMap;
+        ? service.singleFileScFileMapByModule(_singleFileScPath)
+        : service.scFileMapByModule;
   }
 
-  /// Builds the generic `outputFiles` map (`defName -> lang -> filenames`)
-  /// from the active SV file map.
-  Map<String, Map<String, List<String>>> get _outputFiles {
-    final result = <String, Map<String, List<String>>>{};
-    for (final e in _activeSvFileMap.entries) {
+  /// Builds source-module-associated output file metadata.
+  Map<Module, Map<String, List<String>>> _outputFilesFor(
+    Map<Module, String> svFiles,
+    Map<Module, List<String>> scFiles,
+  ) {
+    final result = Map<Module, Map<String, List<String>>>.identity();
+    for (final e in svFiles.entries) {
       result.putIfAbsent(e.key, () => <String, List<String>>{})['sv'] = [
         e.value,
       ];
     }
-    for (final e in _activeScFileMap.entries) {
+    for (final e in scFiles.entries) {
       result.putIfAbsent(e.key, () => <String, List<String>>{})['sc'] = e.value;
     }
     return result;
   }
 
-  /// Builds the generic `outputLineMaps` map
-  /// (lang -> defName -> name -> positions) from the active SV line maps.
-  Map<String, Map<String, Map<String, List<String>>>> get _outputLineMaps => {
-        'sv': _activeSvLineMaps,
-        if (scService != null) 'sc': _activeScLineMaps,
-      };
+  /// Builds source-module-associated generated-code line maps.
+  Map<Module, Map<String, Map<String, List<String>>>> _outputLineMapsFor(
+    Map<Module, Map<String, List<String>>> svLineMaps,
+    Map<Module, Map<String, List<String>>> scLineMaps,
+  ) {
+    final result =
+        Map<Module, Map<String, Map<String, List<String>>>>.identity();
+    for (final e in svLineMaps.entries) {
+      result.putIfAbsent(
+          e.key, () => <String, Map<String, List<String>>>{})['sv'] = e.value;
+    }
+    for (final e in scLineMaps.entries) {
+      result.putIfAbsent(
+          e.key, () => <String, Map<String, List<String>>>{})['sc'] = e.value;
+    }
+    return result;
+  }
+
+  Map<Module, Map<String, List<String>>> get _outputFiles =>
+      _outputFilesFor(_activeSvFileMap, _activeScFileMap);
+
+  Map<Module, Map<String, Map<String, List<String>>>> get _outputLineMaps =>
+      _outputLineMapsFor(_activeSvLineMaps, _activeScLineMaps);
+
+  /// Maps source module occurrences to their generated implementation names.
+  ///
+  /// SystemVerilog is preferred when both code generators are present because
+  /// its implementation names are used by the primary FLC output files.
+  Map<Module, String> get _moduleImplementationNames {
+    final result = Map<Module, String>.identity();
+    final sv = svService;
+    if (sv != null) {
+      result.addAll(sv.synthBuilder.moduleInstanceTypes);
+    }
+    final sc = scService;
+    if (sc != null) {
+      for (final entry in sc.synthBuilder.moduleInstanceTypes.entries) {
+        result.putIfAbsent(entry.key, () => entry.value);
+      }
+    }
+    return result;
+  }
 
   /// Returns the FLC hierarchy with SV line numbers adjusted for
   /// single-file concatenated output.
@@ -326,31 +397,28 @@ class TraceService extends ArtifactProducingService {
     String? scFilename,
     Map<String, String>? packageMap,
   }) {
-    final outputLineMaps = <String, Map<String, Map<String, List<String>>>>{
-      'sv': singleFileSvLineMaps,
-    };
-    final outputFiles = <String, Map<String, List<String>>>{
-      for (final e in singleFileSvFileMap(svFilename).entries)
-        e.key: {
-          'sv': [e.value],
-        },
-    };
-
     final service = scService;
-    if (service != null) {
-      final filename = scFilename ?? _singleFileScPath;
-      outputLineMaps['sc'] = _declarationsLast(service.singleFileScLineMaps);
-      for (final e in service.singleFileScFileMap(filename).entries) {
-        outputFiles.putIfAbsent(e.key, () => <String, List<String>>{})['sc'] =
-            e.value;
-      }
-    }
+    final scLineMaps = service == null
+        ? const <Module, Map<String, List<String>>>{}
+        : _declarationsLastByModule(service.singleFileScLineMapsByModule);
+    final scFiles = service == null
+        ? const <Module, List<String>>{}
+        : service.singleFileScFileMapByModule(
+            scFilename ?? _singleFileScPath,
+          );
 
     return SourceTracer.traceJsonForHierarchy(
       module,
       packageRoot: packageRoot,
-      outputLineMaps: outputLineMaps,
-      outputFiles: outputFiles,
+      moduleOutputLineMaps: _outputLineMapsFor(
+        singleFileSvLineMapsByModule,
+        scLineMaps,
+      ),
+      moduleOutputFiles: _outputFilesFor(
+        singleFileSvFileMapByModule(svFilename),
+        scFiles,
+      ),
+      moduleImplementationNames: _moduleImplementationNames,
       packageMap: packageMap,
     );
   }
@@ -388,8 +456,9 @@ class TraceService extends ArtifactProducingService {
       _flcHierarchyCache ??= SourceTracer.traceJsonForHierarchy(
         module,
         packageRoot: packageRoot,
-        outputLineMaps: _outputLineMaps,
-        outputFiles: _outputFiles,
+        moduleOutputLineMaps: _outputLineMaps,
+        moduleOutputFiles: _outputFiles,
+        moduleImplementationNames: _moduleImplementationNames,
       );
 
   /// Returns the FLC hierarchy as a JSON string, or an unavailable status.
@@ -404,62 +473,76 @@ class TraceService extends ArtifactProducingService {
   Map<String, Object?> toJson() =>
       flcHierarchy ?? const <String, Object?>{'status': 'unavailable'};
 
-  /// Returns the FLC JSON for a single module definition, or `null`
-  /// if no traces exist for that module.
+  /// Returns the FLC JSON for the sole source occurrence with
+  /// [definitionName], or `null` if no traces exist for that module.
+  ///
+  /// Throws an [ArgumentError] when more than one source occurrence requested
+  /// [definitionName]. Use [flcForModuleInstance] in that case so a caller
+  /// cannot accidentally cross-probe the wrong occurrence.
   Map<String, Object>? flcForModule(String definitionName) {
-    // Find the module instance with this definition name.
-    Module? target;
+    final targets = <Module>[];
     void walk(Module m) {
-      if (m.definitionName == definitionName && target == null) {
-        target = m;
-        return;
+      if (m.definitionName == definitionName) {
+        targets.add(m);
       }
       m.subModules.forEach(walk);
     }
 
     walk(module);
 
-    if (target == null) {
+    if (targets.isEmpty) {
       return null;
     }
+    if (targets.length > 1) {
+      throw ArgumentError.value(
+        definitionName,
+        'definitionName',
+        'matches ${targets.length} source module occurrences; use '
+            'flcForModuleInstance instead',
+      );
+    }
 
-    return SourceTracer.traceJsonForModule(
-      target!,
-      packageRoot: packageRoot,
-      outputLineMap: {
-        if (_activeSvLineMaps[definitionName] != null)
-          'sv': _activeSvLineMaps[definitionName]!,
-        if (_activeScLineMaps[definitionName] != null)
-          'sc': _activeScLineMaps[definitionName]!,
-      },
-      outputFile: {
-        if (_activeSvFileMap[definitionName] != null)
-          'sv': [_activeSvFileMap[definitionName]!],
-        if (_activeScFileMap[definitionName] != null)
-          'sc': _activeScFileMap[definitionName]!,
-      },
-    );
+    return flcForModuleInstance(targets.single);
   }
 
-  /// Returns the FLC JSON for a single module as a JSON string (v6 format).
+  /// Returns FLC JSON for one exact source module occurrence, or `null` if
+  /// no traces were captured for it.
+  Map<String, Object>? flcForModuleInstance(Module target) =>
+      SourceTracer.traceJsonForModule(
+        target,
+        packageRoot: packageRoot,
+        moduleOutputLineMap: _outputLineMaps[target],
+        moduleOutputFile: _outputFiles[target],
+        implementationName: _moduleImplementationNames[target],
+      );
+
+  /// Returns the FLC JSON for a generated [implementationName] as a JSON
+  /// string (v6 format).
   ///
   /// Extracts the target module's entry from the cached v6 hierarchy so the
   /// returned JSON is always in the same trie-based format as [flcJson].
-  String flcModuleJson(String definitionName) {
+  String flcModuleJson(String implementationName) {
     final hierarchy = flcHierarchy;
     if (hierarchy == null) {
       return _unavailable;
     }
     final modules = hierarchy['modules'] as Map<String, Object>?;
-    if (modules == null || !modules.containsKey(definitionName)) {
+    if (modules == null || !modules.containsKey(implementationName)) {
       return _unavailable;
     }
     return jsonEncode(<String, Object>{
       'version': 6,
       'files': hierarchy['files']!,
-      'modules': <String, Object>{definitionName: modules[definitionName]!},
+      'modules': <String, Object>{
+        implementationName: modules[implementationName]!,
+      },
     });
   }
+
+  /// Returns FLC JSON for the generated implementation of [sourceModule].
+  String flcModuleJsonForModule(Module sourceModule) => flcModuleJson(
+        _moduleImplementationNames[sourceModule] ?? sourceModule.definitionName,
+      );
 
   // ─── HTML viewer ─────────────────────────────────────────────
 

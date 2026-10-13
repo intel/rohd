@@ -17,10 +17,10 @@ import 'dart:io';
 import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
 
-import '../example/filter_bank/filter_bank_modules.dart';
+import '../../../example/filter_bank/filter_bank_modules.dart';
 
 void main() {
-  final packageRoot = Directory.current.path;
+  final packageRoot = Directory.current.parent.path;
 
   tearDown(() async {
     await Simulator.reset();
@@ -322,11 +322,15 @@ void main() {
       reason: 'At least one module should have rohd.src_trace',
     );
 
-    // FLC hierarchy should be available via the service.
-    // ignore: deprecated_member_use_from_same_package
-    final flcHierarchy = netlist.flcHierarchy;
+    // FLC hierarchy should be available through the dedicated trace service.
+    final trace = TraceService(
+      dut,
+      packageRoot: packageRoot,
+      register: false,
+    );
+    final flcHierarchy = trace.flcHierarchy;
     expect(flcHierarchy, isNotNull);
-    expect(flcHierarchy!['version'], equals(5));
+    expect(flcHierarchy!['version'], equals(6));
     expect(flcHierarchy['files'], isA<List<dynamic>>());
     expect(flcHierarchy['modules'], isA<Map<String, dynamic>>());
 

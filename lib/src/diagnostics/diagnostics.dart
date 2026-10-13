@@ -7,6 +7,7 @@
 // 2026 July 16
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
+export 'debug_session.dart';
 // Retained so existing users can migrate from FlcService to TraceService.
 // ignore: deprecated_member_use_from_same_package
 export 'flc_service.dart' show FlcService;

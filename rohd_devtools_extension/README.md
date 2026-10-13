@@ -92,5 +92,14 @@ The ROHD DevTools extension runs in an iframe when embedded in DevTools, so use
 the Chrome platform for browser-based widget tests.
 
 ```sh
-flutter test --platform chrome test/
+flutter test --platform chrome $(
+  find test -type f -name '*_test.dart' ! -path 'test/debugger/*' | sort
+)
+```
+
+Core debugger-service tests run on the Dart VM because they construct ROHD
+hardware and drive the simulator:
+
+```sh
+flutter test test/debugger/
 ```

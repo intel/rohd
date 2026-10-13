@@ -125,8 +125,6 @@ class NetlistService extends ArtifactProducingService {
 
     if (register) {
       ModuleServices.instance.register<NetlistService>(this);
-      WaveformDataService.init(module);
-      WaveformDataService.instance.startRecording();
     }
   }
 

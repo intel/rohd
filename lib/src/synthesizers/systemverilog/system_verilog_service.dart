@@ -115,37 +115,47 @@ class SystemVerilogService extends CodeGenService {
   /// The number of newlines in the emitted [header].
   int get headerLineCount => '\n'.allMatches(header).length;
 
-  /// The 0-based line offset of each module definition within [output].
-  late final Map<String, int> moduleLineOffsets = _computeModuleLineOffsets();
+  /// The 0-based line offset of each generated implementation within [output].
+  ///
+  /// Keys are [SynthesisResult.instanceTypeName], which stays unique when
+  /// multiple source modules requested the same [Module.definitionName].
+  late final Map<String, int> instanceTypeLineOffsets =
+      _computeInstanceTypeLineOffsets();
 
-  Map<String, int> _computeModuleLineOffsets() {
+  Map<String, int> _computeInstanceTypeLineOffsets() {
     final offsets = <String, int>{};
-    final definitionNames = {
-      for (final result in synthesisResults)
-        result.instanceTypeName: result.module.definitionName,
-    };
 
     var offset = headerLineCount;
     for (var index = 0; index < fileContents.length; index++) {
       if (index > 0) {
         offset += _separatorNewlines;
       }
-      final definitionName = definitionNames[fileContents[index].name];
-      if (definitionName != null) {
-        offsets[definitionName] = offset;
-      }
+      offsets[fileContents[index].name] = offset;
       offset += '\n'.allMatches(fileContents[index].contents).length;
     }
     return Map.unmodifiable(offsets);
   }
 
-  /// Returns per-module SystemVerilog line maps keyed by definition name.
+  /// The 0-based line offsets keyed by requested source definition name.
+  ///
+  /// This legacy view cannot distinguish separately synthesized source
+  /// occurrences that requested the same definition name. Prefer
+  /// [instanceTypeLineOffsets] or [singleFileSvLineMapsByModule].
+  late final Map<String, int> moduleLineOffsets = Map.unmodifiable({
+    for (final result in synthesisResults)
+      if (instanceTypeLineOffsets.containsKey(result.instanceTypeName))
+        result.module.definitionName:
+            instanceTypeLineOffsets[result.instanceTypeName],
+  });
+
+  /// Returns per-module SystemVerilog line maps keyed by generated
+  /// implementation name.
   ///
   /// Positions include the file-local [header] offset when enabled.
   Map<String, Map<String, List<String>>> get perModuleSvLineMaps => {
         for (final result
             in synthesisResults.whereType<SystemVerilogSynthesisResult>())
-          result.module.definitionName: {
+          result.instanceTypeName: {
             for (final entry in result.svLineMap.entries)
               entry.key: [
                 for (final position in entry.value)
@@ -154,21 +164,81 @@ class SystemVerilogService extends CodeGenService {
           },
       };
 
-  /// Returns line maps adjusted to positions within single-file [output].
+  /// Returns per-source-module line maps for the generated implementation
+  /// associated with each occurrence.
+  ///
+  /// Equivalent source occurrences intentionally share the same map.
+  Map<Module, Map<String, List<String>>> get perModuleSvLineMapsByModule =>
+      _lineMapsByModule(perModuleSvLineMaps);
+
+  /// Returns line maps adjusted to positions within single-file [output],
+  /// keyed by generated implementation name.
   Map<String, Map<String, List<String>>> get singleFileSvLineMaps => {
         for (final result
             in synthesisResults.whereType<SystemVerilogSynthesisResult>())
-          result.module.definitionName: {
+          result.instanceTypeName: {
             for (final entry in result.svLineMap.entries)
               entry.key: [
                 for (final position in entry.value)
                   _offsetLineCol(
                     position,
-                    moduleLineOffsets[result.module.definitionName] ?? 0,
+                    instanceTypeLineOffsets[result.instanceTypeName] ?? 0,
                   ),
               ],
           },
       };
+
+  /// Returns single-file line maps for the generated implementation
+  /// associated with each source module occurrence.
+  Map<Module, Map<String, List<String>>> get singleFileSvLineMapsByModule =>
+      _lineMapsByModule(singleFileSvLineMaps);
+
+  Map<Module, Map<String, List<String>>> _lineMapsByModule(
+    Map<String, Map<String, List<String>>> lineMapsByInstanceType,
+  ) {
+    final result = Map<Module, Map<String, List<String>>>.identity();
+    for (final entry in synthBuilder.moduleInstanceTypes.entries) {
+      final lineMap = lineMapsByInstanceType[entry.value];
+      if (lineMap != null) {
+        result[entry.key] = lineMap;
+      }
+    }
+    return result;
+  }
+
+  /// Maps generated implementation names to their split-file artifacts.
+  Map<String, String> get svFileMapByInstanceType => {
+        for (final fileContent in fileContents)
+          fileContent.name: '${fileContent.name}.sv',
+      };
+
+  /// Maps each source module occurrence to its split-file artifact.
+  ///
+  /// Equivalent source occurrences intentionally map to the same artifact.
+  Map<Module, String> get svFileMapByModule {
+    final result = Map<Module, String>.identity();
+    final filesByInstanceType = svFileMapByInstanceType;
+    for (final entry in synthBuilder.moduleInstanceTypes.entries) {
+      final file = filesByInstanceType[entry.value];
+      if (file != null) {
+        result[entry.key] = file;
+      }
+    }
+    return result;
+  }
+
+  /// Maps each source module occurrence to [filename] for a concatenated
+  /// single-file artifact.
+  Map<Module, String> singleFileSvFileMapByModule(String filename) {
+    final result = Map<Module, String>.identity();
+    final filesByInstanceType = svFileMapByInstanceType;
+    for (final entry in synthBuilder.moduleInstanceTypes.entries) {
+      if (filesByInstanceType.containsKey(entry.value)) {
+        result[entry.key] = filename;
+      }
+    }
+    return result;
+  }
 
   static String _offsetLineCol(String lineCol, int offset) {
     if (offset == 0) {

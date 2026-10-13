@@ -104,28 +104,58 @@ class SystemCService extends CodeGenService {
   List<SystemCGenerationDiagnostic> get diagnostics =>
       List.unmodifiable(_systemCSynthesizer.diagnostics);
 
-  /// Map from module definition name to the list of generated SC files
-  /// for that module (typically one element today; future-proof for
-  /// header + impl).
+  /// Map from generated implementation name to the list of generated SC
+  /// files for that implementation (typically one element today;
+  /// future-proof for header + impl).
   Map<String, List<String>> get scFileMap {
     final result = <String, List<String>>{};
     for (final sr in synthesisResults) {
-      final defName = sr.module.definitionName;
       final instanceName = sr.instanceTypeName;
       final fc = _fileContents.firstWhereOrNull((f) => f.name == instanceName);
       if (fc != null) {
-        result[defName] = ['${fc.name}.sc'];
+        result[instanceName] = ['${fc.name}.sc'];
       }
     }
     return result;
   }
 
-  /// Map from module definition name to the list of [SystemCSynthesisResult]
+  /// Maps each source module occurrence to the generated SC artifact list.
+  ///
+  /// Equivalent source occurrences intentionally map to the same artifact.
+  Map<Module, List<String>> get scFileMapByModule {
+    final result = Map<Module, List<String>>.identity();
+    final filesByInstanceType = scFileMap;
+    for (final entry in _synthBuilder.moduleInstanceTypes.entries) {
+      final files = filesByInstanceType[entry.value];
+      if (files != null) {
+        result[entry.key] = files;
+      }
+    }
+    return result;
+  }
+
+  /// Map from generated implementation name to the
+  /// [SystemCSynthesisResult]
   /// `scLineMap`s (signal/instance name → list of `'line:col'` positions).
   Map<String, Map<String, List<String>>> get scLineMaps => {
         for (final sr in _systemCResults)
-          sr.module.definitionName: sr.scLineMap,
+          sr.instanceTypeName: sr.scLineMap,
       };
+
+  /// Maps each source module occurrence to its generated SC line map.
+  ///
+  /// Equivalent source occurrences intentionally share the same map.
+  Map<Module, Map<String, List<String>>> get scLineMapsByModule {
+    final result = Map<Module, Map<String, List<String>>>.identity();
+    final lineMapsByInstanceType = scLineMaps;
+    for (final entry in _synthBuilder.moduleInstanceTypes.entries) {
+      final lineMap = lineMapsByInstanceType[entry.value];
+      if (lineMap != null) {
+        result[entry.key] = lineMap;
+      }
+    }
+    return result;
+  }
 
   /// Map from module definition name to the generated SystemC source text.
   Map<String, String> get contentsByDefinitionName {
@@ -167,50 +197,87 @@ class SystemCService extends CodeGenService {
   /// Number of newlines inserted between generated SystemC modules.
   static const int _separatorNewlines = 1;
 
-  /// The 0-based line offset of each module definition within [output].
-  late final Map<String, int> moduleLineOffsets = _computeModuleLineOffsets();
+  /// The 0-based line offset of each generated implementation within [output].
+  ///
+  /// Keys are [SynthesisResult.instanceTypeName], which stays unique when
+  /// multiple source modules requested the same [Module.definitionName].
+  late final Map<String, int> instanceTypeLineOffsets =
+      _computeInstanceTypeLineOffsets();
 
-  Map<String, int> _computeModuleLineOffsets() {
+  Map<String, int> _computeInstanceTypeLineOffsets() {
     final offsets = <String, int>{};
-    final definitionNames = {
-      for (final result in _systemCResults)
-        result.instanceTypeName: result.module.definitionName,
-    };
 
     var offset = headerLineCount;
     for (var index = 0; index < fileContents.length; index++) {
       if (index > 0) {
         offset += _separatorNewlines;
       }
-      final definitionName = definitionNames[fileContents[index].name];
-      if (definitionName != null) {
-        offsets[definitionName] = offset;
-      }
+      offsets[fileContents[index].name] = offset;
       offset += '\n'.allMatches(fileContents[index].contents).length;
     }
     return Map.unmodifiable(offsets);
   }
 
-  /// Returns SystemC line maps adjusted to positions in [output].
+  /// The 0-based line offsets keyed by requested source definition name.
+  ///
+  /// This legacy view cannot distinguish separately synthesized source
+  /// occurrences that requested the same definition name. Prefer
+  /// [instanceTypeLineOffsets] or [singleFileScLineMapsByModule].
+  late final Map<String, int> moduleLineOffsets = Map.unmodifiable({
+    for (final result in _systemCResults)
+      if (instanceTypeLineOffsets.containsKey(result.instanceTypeName))
+        result.module.definitionName:
+            instanceTypeLineOffsets[result.instanceTypeName],
+  });
+
+  /// Returns SystemC line maps adjusted to positions in [output], keyed by
+  /// generated implementation name.
   late final Map<String, Map<String, List<String>>> singleFileScLineMaps = {
     for (final result in _systemCResults)
-      result.module.definitionName: {
+      result.instanceTypeName: {
         for (final entry in result.scLineMap.entries)
           entry.key: [
             for (final position in entry.value)
               _offsetLineCol(
                 position,
-                moduleLineOffsets[result.module.definitionName] ?? 0,
+                instanceTypeLineOffsets[result.instanceTypeName] ?? 0,
               ),
           ],
       },
   };
 
-  /// Returns a single-file map using [filename] for every generated module.
+  /// Returns single-file line maps for the generated implementation
+  /// associated with each source module occurrence.
+  Map<Module, Map<String, List<String>>> get singleFileScLineMapsByModule {
+    final result = Map<Module, Map<String, List<String>>>.identity();
+    for (final entry in _synthBuilder.moduleInstanceTypes.entries) {
+      final lineMap = singleFileScLineMaps[entry.value];
+      if (lineMap != null) {
+        result[entry.key] = lineMap;
+      }
+    }
+    return result;
+  }
+
+  /// Returns a single-file map using [filename] for every generated
+  /// implementation.
   Map<String, List<String>> singleFileScFileMap(String filename) => {
         for (final result in _systemCResults)
-          result.module.definitionName: [filename],
-      };
+          result.instanceTypeName: [filename],
+          };
+
+  /// Returns a single-file artifact map for every source module occurrence.
+  Map<Module, List<String>> singleFileScFileMapByModule(String filename) {
+    final result = Map<Module, List<String>>.identity();
+    final filesByInstanceType = singleFileScFileMap(filename);
+    for (final entry in _synthBuilder.moduleInstanceTypes.entries) {
+      final files = filesByInstanceType[entry.value];
+      if (files != null) {
+        result[entry.key] = files;
+      }
+    }
+    return result;
+  }
 
   static String _offsetLineCol(String lineCol, int offset) {
     if (offset == 0) {

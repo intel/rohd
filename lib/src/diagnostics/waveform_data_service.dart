@@ -246,29 +246,60 @@ class WaveformDataService {
   /// Whether [startRecording] has already attached change listeners.
   bool _recordingStarted = false;
 
+  /// Listener subscriptions owned by [startRecording].
+  final List<StreamSubscription<LogicValueChanged>> _recordingSubscriptions =
+      [];
+
+  /// Whether this service is currently retaining live value changes.
+  bool get isRecording => _recordingStarted;
+
   /// Records the current value of every mapped signal and subscribes to
   /// future changes, populating the in-memory store for DevTools queries.
   ///
   /// [init] builds the Logic→id map and registers the service extensions but
   /// deliberately does *not* attach change listeners: the legacy `WaveDumper`
   /// integration attaches its own as it writes the VCD/FST file.  A
-  /// standalone producer such as `WaveformService` instead calls this once
-  /// after [init], so the live DevTools data is populated without
-  /// re-implementing the module-tree traversal already done by [init].
-  void startRecording() {
+  /// dedicated debugging workflow calls this once after [init], so the live
+  /// DevTools data is populated without re-implementing the module-tree
+  /// traversal already done by [init].
+  ///
+  /// Returns `true` when this call begins recording and `false` when another
+  /// owner is already recording.
+  bool startRecording() {
     if (_recordingStarted) {
-      return;
+      return false;
     }
     _recordingStarted = true;
     for (final logic in _logicToIdMap.keys) {
       // Record the initial value so the signal isn't empty until first change.
       recordLogicChange(logic, Simulator.time);
-      logic.changed.listen((_) => recordLogicChange(logic, Simulator.time));
+      _recordingSubscriptions.add(
+        logic.changed.listen(
+          (_) => recordLogicChange(logic, Simulator.time),
+        ),
+      );
     }
+    return true;
   }
 
-  /// Clear all recorded data and reset the service.
+  /// Stops listeners installed by [startRecording].
+  ///
+  /// This does not clear recorded values or unregister service extensions.
+  /// Call [clear] to discard the complete waveform-data session.
+  void stopRecording() {
+    if (!_recordingStarted) {
+      return;
+    }
+    _recordingStarted = false;
+    for (final subscription in _recordingSubscriptions) {
+      unawaited(subscription.cancel());
+    }
+    _recordingSubscriptions.clear();
+  }
+
+  /// Stops recording, clears all recorded data, and resets the service.
   void clear() {
+    stopRecording();
     _signalData.clear();
     _signalMetadata.clear();
     _logicToIdMap.clear();
@@ -281,7 +312,6 @@ class WaveformDataService {
     _fstQuery = null;
     _currentTime = 0;
     _rootModule = null;
-    _recordingStarted = false;
   }
 
   /// Whether service extensions have already been registered.

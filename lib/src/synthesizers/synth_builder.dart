@@ -38,6 +38,18 @@ class SynthBuilder {
   Set<SynthesisResult> get synthesisResults =>
       UnmodifiableSetView(_synthesisResults);
 
+  /// Maps each source [Module] occurrence to its generated implementation
+  /// name.
+  ///
+  /// Multiple source occurrences can map to the same name when they share an
+  /// equivalent synthesized implementation.
+  Map<Module, String> get moduleInstanceTypes =>
+      Map.unmodifiable(_moduleToInstanceTypeMap);
+
+  /// Returns the generated implementation name for [module], if it emits a
+  /// definition.
+  String? instanceTypeOf(Module module) => _moduleToInstanceTypeMap[module];
+
   /// [Uniquifier] for instance type names.
   final Uniquifier _instanceTypeUniquifier = Uniquifier();
 

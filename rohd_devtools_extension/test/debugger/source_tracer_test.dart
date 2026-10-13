@@ -1,7 +1,7 @@
 // Copyright (C) 2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
-// signal_source_tracer_test.dart
+// source_tracer_test.dart
 // Tests for the SourceTracer utility.
 //
 // 2026 April 21
@@ -87,7 +87,7 @@ void main() {
       expect(intermediateTrace, isNotNull);
       expect(
         intermediateTrace.toString(),
-        contains('signal_source_tracer_test.dart'),
+        contains('source_tracer_test.dart'),
       );
     });
 
@@ -101,7 +101,7 @@ void main() {
       final innerName = mod.subModules.first.uniqueInstanceName;
       final innerTrace = SourceTracer.traceOf(mod, innerName);
       expect(innerTrace, isNotNull);
-      expect(innerTrace.toString(), contains('signal_source_tracer_test.dart'));
+      expect(innerTrace.toString(), contains('source_tracer_test.dart'));
     });
 
     test('traces from .named() capture the call site', () async {
@@ -111,7 +111,7 @@ void main() {
 
       final xorTrace = SourceTracer.traceOf(mod, 'xorResult');
       expect(xorTrace, isNotNull);
-      expect(xorTrace.toString(), contains('signal_source_tracer_test.dart'));
+      expect(xorTrace.toString(), contains('source_tracer_test.dart'));
     });
 
     test('traces for LogicArray signals', () async {
@@ -121,7 +121,7 @@ void main() {
 
       final arrTrace = SourceTracer.traceOf(mod, 'myArray');
       expect(arrTrace, isNotNull);
-      expect(arrTrace.toString(), contains('signal_source_tracer_test.dart'));
+      expect(arrTrace.toString(), contains('source_tracer_test.dart'));
     });
 
     test('tracesForHierarchy covers full hierarchy', () async {

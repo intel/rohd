@@ -89,6 +89,12 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
   /// A cached copy of the generated contents of the module.
   late final String _moduleContentsString;
 
+  /// A cached copy of generated contents without provenance-only comments.
+  ///
+  /// This is used for implementation equality so source construction sites
+  /// do not prevent equivalent modules from sharing one generated definition.
+  late final String _moduleContentsForComparison;
+
   /// A cached copy of the generated parameters.
   late final String? _parameterString;
 
@@ -115,7 +121,16 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
       embedSourceTraceComments: embedSourceTraceComments,
     );
     _portsString = _verilogPorts();
-    _moduleContentsString = _verilogModuleContents(getInstanceTypeOfModule);
+    _moduleContentsString =
+        _verilogModuleContents(getInstanceTypeOfModule, _traceHelper);
+    _moduleContentsForComparison = _verilogModuleContents(
+      getInstanceTypeOfModule,
+      _SvTraceHelper(
+        module,
+        _synthModuleDefinition,
+        embedSourceTraceComments: false,
+      ),
+    );
     _parameterString = _verilogParameters(module);
   }
 
@@ -127,12 +142,12 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
       other is SystemVerilogSynthesisResult &&
       other._portsString == _portsString &&
       other._parameterString == _parameterString &&
-      other._moduleContentsString == _moduleContentsString;
+      other._moduleContentsForComparison == _moduleContentsForComparison;
 
   @override
   int get matchHashCode =>
       _portsString.hashCode ^
-      _moduleContentsString.hashCode ^
+      _moduleContentsForComparison.hashCode ^
       _parameterString.hashCode;
 
   @override
@@ -196,7 +211,7 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
       ].join(' ');
 
   /// Representation of all internal net declarations in generated SV.
-  String _verilogInternalSignals() {
+  String _verilogInternalSignals(_SvTraceHelper traceHelper) {
     final declarations = <String>[];
     for (final sig in _synthModuleDefinition.internalSignals
         .where((e) => e.needsDeclaration)
@@ -207,7 +222,7 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
       // trace on the declaration.
       final comment = _assignedSignalNames.contains(sig.name)
           ? ''
-          : _traceHelper.signalComment(sig);
+          : traceHelper.signalComment(sig);
       final decl =
           '${sig.definitionType(useEnumType: configuration.generateEnums)} '
           '${sig.definitionName(useEnumType: configuration.generateEnums)};';
@@ -217,7 +232,7 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
   }
 
   /// Representation of all assignments in generated SV.
-  String _verilogAssignments() {
+  String _verilogAssignments(_SvTraceHelper traceHelper) {
     final assignmentLines = <String>[];
     // Track which dst signals have already received a trace comment so
     // that only the *first* assignment for each signal is annotated.
@@ -291,7 +306,7 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
 
       // Emit the trace comment on the first assignment to this signal.
       final comment = tracedDsts.add(assignment.dst.name)
-          ? _traceHelper.signalComment(assignment.dst)
+          ? traceHelper.signalComment(assignment.dst)
           : '';
 
       assignmentLines.add(_SvTraceHelper._pad(line, comment));
@@ -302,6 +317,7 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
   /// Representation of all sub-module instantiations in generated SV.
   String _verilogSubModuleInstantiations(
     String Function(Module module) getInstanceTypeOfModule,
+    _SvTraceHelper traceHelper,
   ) {
     final subModuleLines = <String>[];
     for (final subModuleInstantiation
@@ -317,7 +333,7 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
         generateEnums: configuration.generateEnums,
       );
       if (instantiationVerilog != null) {
-        final comment = _traceHelper.moduleComment(
+        final comment = traceHelper.moduleComment(
           subModuleInstantiation.module,
         );
         if (comment.isNotEmpty && instantiationVerilog.contains('\n')) {
@@ -351,18 +367,19 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
   /// declaration, ports, etc.
   String _verilogModuleContents(
     String Function(Module module) getInstanceTypeOfModule,
+    _SvTraceHelper traceHelper,
   ) {
     // Generate body parts first so the trace helper's file table is populated.
     final body = [
       _verilogTypedefs(),
-      _verilogInternalSignals(),
-      _verilogAssignments(), // order matters!
-      _verilogSubModuleInstantiations(getInstanceTypeOfModule),
+      _verilogInternalSignals(traceHelper),
+      _verilogAssignments(traceHelper), // order matters!
+      _verilogSubModuleInstantiations(getInstanceTypeOfModule, traceHelper),
     ].where((element) => element.isNotEmpty);
 
     // Prepend the file index comment (empty when no traces exist).
     return [
-      _traceHelper.fileIndexComment(),
+      traceHelper.fileIndexComment(),
       ...body,
     ].where((element) => element.isNotEmpty).join('\n');
   }

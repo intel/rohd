@@ -21,7 +21,7 @@ import 'dart:io';
 import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
 
-import '../example/filter_bank/filter_bank_modules.dart';
+import '../../../example/filter_bank/filter_bank_modules.dart';
 
 // ──────────────────────────────────────────────────────────────────
 // v6 symbol grammar parser
@@ -433,7 +433,7 @@ Future<_BuiltFlc> _buildFilterBankFlc(String packageRoot) async {
 // ──────────────────────────────────────────────────────────────────
 
 void main() {
-  final packageRoot = Directory.current.path;
+  final packageRoot = Directory.current.parent.path;
 
   tearDown(() async {
     await Simulator.reset();
