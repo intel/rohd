@@ -272,11 +272,11 @@ jobs:
       - name: Generate project documentation
         run: tool/gh_actions/generate_documentation.sh
 
-      - name: Add standalone DevTools application
+      - name: Add ROHD Debugger application
         uses: actions/download-artifact@v4
         with:
-          name: rohd-devtools-standalone
-          path: doc/api/rohd_devtools_extension
+          name: rohd-debugger
+          path: doc/api/rohd-debugger
 
       - name: Deploy generated documentation
         uses: JamesIves/github-pages-deploy-action@v4
@@ -285,7 +285,7 @@ jobs:
           branch: docs
 
   build-devtool:
-    name: Build Devtools
+    name: Build ROHD Debugger
     timeout-minutes: 30
     runs-on: ${{ github.repository_owner == 'intel' && 'intel-ubuntu-latest' || 'ubuntu-latest' }}
     steps:
@@ -306,13 +306,13 @@ jobs:
       - name: Test DevTools Installation
         run: tool/gh_actions/devtool/test_devtools_install.sh extension/devtools
 
-      - name: Build standalone DevTools application
-        run: rohd_devtools_extension/tool/gh_actions/build_app.sh /rohd/rohd_devtools_extension/
+      - name: Build standalone ROHD Debugger application
+        run: rohd_devtools_extension/tool/gh_actions/build_app.sh /rohd/rohd-debugger/
 
-      - name: Upload standalone DevTools application
+      - name: Upload standalone ROHD Debugger application
         uses: actions/upload-artifact@v4
         with:
-          name: rohd-devtools-standalone
+          name: rohd-debugger
           path: rohd_devtools_extension/build/web
           if-no-files-found: error
           include-hidden-files: true
