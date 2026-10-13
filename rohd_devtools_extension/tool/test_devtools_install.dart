@@ -9,6 +9,7 @@
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 import 'dart:io';
+import 'dart:convert';
 
 import 'package:devtools_shared/devtools_extensions_io.dart';
 import 'package:path/path.dart' as p;
@@ -206,6 +207,28 @@ Future<Directory> _writeProjectRootPointingTo(Directory packageRoot) async {
   final projectRoot = await Directory.systemTemp.createTemp(
     'rohd_devtools_extension_discovery_',
   );
+  final pubspec = File(p.join(projectRoot.path, 'pubspec.yaml'));
+  await pubspec.writeAsString('''
+name: rohd_devtools_extension_discovery
+environment:
+  sdk: ^3.6.0
+dependencies:
+  rohd:
+    path: ${jsonEncode(packageRoot.path)}
+''');
+
+  final result = await Process.run(
+    Platform.resolvedExecutable,
+    ['pub', 'get'],
+    workingDirectory: projectRoot.path,
+  );
+  if (result.exitCode != 0) {
+    _fail(
+      'Failed to resolve the temporary DevTools discovery project.\n'
+      '${result.stderr}',
+    );
+  }
+
   return projectRoot;
 }
 

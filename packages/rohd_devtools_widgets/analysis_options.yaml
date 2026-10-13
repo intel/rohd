@@ -8,7 +8,3 @@ analyzer:
     - macos/**
     - linux/**
 include: package:lints/recommended.yaml
-
-linter:
-  rules:
-    - migrate_design_widgets

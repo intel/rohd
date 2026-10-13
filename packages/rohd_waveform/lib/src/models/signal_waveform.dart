@@ -18,38 +18,14 @@ typedef SignalLookup = SignalOccurrence? Function(String signalId);
 
 /// Criterion used when searching waveform transitions.
 enum WaveformSearchCriterion {
-  /// Match samples with an exact value.
+  /// Match a specific waveform value.
   value,
 
-  /// Match low-to-high transitions.
+  /// Match a low-to-high transition.
   risingEdge,
 
-  /// Match high-to-low transitions.
+  /// Match a high-to-low transition.
   fallingEdge,
-}
-
-/// Display representation selected for a monitored waveform row.
-enum MonitorValueFormat {
-  /// Render the signal using its waveform shape and labels.
-  waveform,
-
-  /// Display numeric values as binary.
-  binary,
-
-  /// Display numeric values as hexadecimal.
-  hexadecimal,
-
-  /// Display numeric values as unsigned decimal.
-  unsignedDecimal,
-
-  /// Display numeric values as signed decimal.
-  signedDecimal,
-
-  /// Display numeric values as octal.
-  octal,
-
-  /// Display numeric values as ASCII characters.
-  ascii,
 }
 
 /// Waveform data for a signal.
@@ -73,26 +49,9 @@ enum MonitorValueFormat {
 /// print(waveform.name);  // Uses lookup to get SignalOccurrence.name
 /// ```
 class SignalWaveform {
-  static int _nextMonitorRow = 0;
-
   /// The ID of the signal this waveform data belongs to.
   /// Use this to look up SignalOccurrence metadata from the hierarchy.
   final String signalId;
-
-  /// Identity for this monitor-list row.
-  ///
-  /// The first occurrence keeps [signalId] for compatibility. Copies used for
-  /// duplicate monitor rows receive a distinct ID unless one is provided.
-  final String monitorId;
-
-  /// Parent monitor-row identity for generated fields and bit slices.
-  String? monitorParentId;
-
-  /// Optional named group applied to this monitored row.
-  String? monitorGroup;
-
-  /// Display representation selected for this monitored row.
-  MonitorValueFormat valueFormat;
 
   /// The waveform data points (time, value pairs).
   final List<Data> data;
@@ -110,7 +69,8 @@ class SignalWaveform {
   /// rather than directly fetched from the VM service.
   bool _isComputed;
 
-  /// Whether this waveform was computed rather than directly sampled.
+  /// Whether this waveform was computed/synthesized (e.g. gate evaluation)
+  /// rather than directly fetched from the VM service.
   bool get isComputed => _isComputed;
 
   /// Explicit width for a computed signal not present in the hierarchy.
@@ -122,16 +82,11 @@ class SignalWaveform {
   /// Creates a new SignalWaveform.
   SignalWaveform({
     required this.signalId,
-    String? monitorId,
     List<Data>? data,
     bool isComputed = false,
     this.overrideWidth,
     this.overrideName,
-    this.monitorParentId,
-    this.monitorGroup,
-    this.valueFormat = MonitorValueFormat.waveform,
-  })  : monitorId = monitorId ?? signalId,
-        _isComputed = isComputed,
+  })  : _isComputed = isComputed,
         data = data ?? [];
 
   /// Creates an empty SignalWaveform for a signal.
@@ -141,7 +96,7 @@ class SignalWaveform {
   /// Creates a SignalWaveform from WaveformData.
   ///
   /// [signalId] may provide the canonical hierarchy path when the waveform
-  /// source uses a different identifier format.
+  /// source uses a different textual identifier.
   factory SignalWaveform.fromWaveformData(
     WaveformData waveformData, {
     String? signalId,
@@ -160,19 +115,14 @@ class SignalWaveform {
   /// state between rows in the waveform panel.
   factory SignalWaveform.copyFrom(
     SignalWaveform other, {
-    String? monitorId,
     bool? isComputed,
   }) =>
       SignalWaveform(
         signalId: other.signalId,
-        monitorId: monitorId ?? '${other.signalId}#${_nextMonitorRow++}',
         data: List.from(other.data),
         isComputed: isComputed ?? other.isComputed,
         overrideWidth: other.overrideWidth,
         overrideName: other.overrideName,
-        monitorParentId: other.monitorParentId,
-        monitorGroup: other.monitorGroup,
-        valueFormat: other.valueFormat,
       );
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -201,7 +151,7 @@ class SignalWaveform {
   String get type => 'wire';
 
   /// The signal width from metadata, an explicit override, or derived metadata.
-  int get width => signal?.width ?? overrideWidth ?? _derivedSubFieldWidth ?? 1;
+  int get width => overrideWidth ?? signal?.width ?? _derivedSubFieldWidth ?? 1;
 
   /// The signal direction (from metadata). Returns null for internal signals.
   String? get direction => signal?.direction;
@@ -212,7 +162,7 @@ class SignalWaveform {
   /// Whether this waveform represents [occurrence].
   ///
   /// Waveform sources can use different textual IDs for the same hierarchy
-  /// signal, so compare resolved occurrence addresses when metadata is present.
+  /// signal, so resolved occurrence addresses take precedence when available.
   bool matchesOccurrence(SignalOccurrence occurrence) =>
       signalId == occurrence.path() ||
       (signal?.address != null && signal?.address == occurrence.address);
@@ -514,29 +464,4 @@ class SignalWaveform {
                 .toList() ??
             [],
       );
-}
-
-/// A monitored waveform row with a user-defined display name.
-class MonitoredSignal extends SignalWaveform {
-  /// Display name used in the monitored-signal list.
-  final String displayName;
-
-  /// Creates a named copy of an existing waveform.
-  MonitoredSignal.fromWaveform(
-    SignalWaveform waveform, {
-    required this.displayName,
-  }) : super(
-          signalId: waveform.signalId,
-          monitorId: waveform.monitorId,
-          data: List<Data>.from(waveform.data),
-          isComputed: waveform.isComputed,
-          overrideWidth: waveform.overrideWidth,
-          overrideName: displayName,
-          monitorParentId: waveform.monitorParentId,
-          monitorGroup: waveform.monitorGroup,
-          valueFormat: waveform.valueFormat,
-        );
-
-  @override
-  String get name => displayName;
 }

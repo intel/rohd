@@ -19,5 +19,7 @@
 library;
 
 export 'src/models/models.dart';
+export 'src/module_structure_hierarchy.dart';
+export 'src/signal_data_service_impl.dart';
 export 'src/waveform_api.dart';
 export 'src/waveform_repository.dart';

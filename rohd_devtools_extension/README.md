@@ -93,11 +93,10 @@ CLI architecture is a generic command host whose connectivity, waveform, and
 future providers register their capabilities rather than expose separate
 tool-specific executables.
 
-The older `rohd-wave` implementation in [`bin/rohd_wave.dart`](bin/rohd_wave.dart)
-is a waveform-specific prototype, not the DevTools CLI and not a supported
-packaged executable. Its waveform commands have not yet moved into the generic
-command host. Do not use `make cli-build` or publish
-`build/cli/rohd-wave` as the DevTools command-line interface.
+The older `rohd-wave` implementation was a waveform-specific prototype, not
+the DevTools CLI and not a supported packaged executable. Its waveform commands
+have not yet moved into the generic command host. Do not use `make cli-build`
+or publish `build/cli/rohd-wave` as the DevTools command-line interface.
 
 ### Handle Queries
 

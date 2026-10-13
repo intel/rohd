@@ -71,7 +71,7 @@ class WaveData {
   /// This SignalOccurrence is never modified by the service.
   final SignalOccurrence port;
 
-  /// The waveform data points [time, value] pairs.
+  /// The waveform data point `(time, value)` pairs.
   /// Data type and structure depends on the source (VCD, debugger, etc.).
   final List<Data> data;
 

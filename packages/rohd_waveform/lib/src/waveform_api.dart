@@ -26,7 +26,8 @@ abstract class SignalWaveformApi {
   /// Retrieves waveform data for specific signals.
   ///
   /// [signalIds] is a list of signal IDs for which to retrieve data.
-  /// [startTime] and [endTime] optionally specify a time range for the data.
+  /// [startTime] and [endTime] optionally specify an inclusive time range in
+  /// the same units as [Data.time].
   ///
   /// Returns a [Future] that completes with a list of [WaveformData] objects.
   Future<List<WaveformData>> getWaveformData({
@@ -41,7 +42,8 @@ abstract class SignalWaveformApi {
   /// Streams waveform data incrementally for specific signals.
   ///
   /// [signalIds] is a list of signal IDs for which to stream data.
-  /// [startTime] optionally specifies the starting time for the data stream.
+  /// [startTime] optionally specifies the inclusive starting time in the same
+  /// units as [Data.time].
   ///
   /// Returns a [Stream] of [WaveformData] objects that can be used to
   /// incrementally update the waveform display.

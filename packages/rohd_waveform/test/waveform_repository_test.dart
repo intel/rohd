@@ -312,21 +312,26 @@ void main() {
       expect(synthesized.single.data, isEmpty);
     });
 
-    test('synthesizes bit slices from hexadecimal, binary, and unknown values',
-        () async {
-      api.responses['top/bus'] = [
-        Data(time: 0, value: '0x9'),
-        Data(time: 1, value: '1010'),
-        Data(time: 2, value: 'zzzz'),
-        Data(time: 3, value: 'not-a-value'),
-      ];
+    test(
+      'synthesizes bit slices from hexadecimal, binary, and unknown values',
+      () async {
+        api.responses['top/bus'] = [
+          Data(time: 0, value: '0x9'),
+          Data(time: 1, value: '1010'),
+          Data(time: 2, value: 'zzzz'),
+          Data(time: 3, value: 'not-a-value'),
+        ];
 
-      final synthesized = await repository.getWaveformData(
-        signalIds: ['top/bus#b[0]'],
-      );
+        final synthesized = await repository.getWaveformData(
+          signalIds: ['top/bus#b[0]'],
+        );
 
-      expect(synthesized.single.data.map((d) => d.value), ['1', '0', 'x']);
-    });
+        expect(
+          synthesized.single.data.map((d) => d.value),
+          ['1', '0', 'z', 'x'],
+        );
+      },
+    );
 
     test('synthesizes nested struct field waveform data', () async {
       bus.logicType = {

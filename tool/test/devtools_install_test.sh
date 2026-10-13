@@ -24,9 +24,14 @@ readonly EXTENSION_DIR="$PACKAGE_ROOT/extension/devtools"
 trap 'rm -rf "$FIXTURE"' EXIT
 
 mkdir -p "$EXTENSION_DIR/build/assets" "$EXTENSION_DIR/build/canvaskit"
+cat > "$PACKAGE_ROOT/pubspec.yaml" <<'EOF'
+name: rohd
+environment:
+  sdk: ^3.6.0
+EOF
 cp "$REPO_ROOT/extension/devtools/config.yaml" "$EXTENSION_DIR/config.yaml"
 for asset in index.html flutter_bootstrap.js flutter.js main.dart.js version.json \
-  assets/AssetManifest.bin.json assets/FontManifest.json canvaskit/canvaskit.js canvaskit/canvaskit.wasm; do
+  assets/AssetManifest.bin assets/FontManifest.json canvaskit/canvaskit.js canvaskit/canvaskit.wasm; do
   touch "$EXTENSION_DIR/build/$asset"
 done
 

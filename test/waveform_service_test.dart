@@ -129,6 +129,7 @@ void createTemporaryDump(Module module, String name) {
     module,
     outputDirectory: tempDumpDir,
     outputBaseName: 'temp_dump_$name',
+    writeToFile: true,
   );
 }
 
