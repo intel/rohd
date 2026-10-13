@@ -52,7 +52,11 @@ class LogicArray extends LogicStructure {
   /// impact on simulation functionality or behavior. In SystemVerilog, there
   /// are some differences in access patterns for packed vs. unpacked arrays.
   factory LogicArray(List<int> dimensions, int elementWidth,
-          {String? name, int numUnpackedDimensions = 0, Naming? naming}) =>
+          {String? name,
+          int numUnpackedDimensions = 0,
+          Naming? naming,
+          List<ParameterExpression?>? dimensionExpressions,
+          ParameterExpression? elementWidthExpression}) =>
       LogicArray._factory(
         dimensions,
         elementWidth,
@@ -62,6 +66,8 @@ class LogicArray extends LogicStructure {
         logicBuilder: Logic.new,
         logicArrayBuilder: LogicArray.new,
         isNet: false,
+        dimensionExpressions: dimensionExpressions,
+        elementWidthExpression: elementWidthExpression,
       );
 
   @override
@@ -78,7 +84,11 @@ class LogicArray extends LogicStructure {
   /// impact on simulation functionality or behavior. In SystemVerilog, there
   /// are some differences in access patterns for packed vs. unpacked arrays.
   factory LogicArray.net(List<int> dimensions, int elementWidth,
-          {String? name, int numUnpackedDimensions = 0, Naming? naming}) =>
+          {String? name,
+          int numUnpackedDimensions = 0,
+          Naming? naming,
+          List<ParameterExpression?>? dimensionExpressions,
+          ParameterExpression? elementWidthExpression}) =>
       LogicArray._factory(
         dimensions,
         elementWidth,
@@ -88,6 +98,8 @@ class LogicArray extends LogicStructure {
         logicBuilder: LogicNet.new,
         logicArrayBuilder: LogicArray.net,
         isNet: true,
+        dimensionExpressions: dimensionExpressions,
+        elementWidthExpression: elementWidthExpression,
       );
 
   /// Internal factory constructor.
@@ -123,6 +135,8 @@ class LogicArray extends LogicStructure {
       int numUnpackedDimensions,
       String name,
     }) logicArrayBuilder,
+    List<ParameterExpression?>? dimensionExpressions,
+    ParameterExpression? elementWidthExpression,
   }) {
     if (dimensions.isEmpty) {
       throw LogicConstructionException(
@@ -173,6 +187,8 @@ class LogicArray extends LogicStructure {
       name: name,
       naming: naming,
       isNet: isNet,
+      dimensionExpressions: dimensionExpressions,
+      elementWidthExpression: elementWidthExpression,
     );
   }
 
@@ -213,6 +229,18 @@ class LogicArray extends LogicStructure {
   LogicArray named(String name, {Naming? naming}) =>
       _clone(name: name, naming: naming)..gets(this);
 
+  /// Optional symbolic expressions for each dimension, for parameterized
+  /// SV generation.
+  ///
+  /// When set, the generated SV will use these expressions for the dimension
+  /// ranges (e.g., `[N-1:0]`) instead of concrete integer bounds.
+  /// The list length must match [dimensions] if provided.
+  final List<ParameterExpression?>? dimensionExpressions;
+
+  /// Optional symbolic expression for the leaf element width, for
+  /// parameterized SV generation.
+  final ParameterExpression? elementWidthExpression;
+
   /// Private constructor for the factory [LogicArray] constructor.
   ///
   /// The [name] and [naming] should have been identified before calling this.
@@ -224,6 +252,8 @@ class LogicArray extends LogicStructure {
     required String super.name,
     required this.naming,
     required this.isNet,
+    this.dimensionExpressions,
+    this.elementWidthExpression,
   });
 
   /// Constructs a new [LogicArray] with a more convenient constructor signature

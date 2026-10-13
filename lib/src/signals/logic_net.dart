@@ -26,7 +26,7 @@ class LogicNet extends Logic {
   ///
   /// The [naming] and [name], if unspecified, are chosen based on the rules in
   /// [Naming.chooseNaming] and [Naming.chooseName], respectively.
-  LogicNet({super.name, super.width, super.naming})
+  LogicNet({super.name, super.width, super.naming, super.widthExpression})
       : super._(wire: _WireNet(width: width));
 
   /// Constructs a new [LogicNet] with some additional validation for ports of

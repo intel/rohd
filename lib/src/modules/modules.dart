@@ -5,5 +5,6 @@ export 'bus.dart';
 export 'clkgen.dart';
 export 'conditionals/conditionals.dart';
 export 'gates.dart';
+export 'generate.dart';
 export 'pipeline.dart';
 export 'tristate.dart';
