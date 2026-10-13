@@ -293,6 +293,27 @@ class ReservedEnumNameCollisionModule extends Module {
   }
 }
 
+class MixedReservedEnumModule extends Module {
+  MixedReservedEnumModule(
+      {required bool reservedFirst,
+      String flexibleDefinitionName = 'FlexibleType'}) {
+    final flexible =
+        LogicEnum(OtherEnum.values, definitionName: flexibleDefinitionName);
+    final reserved = LogicEnum(TestEnum.values,
+        definitionName: 'RequiredType', reserveDefinitionName: true);
+    for (final isReserved in [reservedFirst, !reservedFirst]) {
+      final name = isReserved ? 'strict' : 'flexible';
+      final port = addTypedInput(name, isReserved ? reserved : flexible);
+      addOutput('${name}Result', width: port.width) <= port;
+    }
+  }
+}
+
+class MixedReservedEnumExternalModule extends MixedReservedEnumModule
+    with SystemVerilog {
+  MixedReservedEnumExternalModule({required super.reservedFirst});
+}
+
 class EnumNameStabilityModule extends Module {
   EnumNameStabilityModule(Logic source,
       {required bool reserved, Naming signalNaming = Naming.renameable}) {
@@ -2376,6 +2397,110 @@ void main() {
         }
       });
     }
+
+    for (final (reservedFirst, flexibleDefinitionName) in [
+      (false, 'FlexibleType'),
+      (true, 'FlexibleType'),
+      (false, 'RequiredType'),
+    ]) {
+      test(
+          'mixed reserved enum names take priority '
+          'reservedFirst=$reservedFirst '
+          'flexibleDefinitionName=$flexibleDefinitionName', () async {
+        for (final firstMode in ['packed', 'enum', 'netlist']) {
+          await Simulator.reset();
+          final module = MixedReservedEnumModule(
+              reservedFirst: reservedFirst,
+              flexibleDefinitionName: flexibleDefinitionName);
+          await module.build();
+          final flexibleType = flexibleDefinitionName == 'RequiredType'
+              ? 'RequiredType_0'
+              : flexibleDefinitionName;
+          final snapshots = <String, String>{};
+          for (final mode in [
+            firstMode,
+            'packed',
+            'enum',
+            'netlist',
+            'packed',
+            'enum',
+          ]) {
+            if (mode == 'netlist') {
+              final json = jsonDecode(NetlistSynthesizer(
+                      configuration: NetlistSynthesizerConfiguration(
+                          moduleStopPolicy: SynthModuleStopPolicy()))
+                  .synthesizeToJson(module)) as Map<String, dynamic>;
+              final definition = (json['modules'] as Map).values.single as Map;
+              final netnames = definition['netnames'] as Map;
+              final strict = (netnames['strict'] as Map)['attributes'] as Map;
+              final flexible =
+                  (netnames['flexible'] as Map)['attributes'] as Map;
+              expect(strict, containsPair('wiretype', r'\RequiredType'));
+              expect(strict, containsPair('enum_value_00', r'\a'));
+              expect(flexible, containsPair('wiretype', '\\$flexibleType'));
+              expect(flexible, containsPair('enum_value_00', r'\a_0'));
+            } else {
+              final generateEnums = mode == 'enum';
+              final sv = SynthBuilder(
+                      module,
+                      SystemVerilogSynthesizer(
+                          configuration: SystemVerilogSynthesizerConfiguration(
+                              generateEnums: generateEnums)))
+                  .getSynthFileContents()
+                  .join();
+              expect(sv, snapshots.putIfAbsent(mode, () => sv));
+              expect(sv.contains('typedef enum'), generateEnums);
+              if (generateEnums) {
+                expect(
+                    sv,
+                    contains("{ a = 2'h0, b = 2'h1, c = 2'h2 } "
+                        'RequiredType;'));
+                expect(
+                    sv,
+                    contains("{ a_0 = 2'h0, b_0 = 2'h1, c_0 = 2'h2 } "
+                        '$flexibleType;'));
+              }
+            }
+          }
+          final vectors = [
+            for (final value in [0, 1, 2])
+              Vector({'strict': value, 'flexible': 2 - value},
+                  {'strictResult': value, 'flexibleResult': 2 - value}),
+          ];
+          await SimCompare.checkFunctionalVector(module, vectors);
+          for (final generateEnums in [false, true]) {
+            final configuration = SystemVerilogSynthesizerConfiguration(
+                generateEnums: generateEnums);
+            SimCompare.checkIverilogVector(module, vectors,
+                synthesizerConfiguration: configuration);
+            SimCompare.checkVerilatorVector(module, const [],
+                buildOnly: true, synthesizerConfiguration: configuration);
+          }
+        }
+      });
+    }
+
+    test('mixed reserved enum names take priority on external netlist ports',
+        () async {
+      for (final reservedFirst in [false, true]) {
+        final module =
+            MixedReservedEnumExternalModule(reservedFirst: reservedFirst);
+        await module.build();
+        expect(module.generatedDefinitionType, DefinitionGenerationType.none);
+        final json = jsonDecode(NetlistSynthesizer(
+                configuration: NetlistSynthesizerConfiguration(
+                    moduleStopPolicy: SynthModuleStopPolicy()))
+            .synthesizeToJson(module)) as Map<String, dynamic>;
+        final definition = (json['modules'] as Map).values.single as Map;
+        final netnames = definition['netnames'] as Map;
+        final strict = (netnames['strict'] as Map)['attributes'] as Map;
+        final flexible = (netnames['flexible'] as Map)['attributes'] as Map;
+        expect(strict, containsPair('wiretype', r'\RequiredType'));
+        expect(strict, containsPair('enum_value_00', r'\a'));
+        expect(flexible, containsPair('wiretype', r'\FlexibleType'));
+        expect(flexible, containsPair('enum_value_00', r'\a_0'));
+      }
+    });
 
     test('packed enum planning respects reserved signal names', () async {
       final module = EnumNameStabilityModule(Logic(width: 2),

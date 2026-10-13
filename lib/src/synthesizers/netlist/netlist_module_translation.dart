@@ -602,6 +602,17 @@ class NetlistModuleTranslation {
       ..._module.outputs,
       ..._module.inOuts,
     };
+    final enumPorts =
+        ports.keys.map((name) => modulePorts[name]).whereType<LogicEnum>();
+    final portEnumDefinitions = <LogicEnum, SynthEnumDefinition>{};
+    for (final reserved in [true, false]) {
+      for (final port in enumPorts
+          .where((port) => port.reserveDefinitionName == reserved)) {
+        portEnumDefinitions[port] =
+            synthDef?.getSynthLogic(port)?.enumDefinition ??
+                SynthEnumDefinition(port, _module.namer);
+      }
+    }
     for (final port in ports.entries) {
       final portLogic = modulePorts[port.key]!;
       addNetname(
@@ -609,9 +620,7 @@ class NetlistModuleTranslation {
         (port.value['bits']! as List).cast<Object>(),
         logicType: port.value['logic_type'] as Map<String, Object?>?,
         enumDefinition: synthDef?.getSynthLogic(portLogic)?.enumDefinition ??
-            (portLogic is LogicEnum
-                ? SynthEnumDefinition(portLogic, _module.namer)
-                : null),
+            portEnumDefinitions[portLogic],
       );
     }
 

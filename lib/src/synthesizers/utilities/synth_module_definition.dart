@@ -1831,7 +1831,7 @@ class SynthModuleDefinition {
     //   1. Ports (reserved by _initNamespace, claimed via signalName)
     //   2. Reserved submodule instances
     //   3. Reserved internal signals with strong claims
-    //   4. Enum types and members (also protected in packed output)
+    //   4. Enum types and members, reserved first (also in packed output)
     //   5. Non-reserved submodule instances with strong claims
     //   6. Non-reserved internal signals with strong claims
     //   7. Weak submodule instances
@@ -1868,12 +1868,18 @@ class SynthModuleDefinition {
       }
     }
 
-    (<SynthLogic>{
+    final enumSignals = <SynthLogic>{
       ...inputs,
       ...outputs,
       ...inOuts,
       ...internalSignals,
-    }).where((signal) => signal.isEnum).forEach(_pickDefinitionEnumName);
+    }.where((signal) => signal.isEnum);
+    for (final reserved in [true, false]) {
+      enumSignals
+          .where((signal) =>
+              signal.characteristicEnum!.reserveDefinitionName == reserved)
+          .forEach(_pickDefinitionEnumName);
+    }
 
     // Then non-reserved submodule instances with strong name claims.
     final weakSubmodules = <SynthSubModuleInstantiation>[];
