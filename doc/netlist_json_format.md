@@ -9,7 +9,7 @@ SPDX-License-Identifier: BSD-3-Clause
 emits a Yosys-JSON-*compatible* netlist: any tool that reads standard Yosys
 `write_json` output can load the structural parts of a ROHD netlist. On top
 of that shared base, ROHD adds a small number of extension fields so that
-richer, ROHD-specific information (struct/array typing, source
+richer, ROHD-specific information (struct/array/enum typing, source
 cross-probing, generated-vs-authored signals) survives the round trip to
 JSON for tools like the schematic viewer.
 
@@ -22,7 +22,7 @@ version introduced it.
 ```json
 {
   "creator": "NetlistSynthesizer (rohd)",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "files": ["lib/src/my_module.dart"],
   "modules": { "...": "..." }
 }
@@ -31,19 +31,14 @@ version introduced it.
 - `creator` and `version` are only meaningful together: a consumer should
   only look for the ROHD extensions below when `creator` equals
   `"NetlistSynthesizer (rohd)"`.
-- **The version is informational only.** It tells a consumer which
-  ROHD-specific fields and conventions *might* be present so it can decide
-  whether to light up optional capabilities (e.g. struct-aware rendering).
-  A missing, unrecognized, or newer `version` must **not** block loading —
-  plain, unbranded Yosys JSON (no `creator` at all) is just as valid an
-  input and carries none of these extensions.
-- `NetlistSchematicAdapter` (in `rohd-schematic-viewer`) follows this
-  policy: it logs a diagnostic when the version is absent or unrecognized,
-  but always attempts to load the netlist.
+- For a ROHD-branded netlist, `version` is a compatibility contract. A
+  consumer must reject an unsupported version rather than risk
+  misinterpreting extension fields. Plain, unbranded Yosys JSON (no
+  `creator` at all) remains valid and carries none of these extensions.
 - `files` is only present when source tracing was enabled (see
   `rohd.src_trace` below); it is omitted entirely otherwise.
 
-Current schema version: **`0.0.2`** (`NetlistSynthesizer.formatVersion`).
+Current schema version: **`0.1.0`** (`NetlistSynthesizer.formatVersion`).
 Everything below applies to this version; it will be extended (with a
 version bump) rather than broken as new capabilities are added.
 
@@ -51,6 +46,7 @@ version bump) rather than broken as new capabilities are added.
 | --- | --- |
 | `0.0.1` | Initial schema. `rohd.src_trace` (when present) embedded its own per-module `files` list. |
 | `0.0.2` | `rohd.src_trace` no longer embeds a per-module `files` list. Instead, a single top-level `files` array is shared by every module's `rohd.src_trace` in the same netlist document (see below). |
+| `0.1.0` | Retained enum netnames carry Yosys-style `wiretype` and `enum_value_<bits>` attributes. |
 
 ## Module-level extensions (`modules.<name>.attributes`)
 
@@ -163,6 +159,12 @@ ROHD-only marker:
 | Key | Value | Meaning |
 | --- | --- | --- |
 | `attributes.computed` | `1` | **ROHD-only.** Marks a netname as generated/inserted infrastructure (constant drivers, `InlineSystemVerilog` internals) rather than a name the user gave a signal directly, so viewers can visually de-emphasize it. |
+| `attributes.wiretype` | `\TypeName` | Generated enum type for a retained enum netname. |
+| `attributes.enum_value_<bits>` | `\memberName` | Generated enum member for the width-padded binary encoding in `<bits>`. One attribute is emitted for each mapped value. |
+
+Enum attributes describe retained signals and constant uses without changing
+bit connectivity or adding enum cells. Raw uses of a shared packed constant
+remain untyped when another use has enum metadata.
 
 ## Cell-level extensions
 
@@ -225,5 +227,7 @@ to preserve netlist connectivity.
 | `attributes.src = "generated"` | module | 0.0.1 | Key is standard; this value convention is not | n/a |
 | `logic_type` | port, netname | 0.0.1 | No | n/a |
 | `attributes.computed` | netname | 0.0.1 | No | n/a |
+| `attributes.wiretype` | netname | 0.1.0 | Yosys-style enum metadata | n/a |
+| `attributes.enum_value_<bits>` | netname | 0.1.0 | Yosys-style enum metadata | n/a |
 | `$struct_unpack` cell type | cell | 0.0.1 | No | n/a |
 | `$struct_pack` cell type | cell | 0.0.1 | No | n/a |
