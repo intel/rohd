@@ -17,6 +17,8 @@ set -euo pipefail
 
 DEST="../extension/devtools"
 
+bash tool/gh_actions/write_local_package_overrides.sh
+
 # ═══════════════════════════════════════════════════════════════════════
 #  Build starts here
 # ═══════════════════════════════════════════════════════════════════════

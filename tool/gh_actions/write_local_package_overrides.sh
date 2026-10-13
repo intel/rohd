@@ -34,6 +34,21 @@ write_override \
     path: ../../../../packages/rohd_hierarchy'
 
 write_override \
+  "$REPO_ROOT/rohd_devtools_extension/pubspec_overrides.yaml" \
+'dependency_overrides:
+  cupertino_ui: ">=1.0.0 <1.1.0"
+  rohd:
+    path: ..
+  rohd_hierarchy:
+    path: ../packages/rohd_hierarchy
+  rohd_waveform:
+    path: ../packages/rohd_waveform
+  rohd_devtools_widgets:
+    path: ../packages/rohd_devtools_widgets
+  rohd_source_navigator:
+    path: ../packages/rohd_source_navigator'
+
+write_override \
   "$REPO_ROOT/packages/rohd_devtools_widgets/pubspec_overrides.yaml" \
 'dependency_overrides:
   rohd_hierarchy:

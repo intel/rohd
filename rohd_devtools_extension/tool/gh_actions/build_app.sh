@@ -34,6 +34,8 @@ fi
 
 cd "$repo_root"
 
+bash ../tool/gh_actions/write_local_package_overrides.sh
+
 make web-release \
   FLUTTER_WEB_BUILD_ARGS="--pwa-strategy=none --base-href=$base_href"
 

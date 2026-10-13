@@ -11,6 +11,7 @@
 
 set -euo pipefail
 
+bash tool/gh_actions/write_local_package_overrides.sh
 cd rohd_devtools_extension
 
 flutter pub get

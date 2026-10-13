@@ -7,13 +7,15 @@
 // 2026 April
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
+@TestOn('vm')
+library;
+
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:rohd/examples.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/services/netlist_const_extractor.dart';
-
-import '../../example/filter_bank/filter_bank_modules.dart';
 
 void main() {
   tearDown(() async {
