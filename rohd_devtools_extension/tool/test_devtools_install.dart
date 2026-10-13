@@ -216,6 +216,17 @@ dependencies:
   rohd:
     path: ${jsonEncode(packageRoot.path)}
 ''');
+  final hierarchyDir = Directory(
+    p.join(packageRoot.path, 'packages', 'rohd_hierarchy'),
+  );
+  if (hierarchyDir.existsSync()) {
+    final overrides = File(p.join(projectRoot.path, 'pubspec_overrides.yaml'));
+    await overrides.writeAsString('''
+dependency_overrides:
+  rohd_hierarchy:
+    path: ${jsonEncode(hierarchyDir.path)}
+''');
+  }
 
   final result = await Process.run(
     Platform.resolvedExecutable,

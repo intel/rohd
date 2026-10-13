@@ -23,12 +23,23 @@ readonly PACKAGE_ROOT="$FIXTURE/package with spaces"
 readonly EXTENSION_DIR="$PACKAGE_ROOT/extension/devtools"
 trap 'rm -rf "$FIXTURE"' EXIT
 
-mkdir -p "$EXTENSION_DIR/build/assets" "$EXTENSION_DIR/build/canvaskit"
+mkdir -p "$EXTENSION_DIR/build/assets" "$EXTENSION_DIR/build/canvaskit" \
+  "$PACKAGE_ROOT/packages/rohd_hierarchy/lib"
 cat > "$PACKAGE_ROOT/pubspec.yaml" <<'EOF'
 name: rohd
 environment:
   sdk: ^3.6.0
+dependencies:
+  rohd_hierarchy: ^0.2.0
 EOF
+cat > "$PACKAGE_ROOT/packages/rohd_hierarchy/pubspec.yaml" <<'EOF'
+name: rohd_hierarchy
+version: 0.2.0
+environment:
+  sdk: ^3.6.0
+EOF
+printf 'library rohd_hierarchy;\n' \
+  > "$PACKAGE_ROOT/packages/rohd_hierarchy/lib/rohd_hierarchy.dart"
 cp "$REPO_ROOT/extension/devtools/config.yaml" "$EXTENSION_DIR/config.yaml"
 for asset in index.html flutter_bootstrap.js flutter.js main.dart.js version.json \
   assets/AssetManifest.bin assets/FontManifest.json canvaskit/canvaskit.js canvaskit/canvaskit.wasm; do

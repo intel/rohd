@@ -30,11 +30,9 @@ dependencies:
   material_ui: ">=1.1.0 <1.3.0"
   path: ^1.9.0
   path_provider: ^2.1.0
-  rohd: ^0.6.11
+  rohd: ^0.6.12
   rohd_devtools_widgets: ^0.1.0
-  # Version 0.2.0 is available through the development-mode local/git overrides
-  # but has not yet been published to pub.dev.
-  rohd_hierarchy: ^0.1.0
+  rohd_hierarchy: ^0.2.0
   rohd_schematic_viewer: ^0.2.0
   rohd_source_navigator: ^0.1.0
   rohd_wave_viewer: ^0.1.0
