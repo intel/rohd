@@ -1713,7 +1713,7 @@ void main() {
     });
 
     test('OvenModule netlist has FSM states', () async {
-      final button = Logic(name: 'button', width: 2);
+      final button = LogicEnum(Button.values, name: 'button');
       final reset = Logic(name: 'reset');
       final clk = SimpleClockGenerator(10).clk;
       final oven = OvenModule(button, reset, clk);

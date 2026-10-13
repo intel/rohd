@@ -241,9 +241,10 @@ class LogicEnum<T extends Enum> extends LogicDef {
     }
   }
 
-  /// Encodes enum members through [mapping], preserving other operands.
+  /// Encodes enum members through [mapping] with a type-and-member name.
   ///
-  /// Rejects members of another enum type or absent from this mapping.
+  /// Preserves other operands and rejects members of another enum type or
+  /// absent from this mapping.
   dynamic _comparisonOperand(dynamic other) {
     if (other is T) {
       final encoding = mapping[other];
@@ -251,7 +252,8 @@ class LogicEnum<T extends Enum> extends LogicDef {
         throw ArgumentError.value(
             other, 'other', 'Not present in the mapping for $T.');
       }
-      return encoding;
+      return Const(encoding)
+          .named('${definitionName}_${other.name}', naming: Naming.unnamed);
     } else if (other is Enum) {
       throw ArgumentError.value(other, 'other', 'Must be a value of $T.');
     }

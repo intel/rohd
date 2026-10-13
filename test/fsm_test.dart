@@ -18,6 +18,15 @@ enum MyStates { state1, state2, state3, state4 }
 
 enum SingleState { idle }
 
+enum DiagramState {
+  idle,
+  running,
+  isolated;
+
+  @override
+  String toString() => 'custom state description';
+}
+
 const _tmpDir = 'tmp_test';
 const _simpleFSMPath = '$_tmpDir/simple_fsm.md';
 const _trafficFSMPath = '$_tmpDir/traffic_light_fsm.md';
@@ -279,6 +288,33 @@ void main() {
     expect(fsm.currentState.width, 1);
     expect(fsm.nextState.width, 1);
   });
+
+  test('diagram uses enum labels and keeps isolated states', () {
+    final command = LogicEnum(DiagramState.values,
+        name: 'command', definitionName: 'Command');
+    final run = command.eq(DiagramState.running);
+    final fsm =
+        FiniteStateMachine<DiagramState>(Logic(), Logic(), DiagramState.idle, [
+      State(DiagramState.idle,
+          events: {run: DiagramState.running}, actions: []),
+      State(DiagramState.running,
+          events: {}, actions: [], defaultNextState: DiagramState.idle),
+      State(DiagramState.isolated, events: {}, actions: []),
+    ]);
+    const path = '$_tmpDir/enum_labels_fsm.md';
+    Directory(_tmpDir).createSync(recursive: true);
+    fsm.generateDiagram(outputPath: path);
+    final mermaid = File(path).readAsStringSync();
+    expect(mermaid, contains('state "idle" as state0'));
+    expect(mermaid, contains('state "running" as state1'));
+    expect(mermaid, contains('state "isolated" as state2'));
+    expect(mermaid, contains('[*] --> state0'));
+    expect(run.name, contains('command_equals_Command_running'));
+    expect(mermaid, contains('state0 --> state1: ${run.name}'));
+    expect(mermaid, contains('state1 --> state0: (default)'));
+    expect(mermaid, isNot(contains('custom state description')));
+    verifyMermaidStateDiagram(path);
+  }, testOn: 'vm');
 
   group('simcompare', () {
     test('simple fsm', () async {

@@ -203,24 +203,33 @@ class FiniteStateMachine<StateIdentifier extends Enum> {
   /// Check on https://mermaid.js.org/intro/ to view the diagram generated.
   /// If you are using vscode, you can download the mermaid extension.
   ///
+  /// State labels use enum member names. Event labels use [Logic.name].
+  ///
   /// Output to mermaid diagram at [outputPath].
   void generateDiagram({String outputPath = 'diagram_fsm.md'}) {
-    final figure = _MermaidStateDiagram(outputPath: outputPath)
-      ..addStartState(resetState.toString());
+    final figure = _MermaidStateDiagram(outputPath: outputPath);
+    final stateIds = {
+      for (final (index, state) in _states.indexed)
+        state.identifier: 'state$index',
+    };
+    for (final state in _states) {
+      figure.addState(stateIds[state.identifier]!, state.identifier.name);
+    }
+    figure.addStartState(stateIds[resetState]!);
 
     for (final state in _states) {
       for (final entry in state.events.entries) {
         figure.addTransitions(
-          state.identifier.toString(),
-          entry.value.toString(),
+          stateIds[state.identifier]!,
+          stateIds[entry.value]!,
           entry.key.name,
         );
       }
 
       if (state.defaultNextState != state.identifier) {
         figure.addTransitions(
-          state.identifier.toString(),
-          state.defaultNextState.toString(),
+          stateIds[state.identifier]!,
+          stateIds[state.defaultNextState]!,
           '(default)',
         );
       }
@@ -295,6 +304,10 @@ class _MermaidStateDiagram {
       : _outputFile = File(outputPath) {
     _diagram = StringBuffer('stateDiagram-v2');
   }
+
+  /// Declares a state with a separate [identifier] and visible [label].
+  void addState(String identifier, String label) =>
+      _diagram.write('\n${_indentation}state "$label" as $identifier');
 
   /// Register a new transition [event] that point the
   /// current state [currentState] to next state [nextState].

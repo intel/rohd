@@ -864,7 +864,7 @@ void main() {
       TestEnum.a: 6,
       TestEnum.b: 1,
       TestEnum.c: 3,
-    }, width: 4);
+    }, width: 4, name: 'state', definitionName: 'StateType');
     final Logic signal = state;
     final comparisons = [
       signal.eq(TestEnum.c),
@@ -877,6 +877,11 @@ void main() {
       signal >= TestEnum.c,
       signal.isIn([TestEnum.a, TestEnum.c]),
     ];
+
+    expect(comparisons.first.name, contains('state_equals_StateType_c'));
+    expect(comparisons.take(8).map((comparison) => comparison.name),
+        everyElement(contains('StateType_c')));
+    expect(signal.eq(3).name, contains('const_3'));
 
     for (final (member, expected) in [
       (TestEnum.a, [0, 1, 0, 0, 1, 1, 1, 1, 1]),
