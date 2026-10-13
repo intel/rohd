@@ -15,10 +15,6 @@ dependencies:
   rohd_hierarchy: ^0.2.0
   web: ^1.0.0
 
-dependency_overrides:
-  rohd_hierarchy:
-    path: ../rohd_hierarchy
-
 dev_dependencies:
   flutter_test: {sdk: flutter}
   lints: ^5.0.0

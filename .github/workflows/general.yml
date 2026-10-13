@@ -167,6 +167,9 @@ jobs:
           channel: stable
           version: 3.44.0
 
+      - name: Configure local package overrides
+        run: bash tool/gh_actions/write_local_package_overrides.sh
+
       - name: Install root Dart dependencies
         run: dart pub get
 
@@ -223,6 +226,9 @@ jobs:
         with:
           channel: stable
           version: 3.44.0
+
+      - name: Configure local package overrides
+        run: bash ../../tool/gh_actions/write_local_package_overrides.sh
 
       - name: Install package dependencies
         run: ${{ matrix.sdk }} pub get

@@ -20,7 +20,7 @@ coverage/
 *_fsm.md
 .vscode/*
 ./devtools_options.yaml
-/packages/rohd_devtools_widgets/pubspec_overrides.yaml
+pubspec_overrides.yaml
 
 # Exceptions
 !.vscode/extensions.json

@@ -20,7 +20,7 @@ export FLUTTER_ROOT="$FIXTURE/flutter sdk" PANA_ANALYSIS_INCLUDES=1
 
 mkdir -p "$SOURCE/lib" "$SOURCE/.dart_tool" "$SOURCE/example" \
   "$FIXTURE/bin" "$PUB_CACHE/bin" "$TMPDIR" "$FLUTTER_ROOT/bin"
-for executable in bash cmp dirname grep mkdir mktemp readlink rm tar; do
+for executable in bash cat cmp dirname grep mkdir mktemp readlink rm tar; do
   ln -s "$(command -v "$executable")" "$FIXTURE/bin/$executable"
 done
 printf 'name: fixture\n' > "$SOURCE/pubspec.yaml"
@@ -44,13 +44,18 @@ set -euo pipefail
 printf '%s|%s\n' "${0##*/}" "$*" >> "$SDK_LOG"
 case "$*" in
   'pub get')
-    for file in pubspec.lock pubspec_overrides.yaml analysis_options.yaml \
-      .dart_tool example/pubspec.lock example/pubspec_overrides.yaml; do
+    for file in pubspec.lock analysis_options.yaml .dart_tool \
+      example/pubspec.lock example/pubspec_overrides.yaml; do
       [[ ! -e "$file" ]]
     done
+    if grep -q 'rohd_hierarchy:' pubspec.yaml; then
+      [[ "$(cat pubspec_overrides.yaml)" == $'dependency_overrides:\n  rohd_hierarchy:\n    path: ../rohd_hierarchy' ]]
+    else
+      [[ ! -e pubspec_overrides.yaml ]]
+    fi
     cmp pubspec.yaml "$SOURCE/pubspec.yaml"
     cmp lib/fixture.dart "$SOURCE/lib/fixture.dart"
-    if grep -q 'path: ../rohd_hierarchy' pubspec.yaml; then
+    if grep -q 'rohd_hierarchy:' pubspec.yaml; then
       [[ -f ../rohd_hierarchy/pubspec.yaml ]]
     fi
     printf 'hosted resolution\n' > pubspec.lock ;;
