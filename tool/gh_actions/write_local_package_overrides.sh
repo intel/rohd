@@ -38,3 +38,9 @@ write_override \
 'dependency_overrides:
   rohd_hierarchy:
     path: ../rohd_hierarchy'
+
+write_override \
+  "$REPO_ROOT/packages/rohd_waveform/pubspec_overrides.yaml" \
+'dependency_overrides:
+  rohd_hierarchy:
+    path: ../rohd_hierarchy'
