@@ -173,6 +173,24 @@ class _Wire {
     }
   }
 
+  /// Rejects constraint adoption that would change this immutable wire's value.
+  void _assertCanAdopt(_Wire other, {required String signalName}) {
+    if (_immutableOwner == null || other._valueConstraints.isEmpty) {
+      return;
+    }
+
+    var constrainedValue = value;
+    for (final constraint in {
+      ..._valueConstraints,
+      ...other._valueConstraints
+    }) {
+      constrainedValue = constraint(constrainedValue);
+    }
+    if (constrainedValue != value) {
+      _assertMutable(signalName: signalName);
+    }
+  }
+
   /// Tells this [_Wire] to adopt all the behavior of [other] so that
   /// it can replace [other]. Returns the [_Wire] that has adopted everything.
   _Wire _adopt(_Wire other) {
@@ -183,6 +201,7 @@ class _Wire {
 
     _glitchController.emitter.adopt(other._glitchController.emitter);
     other._migrateChangedTriggers(this);
+    _valueConstraints.addAll(other._valueConstraints);
 
     // ignore: avoid_returning_this - this is overriding a function that sometimes returns not this
     return this;
@@ -286,7 +305,24 @@ class _Wire {
       newValue = LogicValue.filled(width, LogicValue.x);
     }
 
-    _updateValue(newValue, signalName: signalName);
+    _updateValue(_applyValueConstraints(newValue), signalName: signalName);
+  }
+
+  /// Distinct value transformations applied in registration order before an
+  /// update.
+  final Set<_LogicValueConstraint> _valueConstraints = {};
+
+  /// Applies constraints without writing a value or emitting events.
+  LogicValue _applyValueConstraints(LogicValue value) {
+    for (final constraint in _valueConstraints) {
+      value = constraint(value);
+    }
+    return value;
+  }
+
+  /// Adds a transformation that constrains every value written to this wire.
+  void _constrainValue(_LogicValueConstraint constraint) {
+    _valueConstraints.add(constraint);
   }
 
   /// Updates the value of this signal to [newValue].
@@ -306,3 +342,6 @@ class _Wire {
   @override
   String toString() => 'wire $hashCode';
 }
+
+/// Transforms a proposed wire value into the value that may be stored.
+typedef _LogicValueConstraint = LogicValue Function(LogicValue origValue);

@@ -633,7 +633,7 @@ void main() {
     final consumer = definition.subModuleInstantiations.singleWhere(
       (instantiation) => instantiation.module is Consumer,
     ) as SystemVerilogSynthSubModuleInstantiation;
-    final sv = consumer.instantiationVerilog('Consumer')!;
+    final sv = consumer.instantiationVerilog('Consumer', generateEnums: true)!;
     expect(sv, contains('.data_in((data_out[41:40]))'));
     expect(definition.assignments, isEmpty);
     expect(

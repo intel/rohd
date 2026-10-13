@@ -399,6 +399,9 @@ void main() {
       expect(full['version'], equals(NetlistService.formatVersion));
       expect(netlist.version, equals(full['version']));
       expect(module['version'], equals(full['version']));
+      expect(netlist.isCompatible, isTrue);
+      expect(NetlistService.isCompatibleVersion('0.0.1'), isFalse);
+      expect(NetlistService.isCompatibleVersion('0.1.99'), isTrue);
       expect(
         (slim['netlist'] as Map<String, dynamic>)['version'],
         equals(full['version']),

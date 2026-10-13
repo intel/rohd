@@ -14,7 +14,13 @@ import 'package:rohd/src/synthesizers/utilities/utilities.dart';
 /// A special [SynthModuleDefinition] for SystemVerilog modules.
 class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
   /// Creates a new [SystemVerilogSynthModuleDefinition] for the given [module].
-  SystemVerilogSynthModuleDefinition(super.module);
+  SystemVerilogSynthModuleDefinition(super.module, {super.generateEnums})
+      : assert(
+            !(module is SystemVerilog &&
+                module.generatedDefinitionType ==
+                    DefinitionGenerationType.none),
+            'Do not build a definition for a module'
+            ' which generates no definition!');
 
   /// A shared mapping from [SynthLogic]s which are the result of an inlineable
   /// submodule to the instantiation that produces them.
@@ -34,6 +40,99 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
     _replaceNetConnections();
     _collapseMarkedChainableModules();
     _replaceInOutConnectionInlineableModules();
+    _lowerEnumPorts();
+  }
+
+  /// Lowers enum ports to packed boundaries backed by internal enum signals.
+  ///
+  /// Includes raw ports that acquire an enum type through merged aliases.
+  void _lowerEnumPorts() {
+    if (!generateEnums) {
+      return;
+    }
+
+    final backingSignals = Map<SynthLogic, SynthLogic>.identity();
+    for (final signal in [...inputs, ...outputs]) {
+      final port =
+          module.tryInput(signal.name) ?? module.tryOutput(signal.name);
+      if (!signal.isEnum) {
+        continue;
+      }
+
+      final initialName = '${signal.name}_enum';
+      final backingSignal = SynthLogic(
+        signal.characteristicEnum!.clone(name: initialName),
+        parentSynthModuleDefinition: this,
+        namingOverride: Naming.renameable,
+      )
+        ..enumDefinition = signal.enumDefinition
+        ..pickGeneratedName(
+          ('systemVerilogEnumPortBacking', port),
+          initialName: initialName,
+        );
+      internalSignals.add(backingSignal);
+      backingSignals[signal.resolved] = backingSignal;
+    }
+
+    if (backingSignals.isEmpty) {
+      return;
+    }
+
+    final rewrittenAssignments = assignments
+        .map((assignment) =>
+            _replaceAssignmentSignals(assignment, backingSignals))
+        .toList(growable: false);
+    assignments
+      ..clear()
+      ..addAll([
+        for (final input in inputs)
+          if (backingSignals[input.resolved] case final backing?)
+            SynthAssignment(input, backing),
+        for (final output in outputs)
+          if (backingSignals[output.resolved] case final backing?)
+            SynthAssignment(backing, output),
+        ...rewrittenAssignments,
+      ]);
+
+    for (final instantiation in subModuleInstantiations) {
+      (instantiation as SystemVerilogSynthSubModuleInstantiation)
+          .replaceMappedSignals(backingSignals);
+    }
+  }
+
+  /// Rewrites assignment references while preserving range and slice bounds.
+  ///
+  /// Returns the original assignment when neither endpoint changes.
+  SynthAssignment _replaceAssignmentSignals(
+    SynthAssignment assignment,
+    Map<SynthLogic, SynthLogic> replacements,
+  ) {
+    final source = assignment.src.replaceReferences(replacements);
+    final destination = assignment.dst.replaceReferences(replacements);
+    if (identical(source, assignment.src) &&
+        identical(destination, assignment.dst)) {
+      return assignment;
+    }
+
+    if (assignment is RangeSynthAssignment) {
+      return RangeSynthAssignment(
+        source,
+        destination,
+        srcUpperIndex: assignment.srcUpperIndex,
+        srcLowerIndex: assignment.srcLowerIndex,
+        dstUpperIndex: assignment.dstUpperIndex,
+        dstLowerIndex: assignment.dstLowerIndex,
+      );
+    }
+    if (assignment is PartialSynthAssignment) {
+      return PartialSynthAssignment(
+        source,
+        destination,
+        dstUpperIndex: assignment.dstUpperIndex,
+        dstLowerIndex: assignment.dstLowerIndex,
+      );
+    }
+    return SynthAssignment(source, destination);
   }
 
   /// Inlines a fully covered packed bus into its sole submodule input.

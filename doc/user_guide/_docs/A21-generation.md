@@ -1,7 +1,7 @@
 ---
 title: "Generating Outputs"
 permalink: /docs/generation/
-last_modified_at: 2026-08-19
+last_modified_at: 2026-10-08
 toc: true
 ---
 
@@ -112,6 +112,20 @@ final systemVerilog = myModule.dumpSystemVerilog(
 
 The same configuration can be passed directly to `SystemVerilogSynthesizer`
 when using `SynthBuilder`.
+
+## Controlling enum generation
+
+[`LogicEnum`](https://intel.github.io/rohd-website/docs/logic-enums/) signals generate SystemVerilog enum typedefs and symbolic values by default. Enum generation can be disabled for compatibility with tools or flows that require packed logic:
+
+```dart
+final generatedSv = myModule.dumpSystemVerilog(
+  configuration: const SystemVerilogSynthesizerConfiguration(
+    generateEnums: false,
+  ),
+);
+```
+
+With enum generation disabled, the same design is emitted using ordinary packed logic and numeric values.
 
 ## Controlling naming
 

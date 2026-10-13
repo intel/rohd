@@ -234,9 +234,7 @@ class Sequential extends Always {
         throw Exception('Each clk or trigger must be 1 bit, but saw $trigger.');
       }
 
-      if (assignedDriverToInputMap.containsKey(trigger)) {
-        _driverInputsThatAreTriggers.add(assignedDriverToInputMap[trigger]!);
-      }
+      _driverInputsThatAreTriggers.addAll(driverInputs(trigger));
 
       _triggers.add(_SequentialTrigger(
           addInput(
@@ -296,7 +294,7 @@ class Sequential extends Always {
     }
 
     // listen to every input of this `Sequential` for changes
-    for (final driverInput in assignedDriverToInputMap.values) {
+    for (final driverInput in registeredDriverInputs) {
       // pre-fill the _inputToPreTickInputValuesMap so that nothing ever
       // uses values directly
       _updateInputToPreTickInputValue(driverInput);

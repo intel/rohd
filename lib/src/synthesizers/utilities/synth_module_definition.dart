@@ -13,6 +13,7 @@ import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/collections/traverseable_collection.dart';
+import 'package:rohd/src/synthesizers/utilities/synth_enum_definition.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
 import 'package:rohd/src/utilities/namer.dart';
 
@@ -195,6 +196,9 @@ Map<K, List<SynthAssignment>> _assignmentsBy<K>(
 class SynthModuleDefinition {
   /// The [Module] being defined.
   final Module module;
+
+  /// Whether generated identifiers may use enum types and symbolic values.
+  final bool generateEnums;
 
   /// All the assignments that are part of this definition.
   final List<SynthAssignment> assignments = [];
@@ -479,7 +483,7 @@ class SynthModuleDefinition {
   }
 
   /// Creates a new definition representation for this [module].
-  SynthModuleDefinition(this.module)
+  SynthModuleDefinition(this.module, {this.generateEnums = true})
       : assert(
             !(module is SystemVerilog &&
                 module.generatedDefinitionType ==
@@ -711,6 +715,7 @@ class SynthModuleDefinition {
     _collapseConstantBackedRangeIntermediates();
     _collapseAssignments();
     _assignSubmodulePortMapping();
+    _adjustTypePairs();
 
     _pruneUnused();
     _collapseConstantBackedRangeIntermediates();
@@ -1540,6 +1545,43 @@ class SynthModuleDefinition {
     }
   }
 
+  /// Specializes submodule input uses for their paired enum types.
+  void _adjustTypePairs() {
+    for (final submoduleInstantiation
+        in moduleToSubModuleInstantiationMap.values) {
+      submoduleInstantiation.adjustTypePairs();
+    }
+  }
+
+  /// Enum definitions named in this module, keyed by generated type identity.
+  final Map<SynthEnumDefinitionKey, SynthEnumDefinition> _enumDefinitions =
+      <SynthEnumDefinitionKey, SynthEnumDefinition>{};
+
+  /// Named enum definitions for retained signals and constant uses.
+  ///
+  /// Names are also planned for packed output to keep signal names stable.
+  List<SynthEnumDefinition> get enumDefinitions =>
+      _enumDefinitions.values.toList(growable: false);
+
+  /// Assigns shared generated names for [synthEnum]'s enum definition.
+  void _pickDefinitionEnumName(SynthLogic synthEnum) {
+    assert(synthEnum.isEnum, 'Only call this on SynthLogic that is an enum.');
+    final key = SynthEnumDefinitionKey(synthEnum.characteristicEnum!);
+    if (_enumDefinitions.containsKey(key)) {
+      // already have a definition for this enum
+      synthEnum.enumDefinition = _enumDefinitions[key];
+    } else {
+      // create a new definition for this enum
+      final newDefinition = SynthEnumDefinition(
+        synthEnum.characteristicEnum!,
+        module.namer,
+        validateReservedNames: generateEnums,
+      );
+      _enumDefinitions[key] = newDefinition;
+      synthEnum.enumDefinition = newDefinition;
+    }
+  }
+
   /// Resolves a submodule input mapping through any replacement and, when the
   /// mapped signal is fully driven by a packed scalar assignment, through that
   /// driver as well.
@@ -1789,10 +1831,11 @@ class SynthModuleDefinition {
     //   1. Ports (reserved by _initNamespace, claimed via signalName)
     //   2. Reserved submodule instances
     //   3. Reserved internal signals with strong claims
-    //   4. Non-reserved submodule instances with strong claims
-    //   5. Non-reserved internal signals with strong claims
-    //   6. Weak submodule instances
-    //   7. Weak internal signals
+    //   4. Enum types and members, reserved first (also in packed output)
+    //   5. Non-reserved submodule instances with strong claims
+    //   6. Non-reserved internal signals with strong claims
+    //   7. Weak submodule instances
+    //   8. Weak internal signals
     for (final input in inputs) {
       input.pickName();
     }
@@ -1817,11 +1860,25 @@ class SynthModuleDefinition {
     for (final signal in internalSignals) {
       if (_weakNameClaimSignals.contains(signal)) {
         weakSignals.add(signal);
-      } else if (signal.isReserved) {
+      } else if (signal.isReserved &&
+          (!signal.isConstant || signal.constNameDisallowed)) {
         signal.pickName();
       } else {
         nonReservedSignals.add(signal);
       }
+    }
+
+    final enumSignals = <SynthLogic>{
+      ...inputs,
+      ...outputs,
+      ...inOuts,
+      ...internalSignals,
+    }.where((signal) => signal.isEnum);
+    for (final reserved in [true, false]) {
+      enumSignals
+          .where((signal) =>
+              signal.characteristicEnum!.reserveDefinitionName == reserved)
+          .forEach(_pickDefinitionEnumName);
     }
 
     // Then non-reserved submodule instances with strong name claims.
@@ -3974,7 +4031,16 @@ class SynthModuleDefinition {
         );
 
         final dst = assignment.dst;
-        final src = assignment.src;
+        var src = assignment.src;
+
+        if (src.isConstant &&
+            !src.isEnum &&
+            dst.isEnum &&
+            dst.characteristicEnum!.mapping.values
+                .contains(src.logics.whereType<Const>().first.value)) {
+          src = src.constantWithEnumType(dst.characteristicEnum!);
+          internalSignals.add(src);
+        }
 
         if (src == dst && src.isConstant) {
           // looks like this assignment does nothing -- some sort of circular
@@ -4001,7 +4067,9 @@ class SynthModuleDefinition {
                 !assignment.dst.hasPreservedName)) {
           internalSignals.remove(assignment.src);
         } else {
-          reducedAssignments.add(assignment);
+          reducedAssignments.add(identical(src, assignment.src)
+              ? assignment
+              : SynthAssignment(src, dst));
         }
       }
       prevAssignmentCount = assignments.length;
@@ -4009,6 +4077,11 @@ class SynthModuleDefinition {
         ..clear()
         ..addAll(reducedAssignments);
     }
+
+    // clear out any duplicates
+    final assignmentEndpoints = <(SynthLogic, SynthLogic)>{};
+    assignments.removeWhere((assignment) => !assignmentEndpoints
+        .add((assignment.src.resolved, assignment.dst.resolved)));
 
     // add back all the partial assignments that were removed since they could
     // not be merged
