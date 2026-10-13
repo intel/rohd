@@ -90,7 +90,11 @@ echo "  - build/linux/assets/ (for Linux native builds)"
 # copied into the host app's web/ directory for the <script> tag in index.html.
 WASM_PKG="${WAVE_VIEWER}/web/pkg"
 WEB_PKG="${ROOT}/web/pkg"
-if [ -d "$WASM_PKG" ]; then
+if [ -f "$WEB_PKG/wellen_bridge.js" ] && \
+    [ -f "$WEB_PKG/wellen_bridge_bg.wasm" ]; then
+    echo "Using checked-in WASM pkg for web dev server."
+elif [ -f "$WASM_PKG/wellen_bridge.js" ] && \
+    [ -f "$WASM_PKG/wellen_bridge_bg.wasm" ]; then
     echo "Copying WASM pkg for web dev server..."
     rm -rf "$WEB_PKG"
     mkdir -p "$(dirname "$WEB_PKG")"
@@ -100,5 +104,5 @@ else
         echo "Removing stale WASM pkg symlink..."
         rm -f "$WEB_PKG"
     fi
-    echo "Warning: WASM pkg not found at $WASM_PKG. Run 'make wasm' first for web builds."
+    echo "Warning: complete WASM pkg not found in $WEB_PKG or $WASM_PKG."
 fi

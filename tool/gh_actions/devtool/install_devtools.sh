@@ -34,10 +34,21 @@ echo "════════════════════════�
 
 flutter build web --pwa-strategy=none --release --no-tree-shake-icons
 
-if [ ! -f build/web/canvaskit/canvaskit.js ] || [ ! -f build/web/canvaskit/canvaskit.wasm ]; then
-  echo "  Expected CanvasKit artifacts were not generated."
-  exit 1
-fi
+rm -rf build/web/pkg
+cp -R web/pkg build/web/
+
+required_web_artifacts=(
+  build/web/canvaskit/canvaskit.js
+  build/web/canvaskit/canvaskit.wasm
+  build/web/pkg/wellen_bridge.js
+  build/web/pkg/wellen_bridge_bg.wasm
+)
+for required_web_artifact in "${required_web_artifacts[@]}"; do
+  if [[ ! -f "$required_web_artifact" ]]; then
+    echo "  Expected web artifact was not generated: $required_web_artifact"
+    exit 1
+  fi
+done
 
 chmod 0755 build/web/canvaskit/canvaskit.js build/web/canvaskit/canvaskit.wasm
 

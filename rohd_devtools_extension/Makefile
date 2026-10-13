@@ -94,8 +94,10 @@ build/web/index.html: web/pkg pubspec.yaml $(DART_SOURCES)
 	@bash $(ROOT)/scripts/verify_elk_distribution.sh $(ROOT)/build/web/assets
 	@echo "Copying widget artifacts into build/web..."
 	@rm -rf $(ROOT)/build/web/pkg
+	@cp -r $(ROOT)/web/pkg $(ROOT)/build/web/
 	@for widget in $(WIDGET_DIRS); do \
 		if [ -d "$$widget/web/pkg" ]; then \
+			rm -rf $(ROOT)/build/web/pkg; \
 			cp -r $$widget/web/pkg $(ROOT)/build/web/; \
 			break; \
 		fi; \
