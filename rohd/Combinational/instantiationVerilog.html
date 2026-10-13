@@ -99,6 +99,9 @@ String instantiationVerilog(
   final outputs = Map.fromEntries(ports.entries
       .where((element) =&gt; this.outputs.containsKey(element.key)));
 
+  assert(ports.length == inputs.length + outputs.length,
+      &#39;All ports of an always should be inputs or outputs&#39;);
+
   var verilog = &#39;&#39;;
   verilog += &#39;&#47;&#47;  $instanceName\n&#39;;
   verilog += &#39;${alwaysVerilogStatement(inputs)} begin\n&#39;;

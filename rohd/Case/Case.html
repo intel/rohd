@@ -78,6 +78,8 @@
     if (item.value.width != expression.width) {
       throw PortWidthMismatchException.equalWidth(expression, item.value);
     }
+
+    _itemTypePortPairs[item.value] = expression;
   }
 }</code></pre>
 </section>

@@ -61,6 +61,8 @@
     
 <section class="desc markdown">
   <p>Conditionally assigns <code>receiver</code> to the value of <code>driver</code>.</p>
+<p>A constant <code>driver</code> must be in a <a href="../../rohd/LogicEnum-class.html">LogicEnum</a> receiver's mapping.
+An enum <code>driver</code> must have the same enum type and a compatible mapping.</p>
 </section>
 
 
@@ -70,6 +72,22 @@
   <pre class="language-dart"><code class="language-dart">ConditionalAssign(this.receiver, this.driver) {
   if (driver.width != receiver.width) {
     throw PortWidthMismatchException.equalWidth(receiver, driver);
+  }
+
+  final enumReceiver = receiver;
+  final enumDriver = driver;
+  if (enumReceiver is LogicEnum &amp;&amp;
+      enumDriver is LogicEnum &amp;&amp;
+      !enumReceiver.canAcceptValuesFrom(enumDriver)) {
+    throw ArgumentError.value(driver, &#39;driver&#39;,
+        &#39;Enum values must be representable in this mapping.&#39;);
+  }
+
+  if (enumReceiver is LogicEnum &amp;&amp;
+      driver is Const &amp;&amp;
+      !enumReceiver.mapping.containsValue(driver.value)) {
+    throw ArgumentError.value(driver.value, &#39;driver&#39;,
+        &#39;Not present in the mapping for ${enumReceiver.runtimeType}.&#39;);
   }
 }</code></pre>
 </section>

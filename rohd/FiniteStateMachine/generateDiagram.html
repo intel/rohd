@@ -26,7 +26,7 @@
   <ol class="breadcrumbs gt-separated dark hidden-xs">
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/">rohd.dart</a></li>
-    <li><a href="../../rohd/FiniteStateMachine-class.html">FiniteStateMachine<span class="signature">&lt;<wbr><span class="type-parameter">StateIdentifier</span>&gt;</span></a></li>
+    <li><a href="../../rohd/FiniteStateMachine-class.html">FiniteStateMachine<span class="signature">&lt;<wbr><span class="type-parameter">StateIdentifier extends Enum</span>&gt;</span></a></li>
     <li class="self-crumb">generateDiagram method</li>
   </ol>
   <div class="self-name">generateDiagram</div>
@@ -66,6 +66,7 @@
   <p>Generate a FSM state diagram <code>_MermaidStateDiagram</code>.
 Check on <a href="https://mermaid.js.org/intro/">https://mermaid.js.org/intro/</a> to view the diagram generated.
 If you are using vscode, you can download the mermaid extension.</p>
+<p>State labels use enum member names. Event labels use <a href="../../rohd/Logic/name.html">Logic.name</a>.</p>
 <p>Output to mermaid diagram at <code>outputPath</code>.</p>
 </section>
 
@@ -74,22 +75,29 @@ If you are using vscode, you can download the mermaid extension.</p>
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">void generateDiagram({String outputPath = &#39;diagram_fsm.md&#39;}) {
-  final figure = _MermaidStateDiagram(outputPath: outputPath)
-    ..addStartState(resetState.toString());
+  final figure = _MermaidStateDiagram(outputPath: outputPath);
+  final stateIds = {
+    for (final (index, state) in _states.indexed)
+      state.identifier: &#39;state$index&#39;,
+  };
+  for (final state in _states) {
+    figure.addState(stateIds[state.identifier]!, state.identifier.name);
+  }
+  figure.addStartState(stateIds[resetState]!);
 
   for (final state in _states) {
     for (final entry in state.events.entries) {
       figure.addTransitions(
-        state.identifier.toString(),
-        entry.value.toString(),
+        stateIds[state.identifier]!,
+        stateIds[entry.value]!,
         entry.key.name,
       );
     }
 
     if (state.defaultNextState != state.identifier) {
       figure.addTransitions(
-        state.identifier.toString(),
-        state.defaultNextState.toString(),
+        stateIds[state.identifier]!,
+        stateIds[state.defaultNextState]!,
         &#39;(default)&#39;,
       );
     }
@@ -110,7 +118,7 @@ If you are using vscode, you can download the mermaid extension.</p>
 <ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/">rohd</a></li>
-    <li><a href="../../rohd/FiniteStateMachine-class.html">FiniteStateMachine<span class="signature">&lt;<wbr><span class="type-parameter">StateIdentifier</span>&gt;</span></a></li>
+    <li><a href="../../rohd/FiniteStateMachine-class.html">FiniteStateMachine<span class="signature">&lt;<wbr><span class="type-parameter">StateIdentifier extends Enum</span>&gt;</span></a></li>
     <li class="self-crumb">generateDiagram method</li>
 </ol>
 

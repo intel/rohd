@@ -73,7 +73,9 @@ consider. For e.g., this can be used instead of a nested <a href="../rohd/mux.ht
 <p>The result is of type <a href="../rohd/Logic-class.html">Logic</a> and it is determined by conditionaly matching
 the expression with the values of each item in conditions. If width of the
 input is not provided, then the width of  the result is inferred from the
-width of the entries.</p>
+width of the entries. Bare <a href="https://api.dart.dev/stable/3.13.5/dart-core/Enum-class.html">Enum</a> values are not supported as results
+because an untyped result has no hardware encoding for them; use explicitly
+mapped <a href="../rohd/LogicEnum-class.html">LogicEnum</a> signals instead.</p>
 </section>
 
 
@@ -84,10 +86,20 @@ width of the entries.</p>
     {int? width,
     ConditionalType conditionalType = ConditionalType.none,
     dynamic defaultValue}) {
-  for (final conditionValue in [
+  final resultValues = [
     ...conditions.values,
     if (defaultValue != null) defaultValue
-  ]) {
+  ];
+  if (resultValues.any((value) =&gt; value is Enum)) {
+    throw ArgumentError.value(
+      resultValues,
+      &#39;conditions&#39;,
+      &#39;Bare enum result values have no hardware encoding. Convert each result &#39;
+          &#39;to a LogicEnum signal with an explicit mapping.&#39;,
+    );
+  }
+
+  for (final conditionValue in resultValues) {
     int? inferredWidth;
 
     if (conditionValue is Logic) {
@@ -106,6 +118,24 @@ width of the entries.</p>
 
   if (width == null) {
     throw SignalWidthMismatchException.forNull(conditions);
+  }
+
+  Logic conditionLogic(dynamic condition) {
+    if (expression is LogicEnum &amp;&amp; condition is Enum) {
+      if (!expression.mapping.containsKey(condition)) {
+        throw ArgumentError.value(
+          condition,
+          &#39;conditions&#39;,
+          &#39;Not present in the mapping for ${expression.runtimeType}.&#39;,
+        );
+      }
+
+      return expression.clone()..gets(Const(expression.mapping[condition]));
+    } else if (condition is Logic) {
+      return condition;
+    } else {
+      return Const(condition, width: expression.width);
+    }
   }
 
   for (final condition in conditions.entries) {
@@ -131,11 +161,7 @@ width of the entries.</p>
         expression,
         [
           for (final condition in conditions.entries)
-            CaseItem(
-                condition.key is Logic
-                    ? condition.key as Logic
-                    : Const(condition.key, width: expression.width),
-                [result &lt; condition.value])
+            CaseItem(conditionLogic(condition.key), [result &lt; condition.value])
         ],
         conditionalType: conditionalType,
         defaultItem: defaultValue != null ? [result &lt; defaultValue] : null)

@@ -204,6 +204,18 @@ to <a href="../rohd/Case/expression.html">expression</a>.
 
 </dd>
 
+        <dt id="portTypePairs" class="property inherited">
+  <span class="name"><a href="../rohd/Case/portTypePairs.html">portTypePairs</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>, <span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd class="inherited">
+  Type references for this conditional's own input uses.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
         <dt id="receivers" class="property inherited">
   <span class="name"><a href="../rohd/Case/receivers.html">receivers</a></span>
   <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span>
@@ -399,6 +411,19 @@ accordingly to <code>SsaLogic</code>s and returns an updated set of mappings.
 <dd class="inherited">
   Gets the output port associated with <code>receiver</code>.
   <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="shouldPropagateType" class="callable">
+  <span class="name"><a href="../rohd/CaseZ/shouldPropagateType.html">shouldPropagateType</a></span><span class="signature">(<wbr><span class="parameter" id="shouldPropagateType-param-reference"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">reference</span>, </span><span class="parameter" id="shouldPropagateType-param-constantValue"><span class="type-annotation"><a href="../rohd/LogicValue-class.html">LogicValue</a>?</span> <span class="parameter-name">constantValue</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Whether synthesis should apply <code>reference</code>'s resolved type to this use.
+  <div class="features"><span class="feature">override</span></div>
 
 </dd>
 

@@ -54,7 +54,8 @@
 
     <section class="multi-line-signature">
       const
-      <span class="name ">SystemVerilogSynthesizerConfiguration</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="param-inputPortType"><span class="type-annotation"><a href="../../rohd/SystemVerilogPortTypeConfiguration-class.html">SystemVerilogPortTypeConfiguration</a></span> <span class="parameter-name">inputPortType</span> = <span class="default-value">const SystemVerilogPortTypeConfiguration(objectType: SystemVerilogPortType.implicit)</span>, </span></li>
+      <span class="name ">SystemVerilogSynthesizerConfiguration</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="param-generateEnums"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">generateEnums</span> = <span class="default-value">true</span>, </span></li>
+<li><span class="parameter" id="param-inputPortType"><span class="type-annotation"><a href="../../rohd/SystemVerilogPortTypeConfiguration-class.html">SystemVerilogPortTypeConfiguration</a></span> <span class="parameter-name">inputPortType</span> = <span class="default-value">const SystemVerilogPortTypeConfiguration(objectType: SystemVerilogPortType.implicit)</span>, </span></li>
 <li><span class="parameter" id="param-outputPortType"><span class="type-annotation"><a href="../../rohd/SystemVerilogPortTypeConfiguration-class.html">SystemVerilogPortTypeConfiguration</a></span> <span class="parameter-name">outputPortType</span> = <span class="default-value">const SystemVerilogPortTypeConfiguration(objectType: SystemVerilogPortType.implicit)</span>, </span></li>
 <li><span class="parameter" id="param-inOutPortType"><span class="type-annotation"><a href="../../rohd/SystemVerilogPortTypeConfiguration-class.html">SystemVerilogPortTypeConfiguration</a></span> <span class="parameter-name">inOutPortType</span> = <span class="default-value">const SystemVerilogPortTypeConfiguration(dataType: SystemVerilogPortType.implicit)</span>, </span></li>
 </ol>})
@@ -69,6 +70,7 @@
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">const SystemVerilogSynthesizerConfiguration({
+  this.generateEnums = true,
   this.inputPortType = const SystemVerilogPortTypeConfiguration(
     objectType: SystemVerilogPortType.implicit,
   ),

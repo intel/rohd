@@ -26,7 +26,7 @@
   <ol class="breadcrumbs gt-separated dark hidden-xs">
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/">rohd.dart</a></li>
-    <li><a href="../../rohd/FiniteStateMachine-class.html">FiniteStateMachine<span class="signature">&lt;<wbr><span class="type-parameter">StateIdentifier</span>&gt;</span></a></li>
+    <li><a href="../../rohd/FiniteStateMachine-class.html">FiniteStateMachine<span class="signature">&lt;<wbr><span class="type-parameter">StateIdentifier extends Enum</span>&gt;</span></a></li>
     <li class="self-crumb">FiniteStateMachine.multi constructor</li>
   </ol>
   <div class="self-name">FiniteStateMachine.multi</div>
@@ -49,12 +49,12 @@
       data-above-sidebar="rohd&#47;FiniteStateMachine-class-sidebar.html"
       data-below-sidebar="">
       <div>
-<h1><span class="kind-constructor">FiniteStateMachine&lt;<wbr><span class="type-parameter">StateIdentifier</span>&gt;.multi</span> constructor 
+<h1><span class="kind-constructor">FiniteStateMachine&lt;<wbr><span class="type-parameter">StateIdentifier extends Enum</span>&gt;.multi</span> constructor 
 </h1></div>
 
     <section class="multi-line-signature">
       
-      <span class="name ">FiniteStateMachine&lt;<wbr><span class="type-parameter">StateIdentifier</span>&gt;.multi</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="multi-param-_clks"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> <span class="parameter-name">_clks</span>, </span></li>
+      <span class="name ">FiniteStateMachine&lt;<wbr><span class="type-parameter">StateIdentifier extends Enum</span>&gt;.multi</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="multi-param-_clks"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> <span class="parameter-name">_clks</span>, </span></li>
 <li><span class="parameter" id="multi-param-reset"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">reset</span>, </span></li>
 <li><span class="parameter" id="multi-param-resetState"><span class="type-annotation">StateIdentifier</span> <span class="parameter-name">resetState</span>, </span></li>
 <li><span class="parameter" id="multi-param-_states"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/State-class.html">State</a><span class="signature">&lt;<wbr><span class="type-parameter">StateIdentifier</span>&gt;</span></span>&gt;</span></span> <span class="parameter-name">_states</span>, {</span></li>
@@ -82,11 +82,7 @@ positive edges of any of <code>_clks</code>.</p>
   this.asyncReset = false,
   List&lt;Conditional&gt; setupActions = const [],
 })  : setupActions = List.unmodifiable(setupActions),
-      stateWidth = _logBase(_states.length, 2),
-      currentState =
-          Logic(name: &#39;currentState&#39;, width: _logBase(_states.length, 2)),
-      nextState =
-          Logic(name: &#39;nextState&#39;, width: _logBase(_states.length, 2)) {
+      stateWidth = max(1, _logBase(_states.length, 2)) {
   _validate();
 
   var stateCounter = 0;
@@ -100,10 +96,8 @@ positive edges of any of <code>_clks</code>.</p>
     Case(
         currentState,
         _states
-            .map((state) =&gt; CaseItem(
-                    Const(_stateValueLookup[state], width: stateWidth)
-                        .named(state.identifier.toString()),
-                    [
+            .map(
+                (state) =&gt; CaseItem(stateEnum()..getsEnum(state.identifier), [
                       ...state.actions,
                       Case(
                           Const(1),
@@ -124,16 +118,16 @@ positive edges of any of <code>_clks</code>.</p>
         defaultItem: [
           nextState &lt; currentState,
 
-          &#47;&#47; zero out all other receivers from state actions...
-          &#47;&#47; even though out-of-state is unreachable,
-          &#47;&#47; we don&#39;t want any inferred latches
+          &#47;&#47; Satisfy lint and synthesis checks for the unreachable default.
           ..._states
               .map((state) =&gt; state.actions)
               .flattened
               .map((conditional) =&gt; conditional.receivers)
               .flattened
               .toSet()
-              .map((receiver) =&gt; receiver &lt; 0)
+              .map((receiver) =&gt; receiver is LogicEnum
+                  ? receiver &lt; receiver.mapping.keys.first
+                  : receiver &lt; 0)
         ])
   ]);
 
@@ -157,7 +151,7 @@ positive edges of any of <code>_clks</code>.</p>
 <ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/">rohd</a></li>
-    <li><a href="../../rohd/FiniteStateMachine-class.html">FiniteStateMachine<span class="signature">&lt;<wbr><span class="type-parameter">StateIdentifier</span>&gt;</span></a></li>
+    <li><a href="../../rohd/FiniteStateMachine-class.html">FiniteStateMachine<span class="signature">&lt;<wbr><span class="type-parameter">StateIdentifier extends Enum</span>&gt;</span></a></li>
     <li class="self-crumb">FiniteStateMachine.multi constructor</li>
 </ol>
 

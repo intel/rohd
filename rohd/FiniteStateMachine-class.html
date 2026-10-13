@@ -26,7 +26,7 @@
   <ol class="breadcrumbs gt-separated dark hidden-xs">
     <li><a href="../index.html">rohd</a></li>
     <li><a href="../rohd/">rohd.dart</a></li>
-    <li class="self-crumb">FiniteStateMachine<span class="signature">&lt;<wbr><span class="type-parameter">StateIdentifier</span>&gt;</span> class</li>
+    <li class="self-crumb">FiniteStateMachine<span class="signature">&lt;<wbr><span class="type-parameter">StateIdentifier extends <a href="https://api.dart.dev/stable/3.13.5/dart-core/Enum-class.html">Enum</a></span>&gt;</span> class</li>
   </ol>
   <div class="self-name">FiniteStateMachine</div>
   <form class="search navbar-right" role="search">
@@ -48,7 +48,7 @@
     data-above-sidebar="rohd&#47;rohd-library-sidebar.html"
     data-below-sidebar="rohd&#47;FiniteStateMachine-class-sidebar.html">
     <div>
-<h1><span class="kind-class">FiniteStateMachine&lt;<wbr><span class="type-parameter">StateIdentifier</span>&gt;</span> class 
+<h1><span class="kind-class">FiniteStateMachine&lt;<wbr><span class="type-parameter">StateIdentifier extends Enum</span>&gt;</span> class 
  
 </h1></div>
 
@@ -57,6 +57,9 @@
   <p>Simple class for FSM <a href="../rohd/FiniteStateMachine-class.html">FiniteStateMachine</a>.</p>
 <p>Abstraction for representing Finite state machines (FSM).
 Contains the logic for performing the state transitions.</p>
+<p>State identifiers must be Dart enum members. Encodings follow the order
+of <a href="../rohd/FiniteStateMachine/states.html">states</a>, not necessarily <a href="https://api.dart.dev/stable/3.13.5/dart-core/Enum/index.html">Enum.index</a>; use <a href="../rohd/FiniteStateMachine/getStateIndex.html">getStateIndex</a> to obtain
+an encoding and <a href="../rohd/LogicEnum/valueEnum.html">LogicEnum.valueEnum</a> to read the current enum member.</p>
 </section>
 
 
@@ -116,13 +119,13 @@ first clock.
 
         <dt id="currentState" class="property">
   <span class="name"><a href="../rohd/FiniteStateMachine/currentState.html">currentState</a></span>
-  <span class="signature">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span>
+  <span class="signature">&#8594; <a href="../rohd/LogicEnum-class.html">LogicEnum</a><span class="signature">&lt;<wbr><span class="type-parameter">StateIdentifier</span>&gt;</span></span>
   
 
 </dt>
 <dd>
   The current state of the FSM.
-  <div class="features"><span class="feature">final</span></div>
+  <div class="features"><span class="feature">late</span><span class="feature">final</span></div>
 
 </dd>
 
@@ -140,13 +143,13 @@ first clock.
 
         <dt id="nextState" class="property">
   <span class="name"><a href="../rohd/FiniteStateMachine/nextState.html">nextState</a></span>
-  <span class="signature">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span>
+  <span class="signature">&#8594; <a href="../rohd/LogicEnum-class.html">LogicEnum</a><span class="signature">&lt;<wbr><span class="type-parameter">StateIdentifier</span>&gt;</span></span>
   
 
 </dt>
 <dd>
   The next state of the FSM.
-  <div class="features"><span class="feature">final</span></div>
+  <div class="features"><span class="feature">late</span><span class="feature">final</span></div>
 
 </dd>
 
@@ -288,6 +291,19 @@ If you are using vscode, you can download the mermaid extension.
 
 </dd>
 
+        <dt id="stateEnum" class="callable">
+  <span class="name"><a href="../rohd/FiniteStateMachine/stateEnum.html">stateEnum</a></span><span class="signature">(<wbr>{<span class="parameter" id="stateEnum-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">name</span></span>})
+    <span class="returntype parameter">&#8594; <a href="../rohd/LogicEnum-class.html">LogicEnum</a><span class="signature">&lt;<wbr><span class="type-parameter">StateIdentifier</span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Creates a state signal using this machine's state-to-index encoding.
+  
+
+</dd>
+
         <dt id="toString" class="callable inherited">
   <span class="name"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Object/toString.html">toString</a></span><span class="signature">(<wbr>)
     <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>
@@ -339,7 +355,7 @@ If you are using vscode, you can download the mermaid extension.
 <ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
     <li><a href="../index.html">rohd</a></li>
     <li><a href="../rohd/">rohd</a></li>
-    <li class="self-crumb">FiniteStateMachine<span class="signature">&lt;<wbr><span class="type-parameter">StateIdentifier</span>&gt;</span> class</li>
+    <li class="self-crumb">FiniteStateMachine<span class="signature">&lt;<wbr><span class="type-parameter">StateIdentifier extends <a href="https://api.dart.dev/stable/3.13.5/dart-core/Enum-class.html">Enum</a></span>&gt;</span> class</li>
 </ol>
 
     <h5>rohd library</h5>

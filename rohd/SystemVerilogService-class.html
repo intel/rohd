@@ -70,7 +70,7 @@ final sv = SystemVerilogService(
 // Write individual .sv files:
 sv.writeOutputs();
 
-// Or get the concatenated output (like generateSynth):
+// Or get the concatenated output:
 print(sv.output);
 </code></pre>
 </section>
@@ -248,7 +248,7 @@ string, without the generation header.
 </dt>
 <dd>
   Returns the full single-file SystemVerilog output with header,
-identical to <code>Module.generateSynth()</code>.
+identical to <a href="../rohd/Module/dumpSystemVerilog.html">Module.dumpSystemVerilog</a>.
   <div class="features"><span class="feature">late</span><span class="feature">final</span></div>
 
 </dd>

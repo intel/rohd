@@ -26,7 +26,7 @@
   <ol class="breadcrumbs gt-separated dark hidden-xs">
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/">rohd.dart</a></li>
-    <li><a href="../../rohd/FiniteStateMachine-class.html">FiniteStateMachine<span class="signature">&lt;<wbr><span class="type-parameter">StateIdentifier</span>&gt;</span></a></li>
+    <li><a href="../../rohd/FiniteStateMachine-class.html">FiniteStateMachine<span class="signature">&lt;<wbr><span class="type-parameter">StateIdentifier extends Enum</span>&gt;</span></a></li>
     <li class="self-crumb">currentState property</li>
   </ol>
   <div class="self-name">currentState</div>
@@ -55,9 +55,9 @@
     
       <section class="multi-line-signature">
         
-        <a href="../../rohd/Logic-class.html">Logic</a>
+        <a href="../../rohd/LogicEnum-class.html">LogicEnum</a><span class="signature">&lt;<wbr><span class="type-parameter">StateIdentifier</span>&gt;</span>
         <span class="name ">currentState</span>
-        <div class="features"><span class="feature">final</span></div>
+        <div class="features"><span class="feature">late</span><span class="feature">final</span></div>
 
       </section>
       
@@ -70,7 +70,8 @@ bus.</p>
       
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">final Logic currentState;</code></pre>
+  <pre class="language-dart"><code class="language-dart">late final LogicEnum&lt;StateIdentifier&gt; currentState =
+    stateEnum(name: &#39;currentState&#39;);</code></pre>
 </section>
 
 
@@ -86,7 +87,7 @@ bus.</p>
 <ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/">rohd</a></li>
-    <li><a href="../../rohd/FiniteStateMachine-class.html">FiniteStateMachine<span class="signature">&lt;<wbr><span class="type-parameter">StateIdentifier</span>&gt;</span></a></li>
+    <li><a href="../../rohd/FiniteStateMachine-class.html">FiniteStateMachine<span class="signature">&lt;<wbr><span class="type-parameter">StateIdentifier extends Enum</span>&gt;</span></a></li>
     <li class="self-crumb">currentState property</li>
 </ol>
 
