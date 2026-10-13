@@ -13,6 +13,9 @@
 // 2026 April
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
+@TestOn('vm')
+library;
+
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';

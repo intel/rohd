@@ -22,6 +22,9 @@
 //
 // Run with: flutter test test/miter_test.dart
 
+@TestOn('vm')
+library;
+
 import 'dart:convert';
 import 'dart:io';
 

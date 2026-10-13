@@ -7,6 +7,9 @@
 // 2024 January 9
 // Author: Yao Jing Quek <yao.jing.quek@intel.com>
 
+@TestOn('vm')
+library;
+
 import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
