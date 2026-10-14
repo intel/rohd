@@ -102,7 +102,7 @@ void execute(Set&lt;Logic&gt;? drivenSignals, [void Function(Logic)? guard]) {
   CaseItem? foundMatch;
 
   for (final item in items) {
-    &#47;&#47; match on the first matchinig item
+    &#47;&#47; match on the first matching item
     if (isMatch(driverValue(item.value), driverValue(expression))) {
       for (final conditional in item.then) {
         conditional.execute(drivenSignals, guard);
