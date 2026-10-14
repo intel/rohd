@@ -215,11 +215,12 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
           configuration.iverilogWorkaroundForUnpackedArrayVariables &&
               _isUnpackedArray(sig) &&
               _isDrivenBySubmoduleOutput(sig);
-      final type = useIverilogWorkaround || _requiresNetDeclaration(sig)
+      final type = useIverilogWorkaround
           ? 'wire'
           : sig.definitionType(useEnumType: configuration.generateEnums);
+      final name = sig.definitionName(useEnumType: configuration.generateEnums);
       declarations.add(
-        '$type ${sig.definitionName(useEnumType: configuration.generateEnums)};',
+        '$type $name;',
       );
     }
     return declarations.join('\n');
