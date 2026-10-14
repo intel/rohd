@@ -2,11 +2,11 @@
 title: "Comparison with Alternatives"
 permalink: /docs/comparison-with-alternatives/
 excerpt: "Comparison with Alternatives"
-last_modified_at: 2026-07-17
+last_modified_at: 2026-10-14
 toc: true
 ---
 
-There are a lot of options for developing hardware.  This section briefly discusses some popular alternatives to ROHD and some of their strengths and weaknesses. It is not intended to be an exhaustive list or a ranking; each approach makes different trade-offs, and these projects continue to evolve.
+There are a lot of options for developing hardware.  This section briefly discusses some popular alternatives to ROHD and some of their strengths and weaknesses. The list is not exhaustive; it is intended as a representative comparison across different types of solutions, including traditional HDLs, embedded generator frameworks, new compiled languages, high-level synthesis, and supporting infrastructure. Each approach makes different trade-offs, and these projects continue to evolve.
 
 There is a conceptual difference between a *compiled hardware language* and an *embedded generator framework*. ROHD falls in the latter category: it is a Dart package for constructing and simulating a hardware model and generating outputs such as SystemVerilog. By contrast, a compiled hardware language has its own syntax and compiler. These are not rigid categories; many tools combine a host language, hardware-specific compiler passes, intermediate representations, and external simulators.
 
@@ -41,13 +41,23 @@ Chisel (Constructing Hardware in a Scala Embedded Language) is a hardware constr
 
 - Both projects use a general-purpose, statically typed host language for parameterization and hardware construction. The choice between Scala/JVM and Dart brings different syntax, build systems, libraries, and debugging experiences.
 - Scala and its functional programming style are less familiar to many hardware engineers than C-style imperative languages. Productive Chisel can also involve Scala-specific concepts such as implicits or givens, type-level programming, higher-order functions, and extensive operator overloading. Developers must distinguish Scala constructs that execute during elaboration from Chisel constructs that the DSL and compiler interpret as hardware. ROHD never converts a Dart language semantic into hardware: Dart executes as ordinary software and constructs explicit hardware objects, and only those objects are converted to RTL. Dart control flow can determine which objects are constructed, but Dart variables, statements, and classes do not themselves acquire hardware meaning.
-- A common complaint about Chisel is that the Scala/JVM toolchain can feel heavy and less approachable. Build configuration, dependency and version compatibility, compiler plugins, and startup time add friction, while debugging may cross Scala elaboration, FIRRTL/CIRCT lowering, generated SystemVerilog, and an external simulator. ROHD's Dart toolchain and more direct generation path generally provide a simpler development and debugging workflow.
+- The Scala/JVM toolchain is a frequently cited source of friction: build configuration, dependency and compiler-plugin version alignment, and JVM startup time all add overhead, and debugging may cross Scala elaboration, FIRRTL/CIRCT lowering, generated SystemVerilog, and an external simulator. ROHD has fewer layers between source and simulation: the Dart debugger steps through both hardware construction and ROHD simulation, and SystemVerilog is generated directly from the same object model.
 - Modern Chisel uses a Scala compiler plugin to capture source-level information such as many `val` names and propagate it into generated hardware. This can make simple code more concise, but it also means that aspects of the Scala source affect the hardware model and generated output. ROHD instead keeps Dart source semantics separate from the object model and names hardware objects explicitly.
 - Chisel's compiler stack performs lowering and optimization through intermediate representations. This enables powerful transformations, but generated SystemVerilog can be less structurally aligned with the source than ROHD's more direct output. CIRCT provides options to tune Chisel's emission style.
 - Chisel provides first-party ChiselSim APIs for stimulus and checking, but ChiselSim requires a compatible external simulator such as Verilator or VCS. ROHD includes its event-driven simulator directly in the package.
 - Both systems elaborate configuration using their host language. Chisel commonly passes Scala parameters into module construction; ROHD can also derive configuration from `Logic` objects connected during construction.
 
 Read more about Chisel here: <https://www.chisel-lang.org/>
+
+## SpinalHDL
+
+SpinalHDL is another hardware description library embedded in Scala. Like Chisel, Scala code elaborates the hardware, but SpinalHDL generates VHDL or Verilog/SystemVerilog directly rather than through FIRRTL and CIRCT, with a stated goal of one-to-one generation without area or performance overhead.
+
+- SpinalHDL performs elaboration-time checks such as clock-domain crossing, combinational loop, and latch detection. Its large library of bus, memory, and peripheral components, along with processor projects such as VexRiscv, is a notable strength for FPGA SoC development.
+- SpinalSim drives external simulators such as Verilator, GHDL, or Icarus Verilog. ROHD includes its own event-driven simulator.
+- The Scala/JVM toolchain and compiler-plugin-based naming trade-offs discussed for Chisel largely apply to SpinalHDL as well.
+
+Read more about SpinalHDL here: <https://github.com/SpinalHDL/SpinalHDL>.
 
 ## MyHDL (Python)
 
@@ -62,13 +72,24 @@ MyHDL is a long-running Python package for hardware modeling, simulation, and co
 
 Read more about MyHDL here: <http://www.myhdl.org/>
 
+## Amaranth (Python)
+
+Amaranth (formerly nMigen) is a Python library for register-transfer-level modeling of synchronous logic. Python code constructs a netlist that can be simulated with Amaranth's built-in Python simulator, synthesized directly through Yosys, or converted to Verilog. The project also provides a standard library and a build system with extensive FPGA toolchain and development-board integration.
+
+- Amaranth shares much of ROHD's philosophy: ordinary host-language code constructs explicit hardware, and the framework avoids non-synthesizable constructs and error-prone inference.
+- Amaranth's board definitions and FPGA toolchain integration give it an edge for end-to-end FPGA projects. ROHD focuses on generating SystemVerilog for existing downstream flows, including ASIC flows.
+- Amaranth's simulator models two-state values, while ROHD's is four-state. Amaranth produces Verilog through Yosys, while ROHD emits structurally similar SystemVerilog directly from its object model.
+- The static-versus-dynamic typing and performance trade-offs discussed for MyHDL also apply.
+
+Read more about Amaranth here: <https://amaranth-lang.org/>.
+
 ## High-Level Synthesis (HLS)
 
 High-Level Synthesis (HLS) derives an RTL implementation from a higher-level algorithmic model. Commercial tools commonly accept C, C++, or SystemC, while research tools also use domain-specific languages and intermediate representations. The compiler schedules operations, chooses clock-cycle boundaries, allocates or shares resources, structures memories, and emits RTL such as Verilog or VHDL.
 
 - HLS can explore many implementations of an algorithm against area, power, performance, latency, and throughput goals much faster than implementing each candidate by hand.
 - The trade-off is that important microarchitectural decisions are made jointly by source code, constraints, directives, and the compiler. Understanding cycle behavior and achieving a specific structure can require familiarity with that tool's scheduling and cost model.
-- C and C++ are familiar, but they are not especially user-friendly hardware modeling languages. Their low-level type and memory semantics, undefined behavior, templates, build systems, and often difficult diagnostics remain, while an HLS tool accepts only particular coding patterns plus tool-specific constraints and directives. SystemC adds hardware concepts, but also adds a class- and template-heavy library and its own simulation semantics. Dart and ROHD provide a more modern language, stronger default safety, and a hardware-focused API without pretending that ordinary software code is hardware.
+- C and C++ are familiar, but were not designed for hardware modeling. HLS users still contend with low-level type and memory semantics, undefined behavior, templates, build systems, and often difficult diagnostics, while the tool accepts only particular coding patterns plus tool-specific constraints and directives. SystemC adds hardware concepts through a class- and template-heavy library with its own simulation semantics. ROHD instead uses Dart with a hardware-focused API, and keeps the distinction between software that constructs hardware and the hardware itself explicit.
 - HLS is strongest for self-contained computational kernels. Integration into a real design often requires exact control of ports, individual wires, clocks and resets, protocols, memories, existing IP, and hierarchy. Many HLS flows expose those details through interface synthesis, prescribed protocols, pragmas, or tool-specific wrappers rather than a natural, general wire-level composition model. Designers commonly have to drop the generated kernel into a conventional RTL environment to assemble the complete system.
 - ROHD works at the RTL construction level: designers normally choose state, resources, cycle boundaries, ports, and connectivity explicitly, while reusable generators automate composition. It can therefore express both detailed wire-level integration and higher-level reusable structure in the same object model.
 
@@ -124,6 +145,15 @@ Spade is a compiled RTL hardware description language inspired by modern softwar
 
 Read more about Spade here: <https://spade-lang.org/>.
 
+## Veryl
+
+Veryl is a compiled HDL with syntax derived from SystemVerilog that transpiles to readable SystemVerilog. It simplifies common idioms, for example by inferring assignment semantics in `always_ff` and `always_comb` blocks and configuring reset polarity and synchronicity at build time. It also adds generics and clock-domain annotations, and bundles a formatter, language server, package manager, and integrated testing.
+
+- Veryl is a strong option for teams that want a cleaner, safer SystemVerilog dialect with a small learning step for SystemVerilog experts and incremental adoption alongside existing SystemVerilog code.
+- As a purpose-built language, Veryl's generation capability is bounded by its own generics and constructs. ROHD uses a full general-purpose language for generation, verification, and custom automation, and includes a built-in simulator.
+
+Read more about Veryl here: <https://veryl-lang.org/>.
+
 ## PipelineC
 
 PipelineC is a C-like HDL with compiler-managed automatic pipelining for pure functions. It primarily generates human-readable VHDL, with a path to Verilog when needed, and occupies a middle ground between explicit RTL and HLS.
@@ -170,3 +200,13 @@ Clash is a functional hardware description language based on Haskell's syntax an
 Earlier Haskell-embedded hardware description projects such as Lava helped establish this style; Clash is the more actively maintained comparison today.
 
 Read more about Clash here: <https://clash-lang.org/>.
+
+## Hardcaml (OCaml)
+
+Hardcaml is an OCaml library from Jane Street for designing, simulating, and testing hardware. It generates hierarchical Verilog or VHDL and includes a cycle-based simulator, with optional Verilator- and C-based backends for faster simulation.
+
+- OCaml's strong type system, higher-order functions, and functors make Hardcaml well suited to highly parametric datapaths. Printing waveforms directly in expect tests is a distinctive verification workflow.
+- Hardcaml's built-in simulator is cycle-based and targets synchronous designs. ROHD's simulator is event-driven and four-state, and its `async`/`await` testbenches can interact with the design at arbitrary times.
+- OCaml and functional idioms are less familiar to most hardware engineers than Dart's C-style syntax.
+
+Read more about Hardcaml here: <https://github.com/janestreet/hardcaml>.

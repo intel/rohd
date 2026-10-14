@@ -2,7 +2,7 @@
 title: "Overview"
 permalink: /get-started/overview/
 excerpt: "Overview of ROHD framework."
-last_modified_at: 2026-07-16
+last_modified_at: 2026-10-14
 toc: true
 ---
 
@@ -40,7 +40,7 @@ One of ROHD's goals is to help grow an open-source community around reusable har
 
 ## Why Dart?
 
-[Dart](https://dart.dev/) is a modern, relatively new, [extremely popular](https://survey.stackoverflow.co/2024/technology#most-popular-technologies) ([top-20](https://redmonk.com/sogrady/2024/09/12/language-rankings-6-24/)) language developed by Google.  It is designed with client-side application development in mind (e.g. apps and websites), but also has great performance for general tasks.  It adopts some of the most loved syntax and features from languages like C++, Java, C#, JavaScript/TypeScript, and Kotlin.  Dart is extremely user-friendly, fun to use, and [**easy to learn** with **excellent documentation**](https://dart.dev/language).  The excellent, fast static analysis with a modern IDE with autocomplete makes it easy to learn as you work.  Dart has a lot of great modern language features, including null safety.
+[Dart](https://dart.dev/) is a modern, [widely used](https://survey.stackoverflow.co/2024/technology#most-popular-technologies) ([top-20](https://redmonk.com/sogrady/2024/09/12/language-rankings-6-24/)) language developed by Google.  It is newer than most other popular languages, and its adoption grew substantially alongside the Flutter UI framework.  It is designed with client-side application development in mind (e.g. apps and websites), but also has great performance for general tasks.  It adopts some of the most loved syntax and features from languages like C++, Java, C#, JavaScript/TypeScript, and Kotlin.  Dart is extremely user-friendly, fun to use, and [**easy to learn** with **excellent documentation**](https://dart.dev/language).  The excellent, fast static analysis with a modern IDE with autocomplete makes it easy to learn as you work.  Dart has a lot of great modern language features, including null safety.
 
 Because it is designed with asynchronous requests in mind (i.e. sending a request to a server and not freezing the application while it waits for a response), Dart has `async`/`await` and `Future`s built in, with [concurrent programming](https://dart.dev/language/concurrency).  These constructs enable code to execute in parallel without multithreading.  These characteristics make modelling, interacting with, and verifying hardware very easy.
 
@@ -58,7 +58,7 @@ If you're thinking "SystemVerilog is just fine, I don't need something new", it 
 
 ### More Information on Dart
 
-Try out Dart instantly from your browser here (it supports ROHD too!): <https://dartpad.dev/?null_safety=true>
+Try out Dart instantly from your browser here (it supports ROHD too!): <https://dartpad.dev/>
 
 See some Dart language samples here: <https://dart.dev/language>
 
@@ -88,9 +88,9 @@ Producing lint-clean SystemVerilog is also an explicit design goal. ROHD prefers
 
 ### The same tests through independent simulators
 
-The ROHD test suite repeatedly checks the boundary between the in-memory model and generated SystemVerilog. Its [`SimCompare`](https://github.com/intel/rohd/blob/main/lib/src/utilities/simcompare.dart) utility applies test vectors to the built-in ROHD simulator, converts those vectors into a SystemVerilog testbench, and runs the generated design with Icarus Verilog. The [tests](https://github.com/intel/rohd/tree/main/test) use this pattern across arithmetic, conditional and sequential logic, arrays, interfaces, nets, naming, and module composition.
+The ROHD test suite repeatedly checks the boundary between the in-memory model and generated SystemVerilog. Its [`SimCompare`](https://github.com/intel/rohd/blob/main/lib/src/utilities/simcompare.dart) utility applies test vectors to the built-in ROHD simulator, converts those vectors into a SystemVerilog testbench, and runs the generated design with Icarus Verilog. A growing set of tests also compiles and simulates generated designs with Verilator, a second independent SystemVerilog tool with stricter parsing and lint checks. The [tests](https://github.com/intel/rohd/tree/main/test) use this pattern across arithmetic, conditional and sequential logic, arrays, interfaces, nets, naming, and module composition.
 
-The [continuous integration workflow](https://github.com/intel/rohd/blob/main/.github/workflows/general.yml) installs Icarus Verilog and runs the project tests for every pull request and every push to the main branch. A change to simulation or generation therefore has to satisfy both execution paths before it can be merged.
+The [continuous integration workflow](https://github.com/intel/rohd/blob/main/.github/workflows/general.yml) installs Icarus Verilog and Verilator and runs the project tests for every pull request and every push to the main branch. A change to simulation or generation therefore has to satisfy these independent execution paths before it can be merged.
 
 ### Deliberately conservative simulation semantics
 
