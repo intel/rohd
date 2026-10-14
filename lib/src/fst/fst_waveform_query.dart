@@ -22,10 +22,13 @@ class FstWaveformQuery {
 
   final FstBlockReader _reader;
 
-  /// Returns all value changes for [signal] within the inclusive time range.
+  /// Returns emitted values for [signal] within the inclusive time range.
   ///
   /// Results merge matching flushed blocks with the writer's unflushed changes
-  /// and are ordered by timestamp.
+  /// and are ordered by timestamp. FST block frames carry a value for every
+  /// signal, including unchanged signals; those carry-over samples are omitted.
+  /// If a signal has multiple emitted values at the same timestamp, only its
+  /// final value is returned.
   List<FstValueChange> changes(
     FstSignalHandle signal, {
     required int startTime,
@@ -46,24 +49,49 @@ class FstWaveformQuery {
       if (block.endTime < startTime || block.startTime > endTime) {
         continue;
       }
+      if (block.startTime >= startTime &&
+          block.startTime <= endTime &&
+          block.changedSignalIndicesAtStart.contains(handleIndex)) {
+        result.add(FstValueChange(
+          block.startTime,
+          _reader.readBlockFrame(block)[handleIndex],
+        ));
+      }
       result.addAll(
         _reader.readBlock(
               block,
               handleIndices: {handleIndex},
               startTime: startTime,
               endTime: endTime,
+              includeFrame: false,
             )[handleIndex] ??
             const [],
       );
     }
-    result
-      ..addAll(
-        writer
-            .queryHotBuffer(handleIndex, startTime, endTime)
-            .map((change) => FstValueChange(change.time, change.value)),
-      )
-      ..sort((a, b) => a.time.compareTo(b.time));
-    return result;
+    result.addAll(
+      writer
+          .queryHotBuffer(handleIndex, startTime, endTime)
+          .map((change) => FstValueChange(change.time, change.value)),
+    );
+
+    final ordered = [
+      for (var index = 0; index < result.length; index++)
+        (index, result[index]),
+    ]..sort((a, b) {
+        final timeCmp = a.$2.time.compareTo(b.$2.time);
+        return timeCmp != 0 ? timeCmp : a.$1.compareTo(b.$1);
+      });
+
+    final coalesced = <FstValueChange>[];
+    for (final entry in ordered) {
+      final change = entry.$2;
+      if (coalesced.isNotEmpty && coalesced.last.time == change.time) {
+        coalesced[coalesced.length - 1] = change;
+      } else {
+        coalesced.add(change);
+      }
+    }
+    return coalesced;
   }
 
   /// Returns [signal]'s value at or immediately before [time].

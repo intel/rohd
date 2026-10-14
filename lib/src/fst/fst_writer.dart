@@ -85,12 +85,20 @@ class FstBlockIndex {
   /// Last timestamp in this block.
   final int endTime;
 
+  /// Zero-based signal indices with an emitted value at [startTime].
+  ///
+  /// The FST frame stores values for every signal at a block's start, even
+  /// when a signal did not change there. This metadata lets live queries
+  /// distinguish actual emitted values from those carry-over samples.
+  final List<int> changedSignalIndicesAtStart;
+
   /// Creates a block index entry.
   const FstBlockIndex({
     required this.fileOffset,
     required this.sectionLength,
     required this.startTime,
     required this.endTime,
+    this.changedSignalIndicesAtStart = const [],
   });
 }
 
@@ -151,8 +159,9 @@ class _ValueChange {
   final int time;
   final int handleIndex; // 0-based
   final String value;
+  final int sequence;
 
-  _ValueChange(this.time, this.handleIndex, this.value);
+  _ValueChange(this.time, this.handleIndex, this.value, this.sequence);
 }
 
 /// Internal: an entry in the hierarchy being built.
@@ -218,6 +227,8 @@ class FstWriter {
 
   /// Buffered value changes.
   final List<_ValueChange> _changes = [];
+
+  int _changeSequence = 0;
 
   /// The start time of the simulation.
   int _startTime = 0;
@@ -334,7 +345,12 @@ class FstWriter {
     if (_endTime < time) {
       _endTime = time;
     }
-    _changes.add(_ValueChange(time, handle.handle - 1, value));
+    _changes.add(_ValueChange(
+      time,
+      handle.handle - 1,
+      value,
+      _changeSequence++,
+    ));
     _currentValues[handle.handle - 1] = value;
 
     // Auto-flush if threshold is reached
@@ -386,10 +402,15 @@ class FstWriter {
       throw StateError('Must call writeHeader() before flushing blocks');
     }
 
-    // Sort changes by time, then by handle
+    // Keep equal-time updates to each signal in emission order. They may
+    // otherwise be reversed by List.sort, changing the final value in a frame.
     _changes.sort((a, b) {
       final cmp = a.time.compareTo(b.time);
-      return cmp != 0 ? cmp : a.handleIndex.compareTo(b.handleIndex);
+      if (cmp != 0) {
+        return cmp;
+      }
+      final handleCmp = a.handleIndex.compareTo(b.handleIndex);
+      return handleCmp != 0 ? handleCmp : a.sequence.compareTo(b.sequence);
     });
 
     final blockStart = _changes.first.time;
@@ -419,6 +440,12 @@ class FstWriter {
         sectionLength: blockEndPos - blockOffset - 1,
         startTime: blockStart,
         endTime: blockEnd,
+        changedSignalIndicesAtStart: List.unmodifiable(
+          _changes
+              .where((change) => change.time == blockStart)
+              .map((change) => change.handleIndex)
+              .toSet(),
+        ),
       ),
     );
     _vcSectionCount++;
@@ -568,7 +595,7 @@ class FstWriter {
     _writeU64(0); // placeholder section_length
     _writeU64(uncompressed.length); // uncompressed_length
 
-    // Write gzip header + deflate-compressed data
+    // Write a complete gzip member.
     _writeGzipCompressed(uncompressed);
 
     // Fix section_length
@@ -1004,22 +1031,13 @@ class FstWriter {
     return Uint8List.fromList(bytes);
   }
 
-  /// Writes gzip-compressed bytes (gzip header + deflate data).
+  /// Writes gzip-compressed bytes.
   void _writeGzipCompressed(Uint8List data) {
-    // Gzip header (10 bytes)
-    const gzipHeader = <int>[
-      0x1F, 0x8B, // magic
-      0x08, // deflate
-      0x00, // no flags
-      0x00, 0x00, 0x00, 0x00, // timestamp = 0
-      0x00, // compression level
-      0xFF, // OS = unknown
-    ];
-    _file.writeFromSync(Uint8List.fromList(gzipHeader));
-
-    // Deflate-compressed data (raw deflate, not zlib-wrapped)
-    final compressed = _deflateCompress(data, config.compressionLevel);
-    _file.writeFromSync(compressed);
+    _file.writeFromSync(
+      Uint8List.fromList(
+        GZipCodec(level: config.compressionLevel).encode(data),
+      ),
+    );
   }
 
   /// Compresses bytes using zlib (with zlib header, for geometry/frame/etc).
@@ -1035,12 +1053,6 @@ class FstWriter {
       return data;
     }
     return result;
-  }
-
-  /// Compresses bytes using raw deflate (no zlib header, for gzip hierarchy).
-  static Uint8List _deflateCompress(Uint8List data, int level) {
-    final compressed = ZLibCodec(level: level, raw: true).encode(data);
-    return Uint8List.fromList(compressed);
   }
 
   /// Generates a date string for the header.

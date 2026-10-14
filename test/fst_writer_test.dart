@@ -69,6 +69,23 @@ int _readU64(Uint8List data, int offset) {
   return result;
 }
 
+int _readU32LittleEndian(Uint8List data, int offset) =>
+    data[offset] |
+    (data[offset + 1] << 8) |
+    (data[offset + 2] << 16) |
+    (data[offset + 3] << 24);
+
+int _crc32(List<int> bytes) {
+  var crc = 0xffffffff;
+  for (final byte in bytes) {
+    crc ^= byte;
+    for (var bit = 0; bit < 8; bit++) {
+      crc = (crc & 1) == 1 ? (crc >> 1) ^ 0xedb88320 : crc >> 1;
+    }
+  }
+  return (crc ^ 0xffffffff) & 0xffffffff;
+}
+
 /// Parses FST file blocks and returns a map of block types to counts.
 Map<int, int> _parseFstBlocks(Uint8List data) {
   final blocks = <int, int>{};
@@ -154,6 +171,116 @@ void main() {
       );
       File(path).deleteSync();
     });
+
+    test('query changes exclude unchanged frame samples across blocks', () {
+      const path = '$_tempDumpDir/fst_query_quiet_signal.fst';
+      Directory(_tempDumpDir).createSync(recursive: true);
+      final file = File(path);
+      addTearDown(() {
+        if (file.existsSync()) {
+          file.deleteSync();
+        }
+      });
+
+      final writer = FstWriter(
+        path,
+        config: const FstWriterConfig(maxChangesPerBlock: 1),
+      )..pushScope('top');
+      final quiet = writer.declareSignal('quiet', 1);
+      final active = writer.declareSignal('active', 1);
+      writer
+        ..popScope()
+        ..writeHeader();
+
+      final query = FstWaveformQuery(writer);
+      writer.emitValueChange(0, quiet, '0');
+      expect(query.changes(quiet, startTime: 1, endTime: 10), isEmpty);
+
+      writer.emitValueChange(5, active, '1');
+      expect(query.changes(quiet, startTime: 1, endTime: 10), isEmpty);
+      writer.emitValueChange(10, active, '0');
+      expect(query.changes(quiet, startTime: 1, endTime: 10), isEmpty);
+      expect(
+        query
+            .changes(active, startTime: 1, endTime: 10)
+            .map((change) => (change.time, change.value)),
+        equals([(5, '1'), (10, '0')]),
+      );
+
+      writer.finish();
+      expect(query.changes(quiet, startTime: 1, endTime: 10), isEmpty);
+      expect(query.valueAt(quiet, 10), equals('0'));
+      expect(
+        query
+            .changes(active, startTime: 1, endTime: 10)
+            .map((change) => (change.time, change.value)),
+        equals([(5, '1'), (10, '0')]),
+      );
+    });
+
+    for (final compressionLevel in [0, 9]) {
+      for (final signalCount in [1, 64]) {
+        test(
+          'hierarchy gzip framing is complete at level $compressionLevel '
+          'with $signalCount signals',
+          () {
+            final path = '$_tempDumpDir/fst_hierarchy_gzip_${compressionLevel}_'
+                '$signalCount.fst';
+            Directory(_tempDumpDir).createSync(recursive: true);
+            final file = File(path);
+            addTearDown(() {
+              if (file.existsSync()) {
+                file.deleteSync();
+              }
+            });
+
+            final writer = FstWriter(
+              path,
+              config: FstWriterConfig(compressionLevel: compressionLevel),
+            )..pushScope('top');
+            for (var i = 0; i < signalCount; i++) {
+              writer.declareSignal('signal$i', 1 + (i % 32));
+            }
+            writer
+              ..popScope()
+              ..finish();
+
+            final data = file.readAsBytesSync();
+            var offset = 0;
+            while (offset < data.length && data[offset] != 4) {
+              offset += 1 + _readU64(data, offset + 1);
+            }
+            expect(offset, lessThan(data.length),
+                reason: 'hierarchy block exists');
+
+            final sectionLength = _readU64(data, offset + 1);
+            final uncompressedLength = _readU64(data, offset + 9);
+            final payloadStart = offset + 17;
+            final payloadEnd = offset + 1 + sectionLength;
+            expect(
+              payloadEnd,
+              equals(data.length),
+              reason: 'the hierarchy block ends at the end of the file',
+            );
+
+            final payload = data.sublist(payloadStart, payloadEnd);
+            final uncompressed = GZipCodec().decode(payload);
+            expect(uncompressed, isNotEmpty);
+            expect(uncompressed.length, equals(uncompressedLength));
+            expect(
+              _readU32LittleEndian(data, payloadEnd - 8),
+              equals(_crc32(uncompressed)),
+              reason: 'gzip trailer CRC32 is present at the block boundary',
+            );
+            expect(
+              _readU32LittleEndian(data, payloadEnd - 4),
+              equals(uncompressed.length & 0xffffffff),
+              reason: 'gzip trailer ISIZE is present at the block boundary',
+            );
+          },
+        );
+      }
+    }
 
     test('default block limit flushes before finalization and retains timeline',
         () {

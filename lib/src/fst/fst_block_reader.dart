@@ -77,6 +77,9 @@ class FstBlockReader {
   /// [handleIndices] are the 0-based signal indices to extract.
   /// If [startTime] / [endTime] are provided, only changes within that
   /// range are returned.
+  /// By default, the block's frame value is included at its start time for
+  /// every requested signal. Set [includeFrame] to `false` to read only
+  /// encoded changes.
   ///
   /// Returns a map from handle index to a list of value changes.
   Map<int, List<FstValueChange>> readBlock(
@@ -84,6 +87,7 @@ class FstBlockReader {
     Set<int>? handleIndices,
     int? startTime,
     int? endTime,
+    bool includeFrame = true,
   }) {
     final file = File(filePath).openSync();
     try {
@@ -93,6 +97,7 @@ class FstBlockReader {
         handleIndices: handleIndices,
         startTime: startTime,
         endTime: endTime,
+        includeFrame: includeFrame,
       );
     } finally {
       file.closeSync();
@@ -119,6 +124,7 @@ class FstBlockReader {
     Set<int>? handleIndices,
     int? startTime,
     int? endTime,
+    bool includeFrame = true,
   }) {
     // The block layout (DynamicAlias2):
     //   block_type(1) + section_length(8) + start_time(8) + end_time(8)
@@ -196,8 +202,9 @@ class FstBlockReader {
 
       final loc = signalLocations[handleIdx];
       if (loc == null) {
-        // No data for this signal in this block — use frame value
-        if ((startTime == null || block.startTime >= startTime) &&
+        // No encoded changes for this signal in this block.
+        if (includeFrame &&
+            (startTime == null || block.startTime >= startTime) &&
             (endTime == null || block.startTime <= endTime)) {
           result[handleIdx] = [
             FstValueChange(block.startTime, frameValues[handleIdx]),
@@ -230,7 +237,8 @@ class FstBlockReader {
 
       // Prepend frame value at block start time if in range
       final allChanges = <FstValueChange>[];
-      if ((startTime == null || block.startTime >= startTime) &&
+      if (includeFrame &&
+          (startTime == null || block.startTime >= startTime) &&
           (endTime == null || block.startTime <= endTime)) {
         allChanges.add(FstValueChange(block.startTime, frameValues[handleIdx]));
       }

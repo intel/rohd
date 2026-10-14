@@ -33,6 +33,48 @@ class _WindowWaveModule extends Module {
   }
 }
 
+class _FanoutWaveModule extends Module {
+  _FanoutWaveModule(Logic a) {
+    a = addInput('a', a, width: a.width);
+    for (var i = 0; i < 16; i++) {
+      addOutput('out$i', width: a.width) <= a;
+    }
+  }
+}
+
+class _LiveFstQueryWaveformService extends WaveformService {
+  Map<String, List<(int, String)>>? liveValuesAtWindowEntry;
+
+  _LiveFstQueryWaveformService(super.module, {required String outputPath})
+      : super(
+          outputDirectory: Directory(outputPath).parent.path,
+          outputFileName: File(outputPath).uri.pathSegments.last,
+          format: WaveOutputFormat.fst,
+          startTime: 10,
+          register: false,
+          writeToFile: true,
+        );
+
+  @override
+  void onTimestampCapture(int timestamp, Set<Logic> changed) {
+    if (timestamp != 10) {
+      return;
+    }
+    final query = createFstQuery()!;
+    liveValuesAtWindowEntry = {
+      for (var i = 0; i < query.writer.signalInfoList.length; i++)
+        query.writer.signalInfoList[i].name: [
+          for (final change in query.changes(
+            FstSignalHandle(i + 1),
+            startTime: 10,
+            endTime: 10,
+          ))
+            (change.time, change.value),
+        ],
+    };
+  }
+}
+
 class _HistoryWaveformService extends WaveformService {
   final Map<Logic, List<(int, String)>> history = {};
   final List<int> capturedTimestamps = [];
@@ -184,6 +226,70 @@ void main() {
       equals([(0, '0'), (10, '1'), (10, '0')]),
     );
     expect(service.capturedTimestamps, equals([10, 10]));
+  });
+
+  test('window-entry FST values agree live, finalized, and in fst2vcd',
+      () async {
+    final a = Logic(name: 'a', width: 8);
+    final mod = _FanoutWaveModule(a);
+    await mod.build();
+    a.put(0);
+
+    Directory(_tempDumpDir).createSync(recursive: true);
+    final fstPath = _temporaryFstPath('windowEntrySameTimestamp');
+    final fstFile = File(fstPath);
+    addTearDown(() {
+      if (fstFile.existsSync()) {
+        fstFile.deleteSync();
+      }
+    });
+    final service = _LiveFstQueryWaveformService(mod, outputPath: fstPath);
+
+    Simulator.registerAction(5, () => a.put(1));
+    Simulator.registerAction(10, () => a.put(0));
+    Simulator.registerAction(20, () => a.put(1));
+    await Simulator.run();
+
+    final query = service.createFstQuery()!;
+    final finalizedValues = {
+      for (var i = 0; i < query.writer.signalInfoList.length; i++)
+        query.writer.signalInfoList[i].name: [
+          for (final change in query.changes(
+            FstSignalHandle(i + 1),
+            startTime: 10,
+            endTime: 10,
+          ))
+            (change.time, change.value),
+        ],
+    };
+    expect(service.liveValuesAtWindowEntry, isNotNull);
+    expect(finalizedValues, equals(service.liveValuesAtWindowEntry));
+    expect(
+      finalizedValues.values,
+      everyElement(equals([(10, '00000000')])),
+    );
+
+    if (Process.runSync('which', ['fst2vcd']).exitCode == 0) {
+      final conversion = Process.runSync('fst2vcd', [fstPath]);
+      expect(
+        conversion.exitCode,
+        equals(0),
+        reason: 'fst2vcd failed: ${conversion.stdout}\n${conversion.stderr}',
+      );
+      final vcdContents = conversion.stdout as String;
+      for (final name in finalizedValues.keys) {
+        expect(
+          VcdParser.confirmValue(
+            vcdContents,
+            name,
+            10,
+            LogicValue.ofString('00000000'),
+          ),
+          isTrue,
+          reason: '$name should be zero at the window-entry timestamp',
+        );
+      }
+    }
   });
 
   test('captures waveform to VCD output path', () async {
