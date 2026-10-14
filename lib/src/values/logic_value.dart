@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2025 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // logic_values.dart
@@ -55,7 +55,7 @@ abstract class LogicValue implements Comparable<LogicValue> {
   /// Converts `bool` [value] to a valid [LogicValue] with 1 bits either
   /// one or zero.
   @Deprecated('Use `ofBool` instead.')
-  // ignore: avoid_positional_boolean_parameters
+  // ignore: avoid_positional_boolean_parameters - literally it's "fromBool"
   static LogicValue fromBool(bool value) => ofBool(value);
 
   /// Converts `int` [value] to a valid [LogicValue] with [width] number
@@ -706,9 +706,9 @@ abstract class LogicValue implements Comparable<LogicValue> {
         }
         final s = [
           if (chunkString == 'z' * chunkString.length)
-            (span == 1 ? 'z' : 'Z')
+            if (span == 1) 'z' else 'Z'
           else if (chunkString == 'x' * chunkString.length)
-            (span == 1 ? 'x' : 'X')
+            if (span == 1) 'x' else 'X'
           else if (chunkString.contains('z') | chunkString.contains('x'))
             '>${_reverse(chunkString)}<'
           else
@@ -763,7 +763,10 @@ abstract class LogicValue implements Comparable<LogicValue> {
   /// illegal characters
   /// in the string or too long of a value string.
   ///
-  ///  Strings created by [toRadixString] are parsed by [ofRadixString].
+  /// Strings created by [toRadixString] are parsed by [ofRadixString].
+  /// [sepChar] is interpreted literally and must match the separator used when
+  /// formatting the string. An empty [sepChar] is allowed for strings without
+  /// separators.
   ///
   /// If the LogicValue width is not encoded as round number of radix
   /// characters, the leading character must be small enough to be encoded
@@ -773,12 +776,13 @@ abstract class LogicValue implements Comparable<LogicValue> {
   ///  - 11'h4aa
   ///  - 12'haa
   static LogicValue ofRadixString(String valueString, {String sepChar = '_'}) {
-    if (radixStringChars.contains(sepChar)) {
+    if (sepChar.isNotEmpty && radixStringChars.contains(sepChar)) {
       throw LogicValueConstructionException('separation character invalid');
     }
+    final escapedSeparator = RegExp.escape(sepChar);
     if (RegExp(r'^\d+').firstMatch(valueString) != null) {
       final formatStr =
-          RegExp("^(\\d+)'([bqodh])([0-9aAbBcCdDeEfFzZxX<>$sepChar]*)")
+          RegExp("^(\\d+)'([bqodh])([0-9aAbBcCdDeEfFzZxX<>$escapedSeparator]*)")
               .firstMatch(valueString);
       if (formatStr != null) {
         if (valueString.length != formatStr.group(0)!.length) {
@@ -1111,7 +1115,7 @@ abstract class LogicValue implements Comparable<LogicValue> {
     if (width != 1) {
       throw Exception('Width must be 1, but was $width.');
     }
-    // ignore: avoid_returning_this
+    // ignore: avoid_returning_this - deprecated but supported for now
     return this;
   }
 
@@ -1248,23 +1252,23 @@ abstract class LogicValue implements Comparable<LogicValue> {
 
   /// Addition operation.
   LogicValue operator +(dynamic other) =>
-      // ignore: avoid_dynamic_calls
+      // ignore: avoid_dynamic_calls - intentionally dynamic
       _doMath(other, (a, b) => a + b);
 
   /// Subtraction operation.
   LogicValue operator -(dynamic other) =>
-      // ignore: avoid_dynamic_calls
+      // ignore: avoid_dynamic_calls - intentionally dynamic
       _doMath(other, (a, b) => a - b);
 
   /// Multiplication operation.
   LogicValue operator *(dynamic other) =>
-      // ignore: avoid_dynamic_calls
+      // ignore: avoid_dynamic_calls - intentionally dynamic
       _doMath(other, (a, b) => a * b);
 
   /// Division operation.
   LogicValue operator /(dynamic other) => _doMath(
         other,
-        // ignore: avoid_dynamic_calls
+        // ignore: avoid_dynamic_calls - intentionally dynamic
         (a, b) => a ~/ b,
         isDivision: true,
       );
@@ -1272,7 +1276,7 @@ abstract class LogicValue implements Comparable<LogicValue> {
   /// Modulo operation.
   LogicValue operator %(dynamic other) => _doMath(
         other,
-        // ignore: avoid_dynamic_calls
+        // ignore: avoid_dynamic_calls - intentionally dynamic
         (a, b) => a % b,
         isDivision: true,
       );
@@ -1401,22 +1405,22 @@ abstract class LogicValue implements Comparable<LogicValue> {
 
   /// Less-than operation.
   LogicValue operator <(dynamic other) =>
-      // ignore: avoid_dynamic_calls
+      // ignore: avoid_dynamic_calls - intentionally dynamic
       _doCompare(other, (a, b) => (a < b) as bool);
 
   /// Greater-than operation.
   LogicValue operator >(dynamic other) =>
-      // ignore: avoid_dynamic_calls
+      // ignore: avoid_dynamic_calls - intentionally dynamic
       _doCompare(other, (a, b) => (a > b) as bool);
 
   /// Less-than-or-equal operation.
   LogicValue operator <=(dynamic other) =>
-      // ignore: avoid_dynamic_calls
+      // ignore: avoid_dynamic_calls - intentionally dynamic
       _doCompare(other, (a, b) => (a <= b) as bool);
 
   /// Greater-than-or-equal operation.
   LogicValue operator >=(dynamic other) =>
-      // ignore: avoid_dynamic_calls
+      // ignore: avoid_dynamic_calls - intentionally dynamic
       _doCompare(other, (a, b) => (a >= b) as bool);
 
   /// Power operation.

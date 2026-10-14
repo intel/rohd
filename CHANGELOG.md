@@ -1,11 +1,59 @@
-## Next release
+## Next Release
 
+- Fixed `LogicValue.ofRadixString` round trips with empty separators and separators containing regular-expression metacharacters (<https://github.com/intel/rohd/issues/722>).
+- Added `LogicEnum<T>` hardware signals with explicit enum encodings, mapped member assignments, driveable cloning, and SystemVerilog enum generation (<https://github.com/intel/rohd/pull/599>).
+- Netlist JSON format is now `0.1.0`, preserving enum types and encodings on retained netnames using Yosys-style attributes, including constant-driven enum uses (<https://github.com/intel/rohd/pull/599>).
+- **Breaking:** `FiniteStateMachine`, `State`, and the deprecated `StateMachine` alias now require Dart enum state identifiers. Replace integer, string, or custom-object identifiers with enum members; update reset and transition targets accordingly. `currentState` and `nextState` are now `LogicEnum` signals (<https://github.com/intel/rohd/pull/599>).
+
+## 0.6.11
+
+- Added `NetlistSynthesizer` for generating JSON netlists, with configurable synthesis passes, validation, and hierarchy support (<https://github.com/intel/rohd/pull/675>).
+- Fixed naming of nested arrays in typed structure ports during synthesis (<https://github.com/intel/rohd/pull/698>).
+- Added `DuplicatePortNameException` for duplicate `Interface` port names in all build modes, replacing an assertion that was disabled in release mode (<https://github.com/intel/rohd/pull/694>).
+- Added shared waveform data models and service APIs in the independently versioned `rohd_waveform` package (<https://github.com/intel/rohd/pull/681>).
+- Added a shared signal value format registry for consistent formatting across DevTools views and snapshots (<https://github.com/intel/rohd/pull/701>).
+- Fixed DevTools popup menu styling and interactions with Material UI (<https://github.com/intel/rohd/pull/702>).
+- Prepared initial independent pub.dev releases of `rohd_hierarchy`, `rohd_waveform`, and `rohd_devtools_widgets`, each at 0.1.0. See the [release guide](https://github.com/intel/rohd/blob/main/doc/releases.md) for package-specific release and tagging conventions.
+- Allowed connected, equivalent `reserved` and `renameable` signals with matching generated base names to share a declaration, including internal signals and port aliases, in generated outputs. Separate aliases may disappear and connected same-name reserved signals no longer cause naming errors; unrelated reserved-name collisions still fail (<https://github.com/intel/rohd/pull/712>).
+- Fixed illegal scalar connections to singleton unpacked-array inputs when inlining constants or live signals into generated SystemVerilog (<https://github.com/intel/rohd/pull/714>).
+- Added targeted Verilator compilation and two-state vector simulation checks, including a `buildOnly` mode, required in native CI and explicitly skipped locally when Verilator is unavailable (<https://github.com/intel/rohd/pull/714>).
+- Improved generated SystemVerilog to inline packed `Logic.assignSubset` connections into submodule inputs (<https://github.com/intel/rohd/pull/711>).
+- Fixed a bug where isolated bit drivers could be lost beside collapsed ranges (<https://github.com/intel/rohd/pull/711>).
+
+- Added the `ModuleService` API for module-scoped generation, capture, and
+  inspection services. `ModuleServices` registers and looks up services for a
+  built module hierarchy, and `hierarchyJson` exposes its hierarchy as JSON.
+- Added `ArtifactProducingService` and `ModuleServiceArtifact` for
+  transport-neutral output. Artifact-producing services default
+  `outputDirectory` to the current directory and `outputBaseName` to the
+  module definition name, and expose named, media-typed byte streams without
+  requiring filesystem output.
+- Added `SystemVerilogService` for configured SystemVerilog synthesis,
+  in-memory source output, artifact inspection, and explicit directory writes.
+  Added `WaveformService` for in-memory waveform capture with optional file
+  writing through `writeToFile`.
+- Added legacy-compatible `Module.dumpSystemVerilog` and `Module.dumpWaves`
+  convenience methods. `dumpSystemVerilog()` returns simple in-memory output;
+  `dumpWaves()` provides standard VCD capture as the replacement for
+  `WaveDumper`. `WaveDumper` and `generateSynth` are deprecated in favor of
+  these `Module` methods.
+
+## 0.6.10
+
+- Improved `Logic.replicate(1)` and same-width `signExtend` to return the original signal, eliminating redundant replication modules and generated SystemVerilog (<https://github.com/intel/rohd/pull/689>).
+- Improved simulation performance and generated outputs by avoiding module creation for four-state-safe operations involving `Const`s, zero shifts, and muxes with constant controls (<https://github.com/intel/rohd/issues/429>).
+- Enforced that `Const` values cannot be changed through `put` or `inject`, including through another `Logic` driven by a `Const` (<https://github.com/intel/rohd/issues/486>).
 - Added per-`Const` preferred radix control for generated literals, normalized `Const` names to reflect their displayed radix, and enhanced `LogicValue.toRadixString` to omit its width and radix decorator or digit separators (<https://github.com/intel/rohd/issues/601>).
+- Fixed a bug to prevent stack overflows when synthesizing designs with combinational loops (<https://github.com/intel/rohd/pull/680>).
 - Improved generated SystemVerilog to collapse contiguous partial array and range assignments into packed slice assignments when safe (<https://github.com/intel/rohd/pull/676>).
-- Added configurable explicit or implicit object and data types for generated SystemVerilog ports, defaulting to `input wire logic`, `output var logic`, and `inout wire logic` (<https://github.com/intel/rohd/pull/678>).
+- Added per-direction configuration of explicit or implicit object and data types for generated SystemVerilog ports. Defaults preserve the existing `input logic`, `output logic`, and `inout wire` declarations (<https://github.com/intel/rohd/pull/678>, <https://github.com/intel/rohd/pull/687>).
+- Significantly enhanced ROHD DevTools with embedded and standalone VM connections, live hierarchy and signal inspection, filtering, snapshots and export, and cross-probe integration (<https://github.com/intel/rohd/pull/665>).
+- Added the `rohd_hierarchy` package for compact hierarchy dictionaries, canonical occurrence addresses, hierarchy search, and netlist adapters (<https://github.com/intel/rohd/pull/653>).
+- Added the ROHD VS Code extension with context-aware snippets, Dart Tooling Daemon integration, and source navigation for cross-probing from ROHD viewers (<https://github.com/intel/rohd/pull/670>).
 - Improved `Logic.getRange` and `slice` on filled `Const`s to return direct constants instead of constructing `BusSubset` modules (<https://github.com/intel/rohd/pull/677>).
 - Improved generated SystemVerilog for swizzles to compact adjacent bit selections into legal slice expressions (<https://github.com/intel/rohd/pull/674>).
 - Improved generated SystemVerilog to collapse a variety of intermediate `LogicArray`s and net buses (e.g. from bit-blasting, aggregate connections, `assignSubset`) into inline concatenations on their consuming connections, eliminating unnecessary intermediate declarations, `assign`s, and `net_connect`s when it is safe to do so (<https://github.com/intel/rohd/pull/663>).
+- Centralized synthesizer naming so output names in different contexts are more consistent. Generated SystemVerilog signal and instance names may change in designs with name collisions, repeated constants, or mergeable intermediate signals, so tests or downstream scripts that match exact generated identifiers may need updates (<https://github.com/intel/rohd/pull/652>).
 
 ## 0.6.9
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2023 Intel Corporation
+// Copyright (C) 2022-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // duplicate_detection_set_test.dart
@@ -14,7 +14,7 @@ void main() {
   group('Add Function: ', () {
     test(
         'should return duplicates if duplicate value exists '
-        'through addAll method', () async {
+        'through addAll method', () {
       final testDuplicateSet = DuplicateDetectionSet<int>()..addAll([1, 2, 1]);
 
       expect(testDuplicateSet.hasDuplicates, equals(true));
@@ -22,7 +22,7 @@ void main() {
     });
     test(
         'should return duplicates if duplicate value exists through add method',
-        () async {
+        () {
       final testDuplicateSet = DuplicateDetectionSet<int>()
         ..addAll([1, 2, 3])
         ..add(1);
@@ -33,12 +33,11 @@ void main() {
   });
 
   group('remove function: ', () {
-    test('should return value if removed value are not duplicate', () async {
+    test('should return value if removed value are not duplicate', () {
       final testDuplicateSet = DuplicateDetectionSet<int>()..addAll([3, 1, 2]);
       expect(testDuplicateSet.remove(1), equals(true));
     });
-    test('should return exception if removed value that are duplicate',
-        () async {
+    test('should return exception if removed value that are duplicate', () {
       final testDuplicateSet = DuplicateDetectionSet<int>()
         ..addAll([3, 1, 2, 1]);
       expect(() {

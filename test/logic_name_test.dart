@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2025 Intel Corporation
+// Copyright (C) 2022-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // logic_name_test.dart
@@ -181,39 +181,37 @@ class StructElementNamingModule extends Module {
 void main() {
   test(
       'GIVEN logic name is valid '
-      'THEN expected to see proper name being generated', () async {
+      'THEN expected to see proper name being generated', () {
     final bus = Logic(name: 'validName');
     expect(bus.name, equals('validName'));
   });
 
-  test('Test signals for sanitized names', () async {
+  test('Test signals for sanitized names', () {
     expect(Sanitizer.isSanitary(Const(LogicValue.ofString('1x0101z')).name),
         isTrue);
   });
 
-  test('GIVEN logic name is invalid THEN expected to see sanitized name',
-      () async {
+  test('GIVEN logic name is invalid THEN expected to see sanitized name', () {
     final bus = Logic(name: '&*-FinvalidN11Me');
     expect(bus.name, equals('___FinvalidN11Me'));
   });
 
   test('GIVEN logic name is null THEN expected to see autogeneration of name',
-      () async {
+      () {
     final bus = Logic();
     expect(bus.name, equals('_s'));
   });
 
   test(
       'GIVEN logic name is empty string THEN expected to see autogeneration '
-      'of name', () async {
+      'of name', () {
     final bus = Logic(name: '');
     expect(bus.name, isNot(equals('')));
   });
 
   group('port name:', () {
-    test('GIVEN port name is empty string THEN expected to see exception',
-        () async {
-      expect(() async {
+    test('GIVEN port name is empty string THEN expected to see exception', () {
+      expect(() {
         LogicTestModule('');
       }, throwsA((dynamic e) => e is EmptyReservedNameException));
     });
@@ -225,13 +223,13 @@ void main() {
     final mod = LogicWithInternalSignalModule(Logic());
     await mod.build();
 
-    expect(mod.generateSynth(), contains('shouldExist'));
+    expect(mod.dumpSystemVerilog(), contains('shouldExist'));
   });
 
   test('unconnected port does not duplicate internal signal', () async {
     final pMod = ParentMod(Logic(), Logic());
     await pMod.build();
-    final sv = pMod.generateSynth();
+    final sv = pMod.dumpSystemVerilog();
     expect(RegExp('logic a[,;\n]').allMatches(sv).length, 2);
   });
 
@@ -239,7 +237,7 @@ void main() {
     test('assigns and gates', () async {
       final mod = SensitiveNaming(Logic());
       await mod.build();
-      final sv = mod.generateSynth();
+      final sv = mod.dumpSystemVerilog();
       expect(sv, contains('e = a & d'));
       expect(sv, contains('b = a'));
       expect(sv, contains('d = c'));
@@ -248,7 +246,7 @@ void main() {
     test('bus subset', () async {
       final mod = BusSubsetNaming(Logic(width: 32));
       await mod.build();
-      final sv = mod.generateSynth();
+      final sv = mod.dumpSystemVerilog();
       expect(sv, contains('c = b[3]'));
     });
   });
@@ -257,7 +255,7 @@ void main() {
     test('unconnected floating', () async {
       final mod = DrivenOutputModule(null);
       await mod.build();
-      final sv = mod.generateSynth();
+      final sv = mod.dumpSystemVerilog();
 
       // shouldn't add a Z in there if left floating
       expect(!sv.contains('z'), true);
@@ -266,7 +264,7 @@ void main() {
     test('driven to z', () async {
       final mod = DrivenOutputModule(Const('z'));
       await mod.build();
-      final sv = mod.generateSynth();
+      final sv = mod.dumpSystemVerilog();
 
       // should add a Z if it's explicitly added
       expect(sv, contains('z'));
@@ -279,7 +277,7 @@ void main() {
       portANaming: Naming.renameable,
     );
     await mod.build();
-    final sv = mod.generateSynth();
+    final sv = mod.dumpSystemVerilog();
 
     expect(
         sv,
@@ -295,7 +293,7 @@ void main() {
       () async {
     final mod = NameCollisionArrayTop();
     await mod.build();
-    final sv = mod.generateSynth();
+    final sv = mod.dumpSystemVerilog();
 
     expect(
         sv,
@@ -312,7 +310,7 @@ void main() {
 
     await dut.build();
 
-    final sv = dut.generateSynth();
+    final sv = dut.dumpSystemVerilog();
 
     expect(sv, contains('_wow_______'));
   });
@@ -321,7 +319,7 @@ void main() {
     final mod = StructElementNamingModule(VariousNamingStruct());
     await mod.build();
 
-    final sv = mod.generateSynth();
+    final sv = mod.dumpSystemVerilog();
 
     expect(sv, contains('assign outp[0] = outp_renameable;'));
     expect(sv, contains('assign outp[1] = reserved_outp;'));

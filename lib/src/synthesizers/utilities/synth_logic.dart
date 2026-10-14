@@ -10,6 +10,7 @@
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/synthesizers/utilities/synth_enum_definition.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
 import 'package:rohd/src/utilities/namer.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
@@ -19,9 +20,9 @@ import 'package:rohd/src/utilities/sanitizer.dart';
 class SynthLogic {
   /// All [Logic]s represented, regardless of type.
   List<Logic> get logics => UnmodifiableListView([
-        if (_reservedLogic != null) _reservedLogic!,
+        ..._reservedLogics,
         if (_constLogic != null) _constLogic!,
-        if (_renameableLogic != null) _renameableLogic!,
+        ..._renameableLogics,
         ..._mergeableLogics,
         ..._unnamedLogics,
       ]);
@@ -39,6 +40,43 @@ class SynthLogic {
   ///
   /// Returns `this` if there is no [replacement].
   SynthLogic get resolved => replacement ?? this;
+
+  /// Rewrites use-local references, including nested packed connection views.
+  ///
+  /// Unchanged references retain their identity. Neither the original views
+  /// nor their signals' [replacement] links are modified.
+  SynthLogic replaceReferences(Map<SynthLogic, SynthLogic> replacements) {
+    final signal = resolved;
+    final replacement = replacements[signal];
+    if (replacement != null) {
+      return replacement;
+    }
+
+    if (signal is SynthLogicConcat) {
+      final parts = signal.parts
+          .map((part) => part.replaceReferences(replacements))
+          .toList(growable: false);
+      if (!const ListEquality<SynthLogic>().equals(parts, signal.parts)) {
+        return SynthLogicConcat(parts,
+            parentSynthModuleDefinition: signal.parentSynthModuleDefinition);
+      }
+    } else if (signal is SynthLogicPackedBitReference) {
+      final base = signal.packedBase.replaceReferences(replacements);
+      if (!identical(base, signal.packedBase)) {
+        return SynthLogicPackedBitReference(base, signal.bitIndex,
+            parentSynthModuleDefinition: signal.parentSynthModuleDefinition);
+      }
+    } else if (signal is SynthLogicPackedRangeReference) {
+      final base = signal.packedBase.replaceReferences(replacements);
+      if (!identical(base, signal.packedBase)) {
+        return SynthLogicPackedRangeReference(
+            base, signal.lowerIndex, signal.upperIndex,
+            parentSynthModuleDefinition: signal.parentSynthModuleDefinition);
+      }
+    }
+
+    return this;
+  }
 
   /// The parent [SynthModuleDefinition] that this [SynthLogic] belongs to.
   final SynthModuleDefinition parentSynthModuleDefinition;
@@ -62,11 +100,8 @@ class SynthLogic {
       );
 
   /// Indicates if this signal is a port, optionally for a specific [module].
-  bool isPort([Module? module]) =>
-      // we can rely on ports being the reserved logic (optimization)
-      _reservedLogic != null &&
-      _reservedLogic!.isPort &&
-      (module == null || _reservedLogic!.parentModule == module);
+  bool isPort([Module? module]) => _reservedLogics.any((logic) =>
+      logic.isPort && (module == null || logic.parentModule == module));
 
   /// The direct replacement of this [SynthLogic].
   SynthLogic? _replacement;
@@ -75,18 +110,34 @@ class SynthLogic {
   int get width => logics.first.width;
 
   /// Indicates that this has a reserved name.
-  bool get isReserved => _reservedLogic != null;
+  bool get isReserved => _reservedLogics.isNotEmpty;
 
   /// Whether this contains a renameable or reserved name that must remain in
   /// generated output.
   bool get hasPreservedName =>
-      _reservedLogic != null || _renameableLogic != null;
+      _reservedLogics.isNotEmpty || _renameableLogics.isNotEmpty;
 
-  /// The [Logic] whose name is reserved, if there is one.
-  Logic? _reservedLogic;
+  /// All represented [Logic]s whose names are reserved in this module.
+  final Set<Logic> _reservedLogics = {};
 
-  /// The [Logic] whose name is renameable, if there is one.
-  Logic? _renameableLogic;
+  /// All represented [Logic]s whose names are renameable in this module.
+  final Set<Logic> _renameableLogics = {};
+
+  /// A [LogicEnum] that is characteristic of any merged [LogicEnum]s into this.
+  LogicEnum? get characteristicEnum => _characteristicEnum;
+
+  /// The first [LogicEnum] merged into this [SynthLogic], if there is one.
+  LogicEnum? _characteristicEnum;
+
+  SynthEnumDefinition? get enumDefinition => _enumDefinition;
+  set enumDefinition(SynthEnumDefinition? definition) {
+    assert(definition != null, 'Cannot set enum definition to null.');
+    assert(
+        _enumDefinition == null, 'Cannot set enum definition more than once.');
+    _enumDefinition = definition;
+  }
+
+  SynthEnumDefinition? _enumDefinition;
 
   /// [Logic]s that are marked mergeable.
   final Set<Logic> _mergeableLogics = {};
@@ -97,18 +148,35 @@ class SynthLogic {
   /// The [Logic] whose value represents a constant, if there is one.
   Const? _constLogic;
 
-  /// Assignments should be eliminated rather than assign to `z`, so this
-  /// indicates if this [SynthLogic] is actually pointing to a [Const] that
-  /// is floating.
+  /// Whether this represents an entirely floating [Const].
+  ///
+  /// Floating assignments can be omitted for nets, but logic variables may
+  /// require an explicit assignment to preserve `z` instead of undriven `x`.
   bool get isFloatingConstant => _constLogic?.value.isFloating ?? false;
 
   /// Whether this represents a constant.
   bool get isConstant => _constLogic != null;
 
+  /// Creates a use-local constant representation with [enumType]'s metadata.
+  ///
+  /// The shared source and its other consumers retain their original type.
+  SynthLogic constantWithEnumType(LogicEnum enumType) {
+    final constant = _constLogic;
+    if (constant == null || !enumType.mapping.containsValue(constant.value)) {
+      throw StateError('Constant is not representable by ${enumType.mapping}.');
+    }
+    return SynthLogic(constant.clone(),
+        parentSynthModuleDefinition: parentSynthModuleDefinition)
+      .._characteristicEnum = enumType;
+  }
+
   /// Whether this represents a net.
   bool get isNet =>
       // can just look at the first since nets and non-nets cannot be merged
       logics.first.isNet || (isArray && (logics.first as LogicArray).isNet);
+
+  /// Whether this represents an enum.
+  bool get isEnum => characteristicEnum != null;
 
   /// If set, then this should never pick the constant as the name.
   bool get constNameDisallowed => _constNameDisallowed;
@@ -194,11 +262,12 @@ class SynthLogic {
             parentSynthModuleDefinition.logicHasPresentSynthLogic,
           ));
 
-  /// Two [SynthLogic]s that are not [mergeable] cannot be merged with each
-  /// other. If only one of them is not [mergeable], it can adopt the elements
-  /// from the other.
-  bool get mergeable =>
-      _reservedLogic == null && _constLogic == null && _renameableLogic == null;
+  /// Whether this can be merged without preserving its name or value literal.
+  ///
+  /// A non-mergeable signal can adopt a mergeable one. Two non-mergeable
+  /// signals can merge only under the pair-specific exceptions in [tryMerge],
+  /// without making the resulting signal clearable.
+  bool get mergeable => !hasPreservedName && _constLogic == null;
 
   /// True only if this represents a [LogicArray].
   final bool isArray;
@@ -220,8 +289,26 @@ class SynthLogic {
     return _name!;
   }
 
+  /// The chosen name of this, or `null` if a name has not been picked or this
+  /// has been replaced.
+  String? get nameOrNull {
+    if (_name == null || _replacement != null) {
+      return null;
+    }
+
+    assert(
+      isConstant || Sanitizer.isSanitary(_name!),
+      'Signal names should be sanitary, but found $_name.',
+    );
+
+    return _name;
+  }
+
   /// The name of this, if it has been picked.
   String? _name;
+
+  /// Stable identity for naming a signal fabricated during synthesis.
+  final Object? _generatedNameKey;
 
   /// Picks a [name] using the module's signal namer.
   ///
@@ -232,48 +319,105 @@ class SynthLogic {
     _name = _findName();
   }
 
+  /// Picks a stable name for a signal fabricated during synthesis.
+  void pickGeneratedName(Object key, {required String initialName}) {
+    assert(_name == null, 'Should only pick a name once.');
+
+    _name = parentSynthModuleDefinition.module.namer.identifierNameOf(
+      key,
+      initialName: initialName,
+    );
+  }
+
   /// Finds the best name from the collection of [Logic]s.
   ///
   /// Delegates to signal namer which handles constant value naming, priority
   /// selection, and uniquification via the module's shared namespace.
-  String _findName() =>
-      parentSynthModuleDefinition.module.namer.signalNameOfBest(
-        logics,
-        constValue: _constLogic,
-        constNameDisallowed: _constNameDisallowed,
-      );
+  String _findName() {
+    if (isConstant &&
+        !_constNameDisallowed &&
+        isEnum &&
+        parentSynthModuleDefinition.generateEnums) {
+      return enumDefinition!.enumToNameMapping[characteristicEnum!
+          .mapping.entries
+          .firstWhere((entry) => entry.value == _constLogic!.value)
+          .key]!;
+    }
+
+    final generatedNameKey = _generatedNameKey;
+    if (generatedNameKey != null) {
+      return parentSynthModuleDefinition.module.namer.identifierNameOf(
+          generatedNameKey,
+          initialName: Namer.baseName(logics.first));
+    }
+
+    return parentSynthModuleDefinition.module.namer.signalNameOfBest(
+      logics,
+      constValue: _constLogic,
+      constNameDisallowed: _constNameDisallowed,
+    );
+  }
 
   /// Creates an instance to represent [initialLogic] and any that merge
   /// into it.
+  ///
+  /// [generatedNameKey] provides stable naming for synthesized use-local
+  /// signals.
   SynthLogic(
     Logic initialLogic, {
     required this.parentSynthModuleDefinition,
     Naming? namingOverride,
     bool constNameDisallowed = false,
+    Object? generatedNameKey,
   })  : isArray = initialLogic is LogicArray,
+        _generatedNameKey = generatedNameKey,
         _constNameDisallowed = constNameDisallowed {
     _addLogic(initialLogic, namingOverride: namingOverride);
   }
 
   /// Returns `null` if the merge did not occur, and a pair of the `removed` and
   /// `kept` [SynthLogic]s otherwise.
+  ///
+  /// The caller must establish whole-signal equivalence through connectivity.
+  /// Preserved signals may share a declaration when all their preserved base
+  /// names match before uniquification. This does not permit merging distinct
+  /// module ports, array elements, or other non-owning signal references.
   static ({SynthLogic removed, SynthLogic kept})? tryMerge(
     SynthLogic a,
     SynthLogic b,
   ) {
+    assert(a != b, 'Cannot merge a SynthLogic with itself.');
+
+    if (a.isEnum && b.isEnum && !_enumTypesCompatible(a, b)) {
+      return null;
+    }
+
     if (_constantsMergeable(a, b)) {
       // case to avoid things like a constant assigned to another constant
       a.adopt(b);
       return (removed: b, kept: a);
     }
 
-    if (!a.mergeable && !b.mergeable) {
-      return null;
-    }
-
     if (a.isNet != b.isNet) {
       // do not merge nets with non-nets
       return null;
+    }
+
+    if ((a.isEnum && b.isConstant) || (b.isEnum && a.isConstant)) {
+      if (!_enumAndConstMergeable(a, b)) {
+        return null;
+      }
+      a.adopt(b);
+      return (removed: b, kept: a);
+    }
+
+    if (!a.mergeable && !b.mergeable) {
+      if (!_preservedNamesMergeable(a, b)) {
+        return null;
+      }
+
+      a.adopt(b);
+      return (removed: b, kept: a);
     }
 
     if (b.mergeable) {
@@ -289,9 +433,79 @@ class SynthLogic {
   static bool _constantsMergeable(SynthLogic a, SynthLogic b) =>
       a.isConstant &&
       b.isConstant &&
+      a.isEnum == b.isEnum &&
+      (!a.isEnum || _enumTypesCompatible(a, b)) &&
       a._constLogic!.value == b._constLogic!.value &&
       !a._constNameDisallowed &&
       !b._constNameDisallowed;
+
+  /// Indicates whether two enum representations have compatible types.
+  static bool _enumTypesCompatible(SynthLogic a, SynthLogic b) {
+    assert(a.isEnum && b.isEnum, 'Both signals must represent enums.');
+    final aEnum = a.characteristicEnum!;
+    final bEnum = b.characteristicEnum!;
+    return aEnum.isEquivalentTypeTo(bEnum) &&
+        !(aEnum.reserveDefinitionName &&
+            bEnum.reserveDefinitionName &&
+            aEnum.definitionName != bEnum.definitionName);
+  }
+
+  /// Indicates whether [a] and [b] are an enum and a legal enum constant.
+  static bool _enumAndConstMergeable(SynthLogic a, SynthLogic b) {
+    final constantLogic = a.isConstant ? a : b;
+    return a.isEnum &&
+        b.isEnum &&
+        _enumTypesCompatible(a, b) &&
+        constantLogic.isConstant &&
+        !a.constNameDisallowed &&
+        !b.constNameDisallowed &&
+        !a.isPort(a.parentSynthModuleDefinition.module) &&
+        !b.isPort(b.parentSynthModuleDefinition.module) &&
+        a.characteristicEnum!.mapping.values
+            .contains(constantLogic._constLogic!.value);
+  }
+
+  /// Whether whole signals can merge without losing any preserved base name.
+  ///
+  /// Only owning [SynthLogic] instances qualify; subclasses may forbid merging
+  /// for structural reasons unrelated to naming. Arrays must have identical
+  /// declaration shapes, not merely equal total widths.
+  static bool _preservedNamesMergeable(SynthLogic a, SynthLogic b) {
+    if (a.runtimeType != SynthLogic ||
+        b.runtimeType != SynthLogic ||
+        a.parentSynthModuleDefinition != b.parentSynthModuleDefinition ||
+        !a.hasPreservedName ||
+        !b.hasPreservedName ||
+        a.isConstant ||
+        b.isConstant ||
+        a.isNet != b.isNet ||
+        a.width != b.width ||
+        a.isArray != b.isArray ||
+        (a.isPort(a.parentSynthModuleDefinition.module) &&
+            b.isPort(b.parentSynthModuleDefinition.module))) {
+      return false;
+    }
+
+    if (a.isArray) {
+      final arrayA = a.logics.first as LogicArray;
+      final arrayB = b.logics.first as LogicArray;
+      if (arrayA.elementWidth != arrayB.elementWidth ||
+          arrayA.numUnpackedDimensions != arrayB.numUnpackedDimensions ||
+          !const ListEquality<int>()
+              .equals(arrayA.dimensions, arrayB.dimensions)) {
+        return false;
+      }
+    }
+
+    final preservedLogics = [
+      ...a._reservedLogics,
+      ...a._renameableLogics,
+      ...b._reservedLogics,
+      ...b._renameableLogics,
+    ];
+    final name = Namer.baseName(preservedLogics.first);
+    return preservedLogics.every((logic) => Namer.baseName(logic) == name);
+  }
 
   /// Merges [other] to be represented by `this` instead, and updates the
   /// [other] that it has been replaced.
@@ -299,7 +513,11 @@ class SynthLogic {
   /// If [force] is `true`, then it will adopt even if both are non-mergeable.
   void adopt(SynthLogic other, {bool force = false}) {
     assert(
-      force || other.mergeable || _constantsMergeable(this, other),
+      force ||
+          other.mergeable ||
+          _constantsMergeable(this, other) ||
+          _enumAndConstMergeable(this, other) ||
+          _preservedNamesMergeable(this, other),
       'Cannot merge a non-mergeable into this.',
     );
     assert(other.isArray == isArray, 'Cannot merge arrays and non-arrays');
@@ -316,10 +534,22 @@ class SynthLogic {
 
     // only take one of the other's items if we don't have it already
     _constLogic ??= other._constLogic;
-    _reservedLogic ??= other._reservedLogic;
-    _renameableLogic ??= other._renameableLogic;
+    if (other._characteristicEnum?.reserveDefinitionName ?? false) {
+      assert(
+        _characteristicEnum == null ||
+            !_characteristicEnum!.reserveDefinitionName ||
+            _characteristicEnum!.definitionName ==
+                other._characteristicEnum!.definitionName,
+        'Cannot merge enums with conflicting reserved definition names.',
+      );
+      _characteristicEnum = other._characteristicEnum;
+    } else {
+      _characteristicEnum ??= other._characteristicEnum;
+    }
 
     // the rest, take them all
+    _reservedLogics.addAll(other._reservedLogics);
+    _renameableLogics.addAll(other._renameableLogics);
     _mergeableLogics.addAll(other._mergeableLogics);
     _unnamedLogics.addAll(other._unnamedLogics);
 
@@ -335,14 +565,34 @@ class SynthLogic {
     } else {
       switch (naming) {
         case Naming.reserved:
-          _reservedLogic = logic;
+          _reservedLogics.add(logic);
         case Naming.renameable:
-          _renameableLogic = logic;
+          _renameableLogics.add(logic);
         case Naming.mergeable:
           _mergeableLogics.add(logic);
         case Naming.unnamed:
           _unnamedLogics.add(logic);
       }
+    }
+
+    if (logic is LogicEnum) {
+      assert(characteristicEnum?.isEquivalentTypeTo(logic) ?? true,
+          'Cannot add a LogicEnum that is not equivalent to the existing one.');
+
+      if (logic.reserveDefinitionName) {
+        // if the added `logic` reserves its definition name, then we
+        // should use it as the characteristic enum
+        assert(
+          _characteristicEnum == null ||
+              !_characteristicEnum!.reserveDefinitionName ||
+              logic.definitionName == _characteristicEnum!.definitionName,
+          'Cannot add a LogicEnum that reserves its definition name, but has a '
+          'different definition name than the existing characteristic enum.',
+        );
+        _characteristicEnum = logic;
+      }
+
+      _characteristicEnum ??= logic;
     }
   }
 
@@ -361,7 +611,11 @@ class SynthLogic {
 
   /// Computes the name of the signal at declaration time with appropriate
   /// dimensions included.
-  String definitionName() {
+  String definitionName({bool useEnumType = true}) {
+    if (isEnum && useEnumType) {
+      return name;
+    }
+
     String packedDims;
     String unpackedDims;
 
@@ -400,6 +654,30 @@ class SynthLogic {
       unpackedDims,
     ].where((e) => e.isNotEmpty).join(' ');
   }
+}
+
+/// A non-owning, most-significant-part-first concatenation of signals.
+///
+/// Used for port connections spanning several signals or selections. It has
+/// no independent declaration or name: backends must interpret [parts] as
+/// connections to existing storage, not allocate a new signal for this view.
+/// Dependency accounting must likewise follow the parts.
+@internal
+class SynthLogicConcat extends SynthLogic {
+  /// The ordered signals or selections comprising the connection.
+  final List<SynthLogic> parts;
+
+  /// Creates a connection view over [parts], from most to least significant.
+  SynthLogicConcat(List<SynthLogic> parts,
+      {required super.parentSynthModuleDefinition})
+      : parts = List.unmodifiable(parts),
+        super(Logic(width: parts.fold(0, (width, part) => width + part.width)));
+
+  @override
+  bool get needsDeclaration => false;
+
+  @override
+  bool get mergeable => false;
 }
 
 /// A non-owning reference to one bit of a packed [SynthLogic].
@@ -466,6 +744,77 @@ class SynthLogicPackedBitReference extends SynthLogic {
   }
 }
 
+/// A non-owning reference to a range of a packed [SynthLogic].
+///
+/// This exists for port mappings that must render a selected packed range,
+/// such as `.data(dataOut[41:40])`.
+class SynthLogicPackedRangeReference extends SynthLogic {
+  /// The packed signal containing the referenced range.
+  final SynthLogic packedBase;
+
+  /// The least-significant selected bit in [packedBase].
+  final int lowerIndex;
+
+  /// The most-significant selected bit in [packedBase].
+  final int upperIndex;
+
+  /// Creates a reference to `[upperIndex:lowerIndex]` of [packedBase].
+  SynthLogicPackedRangeReference(
+    this.packedBase,
+    this.lowerIndex,
+    this.upperIndex, {
+    required super.parentSynthModuleDefinition,
+  })  : assert(
+            !packedBase.isArray, 'Packed reference base must not be an array.'),
+        assert(!packedBase.isNet, 'Packed reference base must not be a net.'),
+        assert(
+          !packedBase.isConstant,
+          'Packed reference base must not be a constant.',
+        ),
+        assert(lowerIndex >= 0, 'Packed reference index must not be negative.'),
+        assert(
+          upperIndex >= lowerIndex,
+          'Packed reference range must not be reversed.',
+        ),
+        assert(
+          upperIndex < packedBase.width,
+          'Packed reference index must fit within its base.',
+        ),
+        super(Logic(width: upperIndex - lowerIndex + 1));
+
+  @override
+  bool get needsDeclaration => false;
+
+  @override
+  bool get mergeable => false;
+
+  @override
+  bool isPort([Module? module]) => packedBase.resolved.isPort(module);
+
+  @override
+  bool hasSrcConnectionsPresent() =>
+      packedBase.resolved.hasSrcConnectionsPresent();
+
+  @override
+  bool hasDstConnectionsPresent() =>
+      packedBase.resolved.hasDstConnectionsPresent();
+
+  @override
+  String get name {
+    final resolvedBase = packedBase.resolved;
+    assert(
+      upperIndex < resolvedBase.width,
+      'Packed reference index must fit within its resolved base.',
+    );
+    final reference = '${resolvedBase.name}[$upperIndex:$lowerIndex]';
+    assert(
+      Sanitizer.isSanitary(resolvedBase.name),
+      'Packed reference base should be sanitary, but found $reference.',
+    );
+    return reference;
+  }
+}
+
 /// Represents an element of a [LogicArray].
 ///
 /// Does not fully override or properly implement all characteristics of
@@ -487,7 +836,7 @@ class SynthLogicArrayElement extends SynthLogic {
   bool isPort([Module? module]) =>
       super.isPort(module) ||
       // we cannot just use `super.isPort` since we can't rely on only using
-      // `_reservedLogic`
+      // `_reservedLogics`
       logics.any(
         (l) => l.isPort && (module == null || l.parentModule == module),
       ) ||

@@ -47,9 +47,9 @@ help:
 # ---------------------------------------------------------------------------
 
 # Install npm dependencies (including TypeScript) if missing or out of date
-node_modules: package.json
+node_modules: package.json package-lock.json
 	@echo "Installing npm dependencies..."
-	@npm install
+	@npm ci
 	@touch node_modules
 
 # ---------------------------------------------------------------------------
@@ -71,6 +71,9 @@ install-remote: compile
 	@if [ -d "$(REMOTE_EXT_DIR)" ]; then \
 		echo "Installing to $(REMOTE_EXT_DIR)/out/..."; \
 		cp out/*.js out/*.js.map "$(REMOTE_EXT_DIR)/out/"; \
+		cp package.json "$(REMOTE_EXT_DIR)/package.json"; \
+		mkdir -p "$(REMOTE_EXT_DIR)/resources"; \
+		cp resources/* "$(REMOTE_EXT_DIR)/resources/"; \
 		echo "Done. Reload the VS Code window to pick up changes."; \
 	else \
 		echo "ERROR: Extension not found at $(REMOTE_EXT_DIR)"; \
@@ -82,6 +85,9 @@ install-local: compile
 	@if [ -d "$(LOCAL_EXT_DIR)" ]; then \
 		echo "Installing to $(LOCAL_EXT_DIR)/out/..."; \
 		cp out/*.js out/*.js.map "$(LOCAL_EXT_DIR)/out/"; \
+		cp package.json "$(LOCAL_EXT_DIR)/package.json"; \
+		mkdir -p "$(LOCAL_EXT_DIR)/resources"; \
+		cp resources/* "$(LOCAL_EXT_DIR)/resources/"; \
 		echo "Done. Reload the VS Code window to pick up changes."; \
 	else \
 		echo "ERROR: Extension not found at $(LOCAL_EXT_DIR)"; \
@@ -101,8 +107,7 @@ clean:
 	@rm -f *.vsix
 
 real-clean: clean
-	@echo "Removing node_modules, lock files, and Dart build artifacts..."
+	@echo "Removing node_modules and Dart build artifacts..."
 	@rm -rf node_modules/
-	@rm -f package-lock.json
 	@rm -rf dart/.dart_tool/
 	@rm -f dart/pubspec.lock

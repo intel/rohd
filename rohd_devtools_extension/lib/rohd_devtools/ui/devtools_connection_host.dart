@@ -12,7 +12,7 @@ import 'dart:async';
 
 import 'package:dtd/dtd.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/models/dtd_vm_service_info.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/services/services.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/ui/ui.dart';
@@ -562,16 +562,16 @@ abstract class DevToolsConnectionHostState<T extends StatefulWidget>
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
     properties
-      ..add(FlagProperty('isConnected', value: isConnected))
-      ..add(FlagProperty('isConnecting', value: isConnecting))
-      ..add(FlagProperty('isVmDead', value: isVmDead))
-      ..add(FlagProperty('isPaused', value: isPaused))
+      ..add(DiagnosticsProperty<bool>('isConnected', isConnected))
+      ..add(DiagnosticsProperty<bool>('isConnecting', isConnecting))
+      ..add(DiagnosticsProperty<bool>('isVmDead', isVmDead))
+      ..add(DiagnosticsProperty<bool>('isPaused', isPaused))
       ..add(DiagnosticsProperty<VmService?>('vmService', vmService))
       ..add(StringProperty('lastVmServiceUri', lastVmServiceUri))
       ..add(StringProperty('lastIsolateId', lastIsolateId))
       ..add(StringProperty('connectedVmName', connectedVmName))
-      ..add(FlagProperty('autoReconnect', value: autoReconnect))
-      ..add(FlagProperty('isVmConnected', value: isVmConnected))
+      ..add(DiagnosticsProperty<bool>('autoReconnect', autoReconnect))
+      ..add(DiagnosticsProperty<bool>('isVmConnected', isVmConnected))
       ..add(IntProperty('connectionGeneration', connectionGeneration))
       ..add(
         DiagnosticsProperty<VmConnectionStrategy?>(

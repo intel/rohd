@@ -389,7 +389,11 @@ class Logic {
 
   /// Handles the actual connection of this [Logic] to be driven by [other].
   void _connect(Logic other) {
-    _unassignable = true;
+    if (other is! LogicNet) {
+      other._wire._assertCanAdopt(_wire, signalName: name);
+    }
+    makeUnassignable(reason: '$this is connected to $other.');
+
     if (other is LogicNet) {
       put(other.value);
       other.glitch.listen((args) {
@@ -419,6 +423,12 @@ class Logic {
     // then, replace the wire
     _wire = newWire._adopt(_wire);
 
+    // apply constraints if there are any
+    final constrainedValue = _wire._applyValueConstraints(_wire.value);
+    if (constrainedValue != _wire.value) {
+      _wire.put(constrainedValue, signalName: name);
+    }
+
     // tell all downstream signals to update to the new wire as well
     final Iterable<Logic> toUpdateWire;
     if (this is LogicNet) {
@@ -445,10 +455,22 @@ class Logic {
   Logic operator ~() => NotGate(this).out;
 
   /// Logical bitwise AND.
-  Logic operator &(Logic other) => And2Gate(this, other).out;
+  Logic operator &(Logic other) {
+    if (other is Const) {
+      return other & this;
+    }
+
+    return And2Gate(this, other).out;
+  }
 
   /// Logical bitwise OR.
-  Logic operator |(Logic other) => Or2Gate(this, other).out;
+  Logic operator |(Logic other) {
+    if (other is Const) {
+      return other | this;
+    }
+
+    return Or2Gate(this, other).out;
+  }
 
   /// Logical bitwise XOR.
   Logic operator ^(Logic other) => Xor2Gate(this, other).out;
@@ -478,6 +500,10 @@ class Logic {
   ///
   /// If [isNet] and [other] is constant, then the result will also be a net.
   Logic operator >>(dynamic other) {
+    if (_isZeroShiftAmount(other)) {
+      return this;
+    }
+
     if (isNet) {
       // many SV simulators don't support shifting of nets, so default this
       final shamt = _constShiftAmount(other);
@@ -498,6 +524,10 @@ class Logic {
   ///
   /// If [isNet] and [other] is constant, then the result will also be a net.
   Logic operator <<(dynamic other) {
+    if (_isZeroShiftAmount(other)) {
+      return this;
+    }
+
     if (isNet) {
       // many SV simulators don't support shifting of nets, so default this
       final shamt = _constShiftAmount(other);
@@ -518,6 +548,10 @@ class Logic {
   ///
   /// If [isNet] and [other] is constant, then the result will also be a net.
   Logic operator >>>(dynamic other) {
+    if (_isZeroShiftAmount(other)) {
+      return this;
+    }
+
     if (isNet) {
       // many SV simulators don't support shifting of nets, so default this
       final shamt = _constShiftAmount(other);
@@ -540,6 +574,17 @@ class Logic {
       return null;
     } else {
       return LogicValue.ofInferWidth(other).toInt();
+    }
+  }
+
+  /// Indicates whether [other] represents a known constant shift of zero.
+  static bool _isZeroShiftAmount(dynamic other) {
+    if (other is Const) {
+      return other.value.isValid && other.value.isZero;
+    } else if (other is Logic) {
+      return false;
+    } else {
+      return LogicValue.ofInferWidth(other).isZero;
     }
   }
 
@@ -673,9 +718,15 @@ class Logic {
   /// [Conditional].
   Conditional operator <(dynamic other) {
     if (_unassignable) {
-      throw Exception('This signal "$this" has been marked as unassignable.  '
-          'It may be a constant expression or otherwise'
-          ' should not be assigned.');
+      throw UnassignableException(this, reason: _unassignableReason);
+    }
+
+    if (other is Enum) {
+      throw ArgumentError.value(
+        other,
+        'other',
+        'Enum values require a LogicEnum receiver with an explicit mapping.',
+      );
     }
 
     if (other is Logic) {
@@ -840,17 +891,23 @@ class Logic {
     return slice(modifiedEndIndex - 1, modifiedStartIndex);
   }
 
-  /// Returns a new [Logic] with width [newWidth] where new bits added are zeros
+  /// Returns a [Logic] with width [newWidth] where new bits added are zeros
   /// as the most significant bits.
   ///
   /// The [newWidth] must be greater than or equal to the current width or an
-  /// exception will be thrown.
+  /// exception will be thrown. When [newWidth] equals the current width, this
+  /// returns the original signal (same object identity).
   ///
   /// If [isNet], then the result will also be a net.
   Logic zeroExtend(int newWidth) {
     if (newWidth < width) {
       throw Exception(
           'New width $newWidth must be greater than or equal to width $width.');
+    }
+    // Nothing to extend: reuse the original signal instead of building a
+    // zero-width Const + Swizzle (matches signExtend's same-width path).
+    if (newWidth == width) {
+      return this;
     }
     return [
       Const(0, width: newWidth - width),
@@ -927,8 +984,16 @@ class Logic {
   /// The input [multiplier] cannot be negative or 0; an exception will be
   /// thrown, otherwise.
   ///
+  /// If [multiplier] is 1, then this signal is returned directly, since
+  /// replicating once is a no-op and would otherwise generate a redundant
+  /// `1{...}` in the output SystemVerilog.
+  ///
   /// If [isNet], then the result will also be a net.
   Logic replicate(int multiplier) {
+    if (multiplier == 1) {
+      return this;
+    }
+
     if (isNet) {
       // many SV simulators don't support replication of nets
       return List.generate(multiplier, (i) => this).swizzle();

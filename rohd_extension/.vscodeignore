@@ -1,0 +1,12 @@
+.gitignore
+.markdownlint.json
+.nvmrc
+.vscodeignore
+Makefile
+dart/**
+node_modules/@types/**
+out/**/*.map
+package-lock.json
+src/**
+tool/**
+tsconfig.json

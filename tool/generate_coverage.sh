@@ -16,6 +16,14 @@
 # the progress of the execution, but MAY REVEAL ANY SECRETS PASSED TO THE SCRIPT!
 set -euxo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TOOL_PACKAGE_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+TARGET_DIR="${PWD}"
+IS_FLUTTER_PACKAGE=false
+if [ -f pubspec.yaml ] && grep -Eq '^  flutter:|^  flutter_test:' pubspec.yaml; then
+    IS_FLUTTER_PACKAGE=true
+fi
+
 #=============#
 
 # Parse arguments
@@ -34,8 +42,15 @@ done
 # Remove old coverage data
 rm -rf coverage
 
-# Run tests with coverage
-dart test --coverage=coverage || true
+if [ "${IS_FLUTTER_PACKAGE}" = true ]; then
+    # Flutter writes LCOV directly, unlike `dart test --coverage` which writes
+    # VM coverage JSON that must be converted with coverage:format_coverage.
+    flutter test --coverage --coverage-path=coverage/lcov.info || true
+else
+    # Benchmarks are smoke-tested separately and can take too long under
+    # coverage instrumentation.
+    dart test --coverage=coverage --exclude-tags benchmark || true
+fi
 
 # Check if coverage was generated
 if [ ! -d "coverage" ]; then
@@ -43,13 +58,42 @@ if [ ! -d "coverage" ]; then
     exit 1
 fi
 
-# Format to LCOV
-dart run coverage:format_coverage \
-    --lcov \
-    --in=coverage \
-    --out=coverage/lcov.info \
-    --packages=.dart_tool/package_config.json \
-    --report-on=lib
+if [ "${IS_FLUTTER_PACKAGE}" != true ]; then
+    # Format to LCOV
+    (
+        cd "${TOOL_PACKAGE_DIR}"
+        dart run coverage:format_coverage \
+            --lcov \
+            --in="${TARGET_DIR}/coverage" \
+            --out="${TARGET_DIR}/coverage/lcov.info" \
+            --package="${TARGET_DIR}" \
+            --report-on="${TARGET_DIR}/lib"
+    )
+fi
+
+# package:coverage may emit BRDA records without BRF/BRH totals, and some
+# coverage producers do not emit branch records at all. When BRDA is present,
+# calculate the branch rate directly. Otherwise, keep reporting line coverage.
+BRANCH_SUMMARY=$(awk -F'[:,]' '
+    /^BRDA:/ {
+        found++
+        if ($5 ~ /^[1-9][0-9]*$/) {
+            hit++
+        }
+    }
+    END {
+        if (found == 0) {
+            print "none"
+            exit 0
+        }
+        printf "%.1f%% (%d of %d branches)", 100 * hit / found, hit, found
+    }
+' coverage/lcov.info)
+if [ "$BRANCH_SUMMARY" = "none" ]; then
+    echo "Warning: no branch coverage data found in coverage/lcov.info; continuing with line coverage only."
+else
+    echo "Branch coverage: $BRANCH_SUMMARY"
+fi
 
 # Install lcov if needed
 if ! command -v lcov &> /dev/null; then
@@ -59,8 +103,8 @@ if ! command -v lcov &> /dev/null; then
     fi
 fi
 
-# Generate HTML report
-genhtml -o coverage/html coverage/lcov.info --branch-coverage
+# Generate HTML line coverage report
+genhtml -o coverage/html coverage/lcov.info
 printf '\n%s\n\n' "Open coverage/html/index.html to review code coverage results."
 
 # Extract coverage percentage

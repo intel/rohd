@@ -13,22 +13,24 @@ set -euo pipefail
 
 declare -r folder_name='tmp_test'
 
-# The "tmp_test" folder after performing the tests should be empty.
-if [ -d "${folder_name}" ]; then
-  output=$(find ${folder_name} | wc --lines | tee)
-  if [ "${output}" -eq 1 ]; then
+# The "tmp_test" folder should be absent or empty.
+if [[ -d "${folder_name}" ]]; then
+  output=$(find "${folder_name}" -mindepth 1 -print -quit)
+  if [[ -z "${output}" ]]; then
     echo "Success: directory \"${folder_name}\" is empty!"
   else
     echo "Failure: directory \"${folder_name}\" is not empty!"
     exit 1
   fi
-else
-  echo "Failure: directory \"${folder_name}\" not found!"
+elif [[ -e "${folder_name}" || -L "${folder_name}" ]]; then
+  echo "Failure: \"${folder_name}\" exists but is not a directory!"
   exit 1
+else
+  echo "Success: directory \"${folder_name}\" is absent; no temporary test files!"
 fi
 
 # Make sure there are no VCD files in the root directory.
-if [ -n "$(find . -maxdepth 1 -name '*.vcd' -print -quit)" ]; then
+if [[ -n "$(find . -maxdepth 1 -name '*.vcd' -print -quit)" ]]; then
   echo "Failure: VCD files found in the root directory!"
   exit 1
 else

@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Intel Corporation
+// Copyright (C) 2023-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // invalid_latch_test.dart
@@ -66,7 +66,7 @@ class _DLatch extends Module {
   late final Logic _outB = addOutput('outB');
 }
 
-void main() async {
+void main() {
   setUp(() async {
     await Simulator.reset();
   });

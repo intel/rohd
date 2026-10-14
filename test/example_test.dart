@@ -8,6 +8,7 @@
 // Author: Max Korbel <max.korbel@intel.com>
 
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
 
 import '../example/example.dart' as counter;
@@ -35,6 +36,60 @@ void main() {
 
   test('fsm example', () async {
     await fsm.main(noPrint: true);
+  });
+
+  test('fsm example uses enum mappings for buttons and LEDs', () async {
+    final button = LogicEnum<fsm.Button>.withMapping({
+      fsm.Button.start: 1,
+      fsm.Button.pause: 4,
+      fsm.Button.resume: 6,
+    });
+    final oven = fsm.OvenModule(button, Logic(), Logic());
+    await oven.build();
+    expect((oven.input('button') as LogicEnum<fsm.Button>).mapping,
+        button.mapping);
+    expect(button.width, 3);
+    expect(oven.led.width, 4);
+    expect(
+        oven.led.mapping
+            .map((light, encoding) => MapEntry(light, encoding.toInt())),
+        {
+          fsm.LedLight.yellow: 1,
+          fsm.LedLight.blue: 2,
+          fsm.LedLight.red: 4,
+          fsm.LedLight.green: 8,
+        });
+
+    final vectors = <Vector>[];
+    for (final (pressed, reset, light) in [
+      (fsm.Button.pause, 1, fsm.LedLight.blue),
+      (fsm.Button.pause, 1, fsm.LedLight.blue),
+      (fsm.Button.start, 0, fsm.LedLight.yellow),
+      (fsm.Button.pause, 0, fsm.LedLight.red),
+      (fsm.Button.pause, 0, fsm.LedLight.red),
+      (fsm.Button.resume, 0, fsm.LedLight.yellow),
+      (fsm.Button.resume, 0, fsm.LedLight.yellow),
+      (fsm.Button.resume, 0, fsm.LedLight.yellow),
+      (fsm.Button.resume, 0, fsm.LedLight.yellow),
+      (fsm.Button.resume, 0, fsm.LedLight.green),
+      (fsm.Button.resume, 0, fsm.LedLight.green),
+      (fsm.Button.start, 0, fsm.LedLight.yellow),
+    ]) {
+      vectors
+        ..add(Vector(
+            {'button': button.mapping[pressed], 'reset': reset, 'clk': 0}, {}))
+        ..add(Vector({'clk': 1}, {'led': oven.led.mapping[light]}));
+    }
+    await SimCompare.checkFunctionalVector(oven, vectors);
+    expect(oven.led.valueEnum, fsm.LedLight.yellow);
+    for (final generateEnums in [true, false]) {
+      final configuration =
+          SystemVerilogSynthesizerConfiguration(generateEnums: generateEnums);
+      SimCompare.checkIverilogVector(oven, vectors,
+          synthesizerConfiguration: configuration);
+      SimCompare.checkVerilatorVector(oven, const [],
+          buildOnly: true, synthesizerConfiguration: configuration);
+    }
   });
 
   test('logic array example', () async {

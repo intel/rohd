@@ -234,9 +234,7 @@ class Sequential extends Always {
         throw Exception('Each clk or trigger must be 1 bit, but saw $trigger.');
       }
 
-      if (assignedDriverToInputMap.containsKey(trigger)) {
-        _driverInputsThatAreTriggers.add(assignedDriverToInputMap[trigger]!);
-      }
+      _driverInputsThatAreTriggers.addAll(driverInputs(trigger));
 
       _triggers.add(_SequentialTrigger(
           addInput(
@@ -296,12 +294,12 @@ class Sequential extends Always {
     }
 
     // listen to every input of this `Sequential` for changes
-    for (final driverInput in assignedDriverToInputMap.values) {
+    for (final driverInput in registeredDriverInputs) {
       // pre-fill the _inputToPreTickInputValuesMap so that nothing ever
       // uses values directly
       _updateInputToPreTickInputValue(driverInput);
 
-      driverInput.glitch.listen((event) async {
+      driverInput.glitch.listen((event) {
         if (Simulator.phase != SimulatorPhase.clkStable) {
           // if the change happens not when the clocks are stable, immediately
           // update the map
@@ -340,7 +338,7 @@ class Sequential extends Always {
 
     // listen to every clock glitch to see if we need to execute
     for (final trigger in _triggers) {
-      trigger.signal.glitch.listen((event) async {
+      trigger.signal.glitch.listen((event) {
         // we want the first previousValue from the first glitch of this tick
         trigger.preTickValue ??= event.previousValue;
 
@@ -349,24 +347,18 @@ class Sequential extends Always {
         }
 
         if (!_pendingExecute) {
-          unawaited(Simulator.clkStable.first.then((value) {
+          unawaited(Simulator.clkStable.first.then<void>((value) {
             // once the clocks are stable, execute the contents of the seq
             _execute();
             _pendingExecute = false;
-          }).catchError(test: (error) => error is Exception,
-              (Object err, StackTrace stackTrace) {
-            Simulator.throwException(err as Exception, stackTrace);
-          }).catchError(test: (error) => error is StateError,
-              (Object err, StackTrace stackTrace) {
-            // This could be a result of the `Simulator` being reset, causing
-            // the stream to `close` before `first` occurs.
-            if (!Simulator.simulationHasEnded) {
-              // If the `Simulator` is still running, rethrow immediately.
-
-              // ignore: only_throw_errors
-              throw err;
+          }, onError: (Object err, StackTrace stackTrace) {
+            if (err is StateError) {
+              // Reset closes the stream before `first` receives an event.
+              _pendingExecute = false;
+              return;
             }
-          }));
+            Error.throwWithStackTrace(err, stackTrace);
+          }).onError<Exception>(Simulator.throwException));
         }
         _pendingExecute = true;
       });
@@ -400,13 +392,13 @@ class Sequential extends Always {
 
       if (allowMultipleAssignments) {
         for (final element in conditionals) {
-          // ignore: invalid_use_of_protected_member
+          // ignore: invalid_use_of_protected_member - special case, always
           element.execute(null, null);
         }
       } else {
         final allDrivenSignals = DuplicateDetectionSet<Logic>();
         for (final element in conditionals) {
-          // ignore: invalid_use_of_protected_member
+          // ignore: invalid_use_of_protected_member - special case, always
           element.execute(allDrivenSignals, null);
         }
         if (allDrivenSignals.hasDuplicates) {

@@ -1,0 +1,51 @@
+name: Release ROHD VS Code Extension
+
+on:
+  release:
+    types: [published]
+
+permissions: {}
+
+jobs:
+  attach-vsix:
+    name: Build and attach VSIX
+    if: startsWith(github.event.release.tag_name, 'rohd-vscode-v')
+    permissions:
+      contents: write
+    timeout-minutes: 15
+    runs-on: ${{ github.repository_owner == 'intel' && 'intel-ubuntu-latest' || 'ubuntu-latest' }}
+    defaults:
+      run:
+        shell: bash
+        working-directory: rohd_extension
+    env:
+      RELEASE_TAG: ${{ github.event.release.tag_name }}
+    steps:
+      - name: Checkout release tag
+        uses: actions/checkout@v4
+        with:
+          ref: refs/tags/${{ github.event.release.tag_name }}
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: rohd_extension/package-lock.json
+
+      - name: Verify release version
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          if [[ "$RELEASE_TAG" != "rohd-vscode-v$version" ]]; then
+            echo "Release tag $RELEASE_TAG does not match extension version $version." >&2
+            exit 1
+          fi
+
+      - name: Package VSIX
+        run: bash ../tool/package_vscode.sh "$RUNNER_TEMP/$RELEASE_TAG.vsix"
+
+      - name: Attach VSIX to release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "$RELEASE_TAG" "$RUNNER_TEMP/$RELEASE_TAG.vsix" --repo "$GITHUB_REPOSITORY"

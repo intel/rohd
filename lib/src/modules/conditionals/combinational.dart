@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2025 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // combinational.dart
@@ -130,7 +130,7 @@ class Combinational extends Always {
       signalToSsaDrivers.putIfAbsent(tpi, () => <SsaLogic>{}).add(ssaDriver);
 
       if (tpi.isInput &&
-          // ignore: deprecated_member_use_from_same_package
+          // ignore: deprecated_member_use_from_same_package - backwards compatibility with CustomSystemVerilog
           ((tpi.parentModule! is CustomSystemVerilog) ||
               tpi.parentModule! is SystemVerilog)) {
         toParse.addAll(tpi.parentModule!.outputs.values);
@@ -159,7 +159,7 @@ class Combinational extends Always {
       {required int context}) {
     var mappings = <Logic, Logic>{};
     for (final conditional in conditionals) {
-      // ignore: invalid_use_of_protected_member, invalid_use_of_visible_for_overriding_member
+      // ignore: invalid_use_of_protected_member, invalid_use_of_visible_for_overriding_member - special case that combinational can call it
       mappings = conditional.processSsa(mappings, context: context);
     }
 
@@ -220,7 +220,7 @@ class Combinational extends Always {
     _isExecuting = true;
 
     for (final element in conditionals) {
-      // ignore: invalid_use_of_protected_member
+      // ignore: invalid_use_of_protected_member - special case, combo can call
       element.execute(_drivenLogics, _guard);
     }
 

@@ -19,6 +19,7 @@ import * as dtdBridge from './dtd_bridge';
 import * as debugTracker from './debug_tracker';
 import * as conditionalCompletions from './conditional_completions';
 import * as flcService from './flc_service';
+import * as signalViewerRegistry from './signal_viewer_registry';
 
 export function activate(context: vscode.ExtensionContext): void {
   console.log('ROHD extension is now active (v0.1.0)');
@@ -31,6 +32,7 @@ export function activate(context: vscode.ExtensionContext): void {
   // These are invoked by ROHD viewer extensions (schematic, wave) via
   // vscode.commands.executeCommand('rohd.openSourceLocation', ...).
   sourceNavigator.registerCommands(context);
+  signalViewerRegistry.registerCommands(context);
 
   // ── FLC commands — viewer extensions delegate here ──────────────────────
 
@@ -109,5 +111,6 @@ async function activateCompletionsIfEnabled(
 export function deactivate(): void {
   debugTracker.deactivate();
   dtdBridge.dispose();
+  signalViewerRegistry.dispose();
   sourceNavigator.dispose();
 }

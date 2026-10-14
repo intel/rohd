@@ -10,6 +10,8 @@
 
 import 'dart:collection';
 
+import 'package:meta/meta.dart';
+
 /// A limited type of collection that has very fast index access and [contains].
 ///
 /// This collection stores all data twice: once in a [Set] and once in a [List].
@@ -21,6 +23,7 @@ import 'dart:collection';
 /// elements by index, but also check whether a certain element is contained
 /// within it, and there are many elements, this implementation is substantially
 /// faster than using either a [Set] or a [List].
+@internal
 class TraverseableCollection<T> with IterableMixin<T> {
   /// The underlying [Set] that stores the data.
   late final Set<T> _set = HashSet<T>();

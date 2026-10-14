@@ -2,7 +2,7 @@
 title: "Finite State Machines"
 permalink: /docs/fsm/
 excerpt: "Finite State Machines"
-last_modified_at: 2023-09-19
+last_modified_at: 2026-08-10
 toc: true
 ---
 
@@ -47,14 +47,17 @@ Now, let's define the encoding of outputs (the color of the light).
 
 ```dart
 enum LightColor {
-  green(0),
-  yellow(1),
-  red(2);
-
-  final int value;
-
-  const LightColor(this.value);
+  green,
+  yellow,
+  red,
 }
+
+final lightType = LogicEnum(
+  LightColor.values,
+  definitionName: 'LightColor',
+);
+final northLight = addTypedOutput('northLight', lightType.clone);
+final eastLight = addTypedOutput('eastLight', lightType.clone);
 ```
 
 Now we can go ahead and describe the set of states for our state machine. Note that for each state, we describe a few things:
@@ -68,16 +71,16 @@ final states = <State<LightStates>>[
   State(LightStates.northFlowing, events: {
     TrafficPresence.isEastActive(traffic): LightStates.northSlowing,
   }, actions: [
-    northLight < LightColor.green.value,
-    eastLight < LightColor.red.value,
+    northLight < LightColor.green,
+    eastLight < LightColor.red,
   ]),
   State(
     LightStates.northSlowing,
     events: {},
     defaultNextState: LightStates.eastFlowing,
     actions: [
-      northLight < LightColor.yellow.value,
-      eastLight < LightColor.red.value,
+      northLight < LightColor.yellow,
+      eastLight < LightColor.red,
     ],
   ),
   State(
@@ -86,8 +89,8 @@ final states = <State<LightStates>>[
       TrafficPresence.isNorthActive(traffic): LightStates.eastSlowing,
     },
     actions: [
-      northLight < LightColor.red.value,
-      eastLight < LightColor.green.value,
+      northLight < LightColor.red,
+      eastLight < LightColor.green,
     ],
   ),
   State(
@@ -95,8 +98,8 @@ final states = <State<LightStates>>[
     events: {},
     defaultNextState: LightStates.northFlowing,
     actions: [
-      northLight < LightColor.red.value,
-      eastLight < LightColor.yellow.value,
+      northLight < LightColor.red,
+      eastLight < LightColor.yellow,
     ],
   ),
 ];
@@ -120,14 +123,14 @@ final states = <State<LightStates>>[
   State(LightStates.northFlowing, events: {
     TrafficPresence.isEastActive(traffic): LightStates.northSlowing,
   }, actions: [
-    northLight < LightColor.green.value,
+    northLight < LightColor.green,
   ]),
   State(
     LightStates.northSlowing,
     events: {},
     defaultNextState: LightStates.eastFlowing,
     actions: [
-      northLight < LightColor.yellow.value,
+      northLight < LightColor.yellow,
     ],
   ),
   State(
@@ -136,7 +139,7 @@ final states = <State<LightStates>>[
       TrafficPresence.isNorthActive(traffic): LightStates.eastSlowing,
     },
     actions: [
-      eastLight < LightColor.green.value,
+      eastLight < LightColor.green,
     ],
   ),
   State(
@@ -144,7 +147,7 @@ final states = <State<LightStates>>[
     events: {},
     defaultNextState: LightStates.northFlowing,
     actions: [
-      eastLight < LightColor.yellow.value,
+      eastLight < LightColor.yellow,
     ],
   ),
 ];
@@ -156,13 +159,13 @@ FiniteStateMachine<LightStates>(
   states,
   setupActions: [
     // by default, lights should be red
-    northLight < LightColor.red.value,
-    eastLight < LightColor.red.value,
+    northLight < LightColor.red,
+    eastLight < LightColor.red,
   ],
 );
 ```
 
-This state machine is now functional and synthesizable into SystemVerilog!
+This state machine is now functional and synthesizable into SystemVerilog. Its `currentState` and `nextState` signals are `LogicEnum<LightStates>`, and generated SystemVerilog uses the `LightColor` enum for internal output backing signals and symbolic assignments. See [Logic Enums](https://intel.github.io/rohd-website/docs/logic-enums/) for details about enum mappings and generation.
 
 You can even generate a mermaid diagram for the state machine using the [`generateDiagram`](https://intel.github.io/rohd/rohd/FiniteStateMachine/generateDiagram.html) API.
 

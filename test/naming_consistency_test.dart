@@ -14,6 +14,8 @@ import 'package:rohd/src/synthesizers/systemverilog/systemverilog_synth_module_d
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
 import 'package:test/test.dart';
 
+import 'naming_test_utils.dart';
+
 // ── Helper modules ──────────────────────────────────────────────────
 
 /// A simple module with ports, internal wires, and a sub-module.
@@ -64,32 +66,6 @@ class _FlopOuter extends Module {
   }
 }
 
-/// Builds [SynthModuleDefinition]s from both bases and collects a
-/// Logic→name mapping for all present SynthLogics.
-///
-/// Returns maps from Logic to its resolved signal name.
-Map<Logic, String> _collectNames(SynthModuleDefinition def) {
-  final names = <Logic, String>{};
-  for (final sl in [
-    ...def.inputs,
-    ...def.outputs,
-    ...def.inOuts,
-    ...def.internalSignals,
-  ]) {
-    // Skip SynthLogics whose name was never picked (replaced/pruned).
-    try {
-      final n = sl.name;
-      for (final logic in sl.logics) {
-        names[logic] = n;
-      }
-      // ignore: avoid_catches_without_on_clauses
-    } catch (_) {
-      // name not picked — skip
-    }
-  }
-  return names;
-}
-
 void main() {
   group('naming consistency', () {
     test('SV and base SynthModuleDefinition agree on port names', () async {
@@ -104,8 +80,8 @@ void main() {
       // the same naming state — names must be consistent.
       final baseDef = SynthModuleDefinition(mod);
 
-      final svNames = _collectNames(svDef);
-      final baseNames = _collectNames(baseDef);
+      final svNames = collectSynthNames(svDef);
+      final baseNames = collectSynthNames(baseDef);
 
       // Every Logic present in both must have the same name.
       for (final logic in svNames.keys) {
@@ -134,8 +110,8 @@ void main() {
       final svDef = SystemVerilogSynthModuleDefinition(mod);
       final baseDef = SynthModuleDefinition(mod);
 
-      final svNames = _collectNames(svDef);
-      final baseNames = _collectNames(baseDef);
+      final svNames = collectSynthNames(svDef);
+      final baseNames = collectSynthNames(baseDef);
 
       for (final logic in svNames.keys) {
         if (baseNames.containsKey(logic)) {
@@ -152,8 +128,8 @@ void main() {
       final svDef = SystemVerilogSynthModuleDefinition(mod);
       final baseDef = SynthModuleDefinition(mod);
 
-      final svNames = _collectNames(svDef);
-      final baseNames = _collectNames(baseDef);
+      final svNames = collectSynthNames(svDef);
+      final baseNames = collectSynthNames(baseDef);
 
       for (final logic in svNames.keys) {
         if (baseNames.containsKey(logic)) {
@@ -170,8 +146,8 @@ void main() {
       final svDef = SystemVerilogSynthModuleDefinition(mod);
       final baseDef = SynthModuleDefinition(mod);
 
-      final svNames = _collectNames(svDef);
-      final baseNames = _collectNames(baseDef);
+      final svNames = collectSynthNames(svDef);
+      final baseNames = collectSynthNames(baseDef);
 
       for (final logic in svNames.keys) {
         if (baseNames.containsKey(logic)) {
@@ -189,8 +165,8 @@ void main() {
       final def1 = SynthModuleDefinition(mod);
       final def2 = SynthModuleDefinition(mod);
 
-      final names1 = _collectNames(def1);
-      final names2 = _collectNames(def2);
+      final names1 = collectSynthNames(def1);
+      final names2 = collectSynthNames(def2);
 
       for (final logic in names1.keys) {
         if (names2.containsKey(logic)) {
@@ -206,7 +182,7 @@ void main() {
       await mod.build();
 
       final def = SynthModuleDefinition(mod);
-      final synthNames = _collectNames(def);
+      final synthNames = collectSynthNames(def);
 
       // Module.namer.signalNameOf uses Namer directly
       for (final port in [...mod.inputs.values, ...mod.outputs.values]) {

@@ -38,6 +38,9 @@ class Namer {
   /// fresh suffixes for the same submodule instances.
   final Map<Object, String> _instanceNames = {};
 
+  /// Cache of other generated identifiers, such as type and member names.
+  final Map<Object, String> _identifierNames = {};
+
   /// The set of port [Logic] objects, for O(1) port membership tests.
   final Set<Logic> _portLogics;
 
@@ -71,6 +74,25 @@ class Namer {
   /// Returns `true` if [name] has not yet been claimed in the namespace.
   @visibleForTesting
   bool isAvailable(String name) => _uniquifier.isAvailable(name);
+
+  /// Returns a stable, collision-free name for a generated identifier.
+  String identifierNameOf(
+    Object key, {
+    required String initialName,
+    bool reserved = false,
+  }) {
+    final cached = _identifierNames[key];
+    if (cached != null) {
+      return cached;
+    }
+
+    final name = _uniquifier.getUniqueName(
+      initialName: Sanitizer.sanitizeSV(initialName),
+      reserved: reserved,
+    );
+    _identifierNames[key] = name;
+    return name;
+  }
 
   // ─── Instance naming (Module → String) ──────────────────────────
 
@@ -153,8 +175,11 @@ class Namer {
   ///   4. Preferred-available mergeable (base name not yet taken).
   ///   5. Preferred-uniquifiable mergeable.
   ///   6. Available-unpreferred mergeable.
-  ///   7. First unpreferred mergeable.
+  ///   7. Unpreferred-uniquifiable mergeable.
   ///   8. Unnamed (prefer non-unpreferred base name).
+  ///
+  /// Within each mergeable tier, output ports are preferred over other
+  /// candidates. Remaining ties retain candidate order.
   ///
   /// The winning name is allocated once and cached for the chosen [Logic].
   /// All other non-port [Logic]s in [candidates] are also cached to the
@@ -218,18 +243,18 @@ class Namer {
     }
 
     if (preferredMergeable.isNotEmpty) {
-      final best = preferredMergeable.firstWhereOrNull(
-            (e) => isAvailable(baseName(e)),
-          ) ??
-          preferredMergeable.first;
+      final available =
+          preferredMergeable.where((logic) => isAvailable(baseName(logic)));
+      final best =
+          _preferDriver(available.isNotEmpty ? available : preferredMergeable);
       return _nameAndCacheAll(best, candidates);
     }
 
     if (unpreferredMergeable.isNotEmpty) {
-      final best = unpreferredMergeable.firstWhereOrNull(
-            (e) => isAvailable(baseName(e)),
-          ) ??
-          unpreferredMergeable.first;
+      final available =
+          unpreferredMergeable.where((logic) => isAvailable(baseName(logic)));
+      final best = _preferDriver(
+          available.isNotEmpty ? available : unpreferredMergeable);
       return _nameAndCacheAll(best, candidates);
     }
 
@@ -242,6 +267,10 @@ class Namer {
 
     throw StateError('No Logic candidates to name.');
   }
+
+  static Logic _preferDriver(Iterable<Logic> candidates) =>
+      candidates.firstWhereOrNull((logic) => logic.isOutput) ??
+      candidates.first;
 
   /// Names [chosen] with the single-signal allocator, then caches the
   /// same name for all other non-port [Logic]s in [all].

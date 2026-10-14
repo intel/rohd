@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Intel Corporation
+// Copyright (C) 2023-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // logic_structure_test.dart
@@ -121,13 +121,13 @@ class StructModuleWithInstrumentation extends Module {
       ..isOutput
       ..changed
       ..glitch
-      // ignore: deprecated_member_use_from_same_package
+      // ignore: deprecated_member_use_from_same_package - deprecated but supported for now
       ..hasValidValue()
-      // ignore: deprecated_member_use_from_same_package
+      // ignore: deprecated_member_use_from_same_package - deprecated but supported for now
       ..isFloating()
-      // ignore: deprecated_member_use_from_same_package
+      // ignore: deprecated_member_use_from_same_package - deprecated but supported for now
       ..valueBigInt
-      // ignore: deprecated_member_use_from_same_package
+      // ignore: deprecated_member_use_from_same_package - deprecated but supported for now
       ..valueInt;
 
     unawaited(MyStruct().nextChanged);
@@ -175,7 +175,7 @@ void main() {
     final mod = StructModuleWithInstrumentation(Const(0, width: 2));
     await mod.build();
 
-    final sv = mod.generateSynth();
+    final sv = mod.dumpSystemVerilog();
 
     expect(sv.contains('swizzle'), isFalse,
         reason: 'Should not pack from instrumentation!');
@@ -189,6 +189,19 @@ void main() {
       ], name: 'structure');
 
       expect(s.name, 'structure');
+    });
+
+    test('hasConsts detects constants at any depth', () {
+      final withoutConsts = LogicStructure([Logic()]);
+      final withDirectConst = LogicStructure([Logic(), Const(0)]);
+      final withNestedConst = LogicStructure([
+        Logic(),
+        LogicStructure([Logic(), Const(1)]),
+      ]);
+
+      expect(withoutConsts.hasConsts, isFalse);
+      expect(withDirectConst.hasConsts, isTrue);
+      expect(withNestedConst.hasConsts, isTrue);
     });
 
     test('sub logic in two structures throws exception', () {
@@ -235,7 +248,7 @@ void main() {
       expect(orig.clone(name: 'newName').name, 'newName');
     });
 
-    test('tricky withSet', () async {
+    test('tricky withSet', () {
       // first field has width of 72 so this is the starting point
       // second field has a width of 12
       // try a withSet of a subset of the second field

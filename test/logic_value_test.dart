@@ -2144,6 +2144,21 @@ void main() {
       }
     });
 
+    for (final separator in ['', ']', r'\', '[', '^', '.', '-']) {
+      test('radixString literal separator "$separator" round trip', () {
+        final known = LogicValue.ofInt(0x1234abcd, 40);
+        final fourState = LogicValue.ofString('10xz1010zz01');
+        for (final radix in [2, 4, 8, 10, 16]) {
+          for (final value in [known, if (radix != 10) fourState]) {
+            final encoded = value.toRadixString(
+                radix: radix, leadingZeros: true, sepChar: separator);
+            expect(
+                LogicValue.ofRadixString(encoded, sepChar: separator), value);
+          }
+        }
+      });
+    }
+
     test('radixString space separators', () {
       final lv = LogicValue.ofRadixString("10'b10 0010 0111", sepChar: ' ');
       expect(lv.toInt(), equals(551));

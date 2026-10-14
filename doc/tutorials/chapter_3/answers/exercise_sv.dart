@@ -1,3 +1,12 @@
+// Copyright (C) 2023-2026 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// exercise_sv.dart
+// Chapter 3 SystemVerilog exercise answer.
+//
+// 2023 March 30
+// Author: Yao Jing Quek <yao.jing.quek@intel.com>
+
 import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
 import 'helper.dart';
@@ -32,10 +41,10 @@ void main() async {
   final fSub = FullSubtractor(a, b, borrowIn);
   await fSub.build();
 
-  // ignore: avoid_print
-  print(fSub.generateSynth());
+  // ignore: avoid_print - tutorial
+  print(fSub.dumpSystemVerilog());
 
-  test('should return 0 when a and b equal 1', () async {
+  test('should return 0 when a and b equal 1', () {
     a.put(1);
     b.put(1);
     borrowIn.put(0);
@@ -43,7 +52,7 @@ void main() async {
     expect(fSub.diff.value.toInt(), equals(0));
   });
 
-  test('should return true if results matched truth table', () async {
+  test('should return true if results matched truth table', () {
     for (var i = 0; i <= 1; i++) {
       for (var j = 0; j <= 1; j++) {
         for (var k = 0; k <= 1; k++) {

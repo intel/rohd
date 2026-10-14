@@ -7,7 +7,7 @@
 // 2026 January
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 const _fontFallback = <String>['Noto Color Emoji'];
 

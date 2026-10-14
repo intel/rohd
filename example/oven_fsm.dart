@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2024 Intel Corporation
+// Copyright (C) 2023-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // oven_fsm.dart
@@ -7,7 +7,7 @@
 // 2023 February 13
 // Author: Yao Jing Quek <yao.jing.quek@intel.com>
 
-// ignore_for_file: avoid_print
+// ignore_for_file: avoid_print - example
 
 // Import the ROHD package.
 import 'dart:async';
@@ -15,38 +15,20 @@ import 'dart:async';
 import 'package:rohd/rohd.dart';
 
 // Import the counter module implement in example.dart.
-import './example.dart';
+import 'example.dart';
 
 // Enumerated type named `OvenState` with four possible states:
 // `standby`, `cooking`,`paused`, and `completed`.
 enum OvenState { standby, cooking, paused, completed }
 
-// One-hot encoded `Button` using dart enhanced enums.
-// Represent start, pause, and resume as integer value 0, 1,
-// and 2 respectively.
-enum Button {
-  start(value: 0),
-  pause(value: 1),
-  resume(value: 2);
+enum Button { start, pause, resume }
 
-  const Button({required this.value});
+enum LedLight { yellow, blue, red, green }
 
-  final int value;
-}
-
-// One-hot encoded `LEDLight` using dart enhanced enums.
-// Represent yellow, blue, red, and green  as integer value 0, 1,
-// 2, and 3 respectively.
-enum LEDLight {
-  yellow(value: 0),
-  blue(value: 1),
-  red(value: 2),
-  green(value: 3);
-
-  const LEDLight({required this.value});
-
-  final int value;
-}
+/// Assigns one bit per enum member, starting at bit zero in [values] order.
+Map<T, BigInt> oneHotMapping<T extends Enum>(List<T> values) => {
+      for (final (index, value) in values.indexed) value: BigInt.one << index,
+    };
 
 // Define a class OvenModule that extends ROHD's abstract Module class.
 class OvenModule extends Module {
@@ -57,17 +39,19 @@ class OvenModule extends Module {
   late FiniteStateMachine<OvenState> _oven;
 
   // We can expose an LED light output as a getter to retrieve it value.
-  Logic get led => output('led');
+  LogicEnum<LedLight> get led => output('led') as LogicEnum<LedLight>;
 
   // This oven module receives a `button` and a `reset` input from runtime.
-  OvenModule(Logic button, Logic reset, Logic clk) : super(name: 'OvenModule') {
+  OvenModule(LogicEnum<Button> button, Logic reset, Logic clk)
+      : super(name: 'OvenModule') {
     // Register inputs and outputs of the module in the constructor.
     // Module logic must consume registered inputs and output to registered
     // outputs. `led` output also added as the output port.
-    button = addInput('button', button, width: button.width);
+    button = addTypedInput('button', button);
     reset = addInput('reset', reset);
     clk = addInput('clk', clk);
-    final led = addOutput('led', width: button.width);
+    final led = addTypedOutput(
+        'led', LogicEnum.withMapping(oneHotMapping(LedLight.values)).clone);
 
     // Register local signals, `counterReset` and `en`
     // for Counter module.
@@ -91,17 +75,14 @@ class OvenModule extends Module {
           // When the button `start` is pressed during standby state,
           // OvenState will changed to `OvenState.cooking` state.
           events: {
-            Logic(name: 'button_start')
-                  ..gets(button
-                      .eq(Const(Button.start.value, width: button.width))):
-                OvenState.cooking,
+            button.eq(Button.start): OvenState.cooking,
           },
           // actions:
           // During the standby state, `led` is change to blue; timer's
           // `counterReset` is set to 1 (Reset the timer);
           // timer's `en` is set to 0 (Disable value update).
           actions: [
-            led < LEDLight.blue.value,
+            led < LedLight.blue,
             counterReset < 1,
             en < 0,
           ]),
@@ -115,11 +96,8 @@ class OvenModule extends Module {
           // When the button `counter` time is elapsed during cooking state,
           // OvenState will changed to `OvenState.completed` state.
           events: {
-            Logic(name: 'button_pause')
-                  ..gets(button
-                      .eq(Const(Button.pause.value, width: button.width))):
-                OvenState.paused,
-            Logic(name: 'counter_time_complete')..gets(counter.val.eq(4)):
+            button.eq(Button.pause): OvenState.paused,
+            counter.val.eq(4).named('counter_time_complete'):
                 OvenState.completed
           },
           // actions:
@@ -127,7 +105,7 @@ class OvenModule extends Module {
           // `counterReset` is set to 0 (Do not reset);
           // timer's `en` is set to 1 (Enable value update).
           actions: [
-            led < LEDLight.yellow.value,
+            led < LedLight.yellow,
             counterReset < 0,
             en < 1,
           ]),
@@ -138,17 +116,14 @@ class OvenModule extends Module {
           // When the button `resume` is pressed during paused state,
           // OvenState will changed to `OvenState.cooking` state.
           events: {
-            Logic(name: 'button_resume')
-                  ..gets(button
-                      .eq(Const(Button.resume.value, width: button.width))):
-                OvenState.cooking
+            button.eq(Button.resume): OvenState.cooking
           },
           // actions:
           // During the paused state, `led` is change to red; timer's
           // `counterReset` is set to 0 (Do not reset);
           // timer's `en` is set to 0 (Disable value update).
           actions: [
-            led < LEDLight.red.value,
+            led < LedLight.red,
             counterReset < 0,
             en < 0,
           ]),
@@ -159,17 +134,14 @@ class OvenModule extends Module {
           // When the button `start` is pressed during completed state,
           // OvenState will changed to `OvenState.cooking` state.
           events: {
-            Logic(name: 'button_start')
-                  ..gets(button
-                      .eq(Const(Button.start.value, width: button.width))):
-                OvenState.cooking
+            button.eq(Button.start): OvenState.cooking
           },
           // actions:
           // During the start state, `led` is change to green; timer's
           // `counterReset` is set to 1 (Reset value);
           // timer's `en` is set to 0 (Disable value update).
           actions: [
-            led < LEDLight.green.value,
+            led < LedLight.green,
             counterReset < 1,
             en < 0,
           ])
@@ -195,8 +167,8 @@ Future<void> main({bool noPrint = false}) async {
   // Signals `button` and `reset` that mimic user's behaviour of button pressed
   // and reset.
   //
-  // Width of button is 2 because button is represented by a 2-bit signal.
-  final button = Logic(name: 'button', width: 2);
+  // LogicEnum infers a 2-bit width for the three button values.
+  final button = LogicEnum(Button.values, name: 'button');
   final reset = Logic(name: 'reset');
 
   // A clock generator.
@@ -225,7 +197,7 @@ Future<void> main({bool noPrint = false}) async {
 
   // Attach a waveform dumper so we can see what happens.
   if (!noPrint) {
-    WaveDumper(oven, outputPath: 'oven.vcd');
+    oven.dumpWaves(outputPath: 'oven.vcd');
   }
 
   // Kick off the simulation.
@@ -238,16 +210,15 @@ Future<void> main({bool noPrint = false}) async {
 
   if (!noPrint) {
     // We can listen to the streams on LED light changes based on time.
-    oven.led.changed.listen((event) {
-      // Get the led light enum name from LogicValue.
-      final ledVal = LEDLight.values[event.newValue.toInt()].name;
+    oven.led.changed.listen((_) {
+      final ledVal = oven.led.valueEnum.name;
 
       // Print the Simulator time when the LED light changes.
       print('@t=${Simulator.time}, LED changed to: $ledVal');
     });
 
-    button.changed.listen((event) {
-      final buttonVal = Button.values[event.newValue.toInt()].name;
+    button.changed.listen((_) {
+      final buttonVal = button.valueEnum.name;
       print('@t=${Simulator.time}, Button changed to: $buttonVal');
     });
   }
@@ -258,17 +229,17 @@ Future<void> main({bool noPrint = false}) async {
   reset.inject(0);
 
   // Press button start => `00`
-  button.inject(Button.start.value);
+  button.inject(Button.start);
 
   await waitCycles(clk, 3);
 
   // Press button pause => `01`
-  button.inject(Button.pause.value);
+  button.inject(Button.pause);
 
   await waitCycles(clk, 3);
 
   // Press button resume => `10`
-  button.inject(Button.resume.value);
+  button.inject(Button.resume);
 
   await waitCycles(clk, 8);
 

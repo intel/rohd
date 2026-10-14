@@ -10,7 +10,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/ui/platform_icon.dart';
 
 /// Describes a single VM service discovered via DTD.
@@ -63,8 +63,8 @@ class DiscoveredVmService with Diagnosticable {
       ..add(StringProperty('name', name))
       ..add(StringProperty('uri', uri))
       ..add(StringProperty('exposedUri', exposedUri))
-      ..add(FlagProperty('isAlive', value: isAlive))
-      ..add(FlagProperty('autoReconnect', value: autoReconnect))
+      ..add(DiagnosticsProperty<bool>('isAlive', isAlive))
+      ..add(DiagnosticsProperty<bool>('autoReconnect', autoReconnect))
       ..add(StringProperty('connectionUri', connectionUri))
       ..add(StringProperty('displayLabel', displayLabel));
   }
@@ -185,8 +185,8 @@ class VmConnectionForm extends StatefulWidget {
           ifNull: 'disabled',
         ),
       )
-      ..add(FlagProperty('showDemoButton', value: showDemoButton))
-      ..add(FlagProperty('hasColorEmoji', value: hasColorEmoji))
+      ..add(DiagnosticsProperty<bool>('showDemoButton', showDemoButton))
+      ..add(DiagnosticsProperty<bool>('hasColorEmoji', hasColorEmoji))
       ..add(
         DiagnosticsProperty<String Function(String)>(
           'cleanVmServiceUri',
