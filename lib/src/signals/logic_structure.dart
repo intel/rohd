@@ -40,6 +40,14 @@ void _validateMatchingStructure(
           '$operation array operands differ in shape at $path.',
         );
       }
+      if (first is TypedLogicArray &&
+          second is TypedLogicArray &&
+          !identical(first.valueCodec, second.valueCodec)) {
+        throw LogicConstructionException(
+          '$operation typed-array operands use different value codecs at '
+          '$path. Convert through packed to reinterpret their bits explicitly.',
+        );
+      }
     }
 
     for (var index = 0; index < first.elements.length; index++) {
@@ -56,8 +64,9 @@ void _validateMatchingStructure(
 /// Verifies that [first] and [second] have identical recursive structure.
 ///
 /// Compatibility requires matching concrete structure types, element counts,
-/// leaf widths, and array geometry. Field names may differ because separately
-/// constructed instances of one structure type can use different root names.
+/// leaf widths, array geometry, and typed-array codec identity. Field names
+/// may differ because separately constructed instances of one structure type
+/// can use different root names.
 ///
 /// Throws a [LogicConstructionException] when the structures do not match.
 void validateMatchingLogicStructure(
