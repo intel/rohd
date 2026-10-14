@@ -177,7 +177,9 @@ Read more about SUS here: <https://sus-lang.org/>.
 DFHDL is an embedded Scala hardware description framework. It supports dataflow, register-transfer, and event-driven levels of abstraction, with dataflow firing rules intended to enable timing- and device-agnostic descriptions.
 
 - DFHDL and ROHD both gain metaprogramming and abstraction capabilities by embedding hardware construction in a general-purpose language.
-- DFHDL emphasizes multiple hardware abstraction domains and dataflow semantics. ROHD emphasizes explicit structural construction, a built-in simulator, and structurally similar SystemVerilog generation using the Dart ecosystem.
+- DFHDL's dataflow domain lets the compiler derive registers and timing from firing rules, which can make some designs more portable across devices and clock targets. ROHD keeps registers and cycle boundaries explicit.
+- DFHDL generates Verilog/SystemVerilog or VHDL across several dialects and drives external tools for linting, simulation (for example Verilator, Icarus Verilog, GHDL, or NVC), and FPGA build and programming. It does not include its own simulator, while ROHD's built-in simulator runs testbenches directly in Dart.
+- DFHDL uses Scala 3 with a compiler plugin, so the Scala/JVM toolchain trade-offs discussed for Chisel also apply.
 
 Read more about DFHDL here: <https://dfianthdl.github.io/>.
 
@@ -194,8 +196,10 @@ Read more about Bluespec here: <https://github.com/B-Lang-org/bsc>.
 
 Clash is a functional hardware description language based on Haskell's syntax and semantics. It uses strong types, higher-order functions, and streams of values to describe hardware, and it generates synthesizable VHDL, Verilog, or SystemVerilog. It also provides an interactive REPL for testing components.
 
-- Clash is especially attractive for functional, strongly typed, and highly parametric circuit descriptions.
-- ROHD uses Dart's imperative and object-oriented styles, executes Dart to construct the hardware model at generation time, and includes a four-state event-driven simulator. The choice often comes down to the preferred programming model and ecosystem.
+- Clash is especially attractive for functional, strongly typed, and highly parametric circuit descriptions. Its type system can check properties such as vector lengths and clock-domain compatibility at compile time.
+- Clash designs are Haskell functions over streams of values, so they can be simulated directly in Haskell or the REPL with functions such as `simulate` and `sample`. This simulation is cycle-based and targets synchronous designs. Clash can also generate HDL testbenches for external simulators. ROHD's built-in simulator is event-driven and four-state, and its `async`/`await` testbenches can interact with the design at arbitrary times.
+- Clash generates HDL by compiling Haskell, not by translating an explicit object model. Module boundaries follow Haskell functions that are not inlined, and designers commonly use annotations such as `NOINLINE` and `Synthesize` to control hierarchy and port names. Internal signals often carry compiler-generated names derived from Haskell binders, so the output can be harder to relate to the source than ROHD's structurally similar SystemVerilog.
+- Haskell's purely functional style, type-level programming, and laziness are unfamiliar to most hardware engineers. ROHD uses Dart's imperative and object-oriented styles, and Dart code that constructs hardware runs as ordinary software.
 
 Earlier Haskell-embedded hardware description projects such as Lava helped establish this style; Clash is the more actively maintained comparison today.
 
