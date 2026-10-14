@@ -122,6 +122,9 @@ representations.
 
 `valueCodec` is optional only when `TValue` is `LogicValue`. A custom codec
 should decode every four-state value that can appear in its hardware.
+Type-preserving operations require compatible arrays to use the identical
+`valueCodec` instance; reuse a shared codec instance or pass `packed`
+explicitly when intentionally reinterpreting the bits with a different codec.
 `dimensionNames` controls child naming during construction and cloning; it is
 not public axis metadata. See the
 [`TypedLogicArray` API documentation](https://intel.github.io/rohd/rohd/TypedLogicArray-class.html)
@@ -236,7 +239,7 @@ final selected = Mux(select, samplesA, samplesB).out;
 final delayed = FlipFlop(clk, selected, reset: reset).q;
 final forwarded = Passthrough(delayed).out;
 
-final bottomRightData = forwarded.elementAt([1, 2]).data;
+final bottomRightData = forwarded.at([1, 2]).data;
 ```
 
 The mux inputs must have matching concrete array types and geometry, including

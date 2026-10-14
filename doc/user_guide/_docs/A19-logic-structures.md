@@ -26,9 +26,10 @@ their operands establish a compatible output representation:
 final selected = Mux(select, packet1, packet0).out;
 final registered = FlipFlop(clk, selected, reset: reset).q;
 final forwarded = Passthrough(registered).out;
+final observedValid = forwarded.valid;
 
 // All three values have type Packet.
-forwarded.valid <= selected.valid;
+assert(observedValid.width == 1);
 ```
 
 The same behavior applies to `LogicArray` and `TypedLogicArray<T, V>`, including

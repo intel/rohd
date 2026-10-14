@@ -50,6 +50,11 @@ LogicEnum<_OperationEnum> _operationEnum({String? name}) =>
       name: name,
     );
 
+LogicValueCodec<int> _typedLaneCodec() => LogicValueCodec(
+      decode: (value) => value.isValid ? value.toInt() : 0,
+      encode: (value) => LogicValue.ofInt(value, 9),
+    );
+
 class _TypedPacket extends LogicStructure {
   Logic get opcode => elements[0];
   TypedLogicArray<_TypedLane, LogicValue> get lanes =>
@@ -643,6 +648,36 @@ void main() {
         () => Mux(Logic(), _TypedPacket(laneDimensions: const [2, 2]),
             _TypedPacket(laneDimensions: const [4])),
         throwsA(isA<LogicConstructionException>()));
+  });
+
+  test('typed operations require identical typed-array codecs', () {
+    final first = TypedLogicArray<_TypedLane, int>(
+      [2],
+      _TypedLane.new,
+      valueCodec: _typedLaneCodec(),
+    );
+    final second = TypedLogicArray<_TypedLane, int>(
+      [2],
+      _TypedLane.new,
+      valueCodec: _typedLaneCodec(),
+    );
+
+    expect(identical(first.valueCodec, second.valueCodec), isFalse);
+    expect(
+      () => Mux(Logic(), second, first),
+      throwsA(isA<LogicConstructionException>()),
+    );
+    expect(
+      () => cases<TypedLogicArray<_TypedLane, int>>(
+        Logic(),
+        {0: first, 1: second},
+      ),
+      throwsA(isA<LogicConstructionException>()),
+    );
+    expect(
+      Mux<Logic>(Logic(), second.packed, first.packed).out,
+      isA<Logic>(),
+    );
   });
 
   test('typed operations consume structures with constant leaves', () async {
