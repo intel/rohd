@@ -109,7 +109,9 @@ class Interface<TagType extends Enum> {
   /// to the [Module] via [Module.addInput], [Module.addOutput], or
   /// [Module.addInOut] based on [inputTags], [outputTags], and [inOutTags],
   /// respectively. [uniquify] can be used to uniquifiy port names by
-  /// manipulating the original name of the port.
+  /// manipulating the original name of the port. [groupName] records the
+  /// registered ports as one interface group. When omitted, simple prefix and
+  /// suffix transformations applied by [uniquify] are used to infer the group.
   ///
   /// If [inputTags], [outputTags], or [inOutTags] is not specified, then,
   /// respectively, no inputs, outputs, or inOuts will be added.

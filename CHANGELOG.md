@@ -1,6 +1,8 @@
 ## Next Release
 
 - Added structure-preserving typed operations for multiplexing, flip-flops, case and indexed selection, pipelines, naming, cloning, and pass-through modules. Nested `LogicArray` and `LogicArrayOf` boundaries remain available through the concrete output type while existing scalar operations retain their `Logic` APIs.
+- Added typed-structure interface registration through `Module.addInterface` and `Module.addPairInterface`, including recursive `PairInterface` hierarchies, explicit structure definition names, and opt-in `asStruct` support on the legacy `addInterfacePorts` and `addPairInterfacePorts` APIs.
+- **Breaking:** `Interface.connectIO` has a new optional named `groupName` argument for recording individual-port interface groups. Overrides of `connectIO` must accept and forward the new argument.
 - Added the `ModuleService` API for module-scoped generation, capture, and inspection services. `ModuleServices` registers and looks up services for a built module hierarchy, and `hierarchyJson` exposes its hierarchy as JSON.
 - Added `ArtifactProducingService` and `ModuleServiceArtifact` for transport-neutral output. Artifact-producing services default `outputDirectory` to the current directory and `outputBaseName` to the module definition name, and expose named, media-typed byte streams without requiring filesystem output.
 - Added `SystemVerilogService` for configured SystemVerilog synthesis, in-memory source output, artifact inspection, and explicit directory writes.
