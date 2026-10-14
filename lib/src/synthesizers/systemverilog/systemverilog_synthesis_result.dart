@@ -111,7 +111,7 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
     super.getInstanceTypeOfModule, {
     this.configuration = const SystemVerilogSynthesizerConfiguration(),
     bool embedSourceTraceComments = true,
-  })  : _synthModuleDefinition = SystemVerilogSynthModuleDefinition(
+  }) : _synthModuleDefinition = SystemVerilogSynthModuleDefinition(
           module,
           generateEnums: configuration.generateEnums,
         ) {
