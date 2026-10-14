@@ -40,6 +40,7 @@ import 'package:rohd/rohd.dart';
 ///   signalFilter: (signal) => signal.name.startsWith('debug_'),
 /// );
 /// ```
+// ignore: remove_deprecations_in_breaking_versions - Introduced in 0.6.11.
 @Deprecated('Use Module.dumpWaves() for simple VCD output, or '
     'WaveformService for advanced waveform configuration.')
 class WaveDumper {
@@ -59,6 +60,7 @@ class WaveDumper {
   /// **Deprecated:** Use [Module.dumpWaves] for simple VCD output, or
   /// [WaveformService] for signal filtering, custom timescale, recording
   /// windows, and extensibility hooks for streaming applications.
+  // ignore: remove_deprecations_in_breaking_versions - Introduced in 0.6.11.
   @Deprecated('Use Module.dumpWaves() for simple VCD output, or '
       'WaveformService for advanced waveform configuration.')
   WaveDumper(Module module, {String outputPath = 'waves.vcd'})

@@ -48,12 +48,14 @@
 - **Migration:** type-preserving operations on `TypedLogicArray` operands now
   require the identical `valueCodec` instance. Reuse a shared codec or cross
   an explicit `packed` boundary to reinterpret compatible bits.
-- **Breaking:** Removed compatibility APIs deprecated before `0.7.0`. Use the canonical
-  `ExternalSystemVerilogModule`, `FiniteStateMachine`, `Sequential`,
+- **Breaking:** Removed compatibility APIs deprecated before `0.6.11`. Use the
+  canonical `ExternalSystemVerilogModule`, `FiniteStateMachine`, `Sequential`,
   `If.block`, `Logic.port`, `LogicValue` `of...` constructors, `SystemVerilog`,
   `SynthFileContents`, and instance `clone()` APIs. Apply interface port names
   at connection time with `uniquify`; use canonical operation outputs such as
-  `out` and `sum`; and access signal values through `value`.
+  `out` and `sum`; and access signal values through `value`. Compatibility APIs
+  first deprecated in `0.6.11` remain available, including `generateSynth`,
+  `WaveDumper`, `hierarchyJSON`, and `contentsByName`.
 - Added public `cloneTyped()` and `namedTyped()` conveniences for retaining a
   receiver's static type. `Const.cloneTyped()` remains a literal clone;
   `Const.namedTyped()` is rejected because a named alias must be driveable.
