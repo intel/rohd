@@ -37,6 +37,19 @@ class _ScalarDomainLogic extends Logic {
       _ScalarDomainLogic(schema: schema, name: name ?? this.name);
 }
 
+enum _OperationEnum { idle, active, done }
+
+LogicEnum<_OperationEnum> _operationEnum({String? name}) =>
+    LogicEnum<_OperationEnum>.withMapping(
+      {
+        _OperationEnum.idle: 0,
+        _OperationEnum.active: 2,
+        _OperationEnum.done: 3,
+      },
+      width: 2,
+      name: name,
+    );
+
 class _TypedPacket extends LogicStructure {
   Logic get opcode => elements[0];
   TypedLogicArray<_TypedLane, LogicValue> get lanes =>
@@ -334,6 +347,85 @@ void main() {
     expect(forwarded.value, LogicValue.ofInt(0x2, 4));
     await clk.nextPosedge;
     expect(registered.value, LogicValue.ofInt(0x2, 4));
+    await Simulator.endSimulation();
+  });
+
+  test('LogicEnum domains compose with generic operations', () async {
+    final clk = SimpleClockGenerator(10).clk;
+    final control = Logic();
+    final reset = Logic();
+    final selector = _operationEnum(name: 'selector');
+    final d0 = _operationEnum(name: 'd0');
+    final d1 = _operationEnum(name: 'd1');
+    final muxed = Mux(control, d1, d0).out;
+    final cased = cases<LogicEnum<_OperationEnum>>(
+      selector,
+      {
+        _OperationEnum.idle: d0,
+        _OperationEnum.active: d1,
+      },
+      defaultValue: d0,
+    );
+    final indexed = [d0, d1].selectIndex(control, defaultValue: d0);
+    final forwarded = Passthrough(d0).out;
+    final flipFlop = FlipFlop(
+      clk,
+      cased,
+      reset: reset,
+      resetValue: _OperationEnum.idle,
+    );
+    final registered = flipFlop.q;
+
+    expect(muxed, isA<LogicEnum<_OperationEnum>>());
+    expect(cased, isA<LogicEnum<_OperationEnum>>());
+    expect(indexed, isA<LogicEnum<_OperationEnum>>());
+    expect(forwarded, isA<LogicEnum<_OperationEnum>>());
+    expect(registered, isA<LogicEnum<_OperationEnum>>());
+    for (final result in [muxed, cased, indexed, forwarded, registered]) {
+      expect(result.mapping, d0.mapping);
+    }
+    expect(
+      () => Mux(
+        control,
+        LogicEnum<_OperationEnum>.withMapping(
+          {
+            _OperationEnum.idle: 0,
+            _OperationEnum.active: 1,
+            _OperationEnum.done: 3,
+          },
+          width: 2,
+        ),
+        d0,
+      ),
+      throwsA(isA<LogicConstructionException>()),
+    );
+    expect(
+      () => cases<LogicEnum<_OperationEnum>>(
+        selector,
+        {_OperationEnum.idle: _OperationEnum.idle},
+      ),
+      throwsA(isA<ArgumentError>()),
+    );
+
+    await flipFlop.build();
+    unawaited(Simulator.run());
+    d0.inject(_OperationEnum.idle);
+    d1.inject(_OperationEnum.done);
+    control.inject(1);
+    selector.inject(_OperationEnum.active);
+    await Simulator.tick();
+    expect(muxed.valueEnum, _OperationEnum.done);
+    expect(cased.valueEnum, _OperationEnum.done);
+    expect(indexed.valueEnum, _OperationEnum.done);
+    expect(forwarded.valueEnum, _OperationEnum.idle);
+
+    reset.inject(1);
+    await clk.nextPosedge;
+    reset.inject(0);
+    expect(registered.valueEnum, _OperationEnum.idle);
+    selector.inject(_OperationEnum.active);
+    await clk.nextPosedge;
+    expect(registered.valueEnum, _OperationEnum.done);
     await Simulator.endSimulation();
   });
 
