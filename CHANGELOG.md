@@ -1,7 +1,5 @@
 ## Next Release
 
-## 0.7.0
-
 - Fixed `LogicValue.ofRadixString` round trips with empty separators and separators containing regular-expression metacharacters (<https://github.com/intel/rohd/issues/722>).
 - Added `LogicEnum<T>` hardware signals with explicit enum encodings, mapped member assignments, driveable cloning, and SystemVerilog enum generation (<https://github.com/intel/rohd/pull/599>).
 - Netlist JSON format is now `0.1.0`, preserving enum types and encodings on retained netnames using Yosys-style attributes, including constant-driven enum uses (<https://github.com/intel/rohd/pull/599>).
@@ -15,40 +13,23 @@
 - Added `SystemVerilogService` for configured SystemVerilog synthesis, in-memory source output, artifact inspection, and explicit directory writes. Added `WaveformService` for in-memory waveform capture with optional file writing through `writeToFile`.
 - Added legacy-compatible `Module.dumpSystemVerilog` and `Module.dumpWaves` convenience methods. `dumpSystemVerilog()` returns simple in-memory output; `dumpWaves()` provides standard VCD capture as the replacement for `WaveDumper`. `WaveDumper` and `generateSynth` are deprecated in favor of these `Module` methods.
 
-### Compatibility
-
 - No source-level breaking changes to existing `LogicArray` construction or operations are intended. `LogicArray.value` and `previousValue` now return shape-carrying `LogicValueArray` instances, which remain `LogicValue` subtypes; code relying on their exact concrete runtime types may observe this behavior change (<https://github.com/intel/rohd/pull/686>).
-
-### Additions and fixes
 
 - Added `TypedLogicArray<TLogic, TValue>` for multidimensional arrays with fixed typed hardware elements and associated semantic values, including typed snapshots and ports, traversal, cloning, net support, and synthesis. Added shaped `LogicValueArray` and codec-backed `TypedLogicValueArray<TValue>` values with nested construction, packed `LogicValue` interoperability, and hardware-array assignment. Existing `LogicArray`, `LogicValueArray`, and concrete array port APIs remain available as specializations (<https://github.com/intel/rohd/pull/686>).
 - Refined the typed-array hierarchy so `LogicArray` directly specializes `TypedLogicArray<Logic, LogicValue>`, and strengthened custom `TypedLogicArray` cloning to preserve runtime types, codecs, unpacked dimensions, and constructor-only naming prefixes without exposing them as public axis metadata (<https://github.com/intel/rohd/pull/686>).
 - Expanded `TypedLogicArray` support for recursively nested typed and ordinary arrays, structures containing array fields, mixed packed/unpacked dimensions, structured net and inout ports, and recursive netlist type metadata. Fixed generated SystemVerilog for array-valued elements to use packed offsets consistent with declarations and module-port connections, avoiding invalid chained selections in Icarus and Verilator (<https://github.com/intel/rohd/pull/686>).
 - Preserved configured SystemVerilog output object types for nested arrays and added the opt-in `iverilogWorkaroundForUnpackedArrayVariables` setting for child-driven unpacked array variables that remain unknown in Icarus Verilog 12.0 (<https://github.com/intel/rohd/pull/686>).
-- Upgraded `Mux`, `FlipFlop`, `Passthrough`, `mux`, `flop`, `cases`,
-  `selectIndex`, and `selectFrom` to preserve compatible concrete `Logic`
-  subtypes, including nested `LogicArray` and `TypedLogicArray` boundaries.
-  Removed the parallel structure-only operation APIs.
-- **Migration:** plain `Const` and `LogicNet` sources no longer infer
-  driveable outputs for operations that construct hardware. Request
-  `<Logic>`, for example `flop<Logic>(clk, Const(1))`, to normalize them.
-  Use an operation `outputGenerator` (or `Passthrough.withOutput`) when an
-  explicit output representation is required, including mixed packed and
-  structured `cases` branches.
-- **Migration:** type-preserving operations on `TypedLogicArray` operands now
-  require the identical `valueCodec` instance. Reuse a shared codec or cross
-  an explicit `packed` boundary to reinterpret compatible bits.
-- **Breaking:** Removed compatibility APIs deprecated before `0.6.11`. Use the
-  canonical `ExternalSystemVerilogModule`, `FiniteStateMachine`, `Sequential`,
-  `If.block`, `Logic.port`, `LogicValue` `of...` constructors, `SystemVerilog`,
-  `SynthFileContents`, and instance `clone()` APIs. Apply interface port names
-  at connection time with `uniquify`; use canonical operation outputs such as
-  `out` and `sum`; and access signal values through `value`. Compatibility APIs
-  first deprecated in `0.6.11` remain available, including `generateSynth`,
-  `WaveDumper`, `hierarchyJSON`, and `contentsByName`.
-- Added public `cloneTyped()` and `namedTyped()` conveniences for retaining a
-  receiver's static type. `Const.cloneTyped()` remains a literal clone;
-  `Const.namedTyped()` is rejected because a named alias must be driveable.
+- Upgraded `Mux`, `FlipFlop`, `Passthrough`, `mux`, `flop`, `cases`, `selectIndex`, and `selectFrom` to preserve compatible concrete `Logic` subtypes, including nested `LogicArray` and `TypedLogicArray` boundaries. Removed the parallel structure-only operation APIs.
+- Added support for structures with constant leaves when their `clone()` implementation produces driveable fields, preserving domain-specific constant structures through generic operations.
+- Integrated `LogicEnum` with generic operations. Enum mappings are preserved through typed operation results, enum members can be used as `cases` keys, and incompatible enum mappings are rejected.
+- Added typed `ReadyValidPipeline` payload support, preserving structured, typed-array, and aggregate assignments through pipeline stages.
+- Preserved aggregate structure assignment metadata through synthesis and netlist generation.
+- Fixed SystemVerilog synthesis of internally computed packed logic assigned to packed-array outputs, retaining required intermediate declarations.
+- **Breaking:** `FiniteStateMachine`, `State`, and the deprecated `StateMachine` alias now require Dart enum state identifiers. Replace integer, string, or custom-object identifiers with enum members; update reset and transition targets accordingly. `currentState` and `nextState` are now `LogicEnum` signals (<https://github.com/intel/rohd/pull/599>).
+- **Migration:** plain `Const` and `LogicNet` sources no longer infer driveable outputs for operations that construct hardware. Request `<Logic>`, for example `flop<Logic>(clk, Const(1))`, to normalize them. Use an operation `outputGenerator` (or `Passthrough.withOutput`) when an explicit output representation is required, including mixed packed and structured `cases` branches.
+- **Migration:** type-preserving operations on `TypedLogicArray` operands now require the identical `valueCodec` instance. Reuse a shared codec or cross an explicit `packed` boundary to reinterpret compatible bits.
+- **Breaking:** Removed compatibility APIs deprecated before `0.6.11`. Use the canonical `ExternalSystemVerilogModule`, `FiniteStateMachine`, `Sequential`, `If.block`, `Logic.port`, `LogicValue` `of...` constructors, `SystemVerilog`, `SynthFileContents`, and instance `clone()` APIs. Apply interface port names at connection time with `uniquify`; use canonical operation outputs such as `out` and `sum`; and access signal values through `value`. Compatibility APIs first deprecated in `0.6.11` remain available, including `generateSynth`, `WaveDumper`, `hierarchyJSON`, and `contentsByName`.
+- Added public `cloneTyped()` and `namedTyped()` conveniences for retaining a receiver's static type. `Const.cloneTyped()` remains a literal clone; `Const.namedTyped()` is rejected because a named alias must be driveable.
 
 ## 0.6.11
 
