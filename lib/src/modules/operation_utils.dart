@@ -82,6 +82,14 @@ void validateOperationSource(
     throw PortWidthMismatchException.equalWidth(source, output);
   }
 
+  if (source is LogicEnum &&
+      output is LogicEnum &&
+      !source.isEquivalentTypeTo(output)) {
+    throw LogicConstructionException(
+      '$operation source and output use incompatible LogicEnum mappings.',
+    );
+  }
+
   if (source is LogicStructure && output is LogicStructure) {
     validateMatchingLogicStructure(source, output, operation: operation);
   } else if (source is LogicStructure && output is! LogicStructure) {
