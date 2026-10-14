@@ -35,6 +35,9 @@
   Use an operation `outputGenerator` (or `Passthrough.withOutput`) when an
   explicit output representation is required, including mixed packed and
   structured `cases` branches.
+- **Migration:** type-preserving operations on `TypedLogicArray` operands now
+  require the identical `valueCodec` instance. Reuse a shared codec or cross
+  an explicit `packed` boundary to reinterpret compatible bits.
 - **Breaking:** Removed compatibility APIs deprecated before `0.7.0`. Use the canonical
   `ExternalSystemVerilogModule`, `FiniteStateMachine`, `Sequential`,
   `If.block`, `Logic.port`, `LogicValue` `of...` constructors, `SystemVerilog`,
