@@ -11,6 +11,7 @@ import 'dart:math' show max;
 
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/signals/signals.dart';
 
 /// A [Module] which gives access to a subset range of signals of the input.
 ///
@@ -256,12 +257,31 @@ class Swizzle extends Module with InlineSystemVerilog {
   String get resultSignalName => _out;
 
   @override
+  String instantiationVerilog(
+    String instanceType,
+    String instanceName,
+    Map<String, String> ports,
+  ) {
+    final result = ports[resultSignalName];
+    final inputPorts = Map<String, String>.of(ports)..remove(resultSignalName);
+    final packedArrayAlias = _packedArrayAlias(inputPorts);
+    return packedArrayAlias == null
+        ? super.instantiationVerilog(instanceType, instanceName, ports)
+        : 'assign $result = $packedArrayAlias;';
+  }
+
+  @override
   String inlineVerilog(Map<String, String> inputs) {
     assert(
         inputs.length == _swizzleInputs.length ||
             (inputs.length == _swizzleInputs.length + 1 && isNet),
         'This swizzle has ${_swizzleInputs.length} inputs,'
         ' but saw $inputs with ${inputs.length} values.');
+
+    final packedArrayAlias = _packedArrayAlias(inputs);
+    if (packedArrayAlias != null) {
+      return packedArrayAlias;
+    }
 
     // Calculate all width descriptions upfront to determine alignment
     final validInputs =
@@ -331,6 +351,41 @@ class Swizzle extends Module with InlineSystemVerilog {
 {
 ${inputLines.join('\n')}
 }''';
+  }
+
+  /// Returns the source array for a natural-order packing of a packed 1D array.
+  String? _packedArrayAlias(Map<String, String> inputs) {
+    if (isNet || _swizzleInputs.isEmpty) {
+      return null;
+    }
+
+    final firstSource = _swizzleInputs.first.srcConnection;
+    final array = firstSource?.parentStructure;
+    if (array is! BaseLogicArray ||
+        array.dimensions.length != 1 ||
+        array.numUnpackedDimensions != 0 ||
+        array.elements.length != _swizzleInputs.length) {
+      return null;
+    }
+
+    String? arrayExpression;
+    for (var index = 0; index < _swizzleInputs.length; index++) {
+      final input = _swizzleInputs[index];
+      final source = input.srcConnection;
+      if (source?.parentStructure != array || source?.arrayIndex != index) {
+        return null;
+      }
+
+      final match = _singleBitSelectRegex.firstMatch(inputs[input.name]!);
+      if (match == null ||
+          int.parse(match.group(2)!) != index ||
+          (arrayExpression != null && match.group(1) != arrayExpression)) {
+        return null;
+      }
+      arrayExpression ??= match.group(1);
+    }
+
+    return arrayExpression;
   }
 
   /// Rewrites runs of adjacent descending single-bit selects from the same
@@ -416,7 +471,7 @@ ${inputLines.join('\n')}
     var current = logic;
     while (current?.parentStructure != null) {
       final parentStructure = current!.parentStructure!;
-      if (parentStructure is LogicArray &&
+      if (parentStructure is BaseLogicArray &&
           parentStructure.numUnpackedDimensions > 0) {
         return true;
       }

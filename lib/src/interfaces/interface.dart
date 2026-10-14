@@ -10,6 +10,9 @@
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/interfaces/interface_structure.dart';
+import 'package:rohd/src/signals/signals.dart';
+import 'package:rohd/src/utilities/sanitizer.dart';
 
 /// Represents a logical interface to a [Module].
 ///
@@ -24,6 +27,41 @@ import 'package:rohd/rohd.dart';
 /// [Interface], and also breaks the rules for [Module] input and output
 /// connectivity.
 class Interface<TagType extends Enum> {
+  final String? _definitionName;
+
+  /// Creates an interface with an optional SystemVerilog definition name.
+  ///
+  /// If omitted, the concrete runtime type name is used. Generic type
+  /// arguments are included in the default name.
+  Interface({String? definitionName}) : _definitionName = definitionName;
+
+  /// The type-oriented name used for interface-derived SystemVerilog typedefs.
+  ///
+  /// Parameterized interfaces should override this getter to include any
+  /// configuration values that affect their type, similar to
+  /// [Module.definitionName]. Struct-view synthesis reuses matching type names
+  /// and layouts, and uniquifies names when different layouts share a base.
+  String get definitionName {
+    if (_definitionName case final name?) {
+      return Sanitizer.sanitizeSV(name);
+    }
+    // Runtime type text retains generic arguments for the default type name.
+    // ignore: no_runtimetype_tostring
+    final runtimeName = runtimeType.toString();
+    final genericStart = runtimeName.indexOf('<');
+    final baseName =
+        genericStart < 0 ? runtimeName : runtimeName.substring(0, genericStart);
+    if (baseName == 'Interface' || baseName == 'PairInterface') {
+      return 'intf';
+    }
+    return Sanitizer.sanitizeSV(
+      runtimeName
+          .replaceAll(RegExp(r'[<>,\s]+'), '_')
+          .replaceAll(RegExp('_+'), '_')
+          .replaceAll(RegExp(r'^_|_$'), ''),
+    );
+  }
+
   /// Internal map from the [Interface]'s defined port name to an instance
   /// of a [Logic].
   ///
@@ -71,7 +109,9 @@ class Interface<TagType extends Enum> {
   /// to the [Module] via [Module.addInput], [Module.addOutput], or
   /// [Module.addInOut] based on [inputTags], [outputTags], and [inOutTags],
   /// respectively. [uniquify] can be used to uniquifiy port names by
-  /// manipulating the original name of the port.
+  /// manipulating the original name of the port. [groupName] records the
+  /// registered ports as one interface group. When omitted, simple prefix and
+  /// suffix transformations applied by [uniquify] are used to infer the group.
   ///
   /// If [inputTags], [outputTags], or [inOutTags] is not specified, then,
   /// respectively, no inputs, outputs, or inOuts will be added.
@@ -79,49 +119,97 @@ class Interface<TagType extends Enum> {
       {Iterable<TagType>? inputTags,
       Iterable<TagType>? outputTags,
       Iterable<TagType>? inOutTags,
-      String Function(String original)? uniquify}) {
+      String Function(String original)? uniquify,
+      String? groupName}) {
     uniquify ??= (original) => original;
+
+    // Derive the interface group name from the uniquify function.
+    // We probe with a sentinel to detect what the function adds.
+    // Supports prefix patterns (e.g. 'ace0_pcieRp_X') and suffix
+    // patterns (e.g. 'x_m', 'x_dti_a2f').
+    if (groupName == null) {
+      const sentinel = '\x00';
+      final probed = uniquify(sentinel);
+      if (probed.endsWith(sentinel)) {
+        // Prefix-based: uniquify('X') → 'prefix_X'
+        groupName = probed.substring(0, probed.length - 1);
+      } else if (probed.startsWith(sentinel)) {
+        // Suffix-based: uniquify('X') → 'X_suffix'
+        groupName = probed.substring(1);
+      }
+    }
+
+    // Helper to register the port group if we successfully extracted one.
+    void registerGroup(String portName) {
+      if (groupName != null && groupName.isNotEmpty) {
+        // Strip leading/trailing separators for a cleaner group name.
+        var trimmed = groupName;
+        if (trimmed.startsWith('_')) {
+          trimmed = trimmed.substring(1);
+        }
+        if (trimmed.endsWith('_')) {
+          trimmed = trimmed.substring(0, trimmed.length - 1);
+        }
+        if (trimmed.isNotEmpty) {
+          module.registerPortGroup(portName, trimmed);
+        }
+      }
+    }
 
     if (inputTags != null) {
       for (final port in getPorts(inputTags).values) {
+        final portName = uniquify(port.name);
         port <=
-            (port is LogicArray
-                ? module.addInputArray(
-                    uniquify(port.name),
-                    srcInterface.port(port.name),
-                    dimensions: port.dimensions,
-                    elementWidth: port.elementWidth,
-                    numUnpackedDimensions: port.numUnpackedDimensions,
-                  )
-                : module.addInput(
-                    uniquify(port.name),
-                    srcInterface.port(port.name),
-                    width: port.width,
-                  ));
+            switch (port) {
+              LogicArray() => module.addInputArray(
+                  portName,
+                  srcInterface.port(port.name),
+                  dimensions: port.dimensions,
+                  elementWidth: port.elementWidth,
+                  numUnpackedDimensions: port.numUnpackedDimensions,
+                ),
+              BaseLogicArray() => module.addTypedInput(
+                  portName,
+                  srcInterface.port(port.name) as BaseLogicArray,
+                ),
+              _ => module.addInput(
+                  portName,
+                  srcInterface.port(port.name),
+                  width: port.width,
+                ),
+            };
+        registerGroup(portName);
       }
     }
 
     if (outputTags != null) {
       for (final port in getPorts(outputTags).values) {
-        final output = (port is LogicArray
-            ? module.addOutputArray(
-                uniquify(port.name),
-                dimensions: port.dimensions,
-                elementWidth: port.elementWidth,
-                numUnpackedDimensions: port.numUnpackedDimensions,
-              )
-            : module.addOutput(
-                uniquify(port.name),
-                width: port.width,
-              ));
+        final portName = uniquify(port.name);
+        final output = switch (port) {
+          LogicArray() => module.addOutputArray(
+              portName,
+              dimensions: port.dimensions,
+              elementWidth: port.elementWidth,
+              numUnpackedDimensions: port.numUnpackedDimensions,
+            ),
+          BaseLogicArray() => module.addTypedOutput(
+              portName,
+              port.clone,
+            ),
+          _ => module.addOutput(
+              portName,
+              width: port.width,
+            ),
+        };
         output <= port;
         srcInterface.port(port.name) <= output;
+        registerGroup(portName);
       }
     }
 
     if (inOutTags != null) {
       for (final port in getPorts(inOutTags).values) {
-        if (port is LogicArray) {
+        if (port is BaseLogicArray) {
           if (!port.isNet) {
             throw PortTypeException(
                 port, 'LogicArray nets must be used for inOut array ports.');
@@ -131,22 +219,118 @@ class Interface<TagType extends Enum> {
               port, 'LogicNet must be used for inOut ports.');
         }
 
+        final portName = uniquify(port.name);
         port <=
-            (port is LogicArray
-                ? module.addInOutArray(
-                    uniquify(port.name),
-                    srcInterface.port(port.name),
-                    dimensions: port.dimensions,
-                    elementWidth: port.elementWidth,
-                    numUnpackedDimensions: port.numUnpackedDimensions,
-                  )
-                : module.addInOut(
-                    uniquify(port.name),
-                    srcInterface.port(port.name),
-                    width: port.width,
-                  ));
+            switch (port) {
+              LogicArray() => module.addInOutArray(
+                  portName,
+                  srcInterface.port(port.name),
+                  dimensions: port.dimensions,
+                  elementWidth: port.elementWidth,
+                  numUnpackedDimensions: port.numUnpackedDimensions,
+                ),
+              BaseLogicArray() => module.addTypedInOut(
+                  portName,
+                  srcInterface.port(port.name) as BaseLogicArray,
+                ),
+              _ => module.addInOut(
+                  portName,
+                  srcInterface.port(port.name),
+                  width: port.width,
+                ),
+            };
+        registerGroup(portName);
       }
     }
+  }
+
+  /// Connects this local interface through grouped typed structure ports.
+  ///
+  /// Selected inputs and outputs become `<prefix>_in` and `<prefix>_out`
+  /// [LogicStructure] ports, where the prefix is derived from [uniquify].
+  /// [definitionName] optionally overrides the type-name base for the
+  /// generated typedefs; it does not change the grouped port names.
+  /// Field order and types are preserved. InOuts remain individual ports.
+  /// Prefer [Module.addInterface] to create and register a local clone.
+  void connectIOAsStruct(
+    Module module,
+    Interface<dynamic> srcInterface, {
+    Iterable<TagType>? inputTags,
+    Iterable<TagType>? outputTags,
+    Iterable<TagType>? inOutTags,
+    String Function(String original)? uniquify,
+    String? name,
+    String? definitionName,
+  }) {
+    final rename = uniquify ?? (original) => original;
+    final prefix = name ?? _structurePrefix(uniquify);
+    final typeName = Sanitizer.sanitizeSV(
+      definitionName ?? srcInterface.definitionName,
+    );
+
+    if (inputTags != null) {
+      final entries = getPorts(inputTags).entries.toList(growable: false);
+      if (entries.isNotEmpty) {
+        final sourceStructure = InterfaceStructure(
+          [
+            for (final entry in entries)
+              srcInterface.port(entry.key).clone(name: rename(entry.key)),
+          ],
+          interfaceTypeName: '${typeName}_in',
+          name: '${prefix}_in',
+        );
+        for (var i = 0; i < entries.length; i++) {
+          sourceStructure.elements[i] <= srcInterface.port(entries[i].key);
+        }
+
+        final modulePort =
+            module.addTypedInput(sourceStructure.name, sourceStructure);
+        for (var i = 0; i < entries.length; i++) {
+          port(entries[i].key) <= modulePort.elements[i];
+        }
+      }
+    }
+
+    if (outputTags != null) {
+      final entries = getPorts(outputTags).entries.toList(growable: false);
+      if (entries.isNotEmpty) {
+        final template = InterfaceStructure(
+          [
+            for (final entry in entries)
+              port(entry.key).clone(name: rename(entry.key)),
+          ],
+          interfaceTypeName: '${typeName}_out',
+          name: '${prefix}_out',
+        );
+        final modulePort = module.addTypedOutput(template.name, template.clone);
+        for (var i = 0; i < entries.length; i++) {
+          modulePort.elements[i] <= port(entries[i].key);
+          srcInterface.port(entries[i].key) <= modulePort.elements[i];
+        }
+      }
+    }
+
+    if (inOutTags != null) {
+      connectIO(module, srcInterface, inOutTags: inOutTags, uniquify: uniquify);
+    }
+  }
+
+  static String _structurePrefix(String Function(String original)? uniquify) {
+    if (uniquify == null) {
+      return 'intf';
+    }
+    const sentinel = '\x00';
+    final probed = uniquify(sentinel);
+    final String prefix;
+    if (probed.endsWith(sentinel)) {
+      prefix = probed.substring(0, probed.length - 1);
+    } else if (probed.startsWith(sentinel)) {
+      prefix = probed.substring(1);
+    } else {
+      prefix = probed;
+    }
+    final trimmed = prefix.replaceAll(RegExp(r'^_+|_+$'), '');
+    return trimmed.isEmpty ? 'intf' : trimmed;
   }
 
   /// Returns all interface ports associated with the provided [tags] as a

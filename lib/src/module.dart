@@ -13,6 +13,7 @@ import 'dart:collection';
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/collections/traverseable_collection.dart';
+import 'package:rohd/src/signals/signals.dart';
 import 'package:rohd/src/utilities/namer.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
@@ -48,6 +49,29 @@ abstract class Module {
 
   /// An internal mapping of input names to their sources to this [Module].
   late final Map<String, Logic> _inputSources = {};
+
+  /// Maps port names to their interface group name.
+  ///
+  /// Populated during [Interface.connectIO] to record which ports were
+  /// registered together as part of the same interface.  The group name
+  /// is derived from the `uniquify` prefix applied during connection.
+  ///
+  /// This enables netlist synthesis to emit port-grouping annotations
+  /// without relying on naming heuristics.
+  final Map<String, String> _portGroups = {};
+
+  /// Returns an unmodifiable view of the port-to-interface-group mapping.
+  ///
+  /// Keys are port names; values are the interface group name shared by
+  /// all ports registered in the same [Interface.connectIO] call.
+  Map<String, String> get portGroups => UnmodifiableMapView(_portGroups);
+
+  /// Registers [portName] as belonging to interface group [groupName].
+  ///
+  /// Called by [Interface.connectIO] during port registration.
+  void registerPortGroup(String portName, String groupName) {
+    _portGroups[portName] = groupName;
+  }
 
   // ─── Central naming (Namer) ─────────────────────────────────────
 
@@ -391,26 +415,6 @@ abstract class Module {
     await module.build();
   }
 
-  /// Makes a signal name "unpreferred" when considering between multiple
-  /// possible signal names.
-  ///
-  /// When logic is synthesized out (e.g. to SystemVerilog), there are cases
-  /// where two signals might be logically equivalent (e.g. directly connected
-  /// to each other).  In those scenarios, one of the two signals is collapsed
-  /// into the other.  If one of the two signals is "unpreferred", it will
-  /// choose the other one for the final signal name.  Marking signals as
-  /// "unpreferred" can have the effect of making generated output easier to
-  /// read.
-  @Deprecated('Use `Naming.unpreferredName` or `Logic.naming` instead.')
-  @protected
-  static String unpreferredName(String name) => Naming.unpreferredName(name);
-
-  /// Returns true iff the signal name is "unpreferred".
-  ///
-  /// See documentation for [unpreferredName] for more details.
-  @Deprecated('Use `Naming.isUnpreferred` or `Logic.naming` instead.')
-  static bool isUnpreferred(String name) => Naming.isUnpreferred(name);
-
   /// Searches for [Logic]s and [Module]s within this [Module] from its inputs.
   Future<void> _traceInputForModuleContents(Logic signal,
       {bool dontAddSignal = false}) async {
@@ -710,12 +714,15 @@ abstract class Module {
   ///
   /// This is a good way to construct [input]s that have matching widths or
   /// dimensions to their [source] signal, or to make a [LogicStructure] an
-  /// [input]. You can use this on a [Logic], [LogicArray], or [LogicStructure].
+  /// [input]. You can use this on a [Logic], [LogicArray],
+  /// [TypedLogicArray], or [LogicStructure]. A [TypedLogicArray] retains both
+  /// its hardware element type and semantic value type.
   ///
   /// The [source] cannot be or contain any [LogicNet]s. If [source] is a
-  /// [Const] (or is a [LogicStructure] that includes a [Const]), the
-  /// [LogicType] must be set to [Logic], since [Const]s cannot be driven and
-  /// are not suitable as ports.
+  /// [Const], the [LogicType] must be set to [Logic], since [Const]s cannot be
+  /// driven and are not suitable as ports. A [LogicStructure] containing
+  /// [Const]s is accepted when its [Logic.clone] implementation creates a
+  /// matching structure with only driveable elements.
   ///
   /// The return value is the same as what is returned by [input] and should
   /// only be used within this [Module]. The provided [source] is accessible via
@@ -724,13 +731,26 @@ abstract class Module {
       String name, LogicType source) {
     _checkForSafePortName(name);
 
-    source = _validateType<LogicType>(source, isOutput: false, name: name);
+    final hasTypedStructuredConstants =
+        LogicType != Logic && source is LogicStructure && source.hasConsts;
+    if (!hasTypedStructuredConstants) {
+      source = _validateType<LogicType>(source, isOutput: false, name: name);
+    }
 
     if (source.isNet || (source is LogicStructure && source.hasNets)) {
       throw PortTypeException(source, 'Typed inputs cannot have nets in them.');
     }
 
-    final inPort = (source.clone(name: name) as LogicType)..gets(source);
+    final cloned = source.clone(name: name);
+    if (cloned is! LogicType) {
+      throw PortTypeException(source,
+          'The `clone` method did not preserve the requested port type.');
+    }
+    final inPort = _validateType<LogicType>(
+      cloned,
+      isOutput: true,
+      name: name,
+    )..gets(source);
 
     if (inPort.name != name) {
       throw PortTypeException.forIntendedName(name,
@@ -771,7 +791,7 @@ abstract class Module {
     _inOutDrivers.add(source);
 
     // we need to properly detect all inout sources, even for arrays
-    if (source.isArrayMember || source is LogicArray) {
+    if (source.isArrayMember || source is BaseLogicArray) {
       final sourceElems = TraverseableCollection<Logic>()..add(source);
       for (var i = 0; i < sourceElems.length; i++) {
         final sei = sourceElems[i];
@@ -781,7 +801,7 @@ abstract class Module {
           sourceElems.add(sei.parentStructure!);
         }
 
-        if (sei is LogicArray) {
+        if (sei is BaseLogicArray) {
           sourceElems.addAll(sei.elements);
         }
       }
@@ -814,7 +834,9 @@ abstract class Module {
   ///
   /// This is a good way to construct [inOut]s that have matching widths or
   /// dimensions to their [source] signal, or to make a [LogicStructure] an
-  /// [inOut]. You can use this on a [Logic], [LogicArray], or [LogicStructure].
+  /// [inOut]. You can use this on a [Logic], [LogicArray],
+  /// [TypedLogicArray], or [LogicStructure]. A [TypedLogicArray] retains both
+  /// its hardware element type and semantic value type.
   ///
   /// The [source] must be or exclusively contain [LogicNet]s. If [source] is a
   /// [Const] (or is a [LogicStructure] that includes a [Const]), the
@@ -963,7 +985,9 @@ abstract class Module {
   ///
   /// This is a good way to construct [output]s that have matching widths or
   /// dimensions to another signal, or to make a [LogicStructure] an [output].
-  /// You can use this on a [Logic], [LogicArray], or [LogicStructure].
+  /// You can use this on a [Logic], [LogicArray], [TypedLogicArray], or
+  /// [LogicStructure]. A [TypedLogicArray] retains both its hardware element
+  /// type and semantic value type.
   ///
   /// The [logicGenerator] cannot create ports that are or contain any
   /// [LogicNet]s in them. If a [Const] is generated (or included in a
@@ -1056,7 +1080,7 @@ abstract class Module {
         sourceElems.add(sei.parentStructure!);
       }
 
-      if (sei is LogicArray) {
+      if (sei is BaseLogicArray) {
         sourceElems.addAll(sei.elements);
       }
     }
@@ -1082,28 +1106,181 @@ abstract class Module {
     return inOutArr;
   }
 
-  /// Connects the [source] to this [Module] using [Interface.connectIO] and
-  /// returns a copy of the [source] that can be used within this module.
-  InterfaceType addInterfacePorts<InterfaceType extends Interface<TagType>,
-              TagType extends Enum>(InterfaceType source,
-          {Iterable<TagType>? inputTags,
-          Iterable<TagType>? outputTags,
-          Iterable<TagType>? inOutTags,
-          String Function(String original)? uniquify}) =>
-      (source.clone() as InterfaceType)
-        ..connectIO(this, source,
-            inputTags: inputTags,
-            outputTags: outputTags,
-            inOutTags: inOutTags,
-            uniquify: uniquify);
+  /// Registers [source] on this [Module] and returns its internal clone.
+  ///
+  /// Module logic must use the returned clone rather than [source].
+  /// By default, inputs and outputs are grouped into typed [LogicStructure]
+  /// ports. Set [asStruct] to `false` to register individual ports through
+  /// [Interface.connectIO]. InOuts retain their individual port declarations.
+  /// When [asStruct] is `true`, [definitionName] optionally overrides the
+  /// typedef base independently of the grouped port [name]. The override is
+  /// ignored when [asStruct] is `false`.
+  InterfaceType addInterface<InterfaceType extends Interface<TagType>,
+          TagType extends Enum>(
+    InterfaceType source, {
+    Iterable<TagType>? inputTags,
+    Iterable<TagType>? outputTags,
+    Iterable<TagType>? inOutTags,
+    String Function(String original)? uniquify,
+    String? name,
+    String? definitionName,
+    bool asStruct = true,
+  }) =>
+      addInterfaceFrom(
+        source.clone() as InterfaceType,
+        source,
+        inputTags: inputTags,
+        outputTags: outputTags,
+        inOutTags: inOutTags,
+        uniquify: uniquify,
+        name: name,
+        definitionName: definitionName,
+        asStruct: asStruct,
+      );
 
-  /// Connects the [source] to this [Module] using [PairInterface.pairConnectIO]
-  /// and returns a copy of the [source] that can be used within this module.
+  /// Registers a deliberately constructed local [target] against [source].
+  ///
+  /// Prefer [addInterface] when both interfaces have the same concrete type.
+  /// This form supports intentional type adaptation and returns [target]
+  /// without cloning it. Structured registration is the default.
+  /// [definitionName] optionally overrides the typedef base; it does not
+  /// rename the grouped port and is ignored when [asStruct] is `false`.
+  InterfaceType addInterfaceFrom<InterfaceType extends Interface<TagType>,
+      TagType extends Enum>(
+    InterfaceType target,
+    Interface<TagType> source, {
+    Iterable<TagType>? inputTags,
+    Iterable<TagType>? outputTags,
+    Iterable<TagType>? inOutTags,
+    String Function(String original)? uniquify,
+    String? name,
+    String? definitionName,
+    bool asStruct = true,
+  }) {
+    if (asStruct) {
+      target.connectIOAsStruct(
+        this,
+        source,
+        inputTags: inputTags,
+        outputTags: outputTags,
+        inOutTags: inOutTags,
+        uniquify: uniquify,
+        name: name,
+        definitionName: definitionName,
+      );
+    } else {
+      target.connectIO(
+        this,
+        source,
+        inputTags: inputTags,
+        outputTags: outputTags,
+        inOutTags: inOutTags,
+        uniquify: uniquify,
+      );
+    }
+    return target;
+  }
+
+  /// Registers [source] with the legacy interface-port API.
+  ///
+  /// Unlike [addInterface], this defaults to individual ports. Set [asStruct]
+  /// to `true` to group inputs and outputs into typed [LogicStructure] ports.
+  /// [definitionName] only applies to this structured form.
+  InterfaceType addInterfacePorts<InterfaceType extends Interface<TagType>,
+          TagType extends Enum>(
+    InterfaceType source, {
+    Iterable<TagType>? inputTags,
+    Iterable<TagType>? outputTags,
+    Iterable<TagType>? inOutTags,
+    String Function(String original)? uniquify,
+    String? name,
+    String? definitionName,
+    bool asStruct = false,
+  }) =>
+      addInterface(
+        source,
+        inputTags: inputTags,
+        outputTags: outputTags,
+        inOutTags: inOutTags,
+        uniquify: uniquify,
+        name: name,
+        definitionName: definitionName,
+        asStruct: asStruct,
+      );
+
+  /// Registers [source] for [role] and returns its internal clone.
+  ///
+  /// Structured registration is the default and preserves the current
+  /// [PairInterface] hierarchy and direction reversal. Set [asStruct] to
+  /// `false` to register individual ports. [definitionName] optionally
+  /// overrides the root typedef base, independently of the grouped port
+  /// [name]; nested interfaces retain their own definition names. The
+  /// override is ignored when [asStruct] is `false`.
+  InterfaceType addPairInterface<InterfaceType extends PairInterface>(
+    InterfaceType source,
+    PairRole role, {
+    String Function(String original)? uniquify,
+    String? name,
+    String? definitionName,
+    bool asStruct = true,
+  }) =>
+      addPairInterfaceFrom(
+        source.clone() as InterfaceType,
+        source,
+        role,
+        uniquify: uniquify,
+        name: name,
+        definitionName: definitionName,
+        asStruct: asStruct,
+      );
+
+  /// Registers a deliberately retyped pair [target] against [source].
+  ///
+  /// Prefer [addPairInterface] when both interfaces have the same concrete
+  /// type. This form returns [target] without cloning it and retains the
+  /// role-specific, recursive registration behavior. [definitionName]
+  /// optionally overrides the root typedef base; nested interfaces retain
+  /// their own definition names. The override is ignored when [asStruct] is
+  /// `false`.
+  InterfaceType addPairInterfaceFrom<InterfaceType extends PairInterface>(
+    InterfaceType target,
+    PairInterface source,
+    PairRole role, {
+    String Function(String original)? uniquify,
+    String? name,
+    String? definitionName,
+    bool asStruct = true,
+  }) {
+    final tags = PairInterface.tagsForRole(role);
+    return addInterfaceFrom<InterfaceType, PairDirection>(
+      target,
+      source,
+      inputTags: tags.inputTags,
+      outputTags: tags.outputTags,
+      inOutTags: tags.inOutTags,
+      uniquify: uniquify,
+      name: name,
+      definitionName: definitionName,
+      asStruct: asStruct,
+    );
+  }
+
+  /// Registers [source] with the legacy pair-interface-port API.
+  ///
+  /// Unlike [addPairInterface], this defaults to individual ports. Set
+  /// [asStruct] to `true` to preserve the hierarchy in typed structure ports.
+  /// [definitionName] only applies to this structured form.
   InterfaceType addPairInterfacePorts<InterfaceType extends PairInterface>(
           InterfaceType source, PairRole role,
-          {String Function(String original)? uniquify}) =>
-      (source.clone() as InterfaceType)
-        ..pairConnectIO(this, source, role, uniquify: uniquify);
+          {String Function(String original)? uniquify,
+          String? name,
+          String? definitionName,
+          bool asStruct = false}) =>
+      addPairInterface(source, role,
+          uniquify: uniquify,
+          name: name,
+          definitionName: definitionName,
+          asStruct: asStruct);
 
   @override
   String toString() => [

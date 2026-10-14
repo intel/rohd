@@ -11,6 +11,8 @@ import 'dart:collection';
 
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/interfaces/interface_structure.dart';
+import 'package:rohd/src/signals/signals.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 
 /// A direction for signals between a pair of components.
@@ -44,23 +46,13 @@ enum PairRole {
 /// It can be either directly used for simple scenarios, or extended for more
 /// complex situations.
 class PairInterface extends Interface<PairDirection> {
-  /// A function that can be used to modify all port names in a certain way.
-  @Deprecated(
-      'Use `uniquify` when connecting or adding sub interfaces instead.')
-  String Function(String original)? modify;
-
   /// Constructs an instance of a [PairInterface] with the specified ports.
-  ///
-  /// The [modify] function will allow modification of all port names, in
-  /// addition to the usual uniquification that can occur during [connectIO].
   PairInterface({
     List<Logic>? portsFromConsumer,
     List<Logic>? portsFromProvider,
     List<Logic>? sharedInputPorts,
     List<Logic>? commonInOutPorts,
-    @Deprecated(
-        'Use `uniquify` when connecting or adding sub interfaces instead.')
-    this.modify,
+    super.definitionName,
   }) {
     if (portsFromConsumer != null) {
       setPorts(portsFromConsumer, [PairDirection.fromConsumer]);
@@ -92,6 +84,8 @@ class PairInterface extends Interface<PairDirection> {
                         p.numUnpackedDimensions)
                     : LogicArray.port(name, p.dimensions, p.elementWidth,
                         p.numUnpackedDimensions);
+              case BaseLogicArray():
+                return p.clone();
               case LogicNet():
                 return LogicNet.port(name, p.width);
               default:
@@ -100,59 +94,18 @@ class PairInterface extends Interface<PairDirection> {
           })
           .toList(growable: false);
 
-  /// Creates a new instance of a [PairInterface] with the same ports and other
-  /// characteristics.
-  @Deprecated('Use `clone()` on an instance instead')
-  PairInterface.clone(PairInterface otherInterface)
-      : this(
-          portsFromConsumer:
-              _getMatchPorts(otherInterface, PairDirection.fromConsumer),
-          portsFromProvider:
-              _getMatchPorts(otherInterface, PairDirection.fromProvider),
-          sharedInputPorts:
-              _getMatchPorts(otherInterface, PairDirection.sharedInputs),
-          commonInOutPorts:
-              _getMatchPorts(otherInterface, PairDirection.commonInOuts),
-          modify: otherInterface.modify,
-        );
-
   /// A simplified version of [connectIO] for [PairInterface]s where by only
   /// specifying the [role], the input and output tags can be inferred.
   void pairConnectIO(
       Module module, Interface<PairDirection> srcInterface, PairRole role,
       {String Function(String original)? uniquify}) {
-    final List<PairDirection> inputTags;
-    final List<PairDirection> outputTags;
-    final inOutTags = [
-      PairDirection.commonInOuts,
-    ];
-
-    switch (role) {
-      case PairRole.consumer:
-        inputTags = [
-          PairDirection.sharedInputs,
-          PairDirection.fromProvider,
-        ];
-        outputTags = [
-          PairDirection.fromConsumer,
-        ];
-
-      case PairRole.provider:
-        inputTags = [
-          PairDirection.sharedInputs,
-          PairDirection.fromConsumer,
-        ];
-        outputTags = [
-          PairDirection.fromProvider,
-        ];
-    }
-
+    final tags = tagsForRole(role);
     connectIO(
       module,
       srcInterface,
-      inputTags: inputTags,
-      outputTags: outputTags,
-      inOutTags: inOutTags,
+      inputTags: tags.inputTags,
+      outputTags: tags.outputTags,
+      inOutTags: tags.inOutTags,
       uniquify: uniquify,
     );
   }
@@ -164,18 +117,16 @@ class PairInterface extends Interface<PairDirection> {
       {Iterable<PairDirection>? inputTags,
       Iterable<PairDirection>? outputTags,
       Iterable<PairDirection>? inOutTags,
-      String Function(String original)? uniquify}) {
+      String Function(String original)? uniquify,
+      String? groupName}) {
     final nonNullUniquify = uniquify ?? (original) => original;
-    // ignore: deprecated_member_use_from_same_package - deprecated backwards compat
-    final nonNullModify = modify ?? (original) => original;
-    String newUniquify(String original) =>
-        nonNullUniquify(nonNullModify(original));
 
     super.connectIO(module, srcInterface,
         inputTags: inputTags,
         outputTags: outputTags,
         inOutTags: inOutTags,
-        uniquify: newUniquify);
+        uniquify: nonNullUniquify,
+        groupName: groupName);
 
     if (subInterfaces.isNotEmpty) {
       if (srcInterface is! PairInterface) {
@@ -193,7 +144,7 @@ class PairInterface extends Interface<PairDirection> {
             subInterfaceEntry.value.uniquify ?? (original) => original;
 
         String newSubIntfUniquify(String original) =>
-            nonNullUniquify(nonNullSubIntfUniquify(nonNullModify(original)));
+            nonNullUniquify(nonNullSubIntfUniquify(original));
 
         if (!srcInterface._subInterfaces.containsKey(subInterfaceName)) {
           throw InterfaceTypeException(
@@ -241,10 +192,334 @@ class PairInterface extends Interface<PairDirection> {
           outputTags: subIntfOutputTags,
           inOutTags: subIntfInOutTags,
           uniquify: newSubIntfUniquify,
+          groupName: subInterfaceName,
         );
       }
     }
   }
+
+  /// Like [pairConnectIO], but groups ports by direction into
+  /// [LogicStructure] ports for struct-typed SV generation. [definitionName]
+  /// optionally overrides the root typedef base; nested interfaces retain
+  /// their own definition names.
+  void pairConnectIOAsStruct(
+      Module module, Interface<PairDirection> srcInterface, PairRole role,
+      {String Function(String original)? uniquify,
+      String? name,
+      String? definitionName,
+      String? structName}) {
+    final tags = tagsForRole(role);
+    connectIOAsStruct(
+      module,
+      srcInterface,
+      inputTags: tags.inputTags,
+      outputTags: tags.outputTags,
+      inOutTags: tags.inOutTags,
+      uniquify: uniquify,
+      name: name,
+      definitionName: definitionName,
+      structName: structName,
+    );
+  }
+
+  /// Returns the port direction tags for a module acting in [role].
+  static ({
+    List<PairDirection> inputTags,
+    List<PairDirection> outputTags,
+    List<PairDirection> inOutTags,
+  }) tagsForRole(PairRole role) => switch (role) {
+        PairRole.consumer => (
+            inputTags: [PairDirection.sharedInputs, PairDirection.fromProvider],
+            outputTags: [PairDirection.fromConsumer],
+            inOutTags: [PairDirection.commonInOuts],
+          ),
+        PairRole.provider => (
+            inputTags: [PairDirection.sharedInputs, PairDirection.fromConsumer],
+            outputTags: [PairDirection.fromProvider],
+            inOutTags: [PairDirection.commonInOuts],
+          ),
+      };
+
+  /// Builds hierarchical [InterfaceStructure] ports that mirror the
+  /// sub-interface hierarchy, grouping all input-tagged ports into a single
+  /// `_in` struct and all output-tagged ports into a single `_out` struct.
+  /// [definitionName] overrides the root typedef base, while nested
+  /// interfaces retain their own definition names.
+  @override
+  void connectIOAsStruct(
+    Module module,
+    Interface<dynamic> srcInterface, {
+    Iterable<PairDirection>? inputTags,
+    Iterable<PairDirection>? outputTags,
+    Iterable<PairDirection>? inOutTags,
+    String Function(String original)? uniquify,
+    String? name,
+    String? definitionName,
+    String? structName,
+  }) {
+    final nonNullUniquify = uniquify ?? (original) => original;
+
+    if (srcInterface is! PairInterface) {
+      throw InterfaceTypeException(
+          srcInterface, 'connectIOAsStruct requires a PairInterface source');
+    }
+
+    final structBaseName = structName ?? _deriveInterfaceTypeName(srcInterface);
+    final typeName = Sanitizer.sanitizeSV(
+      definitionName ?? structBaseName,
+    );
+
+    // Build hierarchical input + output structs from entire sub-interface tree
+    final inputMappings = <_PortMapping>[];
+    final outputMappings = <_PortMapping>[];
+    final result = _buildHierarchicalStructPair(
+      srcInterface: srcInterface,
+      inputTags: inputTags ?? const [],
+      outputTags: outputTags ?? const [],
+      structName: structBaseName,
+      definitionName: typeName,
+      inputMappings: inputMappings,
+      outputMappings: outputMappings,
+    );
+
+    // Wire hierarchical input struct
+    if (result.inputStruct != null) {
+      final srcStruct = result.inputStruct!;
+
+      // Drive fresh struct leaf elements from srcInterface ports
+      for (var i = 0; i < inputMappings.length; i++) {
+        final m = inputMappings[i];
+        srcStruct.leafElements[i] <= m.srcIntf.port(m.portName);
+      }
+
+      // Register as a single typed input on the module
+      final modulePort = module.addTypedInput(
+        name == null ? nonNullUniquify(srcStruct.name) : '${name}_in',
+        srcStruct,
+      );
+
+      // Wire this interface hierarchy's ports from the module port
+      for (var i = 0; i < inputMappings.length; i++) {
+        final m = inputMappings[i];
+        m.thisIntf.port(m.portName) <= modulePort.leafElements[i];
+      }
+    }
+
+    // Wire hierarchical output struct
+    if (result.outputStruct != null) {
+      final outTemplate = result.outputStruct!;
+
+      // Register as a single typed output on the module
+      final modulePort = module.addTypedOutput(
+        name == null ? nonNullUniquify(outTemplate.name) : '${name}_out',
+        ({name = ''}) => outTemplate.clone(
+          name: name.isEmpty ? outTemplate.name : name,
+        ),
+      );
+
+      // Drive output struct elements from this interface's ports
+      for (var i = 0; i < outputMappings.length; i++) {
+        final m = outputMappings[i];
+        modulePort.leafElements[i] <= m.thisIntf.port(m.portName);
+      }
+
+      // Wire srcInterface ports from output struct elements
+      for (var i = 0; i < outputMappings.length; i++) {
+        final m = outputMappings[i];
+        m.srcIntf.port(m.portName) <= modulePort.leafElements[i];
+      }
+    }
+
+    // InOut ports are still connected individually (can't be in packed structs)
+    if (inOutTags != null) {
+      _connectInOutsHierarchically(
+          module, srcInterface, inOutTags, nonNullUniquify);
+    }
+  }
+
+  /// Recursively builds hierarchical [InterfaceStructure]s for input and
+  /// output directions, mirroring the sub-interface hierarchy.
+  ({InterfaceStructure? inputStruct, InterfaceStructure? outputStruct})
+      _buildHierarchicalStructPair({
+    required PairInterface srcInterface,
+    required Iterable<PairDirection> inputTags,
+    required Iterable<PairDirection> outputTags,
+    required String structName,
+    required List<_PortMapping> inputMappings,
+    required List<_PortMapping> outputMappings,
+    String? definitionName,
+  }) {
+    final inputElements = <Logic>[];
+    final outputElements = <Logic>[];
+
+    // 1. Collect direct ports at this level
+    if (inputTags.isNotEmpty) {
+      for (final entry in getPorts(inputTags.toSet()).entries) {
+        final srcPort = srcInterface.port(entry.key);
+        inputElements.add(Logic(name: srcPort.name, width: srcPort.width));
+        inputMappings.add(_PortMapping(this, srcInterface, entry.key));
+      }
+    }
+
+    if (outputTags.isNotEmpty) {
+      for (final entry in getPorts(outputTags.toSet()).entries) {
+        final p = port(entry.key);
+        outputElements.add(Logic(name: p.name, width: p.width));
+        outputMappings.add(_PortMapping(this, srcInterface, entry.key));
+      }
+    }
+
+    // 2. Recurse into sub-interfaces
+    for (final subEntry in _subInterfaces.entries) {
+      final subName = subEntry.key;
+      final subIntf = subEntry.value.interface;
+
+      if (!srcInterface._subInterfaces.containsKey(subName)) {
+        throw InterfaceTypeException(
+            srcInterface, 'missing a sub-interface named $subName');
+      }
+      final srcSubIntf = srcInterface._subInterfaces[subName]!.interface;
+
+      // Compute tags for sub-interface (handle reversal)
+      final subTags =
+          _computeSubTags(inputTags, outputTags, subEntry.value.reverse);
+
+      final subResult = subIntf._buildHierarchicalStructPair(
+        srcInterface: srcSubIntf,
+        inputTags: subTags.inputTags,
+        outputTags: subTags.outputTags,
+        structName: subName,
+        inputMappings: inputMappings,
+        outputMappings: outputMappings,
+      );
+
+      if (subResult.inputStruct != null) {
+        inputElements.add(subResult.inputStruct!);
+      }
+      if (subResult.outputStruct != null) {
+        outputElements.add(subResult.outputStruct!);
+      }
+    }
+
+    // 3. Build structs (null if no matching ports at any depth)
+    final intfTypeName =
+        definitionName ?? _deriveInterfaceTypeName(srcInterface);
+
+    return (
+      inputStruct: inputElements.isEmpty
+          ? null
+          : InterfaceStructure(
+              inputElements,
+              interfaceTypeName: '${intfTypeName}_in',
+              name: '${structName}_in',
+            ),
+      outputStruct: outputElements.isEmpty
+          ? null
+          : InterfaceStructure(
+              outputElements,
+              interfaceTypeName: '${intfTypeName}_out',
+              name: '${structName}_out',
+            ),
+    );
+  }
+
+  /// Computes sub-interface input/output tags, applying direction reversal
+  /// when the sub-interface is marked as [reverse].
+  static ({List<PairDirection> inputTags, List<PairDirection> outputTags})
+      _computeSubTags(
+    Iterable<PairDirection> inputTags,
+    Iterable<PairDirection> outputTags,
+    bool reverse,
+  ) {
+    if (!reverse) {
+      return (inputTags: inputTags.toList(), outputTags: outputTags.toList());
+    }
+
+    final subInputTags = <PairDirection>[];
+    final subOutputTags = <PairDirection>[];
+
+    // fromConsumer: swap between input and output
+    if (inputTags.contains(PairDirection.fromConsumer)) {
+      subOutputTags.add(PairDirection.fromConsumer);
+    }
+    if (outputTags.contains(PairDirection.fromConsumer)) {
+      subInputTags.add(PairDirection.fromConsumer);
+    }
+
+    // fromProvider: swap between input and output
+    if (outputTags.contains(PairDirection.fromProvider)) {
+      subInputTags.add(PairDirection.fromProvider);
+    }
+    if (inputTags.contains(PairDirection.fromProvider)) {
+      subOutputTags.add(PairDirection.fromProvider);
+    }
+
+    // sharedInputs: always stays as input
+    if (inputTags.contains(PairDirection.sharedInputs)) {
+      subInputTags.add(PairDirection.sharedInputs);
+    }
+
+    return (inputTags: subInputTags, outputTags: subOutputTags);
+  }
+
+  /// Recursively connects inOut ports individually across the sub-interface
+  /// hierarchy.
+  void _connectInOutsHierarchically(
+    Module module,
+    PairInterface srcInterface,
+    Iterable<PairDirection> inOutTags,
+    String Function(String) uniquify,
+  ) {
+    // Connect this level's inOuts
+    for (final p in getPorts(inOutTags.toSet()).values) {
+      if (p is LogicArray) {
+        if (!p.isNet) {
+          throw PortTypeException(
+              p, 'LogicArray nets must be used for inOut array ports.');
+        }
+        p <=
+            module.addInOutArray(
+              uniquify(p.name),
+              srcInterface.port(p.name),
+              dimensions: p.dimensions,
+              elementWidth: p.elementWidth,
+              numUnpackedDimensions: p.numUnpackedDimensions,
+            );
+      } else if (p is LogicNet) {
+        p <=
+            module.addInOut(
+              uniquify(p.name),
+              srcInterface.port(p.name),
+              width: p.width,
+            );
+      } else {
+        throw PortTypeException(p, 'LogicNet must be used for inOut ports.');
+      }
+    }
+
+    // Recurse into sub-interfaces
+    for (final subEntry in _subInterfaces.entries) {
+      final subName = subEntry.key;
+      final subIntf = subEntry.value.interface;
+
+      if (!srcInterface._subInterfaces.containsKey(subName)) {
+        throw InterfaceTypeException(
+            srcInterface, 'missing a sub-interface named $subName');
+      }
+      final srcSubIntf = srcInterface._subInterfaces[subName]!.interface;
+
+      final subUniquify =
+          subEntry.value.uniquify ?? (String original) => original;
+      String subUq(String original) => uniquify(subUniquify(original));
+
+      subIntf._connectInOutsHierarchically(
+          module, srcSubIntf, inOutTags, subUq);
+    }
+  }
+
+  /// Derives an interface type name from the runtime type of the interface.
+  static String _deriveInterfaceTypeName(Interface<dynamic> srcInterface) =>
+      srcInterface.definitionName;
 
   /// A mapping from sub-interface names to instances of sub-interfaces.
   Map<String, PairInterface> get subInterfaces =>
@@ -413,8 +688,12 @@ class PairInterface extends Interface<PairDirection> {
 
   @override
   @mustBeOverridden
-  // ignore: deprecated_member_use_from_same_package - deprecated backwards compat
-  PairInterface clone() => PairInterface.clone(this);
+  PairInterface clone() => PairInterface(
+        portsFromConsumer: _getMatchPorts(this, PairDirection.fromConsumer),
+        portsFromProvider: _getMatchPorts(this, PairDirection.fromProvider),
+        sharedInputPorts: _getMatchPorts(this, PairDirection.sharedInputs),
+        commonInOutPorts: _getMatchPorts(this, PairDirection.commonInOuts),
+      );
 }
 
 /// An internal tracking object for sub-interfaces and characteristics useful
@@ -431,4 +710,19 @@ class _SubPairInterface<PairInterfaceType extends PairInterface> {
 
   /// Constructs a new sub-interface tracking object with characteristics.
   _SubPairInterface(this.interface, {required this.reverse, this.uniquify});
+}
+
+/// Tracks a port mapping between the local (this) and source interfaces,
+/// used for wiring hierarchical struct ports.
+class _PortMapping {
+  /// The local interface (inside the module) owning the port.
+  final PairInterface thisIntf;
+
+  /// The source interface (outside the module) owning the port.
+  final PairInterface srcIntf;
+
+  /// The port name on both interfaces.
+  final String portName;
+
+  _PortMapping(this.thisIntf, this.srcIntf, this.portName);
 }

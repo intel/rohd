@@ -9,6 +9,7 @@
 
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/signals/signals.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_cell.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_port_direction.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
@@ -92,10 +93,7 @@ abstract class NetlistUtils {
       );
     }
 
-    final parts = [
-      _rootSignalIndexInModule(module, _rootLogic(destination)),
-      ..._logicElementPathIndices(destination),
-    ];
+    final parts = _rootSignalPathInModule(module, destination);
     return parts.map((part) => part.toString()).join('_');
   }
 
@@ -107,21 +105,29 @@ abstract class NetlistUtils {
     return root;
   }
 
-  static List<int> _logicElementPathIndices(Logic destination) {
+  static List<int> _rootSignalPathInModule(
+    Module module,
+    Logic destination,
+  ) {
     final elementPath = <int>[];
     var current = destination;
-    while (current.parentStructure != null) {
+
+    while (true) {
+      final rootIndex = _rootSignalIndexInModule(module, current);
+      if (rootIndex != null) {
+        return [rootIndex, ...elementPath.reversed];
+      }
+
       final parent = current.parentStructure!;
       final index = parent.elements.indexWhere(
         (element) => identical(element, current),
       );
-      elementPath.insert(0, index < 0 ? current.arrayIndex ?? 0 : index);
+      elementPath.add(index < 0 ? current.arrayIndex ?? 0 : index);
       current = parent;
     }
-    return elementPath;
   }
 
-  static int _rootSignalIndexInModule(Module module, Logic root) {
+  static int? _rootSignalIndexInModule(Module module, Logic root) {
     final inputIndex = _identityIndex(module.inputs.values, root);
     if (inputIndex != null) {
       return inputIndex;
@@ -145,10 +151,15 @@ abstract class NetlistUtils {
           internalIndex;
     }
 
-    throw SynthException(
-      'Cannot derive a netlist cell key for ${root.name}: '
-      'the logic root is not registered with module ${module.name}.',
-    );
+    if (root.parentStructure == null) {
+      final topRoot = _rootLogic(root);
+      throw SynthException(
+        'Cannot derive a netlist cell key for ${topRoot.name}: '
+        'the logic root is not registered with module ${module.name}.',
+      );
+    }
+
+    return null;
   }
 
   static int? _identityIndex(Iterable<Logic> logics, Logic target) {
@@ -424,7 +435,7 @@ abstract class NetlistUtils {
     Logic logic, [
     List<Object>? bits,
   ]) {
-    if (logic is LogicArray) {
+    if (logic is BaseLogicArray) {
       final result = <String, Object?>{
         'width': logic.width,
         'arrayDims': logic.dimensions,
@@ -434,9 +445,9 @@ abstract class NetlistUtils {
       // include the element type metadata for recursive expansion.
       if (logic.elements.isNotEmpty) {
         final first = logic.elements.first;
-        if (first is LogicStructure && first is! LogicArray) {
+        if (first is LogicStructure && first is! BaseLogicArray) {
           result['elementType'] = buildLogicType(first);
-        } else if (first is LogicArray) {
+        } else if (first is BaseLogicArray) {
           // Nested array — encode inner dimensions via recursive call.
           result['elementType'] = buildLogicType(first);
         }
@@ -447,13 +458,13 @@ abstract class NetlistUtils {
       final fields = logic.elements.map((e) {
         final fieldBits = bits?.sublist(offset, offset + e.width);
         offset += e.width;
-        if (e is LogicStructure && e is! LogicArray) {
+        if (e is LogicStructure && e is! BaseLogicArray) {
           return <String, Object?>{
             'name': e.name,
             if (fieldBits != null) 'bits': fieldBits,
             'type': buildLogicType(e, fieldBits),
           };
-        } else if (e is LogicArray) {
+        } else if (e is BaseLogicArray) {
           return <String, Object?>{
             'name': e.name,
             'width': e.width,
@@ -483,7 +494,7 @@ abstract class NetlistUtils {
     final logics = sl.logics;
     return logics
             .whereType<LogicStructure>()
-            .where((l) => l is! LogicArray)
+            .where((l) => l is! BaseLogicArray)
             .firstOrNull ??
         logics.firstOrNull;
   }

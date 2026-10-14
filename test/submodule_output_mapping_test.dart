@@ -96,13 +96,12 @@ class CustomRetentionTop extends Module {
     required bool acceptsEmptyPortConnections,
     required bool fanout,
     required AssignmentOrder order,
-    bool legacy = false,
   }) : super(name: 'custom_retention_top') {
     final data = addInput('data', Logic(width: 3), width: 3);
-    final stage = legacy
-        ? LegacyMultiportStage(data)
-        : CustomMultiportStage(data,
-            acceptsEmptyPortConnections: acceptsEmptyPortConnections);
+    final stage = CustomMultiportStage(
+      data,
+      acceptsEmptyPortConnections: acceptsEmptyPortConnections,
+    );
     final observed = addOutput('observed', width: 2);
     assignBits(
         observed, [stage.output('result0'), stage.output('result1')], order);
@@ -110,20 +109,6 @@ class CustomRetentionTop extends Module {
       addOutput('tap') <= BitStage(stage.output('result1')).output('result');
     }
   }
-}
-
-// ignore: deprecated_member_use_from_same_package - backwards compatibility with CustomSystemVerilog
-class LegacyMultiportStage extends MultiportStage with CustomSystemVerilog {
-  LegacyMultiportStage(super.data);
-
-  @override
-  String instantiationVerilog(String instanceType, String instanceName,
-          Map<String, String> inputs, Map<String, String> outputs) =>
-      List.generate(3, (index) {
-        final output = outputs['result$index'];
-        return 'not ${instanceName}_$index('
-            '$output, ${inputs['data']}[$index]);';
-      }).join('\n');
 }
 
 List<Logic> stageOutputs(Logic data, ProducerKind kind) {
@@ -639,26 +624,21 @@ void main() {
   });
 
   group('custom output declaration retention', () {
-    for (final (legacy, acceptsEmptyPortConnections) in [
-      (false, false),
-      (false, true),
-      (true, false),
-    ]) {
+    for (final acceptsEmptyPortConnections in [false, true]) {
       for (final fanout in [false, true]) {
         for (final order in AssignmentOrder.values) {
           test(
-              'legacy=$legacy empty=$acceptsEmptyPortConnections '
+              'empty=$acceptsEmptyPortConnections '
               'fanout=$fanout ${order.name}', () async {
             final module = CustomRetentionTop(
               acceptsEmptyPortConnections: acceptsEmptyPortConnections,
               fanout: fanout,
               order: order,
-              legacy: legacy,
             );
             await module.build();
             final body = topBody(module);
             String connection(int index, String target) =>
-                legacy ? '($target, data[$index])' : '.result$index($target)';
+                '.result$index($target)';
 
             expect(body, contains(connection(0, 'observed[0]')));
             expect(body, isNot(contains('logic result0;')));

@@ -121,14 +121,10 @@ class StructModuleWithInstrumentation extends Module {
       ..isOutput
       ..changed
       ..glitch
-      // ignore: deprecated_member_use_from_same_package - deprecated but supported for now
-      ..hasValidValue()
-      // ignore: deprecated_member_use_from_same_package - deprecated but supported for now
-      ..isFloating()
-      // ignore: deprecated_member_use_from_same_package - deprecated but supported for now
-      ..valueBigInt
-      // ignore: deprecated_member_use_from_same_package - deprecated but supported for now
-      ..valueInt;
+      ..value.isValid
+      ..value.isFloating
+      ..value.toBigInt()
+      ..value.toInt();
 
     unawaited(MyStruct().nextChanged);
   }
@@ -248,11 +244,75 @@ void main() {
       expect(orig.clone(name: 'newName').name, 'newName');
     });
 
+    test('whole structure conditional assignment retains metadata', () {
+      final receiver = MyStruct(name: 'receiver');
+      final driver = MyStruct(name: 'driver');
+
+      final assignment = receiver < driver;
+
+      expect(assignment, isA<StructureConditionalGroup>());
+      final group = assignment as StructureConditionalGroup;
+      expect(group.receiver, same(receiver));
+      expect(group.driver, same(driver));
+      expect(group.conditionals, hasLength(receiver.leafElements.length));
+    });
+
+    test('flatten outer clones and connects promoted fields', () {
+      final config = LogicStructure([
+        Logic(name: 'mode', width: 2),
+        Logic(name: 'valid'),
+      ], name: 'config');
+      final control = LogicStructure([
+        Logic(name: 'enable'),
+        config,
+      ], name: 'control');
+
+      final flattened = control.flattenOuter(name: 'flatControl');
+
+      expect(flattened.name, 'flatControl');
+      expect(flattened.elements.map((element) => element.name),
+          ['enable', 'config_mode', 'config_valid']);
+      expect(flattened.elements[1].width, 2);
+      expect(
+          flattened.elements[0].srcConnections, contains(control.elements[0]));
+      expect(
+          flattened.elements[1].srcConnections, contains(config.elements[0]));
+      expect(
+          flattened.elements[2].srcConnections, contains(config.elements[1]));
+    });
+
+    test('flatten outer rejects duplicate promoted field names', () {
+      final control = LogicStructure([
+        Logic(name: 'mode'),
+        LogicStructure([
+          Logic(name: 'mode'),
+        ], name: 'config'),
+      ], name: 'control');
+
+      expect(() => control.flattenOuter(prefixFieldNames: false),
+          throwsA(isA<LogicConstructionException>()));
+    });
+
     test('tricky withSet', () {
       // first field has width of 72 so this is the starting point
       // second field has a width of 12
       // try a withSet of a subset of the second field
       MyFancyStruct().withSet(72, Logic(width: 4));
+    });
+
+    test('withSet range can be contained within a wide field', () {
+      final structure = LogicStructure([
+        Logic(name: 'wide', width: 8),
+      ])
+        ..put(LogicValue.ofString('10100101'));
+      final update = Const(1);
+
+      final updated = structure.withSet(3, update);
+
+      expect(
+        updated.value,
+        structure.value.withSet(3, update.value),
+      );
     });
   });
 

@@ -86,27 +86,3 @@ extension LogicValueSwizzle on List<LogicValue> {
   /// If you want the opposite, check out [swizzle].
   LogicValue rswizzle() => length == 1 ? first : LogicValue.ofIterable(this);
 }
-
-/// Performs a concatenation operation on the list of signals, where index 0 of
-/// [signals] is the *most* significant bit(s).
-///
-/// This is the one you should use if you're writing something like
-/// SystemVerilog's `{}` notation. If you write `swizzle([a, b, c])` you would
-/// get a single output [Logic] where the bits in `a` are the most significant
-/// (highest) bits.
-///
-/// If you want the opposite, check out [rswizzle()].
-@Deprecated('Use `List<Logic>.swizzle()` instead')
-Logic swizzle(List<Logic> signals) => signals.swizzle();
-
-/// Performs a concatenation operation on the list of signals, where index 0 of
-/// [signals] is the *least* significant bit(s).
-///
-/// This is the one you should probably use if you're trying to concatenate a
-/// generated [List] of signals. If you write `rswizzle([a, b, c])` you would
-/// get a single output [Logic] where the bits in `a` are the least significant
-/// (lowest) bits.
-///
-/// If you want the opposite, check out [swizzle()].
-@Deprecated('Use `List<Logic>.rswizzle()` instead')
-Logic rswizzle(List<Logic> signals) => signals.rswizzle();

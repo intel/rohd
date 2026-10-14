@@ -9,6 +9,7 @@
 
 import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/signals/signals.dart';
 import 'package:rohd/src/synthesizers/systemverilog/systemverilog_synth_module_definition.dart';
 import 'package:rohd/src/synthesizers/systemverilog/systemverilog_synth_sub_module_instantiation.dart';
 import 'package:rohd/src/synthesizers/utilities/synth_enum_definition.dart';
@@ -57,10 +58,6 @@ class SystemVerilogCustomDefinitionSynthesisResult extends SynthesisResult {
       other is SystemVerilogCustomDefinitionSynthesisResult &&
       (module as SystemVerilog).definitionVerilog('*PLACEHOLDER*')! ==
           (other.module as SystemVerilog).definitionVerilog('*PLACEHOLDER*')!;
-
-  @override
-  String toFileContents() => (module as SystemVerilog)
-      .definitionVerilog(getInstanceTypeOfModule(module))!;
 
   @override
   List<SynthFileContents> toSynthFileContents() => List.unmodifiable([
@@ -121,9 +118,6 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
       _parameterString.hashCode;
 
   @override
-  String toFileContents() => _toVerilog();
-
-  @override
   List<SynthFileContents> toSynthFileContents() => List.unmodifiable([
         SynthFileContents(
           name: instanceTypeName,
@@ -144,7 +138,20 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
       _synthModuleDefinition.outputs.map((sig) {
         assert(module.tryOutput(sig.name) != null,
             'Named output ${sig.name} not found in module ${module.name}.');
-        return _verilogPort('output', 'var', configuration.outputPortType, sig);
+        final useIverilogWorkaround =
+            configuration.iverilogWorkaroundForUnpackedArrayVariables &&
+                _isUnpackedArray(sig);
+        final portType = useIverilogWorkaround
+            ? SystemVerilogPortTypeConfiguration(
+                dataType: configuration.outputPortType.dataType,
+              )
+            : configuration.outputPortType;
+        return _verilogPort(
+          'output',
+          useIverilogWorkaround ? 'wire' : 'var',
+          portType,
+          sig,
+        );
       });
 
   /// Representation of all inout port declarations in generated SV.
@@ -164,15 +171,49 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
         sig.definitionName(useEnumType: false),
       ].join(' ');
 
+  /// Whether [sig] represents an array with an unpacked dimension.
+  bool _isUnpackedArray(SynthLogic sig) {
+    final array = sig.logics.whereType<BaseLogicArray>().firstOrNull;
+    return array != null && array.numUnpackedDimensions > 0;
+  }
+
+  /// Whether [sig] is driven by a submodule output.
+  bool _isDrivenBySubmoduleOutput(SynthLogic sig) {
+    final target = sig.resolved;
+    return _synthModuleDefinition.subModuleInstantiations.any(
+      (instantiation) => instantiation.outputMapping.values.any(
+        (mapped) => identical(_referenceRoot(mapped), target),
+      ),
+    );
+  }
+
+  SynthLogic _referenceRoot(SynthLogic signal) {
+    final resolved = signal.resolved;
+    return switch (resolved) {
+      SynthLogicArrayElement() => _referenceRoot(resolved.parentArray),
+      SynthLogicArrayStructureElement() => _referenceRoot(resolved.rootArray),
+      SynthLogicPackedBitReference() => _referenceRoot(resolved.packedBase),
+      SynthLogicPackedRangeReference() => _referenceRoot(resolved.packedBase),
+      _ => resolved,
+    };
+  }
+
   /// Representation of all internal net declarations in generated SV.
   String _verilogInternalSignals() {
     final declarations = <String>[];
     for (final sig in _synthModuleDefinition.internalSignals
         .where((e) => e.needsDeclaration)
         .sorted((a, b) => a.name.compareTo(b.name))) {
+      final useIverilogWorkaround =
+          configuration.iverilogWorkaroundForUnpackedArrayVariables &&
+              _isUnpackedArray(sig) &&
+              _isDrivenBySubmoduleOutput(sig);
+      final type = useIverilogWorkaround
+          ? 'wire'
+          : sig.definitionType(useEnumType: configuration.generateEnums);
+      final name = sig.definitionName(useEnumType: configuration.generateEnums);
       declarations.add(
-        '${sig.definitionType(useEnumType: configuration.generateEnums)} '
-        '${sig.definitionName(useEnumType: configuration.generateEnums)};',
+        '$type $name;',
       );
     }
     return declarations.join('\n');
@@ -181,10 +222,6 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
   /// Representation of all assignments in generated SV.
   String _verilogAssignments() {
     final assignmentLines = <String>[];
-    String rangeString(int upperIndex, int lowerIndex) =>
-        upperIndex == lowerIndex
-            ? '[$upperIndex]'
-            : '[$upperIndex:$lowerIndex]';
 
     for (final assignment in _synthModuleDefinition.assignments) {
       assert(
@@ -192,39 +229,37 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
           'Net connections should have been implemented as'
           ' bidirectional net connections.');
 
-      var dstSliceString = '';
-      var srcSliceString = '';
       final assignsWholeDestination = assignment is! PartialSynthAssignment ||
           (assignment.dstLowerIndex == 0 &&
               assignment.dstUpperIndex == assignment.dst.width - 1);
       final normalizesWholeEnumDestination =
           assignment.dst.isEnum && assignsWholeDestination;
+      var destination = assignment.dst.name;
+      var source = assignment.src.name;
       if (assignment is RangeSynthAssignment) {
         if (!normalizesWholeEnumDestination) {
-          dstSliceString = rangeString(
-            assignment.dstUpperIndex,
+          destination = assignment.dst.rangeName(
             assignment.dstLowerIndex,
+            assignment.dstUpperIndex,
           );
         }
-        if (assignment.src.isArray ||
-            assignment.src.width <= 1 ||
-            assignment.srcLowerIndex != 0 ||
-            assignment.srcUpperIndex != assignment.src.width - 1) {
-          srcSliceString = rangeString(
-            assignment.srcUpperIndex,
-            assignment.srcLowerIndex,
-          );
-        }
+        source = assignment.srcLowerIndex == 0 &&
+                assignment.srcUpperIndex == assignment.src.width - 1
+            ? assignment.src.name
+            : assignment.src.rangeName(
+                assignment.srcLowerIndex,
+                assignment.srcUpperIndex,
+              );
       } else if (assignment is PartialSynthAssignment &&
           assignment.width > 1 &&
           !normalizesWholeEnumDestination) {
-        dstSliceString = rangeString(
-          assignment.dstUpperIndex,
+        destination = assignment.dst.rangeName(
           assignment.dstLowerIndex,
+          assignment.dstUpperIndex,
         );
       }
 
-      var sourceExpression = '${assignment.src.name}$srcSliceString';
+      var sourceExpression = source;
 
       final sourceIsPackedEnumInput = assignment.src.isEnum &&
           _synthModuleDefinition.inputs.contains(assignment.src.resolved);
@@ -243,8 +278,7 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
         sourceExpression = "$enumType'($sourceExpression)";
       }
 
-      assignmentLines.add('assign ${assignment.dst.name}$dstSliceString'
-          ' = $sourceExpression;');
+      assignmentLines.add('assign $destination = $sourceExpression;');
     }
     return assignmentLines.join('\n');
   }
