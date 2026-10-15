@@ -25,14 +25,6 @@ class _SimpleWaveModule extends Module {
   }
 }
 
-class _WindowWaveModule extends Module {
-  late final Logic a;
-
-  _WindowWaveModule() {
-    a = addOutput('a');
-  }
-}
-
 class _FanoutWaveModule extends Module {
   _FanoutWaveModule(Logic a) {
     a = addInput('a', a, width: a.width);
@@ -74,33 +66,6 @@ class _LiveFstQueryWaveformService extends WaveformService {
     };
   }
 }
-
-class _HistoryWaveformService extends WaveformService {
-  final Map<Logic, List<(int, String)>> history = {};
-  final List<int> capturedTimestamps = [];
-
-  _HistoryWaveformService(super.module, {super.startTime, super.register});
-
-  @override
-  void onSignalCollected(Logic signal) {
-    history[signal] = [(Simulator.time, _binaryValue(signal))];
-  }
-
-  @override
-  void onValueChange(Logic signal, int timestamp) {
-    history[signal]!.add((timestamp, _binaryValue(signal)));
-  }
-
-  @override
-  void onTimestampCapture(int timestamp, Set<Logic> changed) {
-    capturedTimestamps.add(timestamp);
-  }
-}
-
-String _binaryValue(Logic signal) => signal.value.reversed
-    .toList()
-    .map((value) => value.toString(includeWidth: false))
-    .join();
 
 const _tempDumpDir = 'tmp_test';
 
