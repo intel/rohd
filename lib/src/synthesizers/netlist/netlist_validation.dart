@@ -59,51 +59,59 @@ class NetlistValidation {
     final issues = <NetlistValidationIssue>[];
 
     final driversByBit = _driversByBit(ports, cells);
+    final aggregateNetnamesByBit = _aggregateNetnamesByBit(netnames);
 
     for (final entry in driversByBit.entries) {
       if (!_hasConflictingDrivers(entry.value)) {
         continue;
       }
       final drivers = entry.value.map((driver) => driver.description).toList();
+      final aggregateNetnames =
+          aggregateNetnamesByBit[entry.key] ?? const <String>{};
+      final aggregateContext = aggregateNetnames.isEmpty
+          ? ''
+          : ' in aggregate net${aggregateNetnames.length == 1 ? '' : 's'} '
+              '${aggregateNetnames.map((name) => '"$name"').join(', ')}';
       issues.add(NetlistValidationIssue(
         'wire bit ${entry.key} has multiple drivers: '
-        '${drivers.join(', ')}',
+        '${drivers.join(', ')}$aggregateContext',
         wireBit: entry.key,
+        netname:
+            aggregateNetnames.length == 1 ? aggregateNetnames.single : null,
         drivers: drivers,
       ));
-    }
-
-    if (netnames != null) {
-      for (final entry in netnames.entries) {
-        final netname = entry.value;
-        if (netname is! Map<String, Object?>) {
-          continue;
-        }
-        final logicType = netname['logic_type'];
-        if (logicType is! Map ||
-            (logicType['arrayDims'] is! List && logicType['fields'] is! List)) {
-          continue;
-        }
-        final bits = (netname['bits'] as List?)?.whereType<int>() ?? const [];
-        final aggregateDrivers = <({String description, bool isTriState})>{
-          for (final bit in bits) ...driversByBit[bit] ?? const [],
-        };
-        if (aggregateDrivers.length <= 1 ||
-            aggregateDrivers.every((driver) => driver.isTriState)) {
-          continue;
-        }
-        issues.add(NetlistValidationIssue(
-          'aggregate net "${entry.key}" is reached from multiple drivers: '
-          '${aggregateDrivers.map((driver) => driver.description).join(', ')}',
-          netname: entry.key,
-          drivers: aggregateDrivers.map((driver) => driver.description),
-        ));
-      }
     }
 
     if (issues.isNotEmpty) {
       throw NetlistValidationException(moduleName, issues);
     }
+  }
+
+  static Map<int, Set<String>> _aggregateNetnamesByBit(
+    Map<String, Object?>? netnames,
+  ) {
+    final netnamesByBit = <int, Set<String>>{};
+    if (netnames == null) {
+      return netnamesByBit;
+    }
+
+    for (final entry in netnames.entries) {
+      final netname = entry.value;
+      if (netname is! Map<String, Object?>) {
+        continue;
+      }
+      final logicType = netname['logic_type'];
+      if (logicType is! Map ||
+          (logicType['arrayDims'] is! List && logicType['fields'] is! List)) {
+        continue;
+      }
+      for (final bit
+          in (netname['bits'] as List?)?.whereType<int>() ?? const <int>[]) {
+        (netnamesByBit[bit] ??= <String>{}).add(entry.key);
+      }
+    }
+
+    return netnamesByBit;
   }
 
   /// Collects the port and cell output drivers for each integer bit ID.
