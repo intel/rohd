@@ -139,6 +139,6 @@ class NetlistSynthModuleDefinition extends SynthModuleDefinition {
 
   @override
   void process() {
-    // Netlist synthesis preserves every submodule as a cell.
+    super.process();
   }
 }
