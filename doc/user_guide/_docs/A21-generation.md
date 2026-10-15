@@ -105,6 +105,15 @@ void main() async {
 
     // write it to a file
     File('myHardware.h').writeAsStringSync(generatedSc);
+
+    // Or configure artifact output and write it explicitly:
+    final systemC = SystemCService(
+        myModule,
+        register: false,
+        outputDirectory: 'build',
+        outputBaseName: 'myHardware',
+        multiFile: false);
+    systemC.writeOutputs(); // build/myHardware.sc
 }
 ```
 

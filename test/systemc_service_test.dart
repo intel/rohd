@@ -83,17 +83,18 @@ void main() {
     final top = _Top(a, b);
     await top.build();
 
-    final sc = SystemCService(top);
-
-    expect(sc.fileContents, isNotEmpty);
-    expect(sc.scFileMap['Top'], contains('Top.sc'));
-    expect(sc.scFileMap['Adder'], contains('Adder.sc'));
-    expect(sc.contentsByDefinitionName['Top'], contains('SC_MODULE(Top)'));
-    expect(sc.contentsByDefinitionName['Adder'], contains('SC_MODULE(Adder)'));
-
     final outDir = Directory.systemTemp.createTempSync('rohd_systemc_service_');
     try {
-      sc.writeFiles(outDir.path);
+      final sc = SystemCService(top, outputDirectory: outDir.path);
+
+      expect(sc.fileContents, isNotEmpty);
+      expect(sc.scFileMap['Top'], contains('Top.sc'));
+      expect(sc.scFileMap['Adder'], contains('Adder.sc'));
+      expect(sc.contentsByDefinitionName['Top'], contains('SC_MODULE(Top)'));
+      expect(
+          sc.contentsByDefinitionName['Adder'], contains('SC_MODULE(Adder)'));
+
+      sc.writeOutputs();
       expect(File('${outDir.path}/Top.sc').existsSync(), isTrue);
       expect(File('${outDir.path}/Adder.sc').existsSync(), isTrue);
     } finally {
@@ -128,14 +129,20 @@ void main() {
   );
 
   test(
-    'SystemCService write() emits a directory of .sc files by default',
+    'SystemCService writeOutputs emits configured multi-file artifacts',
     () async {
       final top = _Top(Logic(width: 8), Logic(width: 8));
       await top.build();
 
       final dir = Directory.systemTemp.createTempSync('rohd_systemc_service_');
       try {
-        SystemCService(top, register: false, outputPath: dir.path);
+        final sc = SystemCService(
+          top,
+          register: false,
+          outputDirectory: dir.path,
+        );
+        expect(dir.listSync(), isEmpty);
+        sc.writeOutputs();
         final files = dir.listSync().whereType<File>().toList();
         expect(files.any((f) => f.path.endsWith('.sc')), isTrue);
       } finally {
@@ -145,16 +152,23 @@ void main() {
   );
 
   test(
-    'SystemCService write() with multiFile false emits a single file',
+    'SystemCService writeOutputs honors output base name',
     () async {
       final top = _Top(Logic(width: 8), Logic(width: 8));
       await top.build();
 
-      final sc = SystemCService(top, register: false, multiFile: false);
       final dir = Directory.systemTemp.createTempSync('rohd_systemc_service_');
       try {
-        final path = '${dir.path}/out.cpp';
-        sc.write(path);
+        final sc = SystemCService(
+          top,
+          register: false,
+          multiFile: false,
+          outputDirectory: dir.path,
+          outputBaseName: 'out',
+        );
+        final path = '${dir.path}/out.sc';
+        expect(File(path).existsSync(), isFalse);
+        sc.writeOutputs();
         expect(File(path).readAsStringSync(), equals(sc.output));
       } finally {
         dir.deleteSync(recursive: true);

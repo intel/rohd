@@ -470,6 +470,35 @@ String invertedBit(LogicValue input, int index) {
 void main() {
   setUp(Simulator.reset);
 
+  test('supported packed output producers compile through SystemC', () async {
+    for (final producer in [
+      ProducerKind.independent,
+      ProducerKind.multiport,
+      ProducerKind.hierarchical,
+    ]) {
+      final module = OutputMappingTop(
+        width: 4,
+        producer: producer,
+        order: AssignmentOrder.batch,
+        aliasDepth: 1,
+      );
+      await module.build();
+      final vectors = [
+        for (final input in twoStateInputPatterns(4))
+          Vector({
+            'data': input
+          }, {
+            'observed': LogicValue.ofString([
+              for (var index = 0; index < 4; index++) invertedBit(input, index),
+            ].join()),
+          }),
+      ];
+
+      await SimCompare.checkVectors(module, vectors);
+      await Simulator.reset();
+    }
+  });
+
   group('independent outputs to packed parent bits', () {
     for (final producer in ProducerKind.values) {
       for (final order in AssignmentOrder.values) {

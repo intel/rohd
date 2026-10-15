@@ -127,6 +127,63 @@ class ChainedGateModule extends Module {
   }
 }
 
+class WideConditionalConstantModule extends Module {
+  static final constant = (BigInt.one << 100) + BigInt.from(3);
+
+  WideConditionalConstantModule(Logic select)
+      : super(name: 'WideConditionalConstantModule') {
+    select = addInput('select', select);
+    final q = addOutput('q', width: 128);
+    Combinational([
+      If(
+        select,
+        then: [q < Const(constant, width: 128)],
+        orElse: [q < 0],
+      ),
+    ]);
+  }
+}
+
+class IntegerPowerModule extends Module {
+  IntegerPowerModule(Logic base, Logic exponent)
+      : super(name: 'IntegerPowerModule') {
+    base = addInput('base', base, width: 64);
+    exponent = addInput('exponent', exponent, width: 64);
+    addOutput('result', width: 64) <= base.pow(exponent);
+  }
+}
+
+class ShiftBoundaryModule extends Module {
+  ShiftBoundaryModule(Logic data, Logic amount)
+      : super(name: 'ShiftBoundaryModule') {
+    data = addInput('data', data, width: 64);
+    amount = addInput('amount', amount, width: 7);
+    addOutput('left', width: 64) <= LShift(data, amount).out;
+    addOutput('right', width: 64) <= RShift(data, amount).out;
+    addOutput('arithmeticRight', width: 64) <= ARShift(data, amount).out;
+  }
+}
+
+class DivideModuloModule extends Module {
+  DivideModuloModule(Logic dividend, Logic divisor, {required int width})
+      : super(name: 'DivideModulo${width}Module') {
+    dividend = addInput('dividend', dividend, width: width);
+    divisor = addInput('divisor', divisor, width: width);
+    addOutput('quotient', width: width) <= dividend / divisor;
+    addOutput('remainder', width: width) <= dividend % divisor;
+  }
+}
+
+class CppKeywordModule extends Module {
+  CppKeywordModule(Logic autoSource, Logic autoSuffixSource)
+      : super(name: 'CppKeywordModule') {
+    final autoPort = addInput('auto', autoSource, width: 8);
+    final autoSuffixPort = addInput('auto_', autoSuffixSource, width: 8);
+    addOutput('concept', width: 8) <= autoPort;
+    addOutput('result', width: 8) <= autoSuffixPort;
+  }
+}
+
 void main() {
   tearDown(() async {
     await Simulator.reset();
@@ -148,6 +205,85 @@ void main() {
       ];
 
       SimCompare.checkSystemCVector(mod, vectors);
+    });
+
+    test('wide conditional constant retains upper bits', () async {
+      final mod = WideConditionalConstantModule(Logic());
+      await mod.build();
+
+      SimCompare.checkSystemCVector(mod, [
+        Vector({'select': 1}, {'q': WideConditionalConstantModule.constant}),
+        Vector({'select': 0}, {'q': BigInt.zero}),
+      ]);
+    });
+
+    test('integer power remains exact beyond double precision', () async {
+      final mod = IntegerPowerModule(Logic(width: 64), Logic(width: 64));
+      await mod.build();
+
+      SimCompare.checkSystemCVector(mod, [
+        Vector(
+          {'base': 3, 'exponent': 34},
+          {'result': BigInt.from(3).pow(34)},
+        ),
+      ]);
+    });
+
+    test('narrow shift count guards the data-width boundary', () async {
+      final mod = ShiftBoundaryModule(Logic(width: 64), Logic(width: 7));
+      await mod.build();
+      final highBit = BigInt.one << 63;
+      final allOnes = (BigInt.one << 64) - BigInt.one;
+
+      SimCompare.checkSystemCVector(mod, [
+        Vector(
+          {'data': 1, 'amount': 64},
+          {'left': 0, 'right': 0, 'arithmeticRight': 0},
+        ),
+        Vector(
+          {'data': 1, 'amount': 65},
+          {'left': 0, 'right': 0, 'arithmeticRight': 0},
+        ),
+        Vector(
+          {'data': highBit, 'amount': 64},
+          {'left': 0, 'right': 0, 'arithmeticRight': allOnes},
+        ),
+      ]);
+    });
+
+    test('division and modulo compile across the 64-bit boundary', () async {
+      for (final width in [64, 65]) {
+        final mod = DivideModuloModule(
+          Logic(width: width),
+          Logic(width: width),
+          width: width,
+        );
+        await mod.build();
+
+        SimCompare.checkSystemCVector(mod, [
+          Vector(
+            {'dividend': BigInt.from(15), 'divisor': BigInt.from(3)},
+            {'quotient': BigInt.from(5), 'remainder': BigInt.zero},
+          ),
+        ]);
+      }
+    });
+
+    test('C++ keyword port names are collision-safe', () async {
+      final mod = CppKeywordModule(Logic(width: 8), Logic(width: 8));
+      await mod.build();
+
+      final systemc = SystemCService(mod, register: false).output;
+      expect(systemc, contains(' auto_{"auto_"};'));
+      expect(systemc, contains(' auto__{"auto__"};'));
+      expect(systemc, contains(' concept_{"concept_"};'));
+
+      SimCompare.checkSystemCVector(mod, [
+        Vector(
+          {'auto': 0x12, 'auto_': 0x34},
+          {'concept': 0x12, 'result': 0x34},
+        ),
+      ]);
     });
 
     test('counter module passes vectors', () async {

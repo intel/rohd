@@ -345,11 +345,16 @@ class SystemCFfiCosim {
         .where((line) => !line.contains('Generation time:'))
         .join('\n');
     final contentHash = stableCode.hashCode.toUnsigned(32).toRadixString(16);
-    final uniqueName = '${module.definitionName}_$contentHash';
+    final generatedTopName = SystemCSynthesisResult.systemCIdentifier(
+      module.definitionName,
+    );
+    final uniqueName = SystemCSynthesisResult.systemCIdentifier(
+      '${module.definitionName}_$contentHash',
+    );
 
     // Rename the top-level SC_MODULE in the generated code to the unique name
     // so that different logic variants don't collide in the SystemC linker.
-    final renamedSC = generatedSC.replaceAll(module.definitionName, uniqueName);
+    final renamedSC = generatedSC.replaceAll(generatedTopName, uniqueName);
     final wrapperSrc = _generateWrapper(renamedSC, uniqueName);
 
     const dir = 'tmp_test';
@@ -764,12 +769,14 @@ class SystemCFfiCosim {
     // All input signal declarations (including clocks as sc_signal<bool>)
     for (final entry in _inputWidths.entries) {
       final type = SystemCSynthesisResult.systemCType(entry.value);
-      sb.writeln('    sc_signal<$type> ${entry.key};');
+      final identifier = SystemCSynthesisResult.systemCIdentifier(entry.key);
+      sb.writeln('    sc_signal<$type> $identifier;');
     }
     // Output signal declarations
     for (final entry in _outputWidths.entries) {
       final type = SystemCSynthesisResult.systemCType(entry.value);
-      sb.writeln('    sc_signal<$type> ${entry.key};');
+      final identifier = SystemCSynthesisResult.systemCIdentifier(entry.key);
+      sb.writeln('    sc_signal<$type> $identifier;');
     }
 
     _writeCode(sb, '''
@@ -793,7 +800,8 @@ class SystemCFfiCosim {
 
     for (final entry in _inputWidths.entries) {
       final type = SystemCSynthesisResult.systemCType(entry.value);
-      sb.writeln('        _active_ctx->${entry.key}.write($type(0));');
+      final identifier = SystemCSynthesisResult.systemCIdentifier(entry.key);
+      sb.writeln('        _active_ctx->$identifier.write($type(0));');
     }
 
     _writeCode(sb, '''
@@ -811,11 +819,13 @@ class SystemCFfiCosim {
 
     // Bind all inputs (including clocks — driven via sc_signal<bool>)
     for (final name in _inputWidths.keys) {
-      sb.writeln('    ctx->dut->$name(ctx->$name);');
+      final identifier = SystemCSynthesisResult.systemCIdentifier(name);
+      sb.writeln('    ctx->dut->$identifier(ctx->$identifier);');
     }
     // Bind outputs
     for (final name in _outputWidths.keys) {
-      sb.writeln('    ctx->dut->$name(ctx->$name);');
+      final identifier = SystemCSynthesisResult.systemCIdentifier(name);
+      sb.writeln('    ctx->dut->$identifier(ctx->$identifier);');
     }
 
     _writeCode(sb, '''
@@ -902,6 +912,7 @@ class SystemCFfiCosim {
     for (final entry in _inputWidths.entries) {
       final name = entry.key;
       final width = entry.value;
+      final identifier = SystemCSynthesisResult.systemCIdentifier(name);
 
       if (narrow && width > 64) {
         continue;
@@ -916,13 +927,15 @@ class SystemCFfiCosim {
       sb.writeln('$ifStr (strcmp(name, "$name") == 0) {');
       if (narrow) {
         final type = SystemCSynthesisResult.systemCType(width);
-        sb.writeln('        ctx->$name.write(static_cast<$type>(value));');
+        sb.writeln(
+          '        ctx->$identifier.write(static_cast<$type>(value));',
+        );
       } else {
         _writeCode(
             sb,
             '''
           sc_biguint<$width> v(hex_value);
-          ctx->$name.write(v);
+          ctx->$identifier.write(v);
         ''',
             prefix: '        ');
       }
@@ -938,6 +951,7 @@ class SystemCFfiCosim {
     for (final entry in _outputWidths.entries) {
       final name = entry.key;
       final width = entry.value;
+      final identifier = SystemCSynthesisResult.systemCIdentifier(name);
 
       if (narrow && width > 64) {
         continue;
@@ -951,12 +965,14 @@ class SystemCFfiCosim {
 
       sb.writeln('$ifStr (strcmp(name, "$name") == 0) {');
       if (narrow) {
-        sb.writeln('        return static_cast<uint64_t>(ctx->$name.read());');
+        sb.writeln(
+          '        return static_cast<uint64_t>(ctx->$identifier.read());',
+        );
       } else {
         _writeCode(
             sb,
             '''
-          sc_biguint<$width> v = ctx->$name.read();
+          sc_biguint<$width> v = ctx->$identifier.read();
           string s = v.to_string(SC_HEX_US);
           strncpy(_buf, s.c_str(), sizeof(_buf)-1);
           _buf[sizeof(_buf)-1] = 0;

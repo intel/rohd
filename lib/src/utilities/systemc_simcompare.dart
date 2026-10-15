@@ -214,7 +214,9 @@ class _SystemCSimCompare {
       return null;
     }
 
-    final topModule = moduleName ?? module.definitionName;
+    final topModule = SystemCSynthesisResult.systemCIdentifier(
+      moduleName ?? module.definitionName,
+    );
     final generatedSystemC = SystemCService(
       module,
       register: false,
@@ -294,8 +296,10 @@ int sc_main(int argc, char* argv[]) {
 
     // Clock
     for (final clkName in clockSignals) {
+      final clkIdentifier = SystemCSynthesisResult.systemCIdentifier(clkName);
       tb.writeln(
-        '    sc_clock $clkName("$clkName", ${Vector._period}, SC_NS);',
+        '    sc_clock $clkIdentifier'
+        '("$clkName", ${Vector._period}, SC_NS);',
       );
     }
 
@@ -304,25 +308,28 @@ int sc_main(int argc, char* argv[]) {
       if (clockSignals.contains(entry.key)) {
         continue;
       }
+      final identifier = SystemCSynthesisResult.systemCIdentifier(entry.key);
       tb.writeln(
         '    sc_signal<${SystemCSynthesisResult.systemCType(entry.value)}>'
-        ' ${entry.key};',
+        ' $identifier;',
       );
     }
 
     // Signals for all output ports
     for (final entry in outputPorts.entries) {
+      final identifier = SystemCSynthesisResult.systemCIdentifier(entry.key);
       tb.writeln(
         '    sc_signal<${SystemCSynthesisResult.systemCType(entry.value)}>'
-        ' ${entry.key};',
+        ' $identifier;',
       );
     }
 
     // Signals for all inout ports
     for (final entry in inOutPorts.entries) {
+      final identifier = SystemCSynthesisResult.systemCIdentifier(entry.key);
       tb.writeln(
         '    sc_signal<${SystemCSynthesisResult.systemCType(entry.value)}>'
-        ' ${entry.key};',
+        ' $identifier;',
       );
     }
 
@@ -331,18 +338,22 @@ int sc_main(int argc, char* argv[]) {
       // DUT instantiation and port binding
       ..writeln('    $topModule dut("dut");');
     for (final name in inputPorts.keys) {
-      tb.writeln('    dut.$name($name);');
+      final identifier = SystemCSynthesisResult.systemCIdentifier(name);
+      tb.writeln('    dut.$identifier($identifier);');
     }
     for (final clkName in clockSignals) {
       if (!inputPorts.containsKey(clkName)) {
-        tb.writeln('    dut.$clkName($clkName);');
+        final identifier = SystemCSynthesisResult.systemCIdentifier(clkName);
+        tb.writeln('    dut.$identifier($identifier);');
       }
     }
     for (final name in outputPorts.keys) {
-      tb.writeln('    dut.$name($name);');
+      final identifier = SystemCSynthesisResult.systemCIdentifier(name);
+      tb.writeln('    dut.$identifier($identifier);');
     }
     for (final name in inOutPorts.keys) {
-      tb.writeln('    dut.$name($name);');
+      final identifier = SystemCSynthesisResult.systemCIdentifier(name);
+      tb.writeln('    dut.$identifier($identifier);');
     }
 
     tb.write('''
@@ -363,31 +374,33 @@ int sc_main(int argc, char* argv[]) {
         inputPorts.keys.where((k) => !clockSignals.contains(k)).toList();
     for (final name in drivableInputs) {
       final w = inputPorts[name]!;
+      final identifier = SystemCSynthesisResult.systemCIdentifier(name);
       if (w >= 64) {
         // BigInt — read as hex string
         tb
           ..writeln('        { string _h; cin >> _h;')
           ..writeln('          sc_biguint<$w> _v(_h.c_str());')
-          ..writeln('          $name.write(_v); }');
+          ..writeln('          $identifier.write(_v); }');
       } else {
         tb
           ..writeln('        { uint64_t _v; cin >> _v;')
-          ..writeln('          $name.write(_v); }');
+          ..writeln('          $identifier.write(_v); }');
       }
     }
     for (final entry in inOutPorts.entries) {
       final name = entry.key;
       final w = entry.value;
+      final identifier = SystemCSynthesisResult.systemCIdentifier(name);
       tb.writeln('        { int _drive; cin >> _drive;');
       if (w >= 64) {
         tb
           ..writeln('          if (_drive) { string _h; cin >> _h;')
           ..writeln('            sc_biguint<$w> _v(_h.c_str());')
-          ..writeln('            $name.write(_v); } }');
+          ..writeln('            $identifier.write(_v); } }');
       } else {
         tb
           ..writeln('          if (_drive) { uint64_t _v; cin >> _v;')
-          ..writeln('            $name.write(_v); } }');
+          ..writeln('            $identifier.write(_v); } }');
       }
     }
 
@@ -410,6 +423,7 @@ int sc_main(int argc, char* argv[]) {
     for (final entry in checkablePorts.entries) {
       final name = entry.key;
       final w = entry.value;
+      final identifier = SystemCSynthesisResult.systemCIdentifier(name);
       final ifKey = first ? 'if' : '} else if';
       first = false;
       tb.writeln('            $ifKey (_tb_pn == "$name") {');
@@ -417,17 +431,21 @@ int sc_main(int argc, char* argv[]) {
         tb
           ..writeln('                string _h; cin >> _h;')
           ..writeln('                sc_biguint<$w> _tb_exp(_h.c_str());')
-          ..writeln('                if ($name.read() != _tb_exp) {');
+          ..writeln(
+            '                if ($identifier.read() != _tb_exp) {',
+          );
       } else {
         tb
           ..writeln('                uint64_t _tb_exp; cin >> _tb_exp;')
-          ..writeln('                if ($name.read() != _tb_exp) {');
+          ..writeln(
+            '                if ($identifier.read() != _tb_exp) {',
+          );
       }
       tb
         ..writeln(
           '                    cout << "ERROR vector " << _tb_v'
           ' << ": expected $name=" << _tb_exp'
-          ' << ", got " << $name.read() << endl;',
+          ' << ", got " << $identifier.read() << endl;',
         )
         ..writeln('                    _tb_errors++;')
         ..writeln('                }');

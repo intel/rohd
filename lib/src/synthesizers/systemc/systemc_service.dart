@@ -29,13 +29,9 @@ class SystemCService extends CodeGenService {
   /// The most recently registered [SystemCService], or `null`.
   static SystemCService? current;
 
-  /// The default location written by [write].
-  ///
-  /// A directory when [multiFile] is `true`, otherwise a single file path.
-  final String? outputPath;
-
-  /// Whether [write] emits one `.sc` file per module definition (`true`) or a
-  /// single concatenated file (`false`). Defaults to `true` for SystemC.
+  /// Whether [writeOutputs] emits one `.sc` file per module definition
+  /// (`true`) or a single concatenated file (`false`). Defaults to `true` for
+  /// SystemC.
   final bool multiFile;
 
   /// Configuration controlling unsupported SystemC functionality.
@@ -52,14 +48,11 @@ class SystemCService extends CodeGenService {
   /// Creates an [SystemCService] for [module].
   ///
   /// [module] must already be built.
-  ///
-  /// If [outputPath] is provided, output is written immediately: a directory
-  /// of per-module files when [multiFile] is `true`, otherwise the
-  /// concatenated SystemC output to that single file.
+  /// Construction does not write to the filesystem. Call [writeOutputs] to
+  /// write generated artifacts to [outputDirectory].
   SystemCService(
     Module module, {
     bool register = true,
-    this.outputPath,
     super.outputDirectory,
     super.outputBaseName,
     this.multiFile = true,
@@ -74,10 +67,6 @@ class SystemCService extends CodeGenService {
     _systemCSynthesizer = SystemCSynthesizer(configuration: configuration);
     _synthBuilder = SynthBuilder(module, _systemCSynthesizer);
     _fileContents = _synthBuilder.getSynthFileContents();
-
-    if (outputPath != null) {
-      write();
-    }
 
     if (register) {
       current = this;
@@ -172,35 +161,16 @@ class SystemCService extends CodeGenService {
   @override
   late final String output = scHeader + allContents;
 
-  /// Writes each module's SystemC source to a separate file in [directory].
-  ///
-  /// Files are named `<instanceTypeName>.sc`.
-  void writeFiles(String directory) {
-    final dir = Directory(directory)..createSync(recursive: true);
-    for (final fc in _fileContents) {
-      File('${dir.path}/${fc.name}.sc').writeAsStringSync(fc.contents);
-    }
-  }
-
-  /// Writes the SystemC output to [path], or to [outputPath] when [path] is
-  /// omitted.
-  ///
-  /// When [multiFile] is `true`, writes one `.sc` file per module definition
-  /// into the target directory (see [writeFiles]); otherwise writes the
-  /// concatenated [output] to the target file.
-  void write([String? path]) {
-    final target = path ?? outputPath;
-    if (target == null) {
-      throw ArgumentError(
-        'No output path provided: pass a path to write() or set outputPath.',
-      );
-    }
+  /// Writes this service's artifacts to [outputDirectory].
+  void writeOutputs() {
+    final directory = Directory(outputDirectory)..createSync(recursive: true);
     if (multiFile) {
-      writeFiles(target);
+      for (final fileContent in _fileContents) {
+        File('${directory.path}/${fileContent.name}.sc')
+            .writeAsStringSync(fileContent.contents);
+      }
     } else {
-      File(target)
-        ..parent.createSync(recursive: true)
-        ..writeAsStringSync(output);
+      File('${directory.path}/$outputBaseName.sc').writeAsStringSync(output);
     }
   }
 

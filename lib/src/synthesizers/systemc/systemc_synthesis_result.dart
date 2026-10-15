@@ -15,6 +15,7 @@ import 'package:rohd/src/synthesizers/systemc/systemc_synth_module_definition.da
 import 'package:rohd/src/synthesizers/systemc/systemc_synth_sub_module_instantiation.dart';
 import 'package:rohd/src/synthesizers/systemc/systemc_synthesizer_configuration.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
+import 'package:rohd/src/utilities/sanitizer.dart';
 
 /// A [SynthesisResult] representing a conversion of a [Module] to SystemC.
 @internal
@@ -197,8 +198,11 @@ class SystemCSynthesisResult extends SynthesisResult {
 
   /// Sanitize a signal/port name to be a valid C++ identifier.
   /// Replaces `[N]` with `_N_` (LogicArray element indexing).
-  static String _scName(String name) =>
-      name.replaceAllMapped(RegExp(r'\[(\d+)\]'), (m) => '_${m[1]}_');
+  static String systemCIdentifier(String name) => Sanitizer.sanitizeCpp(
+        name.replaceAllMapped(RegExp(r'\[(\d+)\]'), (m) => '_${m[1]}_'),
+      );
+
+  static String _scName(String name) => systemCIdentifier(name);
 
   /// Maps a signal width to the appropriate SystemC data type.
   static String systemCType(int width) {
@@ -648,16 +652,31 @@ class SystemCSynthesisResult extends SynthesisResult {
     if (m is Divide || m is Modulo) {
       final vals = inputs.values.toList();
       final op = m is Divide ? '/' : '%';
+      final outputWidth = (m as Module).outputs.values.first.width;
+      final outputType = systemCType(outputWidth);
       // Guard against zero divisor (sc_uint defaults to 0 at time-0)
-      return '(${vals[1]} != 0 ? ${vals[0]} $op ${vals[1]} : 0)';
+      return '(${vals[1]} != 0'
+          ' ? $outputType(${vals[0]} $op ${vals[1]})'
+          ' : $outputType(0))';
     }
     if (m is Power) {
       final vals = inputs.values.toList();
-      final w = (m as Module).inputs.values.first.width;
-      return '${systemCType(w)}'
-          '(static_cast<uint64_t>'
-          '(pow(static_cast<double>(${vals[0]}),'
-          ' static_cast<double>(${vals[1]}))))';
+      final module = m as Module;
+      final outputType = systemCType(module.outputs.values.first.width);
+      final exponentWidth = module.inputs.values.toList()[1].width;
+      final exponentLowBit =
+          exponentWidth == 1 ? '_exp' : 'static_cast<bool>(_exp[0])';
+      return '([&]() {'
+          ' $outputType _base(${vals[0]});'
+          ' $outputType _result(1);'
+          ' auto _exp = ${vals[1]};'
+          ' while (_exp != 0) {'
+          ' if ($exponentLowBit) { _result = _result * _base; }'
+          ' _exp = _exp >> 1;'
+          ' if (_exp != 0) { _base = _base * _base; }'
+          ' }'
+          ' return _result;'
+          ' }())';
     }
 
     // ── Comparison (operators identical) ──
@@ -685,12 +704,14 @@ class SystemCSynthesisResult extends SynthesisResult {
       final w = (m as Module).inputs.values.first.width;
       final outType = systemCType(w);
       final shiftAmtWidth = (m as Module).inputs.values.toList()[1].width;
+      final canOvershift =
+          ((BigInt.one << shiftAmtWidth) - BigInt.one) >= BigInt.from(w);
       final shiftExpr =
           shiftAmtWidth == 1 ? '(int)(${vals[1]})' : '(${vals[1]}).to_int()';
       if (m is ARShift) {
         final signedType = w <= 64 ? 'sc_int<$w>' : 'sc_bigint<$w>';
         final shiftOp = '$outType(($signedType(${vals[0]})) >> $shiftExpr)';
-        if (shiftAmtWidth > 31) {
+        if (canOvershift) {
           // Sign-fill: shift by width-1 to replicate MSB when shift >= width
           final overflow = '$outType(($signedType(${vals[0]})) >> ${w - 1})';
           return '(${vals[1]} >= $w) ? $overflow : $shiftOp';
@@ -699,7 +720,7 @@ class SystemCSynthesisResult extends SynthesisResult {
       }
       final op = m is LShift ? '<<' : '>>';
       final shiftOp = '$outType(${vals[0]} $op $shiftExpr)';
-      if (shiftAmtWidth > 31) {
+      if (canOvershift) {
         return '(${vals[1]} >= $w) ? $outType(0) : $shiftOp';
       }
       return shiftOp;
@@ -1222,7 +1243,8 @@ class SystemCSynthesisResult extends SynthesisResult {
       if (_isHandledInline(ssmi)) {
         continue;
       }
-      final instanceType = getInstanceTypeOfModule(ssmi.module);
+      final instanceType = _scName(getInstanceTypeOfModule(ssmi.module));
+      final instanceName = _scName(ssmi.name);
       final unsupportedReason = systemCUnsupportedReason(ssmi.module);
       if (unsupportedReason != null) {
         lines
@@ -1235,7 +1257,7 @@ class SystemCSynthesisResult extends SynthesisResult {
             'implementation before relying on its behavior.',
           );
       }
-      lines.add('  $instanceType ${ssmi.name}{"${ssmi.name}"};');
+      lines.add('  $instanceType $instanceName{"${ssmi.name}"};');
     }
     return lines.join('\n');
   }
@@ -1262,6 +1284,7 @@ class SystemCSynthesisResult extends SynthesisResult {
       if (_isHandledInline(ssmi)) {
         continue;
       }
+      final instanceName = _scName(ssmi.name);
 
       // Bind connected ports (inputs, outputs, inouts)
       final allPorts = {
@@ -1285,11 +1308,14 @@ class SystemCSynthesisResult extends SynthesisResult {
               '  ${systemCSignalType(w)} $constName{"$constName"};',
             );
             _constInputInits.add('    $constName.write($constVal);');
-            lines.add('    ${ssmi.name}.${entry.key}($constName);');
+            lines.add(
+              '    $instanceName.${_scName(entry.key)}($constName);',
+            );
           } else {
             lines.add(
               '    '
-              '${ssmi.name}.${entry.key}(${_scName(entry.value.name)});',
+              '$instanceName.${_scName(entry.key)}'
+              '(${_scName(entry.value.name)});',
             );
           }
         }
@@ -1307,7 +1333,9 @@ class SystemCSynthesisResult extends SynthesisResult {
           _unconnectedOutputSignals.add(
             '  ${systemCSignalType(w)} $dummyName{"$dummyName"};',
           );
-          lines.add('    ${ssmi.name}.${entry.key}($dummyName);');
+          lines.add(
+            '    $instanceName.${_scName(entry.key)}($dummyName);',
+          );
           unconnIdx++;
         }
       }
@@ -1623,7 +1651,7 @@ class SystemCSynthesisResult extends SynthesisResult {
   /// SynthModuleDefinition's logicToSynthMap to find the canonical name.
   String _resolveDriver(Logic driver, Map<String, String> inputsMap) {
     if (driver is Const) {
-      return _constLit(driver);
+      return _typedConstExpr(driver.value, driver.width);
     }
     // Look up via logicToSynthMap — the SynthLogic has the canonical name
     final sl = _synthModuleDefinition.logicToSynthMap[driver];
@@ -1783,7 +1811,7 @@ class SystemCSynthesisResult extends SynthesisResult {
   // ────────────────────────────────────────────────────────────────────
 
   String _toSystemC() {
-    final moduleName = getInstanceTypeOfModule(module);
+    final moduleName = _scName(getInstanceTypeOfModule(module));
     final buf = StringBuffer()..writeln('SC_MODULE($moduleName) {');
 
     if (_portsString.isNotEmpty) {
@@ -1892,19 +1920,22 @@ class SystemCStubSynthesisResult extends SynthesisResult {
     for (final entry in module.inputs.entries) {
       lines.add(
         '  ${SystemCSynthesisResult.systemCInType(entry.value.width)} '
-        '${entry.key}{"${entry.key}"};',
+        '${SystemCSynthesisResult.systemCIdentifier(entry.key)}'
+        '{"${entry.key}"};',
       );
     }
     for (final entry in module.outputs.entries) {
       lines.add(
         '  ${SystemCSynthesisResult.systemCOutType(entry.value.width)} '
-        '${entry.key}{"${entry.key}"};',
+        '${SystemCSynthesisResult.systemCIdentifier(entry.key)}'
+        '{"${entry.key}"};',
       );
     }
     for (final entry in module.inOuts.entries) {
       lines.add(
         '  ${SystemCSynthesisResult.systemCInOutType(entry.value.width)} '
-        '${entry.key}{"${entry.key}"};',
+        '${SystemCSynthesisResult.systemCIdentifier(entry.key)}'
+        '{"${entry.key}"};',
       );
     }
     return lines.join('\n');
@@ -1921,7 +1952,9 @@ class SystemCStubSynthesisResult extends SynthesisResult {
 
   @override
   String toFileContents() {
-    final moduleName = getInstanceTypeOfModule(module);
+    final moduleName = SystemCSynthesisResult.systemCIdentifier(
+      getInstanceTypeOfModule(module),
+    );
     return '// WARNING: Empty SystemC stub for ${module.runtimeType}; '
         'behavior is omitted.\n'
         '// Reason: $reason.\n'
