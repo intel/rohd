@@ -220,12 +220,13 @@ occurrence metadata.
 
 ## Netlist attributes
 
-`NetlistService.create` can embed source-only `rohd.src_trace` attributes in
-Yosys JSON when given `packageRoot`:
+`NetlistService` can embed source-only `rohd.src_trace` attributes in Yosys
+JSON when configured for tracing:
 
 ```dart
-final netlist = await NetlistService.create(
+final netlist = NetlistService(
   dut,
+  configuration: const NetlistSynthesizerConfiguration(trace: true),
   packageRoot: Directory.current.path,
 );
 print(netlist.toJson());
@@ -240,6 +241,7 @@ hierarchy.
 | Need | API |
 | --- | --- |
 | Start or stop capture | `SourceTracer.activate()` / `SourceTracer.clear()` |
+| Create a registered netlist | `NetlistService(dut, ...)` |
 | Inspect one source trace | `SourceTracer.traceOf(...)` |
 | Inspect a source hierarchy | `SourceTracer.tracesForHierarchy(...)` |
 | FLC v6 hierarchy or JSON | `TraceService.flcHierarchy` / `TraceService.flcJson` |

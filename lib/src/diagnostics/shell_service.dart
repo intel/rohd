@@ -28,7 +28,7 @@ class RohdShellService {
       RohdDesignSessionProtocol.vmServiceExtensionName;
 
   static var _registered = false;
-  static final _commandSessions = <String, RohdDesignCommandShell>{};
+  static final _commandSessions = <String, _CachedCommandShell>{};
 
   /// Registers the typed design-session VM service extension once.
   static void register() {
@@ -93,10 +93,7 @@ class RohdShellService {
   /// Executes one canonical ROHD command for a frontend [sessionId].
   static String executeDesignCommandNow(String sessionId, String input) {
     try {
-      final shell = _commandSessions.putIfAbsent(
-        _sessionId(sessionId),
-        () => RohdDesignCommandShell(_handler()),
-      );
+      final shell = _commandShell(sessionId);
       return jsonEncode(shell.execute(input));
     } on FormatException catch (error) {
       return _protocolError('invalidArgument', error.message);
@@ -116,10 +113,7 @@ class RohdShellService {
     int cursor,
   ) {
     try {
-      final shell = _commandSessions.putIfAbsent(
-        _sessionId(sessionId),
-        () => RohdDesignCommandShell(_handler()),
-      );
+      final shell = _commandShell(sessionId);
       return jsonEncode({'ok': true, 'items': shell.complete(input, cursor)});
     } on FormatException catch (error) {
       return _protocolError('invalidArgument', error.message);
@@ -132,8 +126,25 @@ class RohdShellService {
     }
   }
 
-  static RohdDesignSessionProtocolHandler _handler() =>
-      RohdDesignSessionProtocolHandler(InProcessRohdDesignSession(_netlist()));
+  static RohdDesignCommandShell _commandShell(String sessionId) {
+    final id = _sessionId(sessionId);
+    final netlist = _currentNetlist();
+    if (netlist == null) {
+      _commandSessions.remove(id);
+      throw StateError('No synthesized netlist is available.');
+    }
+    final cached = _commandSessions[id];
+    if (cached != null && identical(cached.netlist, netlist)) {
+      return cached.shell;
+    }
+
+    final shell = RohdDesignCommandShell(_handler(netlist));
+    _commandSessions[id] = _CachedCommandShell(netlist, shell);
+    return shell;
+  }
+
+  static RohdDesignSessionProtocolHandler _handler(NetlistService netlist) =>
+      RohdDesignSessionProtocolHandler(InProcessRohdDesignSession(netlist));
 
   static String _sessionId(String value) {
     if (value.isEmpty || value.length > 200) {
@@ -148,12 +159,18 @@ class RohdShellService {
         'error': {'code': code, 'message': message},
       });
 
-  static NetlistService _netlist() {
-    final netlist = ModuleServices.instance.lookup<NetlistService>() ??
-        NetlistService.current;
-    if (netlist == null) {
-      throw StateError('No synthesized netlist is available.');
-    }
-    return netlist;
-  }
+  static NetlistService _netlist() =>
+      _currentNetlist() ??
+      (throw StateError('No synthesized netlist is available.'));
+
+  static NetlistService? _currentNetlist() =>
+      ModuleServices.instance.lookup<NetlistService>() ??
+      NetlistService.current;
+}
+
+class _CachedCommandShell {
+  const _CachedCommandShell(this.netlist, this.shell);
+
+  final NetlistService netlist;
+  final RohdDesignCommandShell shell;
 }
