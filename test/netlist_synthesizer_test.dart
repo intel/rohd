@@ -14,8 +14,10 @@ import 'package:rohd/rohd.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_cell_mapper.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_module_translation.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_passes.dart';
+import 'package:rohd/src/synthesizers/netlist/netlist_synth_module_definition.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_validation.dart';
 import 'package:rohd/src/synthesizers/utilities/synth_logic.dart';
+import 'package:rohd/src/synthesizers/utilities/synth_module_definition.dart';
 import 'package:rohd/src/synthesizers/utilities/synth_structure_concat.dart';
 import 'package:test/test.dart';
 
@@ -67,6 +69,14 @@ class NotModule extends Module {
   NotModule(Logic a) : super(name: 'notmod') {
     a = addInput('a', a);
     addOutput('y') <= ~a;
+  }
+}
+
+/// Splits a packed input across a packed array output.
+class PackedInputArrayOutputModule extends Module {
+  PackedInputArrayOutputModule(Logic data) {
+    data = addInput('data', data, width: 8);
+    addOutputArray('out', dimensions: [4], elementWidth: 2) <= data;
   }
 }
 
@@ -871,6 +881,38 @@ void main() {
       for (final index in [0, 2, 3, 4, 5, 7]) replacementIds[index],
     ]);
     expect(replacementIds, isNot(equals(storageIds)));
+  });
+
+  test('shared packed-array rewrite applies before backend rendering',
+      () async {
+    final module = PackedInputArrayOutputModule(Logic(width: 8));
+    await module.build();
+
+    void expectSharedRewrite(SynthModuleDefinition definition) {
+      final input =
+          definition.inputs.singleWhere((signal) => signal.name == 'data');
+      final output =
+          definition.outputs.singleWhere((signal) => signal.name == 'out');
+      expect(
+        definition.assignments.any(
+          (assignment) =>
+              identical(assignment.src.resolved, input.resolved) &&
+              identical(assignment.dst.resolved, output.resolved),
+        ),
+        isTrue,
+      );
+
+      final subsets = definition.subModuleInstantiations
+          .where((instantiation) => instantiation.module is BusSubset)
+          .toList();
+      expect(subsets, isNotEmpty);
+      expect(
+          subsets.every((instantiation) => !instantiation.needsInstantiation),
+          isTrue);
+    }
+
+    expectSharedRewrite(SynthModuleDefinition(module));
+    expectSharedRewrite(NetlistSynthModuleDefinition(module));
   });
 
   for (final unpackedDimensions in [0, 2]) {

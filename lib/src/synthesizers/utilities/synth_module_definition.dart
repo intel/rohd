@@ -1272,11 +1272,137 @@ class SynthModuleDefinition {
   }
 
   /// Performs additional processing on the current definition to simplify,
-  /// reduce, etc.
+  /// reduce, etc. Overrides must invoke `super.process()` at the appropriate
+  /// graph-processing point.
   @protected
   @visibleForOverriding
   void process() {
-    // by default, nothing!
+    _collapsePackedArrayLogicAssignments();
+  }
+
+  /// Collapses a full packed module input split across a packed output array.
+  ///
+  /// The rewrite is backend-independent: it replaces complete [BusSubset]
+  /// coverage with a direct [SynthAssignment] and removes only the consumed
+  /// helper instantiations. Backends remain responsible for declaration
+  /// legality and rendering of the resulting assignment.
+  void _collapsePackedArrayLogicAssignments() {
+    final subsetsByOutput = logicSubsetLookups();
+    for (final arraySynth in outputs.where((signal) => signal.isArray)) {
+      final array = arraySynth.logics.whereType<BaseLogicArray>().firstOrNull;
+      if (array == null ||
+          array.dimensions.length != 1 ||
+          array.numUnpackedDimensions != 0) {
+        continue;
+      }
+
+      final packedSource = packedLogicSubsetSource(
+        array.elements.map(getSynthLogic).toList(growable: false),
+        subsetsByOutput,
+        expectedWidth: array.width,
+      );
+      if (packedSource == null ||
+          !packedSource.source.isPort(module) ||
+          !inputs.contains(packedSource.source.resolved)) {
+        continue;
+      }
+
+      assignments.add(SynthAssignment(packedSource.source, arraySynth));
+      for (final subset in packedSource.subsets) {
+        subset.clearInstantiation();
+      }
+    }
+  }
+
+  /// Indexes non-net [BusSubset] views by their resolved subset output.
+  @protected
+  Map<
+      SynthLogic,
+      List<
+          ({
+            SynthSubModuleInstantiation inst,
+            SynthLogic original,
+            SynthLogic subset,
+            int start,
+            int end,
+          })>> logicSubsetLookups() {
+    final bySubset = <SynthLogic,
+        List<
+            ({
+              SynthSubModuleInstantiation inst,
+              SynthLogic original,
+              SynthLogic subset,
+              int start,
+              int end,
+            })>>{};
+    for (final instantiation in subModuleInstantiations) {
+      final subsetModule = instantiation.module;
+      if (subsetModule is! BusSubset || subsetModule.original.isNet) {
+        continue;
+      }
+      final original =
+          instantiation.inputMapping[subsetModule.original.name]?.resolved;
+      final subset =
+          instantiation.outputMapping[subsetModule.subset.name]?.resolved;
+      if (original == null || subset == null) {
+        continue;
+      }
+      final view = (
+        inst: instantiation,
+        original: original,
+        subset: subset,
+        start: subsetModule.startIndex,
+        end: subsetModule.endIndex,
+      );
+      bySubset.putIfAbsent(subset, () => []).add(view);
+    }
+    return bySubset;
+  }
+
+  /// Reconstructs one fully covered packed source from ordered element subsets.
+  @protected
+  ({
+    SynthLogic source,
+    Set<SynthSubModuleInstantiation> subsets,
+  })? packedLogicSubsetSource(
+    List<SynthLogic?> elements,
+    Map<
+            SynthLogic,
+            List<
+                ({
+                  SynthSubModuleInstantiation inst,
+                  SynthLogic original,
+                  SynthLogic subset,
+                  int start,
+                  int end,
+                })>>
+        subsetsByOutput, {
+    required int expectedWidth,
+  }) {
+    SynthLogic? source;
+    var nextBit = 0;
+    final subsets = <SynthSubModuleInstantiation>{};
+    for (final element in elements) {
+      if (element == null) {
+        return null;
+      }
+      final view = subsetsByOutput[element]?.singleOrNull;
+      if (view == null ||
+          view.start != nextBit ||
+          view.end != nextBit + element.width - 1 ||
+          (source != null && source != view.original)) {
+        return null;
+      }
+      source ??= view.original;
+      subsets.add(view.inst);
+      nextBit += element.width;
+    }
+    if (source == null ||
+        source.width != expectedWidth ||
+        nextBit != expectedWidth) {
+      return null;
+    }
+    return (source: source, subsets: subsets);
   }
 
   /// Prunes any signals that are not used in this definition, including any
