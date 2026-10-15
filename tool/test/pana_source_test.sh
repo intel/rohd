@@ -150,6 +150,7 @@ run_case 0 "$NAVIGATOR" dart
 export EXPECTED_SDK=flutter EXPECTED_THRESHOLD=10
 run_case 0 "$WIDGETS" flutter
 [[ "$(cat "$SDK_LOG")" == $'flutter|pub get\nflutter|analyze --fatal-infos --no-pub lib\nflutter|pub downgrade\nflutter|analyze --fatal-infos --no-pub lib\npana' ]]
+PANA_STATUS=73 run_case 73 "$WIDGETS" flutter
 
 export EXPECTED_SDK=dart EXPECTED_THRESHOLD=10
 run_case 0 "$WAVEFORM" dart
