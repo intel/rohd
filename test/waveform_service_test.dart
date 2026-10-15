@@ -60,12 +60,12 @@ class _LiveFstQueryWaveformService extends WaveformService {
     if (timestamp != 10) {
       return;
     }
-    final query = createFstQuery()!;
+    final query = createWaveformQuery();
     liveValuesAtWindowEntry = {
-      for (var i = 0; i < query.writer.signalInfoList.length; i++)
-        query.writer.signalInfoList[i].name: [
+      for (final signal in query.signals)
+        signal.name: [
           for (final change in query.changes(
-            FstSignalHandle(i + 1),
+            signal,
             startTime: 10,
             endTime: 10,
           ))
@@ -250,12 +250,12 @@ void main() {
     Simulator.registerAction(20, () => a.put(1));
     await Simulator.run();
 
-    final query = service.createFstQuery()!;
+    final query = service.createWaveformQuery();
     final finalizedValues = {
-      for (var i = 0; i < query.writer.signalInfoList.length; i++)
-        query.writer.signalInfoList[i].name: [
+      for (final signal in query.signals)
+        signal.name: [
           for (final change in query.changes(
-            FstSignalHandle(i + 1),
+            signal,
             startTime: 10,
             endTime: 10,
           ))
@@ -342,6 +342,40 @@ void main() {
     expect(fstFile.lengthSync(), greaterThan(100));
 
     fstFile.deleteSync();
+  });
+
+  test('FST writer tuning uses the backend-specific constructor', () async {
+    final mod = _SimpleWaveModule(Logic(name: 'a'));
+    await mod.build();
+
+    Directory(_tempDumpDir).createSync(recursive: true);
+    final fstFile = File(_temporaryFstPath('fstWriterConfig'));
+    addTearDown(() {
+      if (fstFile.existsSync()) {
+        fstFile.deleteSync();
+      }
+    });
+    final service = WaveformService.fst(
+      mod,
+      outputDirectory: _tempDumpDir,
+      outputBaseName: 'temp_wave_fstWriterConfig',
+      register: false,
+      config: const FstWriterConfig(maxChangesPerBlock: 2),
+    );
+
+    await Simulator.run();
+
+    final writerMetadata = service.toJson()['writer']! as Map<String, Object?>;
+    expect(writerMetadata['maxChangesPerBlock'], equals(2));
+  });
+
+  test('VCD query capability reports unsupported explicitly', () async {
+    final mod = _SimpleWaveModule(Logic(name: 'a'));
+    await mod.build();
+
+    final service = WaveformService(mod, register: false);
+
+    expect(service.createWaveformQuery, throwsUnsupportedError);
   });
 
   test('rejects unsupported waveform timescale exponents', () {

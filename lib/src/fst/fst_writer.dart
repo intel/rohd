@@ -85,20 +85,12 @@ class FstBlockIndex {
   /// Last timestamp in this block.
   final int endTime;
 
-  /// Zero-based signal indices with an emitted value at [startTime].
-  ///
-  /// The FST frame stores values for every signal at a block's start, even
-  /// when a signal did not change there. This metadata lets live queries
-  /// distinguish actual emitted values from those carry-over samples.
-  final List<int> changedSignalIndicesAtStart;
-
   /// Creates a block index entry.
   const FstBlockIndex({
     required this.fileOffset,
     required this.sectionLength,
     required this.startTime,
     required this.endTime,
-    this.changedSignalIndicesAtStart = const [],
   });
 }
 
@@ -416,14 +408,10 @@ class FstWriter {
     final blockStart = _changes.first.time;
     final blockEnd = _changes.last.time;
 
-    // Build frame: carry-over state from previous block, overridden by
-    // any changes at this block's start time.
+    // A frame is the carry-over state before any changes at the block's
+    // first timestamp. Those changes must remain in the encoded chains so
+    // standard FST readers can observe them.
     final frameValues = List<String>.from(_nextFrameBase);
-    for (final c in _changes) {
-      if (c.time == blockStart) {
-        frameValues[c.handleIndex] = c.value;
-      }
-    }
 
     final blockOffset = _file.positionSync();
     _writeVcDataBlock(
@@ -440,12 +428,6 @@ class FstWriter {
         sectionLength: blockEndPos - blockOffset - 1,
         startTime: blockStart,
         endTime: blockEnd,
-        changedSignalIndicesAtStart: List.unmodifiable(
-          _changes
-              .where((change) => change.time == blockStart)
-              .map((change) => change.handleIndex)
-              .toSet(),
-        ),
       ),
     );
     _vcSectionCount++;
@@ -636,8 +618,8 @@ class FstWriter {
   /// `_changes` buffer.
   ///
   /// [blockStartTime] and [blockEndTime] are the time range for this block.
-  /// [frameValues] contains the initial value of each signal at the block's
-  /// start time (carry-over state plus changes at blockStartTime).
+  /// [frameValues] contains the carry-over value of each signal immediately
+  /// before [blockStartTime].
   ///
   /// Assumes `_changes` is already sorted by time, then by handle.
   void _writeVcDataBlock({
@@ -645,17 +627,11 @@ class FstWriter {
     required int blockEndTime,
     required List<String> frameValues,
   }) {
-    // Build sorted unique time table.
-    // Only include timestamps that have signal chain entries (i.e., after
-    // blockStartTime). Changes at blockStartTime go into the frame section.
-    // The fst-reader only reads the frame when time_table[0] > start_time;
-    // if blockStartTime were included, the frame would be skipped and all
-    // signals would appear as 'x'.
+    // Build a sorted unique time table for every emitted timestamp. FST
+    // frames are checkpoints, not replacements for changes at block start.
     final timeSet = <int>{};
     for (final c in _changes) {
-      if (c.time != blockStartTime) {
-        timeSet.add(c.time);
-      }
+      timeSet.add(c.time);
     }
     final timeTable = timeSet.toList()..sort();
     // Map timestamp → index
@@ -665,7 +641,7 @@ class FstWriter {
     }
 
     // Build per-signal value change chains
-    final signalData = _buildSignalData(timeToIndex, blockStartTime);
+    final signalData = _buildSignalData(timeToIndex);
 
     // Pack each signal's data (store uncompressed with varint(0) prefix)
     final packedSignals = <Uint8List>[];
@@ -761,10 +737,8 @@ class FstWriter {
   ///
   /// Returns a list of byte arrays, one per signal (0-indexed).
   /// Each byte array contains the encoded value change chain for that signal.
-  /// Changes at [blockStartTime] are skipped (captured in the frame).
   List<Uint8List> _buildSignalData(
     Map<int, int> timeToIndex,
-    int blockStartTime,
   ) {
     // Group changes by signal handle index
     final signalChanges = List<List<_ValueChange>>.generate(
@@ -772,10 +746,6 @@ class FstWriter {
       (_) => [],
     );
     for (final c in _changes) {
-      // Skip changes at blockStartTime — those are captured in the frame
-      if (c.time == blockStartTime) {
-        continue;
-      }
       signalChanges[c.handleIndex].add(c);
     }
 

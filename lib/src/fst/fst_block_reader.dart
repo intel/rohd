@@ -77,8 +77,8 @@ class FstBlockReader {
   /// [handleIndices] are the 0-based signal indices to extract.
   /// If [startTime] / [endTime] are provided, only changes within that
   /// range are returned.
-  /// By default, the block's frame value is included at its start time for
-  /// every requested signal. Set [includeFrame] to `false` to read only
+  /// By default, the block's frame checkpoint is included at its start time
+  /// for every requested signal. Set [includeFrame] to `false` to read only
   /// encoded changes.
   ///
   /// Returns a map from handle index to a list of value changes.
@@ -104,7 +104,7 @@ class FstBlockReader {
     }
   }
 
-  /// Read the frame (initial values at block start) for all signals.
+  /// Reads the frame checkpoint (values immediately before block changes).
   ///
   /// Returns a list indexed by handle (0-based) of initial value strings.
   List<String> readBlockFrame(FstBlockIndex block) {

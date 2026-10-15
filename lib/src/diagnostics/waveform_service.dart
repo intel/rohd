@@ -18,9 +18,8 @@ import 'package:rohd/src/utilities/uniquifier.dart';
 
 /// A waveform capture service that writes signal changes to a file.
 ///
-/// Selects the output backend via [format]; each format is emitted by a
-/// dedicated [WaveformWriter] implementation ([VcdWaveformWriter] for
-/// [WaveOutputFormat.vcd], [FstWaveformWriter] for [WaveOutputFormat.fst]).
+/// Selects the output backend via [format]. FST-specific writer tuning is
+/// available through [WaveformService.fst].
 class WaveformService extends ArtifactProducingService {
   /// The most recently registered [WaveformService], or `null`.
   ///
@@ -82,30 +81,33 @@ class WaveformService extends ArtifactProducingService {
   /// Whether to retain a complete in-memory copy for debugging consumers.
   final bool retainInMemory;
 
-  /// Whether this service can service debugger waveform-data queries.
+  /// Whether this service can provide waveform data to debugging consumers.
   ///
-  /// A `true` result promises waveform-value queries, not artifact-byte
-  /// transfer. VCD requires [retainInMemory]; FST can query a written file.
+  /// This describes whether waveform data is available, not whether the
+  /// backend supports indexed value queries. VCD requires [retainInMemory];
+  /// FST can query a written file.
   bool canSendWaveforms() =>
-      retainInMemory || (writeToFile && format.supportsOnDiskQueries);
+      retainInMemory || (writeToFile && _writer.supportsQueries);
 
   /// The retained VCD waveform, or `null` when retention is disabled.
   String? get inMemoryOutput => _writer.inMemoryOutput;
 
-  /// The FST writer configuration (only used when [format] is
-  /// [WaveOutputFormat.fst]).
-  final FstWriterConfig? fstConfig;
-
   late final WaveformWriter _writer;
+  final FstWriterConfig? _fstWriterConfig;
 
-  /// Creates a bounded-memory query provider for an FST capture.
+  /// Creates a format-independent query provider for this capture.
   ///
-  /// Returns `null` for VCD captures, whose text output is not indexed for
-  /// time-range queries.
-  FstWaveformQuery? createFstQuery() => switch (_writer) {
-        FstWaveformWriter() => (_writer as FstWaveformWriter).createQuery(),
-        _ => null,
-      };
+  /// Throws [UnsupportedError] when the selected backend does not support
+  /// waveform queries.
+  WaveformQuery createWaveformQuery() {
+    final query = _writer.createWaveformQuery();
+    if (query == null) {
+      throw UnsupportedError(
+        '${format.name.toUpperCase()} waveform queries are not supported.',
+      );
+    }
+    return query;
+  }
 
   /// Maps each captured [Logic] to its writer-specific signal handle.
   final Map<Logic, Object> _signalHandles = <Logic, Object>{};
@@ -128,6 +130,72 @@ class WaveformService extends ArtifactProducingService {
   /// [outputFileName] to override the filename explicitly.
   WaveformService(
     Module module, {
+    String? outputDirectory,
+    String? outputBaseName,
+    String? outputFileName,
+    WaveOutputFormat format = WaveOutputFormat.vcd,
+    bool Function(Logic signal)? signalFilter,
+    WaveformTimeScale timescale = WaveformTimeScale.onePicosecond,
+    int? startTime,
+    int? stopTime,
+    int flushBufferSize = 100000,
+    OverwritePolicy overwritePolicy = OverwritePolicy.overwrite,
+    bool register = true,
+    bool writeToFile = false,
+    bool? retainInMemory,
+  }) : this._(
+          module,
+          outputDirectory: outputDirectory ?? '.',
+          outputBaseName: outputBaseName,
+          outputFileName: outputFileName,
+          format: format,
+          signalFilter: signalFilter,
+          timescale: timescale,
+          startTime: startTime,
+          stopTime: stopTime,
+          flushBufferSize: flushBufferSize,
+          overwritePolicy: overwritePolicy,
+          register: register,
+          writeToFile: writeToFile,
+          retainInMemory: retainInMemory,
+        );
+
+  /// Creates an FST capture with backend-specific [config] tuning.
+  ///
+  /// Use this constructor when advanced FST writer settings are needed;
+  /// ordinary format selection remains available through [WaveformService].
+  WaveformService.fst(
+    Module module, {
+    String? outputDirectory,
+    String? outputBaseName,
+    String? outputFileName,
+    bool Function(Logic signal)? signalFilter,
+    WaveformTimeScale timescale = WaveformTimeScale.onePicosecond,
+    int? startTime,
+    int? stopTime,
+    OverwritePolicy overwritePolicy = OverwritePolicy.overwrite,
+    bool register = true,
+    bool writeToFile = true,
+    FstWriterConfig config = const FstWriterConfig(),
+  }) : this._(
+          module,
+          outputDirectory: outputDirectory ?? '.',
+          outputBaseName: outputBaseName,
+          outputFileName: outputFileName,
+          format: WaveOutputFormat.fst,
+          signalFilter: signalFilter,
+          timescale: timescale,
+          startTime: startTime,
+          stopTime: stopTime,
+          overwritePolicy: overwritePolicy,
+          register: register,
+          writeToFile: writeToFile,
+          retainInMemory: false,
+          fstWriterConfig: config,
+        );
+
+  WaveformService._(
+    Module module, {
     super.outputDirectory,
     super.outputBaseName,
     this.outputFileName,
@@ -141,8 +209,9 @@ class WaveformService extends ArtifactProducingService {
     this.register = true,
     this.writeToFile = false,
     bool? retainInMemory,
-    this.fstConfig,
+    FstWriterConfig? fstWriterConfig,
   })  : retainInMemory = retainInMemory ?? !writeToFile,
+        _fstWriterConfig = fstWriterConfig,
         super(module) {
     if (!module.hasBuilt) {
       throw ModuleNotBuiltException(module);
@@ -209,8 +278,7 @@ class WaveformService extends ArtifactProducingService {
       int flushBufferSize = 100000,
       OverwritePolicy overwritePolicy = OverwritePolicy.overwrite,
       bool register = true,
-      bool? retainInMemory,
-      FstWriterConfig? fstConfig}) {
+      bool? retainInMemory}) {
     final normalized = outputPath.replaceAll(r'\', '/');
     final sep = normalized.lastIndexOf('/');
     final directory =
@@ -228,8 +296,7 @@ class WaveformService extends ArtifactProducingService {
         overwritePolicy: overwritePolicy,
         register: register,
         writeToFile: true,
-        retainInMemory: retainInMemory,
-        fstConfig: fstConfig);
+        retainInMemory: retainInMemory);
   }
 
   /// The concrete output writer used by this service.
@@ -279,7 +346,8 @@ class WaveformService extends ArtifactProducingService {
             writeToFile: writeToFile);
       case WaveOutputFormat.fst:
         return FstWaveformWriter(outputPath,
-            timescale: timescale, config: fstConfig ?? const FstWriterConfig());
+            timescale: timescale,
+            config: _fstWriterConfig ?? const FstWriterConfig());
     }
   }
 

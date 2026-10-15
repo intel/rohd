@@ -15,6 +15,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/utilities/vcd_parser.dart';
 import 'package:test/test.dart';
 
 import 'pipeline_test.dart' show SimplePipelineModule;
@@ -84,6 +85,69 @@ int _crc32(List<int> bytes) {
     }
   }
   return (crc ^ 0xffffffff) & 0xffffffff;
+}
+
+String _binaryByte(int value) => value.toRadixString(2).padLeft(8, '0');
+
+String _convertFstToVcd(String fstPath) {
+  final result = Process.runSync('fst2vcd', [fstPath]);
+  expect(
+    result.exitCode,
+    equals(0),
+    reason: 'fst2vcd failed: ${result.stdout}\n${result.stderr}',
+  );
+  return result.stdout as String;
+}
+
+Map<String, Map<int, String>> _readEightBitVcdEvents(
+  String vcd,
+  Set<String> signalNames,
+) {
+  final markerToSignal = <String, String>{};
+  final events = <String, Map<int, String>>{
+    for (final name in signalNames) name: <int, String>{},
+  };
+  final declaration = RegExp(r'^\s*\$var\s+\S+\s+8\s+(\S+)\s+(\S+)');
+  var currentTime = 0;
+  var inValues = false;
+
+  for (final sourceLine in vcd.split('\n')) {
+    final line = sourceLine.trim();
+    final declarationMatch = declaration.firstMatch(line);
+    if (declarationMatch != null) {
+      final marker = declarationMatch.group(1)!;
+      final name = declarationMatch.group(2)!;
+      if (signalNames.contains(name)) {
+        markerToSignal[marker] = name;
+      }
+      continue;
+    }
+    if (line == r'$dumpvars') {
+      inValues = true;
+      continue;
+    }
+    if (!inValues || line == r'$end') {
+      continue;
+    }
+    if (line.startsWith('#')) {
+      currentTime = int.parse(line.substring(1));
+      continue;
+    }
+    if (!line.startsWith('b')) {
+      continue;
+    }
+
+    final parts = line.substring(1).split(RegExp(r'\s+'));
+    if (parts.length != 2) {
+      continue;
+    }
+    final signalName = markerToSignal[parts[1]];
+    if (signalName != null) {
+      events[signalName]![currentTime] = parts[0];
+    }
+  }
+
+  return events;
 }
 
 /// Parses FST file blocks and returns a map of block types to counts.
@@ -332,6 +396,145 @@ void main() {
 
       writer.finish();
     });
+
+    test(
+      'fst2vcd preserves an eight-bit change at the default block boundary',
+      () {
+        const path = '$_tempDumpDir/fst_block_boundary.fst';
+        Directory(_tempDumpDir).createSync(recursive: true);
+        final file = File(path);
+        addTearDown(() {
+          if (file.existsSync()) {
+            file.deleteSync();
+          }
+        });
+
+        final writer = FstWriter(path)..pushScope('top');
+        final signal = writer.declareSignal('signal', 8);
+        writer
+          ..popScope()
+          ..writeHeader();
+        for (var time = 0; time <= 5000; time++) {
+          writer.emitValueChange(time, signal, _binaryByte(time % 256));
+        }
+        writer.finish();
+
+        expect(writer.blockIndex, hasLength(2));
+        final vcd = _convertFstToVcd(path);
+        expect(
+          VcdParser.confirmValue(
+            vcd,
+            'signal',
+            FstWriterConfig.defaultMaxChangesPerBlock - 1,
+            LogicValue.ofInt(255, 8),
+          ),
+          isTrue,
+        );
+        expect(
+          VcdParser.confirmValue(
+            vcd,
+            'signal',
+            FstWriterConfig.defaultMaxChangesPerBlock,
+            LogicValue.ofInt(0, 8),
+          ),
+          isTrue,
+        );
+      },
+      skip: Process.runSync('which', ['fst2vcd']).exitCode != 0
+          ? 'fst2vcd is not installed'
+          : false,
+    );
+
+    test(
+      'fst2vcd preserves all signals across default block boundaries',
+      () {
+        const path = '$_tempDumpDir/fst_multisignal_block_boundaries.fst';
+        Directory(_tempDumpDir).createSync(recursive: true);
+        final file = File(path);
+        addTearDown(() {
+          if (file.existsSync()) {
+            file.deleteSync();
+          }
+        });
+
+        final writer = FstWriter(path)..pushScope('top');
+        final signals = [
+          writer.declareSignal('a', 8),
+          writer.declareSignal('b', 8),
+          writer.declareSignal('c', 8),
+        ];
+        writer
+          ..popScope()
+          ..writeHeader();
+        for (var time = 0; time <= 5000; time++) {
+          writer
+            ..emitValueChange(time, signals[0], _binaryByte(time % 256))
+            ..emitValueChange(time, signals[1], _binaryByte((time + 85) % 256))
+            ..emitValueChange(
+              time,
+              signals[2],
+              _binaryByte((255 - time) % 256),
+            );
+        }
+        writer.finish();
+
+        final events = _readEightBitVcdEvents(
+          _convertFstToVcd(path),
+          const {'a', 'b', 'c'},
+        );
+        final mismatches = <String>[];
+        for (var time = 0; time <= 5000; time++) {
+          final expected = {
+            'a': _binaryByte(time % 256),
+            'b': _binaryByte((time + 85) % 256),
+            'c': _binaryByte((255 - time) % 256),
+          };
+          for (final entry in expected.entries) {
+            final actual = events[entry.key]![time];
+            if (actual != entry.value) {
+              mismatches.add(
+                '${entry.key} at $time: expected ${entry.value}, got $actual',
+              );
+            }
+          }
+        }
+        expect(mismatches, isEmpty);
+      },
+      skip: Process.runSync('which', ['fst2vcd']).exitCode != 0
+          ? 'fst2vcd is not installed'
+          : false,
+    );
+
+    test(
+      'fst2vcd preserves a constant-only initial value',
+      () {
+        const path = '$_tempDumpDir/fst_constant_initial_value.fst';
+        Directory(_tempDumpDir).createSync(recursive: true);
+        final file = File(path);
+        addTearDown(() {
+          if (file.existsSync()) {
+            file.deleteSync();
+          }
+        });
+
+        final writer = FstWriter(path)..pushScope('top');
+        final signal = writer.declareSignal('constant', 8);
+        writer
+          ..popScope()
+          ..writeHeader()
+          ..emitValueChange(0, signal, _binaryByte(42))
+          ..finish();
+
+        final vcd = _convertFstToVcd(path);
+        expect(
+          VcdParser.confirmValue(vcd, 'constant', 0, LogicValue.ofInt(42, 8)),
+          isTrue,
+        );
+      },
+      skip: Process.runSync('which', ['fst2vcd']).exitCode != 0
+          ? 'fst2vcd is not installed'
+          : false,
+    );
 
     test('writes valid header block', () {
       const path = '$_tempDumpDir/fst_header_test.fst';

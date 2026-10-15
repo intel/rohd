@@ -169,10 +169,63 @@ class WaveformValueChange extends WaveformInitialValue {
   const WaveformValueChange(super.handle, super.value);
 }
 
+/// A signal available from a format-independent waveform query.
+class WaveformQuerySignal {
+  /// Creates a query signal.
+  const WaveformQuerySignal({
+    required this.index,
+    required this.name,
+    required this.width,
+  });
+
+  /// The zero-based index of this signal within its waveform.
+  final int index;
+
+  /// The signal's declared name.
+  final String name;
+
+  /// The signal's declared width.
+  final int width;
+}
+
+/// A timestamped value returned by a waveform query.
+class WaveformQueryValueChange {
+  /// Creates a queried value change.
+  const WaveformQueryValueChange(this.time, this.value);
+
+  /// Simulation timestamp of this change.
+  final int time;
+
+  /// The MSB-first binary value string.
+  final String value;
+}
+
+/// Format-independent capability for querying waveform values.
+abstract interface class WaveformQuery {
+  /// The signals available for querying.
+  List<WaveformQuerySignal> get signals;
+
+  /// Returns emitted values for [signal] within the inclusive time range.
+  List<WaveformQueryValueChange> changes(
+    WaveformQuerySignal signal, {
+    required int startTime,
+    required int endTime,
+  });
+
+  /// Returns [signal]'s value at or immediately before [time].
+  String? valueAt(WaveformQuerySignal signal, int time);
+}
+
 /// Common backend contract for waveform file formats.
 abstract class WaveformWriter {
   /// The file format emitted by this writer.
   WaveOutputFormat get format;
+
+  /// Whether this writer can query waveform values from its output.
+  bool get supportsQueries;
+
+  /// Creates a format-independent query capability, when supported.
+  WaveformQuery? createWaveformQuery();
 
   /// Pushes a scope onto the declaration hierarchy.
   void pushScope(String name);
@@ -248,6 +301,12 @@ class VcdWaveformWriter implements WaveformWriter {
 
   @override
   WaveOutputFormat get format => WaveOutputFormat.vcd;
+
+  @override
+  bool get supportsQueries => false;
+
+  @override
+  WaveformQuery? createWaveformQuery() => null;
 
   @override
   String? get inMemoryOutput => memoryBuffer?.toString();
@@ -388,6 +447,13 @@ class FstWaveformWriter implements WaveformWriter {
   WaveOutputFormat get format => WaveOutputFormat.fst;
 
   @override
+  bool get supportsQueries => true;
+
+  @override
+  WaveformQuery createWaveformQuery() =>
+      _FstWaveformQueryAdapter(createQuery());
+
+  @override
   String? get inMemoryOutput => null;
 
   @override
@@ -456,4 +522,51 @@ class FstWaveformWriter implements WaveformWriter {
         return FstVarDirection.implicit;
     }
   }
+}
+
+class _FstWaveformQueryAdapter implements WaveformQuery {
+  _FstWaveformQueryAdapter(this._query)
+      : signals = List.unmodifiable([
+          for (var index = 0;
+              index < _query.writer.signalInfoList.length;
+              index++)
+            WaveformQuerySignal(
+              index: index,
+              name: _query.writer.signalInfoList[index].name,
+              width: _query.writer.signalInfoList[index].width,
+            ),
+        ]);
+
+  final FstWaveformQuery _query;
+
+  @override
+  final List<WaveformQuerySignal> signals;
+
+  FstSignalHandle _handle(WaveformQuerySignal signal) {
+    if (signal.index < 0 || signal.index >= signals.length) {
+      throw RangeError.index(signal.index, signals, 'signal');
+    }
+    return FstSignalHandle(signal.index + 1);
+  }
+
+  @override
+  List<WaveformQueryValueChange> changes(
+    WaveformQuerySignal signal, {
+    required int startTime,
+    required int endTime,
+  }) =>
+      _query
+          .changes(
+            _handle(signal),
+            startTime: startTime,
+            endTime: endTime,
+          )
+          .map(
+            (change) => WaveformQueryValueChange(change.time, change.value),
+          )
+          .toList(growable: false);
+
+  @override
+  String? valueAt(WaveformQuerySignal signal, int time) =>
+      _query.valueAt(_handle(signal), time);
 }

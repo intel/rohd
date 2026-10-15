@@ -25,8 +25,8 @@ class FstWaveformQuery {
   /// Returns emitted values for [signal] within the inclusive time range.
   ///
   /// Results merge matching flushed blocks with the writer's unflushed changes
-  /// and are ordered by timestamp. FST block frames carry a value for every
-  /// signal, including unchanged signals; those carry-over samples are omitted.
+  /// and are ordered by timestamp. FST block frames are carry-over
+  /// checkpoints, so only encoded signal-chain entries are returned.
   /// If a signal has multiple emitted values at the same timestamp, only its
   /// final value is returned.
   List<FstValueChange> changes(
@@ -48,14 +48,6 @@ class FstWaveformQuery {
     for (final block in writer.blockIndex) {
       if (block.endTime < startTime || block.startTime > endTime) {
         continue;
-      }
-      if (block.startTime >= startTime &&
-          block.startTime <= endTime &&
-          block.changedSignalIndicesAtStart.contains(handleIndex)) {
-        result.add(FstValueChange(
-          block.startTime,
-          _reader.readBlockFrame(block)[handleIndex],
-        ));
       }
       result.addAll(
         _reader.readBlock(
