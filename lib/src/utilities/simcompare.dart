@@ -146,9 +146,243 @@ class Vector {
   }
 }
 
+/// A simulation backend available to [SimCompare.checkVectors].
+enum SimCompareBackend {
+  /// ROHD's native simulator.
+  rohd,
+
+  /// Icarus Verilog.
+  iverilog,
+
+  /// Verilator.
+  verilator,
+
+  /// Native SystemC.
+  systemc,
+}
+
+/// The outcome of one backend in a shared vector comparison.
+enum SimCompareBackendStatus {
+  /// The backend executed and all checks passed.
+  passed,
+
+  /// The backend tool was unavailable in an optional environment.
+  skipped,
+
+  /// The caller explicitly excluded the backend with a reason.
+  excluded,
+
+  /// The backend failed to compile, execute, or compare the vectors.
+  failed,
+}
+
+/// The result for one backend in a shared vector comparison.
+class SimCompareBackendResult {
+  /// The backend that produced this result.
+  final SimCompareBackend backend;
+
+  /// The outcome of the backend check.
+  final SimCompareBackendStatus status;
+
+  /// Why the backend was skipped, excluded, or failed.
+  final String? reason;
+
+  const SimCompareBackendResult._(this.backend, this.status, [this.reason]);
+}
+
+/// Results from a shared vector comparison.
+class SimCompareReport {
+  /// Results keyed by every selected backend.
+  final Map<SimCompareBackend, SimCompareBackendResult> results;
+
+  SimCompareReport._(Map<SimCompareBackend, SimCompareBackendResult> results)
+      : results = Map.unmodifiable(results);
+
+  /// The result for [backend], or `null` if it was not selected.
+  SimCompareBackendResult? operator [](SimCompareBackend backend) =>
+      results[backend];
+}
+
 /// A utility class for checking a collection of [Vector]s against
 /// different simulators.
 abstract class SimCompare {
+  /// Backends exercised by ordinary shared vector checks.
+  ///
+  /// Verilator remains available for focused checks through [checkVectors] or
+  /// [checkVerilatorVector], but is not duplicated in the default matrix
+  /// because Icarus already exercises generated SystemVerilog behavior.
+  static const defaultVectorBackends = {
+    SimCompareBackend.rohd,
+    SimCompareBackend.iverilog,
+    SimCompareBackend.systemc,
+  };
+
+  /// Checks [vectors] against the selected simulation backends.
+  ///
+  /// When [backends] is omitted, [defaultVectorBackends] is used. Ordinary
+  /// functional tests should use that default rather than list backends.
+  /// Focused backend tests may pass an explicit set.
+  ///
+  /// [excludedBackends] must provide a non-empty reason for every explicit
+  /// exclusion. An exclusion is reported separately from an unavailable-tool
+  /// skip and from a pass. Backend failures are collected and reported
+  /// together with the backend that failed. [allowIverilogWarnings] and
+  /// [dontDeleteSystemCTmpFiles] support existing specialized test fixtures
+  /// without requiring separate ordinary backend calls.
+  static Future<SimCompareReport> checkVectors(
+    Module module,
+    List<Vector> vectors, {
+    Set<SimCompareBackend>? backends,
+    Map<SimCompareBackend, String> excludedBackends = const {},
+    bool? requireSystemC,
+    String? systemcHome,
+    String? systemcLib,
+    bool? requireVerilator,
+    String verilatorExecutable = 'verilator',
+    bool allowIverilogWarnings = false,
+    bool dontDeleteSystemCTmpFiles = false,
+  }) async {
+    final selected = backends ?? defaultVectorBackends;
+    if (selected.isEmpty) {
+      throw ArgumentError.value(backends, 'backends', 'Must not be empty.');
+    }
+    for (final entry in excludedBackends.entries) {
+      if (!selected.contains(entry.key)) {
+        throw ArgumentError.value(
+          entry.key,
+          'excludedBackends',
+          'Excluded backends must also be selected.',
+        );
+      }
+      if (entry.value.trim().isEmpty) {
+        throw ArgumentError.value(
+          entry.value,
+          'excludedBackends',
+          'Every backend exclusion must include a reason.',
+        );
+      }
+    }
+
+    final results = <SimCompareBackend, SimCompareBackendResult>{};
+    for (final backend in SimCompareBackend.values) {
+      if (!selected.contains(backend)) {
+        continue;
+      }
+
+      final exclusionReason = excludedBackends[backend];
+      if (exclusionReason != null) {
+        results[backend] = SimCompareBackendResult._(
+          backend,
+          SimCompareBackendStatus.excluded,
+          exclusionReason,
+        );
+        continue;
+      }
+
+      try {
+        switch (backend) {
+          case SimCompareBackend.rohd:
+            await checkFunctionalVector(module, vectors);
+          case SimCompareBackend.iverilog:
+            if (kIsWeb) {
+              results[backend] = SimCompareBackendResult._(
+                backend,
+                SimCompareBackendStatus.skipped,
+                'Icarus checks require the Dart VM.',
+              );
+              continue;
+            }
+            checkIverilogVector(
+              module,
+              vectors,
+              allowWarnings: allowIverilogWarnings,
+            );
+          case SimCompareBackend.verilator:
+            String? skipReason;
+            final passed = checkVerilatorVector(
+              module,
+              vectors,
+              requireTool: requireVerilator,
+              verilatorExecutable: verilatorExecutable,
+              onSkip: (reason) => skipReason = reason,
+            );
+            if (!passed) {
+              if (skipReason == null) {
+                throw StateError(
+                  'Verilator returned without passing or reporting a skip.',
+                );
+              }
+              results[backend] = SimCompareBackendResult._(
+                backend,
+                SimCompareBackendStatus.skipped,
+                skipReason,
+              );
+              continue;
+            }
+          case SimCompareBackend.systemc:
+            String? skipReason;
+            final passed = checkSystemCVector(
+              module,
+              vectors,
+              systemcHome: systemcHome,
+              systemcLib: systemcLib,
+              requireTool: requireSystemC,
+              dontDeleteTmpFiles: dontDeleteSystemCTmpFiles,
+              onSkip: (reason) => skipReason = reason,
+            );
+            if (!passed) {
+              if (skipReason == null) {
+                throw StateError(
+                  'SystemC returned without passing or reporting a skip.',
+                );
+              }
+              results[backend] = SimCompareBackendResult._(
+                backend,
+                SimCompareBackendStatus.skipped,
+                skipReason,
+              );
+              continue;
+            }
+        }
+        results[backend] = SimCompareBackendResult._(
+          backend,
+          SimCompareBackendStatus.passed,
+        );
+      } on Object catch (error) {
+        results[backend] = SimCompareBackendResult._(
+          backend,
+          SimCompareBackendStatus.failed,
+          error.toString(),
+        );
+      }
+    }
+
+    for (final result in results.values.where(
+      (result) =>
+          result.status == SimCompareBackendStatus.skipped ||
+          result.status == SimCompareBackendStatus.excluded,
+    )) {
+      print(
+        'SimCompare ${result.backend.name} ${result.status.name}: '
+        '${result.reason}',
+      );
+    }
+
+    final failures = results.values
+        .where((result) => result.status == SimCompareBackendStatus.failed)
+        .toList();
+    if (failures.isNotEmpty) {
+      fail(
+        'Vector comparison failed for ${module.definitionName}:\n'
+        '${failures.map(
+              (result) => '[${result.backend.name}] ${result.reason}',
+            ).join('\n')}',
+      );
+    }
+
+    return SimCompareReport._(results);
+  }
+
   static bool _verilatorExecutableExists(String executable) {
     final names = [
       executable,

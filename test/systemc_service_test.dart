@@ -48,6 +48,32 @@ class _UnsupportedTop extends Module {
   }
 }
 
+class _CustomInstantiation extends Module with SystemVerilog {
+  _CustomInstantiation(Logic data) : super(name: 'customInstantiation') {
+    data = addInput('data', data, width: 8);
+    addOutput('q', width: 8) <= data;
+  }
+
+  @override
+  String? definitionVerilog(String definitionType) => null;
+
+  @override
+  String? instantiationVerilog(
+    String instanceType,
+    String instanceName,
+    Map<String, String> ports,
+  ) =>
+      'assign ${ports['q']} = ~${ports['data']};  // $instanceName';
+}
+
+class _CustomInstantiationTop extends Module {
+  _CustomInstantiationTop() : super(name: 'customInstantiationTop') {
+    final data = addInput('data', Logic(width: 8), width: 8);
+    final custom = _CustomInstantiation(data);
+    addOutput('q', width: 8) <= custom.output('q');
+  }
+}
+
 void main() {
   tearDown(ModuleServices.instance.reset);
 
@@ -156,6 +182,80 @@ void main() {
             ),
       ),
     );
+  });
+
+  test('stub-only SystemC service exposes result and file inventories',
+      () async {
+    final stub = _ExternalLeaf(Logic(width: 8), name: 'stub');
+    await stub.build();
+
+    final sc = SystemCService(
+      stub,
+      register: false,
+      configuration: const SystemCSynthesizerConfiguration(
+        stubAllUnsupportedModules: true,
+      ),
+    );
+
+    expect(sc.diagnostics, hasLength(1));
+    expect(sc.synthesisResults, hasLength(1));
+    expect(sc.scFileMap, {
+      'ExternalLeaf': ['ExternalLeaf.sc']
+    });
+    expect(
+      sc.contentsByDefinitionName['ExternalLeaf'],
+      contains('WARNING: Empty SystemC stub'),
+    );
+  });
+
+  test(
+      'custom SystemVerilog instantiation is rejected independently of '
+      'standard definition generation', () async {
+    final top = _CustomInstantiationTop();
+    await top.build();
+
+    expect(
+      top.dumpSystemVerilog(),
+      contains('assign q = ~data;'),
+    );
+    expect(
+      () => SystemCService(top, register: false),
+      throwsA(
+        isA<UnsupportedSystemCModuleException>()
+            .having(
+              (error) => error.module.runtimeType,
+              'module type',
+              _CustomInstantiation,
+            )
+            .having(
+              (error) => error.reason,
+              'reason',
+              contains('custom SystemVerilog instantiation'),
+            ),
+      ),
+    );
+  });
+
+  test('custom SystemVerilog instantiation can be explicitly stubbed',
+      () async {
+    final top = _CustomInstantiationTop();
+    await top.build();
+
+    final sc = SystemCService(
+      top,
+      register: false,
+      configuration: const SystemCSynthesizerConfiguration(
+        stubAllUnsupportedModules: true,
+      ),
+    );
+
+    expect(sc.diagnostics, hasLength(1));
+    expect(sc.diagnostics.single.module, isA<_CustomInstantiation>());
+    expect(
+      sc.diagnostics.single.reason,
+      contains('custom SystemVerilog instantiation'),
+    );
+    expect(sc.output, contains('WARNING: Empty SystemC stub'));
   });
 
   test('selective stubbing still rejects unselected instances', () async {

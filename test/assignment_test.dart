@@ -86,14 +86,11 @@ void main() {
     final vectors = [
       Vector({}, {'out': 1}),
     ];
-    await SimCompare.checkFunctionalVector(exampleModule, vectors);
-    final simResult = SimCompare.iverilogVector(
+    await SimCompare.checkVectors(
       exampleModule,
       vectors,
-      allowWarnings: true, // since always_comb has no sensitivities
+      allowIverilogWarnings: true, // always_comb has no sensitivities
     );
-    expect(simResult, equals(true));
-    SimCompare.checkSystemCVector(exampleModule, vectors);
   });
 
   group('assign subset', () {
@@ -107,9 +104,14 @@ void main() {
               {'subset': bin('1')}, {'result': LogicValue.ofString('zzzz1zzz')})
         ];
 
-        await SimCompare.checkFunctionalVector(mod, vectors);
-        SimCompare.checkIverilogVector(mod, vectors);
-        SimCompare.checkSystemCVector(mod, vectors);
+        await SimCompare.checkVectors(
+          mod,
+          vectors,
+          excludedBackends: const {
+            SimCompareBackend.systemc:
+                'This case checks undriven bits retaining Z values.',
+          },
+        );
       });
 
       test('multiple bits', () async {

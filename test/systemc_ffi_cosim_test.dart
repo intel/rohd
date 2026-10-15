@@ -33,7 +33,7 @@ class SimpleCounter extends Module {
 
     final nextVal = Logic(name: 'nextVal', width: 8);
 
-    Sequential(clk, reset: reset, [
+    Sequential(clk, reset: reset, asyncReset: true, [
       If(en, then: [nextVal < nextVal + 1], orElse: [nextVal < nextVal]),
     ]);
 
@@ -249,6 +249,64 @@ void main() {
         reset: reset,
         en: en,
       );
+    } finally {
+      await cosim.dispose();
+    }
+  });
+
+  test('async reset pulse between clock edges reaches SystemC FFI', () async {
+    final clk = SimpleClockGenerator(10).clk;
+    final reset = Logic(name: 'reset');
+    final en = Logic(name: 'en');
+    final counter = SimpleCounter(clk, reset, en);
+    await counter.build();
+
+    final cosim = await SystemCFfiCosim.create(counter, clk: clk);
+    if (cosim == null) {
+      return;
+    }
+
+    try {
+      Simulator.setMaxSimTime(100);
+      unawaited(Simulator.run());
+
+      reset.inject(1);
+      en.inject(0);
+      await clk.nextPosedge;
+      await clk.nextPosedge;
+      reset.inject(0);
+      en.inject(1);
+
+      await clk.nextPosedge;
+      expect(counter.val.value.toInt(), 1);
+      await clk.nextPosedge;
+      expect(counter.val.value.toInt(), 2);
+
+      final pulseStart = Simulator.time + 1;
+      Simulator.registerAction(pulseStart, () => reset.put(1));
+      Simulator.registerAction(pulseStart + 2, () => reset.put(0));
+
+      await clk.nextNegedge;
+      expect(
+        counter.val.value.toInt(),
+        0,
+        reason: 'the asynchronous reset pulse must reach native SystemC',
+      );
+
+      await clk.nextPosedge;
+      expect(
+        counter.val.value.toInt(),
+        1,
+        reason: 'native state must increment from the reset value',
+      );
+      await clk.nextPosedge;
+      expect(
+        counter.val.value.toInt(),
+        2,
+        reason: 'native state must remain aligned after the reset pulse',
+      );
+
+      await Simulator.endSimulation();
     } finally {
       await cosim.dispose();
     }

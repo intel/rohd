@@ -7,10 +7,13 @@
 // 2026 May
 // Author: Desmond A. Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
+import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/synthesizers/systemc/systemc_synthesizer_configuration.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
 
 /// Represents a submodule instantiation for SystemC.
+@internal
 class SystemCSynthSubModuleInstantiation extends SynthSubModuleInstantiation {
   /// Creates a new [SystemCSynthSubModuleInstantiation] for the given
   /// [module].

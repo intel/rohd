@@ -363,7 +363,7 @@ int sc_main(int argc, char* argv[]) {
         inputPorts.keys.where((k) => !clockSignals.contains(k)).toList();
     for (final name in drivableInputs) {
       final w = inputPorts[name]!;
-      if (w > 64) {
+      if (w >= 64) {
         // BigInt — read as hex string
         tb
           ..writeln('        { string _h; cin >> _h;')
@@ -379,7 +379,7 @@ int sc_main(int argc, char* argv[]) {
       final name = entry.key;
       final w = entry.value;
       tb.writeln('        { int _drive; cin >> _drive;');
-      if (w > 64) {
+      if (w >= 64) {
         tb
           ..writeln('          if (_drive) { string _h; cin >> _h;')
           ..writeln('            sc_biguint<$w> _v(_h.c_str());')
@@ -413,7 +413,7 @@ int sc_main(int argc, char* argv[]) {
       final ifKey = first ? 'if' : '} else if';
       first = false;
       tb.writeln('            $ifKey (_tb_pn == "$name") {');
-      if (w > 64) {
+      if (w >= 64) {
         tb
           ..writeln('                string _h; cin >> _h;')
           ..writeln('                sc_biguint<$w> _tb_exp(_h.c_str());')
@@ -518,10 +518,24 @@ int sc_main(int argc, char* argv[]) {
     SystemCVectorExecutable exe,
     List<Vector> vectors,
   ) {
-    if (!File(exe.binaryPath).existsSync()) {
-      print('SystemC binary not found: ${exe.binaryPath}');
-      return false;
+    final result = _runSystemCVectors(exe, vectors);
+    if (!result.passed) {
+      print(result.diagnostics);
     }
+    return result.passed;
+  }
+
+  /// Executes [vectors] and retains diagnostics for assertion failures.
+  static _SystemCVectorRunResult _runSystemCVectors(
+    SystemCVectorExecutable exe,
+    List<Vector> vectors,
+  ) {
+    if (!File(exe.binaryPath).existsSync()) {
+      return _SystemCVectorRunResult.failure(
+        'SystemC binary not found: ${exe.binaryPath}',
+      );
+    }
+    _validateTwoStateVectors(exe, vectors);
 
     // Build stdin data
     final sb = StringBuffer()..writeln(vectors.length);
@@ -541,7 +555,7 @@ int sc_main(int argc, char* argv[]) {
         final value = vector.inputValues[name];
         if (value != null) {
           final w = exe.inputPorts[name]!;
-          if (w > 64) {
+          if (w >= 64) {
             final lv = LogicValue.of(value, width: w);
             var hex = lv.toBigInt().toUnsigned(w).toRadixString(16);
             if (hex.length.isOdd) {
@@ -561,7 +575,7 @@ int sc_main(int argc, char* argv[]) {
         final value = vector.inputValues[name];
         if (value != null) {
           final w = exe.inOutPorts[name]!;
-          final formattedValue = w > 64
+          final formattedValue = w >= 64
               ? _systemcHexValue(value, w)
               : '${_systemcIntValue(value, w)}';
           lastValues[name] = formattedValue;
@@ -575,19 +589,13 @@ int sc_main(int argc, char* argv[]) {
       }
       sb.writeln();
 
-      // Write expected outputs: count then name/value pairs
-      // Skip x/z outputs
+      // Write expected outputs: count then name/value pairs.
       final checks = <String, String>{};
       for (final entry in vector.expectedOutputValues.entries) {
         final name = entry.key;
         final checkablePorts = {...exe.outputPorts, ...exe.inOutPorts};
         final w = checkablePorts[name]!;
-        final expectedLV = LogicValue.of(entry.value, width: w);
-        if (expectedLV.toString().contains('x') ||
-            expectedLV.toString().contains('z')) {
-          continue;
-        }
-        if (w > 64) {
+        if (w >= 64) {
           checks[name] = _systemcHexValue(entry.value, w);
         } else {
           checks[name] = '${_systemcIntValue(entry.value, w)}';
@@ -624,14 +632,60 @@ int sc_main(int argc, char* argv[]) {
     final stdout = result.stdout.toString();
     final stderr = result.stderr.toString();
 
-    if (stdout.isNotEmpty && !stdout.contains('PASS')) {
-      print(stdout);
+    final passed = result.exitCode == 0 &&
+        stdout.contains('PASS') &&
+        !stdout.contains('FAIL');
+    if (!passed) {
+      return _SystemCVectorRunResult.failure(
+        'SystemC vector execution failed.\n'
+        'Command: ${exe.binaryPath}\n'
+        'Exit status: ${result.exitCode}\n'
+        'stdout:\n$stdout\n'
+        'stderr:\n$stderr',
+      );
     }
-    if (stderr.isNotEmpty && !stderr.contains('Info:')) {
-      print(stderr);
+    return const _SystemCVectorRunResult.success();
+  }
+
+  static void _validateTwoStateVectors(
+    SystemCVectorExecutable exe,
+    List<Vector> vectors,
+  ) {
+    final inputWidths = {...exe.inputPorts, ...exe.inOutPorts};
+    final outputWidths = {...exe.outputPorts, ...exe.inOutPorts};
+
+    void validate(
+      Map<String, dynamic> values,
+      Map<String, int> widths,
+      int vectorIndex,
+      String kind,
+    ) {
+      for (final entry in values.entries) {
+        final width = widths[entry.key];
+        if (width == null) {
+          continue;
+        }
+        final value = LogicValue.of(entry.value, width: width);
+        if (!value.isValid) {
+          throw ArgumentError(
+            'SystemC vector checks require two-state values, but vector '
+            '$vectorIndex $kind "${entry.key}" contains X or Z. Explicitly '
+            'exclude SystemC with a reason in shared checks that require '
+            'four-state semantics.',
+          );
+        }
+      }
     }
 
-    return stdout.contains('PASS') && !stdout.contains('FAIL');
+    for (final (index, vector) in vectors.indexed) {
+      validate(vector.inputValues, inputWidths, index, 'input');
+      validate(
+        vector.expectedOutputValues,
+        outputWidths,
+        index,
+        'expected output',
+      );
+    }
   }
 
   /// Convenience: runs [vectors] against a pre-compiled executable and
@@ -640,7 +694,8 @@ int sc_main(int argc, char* argv[]) {
     SystemCVectorExecutable exe,
     List<Vector> vectors,
   ) {
-    expect(runSystemCVectors(exe, vectors), true);
+    final result = _runSystemCVectors(exe, vectors);
+    expect(result.passed, true, reason: result.diagnostics);
   }
 
   /// Converts a value to an integer for stdin.
@@ -722,7 +777,7 @@ int sc_main(int argc, char* argv[]) {
       return false;
     }
     try {
-      expect(runSystemCVectors(exe, vectors), true);
+      checkSystemCVectors(exe, vectors);
       return true;
     } finally {
       if (!dontDeleteTmpFiles) {
@@ -936,6 +991,17 @@ class SystemCVectorExecutable {
       tryDelete(binaryPath);
     } on Exception catch (_) {}
   }
+}
+
+class _SystemCVectorRunResult {
+  final bool passed;
+  final String diagnostics;
+
+  const _SystemCVectorRunResult.success()
+      : passed = true,
+        diagnostics = '';
+
+  const _SystemCVectorRunResult.failure(this.diagnostics) : passed = false;
 }
 
 /// Legacy name for [SystemCVectorExecutable].

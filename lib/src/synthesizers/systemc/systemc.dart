@@ -1,7 +1,7 @@
-// Copyright (C) 2021-2026 Intel Corporation
+// Copyright (C) 2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
-// systemc_synthesizer.dart
+// systemc.dart
 // Definition for SystemC Synthesizer
 //
 // 2026 May
@@ -9,9 +9,11 @@
 
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/synthesizers/systemc/systemc_synthesis_result.dart';
+import 'package:rohd/src/synthesizers/systemc/systemc_synthesizer_configuration.dart';
 
 export 'systemc_service.dart';
-export 'systemc_synthesizer_configuration.dart';
+export 'systemc_synthesizer_configuration.dart'
+    hide isSystemCHandledInlineModule, systemCUnsupportedReason;
 
 /// A [Synthesizer] which generates a two-state SystemC representation of the
 /// given [Module].

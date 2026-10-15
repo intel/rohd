@@ -38,7 +38,7 @@ void main() {
     // SystemC cannot bind an output port to a concatenation, so the
     // intermediate bus must be retained and named.
     final sc = SystemCService(dut, register: false);
-    expect(sc.systemCResults, isNotEmpty);
+    expect(sc.synthesisResults, isNotEmpty);
     expect(
         sc.fileContents.map((f) => f.contents).join(), contains('wide_leaf'));
 

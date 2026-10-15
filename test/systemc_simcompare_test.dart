@@ -10,6 +10,8 @@
 @TestOn('vm')
 library;
 
+import 'dart:io';
+
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
@@ -68,6 +70,21 @@ class FlopEnModule extends Module {
     d = addInput('d', d, width: 8);
     final q = addOutput('q', width: 8);
     q <= flop(clk, d, reset: reset, en: en);
+  }
+}
+
+/// Verifies that generated clocked processes capture on their first edge.
+class FirstEdgeCaptureModule extends Module {
+  FirstEdgeCaptureModule(Logic clk, Logic d) : super(name: 'FirstEdgeCapture') {
+    clk = addInput('clk', clk);
+    d = addInput('d', d, width: 8);
+
+    addOutput('flopQ', width: 8) <= flop(clk, d);
+    final sequentialQ = Logic(name: 'sequentialQ', width: 8);
+    Sequential(clk, [
+      sequentialQ < d,
+    ]);
+    addOutput('sequentialQ', width: 8) <= sequentialQ;
   }
 }
 
@@ -260,6 +277,108 @@ void main() {
       ];
 
       SimCompare.checkSystemCVector(mod, vectors);
+    });
+
+    test('clocked processes capture known data on the first driven edge',
+        () async {
+      final mod = FirstEdgeCaptureModule(
+        Logic(name: 'clk'),
+        Logic(name: 'd', width: 8),
+      );
+      await mod.build();
+
+      final vectorExecutable = SimCompare.buildSystemCVectorExecutable(mod);
+      if (vectorExecutable == null) {
+        return;
+      }
+
+      final systemcHome = [
+        '/opt/systemc/include',
+        '/usr/include',
+      ].firstWhere(
+        (path) => File('$path/systemc.h').existsSync(),
+        orElse: () => '',
+      );
+      expect(systemcHome, isNotEmpty);
+
+      final tempDir =
+          Directory('tmp_test').createTempSync('systemc_first_driven_edge_');
+      final source = File('${tempDir.path}/first_edge.cpp');
+      final executable = '${tempDir.path}/first_edge';
+      try {
+        final apiSymbols = Process.runSync(
+          'nm',
+          ['-D', '${vectorExecutable.scLib}/libsystemc.so'],
+        ).stdout.toString();
+        final cxxStandard =
+            apiSymbols.contains('cxx202002L') ? 'c++20' : 'c++17';
+        source.writeAsStringSync('''
+#include <systemc.h>
+
+${SystemCService(mod, register: false).output}
+
+int sc_main(int, char*[]) {
+  sc_signal<bool> clk("clk");
+  sc_signal<sc_uint<8>> d("d");
+  sc_signal<sc_uint<8>> flopQ("flopQ");
+  sc_signal<sc_uint<8>> sequentialQ("sequentialQ");
+  FirstEdgeCaptureModule dut("dut");
+  dut.clk(clk);
+  dut.d(d);
+  dut.flopQ(flopQ);
+  dut.sequentialQ(sequentialQ);
+
+  clk.write(false);
+  d.write(42);
+  sc_start(SC_ZERO_TIME);
+  clk.write(true);
+  sc_start(sc_time(1, SC_NS));
+
+  if (flopQ.read() != 42 || sequentialQ.read() != 42) {
+    cerr << "first edge capture failed: flopQ=" << flopQ.read()
+         << ", sequentialQ=" << sequentialQ.read() << endl;
+    return 1;
+  }
+  return 0;
+}
+''');
+
+        final compile = Process.runSync(
+          'g++',
+          [
+            '-std=$cxxStandard',
+            '-I$systemcHome',
+            source.path,
+            '-L${vectorExecutable.scLib}',
+            '-lsystemc',
+            '-o',
+            executable,
+          ],
+        );
+        expect(
+          compile.exitCode,
+          0,
+          reason: 'Could not compile first-edge SystemC regression:\n'
+              '${compile.stdout}\n${compile.stderr}',
+        );
+
+        final run = Process.runSync(
+          executable,
+          const [],
+          environment: {
+            'LD_LIBRARY_PATH': vectorExecutable.scLib,
+            'SC_COPYRIGHT_MESSAGE': 'DISABLE',
+          },
+        );
+        expect(
+          run.exitCode,
+          0,
+          reason: 'First-edge SystemC regression failed:\n'
+              '${run.stdout}\n${run.stderr}',
+        );
+      } finally {
+        tempDir.deleteSync(recursive: true);
+      }
     });
 
     test('independent inline gates share a method', () async {

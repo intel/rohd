@@ -8,13 +8,16 @@
 // Author: Desmond A. Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 import 'package:collection/collection.dart';
+import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/modules/conditionals/always.dart';
 import 'package:rohd/src/synthesizers/systemc/systemc_synth_module_definition.dart';
 import 'package:rohd/src/synthesizers/systemc/systemc_synth_sub_module_instantiation.dart';
+import 'package:rohd/src/synthesizers/systemc/systemc_synthesizer_configuration.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
 
 /// A [SynthesisResult] representing a conversion of a [Module] to SystemC.
+@internal
 class SystemCSynthesisResult extends SynthesisResult {
   /// A cached copy of the generated ports.
   late final String _portsString;
@@ -295,7 +298,13 @@ class SystemCSynthesisResult extends SynthesisResult {
       final m = ssmi.module;
 
       // All submodule output mappings
-      ssmi.outputMapping.values.forEach(addIfArrayElement);
+      for (final output in ssmi.outputMapping.values) {
+        addIfArrayElement(output);
+        final outputName = output.nameOrNull;
+        if (outputName != null && RegExp(r'^.+\[\d+\]$').hasMatch(outputName)) {
+          result[outputName] = output.width;
+        }
+      }
 
       // Inline gate result logics
       if (ssmi is SystemCSynthSubModuleInstantiation) {
@@ -385,6 +394,37 @@ class SystemCSynthesisResult extends SynthesisResult {
           addElement(sl);
         }
       }
+    }
+
+    // Packed output bits directly driven by submodule ports can be represented
+    // as ordinary SynthLogic names such as "observed[1]" rather than
+    // SynthLogicArrayElement instances. Retain those bridge signals and
+    // assemble them back into the packed parent output.
+    for (final entry in _arrayElementsWritten.entries) {
+      if (result.values
+          .expand((elements) => elements)
+          .any((element) => element.elemName == entry.key)) {
+        continue;
+      }
+      final match = RegExp(r'^(.+)\[(\d+)\]$').firstMatch(entry.key);
+      if (match == null) {
+        continue;
+      }
+      final rootName = match.group(1)!;
+      final parent = [
+        ..._synthModuleDefinition.outputs,
+        ..._synthModuleDefinition.inOuts,
+        ..._synthModuleDefinition.internalSignals,
+      ].where((signal) => signal.name == rootName).firstOrNull;
+      if (parent == null || parent.declarationCleared) {
+        continue;
+      }
+      final elementWidth = entry.value;
+      result.putIfAbsent(rootName, () => []).add((
+        index: int.parse(match.group(2)!) * elementWidth,
+        width: elementWidth,
+        elemName: entry.key,
+      ));
     }
 
     // Sort each list by flat bit offset
@@ -1082,25 +1122,19 @@ class SystemCSynthesisResult extends SynthesisResult {
       final distinctSignals = triggers.map((t) => t.signalName).toSet();
       final useCthread = distinctSignals.length == 1 &&
           triggers.first.isPort &&
-          triggers.length == 1;
+          triggers.length == 1 &&
+          !group.isAsyncReset;
 
       if (useCthread) {
         final t = triggers.first;
         final clockRef = _scName(t.signalName);
         final edge = t.isPosedge ? '.pos()' : '.neg()';
         setupBuf.writeln('    SC_CTHREAD($name, $clockRef$edge);');
-        if (group.resetName != null && group.isAsyncReset) {
-          setupBuf.writeln(
-            '    async_reset_signal_is('
-            '${_scName(group.resetName!)}, true);',
-          );
-        }
 
         bodyBuf.writeln('  void $name() {');
         group.resetLines.forEach(bodyBuf.writeln);
-        bodyBuf
-          ..writeln('    wait();')
-          ..writeln('    while (true) {');
+        group.whileBodyLines.forEach(bodyBuf.write);
+        bodyBuf.writeln('    while (true) {');
         group.whileBodyLines.forEach(bodyBuf.write);
         bodyBuf
           ..writeln('      wait();')
@@ -1135,13 +1169,24 @@ class SystemCSynthesisResult extends SynthesisResult {
           }
           waitExpr = eventExprs.join(' | ');
         }
+        if (group.resetName != null && group.isAsyncReset) {
+          waitExpr += ' | ${_scName(group.resetName!)}.posedge_event()';
+        }
 
         bodyBuf.writeln('  void $name() {');
         group.resetLines.forEach(bodyBuf.writeln);
         bodyBuf
           ..writeln('    while (true) {')
           ..writeln('      wait($waitExpr);');
-        group.whileBodyLines.forEach(bodyBuf.write);
+        if (group.resetName != null && group.isAsyncReset) {
+          bodyBuf.writeln('      if (${_scName(group.resetName!)}.read()) {');
+          group.resetLines.forEach(bodyBuf.writeln);
+          bodyBuf.writeln('      } else {');
+          group.whileBodyLines.forEach(bodyBuf.write);
+          bodyBuf.writeln('      }');
+        } else {
+          group.whileBodyLines.forEach(bodyBuf.write);
+        }
         bodyBuf
           ..writeln('    }')
           ..writeln('  }')
@@ -1828,6 +1873,7 @@ class _ClockedGroupData {
 }
 
 /// A port-compatible SystemC definition that intentionally omits behavior.
+@internal
 class SystemCStubSynthesisResult extends SynthesisResult {
   /// Why the module behavior was omitted.
   final String reason;

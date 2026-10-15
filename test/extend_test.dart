@@ -45,14 +45,20 @@ void main() {
     group('extend', () {
       Future<void> extendVectors(
           List<Vector> vectors, int newWidth, ExtendType extendType,
-          {int originalWidth = 8}) async {
+          {int originalWidth = 8, bool requiresFourState = false}) async {
         final mod =
             ExtendModule(Logic(width: originalWidth), newWidth, extendType);
         await mod.build();
-        await SimCompare.checkFunctionalVector(mod, vectors);
-        final simResult = SimCompare.iverilogVector(mod, vectors);
-        expect(simResult, equals(true));
-        SimCompare.checkSystemCVector(mod, vectors);
+        await SimCompare.checkVectors(
+          mod,
+          vectors,
+          excludedBackends: requiresFourState
+              ? const {
+                  SimCompareBackend.systemc:
+                      'This case checks X propagation during sign extension.',
+                }
+              : const {},
+        );
       }
 
       test('zero extend with same width returns same thing', () async {
@@ -99,7 +105,7 @@ void main() {
         await extendVectors([
           Vector({'a': LogicValue.ofString('x0100100')},
               {'b': LogicValue.ofString('xxxxx0100100')})
-        ], 12, ExtendType.sign);
+        ], 12, ExtendType.sign, requiresFourState: true);
       });
       test('sign extend single bit(0) pads 0s', () async {
         await extendVectors([
@@ -119,10 +125,7 @@ void main() {
         final mod = WithSetModule(
             Logic(width: 8), startIndex, Logic(width: updateWidth));
         await mod.build();
-        await SimCompare.checkFunctionalVector(mod, vectors);
-        final simResult = SimCompare.iverilogVector(mod, vectors);
-        expect(simResult, equals(true));
-        SimCompare.checkSystemCVector(mod, vectors);
+        await SimCompare.checkVectors(mod, vectors);
       }
 
       test('setting with bigger number throws exception', () {

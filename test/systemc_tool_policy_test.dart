@@ -23,6 +23,14 @@ class _ToolPolicyModule extends Module {
   }
 }
 
+class _Unsigned64BoundaryModule extends Module {
+  _Unsigned64BoundaryModule() : super(name: 'unsigned64Boundary') {
+    final data = addInput('data', Logic(width: 64), width: 64);
+    addOutput('dataOut', width: 64) <= data;
+    addOutput('msb') <= data.getRange(63, 64);
+  }
+}
+
 Future<_ToolPolicyModule> _buildModule() async {
   final module = _ToolPolicyModule();
   await module.build();
@@ -30,7 +38,85 @@ Future<_ToolPolicyModule> _buildModule() async {
 }
 
 void main() {
+  tearDown(() async {
+    await Simulator.reset();
+  });
   tearDownAll(SimCompare.cleanupSystemCCache);
+
+  test('shared vector defaults run ROHD, Icarus, and SystemC', () async {
+    final module = await _buildModule();
+    final report = await SimCompare.checkVectors(
+      module,
+      [
+        Vector({'dataIn': 1}, {'dataOut': 1}),
+      ],
+      requireSystemC: true,
+    );
+
+    expect(report.results.keys, SimCompare.defaultVectorBackends);
+    for (final result in report.results.values) {
+      expect(result.status, SimCompareBackendStatus.passed);
+    }
+  });
+
+  test('shared vector check distinguishes exclusions and tool skips', () async {
+    final module = await _buildModule();
+    final excluded = await SimCompare.checkVectors(
+      module,
+      [
+        Vector({'dataIn': 0}, {'dataOut': 0}),
+      ],
+      backends: const {
+        SimCompareBackend.rohd,
+        SimCompareBackend.systemc,
+      },
+      excludedBackends: const {
+        SimCompareBackend.systemc: 'Requires four-state behavior.',
+      },
+    );
+    expect(
+      excluded[SimCompareBackend.rohd]!.status,
+      SimCompareBackendStatus.passed,
+    );
+    expect(
+      excluded[SimCompareBackend.systemc]!.status,
+      SimCompareBackendStatus.excluded,
+    );
+
+    final skipped = await SimCompare.checkVectors(
+      module,
+      const [],
+      backends: const {SimCompareBackend.systemc},
+      systemcHome: '/path/that/does/not/contain/systemc',
+      systemcLib: '/path/that/does/not/contain/libsystemc',
+      requireSystemC: false,
+    );
+    expect(
+      skipped[SimCompareBackend.systemc]!.status,
+      SimCompareBackendStatus.skipped,
+    );
+  });
+
+  test('shared vector failures identify the backend', () async {
+    final module = await _buildModule();
+
+    await expectLater(
+      SimCompare.checkVectors(
+        module,
+        [
+          Vector({'dataIn': 1}, {'dataOut': 0}),
+        ],
+        backends: const {SimCompareBackend.rohd},
+      ),
+      throwsA(
+        isA<TestFailure>().having(
+          (error) => error.message,
+          'message',
+          contains('[rohd]'),
+        ),
+      ),
+    );
+  });
 
   test('optional SystemC absence reports a skip', () async {
     final module = await _buildModule();
@@ -89,6 +175,111 @@ void main() {
       );
     } finally {
       installation.deleteSync(recursive: true);
+    }
+  });
+
+  test('SystemC execution failure after PASS fails the affected check',
+      () async {
+    final module = await _buildModule();
+    final executable = SimCompare.buildSystemCVectorExecutable(
+      module,
+      requireTool: true,
+    );
+    expect(executable, isNotNull);
+    final exe = executable!;
+    final originalPath = '${exe.binaryPath}.passing';
+
+    try {
+      File(exe.binaryPath).renameSync(originalPath);
+      File(exe.binaryPath).writeAsStringSync(
+        '#!/bin/sh\n'
+        '"$originalPath" "\$@"\n'
+        'echo "teardown failed" >&2\n'
+        'exit 42\n',
+      );
+      expect(
+        Process.runSync('chmod', ['+x', exe.binaryPath]).exitCode,
+        0,
+      );
+
+      expect(
+        () => SimCompare.checkSystemCVectors(exe, const []),
+        throwsA(
+          isA<TestFailure>().having(
+            (error) => error.message,
+            'message',
+            allOf(
+              contains('Exit status: 42'),
+              contains('PASS'),
+              contains('teardown failed'),
+            ),
+          ),
+        ),
+      );
+    } finally {
+      exe.cleanup();
+    }
+  });
+
+  test('SystemC vectors preserve unsigned 64-bit values', () async {
+    final module = _Unsigned64BoundaryModule();
+    await module.build();
+    final executable = SimCompare.buildSystemCVectorExecutable(
+      module,
+      requireTool: true,
+    );
+    expect(executable, isNotNull);
+    final exe = executable!;
+    final highBit = BigInt.one << 63;
+    final maxSigned = highBit - BigInt.one;
+
+    try {
+      expect(
+        SimCompare.runSystemCVectors(exe, [
+          Vector({'data': highBit}, {'dataOut': highBit, 'msb': 1}),
+        ]),
+        isTrue,
+        reason: 'The high bit must reach the native SystemC model.',
+      );
+      expect(
+        () => SimCompare.checkSystemCVectors(exe, [
+          Vector({'data': maxSigned}, {'dataOut': highBit}),
+        ]),
+        throwsA(isA<TestFailure>()),
+        reason: 'A wrong expected unsigned 64-bit output must not pass.',
+      );
+    } finally {
+      exe.cleanup();
+    }
+  });
+
+  test('SystemC vector checks reject four-state values', () async {
+    final module = await _buildModule();
+    final executable = SimCompare.buildSystemCVectorExecutable(
+      module,
+      requireTool: true,
+    );
+    expect(executable, isNotNull);
+    final exe = executable!;
+
+    try {
+      expect(
+        () => SimCompare.checkSystemCVectors(exe, [
+          Vector(
+            {'dataIn': LogicValue.x},
+            {'dataOut': LogicValue.x},
+          ),
+        ]),
+        throwsA(
+          isA<ArgumentError>().having(
+            (error) => error.message,
+            'message',
+            contains('Explicitly exclude SystemC with a reason'),
+          ),
+        ),
+      );
+    } finally {
+      exe.cleanup();
     }
   });
 }

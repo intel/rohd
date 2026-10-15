@@ -404,9 +404,11 @@ void main() {
           Vector({}, {'const_subset': 0xcd}),
         ];
 
-        await SimCompare.checkFunctionalVector(mod, vectors);
-        SimCompare.checkIverilogVector(mod, vectors);
-        SimCompare.checkSystemCVector(mod, vectors, dontDeleteTmpFiles: true);
+        await SimCompare.checkVectors(
+          mod,
+          vectors,
+          dontDeleteSystemCTmpFiles: true,
+        );
       });
 
       test('Assignment of a const', () async {
@@ -416,9 +418,11 @@ void main() {
           Vector({}, {'const_subset': 0xabcd}),
         ];
 
-        await SimCompare.checkFunctionalVector(mod, vectors);
-        SimCompare.checkIverilogVector(mod, vectors);
-        SimCompare.checkSystemCVector(mod, vectors, dontDeleteTmpFiles: true);
+        await SimCompare.checkVectors(
+          mod,
+          vectors,
+          dontDeleteSystemCTmpFiles: true,
+        );
 
         final sv = mod.dumpSystemVerilog();
         expect(sv.contains("assign const_subset = 16'habcd;"), true);
@@ -679,10 +683,11 @@ void main() {
         Vector({'a1': 1, 'a2': 2, 'a3': 3, 'b': 2},
             {'selectIndexValue': 3, 'selectFromValue': 3})
       ];
-      await SimCompare.checkFunctionalVector(gtm, vectors);
-      final simResult = SimCompare.iverilogVector(gtm, vectors);
-      expect(simResult, equals(true));
-      SimCompare.checkSystemCVector(gtm, vectors, dontDeleteTmpFiles: true);
+      await SimCompare.checkVectors(
+        gtm,
+        vectors,
+        dontDeleteSystemCTmpFiles: true,
+      );
     });
 
     test('selectFrom with default Value', () async {
@@ -694,10 +699,11 @@ void main() {
         Vector({'a1': 1, 'a2': 2, 'a3': 3, 'b': 4, 'defaultValue': 5},
             {'selectFromValue': 5, 'selectIndexValue': 5}),
       ];
-      await SimCompare.checkFunctionalVector(gtm, vectors);
-      final simResult = SimCompare.iverilogVector(gtm, vectors);
-      expect(simResult, equals(true));
-      SimCompare.checkSystemCVector(gtm, vectors, dontDeleteTmpFiles: true);
+      await SimCompare.checkVectors(
+        gtm,
+        vectors,
+        dontDeleteSystemCTmpFiles: true,
+      );
     });
   });
 }

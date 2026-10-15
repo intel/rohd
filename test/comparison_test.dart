@@ -133,10 +133,7 @@ void main() {
           'a_gte_operator_c': 1
         })
       ];
-      await SimCompare.checkFunctionalVector(gtm, vectors);
-      final simResult = SimCompare.iverilogVector(gtm, vectors);
-      expect(simResult, equals(true));
-      SimCompare.checkSystemCVector(gtm, vectors);
+      await SimCompare.checkVectors(gtm, vectors);
     });
   });
 }

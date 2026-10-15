@@ -131,14 +131,14 @@ class SystemCFfiCosim {
   /// Subscription to Simulator.clkStable for per-tick stepping (clocked mode).
   StreamSubscription<void>? _clkStableSubscription;
 
-  /// Synchronous subscriptions on input glitches (combinational mode).
+  /// Synchronous subscriptions on non-clock input glitches.
   final List<SynchronousSubscription<LogicValueChanged>>
       _inputGlitchSubscriptions = [];
 
-  /// Whether a combinational step is already pending in this propagation wave.
+  /// Whether an input propagation step is active in this propagation wave.
   /// Prevents re-entrant stepping when multiple inputs change in the same
-  /// event (e.g. Swizzle feeding a bus).
-  bool _combStepPending = false;
+  /// event (for example, a Swizzle feeding a bus).
+  bool _inputStepPending = false;
 
   // FFI function handles
   late final _SetInputDart _setInput;
@@ -502,8 +502,10 @@ class SystemCFfiCosim {
   /// Simulator.clkStable — mirroring how ROHD's Sequential works.
   ///
   /// In clocked mode: Steps SystemC on BOTH posedge and negedge, advancing
-  /// by half-period each time. This keeps the SystemC clock perfectly aligned
-  /// with ROHD's:
+  /// by half-period each time. Non-clock input changes also advance SystemC
+  /// by one picosecond, allowing asynchronous state changes to settle without
+  /// creating a clock transition. This keeps the SystemC clock aligned with
+  /// ROHD's:
   ///
   ///   ROHD posedge  → sc_start(T/2) → SystemC posedge occurs → read outputs
   ///   ROHD negedge  → sc_start(T/2) → SystemC negedge occurs → read outputs
@@ -547,6 +549,8 @@ class SystemCFfiCosim {
         );
       }
     });
+
+    _listenToNonClockInputChanges(_stepInputChange);
   }
 
   /// Starts combinational mode — step on any input change (synchronous).
@@ -559,29 +563,29 @@ class SystemCFfiCosim {
   /// This allows multiple module variants to be pre-elaborated before the
   /// kernel starts (avoiding E113 errors).
   void _startCombinational() {
+    _listenToNonClockInputChanges(_stepCombinational);
+  }
+
+  /// Propagates non-clock input changes into SystemC without manufacturing a
+  /// clock edge.
+  void _listenToNonClockInputChanges(void Function() step) {
     for (final entry in _inputWidths.entries) {
       final name = entry.key;
-      // Skip clock-like signals (shouldn't exist in combinational mode,
-      // but guard against it)
       if (_clockNames.contains(name)) {
         continue;
       }
 
       final signal = module.input(name);
       final sub = signal.glitch.listen((event) {
-        if (!_active) {
+        if (!_active || _inputStepPending) {
           return;
         }
-        if (_combStepPending) {
-          return;
+        _inputStepPending = true;
+        try {
+          step();
+        } finally {
+          _inputStepPending = false;
         }
-        _combStepPending = true;
-
-        // Push all current inputs, advance by 1 ps (triggers delta cycles),
-        // and pull outputs. The _combStepPending flag prevents re-entrant
-        // calls during the same propagation wave.
-        _stepCombinational();
-        _combStepPending = false;
       });
       _inputGlitchSubscriptions.add(sub);
     }
@@ -597,6 +601,17 @@ class SystemCFfiCosim {
     // in SystemC relies on the sc_signal<bool> transitions we just wrote.
     _advance(_handle, clockPeriodNs * 1000 ~/ 2);
 
+    _pullOutputs();
+  }
+
+  /// Propagates a clocked model's non-clock input update through SystemC.
+  ///
+  /// One picosecond is sufficient to process externally written signals and
+  /// their delta notifications. The clock input is unchanged, so this cannot
+  /// create a posedge or negedge in the native model.
+  void _stepInputChange() {
+    _pushInputs();
+    _advance(_handle, 1);
     _pullOutputs();
   }
 

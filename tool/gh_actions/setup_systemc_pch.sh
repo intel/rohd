@@ -25,7 +25,8 @@ fi
 # Detect C++ standard from the installed library
 CXX_STD="c++17"
 if command -v nm &>/dev/null && [ -f "$SC_LIB/libsystemc.so" ]; then
-  if nm -D "$SC_LIB/libsystemc.so" 2>/dev/null | grep -q 'cxx202002L'; then
+  if nm -D "$SC_LIB/libsystemc.so" 2>/dev/null |
+      grep -F 'cxx202002L' >/dev/null; then
     CXX_STD="c++20"
   fi
 fi

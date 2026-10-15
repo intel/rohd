@@ -429,9 +429,7 @@ void main() {
           Vector({'a': 0}, {'x': 1}),
           Vector({'a': 1}, {'x': 0}),
         ];
-        await SimCompare.checkFunctionalVector(mod, vectors);
-        SimCompare.checkIverilogVector(mod, vectors);
-        SimCompare.checkSystemCVector(mod, vectors);
+        await SimCompare.checkVectors(mod, vectors);
       });
     });
 
@@ -492,10 +490,14 @@ void main() {
         Vector({'a': 1, 'b': 0, 'd': 7}, {'y': 1, 'z': 0, 'x': 0, 'q': 7}),
         Vector({'a': 1, 'b': 1, 'd': 8}, {'y': 1, 'z': 1, 'x': 1, 'q': 8}),
       ];
-      await SimCompare.checkFunctionalVector(mod, vectors);
-      final simResult = SimCompare.iverilogVector(mod, vectors);
-      expect(simResult, equals(true));
-      SimCompare.checkSystemCVector(mod, vectors);
+      await SimCompare.checkVectors(
+        mod,
+        vectors,
+        excludedBackends: const {
+          SimCompareBackend.systemc:
+              'This case checks four-state unassigned conditional outputs.',
+        },
+      );
     });
 
     test('iffblock comb', () async {
@@ -507,10 +509,7 @@ void main() {
         Vector({'a': 1, 'b': 0}, {'c': 1, 'd': 0}),
         Vector({'a': 1, 'b': 1}, {'c': 0, 'd': 1}),
       ];
-      await SimCompare.checkFunctionalVector(mod, vectors);
-      final simResult = SimCompare.iverilogVector(mod, vectors);
-      expect(simResult, equals(true));
-      SimCompare.checkSystemCVector(mod, vectors);
+      await SimCompare.checkVectors(mod, vectors);
     });
 
     test('if invalid ', () async {
@@ -530,10 +529,7 @@ void main() {
       final vectors = [
         Vector({'a': 1}, {'c': 1}),
       ];
-      await SimCompare.checkFunctionalVector(mod, vectors);
-      final simResult = SimCompare.iverilogVector(mod, vectors);
-      expect(simResult, equals(true));
-      SimCompare.checkSystemCVector(mod, vectors);
+      await SimCompare.checkVectors(mod, vectors);
     });
 
     test('elseifblock comb', () async {
@@ -545,10 +541,7 @@ void main() {
         Vector({'a': 1, 'b': 0}, {'c': 1, 'd': 0}),
         Vector({'a': 1, 'b': 1}, {'c': 0, 'd': 1}),
       ];
-      await SimCompare.checkFunctionalVector(mod, vectors);
-      final simResult = SimCompare.iverilogVector(mod, vectors);
-      expect(simResult, equals(true));
-      SimCompare.checkSystemCVector(mod, vectors);
+      await SimCompare.checkVectors(mod, vectors);
     });
 
     test('Conditional assign module with invalid inputs', () async {
@@ -586,10 +579,7 @@ void main() {
         Vector({'a': 1}, {'c': 1}),
         Vector({'a': 0}, {'c': 0, 'd': 1}),
       ];
-      await SimCompare.checkFunctionalVector(mod, vectors);
-      final simResult = SimCompare.iverilogVector(mod, vectors);
-      expect(simResult, equals(true));
-      SimCompare.checkSystemCVector(mod, vectors);
+      await SimCompare.checkVectors(mod, vectors);
     });
 
     test('case comb', () async {
@@ -601,10 +591,7 @@ void main() {
         Vector({'a': 1, 'b': 0}, {'c': 1, 'd': 0, 'e': 1}),
         Vector({'a': 1, 'b': 1}, {'c': 0, 'd': 1, 'e': 1}),
       ];
-      await SimCompare.checkFunctionalVector(mod, vectors);
-      final simResult = SimCompare.iverilogVector(mod, vectors);
-      expect(simResult, equals(true));
-      SimCompare.checkSystemCVector(mod, vectors);
+      await SimCompare.checkVectors(mod, vectors);
     });
 
     test('Unique case', () async {
@@ -630,10 +617,7 @@ void main() {
         Vector({'a': 1, 'b': 1, 'd': 5}, {'y': 1, 'z': 0, 'x': 1, 'q': 4}),
         Vector({}, {'y': 1, 'z': 1, 'x': 0, 'q': 5}),
       ];
-      await SimCompare.checkFunctionalVector(mod, vectors);
-      final simResult = SimCompare.iverilogVector(mod, vectors);
-      expect(simResult, equals(true));
-      SimCompare.checkSystemCVector(mod, vectors);
+      await SimCompare.checkVectors(mod, vectors);
     });
 
     test('should return exception if a conditional is used multiple times.',
@@ -652,10 +636,7 @@ void main() {
     final vectors = [
       Vector({'a': 1}, {'q': 1})
     ];
-    await SimCompare.checkFunctionalVector(mod, vectors);
-    final simResult = SimCompare.iverilogVector(mod, vectors);
-    expect(simResult, equals(true));
-    SimCompare.checkSystemCVector(mod, vectors);
+    await SimCompare.checkVectors(mod, vectors);
   });
 
   test(
@@ -667,10 +648,7 @@ void main() {
       Vector({'a': 1}, {'q': 1}),
       Vector({'a': 0}, {'x': 1}),
     ];
-    await SimCompare.checkFunctionalVector(mod, vectors);
-    final simResult = SimCompare.iverilogVector(mod, vectors);
-    expect(simResult, equals(true));
-    SimCompare.checkSystemCVector(mod, vectors);
+    await SimCompare.checkVectors(mod, vectors);
   });
 
   test(
@@ -682,10 +660,7 @@ void main() {
       Vector({'a': 1}, {'q': 1}),
       Vector({'a': 0}, {'x': 1}),
     ];
-    await SimCompare.checkFunctionalVector(mod, vectors);
-    final simResult = SimCompare.iverilogVector(mod, vectors);
-    expect(simResult, equals(true));
-    SimCompare.checkSystemCVector(mod, vectors);
+    await SimCompare.checkVectors(mod, vectors);
   });
 
   test(
@@ -719,9 +694,7 @@ void main() {
       Vector({'a': 1, 'b': 0, 'd': 3}, {'q': 2}),
     ];
 
-    await SimCompare.checkFunctionalVector(mod, vectors);
-    SimCompare.checkIverilogVector(mod, vectors);
-    SimCompare.checkSystemCVector(mod, vectors);
+    await SimCompare.checkVectors(mod, vectors);
   });
 
   test(

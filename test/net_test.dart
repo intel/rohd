@@ -687,9 +687,7 @@ void main() {
       Vector({'a': 1, 'b': 0}, {'c': 0, 'd': 1}),
     ];
 
-    await SimCompare.checkFunctionalVector(mod, vectors);
-    SimCompare.checkIverilogVector(mod, vectors);
-    SimCompare.checkSystemCVector(mod, vectors);
+    await SimCompare.checkVectors(mod, vectors);
   });
 
   test('build fails with missing inout port', () {

@@ -422,9 +422,7 @@ String topBody(Module module) {
 }
 
 Iterable<LogicValue> inputPatterns(int width) sync* {
-  for (var value = 0; value < 1 << width; value++) {
-    yield LogicValue.ofInt(value, width);
-  }
+  yield* twoStateInputPatterns(width);
   for (var index = 0; index < width; index++) {
     for (final state in ['x', 'z']) {
       yield LogicValue.ofString([
@@ -432,6 +430,12 @@ Iterable<LogicValue> inputPatterns(int width) sync* {
           if (bit == index) state else (bit % 2).toString(),
       ].join());
     }
+  }
+}
+
+Iterable<LogicValue> twoStateInputPatterns(int width) sync* {
+  for (var value = 0; value < 1 << width; value++) {
+    yield LogicValue.ofInt(value, width);
   }
 }
 
@@ -492,7 +496,7 @@ void main() {
               expect(topBody(module), body);
 
               final vectors = [
-                for (final input in inputPatterns(width))
+                for (final input in twoStateInputPatterns(width))
                   Vector({
                     'data': input
                   }, {
@@ -502,8 +506,17 @@ void main() {
                     ].join()),
                   }),
               ];
-              await SimCompare.checkFunctionalVector(module, vectors);
-              SimCompare.checkIverilogVector(module, vectors);
+              await SimCompare.checkVectors(
+                module,
+                vectors,
+                excludedBackends: producer == ProducerKind.custom
+                    ? const {
+                        SimCompareBackend.systemc:
+                            'CustomStage provides only a custom SystemVerilog '
+                                'definition.',
+                      }
+                    : const {},
+              );
               expect(body, isNot(matches(r'logic\s+result\w*;')),
                   reason: 'Directly mapped outputs should not leave unused '
                       'intermediate declarations.\n$body');

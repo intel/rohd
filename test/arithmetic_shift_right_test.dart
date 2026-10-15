@@ -38,9 +38,6 @@ void main() {
       Vector({'toShift': 0xe0000000, 'shiftAmount': 4, 'maskBit': 0},
           {'result': 0})
     ];
-    await SimCompare.checkFunctionalVector(mod, vectors);
-    final simResult = SimCompare.iverilogVector(mod, vectors);
-    expect(simResult, equals(true));
-    SimCompare.checkSystemCVector(mod, vectors);
+    await SimCompare.checkVectors(mod, vectors);
   });
 }

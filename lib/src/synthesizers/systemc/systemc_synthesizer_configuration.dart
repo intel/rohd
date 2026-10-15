@@ -7,6 +7,7 @@
 // 2026 October
 // Author: Desmond A. Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
+import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/modules/conditionals/always.dart';
 
@@ -90,15 +91,16 @@ class UnsupportedSystemCModuleException extends SynthException {
 }
 
 /// Whether [module] has a built-in inline/process translation in SystemC.
+@internal
 bool isSystemCHandledInlineModule(Module module) =>
     module is Always ||
     module is FlipFlop ||
     module is SimpleClockGenerator ||
     module is Add ||
-    isSystemCSupportedInlineExpression(module);
+    _isSystemCSupportedInlineExpression(module);
 
 /// Whether [module] has a built-in SystemC expression translation.
-bool isSystemCSupportedInlineExpression(Module module) =>
+bool _isSystemCSupportedInlineExpression(Module module) =>
     module is NotGate ||
     module is And2Gate ||
     module is Or2Gate ||
@@ -131,6 +133,7 @@ bool isSystemCSupportedInlineExpression(Module module) =>
 /// A `null` result means the module is either structurally translatable or has
 /// a built-in SystemC translation. It does not suppress failures encountered
 /// while translating otherwise supported structure.
+@internal
 String? systemCUnsupportedReason(Module module) {
   // Preserve detection for the deprecated customization API until callers
   // migrate to the current SystemVerilog mixin.
@@ -147,6 +150,11 @@ String? systemCUnsupportedReason(Module module) {
     return 'the module provides only a custom SystemVerilog definition';
   }
 
+  if (!isSystemCHandledInlineModule(module) &&
+      _hasCustomSystemVerilogInstantiation(module)) {
+    return 'the module provides a custom SystemVerilog instantiation';
+  }
+
   if (module.generatedDefinitionType == DefinitionGenerationType.none &&
       !isSystemCHandledInlineModule(module)) {
     return module is InlineSystemVerilog
@@ -155,4 +163,35 @@ String? systemCUnsupportedReason(Module module) {
   }
 
   return null;
+}
+
+/// Whether [module] changes its SystemVerilog instantiation from the standard
+/// structural form.
+bool _hasCustomSystemVerilogInstantiation(Module module) {
+  if (module is! SystemVerilog) {
+    return false;
+  }
+
+  final ports = {
+    for (final name in module.inputs.keys) name: name,
+    for (final name in module.outputs.keys) name: name,
+    for (final name in module.inOuts.keys) name: name,
+  };
+  final custom = module.instantiationVerilog(
+    module.definitionName,
+    module.uniqueInstanceName,
+    ports,
+  );
+  if (custom == null) {
+    return false;
+  }
+
+  final standard = SystemVerilogSynthesizer.instantiationVerilogFor(
+    module: module,
+    instanceType: module.definitionName,
+    instanceName: module.uniqueInstanceName,
+    ports: ports,
+    forceStandardInstantiation: true,
+  );
+  return custom != standard;
 }
