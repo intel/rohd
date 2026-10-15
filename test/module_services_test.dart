@@ -14,6 +14,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/diagnostics/inspector_service.dart';
 import 'package:test/test.dart';
 
 class SimpleModule extends Module {
