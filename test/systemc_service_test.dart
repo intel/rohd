@@ -322,13 +322,10 @@ void main() {
     expect(sc.output, contains('accepted.dataIn(dataIn);'));
     expect(sc.output, contains('accepted.dataOut('));
 
-    expect(
-      SimCompare.checkSystemCVector(
-        top,
-        const [],
-        synthesizerConfiguration: configuration,
-      ),
-      isTrue,
+    SimCompare.checkSystemCVector(
+      top,
+      const [],
+      synthesizerConfiguration: configuration,
     );
   });
 }

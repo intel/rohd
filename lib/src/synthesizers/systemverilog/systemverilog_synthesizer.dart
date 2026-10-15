@@ -112,7 +112,15 @@ class SystemVerilogSynthesizer extends Synthesizer {
       if (outputPortColumns != null &&
           outputNames.contains(signalName) &&
           wireValue.isNotEmpty) {
-        outputPortColumns[wireValue] = offset + signalName.length + 3;
+        final wireStartColumn = offset + signalName.length + 3;
+        if (wireValue.startsWith('{') && wireValue.endsWith('}')) {
+          final signalReference = RegExp(r'[A-Za-z_]\w*(?:\[[^\]]+\])*');
+          for (final match in signalReference.allMatches(wireValue)) {
+            outputPortColumns[match.group(0)!] = wireStartColumn + match.start;
+          }
+        } else {
+          outputPortColumns[wireValue] = wireStartColumn;
+        }
       }
       connections.add(connection);
       offset += connection.length;

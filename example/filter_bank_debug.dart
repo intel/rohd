@@ -70,6 +70,7 @@ Future<void> main() async {
     svService: sv,
     packageRoot: packageRoot,
     register: false,
+    svOutputMode: SvOutputMode.perModule,
   );
   if (trace.hasTraces) {
     trace

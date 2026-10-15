@@ -345,6 +345,29 @@ void main() {
       }
     });
 
+    test('write records the actual output path', () async {
+      final mod = SimpleModule(Logic());
+      await mod.build();
+      final dir = Directory.systemTemp.createTempSync('sv_test_');
+      try {
+        final sv = SystemVerilogService(
+          mod,
+          outputDirectory: dir.path,
+          outputBaseName: 'configured',
+        );
+        final configuredPath = '${dir.path}/configured.sv';
+        final writtenPath = '${dir.path}/custom.sv';
+
+        expect(sv.outputPath, equals(configuredPath));
+        sv.write(writtenPath);
+
+        expect(sv.outputPath, equals(writtenPath));
+        expect(File(writtenPath).readAsStringSync(), equals(sv.output));
+      } finally {
+        dir.deleteSync(recursive: true);
+      }
+    });
+
     test('multiFile writeOutputs emits a directory of files', () async {
       final mod = SimpleModule(Logic());
       await mod.build();

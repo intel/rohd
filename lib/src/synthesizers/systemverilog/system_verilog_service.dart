@@ -71,6 +71,8 @@ class SystemVerilogService extends CodeGenService {
   /// The generated file contents (one per unique module definition).
   late final List<SynthFileContents> fileContents;
 
+  String? _writtenOutputPath;
+
   /// Creates a [SystemVerilogService] for [module].
   ///
   /// [module] must already be built.
@@ -105,8 +107,11 @@ class SystemVerilogService extends CodeGenService {
   /// Backwards-compatible alias for [output].
   String get synthOutput => output;
 
-  /// The file path used for single-file output.
-  String get outputPath =>
+  /// The configured output path, or the path used by the most recent
+  /// successful write.
+  String get outputPath => _writtenOutputPath ?? _configuredOutputPath;
+
+  String get _configuredOutputPath =>
       multiFile ? outputDirectory : '$outputDirectory/$outputBaseName.sv';
 
   /// Number of newlines in [moduleSeparator].
@@ -251,13 +256,14 @@ class SystemVerilogService extends CodeGenService {
 
   /// Writes concatenated output to [path], or to [outputPath] when omitted.
   void write([String? path]) {
-    final target = path ?? outputPath;
+    final target = path ?? _configuredOutputPath;
     if (multiFile) {
       writeFiles(target);
     } else {
       final file = File(target);
       file.parent.createSync(recursive: true);
       file.writeAsStringSync(output);
+      _writtenOutputPath = target;
     }
   }
 
@@ -269,6 +275,7 @@ class SystemVerilogService extends CodeGenService {
       File('$targetDirectory/${fileContent.name}.sv')
           .writeAsStringSync(header + fileContent.contents);
     }
+    _writtenOutputPath = targetDirectory;
   }
 
   /// All [SynthesisResult]s produced by synthesis.
@@ -375,8 +382,10 @@ class SystemVerilogService extends CodeGenService {
         File('${directory.path}/${fc.name}.sv')
             .writeAsStringSync(header + fc.contents);
       }
+      _writtenOutputPath = directory.path;
     } else {
       File('${directory.path}/$outputBaseName.sv').writeAsStringSync(output);
+      _writtenOutputPath = '$outputDirectory/$outputBaseName.sv';
     }
   }
 
@@ -393,6 +402,7 @@ class SystemVerilogService extends CodeGenService {
     File(outputPath)
       ..parent.createSync(recursive: true)
       ..writeAsStringSync(output);
+    _writtenOutputPath = outputPath;
   }
 
   /// Returns a JSON-serialisable summary of the SV synthesis.
