@@ -2412,8 +2412,36 @@ void main() {
           },
         },
       };
+      final aggregateBits = <int>[
+        ...List<int>.generate(8, (index) => 200 + index),
+        ...List<int>.generate(8, (index) => 400 + index),
+      ];
+      final netnames = <String, Object?>{
+        'struct_values': {
+          'bits': aggregateBits,
+          'logic_type': {
+            'typeName': 'NetPair',
+            'fields': [
+              {'name': 'first', 'width': 8},
+              {'name': 'second', 'width': 8},
+            ],
+          },
+        },
+        'array_values': {
+          'bits': aggregateBits,
+          'logic_type': {
+            'typeName': 'NetArray',
+            'arrayDims': [2]
+          },
+        },
+      };
       expect(
-        () => NetlistValidation.validate(ports, cells, 'struct_module'),
+        () => NetlistValidation.validate(
+          ports,
+          cells,
+          'struct_module',
+          netnames: netnames,
+        ),
         returnsNormally,
       );
     });
@@ -2438,15 +2466,38 @@ void main() {
           },
         },
       };
+      final netnames = <String, Object?>{
+        'values': {
+          'bits': [200, 201, 202],
+          'logic_type': {
+            'typeName': 'NetPair',
+            'fields': [
+              {'name': 'first', 'width': 1},
+              {'name': 'second', 'width': 2},
+            ],
+          },
+        },
+      };
 
       expect(
-        () => NetlistValidation.validate(ports, cells, 'struct_module'),
+        () => NetlistValidation.validate(
+          ports,
+          cells,
+          'struct_module',
+          netnames: netnames,
+        ),
         throwsA(
-          isA<NetlistValidationException>().having(
-            (error) => error.issues.map((issue) => issue.wireBit),
-            'overlapping wire bit',
-            contains(201),
-          ),
+          isA<NetlistValidationException>()
+              .having(
+                (error) => error.issues.map((issue) => issue.wireBit),
+                'overlapping wire bit',
+                contains(201),
+              )
+              .having(
+                (error) => error.issues.single.netname,
+                'aggregate netname',
+                'values',
+              ),
         ),
       );
     });
@@ -2488,51 +2539,54 @@ void main() {
       );
     });
 
-    test('struct net aggregates reject mixed tri-state and normal drivers', () {
-      final cells = <String, Map<String, Object?>>{
-        'tri_state': {
-          'type': r'$tribuf',
-          'port_directions': {'A': 'input', 'EN': 'input', 'Y': 'output'},
-          'connections': {
-            'A': [100],
-            'EN': [200],
-            'Y': [300]
+    test(
+      'struct net aggregates allow disjoint mixed tri-state and normal drivers',
+      () {
+        final cells = <String, Map<String, Object?>>{
+          'tri_state': {
+            'type': r'$tribuf',
+            'port_directions': {'A': 'input', 'EN': 'input', 'Y': 'output'},
+            'connections': {
+              'A': [100],
+              'EN': [200],
+              'Y': [300]
+            },
           },
-        },
-        'normal': {
-          'type': r'$buf',
-          'port_directions': {'A': 'input', 'Y': 'output'},
-          'connections': {
-            'A': [101],
-            'Y': [301]
+          'normal': {
+            'type': r'$buf',
+            'port_directions': {'A': 'input', 'Y': 'output'},
+            'connections': {
+              'A': [101],
+              'Y': [301]
+            },
           },
-        },
-      };
-      final netnames = <String, Object?>{
-        'values': {
-          'bits': [300, 301],
-          'logic_type': {
-            'typeName': 'NetPair',
-            'fields': [
-              {'name': 'first', 'width': 1},
-              {'name': 'second', 'width': 1},
-            ],
+        };
+        final netnames = <String, Object?>{
+          'values': {
+            'bits': [300, 301],
+            'logic_type': {
+              'typeName': 'NetPair',
+              'fields': [
+                {'name': 'first', 'width': 1},
+                {'name': 'second', 'width': 1},
+              ],
+            },
           },
-        },
-      };
+        };
 
-      expect(
-        () => NetlistValidation.validate(
-          const {},
-          cells,
-          'structured_net_module',
-          netnames: netnames,
-        ),
-        throwsA(isA<NetlistValidationException>()),
-      );
-    });
+        expect(
+          () => NetlistValidation.validate(
+            const {},
+            cells,
+            'structured_net_module',
+            netnames: netnames,
+          ),
+          returnsNormally,
+        );
+      },
+    );
 
-    test('struct net aggregates reject normal partial overlaps', () {
+    test('struct net aggregates reject mixed partial overlaps', () {
       final cells = <String, Map<String, Object?>>{
         'tri_state': {
           'type': r'$tribuf',
@@ -2565,7 +2619,18 @@ void main() {
           'structured_net_module',
           netnames: netnames,
         ),
-        throwsA(isA<NetlistValidationException>()),
+        throwsA(isA<NetlistValidationException>()
+            .having((error) => error.issues.single.wireBit,
+                'overlapping wire bit', 301)
+            .having((error) => error.issues.single.netname, 'aggregate netname',
+                'values')
+            .having(
+                (error) => error.issues.single.drivers,
+                'conflicting drivers',
+                containsAll([
+                  r'cell tri_state.Y ($tribuf)',
+                  r'cell normal.Y ($buf)',
+                ]))),
       );
     });
 

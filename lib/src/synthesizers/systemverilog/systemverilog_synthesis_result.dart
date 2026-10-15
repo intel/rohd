@@ -275,6 +275,8 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
       if (configuration.generateEnums &&
           normalizesWholeEnumDestination &&
           (sourceIsPackedEnumInput ||
+              assignment.src is SynthLogicArrayElement ||
+              assignment.src is SynthLogicArrayStructureElement ||
               !assignment.src.isEnum ||
               assignment is RangeSynthAssignment ||
               !identical(
