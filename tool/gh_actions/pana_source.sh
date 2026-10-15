@@ -37,6 +37,9 @@ if [[ "$package" == rohd_source_navigator ]]; then
   # TODO(desmonddak): https://github.com/intel/rohd/pull/718 Remove this
   # exception after the package move is on main and Pana can verify its URL.
   pana_score_threshold=10
+elif [[ "$package" == rohd_devtools_widgets ]]; then
+  # Pana gates points lost: 10 permits a score of 150/160.
+  pana_score_threshold=10
 fi
 if [[ "$sdk" == flutter ]]; then
   flutter_root="${FLUTTER_ROOT:-}"

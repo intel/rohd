@@ -13,6 +13,7 @@ readonly FIXTURE="$(mktemp -d)"
 trap 'rm -rf "$FIXTURE"' EXIT
 export SOURCE="$FIXTURE/source package" SDK_LOG="$FIXTURE/sdk.log"
 export NAVIGATOR="$FIXTURE/rohd_source_navigator"
+export WIDGETS="$FIXTURE/rohd_devtools_widgets"
 export PUB_CACHE="$FIXTURE/pub cache" TMPDIR="$FIXTURE/temp space"
 export FLUTTER_ROOT="$FIXTURE/flutter sdk" PANA_ANALYSIS_INCLUDES=1
 
@@ -30,6 +31,8 @@ done
 cp -R "$SOURCE" "$FIXTURE/original"
 cp -R "$SOURCE" "$NAVIGATOR"
 cp -R "$NAVIGATOR" "$FIXTURE/original-navigator"
+cp -R "$SOURCE" "$WIDGETS"
+cp -R "$WIDGETS" "$FIXTURE/original-widgets"
 
 cat > "$FIXTURE/bin/dart" <<'EOF'
 #!/bin/bash
@@ -97,6 +100,7 @@ run_case() {
   fi
   diff -ru "$FIXTURE/original" "$SOURCE"
   diff -ru "$FIXTURE/original-navigator" "$NAVIGATOR"
+  diff -ru "$FIXTURE/original-widgets" "$WIDGETS"
   [[ -z "$(find "$TMPDIR" -mindepth 1 -print -quit)" ]]
   passed=$((passed + 1))
 }
@@ -128,6 +132,11 @@ done
 export EXPECTED_SDK=dart EXPECTED_THRESHOLD=10
 run_case 0 "$NAVIGATOR" dart
 [[ "$(cat "$SDK_LOG")" == $'dart|pub get\ndart|analyze --fatal-infos lib\ndart|pub downgrade\ndart|analyze --fatal-infos lib\npana' ]]
+
+export EXPECTED_SDK=flutter EXPECTED_THRESHOLD=10
+run_case 0 "$WIDGETS" flutter
+[[ "$(cat "$SDK_LOG")" == $'flutter|pub get\nflutter|analyze --fatal-infos --no-pub lib\nflutter|pub downgrade\nflutter|analyze --fatal-infos --no-pub lib\npana' ]]
+PANA_STATUS=73 run_case 73 "$WIDGETS" flutter
 
 mv "$PUB_CACHE/bin/pana" "$FIXTURE/pana"
 export EXPECTED_THRESHOLD=0
