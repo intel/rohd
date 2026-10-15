@@ -97,7 +97,11 @@ class SystemCService extends CodeGenService {
   Iterable<SynthesisResult> get synthesisResults =>
       _synthBuilder.synthesisResults;
 
-  Iterable<SystemCSynthesisResult> get _systemCResults =>
+  /// The underlying [SynthBuilder] that drove synthesis.
+  SynthBuilder get synthBuilder => _synthBuilder;
+
+  /// All [SystemCSynthesisResult]s produced by synthesis.
+  Iterable<SystemCSynthesisResult> get systemCResults =>
       _synthBuilder.synthesisResults.whereType<SystemCSynthesisResult>();
 
   /// Unsupported module instances whose behavior was emitted as empty stubs.
@@ -138,8 +142,7 @@ class SystemCService extends CodeGenService {
   /// [SystemCSynthesisResult]
   /// `scLineMap`s (signal/instance name → list of `'line:col'` positions).
   Map<String, Map<String, List<String>>> get scLineMaps => {
-        for (final sr in _systemCResults)
-          sr.instanceTypeName: sr.scLineMap,
+        for (final sr in systemCResults) sr.instanceTypeName: sr.scLineMap,
       };
 
   /// Maps each source module occurrence to its generated SC line map.
