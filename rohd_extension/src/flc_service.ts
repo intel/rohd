@@ -339,7 +339,8 @@ function lookupSignalInEmbeddedTrace(
     const modData = asRecord(modules[modName]);
     const trace = asRecord(asRecord(modData?.['attributes'])?.['rohd.src_trace']);
     const signals = asRecord(trace?.['signals']);
-    const traceFrames = signals?.[signalName];
+    const instances = asRecord(trace?.['instances']);
+    const traceFrames = signals?.[signalName] ?? instances?.[signalName];
     if (!Array.isArray(traceFrames)) { continue; }
 
     const frames = traceFrames.flatMap(frame =>
