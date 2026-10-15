@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to ROHD Debugger will be documented in this file.
+All notable changes to ROHD Live Debugger will be documented in this file.
 
 ## 1.0.0+1
 

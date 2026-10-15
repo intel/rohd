@@ -41,7 +41,7 @@ Build a static bundle for a repository-scoped web path:
 
 ```sh
 cd rohd_devtools_extension
-tool/gh_actions/build_app.sh /rohd_devtools_extension/
+tool/gh_actions/build_app.sh /rohd/rohd-live-debugger/
 ```
 
 The bundle is written to `build/web/`. The optional argument must start and end
@@ -50,7 +50,8 @@ site root. When the argument is omitted in GitHub Actions, the repository name
 determines the base href. Local builds default to `/rohd_devtools_extension/`.
 The build disables Flutter's generated service worker to avoid stale bundles.
 On pushes to `main`, the `General` workflow includes this bundle in the existing
-ROHD documentation deployment at `/rohd_devtools_extension/`.
+ROHD documentation deployment at
+[`https://intel.github.io/rohd/rohd-live-debugger/`](https://intel.github.io/rohd/rohd-live-debugger/).
 
 Run the release Linux standalone form:
 

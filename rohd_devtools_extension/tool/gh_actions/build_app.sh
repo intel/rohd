@@ -27,7 +27,7 @@ if [[ -z "$base_href" ]]; then
   fi
 fi
 
-if [[ ! "$base_href" =~ ^/[A-Za-z0-9._/-]*/$ ]]; then
+if [[ "$base_href" != "/" && ! "$base_href" =~ ^/[A-Za-z0-9._/-]*/$ ]]; then
   echo "error: base href must start and end with '/': $base_href" >&2
   exit 64
 fi

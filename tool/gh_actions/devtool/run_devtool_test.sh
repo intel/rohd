@@ -20,4 +20,4 @@ mapfile -t browser_tests < <(
   find test -type f -name '*_test.dart' ! -path 'test/debugger/*' | sort
 )
 flutter test --platform chrome "${browser_tests[@]}"
-flutter test test/debugger
+flutter test

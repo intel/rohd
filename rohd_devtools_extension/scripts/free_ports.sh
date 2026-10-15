@@ -4,18 +4,12 @@
 #   9199 — Schematic viewer
 #   9299 — Wave viewer
 #
-# Handles both LISTEN and TIME_WAIT states, plus stale flutter processes.
+# Handles both LISTEN and TIME_WAIT states.
 
 set -euo pipefail
 
 PORTS=(9099 9199 9299)
 LABELS=("DevTools" "Schematics" "Waves")
-
-# Kill any stale flutter/dart processes
-echo "Cleaning up stale Flutter/Dart processes..."
-pkill -f "flutter run" 2>/dev/null || true
-pkill -f "dart.*--web-port" 2>/dev/null || true
-sleep 0.5
 
 for i in "${!PORTS[@]}"; do
   port="${PORTS[$i]}"

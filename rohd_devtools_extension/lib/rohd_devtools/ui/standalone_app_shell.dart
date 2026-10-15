@@ -58,7 +58,7 @@ class StandaloneAppConfig {
 
   /// Constructor for [StandaloneAppConfig].
   const StandaloneAppConfig({
-    this.title = 'ROHD DevTools (Standalone)',
+    this.title = 'ROHD Live Debugger',
     this.assetPathPrefix = '',
     this.connectionStrategy,
     this.defaultExampleIndex = 0, // Counter (first in-process example)
@@ -83,7 +83,7 @@ class StandaloneRohdDevToolsApp extends StatelessWidget {
           builder: (context, themeMode) {
             final isDark = themeMode == DevToolsThemeMode.dark;
             return MaterialApp(
-              title: 'ROHD DevTools',
+              title: 'ROHD Live Debugger',
               debugShowCheckedModeBanner: false,
               themeMode: isDark ? ThemeMode.dark : ThemeMode.light,
               darkTheme: buildDarkTheme(),
