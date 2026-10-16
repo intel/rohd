@@ -73,13 +73,10 @@
     
 <section class="desc markdown">
   <p>The waveform artifact produced by this service.</p>
-<p>The artifact is complete after simulation finalization. During capture,
-file-backed artifacts expose only bytes already flushed to
-<a href="../../rohd/WaveformService/outputFilePath.html">outputFilePath</a>; the current write buffer is not visible. Each
-file-backed <a href="../../rohd/ModuleServiceArtifact/openRead.html">ModuleServiceArtifact.openRead</a> opens the current file, not
-an immutable snapshot or a live tail, so concurrent capture may change
-what a read observes. In-memory artifacts are available whenever
-<a href="../../rohd/WaveformService/retainInMemory.html">retainInMemory</a> is enabled, including its automatic memory-only default.</p>
+<p>It is complete after simulation finalization. During capture,
+file-backed reads expose only data already flushed, and each file-backed
+<a href="../../rohd/ModuleServiceArtifact/openRead.html">ModuleServiceArtifact.openRead</a> opens the current file rather than a
+snapshot or live tail.</p>
 </section>
 
     
@@ -95,8 +92,8 @@ Iterable&lt;ModuleServiceArtifact&gt; get artifacts sync* {
     fileName: outputFileName ?? &#39;$outputBaseName.${format.fileExtension}&#39;,
     mediaType: format.mediaType,
     openRead: writeToFile
-        ? () =&gt; File(outputFilePath).openRead()
-        : () =&gt; Stream.value(utf8.encode(_inMemoryOutput.toString())),
+        ? () =&gt; File(outputPath).openRead()
+        : () =&gt; Stream.value(utf8.encode(inMemoryOutput!)),
   );
 }</code></pre>
 </section>

@@ -54,51 +54,9 @@
 
     
 <section class="desc markdown">
-  <p>A waveform capture service that records signal changes.</p>
-<p>This is the base class for waveform capture.  It handles:</p>
-<ul>
-<li>Signal collection (with optional <a href="../rohd/WaveformService/signalFilter.html">signalFilter</a>)</li>
-<li>Optional whole-history in-memory VCD output with configurable <a href="../rohd/WaveformService/timescale.html">timescale</a></li>
-<li>Selective recording via <a href="../rohd/WaveformService/startTime.html">startTime</a> / <a href="../rohd/WaveformService/stopTime.html">stopTime</a></li>
-<li>Optional file output with periodic buffer flushing and <a href="../rohd/WaveformService/overwritePolicy.html">overwritePolicy</a></li>
-<li>Optional registration with <a href="../rohd/ModuleServices-class.html">ModuleServices</a></li>
-</ul>
-<p><strong>Subclassing for DevTools streaming:</strong></p>
-<p>Override the protected hooks below to intercept the simulation event loop
-without re-implementing the file-writing logic:</p>
-<ul>
-<li><a href="../rohd/WaveformService/onSignalCollected.html">onSignalCollected</a> — called once per tracked signal at startup; use
-it to register signals in a VM-service index.</li>
-<li><a href="../rohd/WaveformService/onValueChange.html">onValueChange</a> — called once for each signal in a captured callback
-batch's coalesced final-value set; use it to feed an in-memory store for
-streaming. A window-entry snapshot is a separate batch from captured
-changes and may share their timestamp.</li>
-<li><a href="../rohd/WaveformService/onTimestampCapture.html">onTimestampCapture</a> — called after each captured timestamp batch,
-including the possibly empty finalization batch.</li>
-<li><a href="../rohd/WaveformService/onSimulationEnd.html">onSimulationEnd</a> — called after the final timestamp is written and
-the file is closed; use it to finalise any streaming buffers.</li>
-</ul>
-<p>Example subclass skeleton:</p>
-<pre class="language-dart"><code class="language-dart">class DevToolsWaveformService extends WaveformService {
-  DevToolsWaveformService(
-    super.module, {
-    super.outputDirectory,
-    super.outputBaseName,
-  });
-
-  @override
-  void onSignalCollected(Logic signal) {
-    super.onSignalCollected(signal);
-    _registerWithVmService(signal);
-  }
-
-  @override
-  void onValueChange(Logic signal, int timestamp) {
-    super.onValueChange(signal, timestamp);
-    _recordInMemory(signal, timestamp);
-  }
-}
-</code></pre>
+  <p>A waveform capture service that writes signal changes to a file.</p>
+<p>Selects the output backend via <a href="../rohd/WaveformService/format.html">format</a>. FST-specific writer tuning is
+available through <a href="../rohd/WaveformService/WaveformService.fst.html">WaveformService.fst</a>.</p>
 </section>
 
 
@@ -130,10 +88,23 @@ the file is closed; use it to finalise any streaming buffers.</li>
     <h2>Constructors</h2>
     <dl class="constructor-summary-list">
         <dt id="WaveformService.new" class="callable">
-          <span class="name"><a href="../rohd/WaveformService/WaveformService.html">WaveformService</a></span><span class="signature">(<span class="parameter" id="param-module"><span class="type-annotation"><a href="../rohd/Module-class.html">Module</a></span> <span class="parameter-name">module</span>, {</span><span class="parameter" id="param-outputDirectory"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">outputDirectory</span> = <span class="default-value">&#39;.&#39;</span>, </span><span class="parameter" id="param-outputBaseName"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">outputBaseName</span>, </span><span class="parameter" id="param-outputFileName"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">outputFileName</span>, </span><span class="parameter" id="param-format"><span class="type-annotation"><a href="../rohd/WaveOutputFormat.html">WaveOutputFormat</a></span> <span class="parameter-name">format</span> = <span class="default-value">WaveOutputFormat.vcd</span>, </span><span class="parameter" id="param-signalFilter"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">signalFilter</span>(<span class="parameter" id="param-signal"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">signal</span></span>)?, </span><span class="parameter" id="param-timescale"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">timescale</span> = <span class="default-value">&#39;1ps&#39;</span>, </span><span class="parameter" id="param-startTime"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">startTime</span>, </span><span class="parameter" id="param-stopTime"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">stopTime</span>, </span><span class="parameter" id="param-flushBufferSize"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/int-class.html">int</a></span> <span class="parameter-name">flushBufferSize</span> = <span class="default-value">100000</span>, </span><span class="parameter" id="param-overwritePolicy"><span class="type-annotation"><a href="../rohd/OverwritePolicy.html">OverwritePolicy</a></span> <span class="parameter-name">overwritePolicy</span> = <span class="default-value">OverwritePolicy.overwrite</span>, </span><span class="parameter" id="param-register"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">register</span> = <span class="default-value">true</span>, </span><span class="parameter" id="param-writeToFile"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">writeToFile</span> = <span class="default-value">false</span>, </span><span class="parameter" id="param-retainInMemory"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">retainInMemory</span></span>})</span>
+          <span class="name"><a href="../rohd/WaveformService/WaveformService.html">WaveformService</a></span><span class="signature">(<span class="parameter" id="param-module"><span class="type-annotation"><a href="../rohd/Module-class.html">Module</a></span> <span class="parameter-name">module</span>, {</span><span class="parameter" id="param-outputDirectory"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">outputDirectory</span>, </span><span class="parameter" id="param-outputBaseName"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">outputBaseName</span>, </span><span class="parameter" id="param-outputFileName"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">outputFileName</span>, </span><span class="parameter" id="param-format"><span class="type-annotation"><a href="../rohd/WaveOutputFormat.html">WaveOutputFormat</a></span> <span class="parameter-name">format</span> = <span class="default-value">WaveOutputFormat.vcd</span>, </span><span class="parameter" id="param-signalFilter"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">signalFilter</span>(<span class="parameter" id="param-signal"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">signal</span></span>)?, </span><span class="parameter" id="param-timescale"><span class="type-annotation"><a href="../rohd/WaveformTimeScale.html">WaveformTimeScale</a></span> <span class="parameter-name">timescale</span> = <span class="default-value">WaveformTimeScale.onePicosecond</span>, </span><span class="parameter" id="param-startTime"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">startTime</span>, </span><span class="parameter" id="param-stopTime"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">stopTime</span>, </span><span class="parameter" id="param-flushBufferSize"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/int-class.html">int</a></span> <span class="parameter-name">flushBufferSize</span> = <span class="default-value">100000</span>, </span><span class="parameter" id="param-overwritePolicy"><span class="type-annotation"><a href="../rohd/OverwritePolicy.html">OverwritePolicy</a></span> <span class="parameter-name">overwritePolicy</span> = <span class="default-value">OverwritePolicy.overwrite</span>, </span><span class="parameter" id="param-register"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">register</span> = <span class="default-value">true</span>, </span><span class="parameter" id="param-writeToFile"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">writeToFile</span> = <span class="default-value">false</span>, </span><span class="parameter" id="param-retainInMemory"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">retainInMemory</span></span>})</span>
         </dt>
         <dd>
           Creates a <a href="../rohd/WaveformService-class.html">WaveformService</a> for <code>module</code>.
+        </dd>
+        <dt id="WaveformService.fromOutputPath" class="callable">
+          <span class="name"><a href="../rohd/WaveformService/WaveformService.fromOutputPath.html">WaveformService.fromOutputPath</a></span><span class="signature">(<span class="parameter" id="fromOutputPath-param-module"><span class="type-annotation"><a href="../rohd/Module-class.html">Module</a></span> <span class="parameter-name">module</span>, {</span><span class="parameter" id="fromOutputPath-param-outputPath"><span>required</span> <span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">outputPath</span>, </span><span class="parameter" id="fromOutputPath-param-format"><span class="type-annotation"><a href="../rohd/WaveOutputFormat.html">WaveOutputFormat</a></span> <span class="parameter-name">format</span> = <span class="default-value">WaveOutputFormat.vcd</span>, </span><span class="parameter" id="fromOutputPath-param-signalFilter"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">signalFilter</span>(<span class="parameter" id="param-signal"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">signal</span></span>)?, </span><span class="parameter" id="fromOutputPath-param-timescale"><span class="type-annotation"><a href="../rohd/WaveformTimeScale.html">WaveformTimeScale</a></span> <span class="parameter-name">timescale</span> = <span class="default-value">WaveformTimeScale.onePicosecond</span>, </span><span class="parameter" id="fromOutputPath-param-startTime"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">startTime</span>, </span><span class="parameter" id="fromOutputPath-param-stopTime"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">stopTime</span>, </span><span class="parameter" id="fromOutputPath-param-flushBufferSize"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/int-class.html">int</a></span> <span class="parameter-name">flushBufferSize</span> = <span class="default-value">100000</span>, </span><span class="parameter" id="fromOutputPath-param-overwritePolicy"><span class="type-annotation"><a href="../rohd/OverwritePolicy.html">OverwritePolicy</a></span> <span class="parameter-name">overwritePolicy</span> = <span class="default-value">OverwritePolicy.overwrite</span>, </span><span class="parameter" id="fromOutputPath-param-register"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">register</span> = <span class="default-value">true</span>, </span><span class="parameter" id="fromOutputPath-param-retainInMemory"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">retainInMemory</span></span>})</span>
+        </dt>
+        <dd>
+          Legacy factory that accepts a single <code>outputPath</code> argument.
+            <div class="constructor-modifier features">factory</div>
+        </dd>
+        <dt id="WaveformService.fst" class="callable">
+          <span class="name"><a href="../rohd/WaveformService/WaveformService.fst.html">WaveformService.fst</a></span><span class="signature">(<span class="parameter" id="fst-param-module"><span class="type-annotation"><a href="../rohd/Module-class.html">Module</a></span> <span class="parameter-name">module</span>, {</span><span class="parameter" id="fst-param-outputDirectory"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">outputDirectory</span>, </span><span class="parameter" id="fst-param-outputBaseName"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">outputBaseName</span>, </span><span class="parameter" id="fst-param-outputFileName"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">outputFileName</span>, </span><span class="parameter" id="fst-param-signalFilter"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">signalFilter</span>(<span class="parameter" id="param-signal"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">signal</span></span>)?, </span><span class="parameter" id="fst-param-timescale"><span class="type-annotation"><a href="../rohd/WaveformTimeScale.html">WaveformTimeScale</a></span> <span class="parameter-name">timescale</span> = <span class="default-value">WaveformTimeScale.onePicosecond</span>, </span><span class="parameter" id="fst-param-startTime"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">startTime</span>, </span><span class="parameter" id="fst-param-stopTime"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">stopTime</span>, </span><span class="parameter" id="fst-param-overwritePolicy"><span class="type-annotation"><a href="../rohd/OverwritePolicy.html">OverwritePolicy</a></span> <span class="parameter-name">overwritePolicy</span> = <span class="default-value">OverwritePolicy.overwrite</span>, </span><span class="parameter" id="fst-param-register"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">register</span> = <span class="default-value">true</span>, </span><span class="parameter" id="fst-param-writeToFile"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">writeToFile</span> = <span class="default-value">true</span>, </span><span class="parameter" id="fst-param-config"><span class="type-annotation"><a href="../rohd/FstWriterConfig-class.html">FstWriterConfig</a></span> <span class="parameter-name">config</span> = <span class="default-value">const FstWriterConfig()</span></span>})</span>
+        </dt>
+        <dd>
+          Creates an FST capture with backend-specific <code>config</code> tuning.
         </dd>
     </dl>
   </section>
@@ -162,8 +133,8 @@ the file is closed; use it to finalise any streaming buffers.</li>
 
 </dt>
 <dd>
-  Number of characters accumulated in the write buffer before it is flushed
-to disk.
+  Number of characters accumulated in the VCD write buffer before it is
+flushed to disk.
   <div class="features"><span class="feature">final</span></div>
 
 </dd>
@@ -189,6 +160,18 @@ to disk.
 <dd class="inherited">
   The hash code for this object.
   <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="inMemoryOutput" class="property">
+  <span class="name"><a href="../rohd/WaveformService/inMemoryOutput.html">inMemoryOutput</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  The retained VCD waveform, or <code>null</code> when retention is disabled.
+  <div class="features"><span class="feature">no setter</span></div>
 
 </dd>
 
@@ -259,7 +242,7 @@ to disk.
 
 </dt>
 <dd>
-  The output filepath of the generated waveforms.
+  Path of the output waveform file.
   <div class="features"><span class="feature">no setter</span></div>
 
 </dd>
@@ -295,7 +278,7 @@ to disk.
 
 </dt>
 <dd>
-  Whether to retain the complete waveform in memory.
+  Whether to retain a complete in-memory copy for debugging consumers.
   <div class="features"><span class="feature">final</span></div>
 
 </dd>
@@ -351,13 +334,25 @@ captured.
 
         <dt id="timescale" class="property">
   <span class="name"><a href="../rohd/WaveformService/timescale.html">timescale</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>
+  <span class="signature">&#8594; <a href="../rohd/WaveformTimeScale.html">WaveformTimeScale</a></span>
   
 
 </dt>
 <dd>
-  VCD timescale string, e.g. <code>'1ps'</code>, <code>'1ns'</code>.
+  The physical duration represented by one unit of <a href="../rohd/Simulator/time.html">Simulator.time</a>.
   <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="writer" class="property">
+  <span class="name"><a href="../rohd/WaveformService/writer.html">writer</a></span>
+  <span class="signature">&#8594; <a href="../rohd/WaveformWriter-class.html">WaveformWriter</a></span>
+  
+
+</dt>
+<dd>
+  The concrete output writer used by this service.
+  <div class="features"><span class="feature">no setter</span></div>
 
 </dd>
 
@@ -368,7 +363,7 @@ captured.
 
 </dt>
 <dd>
-  Whether waveform bytes are written to <a href="../rohd/WaveformService/outputFilePath.html">outputFilePath</a>.
+  Whether waveform bytes are written to <a href="../rohd/WaveformService/outputPath.html">outputPath</a>.
   <div class="features"><span class="feature">final</span></div>
 
 </dd>
@@ -390,7 +385,20 @@ captured.
 
 </dt>
 <dd>
-  Whether this service can service debugger waveform-data queries.
+  Whether this service can provide waveform data to debugging consumers.
+  
+
+</dd>
+
+        <dt id="createWaveformQuery" class="callable">
+  <span class="name"><a href="../rohd/WaveformService/createWaveformQuery.html">createWaveformQuery</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="../rohd/WaveformQuery-class.html">WaveformQuery</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Creates a format-independent query provider for this capture.
   
 
 </dd>
@@ -416,8 +424,7 @@ captured.
 
 </dt>
 <dd>
-  Called once for each <a href="../rohd/Logic-class.html">Logic</a> signal that passes
-<a href="../rohd/WaveformService/signalFilter.html">signalFilter</a> during initial signal collection.
+  Called once for each <a href="../rohd/Logic-class.html">Logic</a> signal that passes <a href="../rohd/WaveformService/signalFilter.html">signalFilter</a>.
   
 
 </dd>
@@ -464,7 +471,7 @@ captured.
 
         <dt id="toJson" class="callable">
   <span class="name"><a href="../rohd/WaveformService/toJson.html">toJson</a></span><span class="signature">(<wbr>)
-    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Object-class.html">Object</a></span>&gt;</span></span>
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Object-class.html">Object</a>?</span>&gt;</span></span>
   </span>
   
 

@@ -59,7 +59,7 @@
         <li>@<a href="https://api.dart.dev/stable/3.13.5/dart-core/override-constant.html">override</a></li>
     </ol>
   </div>
-<span class="returntype"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Object-class.html">Object</a></span>&gt;</span></span>
+<span class="returntype"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Object-class.html">Object</a>?</span>&gt;</span></span>
 <span class="name ">toJson</span>(<wbr>)
 
       <div class="features"><span class="feature">override</span></div>
@@ -75,17 +75,16 @@
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@override
-Map&lt;String, Object&gt; toJson() =&gt; {
-      &#39;outputDirectory&#39;: outputDirectory,
-      &#39;outputBaseName&#39;: outputBaseName,
-      &#39;outputFilePath&#39;: outputFilePath,
+Map&lt;String, Object?&gt; toJson() =&gt; &lt;String, Object?&gt;{
+      &#39;outputPath&#39;: outputPath,
       &#39;writeToFile&#39;: writeToFile,
       &#39;retainInMemory&#39;: retainInMemory,
       &#39;format&#39;: format.name,
-      &#39;signalCount&#39;: _signalToMarkerMap.length,
-      &#39;timescale&#39;: timescale,
-      if (startTime != null) &#39;startTime&#39;: startTime!,
-      if (stopTime != null) &#39;stopTime&#39;: stopTime!,
+      &#39;signalCount&#39;: _signalHandles.length,
+      &#39;timescale&#39;: timescale.vcdValue,
+      if (startTime != null) &#39;startTime&#39;: startTime,
+      if (stopTime != null) &#39;stopTime&#39;: stopTime,
+      &#39;writer&#39;: _writer.toJson(),
     };</code></pre>
 </section>
 

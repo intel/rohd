@@ -244,6 +244,79 @@ in SystemVerilog.
   Represents a single flip-flop with no reset.
 </dd>
 
+          <dt id="FstBlockIndex">
+  <span class="name "><a href="../rohd/FstBlockIndex-class.html">FstBlockIndex</a></span> 
+
+</dt>
+<dd>
+  Metadata about a flushed VcData block in the FST file.
+</dd>
+
+          <dt id="FstBlockReader">
+  <span class="name "><a href="../rohd/FstBlockReader-class.html">FstBlockReader</a></span> 
+
+</dt>
+<dd>
+  Lightweight reader that decodes VcData DynamicAlias2 blocks written by
+<a href="../rohd/FstWriter-class.html">FstWriter</a>.
+</dd>
+
+          <dt id="FstSignalHandle">
+  <span class="name "><a href="../rohd/FstSignalHandle-class.html">FstSignalHandle</a></span> 
+
+</dt>
+<dd>
+  A handle to a declared signal in the FST file.
+</dd>
+
+          <dt id="FstSignalInfo">
+  <span class="name "><a href="../rohd/FstSignalInfo-class.html">FstSignalInfo</a></span> 
+
+</dt>
+<dd>
+  Public metadata about a declared signal in the FST writer.
+</dd>
+
+          <dt id="FstValueChange">
+  <span class="name "><a href="../rohd/FstValueChange-class.html">FstValueChange</a></span> 
+
+</dt>
+<dd>
+  A value change record decoded from an FST VcData block.
+</dd>
+
+          <dt id="FstWaveformQuery">
+  <span class="name "><a href="../rohd/FstWaveformQuery-class.html">FstWaveformQuery</a></span> 
+
+</dt>
+<dd>
+  Queries an <a href="../rohd/FstWriter-class.html">FstWriter</a>'s flushed blocks and unflushed hot buffer.
+</dd>
+
+          <dt id="FstWaveformWriter">
+  <span class="name "><a href="../rohd/FstWaveformWriter-class.html">FstWaveformWriter</a></span> 
+
+</dt>
+<dd>
+  FST implementation of <a href="../rohd/WaveformWriter-class.html">WaveformWriter</a>.
+</dd>
+
+          <dt id="FstWriter">
+  <span class="name "><a href="../rohd/FstWriter-class.html">FstWriter</a></span> 
+
+</dt>
+<dd>
+  Pure Dart writer for the FST (Fast Signal Trace) binary format.
+</dd>
+
+          <dt id="FstWriterConfig">
+  <span class="name "><a href="../rohd/FstWriterConfig-class.html">FstWriterConfig</a></span> 
+
+</dt>
+<dd>
+  Configuration for the FST writer.
+</dd>
+
           <dt id="GreaterThan">
   <span class="name "><a href="../rohd/GreaterThan-class.html">GreaterThan</a></span> 
 
@@ -698,6 +771,14 @@ given <a href="../rohd/Module-class.html">Module</a>.
   A tri-state buffer: can drive 0, 1, or leave the output floating.
 </dd>
 
+          <dt id="VcdWaveformWriter">
+  <span class="name "><a href="../rohd/VcdWaveformWriter-class.html">VcdWaveformWriter</a></span> 
+
+</dt>
+<dd>
+  VCD implementation of <a href="../rohd/WaveformWriter-class.html">WaveformWriter</a>.
+</dd>
+
           <dt id="WaveDumper">
   <span class="name deprecated"><a class="deprecated" href="../rohd/WaveDumper-class.html">WaveDumper</a></span> 
 
@@ -706,12 +787,60 @@ given <a href="../rohd/Module-class.html">Module</a>.
   Deprecated: use <a href="../rohd/Module/dumpWaves.html">Module.dumpWaves</a> instead.
 </dd>
 
+          <dt id="WaveformInitialValue">
+  <span class="name "><a href="../rohd/WaveformInitialValue-class.html">WaveformInitialValue</a></span> 
+
+</dt>
+<dd>
+  Initial value for a declared waveform signal.
+</dd>
+
+          <dt id="WaveformQuery">
+  <span class="name "><a href="../rohd/WaveformQuery-class.html">WaveformQuery</a></span> 
+
+</dt>
+<dd>
+  Format-independent capability for querying waveform values.
+</dd>
+
+          <dt id="WaveformQuerySignal">
+  <span class="name "><a href="../rohd/WaveformQuerySignal-class.html">WaveformQuerySignal</a></span> 
+
+</dt>
+<dd>
+  A signal available from a format-independent waveform query.
+</dd>
+
+          <dt id="WaveformQueryValueChange">
+  <span class="name "><a href="../rohd/WaveformQueryValueChange-class.html">WaveformQueryValueChange</a></span> 
+
+</dt>
+<dd>
+  A timestamped value returned by a waveform query.
+</dd>
+
           <dt id="WaveformService">
   <span class="name "><a href="../rohd/WaveformService-class.html">WaveformService</a></span> 
 
 </dt>
 <dd>
-  A waveform capture service that records signal changes.
+  A waveform capture service that writes signal changes to a file.
+</dd>
+
+          <dt id="WaveformValueChange">
+  <span class="name "><a href="../rohd/WaveformValueChange-class.html">WaveformValueChange</a></span> 
+
+</dt>
+<dd>
+  Timestamped value change for a declared waveform signal.
+</dd>
+
+          <dt id="WaveformWriter">
+  <span class="name "><a href="../rohd/WaveformWriter-class.html">WaveformWriter</a></span> 
+
+</dt>
+<dd>
+  Common backend contract for waveform file formats.
 </dd>
 
           <dt id="Xor2Gate">
@@ -750,6 +879,46 @@ given <a href="../rohd/Module-class.html">Module</a>.
 </dt>
 <dd>
   A type of generation for generated outputs.
+</dd>
+
+          <dt id="FstBlockType">
+  <span class="name "><a href="../rohd/FstBlockType.html">FstBlockType</a></span> 
+
+</dt>
+<dd>
+  FST block types (from fstapi.h).
+</dd>
+
+          <dt id="FstFileType">
+  <span class="name "><a href="../rohd/FstFileType.html">FstFileType</a></span> 
+
+</dt>
+<dd>
+  FST file type.
+</dd>
+
+          <dt id="FstScopeType">
+  <span class="name "><a href="../rohd/FstScopeType.html">FstScopeType</a></span> 
+
+</dt>
+<dd>
+  FST scope types.
+</dd>
+
+          <dt id="FstVarDirection">
+  <span class="name "><a href="../rohd/FstVarDirection.html">FstVarDirection</a></span> 
+
+</dt>
+<dd>
+  FST variable direction.
+</dd>
+
+          <dt id="FstVarType">
+  <span class="name "><a href="../rohd/FstVarType.html">FstVarType</a></span> 
+
+</dt>
+<dd>
+  FST variable types.
 </dd>
 
           <dt id="Naming">
@@ -798,6 +967,22 @@ given <a href="../rohd/Module-class.html">Module</a>.
 </dt>
 <dd>
   Controls whether a type is included in a SystemVerilog port declaration.
+</dd>
+
+          <dt id="WaveformSignalDirection">
+  <span class="name "><a href="../rohd/WaveformSignalDirection.html">WaveformSignalDirection</a></span> 
+
+</dt>
+<dd>
+  Direction metadata for a signal emitted into a waveform file.
+</dd>
+
+          <dt id="WaveformTimeScale">
+  <span class="name "><a href="../rohd/WaveformTimeScale.html">WaveformTimeScale</a></span> 
+
+</dt>
+<dd>
+  The physical duration represented by one unit of <a href="../rohd/Simulator/time.html">Simulator.time</a>.
 </dd>
 
           <dt id="WaveOutputFormat">

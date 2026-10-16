@@ -68,14 +68,13 @@
     
 <section class="desc markdown">
   <p>Path of the output waveform file.</p>
-<p>Derived from <a href="../../rohd/ArtifactProducingService/outputDirectory.html">outputDirectory</a>, <a href="../../rohd/ArtifactProducingService/outputBaseName.html">outputBaseName</a>, and <a href="../../rohd/WaveformService/format.html">format</a>.</p>
+<p>This compatibility alias matches the legacy waveform service API.</p>
 </section>
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">String get outputFilePath =&gt; &#39;$outputDirectory${Platform.pathSeparator}&#39;
-    &#39;${outputFileName ?? &#39;$outputBaseName.${format.fileExtension}&#39;}&#39;;</code></pre>
+  <pre class="language-dart"><code class="language-dart">String get outputFilePath =&gt; outputPath;</code></pre>
 </section>
 
   </section>

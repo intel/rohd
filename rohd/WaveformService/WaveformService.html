@@ -55,13 +55,13 @@
     <section class="multi-line-signature">
       
       <span class="name ">WaveformService</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="param-module"><span class="type-annotation"><a href="../../rohd/Module-class.html">Module</a></span> <span class="parameter-name">module</span>, {</span></li>
-<li><span class="parameter" id="param-outputDirectory"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">outputDirectory</span> = <span class="default-value">&#39;.&#39;</span>, </span></li>
+<li><span class="parameter" id="param-outputDirectory"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">outputDirectory</span>, </span></li>
 <li><span class="parameter" id="param-outputBaseName"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">outputBaseName</span>, </span></li>
 <li><span class="parameter" id="param-outputFileName"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">outputFileName</span>, </span></li>
 <li><span class="parameter" id="param-format"><span class="type-annotation"><a href="../../rohd/WaveOutputFormat.html">WaveOutputFormat</a></span> <span class="parameter-name">format</span> = <span class="default-value">WaveOutputFormat.vcd</span>, </span></li>
 <li><span class="parameter" id="param-signalFilter"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">signalFilter</span>(<ol class="parameter-list single-line"> <li><span class="parameter" id="param-signal"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">signal</span></span></li>
 </ol>)?, </span></li>
-<li><span class="parameter" id="param-timescale"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">timescale</span> = <span class="default-value">&#39;1ps&#39;</span>, </span></li>
+<li><span class="parameter" id="param-timescale"><span class="type-annotation"><a href="../../rohd/WaveformTimeScale.html">WaveformTimeScale</a></span> <span class="parameter-name">timescale</span> = <span class="default-value">WaveformTimeScale.onePicosecond</span>, </span></li>
 <li><span class="parameter" id="param-startTime"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">startTime</span>, </span></li>
 <li><span class="parameter" id="param-stopTime"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">stopTime</span>, </span></li>
 <li><span class="parameter" id="param-flushBufferSize"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/int-class.html">int</a></span> <span class="parameter-name">flushBufferSize</span> = <span class="default-value">100000</span>, </span></li>
@@ -74,17 +74,11 @@
     
 <section class="desc markdown">
   <p>Creates a <a href="../../rohd/WaveformService-class.html">WaveformService</a> for <code>module</code>.</p>
-<p><code>module</code> must be built before construction.</p>
-<p><code>outputDirectory</code> defaults to the current directory and <code>outputBaseName</code>
-defaults to <a href="../../rohd/Module/definitionName.html">Module.definitionName</a>. The selected <code>format</code> determines the
-output filename extension. Only <a href="../../rohd/WaveOutputFormat.html">WaveOutputFormat.vcd</a> is currently
-supported by this service.</p>
-<p>Use the optional constructor parameters to configure format, filtering,
-timescale, start/stop times, flush size, and overwrite policy.</p>
-<p>In-memory-only VCD debugging captures retain the complete waveform by
-default. Set <code>retainInMemory</code> to override these defaults; file-backed
-captures default to bounded memory while retaining a streamable artifact
-on disk.</p>
+<p><code>module</code> must be built before construction. <code>outputDirectory</code> defaults to
+the current directory and <code>outputBaseName</code> defaults to
+<a href="../../rohd/Module/definitionName.html">Module.definitionName</a>; the on-disk file is
+<code>&lt;outputDirectory&gt;/&lt;outputBaseName&gt;.&lt;format.fileExtension&gt;</code>. Pass
+<code>outputFileName</code> to override the filename explicitly.</p>
 </section>
 
 
@@ -93,71 +87,35 @@ on disk.</p>
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">WaveformService(
   Module module, {
-  super.outputDirectory,
-  super.outputBaseName,
-  this.outputFileName,
-  this.format = WaveOutputFormat.vcd,
-  this.signalFilter,
-  this.timescale = &#39;1ps&#39;,
-  this.startTime,
-  this.stopTime,
-  this.flushBufferSize = 100000,
-  this.overwritePolicy = OverwritePolicy.overwrite,
-  this.register = true,
-  this.writeToFile = false,
+  String? outputDirectory,
+  String? outputBaseName,
+  String? outputFileName,
+  WaveOutputFormat format = WaveOutputFormat.vcd,
+  bool Function(Logic signal)? signalFilter,
+  WaveformTimeScale timescale = WaveformTimeScale.onePicosecond,
+  int? startTime,
+  int? stopTime,
+  int flushBufferSize = 100000,
+  OverwritePolicy overwritePolicy = OverwritePolicy.overwrite,
+  bool register = true,
+  bool writeToFile = false,
   bool? retainInMemory,
-})  : retainInMemory = retainInMemory ?? !writeToFile,
-      super(module) {
-  if (!module.hasBuilt) {
-    throw ModuleNotBuiltException(module);
-  }
-  if (format != WaveOutputFormat.vcd) {
-    throw UnsupportedError(
-      &#39;Waveform format ${format.name} is not supported by WaveformService.&#39;,
-    );
-  }
-
-  if (writeToFile &amp;&amp; overwritePolicy == OverwritePolicy.failIfExists) {
-    final f = File(outputFilePath);
-    if (f.existsSync()) {
-      throw FileSystemException(
-        &#39;Waveform output file already exists and overwritePolicy is &#39;
-        &#39;failIfExists.&#39;,
-        outputFilePath,
-      );
-    }
-  }
-
-  if (writeToFile) {
-    _outFileSink =
-        (File(outputFilePath)..createSync(recursive: true)).openWrite();
-  }
-
-  _collectSignals();
-  _writeHeader();
-  _writeScope();
-  _hasWrittenWindowSnapshot = startTime == null || startTime == 0;
-
-  Simulator.preTick.listen((_) {
-    if (Simulator.time != _currentDumpingTimestamp) {
-      if (_changedThisTimestamp.isNotEmpty) {
-        _captureTimestamp(_currentDumpingTimestamp);
-      }
-      _currentDumpingTimestamp = Simulator.time;
-      _writeWindowSnapshotIfNeeded(Simulator.time);
-    }
-  });
-
-  Simulator.registerEndOfSimulationAction(() async {
-    _captureTimestamp(Simulator.time);
-    await _terminate();
-    onSimulationEnd();
-  });
-
-  if (register) {
-    ModuleServices.instance.register&lt;WaveformService&gt;(this);
-  }
-}</code></pre>
+}) : this._(
+        module,
+        outputDirectory: outputDirectory ?? &#39;.&#39;,
+        outputBaseName: outputBaseName,
+        outputFileName: outputFileName,
+        format: format,
+        signalFilter: signalFilter,
+        timescale: timescale,
+        startTime: startTime,
+        stopTime: stopTime,
+        flushBufferSize: flushBufferSize,
+        overwritePolicy: overwritePolicy,
+        register: register,
+        writeToFile: writeToFile,
+        retainInMemory: retainInMemory,
+      );</code></pre>
 </section>
 
 

@@ -62,14 +62,10 @@
     </section>
     
 <section class="desc markdown">
-  <p>Whether this service can service debugger waveform-data queries.</p>
-<p>A <code>true</code> result promises that a debugger can request captured waveform
-values, such as selected signals over a time interval. It does not
-promise that <a href="../../rohd/WaveformService/artifacts.html">artifacts</a> can transfer waveform-file bytes. Capture can be
-queried when complete history is retained in memory, or when a
-file-backed <a href="../../rohd/WaveformService/format.html">format</a> supports indexed on-disk queries. VCD requires
-<a href="../../rohd/WaveformService/retainInMemory.html">retainInMemory</a>; FST can provide this capability from a file once FST
-writing is supported.</p>
+  <p>Whether this service can provide waveform data to debugging consumers.</p>
+<p>This describes whether waveform data is available, not whether the
+backend supports indexed value queries. VCD requires <a href="../../rohd/WaveformService/retainInMemory.html">retainInMemory</a>;
+FST can query a written file.</p>
 </section>
 
 
@@ -77,7 +73,7 @@ writing is supported.</p>
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">bool canSendWaveforms() =&gt;
-    retainInMemory || (writeToFile &amp;&amp; format.supportsOnDiskQueries);</code></pre>
+    retainInMemory || (writeToFile &amp;&amp; _writer.supportsQueries);</code></pre>
 </section>
 
 

@@ -67,14 +67,16 @@
     </section>
     
 <section class="desc markdown">
-  <p>The output filepath of the generated waveforms.</p>
-<p>This matches the legacy waveform dumper's <code>outputPath</code> name.</p>
+  <p>Path of the output waveform file.</p>
+<p>Derived from <a href="../../rohd/ArtifactProducingService/outputDirectory.html">outputDirectory</a>, <a href="../../rohd/ArtifactProducingService/outputBaseName.html">outputBaseName</a>, <a href="../../rohd/WaveformService/outputFileName.html">outputFileName</a>,
+and <a href="../../rohd/WaveformService/format.html">format</a>.</p>
 </section>
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">String get outputPath =&gt; outputFilePath;</code></pre>
+  <pre class="language-dart"><code class="language-dart">String get outputPath =&gt; &#39;$outputDirectory${Platform.pathSeparator}&#39;
+    &#39;${outputFileName ?? &#39;$outputBaseName.${format.fileExtension}&#39;}&#39;;</code></pre>
 </section>
 
   </section>

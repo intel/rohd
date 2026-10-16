@@ -55,20 +55,22 @@
     
       <section class="multi-line-signature">
         
-        <a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a>
+        <a href="../../rohd/WaveformTimeScale.html">WaveformTimeScale</a>
         <span class="name ">timescale</span>
         <div class="features"><span class="feature">final</span></div>
 
       </section>
       
 <section class="desc markdown">
-  <p>VCD timescale string, e.g. <code>'1ps'</code>, <code>'1ns'</code>.</p>
+  <p>The physical duration represented by one unit of <a href="../../rohd/Simulator/time.html">Simulator.time</a>.</p>
+<p>This controls waveform-file metadata only; it does not rescale timestamp
+numbers or affect simulator scheduling.</p>
 </section>
 
       
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">final String timescale;</code></pre>
+  <pre class="language-dart"><code class="language-dart">final WaveformTimeScale timescale;</code></pre>
 </section>
 
 
