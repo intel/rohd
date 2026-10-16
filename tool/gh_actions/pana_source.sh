@@ -33,11 +33,18 @@ sdk="$2"
 analyze_arguments=(analyze --fatal-infos)
 pana_arguments=()
 pana_score_threshold=0
-if [[ "$package" == rohd_source_navigator ]]; then
-  # TODO(desmonddak): https://github.com/intel/rohd/pull/718 Remove this
-  # exception after the package move is on main and Pana can verify its URL.
-  pana_score_threshold=10
-fi
+case "$package" in
+  rohd_source_navigator)
+    # TODO(desmonddak): https://github.com/intel/rohd/pull/718 Remove this
+    # exception after the package move is on main and Pana can verify its URL.
+    pana_score_threshold=10
+    ;;
+  rohd_devtools_widgets|rohd_waveform)
+    # These packages intentionally retain dependency bounds for their
+    # supported SDK ranges. Allow the corresponding 10-point Pana deduction.
+    pana_score_threshold=10
+    ;;
+esac
 if [[ "$sdk" == flutter ]]; then
   flutter_root="${FLUTTER_ROOT:-}"
   if [[ -z "$flutter_root" ]]; then
