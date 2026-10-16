@@ -570,7 +570,7 @@ void main() {
         (p) => [p.get(array0) < p.get(array0)]
       ],
     );
-    final LogicArray pipelinedArray = arrayPipeline.get(array0);
+    final pipelinedArray = arrayPipeline.get(array0);
 
     final muxedTypedArray = Mux(selector[0], typedArray1, typedArray0).out;
     final floppedTypedArray = FlipFlop(clk, typedArray0).q;
@@ -588,8 +588,7 @@ void main() {
         (p) => [p.get(typedArray0) < p.get(typedArray0)]
       ],
     );
-    final TypedLogicArray<_TypedLane, LogicValue> pipelinedTypedArray =
-        typedArrayPipeline.get(typedArray0);
+    final pipelinedTypedArray = typedArrayPipeline.get(typedArray0);
 
     [
       muxedArray,
