@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2025 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // conditional_assign.dart
@@ -71,6 +71,7 @@ class ConditionalAssign extends Conditional {
   late final Logic _receiverOutput = receiverOutput(receiver);
 
   @override
+  @protected
   void execute(Set<Logic>? drivenSignals,
       [void Function(Logic toGuard)? guard]) {
     if (guard != null) {
