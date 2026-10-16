@@ -48,16 +48,14 @@ void main() {
   group('a definition parameter cannot take a name that cannot move', () {
     for (final portName in ['a', 'b']) {
       test('such as the port $portName', () {
-        expect(
-            () async =>
-                synthOf(ParameterizedMod(Logic(width: 8), portName)),
+        expect(() => synthOf(ParameterizedMod(Logic(width: 8), portName)),
             throwsA(isA<UnavailableReservedNameException>()));
       });
     }
 
     test('such as a reserved internal signal', () {
       expect(
-          () async => synthOf(ParameterizedMod(Logic(width: 8), 'myInternal',
+          () => synthOf(ParameterizedMod(Logic(width: 8), 'myInternal',
               internalNaming: Naming.reserved)),
           throwsA(isA<UnavailableReservedNameException>()));
     });

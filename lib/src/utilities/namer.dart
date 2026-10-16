@@ -73,7 +73,8 @@ class Namer {
     }
 
     if (module is SystemVerilog) {
-      for (final parameter in module.definitionParameters ?? const []) {
+      for (final parameter in module.definitionParameters ??
+          const <SystemVerilogParameterDefinition>[]) {
         uniquifier.getUniqueName(initialName: parameter.name, reserved: true);
       }
     }
