@@ -87,16 +87,39 @@ class Combinational extends Always {
   /// mitigated by constructing the [Combinational.ssa] before connecting
   /// inputs to the rest of the design, but usually the impact is so small
   /// that it will not be noticeable.
+  ///
   factory Combinational.ssa(
-      List<Conditional> Function(Logic Function(Logic signal) s) construct,
-      {String name = 'combinational_ssa'}) {
+          List<Conditional> Function(Logic Function(Logic signal) s) construct,
+          {String name = 'combinational_ssa'}) =>
+      Combinational._constructSsa(construct, name: name);
+
+  /// Creates SSA combinational logic with type-preserving proxies.
+  ///
+  /// This supports internal users, such as [Pipeline], that need an SSA
+  /// callback to retain concrete signal types and configuration.
+  @internal
+  factory Combinational.ssaWithTypes(
+    List<Conditional> Function(Logic Function(Logic signal) s) construct, {
+    String name = 'combinational_ssa',
+  }) =>
+      Combinational._constructSsa(construct, name: name, preserveTypes: true);
+
+  factory Combinational._constructSsa(
+    List<Conditional> Function(Logic Function(Logic signal) s) construct, {
+    required String name,
+    bool preserveTypes = false,
+  }) {
     final context = _ssaContextCounter++;
 
-    final ssas = <SsaLogic>[];
+    final ssas = <Logic>{};
 
     Logic getSsa(Logic ref) {
-      final newSsa = SsaLogic(ref, context);
-      ssas.add(newSsa);
+      final newSsa = SsaLogic.create(
+        ref,
+        context,
+        preserveTypes: preserveTypes,
+      );
+      ssas.addAll(SsaLogic.proxyLeaves(newSsa, context: context));
       return newSsa;
     }
 
@@ -112,27 +135,24 @@ class Combinational extends Always {
     return Combinational(conditionals, name: name);
   }
 
-  /// A map from [SsaLogic]s to signals that they drive.
+  /// A map from SSA proxies to signals that they drive.
   ///
   /// This only stores information temporarily during construction of a
   /// [Combinational.ssa] and clears afterwards.
   @internal
-  static final Map<Logic, Set<SsaLogic>> signalToSsaDrivers = {};
+  static final Map<Logic, Set<Logic>> signalToSsaDrivers = {};
 
   /// Tags each downstream [Logic] from [ssaDriver] as such in
   /// [signalToSsaDrivers].
-  static void _updateSsaDriverMap(SsaLogic ssaDriver) {
+  static void _updateSsaDriverMap(Logic ssaDriver) {
     final toParse = TraverseableCollection<Logic>()
       ..addAll(ssaDriver.dstConnections);
     for (var i = 0; i < toParse.length; i++) {
       final tpi = toParse[i];
 
-      signalToSsaDrivers.putIfAbsent(tpi, () => <SsaLogic>{}).add(ssaDriver);
+      signalToSsaDrivers.putIfAbsent(tpi, () => <Logic>{}).add(ssaDriver);
 
-      if (tpi.isInput &&
-          // ignore: deprecated_member_use_from_same_package - backwards compatibility with CustomSystemVerilog
-          ((tpi.parentModule! is CustomSystemVerilog) ||
-              tpi.parentModule! is SystemVerilog)) {
+      if (tpi.isInput && tpi.parentModule! is SystemVerilog) {
         toParse.addAll(tpi.parentModule!.outputs.values);
       } else {
         toParse.addAll(tpi.dstConnections);
@@ -148,7 +168,7 @@ class Combinational extends Always {
       // reference an element of a structure without separately SSA'ing it.
       // However, leaving this in here just in case (probably negligible perf
       // impact).
-      if (tpi is LogicStructure) {
+      if (tpi is LogicStructure && !SsaLogic.containsTypedProxy(tpi)) {
         toParse.addAll(tpi.elements);
       }
     }

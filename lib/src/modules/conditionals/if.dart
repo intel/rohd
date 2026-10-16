@@ -57,19 +57,6 @@ class Else extends Iff {
 
 /// Represents a chain of blocks of code to be conditionally executed, like
 /// `if`/`else if`/`else`.
-///
-/// This is functionally equivalent to chaining together [If]s, but this syntax
-/// is a little nicer for long chains.
-@Deprecated('Use `If.block` instead.')
-class IfBlock extends If {
-  /// Checks the conditions for [iffs] in order and executes the first one
-  /// whose condition is enabled.
-  @Deprecated('Use `If.block` instead.')
-  IfBlock(super.iffs) : super.block();
-}
-
-/// Represents a chain of blocks of code to be conditionally executed, like
-/// `if`/`else if`/`else`.
 class If extends Conditional {
   /// A set of conditional items to check against for execution, in order.
   ///
@@ -103,12 +90,12 @@ class If extends Conditional {
       if (iff is Else) {
         if (iff != iffs.last) {
           throw InvalidConditionalException(
-              'Else must come last in an IfBlock.');
+              'Else must come last in an If.block.');
         }
 
         if (iff == iffs.first) {
           throw InvalidConditionalException(
-              'Else cannot be the first in an IfBlock.');
+              'Else cannot be the first in an If.block.');
         }
       }
     }
@@ -233,10 +220,10 @@ ${padding}end ''');
 
       for (final localMapping in localMappings.entries) {
         if (!phiMappings.containsKey(localMapping.key)) {
-          phiMappings[localMapping.key] = Logic(
+          phiMappings[localMapping.key] = SsaLogic.cloneLike(
+            localMapping.key,
+            localMapping.value,
             name: '${localMapping.key.name}_phi',
-            width: localMapping.key.width,
-            naming: Naming.mergeable,
           );
         }
 
@@ -254,18 +241,20 @@ ${padding}end ''');
         .flattened
         .map((e) => e.calculateReceivers())
         .flattened
-        .whereType<SsaLogic>()
+        .where((signal) => SsaLogic.isSsaProxy(signal, context: context))
         .toSet();
     for (final iff in iffs) {
       final alreadyDrivenSsaSignals = iff.then
           .map((e) => e.calculateReceivers())
           .flattened
-          .whereType<SsaLogic>()
+          .where((signal) => SsaLogic.isSsaProxy(signal, context: context))
           .toSet();
 
       for (final signalNeedingInit in signalsNeedingInit) {
         if (!alreadyDrivenSsaSignals.contains(signalNeedingInit)) {
-          iff.then.add(signalNeedingInit < 0);
+          iff.then.add(
+            signalNeedingInit < SsaLogic.branchDefaultValue(signalNeedingInit),
+          );
         }
       }
     }

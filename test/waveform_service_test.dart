@@ -67,7 +67,7 @@ class SimpleModWithSeq extends Module {
     asyncReset = addInput('asyncReset', asyncReset);
     addOutput('val');
 
-    val <= flop(clk, Const(1), reset: asyncReset, asyncReset: true);
+    val <= flop<Logic>(clk, Const(1), reset: asyncReset, asyncReset: true);
   }
 }
 

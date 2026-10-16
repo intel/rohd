@@ -14,8 +14,10 @@ import 'package:rohd/rohd.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_cell_mapper.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_module_translation.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_passes.dart';
+import 'package:rohd/src/synthesizers/netlist/netlist_synth_module_definition.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_validation.dart';
 import 'package:rohd/src/synthesizers/utilities/synth_logic.dart';
+import 'package:rohd/src/synthesizers/utilities/synth_module_definition.dart';
 import 'package:rohd/src/synthesizers/utilities/synth_structure_concat.dart';
 import 'package:test/test.dart';
 
@@ -70,6 +72,14 @@ class NotModule extends Module {
   }
 }
 
+/// Splits a packed input across a packed array output.
+class PackedInputArrayOutputModule extends Module {
+  PackedInputArrayOutputModule(Logic data) {
+    data = addInput('data', data, width: 8);
+    addOutputArray('out', dimensions: [4], elementWidth: 2) <= data;
+  }
+}
+
 /// Exercises preservation of user-named internal signals.
 class UserNamedInternalSignalsModule extends Module {
   UserNamedInternalSignalsModule(Logic a, Logic b)
@@ -103,8 +113,8 @@ class FlopModule extends Module {
 }
 
 /// A custom [FlipFlop] used to verify inheritance-aware leaf matching.
-class CustomFlipFlop extends FlipFlop {
-  CustomFlipFlop(super.clk, super.d);
+class CustomFlipFlop extends FlipFlop<Logic> {
+  CustomFlipFlop(super.clk, super.d) : super.scalar();
 }
 
 /// Exercises flip-flops with optional control signals.
@@ -397,6 +407,22 @@ class NestedNetArrayRowsToChildModule extends Module {
   }
 }
 
+/// Exposes nested output-array rows already driven by child array outputs.
+class NestedArrayRowsOutputModule extends Module {
+  NestedArrayRowsOutputModule() : super(name: 'nestedarrayrowsoutput') {
+    final lower = ArrayOutputChildModule();
+    final upper = ArrayOutputChildModule();
+    final values = addOutputArray(
+      'values',
+      dimensions: [2, 4],
+      elementWidth: 8,
+    );
+
+    values.elements[0] <= lower.values;
+    values.elements[1] <= upper.values;
+  }
+}
+
 /// Simple two-field structure used to demonstrate netlist struct unpack/pack
 /// cells.
 class NetlistPairStruct extends LogicStructure {
@@ -433,6 +459,26 @@ class StructOutputProducerModule extends Module {
     pair.low <= low;
     pair.high <= high ^ Const(1, width: 4);
     addTypedOutput('pair', pair.clone).gets(pair);
+  }
+}
+
+/// Applies structure-preserving primitive operations to an aggregate port.
+class TypedStructOperationModule extends Module {
+  TypedStructOperationModule(
+    Logic clk,
+    Logic control,
+    NetlistPairStruct first,
+    NetlistPairStruct second,
+  ) : super(name: 'typedstructoperation') {
+    clk = addInput('clk', clk);
+    control = addInput('control', control);
+    first = addTypedInput('first', first);
+    second = addTypedInput('second', second);
+
+    final selected = Mux(control, second, first).out;
+    final forwarded = Passthrough(selected).out;
+    final registered = FlipFlop(clk, forwarded);
+    addTypedOutput('out', first.clone) <= registered.q;
   }
 }
 
@@ -837,6 +883,38 @@ void main() {
     expect(replacementIds, isNot(equals(storageIds)));
   });
 
+  test('shared packed-array rewrite applies before backend rendering',
+      () async {
+    final module = PackedInputArrayOutputModule(Logic(width: 8));
+    await module.build();
+
+    void expectSharedRewrite(SynthModuleDefinition definition) {
+      final input =
+          definition.inputs.singleWhere((signal) => signal.name == 'data');
+      final output =
+          definition.outputs.singleWhere((signal) => signal.name == 'out');
+      expect(
+        definition.assignments.any(
+          (assignment) =>
+              identical(assignment.src.resolved, input.resolved) &&
+              identical(assignment.dst.resolved, output.resolved),
+        ),
+        isTrue,
+      );
+
+      final subsets = definition.subModuleInstantiations
+          .where((instantiation) => instantiation.module is BusSubset)
+          .toList();
+      expect(subsets, isNotEmpty);
+      expect(
+          subsets.every((instantiation) => !instantiation.needsInstantiation),
+          isTrue);
+    }
+
+    expectSharedRewrite(SynthModuleDefinition(module));
+    expectSharedRewrite(NetlistSynthModuleDefinition(module));
+  });
+
   for (final unpackedDimensions in [0, 2]) {
     test('split packed child drives permuted array bits $unpackedDimensions',
         () async {
@@ -953,6 +1031,45 @@ void main() {
       final clk = SimpleClockGenerator(10).clk;
       final json = await _synthToMap(FlopModule(clk, Logic(width: 8)));
       expect(_hasCellType(json, r'$dff'), isTrue);
+    });
+
+    test('typed structure operations map to aggregate primitive cells',
+        () async {
+      final module = TypedStructOperationModule(
+        SimpleClockGenerator(10).clk,
+        Logic(),
+        NetlistPairStruct(name: 'first'),
+        NetlistPairStruct(name: 'second'),
+      );
+      final json = await _synthToMap(module);
+      final moduleDef =
+          _modules(json)[module.definitionName] as Map<String, dynamic>;
+      final cells = _cells(moduleDef).values.cast<Map<String, dynamic>>();
+
+      for (final cellType in [r'$mux', r'$buf', r'$dff']) {
+        final matchingCells =
+            cells.where((candidate) => candidate['type'] == cellType).toList();
+        expect(
+          matchingCells,
+          hasLength(1),
+          reason: cells.map((candidate) => candidate['type']).join(', '),
+        );
+        final cell = matchingCells.single;
+        final parameters = cell['parameters'] as Map<String, dynamic>;
+        final connections = cell['connections'] as Map<String, dynamic>;
+        if (cellType == r'$buf') {
+          expect(parameters['A_WIDTH'], 8);
+          expect(parameters['Y_WIDTH'], 8);
+          expect(connections['A'] as List, hasLength(8));
+          expect(connections['Y'] as List, hasLength(8));
+        } else {
+          expect(parameters['WIDTH'], 8);
+          final dataPorts = cellType == r'$mux' ? ['A', 'B', 'Y'] : ['D', 'Q'];
+          for (final port in dataPorts) {
+            expect(connections[port] as List, hasLength(8));
+          }
+        }
+      }
     });
 
     test('FlipFlop controls map to standard Yosys register cells', () async {
@@ -2250,12 +2367,21 @@ void main() {
             return entry.key.startsWith('array_concat') &&
                 cell['type'] == r'$concat';
           });
+          final structurePacks = cells.entries.where((entry) {
+            final cell = entry.value as Map<String, dynamic>;
+            return cell['type'] == r'$struct_pack';
+          }).toList();
           final report = _connectivityReport(moduleDef);
           final multipleDrivers = report.driversByBit.entries
               .where((entry) => entry.value.length > 1)
               .toList();
 
           expect(nestedArrayConcats, isNotEmpty, reason: cells.keys.join(', '));
+          expect(
+            structurePacks,
+            isEmpty,
+            reason: 'Nested arrays must reuse their aggregate driver IDs.',
+          );
           expect(
             report.undrivenInputs,
             isEmpty,
@@ -2269,6 +2395,43 @@ void main() {
         }
       },
     );
+
+    test('nested output arrays reuse existing aggregate drivers', () async {
+      final module = NestedArrayRowsOutputModule();
+      final json = await _synthToMap(
+        module,
+        configuration: const NetlistSynthesizerConfiguration(
+          enableDeadCellElimination: false,
+        ),
+      );
+      final moduleDef =
+          _modules(json)[module.definitionName] as Map<String, dynamic>;
+      final cells = _cells(moduleDef);
+      final structurePacks = cells.entries.where((entry) {
+        final cell = entry.value as Map<String, dynamic>;
+        return cell['type'] == r'$struct_pack';
+      }).toList();
+      final report = _connectivityReport(moduleDef);
+      final multipleDrivers = report.driversByBit.entries
+          .where((entry) => entry.value.length > 1)
+          .toList();
+
+      expect(
+        structurePacks,
+        isEmpty,
+        reason: 'Nested arrays must reuse their aggregate driver IDs.',
+      );
+      expect(
+        report.undrivenInputs,
+        isEmpty,
+        reason: report.undrivenInputs.join('\n'),
+      );
+      expect(
+        multipleDrivers,
+        isEmpty,
+        reason: multipleDrivers.take(8).join('\n'),
+      );
+    });
 
     test('struct input fields get explicit unpack cell', () async {
       final module = StructInputConsumerModule(NetlistPairStruct());
@@ -2350,8 +2513,36 @@ void main() {
           },
         },
       };
+      final aggregateBits = <int>[
+        ...List<int>.generate(8, (index) => 200 + index),
+        ...List<int>.generate(8, (index) => 400 + index),
+      ];
+      final netnames = <String, Object?>{
+        'struct_values': {
+          'bits': aggregateBits,
+          'logic_type': {
+            'typeName': 'NetPair',
+            'fields': [
+              {'name': 'first', 'width': 8},
+              {'name': 'second', 'width': 8},
+            ],
+          },
+        },
+        'array_values': {
+          'bits': aggregateBits,
+          'logic_type': {
+            'typeName': 'NetArray',
+            'arrayDims': [2]
+          },
+        },
+      };
       expect(
-        () => NetlistValidation.validate(ports, cells, 'struct_module'),
+        () => NetlistValidation.validate(
+          ports,
+          cells,
+          'struct_module',
+          netnames: netnames,
+        ),
         returnsNormally,
       );
     });
@@ -2376,16 +2567,171 @@ void main() {
           },
         },
       };
+      final netnames = <String, Object?>{
+        'values': {
+          'bits': [200, 201, 202],
+          'logic_type': {
+            'typeName': 'NetPair',
+            'fields': [
+              {'name': 'first', 'width': 1},
+              {'name': 'second', 'width': 2},
+            ],
+          },
+        },
+      };
 
       expect(
-        () => NetlistValidation.validate(ports, cells, 'struct_module'),
-        throwsA(
-          isA<NetlistValidationException>().having(
-            (error) => error.issues.map((issue) => issue.wireBit),
-            'overlapping wire bit',
-            contains(201),
-          ),
+        () => NetlistValidation.validate(
+          ports,
+          cells,
+          'struct_module',
+          netnames: netnames,
         ),
+        throwsA(
+          isA<NetlistValidationException>()
+              .having(
+                (error) => error.issues.map((issue) => issue.wireBit),
+                'overlapping wire bit',
+                contains(201),
+              )
+              .having(
+                (error) => error.issues.single.netname,
+                'aggregate netname',
+                'values',
+              ),
+        ),
+      );
+    });
+
+    test('struct net aggregates allow distinct tri-state field drivers', () {
+      final cells = <String, Map<String, Object?>>{
+        for (var index = 0; index < 2; index++)
+          'driver_$index': {
+            'type': r'$tribuf',
+            'port_directions': {'A': 'input', 'EN': 'input', 'Y': 'output'},
+            'connections': {
+              'A': [100 + index],
+              'EN': [200 + index],
+              'Y': [300 + index],
+            },
+          },
+      };
+      final netnames = <String, Object?>{
+        'values': {
+          'bits': [300, 301],
+          'logic_type': {
+            'typeName': 'NetPair',
+            'fields': [
+              {'name': 'first', 'width': 1},
+              {'name': 'second', 'width': 1},
+            ],
+          },
+        },
+      };
+
+      expect(
+        () => NetlistValidation.validate(
+          const {},
+          cells,
+          'structured_net_module',
+          netnames: netnames,
+        ),
+        returnsNormally,
+      );
+    });
+
+    test(
+      'struct net aggregates allow disjoint mixed tri-state and normal drivers',
+      () {
+        final cells = <String, Map<String, Object?>>{
+          'tri_state': {
+            'type': r'$tribuf',
+            'port_directions': {'A': 'input', 'EN': 'input', 'Y': 'output'},
+            'connections': {
+              'A': [100],
+              'EN': [200],
+              'Y': [300]
+            },
+          },
+          'normal': {
+            'type': r'$buf',
+            'port_directions': {'A': 'input', 'Y': 'output'},
+            'connections': {
+              'A': [101],
+              'Y': [301]
+            },
+          },
+        };
+        final netnames = <String, Object?>{
+          'values': {
+            'bits': [300, 301],
+            'logic_type': {
+              'typeName': 'NetPair',
+              'fields': [
+                {'name': 'first', 'width': 1},
+                {'name': 'second', 'width': 1},
+              ],
+            },
+          },
+        };
+
+        expect(
+          () => NetlistValidation.validate(
+            const {},
+            cells,
+            'structured_net_module',
+            netnames: netnames,
+          ),
+          returnsNormally,
+        );
+      },
+    );
+
+    test('struct net aggregates reject mixed partial overlaps', () {
+      final cells = <String, Map<String, Object?>>{
+        'tri_state': {
+          'type': r'$tribuf',
+          'port_directions': {'A': 'input', 'EN': 'input', 'Y': 'output'},
+          'connections': {
+            'A': [100, 101],
+            'EN': [200],
+            'Y': [300, 301]
+          },
+        },
+        'normal': {
+          'type': r'$buf',
+          'port_directions': {'A': 'input', 'Y': 'output'},
+          'connections': {
+            'A': [102],
+            'Y': [301]
+          },
+        },
+      };
+      final netnames = <String, Object?>{
+        'values': {
+          'bits': [300, 301],
+          'logic_type': {'typeName': 'NetPair', 'fields': <Object?>[]},
+        },
+      };
+      expect(
+        () => NetlistValidation.validate(
+          const {},
+          cells,
+          'structured_net_module',
+          netnames: netnames,
+        ),
+        throwsA(isA<NetlistValidationException>()
+            .having((error) => error.issues.single.wireBit,
+                'overlapping wire bit', 301)
+            .having((error) => error.issues.single.netname, 'aggregate netname',
+                'values')
+            .having(
+                (error) => error.issues.single.drivers,
+                'conflicting drivers',
+                containsAll([
+                  r'cell tri_state.Y ($tribuf)',
+                  r'cell normal.Y ($buf)',
+                ]))),
       );
     });
 

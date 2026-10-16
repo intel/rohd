@@ -159,6 +159,14 @@ The `Naming.unpreferredName` function will modify a signal name to indicate to d
 
 ## Services API
 
+### Migrating legacy generation APIs
+
+`generateSynth` and `WaveDumper` remain available as deprecated compatibility
+APIs because their replacements were introduced in `0.6.11`. Prefer
+`dumpSystemVerilog`, `SystemVerilogService`, `dumpWaves`, and
+`WaveformService` for new code. Their deprecation does not imply removal in
+this `0.7.0` release.
+
 `ModuleService` is the shared API for module-scoped generation, capture, and
 inspection. Services can register with `ModuleServices` for lookup by DevTools
 and other consumers. `ArtifactProducingService` implementations expose named
@@ -239,7 +247,12 @@ With `multiFile: true`, `SystemVerilogService` writes one `.sv` file per
 generated module definition. For custom synthesis flows,
 [`SynthBuilder`](https://intel.github.io/rohd/rohd/SynthBuilder-class.html)
 accepts a `Module` and a `Synthesizer` (usually a
-`SystemVerilogSynthesizer`).
+`SystemVerilogSynthesizer`). It provides `SynthFileContents` objects through
+`getSynthFileContents`; each includes its contents, file name, and context
+about the `module` it refers to and its `instanceTypeName`. With these APIs,
+you can generate named files, add file headers, ignore generation of some
+modules, and generate file lists for other tools. `SynthBuilder.multi` makes
+it convenient to generate outputs for multiple independent hierarchies.
 
 ## Capturing waveforms
 
