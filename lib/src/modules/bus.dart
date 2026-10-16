@@ -11,6 +11,7 @@ import 'dart:math' show max;
 
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/signals/signals.dart';
 
 /// A [Module] which gives access to a subset range of signals of the input.
 ///
@@ -416,7 +417,7 @@ ${inputLines.join('\n')}
     var current = logic;
     while (current?.parentStructure != null) {
       final parentStructure = current!.parentStructure!;
-      if (parentStructure is LogicArray &&
+      if (parentStructure is BaseLogicArray &&
           parentStructure.numUnpackedDimensions > 0) {
         return true;
       }

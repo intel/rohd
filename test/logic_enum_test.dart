@@ -569,6 +569,79 @@ class EnumArrayBoundaryModule extends Module {
   }
 }
 
+LogicEnum<TestEnum> _arrayState({String? name}) =>
+    LogicEnum<TestEnum>.withMapping(
+      {TestEnum.a: 1, TestEnum.c: 5},
+      width: 3,
+      name: name,
+      definitionName: 'ArrayState',
+    );
+
+TypedLogicArray<LogicEnum<TestEnum>, LogicValue> _enumArray(
+  List<int> dimensions, {
+  int numUnpackedDimensions = 0,
+}) =>
+    TypedLogicArray<LogicEnum<TestEnum>, LogicValue>(
+      dimensions,
+      _arrayState,
+      name: 'states',
+      numUnpackedDimensions: numUnpackedDimensions,
+    );
+
+class _EnumArrayChild extends Module {
+  _EnumArrayChild(TypedLogicArray<LogicEnum<TestEnum>, LogicValue> source) {
+    final input = addTypedInput('statesIn', source);
+    final output = addTypedOutput('statesOut', input.clone);
+    addTypedOutput('stateTap', _arrayState) <= input.arrayElements.first;
+    for (var index = 0; index < input.arrayElements.length; index++) {
+      output.arrayElements[index] <=
+          input.arrayElements[input.arrayElements.length - index - 1];
+    }
+  }
+}
+
+class _EnumArrayParent extends Module {
+  late final TypedLogicArray<LogicEnum<TestEnum>, LogicValue> statesIn;
+  late final TypedLogicArray<LogicEnum<TestEnum>, LogicValue> statesOut;
+
+  _EnumArrayParent(TypedLogicArray<LogicEnum<TestEnum>, LogicValue> source) {
+    statesIn = addTypedInput('statesIn', source);
+    final child = _EnumArrayChild(statesIn);
+    statesOut = addTypedOutput('statesOut', statesIn.clone)
+      ..gets(child.output('statesOut'));
+    addTypedOutput('stateTap', _arrayState).gets(child.output('stateTap'));
+  }
+}
+
+class _EnumArrayPacket extends LogicStructure {
+  final LogicEnum<TestEnum> state;
+  final Logic payload;
+
+  factory _EnumArrayPacket({String? name}) => _EnumArrayPacket._(
+        _arrayState(name: 'state'),
+        Logic(name: 'payload', width: 2),
+        name: name,
+      );
+
+  _EnumArrayPacket._(this.state, this.payload, {super.name})
+      : super([state, payload]);
+
+  @override
+  _EnumArrayPacket clone({String? name}) => _EnumArrayPacket(name: name);
+}
+
+class _EnumPacketArrayModule extends Module {
+  _EnumPacketArrayModule(TypedLogicArray<_EnumArrayPacket, LogicValue> source) {
+    final input = addTypedInput('packetsIn', source);
+    final output = addTypedOutput('packetsOut', input.clone);
+    addTypedOutput('stateTap', _arrayState) <= input.arrayElements.first.state;
+    for (var index = 0; index < input.arrayElements.length; index++) {
+      output.arrayElements[index].state <= input.arrayElements[index].state;
+      output.arrayElements[index].payload <= input.arrayElements[index].payload;
+    }
+  }
+}
+
 class EnumHierarchyChild extends Module {
   Logic get result => output('result');
 
@@ -2991,6 +3064,168 @@ void main() {
 
       expect(module.dumpSystemVerilog(), contains("TestEnum'("));
     });
+
+    test('typed enum array preserves mapping, shape, and normalized leaves',
+        () async {
+      final states = _enumArray([2, 2]);
+      final copy = states.clone(name: 'copy');
+      final named = states.named('named');
+
+      for (final array in [states, copy, named]) {
+        expect(array.at([1, 0]), isA<LogicEnum<TestEnum>>());
+        expect(array.at([1, 0]).mapping, {
+          TestEnum.a: LogicValue.ofInt(1, 3),
+          TestEnum.c: LogicValue.ofInt(5, 3),
+        });
+        expect(array.dimensions, [2, 2]);
+        expect(array.value.dimensions, [2, 2]);
+        expect(array.value.elementWidth, 3);
+      }
+      expect(copy.name, 'copy');
+      expect(named.name, 'named');
+      expect(copy.value.packed.isFloating, isTrue);
+
+      states.at([0, 0]).put(TestEnum.a);
+      states.at([0, 1]).put(TestEnum.c);
+      states.at([1, 0]).put(2);
+      states.at([1, 1]).put(LogicValue.ofString('x0z'));
+      await Simulator.run();
+
+      expect(states.value.arrayValues, [
+        LogicValue.ofInt(1, 3),
+        LogicValue.ofInt(5, 3),
+        LogicValue.ofString('xxx'),
+        LogicValue.ofString('xxx'),
+      ]);
+      expect(states.value.at([1, 0]), LogicValue.ofString('xxx'));
+      expect(named.value.packed, states.value.packed);
+      expect(copy.value.packed.isFloating, isTrue);
+
+      states.at([1, 1]).put(LogicValue.ofString('zzz'));
+      expect(states.value.at([1, 1]), LogicValue.ofString('zzz'));
+    });
+
+    for (final (layout, unpacked) in [
+      ('packed', 0),
+      ('unpacked', 2),
+      ('mixed', 1),
+    ]) {
+      test('typed enum array crosses child boundary with $layout layout',
+          () async {
+        final module = _EnumArrayParent(
+            _enumArray([2, 2], numUnpackedDimensions: unpacked));
+        final mapping = module.statesIn.at([1, 1]).mapping;
+        expect(module.statesOut.at([0, 0]).mapping, mapping);
+        expect(module.statesOut.numUnpackedDimensions, unpacked);
+        expect((module.output('stateTap') as LogicEnum<TestEnum>).mapping,
+            mapping);
+        await module.build();
+
+        final input = LogicValue.ofIterable([
+          for (final value in [1, 5, 5, 5]) LogicValue.ofInt(value, 3),
+        ]);
+        final output = LogicValue.ofIterable([
+          for (final value in [5, 5, 5, 1]) LogicValue.ofInt(value, 3),
+        ]);
+        final vectors = [
+          Vector({'statesIn': input}, {'statesOut': output, 'stateTap': 1}),
+        ];
+        await SimCompare.checkFunctionalVector(module, vectors);
+
+        for (final generateEnums in [true, false]) {
+          final configuration = SystemVerilogSynthesizerConfiguration(
+              generateEnums: generateEnums);
+          final sv = module.dumpSystemVerilog(configuration: configuration);
+          expect(sv, contains('statesIn['));
+          expect(sv, contains('statesOut['));
+          if (generateEnums) {
+            expect(sv, contains('typedef enum'));
+            expect(sv, contains("ArrayState'("));
+          } else {
+            expect(sv, isNot(contains('typedef enum')));
+            expect(sv, isNot(contains("ArrayState'(")));
+          }
+          SimCompare.checkVerilatorVector(
+            module,
+            vectors,
+            synthesizerConfiguration: configuration,
+          );
+          if (unpacked == 0) {
+            SimCompare.checkIverilogVector(
+              module,
+              vectors,
+              synthesizerConfiguration: configuration,
+            );
+          }
+        }
+      }, tags: ['verilator']);
+    }
+
+    test('array of enum-bearing structures keeps fields and metadata',
+        () async {
+      final source = TypedLogicArray<_EnumArrayPacket, LogicValue>(
+          [2], _EnumArrayPacket.new);
+      final module = _EnumPacketArrayModule(source);
+      await module.build();
+
+      final input = LogicValue.ofIterable([
+        LogicValue.ofInt((2 << 3) | 1, 5),
+        LogicValue.ofInt((3 << 3) | 5, 5),
+      ]);
+      final vectors = [
+        Vector({'packetsIn': input}, {'packetsOut': input, 'stateTap': 1}),
+      ];
+      await SimCompare.checkFunctionalVector(module, vectors);
+      final sv = module.dumpSystemVerilog();
+      expect(sv, contains('packetsIn['));
+      expect(sv, contains('packetsOut['));
+      expect(sv, contains("ArrayState'("));
+      SimCompare.checkVerilatorVector(module, vectors);
+      SimCompare.checkIverilogVector(module, vectors);
+
+      final netlist = jsonDecode(NetlistSynthesizer(
+              configuration: NetlistSynthesizerConfiguration(
+                  moduleStopPolicy: SynthModuleStopPolicy()))
+          .synthesizeToJson(module)) as Map<String, dynamic>;
+      final definition =
+          (netlist['modules'] as Map<String, dynamic>)['_EnumPacketArrayModule']
+              as Map<String, dynamic>;
+      final inputPort = (definition['ports']
+          as Map<String, dynamic>)['packetsIn'] as Map<String, dynamic>;
+      final arrayType = inputPort['logic_type'] as Map<String, dynamic>;
+      final elementType = arrayType['elementType'] as Map<String, dynamic>;
+      final fields =
+          (elementType['fields'] as List).cast<Map<String, dynamic>>();
+      expect(arrayType['arrayDims'], [2]);
+      expect(fields.map((field) => (field['name'], field['width'])),
+          containsAll([('state', 3), ('payload', 2)]));
+      expect(sv, contains('packetsIn[0][2:0]'));
+      expect(sv, contains('packetsIn[0][4:3]'));
+      final cells = (definition['cells'] as Map<String, dynamic>)
+          .values
+          .cast<Map<String, dynamic>>();
+      final unpackParameters = cells
+          .where((cell) => cell['type'] == r'$struct_unpack')
+          .map((cell) => cell['parameters'] as Map<String, dynamic>);
+      expect(
+        unpackParameters,
+        contains(predicate<Map<String, dynamic>>((params) =>
+            params['FIELD_0_NAME'] == 'state' &&
+            params['FIELD_0_OFFSET'] == 0 &&
+            params['FIELD_1_NAME'] == 'payload' &&
+            params['FIELD_1_OFFSET'] == 3)),
+      );
+      final netnames = definition['netnames'] as Map<String, dynamic>;
+      final enumAttributes = netnames.values
+          .cast<Map<String, dynamic>>()
+          .map((value) => value['attributes'] as Map<String, dynamic>)
+          .where((attributes) => attributes['wiretype'] == r'\ArrayState');
+      expect(enumAttributes, isNotEmpty);
+      for (final attributes in enumAttributes) {
+        expect(attributes['enum_value_001'], r'\a');
+        expect(attributes['enum_value_101'], r'\c');
+      }
+    }, tags: ['verilator']);
 
     test('enum metadata crosses a submodule boundary in both modes', () async {
       final module = EnumHierarchyModule(Logic(width: 2));

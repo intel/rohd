@@ -167,10 +167,13 @@ It runs `pub get` and `pub downgrade`, each followed by fatal-info analysis of
 downgraded resolution. Required dependencies must already be available on pub.dev;
 there is no fallback to local packages. Command failures stop CI and preparation.
 Pana's report is printed for review, and package scoring findings such as missing
-examples or newer dependency major versions block CI and preparation, matching
-the root package's policy. The runner passes `--exit-code-threshold 0` for every
-sub-package, requiring a full score. The sole temporary exception is
-`rohd_source_navigator`, which uses threshold `10` while its canonical
+examples or newer dependency major versions count against the CI and preparation
+score gate. Pana's `--exit-code-threshold` is the number of
+points that may be lost from its 160-point maximum: `0` requires a full score.
+`rohd_devtools_widgets` permits up to 10 points lost (a minimum score of 150)
+while newer `cupertino_ui` and `material_ui` releases require a Dart SDK
+upgrade and accompanying formatter changes. `rohd_source_navigator` also uses
+threshold `10` temporarily while its canonical
 `https://github.com/intel/rohd/tree/main/packages/rohd_source_navigator`
 repository URL cannot be validated before the path exists on upstream `main`;
 remove the exception when [#718](https://github.com/intel/rohd/pull/718) merges.
