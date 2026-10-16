@@ -74,6 +74,7 @@ jobs:
     permissions: {}
     env:
       ROHD_REQUIRE_VERILATOR: '1'
+      ROHD_REQUIRE_SYSTEMC: '1'
     timeout-minutes: 60
     runs-on: ${{ github.repository_owner == 'intel' && 'intel-ubuntu-latest' || 'ubuntu-latest' }}
     strategy:
@@ -103,6 +104,15 @@ jobs:
       - name: Install software - Verilator
         if: matrix.platform == 'vm'
         run: bash tool/gh_actions/install_verilator.sh
+      - name: Install software - Accellera SystemC
+        run: tool/gh_actions/install_systemc.sh
+
+      - name: Pre-build SystemC PCH and Makefile
+        run: tool/gh_actions/setup_systemc_pch.sh
+
+      - name: Install software - GTKWave
+        if: matrix.platform == 'vm'
+        run: bash tool/gh_actions/install_gtkwave.sh
 
       - name: Install software - GTKWave
         if: matrix.platform == 'vm'
@@ -110,6 +120,9 @@ jobs:
 
       - name: Run project tests
         run: tool/gh_actions/run_tests.sh ${{ matrix.platform }}
+
+      - name: Clean SystemC temporary files
+        run: tool/gh_actions/cleanup_systemc_tmp.sh
 
       - name: Check temporary test files
         if: always()
@@ -135,7 +148,8 @@ jobs:
           push: never
           runCmd: |
             set -eu
-            ROHD_REQUIRE_VERILATOR=1 tool/gh_actions/run_tests.sh ${{ matrix.platform }}
+            ROHD_REQUIRE_VERILATOR=1 ROHD_REQUIRE_SYSTEMC=1 tool/gh_actions/run_tests.sh ${{ matrix.platform }}
+            tool/gh_actions/cleanup_systemc_tmp.sh
             tool/gh_actions/check_tmp_test.sh
 
   shell-regression-tests:

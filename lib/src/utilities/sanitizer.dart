@@ -20,20 +20,7 @@ abstract class Sanitizer {
   /// Returns a modified version of [initialName] which is guaranteed to be
   /// "sanitary".
   static String sanitizeSV(String initialName) {
-    var newName = initialName;
-
-    // get rid of any weird characters, replace with `_`
-    newName = newName.replaceAll(RegExp('[^a-zA-Z0-9_]'), '_');
-
-    // can't start with a number
-    if (newName.startsWith(RegExp('[0-9]'))) {
-      newName = 's$newName';
-    }
-
-    // name can't be empty string
-    if (newName.isEmpty) {
-      return 'empty_';
-    }
+    var newName = _sanitizeCharacters(initialName);
 
     // add `_` to the end if the name is a SystemVerilog keyword
     while (_reservedSVKeywords.contains(newName)) {
@@ -43,6 +30,132 @@ abstract class Sanitizer {
 
     return newName;
   }
+
+  /// Returns a valid C++ identifier that also avoids SystemVerilog keywords.
+  ///
+  /// Keyword names and already-suffixed forms receive one additional
+  /// underscore. This keeps mappings injective for names such as `auto`,
+  /// `auto_`, and `auto__`.
+  static String sanitizeCpp(String initialName) {
+    var newName = _sanitizeCharacters(initialName);
+    final keywordBase = newName.replaceFirst(RegExp(r'_+$'), '');
+    if (_reservedCppKeywords.contains(keywordBase) ||
+        _reservedSVKeywords.contains(keywordBase)) {
+      newName += '_';
+    }
+    return newName;
+  }
+
+  static String _sanitizeCharacters(String initialName) {
+    var newName = initialName.replaceAll(RegExp('[^a-zA-Z0-9_]'), '_');
+    if (newName.startsWith(RegExp('[0-9]'))) {
+      newName = 's$newName';
+    }
+    if (newName.isEmpty) {
+      return 'empty_';
+    }
+    return newName;
+  }
+
+  static const Set<String> _reservedCppKeywords = {
+    'alignas',
+    'alignof',
+    'and',
+    'and_eq',
+    'asm',
+    'atomic_cancel',
+    'atomic_commit',
+    'atomic_noexcept',
+    'auto',
+    'bitand',
+    'bitor',
+    'bool',
+    'break',
+    'case',
+    'catch',
+    'char',
+    'char8_t',
+    'char16_t',
+    'char32_t',
+    'class',
+    'compl',
+    'concept',
+    'const',
+    'consteval',
+    'constexpr',
+    'constinit',
+    'const_cast',
+    'continue',
+    'co_await',
+    'co_return',
+    'co_yield',
+    'decltype',
+    'default',
+    'delete',
+    'do',
+    'double',
+    'dynamic_cast',
+    'else',
+    'enum',
+    'explicit',
+    'export',
+    'extern',
+    'false',
+    'float',
+    'for',
+    'friend',
+    'goto',
+    'if',
+    'inline',
+    'int',
+    'long',
+    'mutable',
+    'namespace',
+    'new',
+    'noexcept',
+    'not',
+    'not_eq',
+    'nullptr',
+    'operator',
+    'or',
+    'or_eq',
+    'private',
+    'protected',
+    'public',
+    'reflexpr',
+    'register',
+    'reinterpret_cast',
+    'requires',
+    'return',
+    'short',
+    'signed',
+    'sizeof',
+    'static',
+    'static_assert',
+    'static_cast',
+    'struct',
+    'switch',
+    'synchronized',
+    'template',
+    'this',
+    'thread_local',
+    'throw',
+    'true',
+    'try',
+    'typedef',
+    'typeid',
+    'typename',
+    'union',
+    'unsigned',
+    'using',
+    'virtual',
+    'void',
+    'volatile',
+    'wchar_t',
+    'while',
+    'xor',
+    'xor_eq',
+  };
 
   /// A set of all the reserved keywords in SystemVerilog.
   static const Set<String> _reservedSVKeywords = {

@@ -379,6 +379,23 @@ void main() {
   });
 
   group('simcompare', () {
+    SystemCVectorExecutable? busSystemCExe;
+
+    setUpAll(() async {
+      final gtm = BusTestModule(Logic(width: 8), Logic(width: 8));
+      await gtm.build();
+      busSystemCExe = SimCompare.buildSystemCVectorExecutable(gtm);
+    });
+
+    tearDownAll(SimCompare.cleanupSystemCCache);
+
+    void checkBusSystemC(List<Vector> vectors) {
+      final exe = busSystemCExe;
+      if (exe != null) {
+        SimCompare.checkSystemCVectors(exe, vectors);
+      }
+    }
+
     group('const sv gen', () {
       test('Subset of a const', () async {
         final mod = ConstBusModule(0xabcd, subset: true);
@@ -387,8 +404,11 @@ void main() {
           Vector({}, {'const_subset': 0xcd}),
         ];
 
-        await SimCompare.checkFunctionalVector(mod, vectors);
-        SimCompare.checkIverilogVector(mod, vectors);
+        await SimCompare.checkVectors(
+          mod,
+          vectors,
+          dontDeleteSystemCTmpFiles: true,
+        );
       });
 
       test('Assignment of a const', () async {
@@ -398,8 +418,11 @@ void main() {
           Vector({}, {'const_subset': 0xabcd}),
         ];
 
-        await SimCompare.checkFunctionalVector(mod, vectors);
-        SimCompare.checkIverilogVector(mod, vectors);
+        await SimCompare.checkVectors(
+          mod,
+          vectors,
+          dontDeleteSystemCTmpFiles: true,
+        );
 
         final sv = mod.dumpSystemVerilog();
         expect(sv.contains("assign const_subset = 16'habcd;"), true);
@@ -418,6 +441,7 @@ void main() {
       await SimCompare.checkFunctionalVector(gtm, vectors);
       final simResult = SimCompare.iverilogVector(gtm, vectors);
       expect(simResult, equals(true));
+      checkBusSystemC(vectors);
     });
 
     test('And2Gate bus', () async {
@@ -434,6 +458,7 @@ void main() {
       await SimCompare.checkFunctionalVector(gtm, vectors);
       final simResult = SimCompare.iverilogVector(gtm, vectors);
       expect(simResult, equals(true));
+      checkBusSystemC(vectors);
     });
 
     test('Operator indexing', () async {
@@ -450,6 +475,7 @@ void main() {
 
       await SimCompare.checkFunctionalVector(gtm, vectors);
       SimCompare.checkIverilogVector(gtm, vectors);
+      checkBusSystemC(vectors);
     });
 
     test('Bus shrink', () async {
@@ -487,6 +513,7 @@ void main() {
       await SimCompare.checkFunctionalVector(gtm, vectors);
       final simResult = SimCompare.iverilogVector(gtm, vectors);
       expect(simResult, equals(true));
+      checkBusSystemC(vectors);
     });
 
     test('Bus reverse slice', () async {
@@ -524,6 +551,7 @@ void main() {
       await SimCompare.checkFunctionalVector(gtm, vectors);
       final simResult = SimCompare.iverilogVector(gtm, vectors);
       expect(simResult, equals(true));
+      checkBusSystemC(vectors);
     });
 
     test('Bus reversed', () async {
@@ -537,6 +565,7 @@ void main() {
       await SimCompare.checkFunctionalVector(gtm, vectors);
       final simResult = SimCompare.iverilogVector(gtm, vectors);
       expect(simResult, equals(true));
+      checkBusSystemC(vectors);
     });
 
     test('Bus range', () async {
@@ -582,6 +611,7 @@ void main() {
       await SimCompare.checkFunctionalVector(gtm, vectors);
       final simResult = SimCompare.iverilogVector(gtm, vectors);
       expect(simResult, equals(true));
+      checkBusSystemC(vectors);
     });
 
     test('Bus swizzle', () async {
@@ -597,6 +627,7 @@ void main() {
       await SimCompare.checkFunctionalVector(gtm, vectors);
       final simResult = SimCompare.iverilogVector(gtm, vectors);
       expect(simResult, equals(true));
+      checkBusSystemC(vectors);
     });
 
     test('Bus bit', () async {
@@ -610,6 +641,7 @@ void main() {
       await SimCompare.checkFunctionalVector(gtm, vectors);
       final simResult = SimCompare.iverilogVector(gtm, vectors);
       expect(simResult, equals(true));
+      checkBusSystemC(vectors);
     });
 
     test('add busses', () async {
@@ -625,6 +657,7 @@ void main() {
       await SimCompare.checkFunctionalVector(gtm, vectors);
       final simResult = SimCompare.iverilogVector(gtm, vectors);
       expect(simResult, equals(true));
+      checkBusSystemC(vectors);
     });
 
     test('expression bit select', () async {
@@ -635,6 +668,7 @@ void main() {
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
       SimCompare.checkIverilogVector(gtm, vectors);
+      checkBusSystemC(vectors);
     });
 
     test('selectFrom and selectIndex', () async {
@@ -649,9 +683,11 @@ void main() {
         Vector({'a1': 1, 'a2': 2, 'a3': 3, 'b': 2},
             {'selectIndexValue': 3, 'selectFromValue': 3})
       ];
-      await SimCompare.checkFunctionalVector(gtm, vectors);
-      final simResult = SimCompare.iverilogVector(gtm, vectors);
-      expect(simResult, equals(true));
+      await SimCompare.checkVectors(
+        gtm,
+        vectors,
+        dontDeleteSystemCTmpFiles: true,
+      );
     });
 
     test('selectFrom with default Value', () async {
@@ -663,9 +699,11 @@ void main() {
         Vector({'a1': 1, 'a2': 2, 'a3': 3, 'b': 4, 'defaultValue': 5},
             {'selectFromValue': 5, 'selectIndexValue': 5}),
       ];
-      await SimCompare.checkFunctionalVector(gtm, vectors);
-      final simResult = SimCompare.iverilogVector(gtm, vectors);
-      expect(simResult, equals(true));
+      await SimCompare.checkVectors(
+        gtm,
+        vectors,
+        dontDeleteSystemCTmpFiles: true,
+      );
     });
   });
 }

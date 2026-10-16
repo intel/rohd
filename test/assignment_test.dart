@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2025 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // assignment_test.dart
@@ -17,9 +17,7 @@ class ExampleModule extends Module {
     final val = Logic(name: 'val');
     val <= Const(1);
 
-    Combinational([
-      out < val,
-    ]);
+    Combinational([out < val]);
   }
 
   Logic get out => output('out');
@@ -88,13 +86,11 @@ void main() {
     final vectors = [
       Vector({}, {'out': 1}),
     ];
-    await SimCompare.checkFunctionalVector(exampleModule, vectors);
-    final simResult = SimCompare.iverilogVector(
+    await SimCompare.checkVectors(
       exampleModule,
       vectors,
-      allowWarnings: true, // since always_comb has no sensitivities
+      allowIverilogWarnings: true, // always_comb has no sensitivities
     );
-    expect(simResult, equals(true));
   });
 
   group('assign subset', () {
@@ -104,12 +100,18 @@ void main() {
         await mod.build();
 
         final vectors = [
-          Vector({'subset': bin('1')},
-              {'result': LogicValue.ofString('zzzz1zzz')}),
+          Vector(
+              {'subset': bin('1')}, {'result': LogicValue.ofString('zzzz1zzz')})
         ];
 
-        await SimCompare.checkFunctionalVector(mod, vectors);
-        SimCompare.checkIverilogVector(mod, vectors);
+        await SimCompare.checkVectors(
+          mod,
+          vectors,
+          excludedBackends: const {
+            SimCompareBackend.systemc:
+                'This case checks undriven bits retaining Z values.',
+          },
+        );
       });
 
       test('multiple bits', () async {
@@ -118,7 +120,7 @@ void main() {
 
         final vectors = [
           Vector({'subset': bin('0110')},
-              {'result': LogicValue.ofString('zz0110zz')}),
+              {'result': LogicValue.ofString('zz0110zz')})
         ];
 
         await SimCompare.checkFunctionalVector(mod, vectors);
@@ -162,7 +164,7 @@ void main() {
 
         final vectors = [
           Vector({'subset1': bin('0000'), 'subset2': bin('1111')},
-              {'result': LogicValue.ofString('11xx00zz')}),
+              {'result': LogicValue.ofString('11xx00zz')})
         ];
 
         await SimCompare.checkFunctionalVector(mod, vectors);
@@ -185,7 +187,7 @@ void main() {
           }, {
             'subset1': LogicValue.ofString('0100'),
             'subset2': LogicValue.ofString('1101')
-          }),
+          })
         ];
 
         await SimCompare.checkFunctionalVector(mod, vectors);
