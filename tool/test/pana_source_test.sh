@@ -159,6 +159,7 @@ PANA_STATUS=73 run_case 73 "$WIDGETS" flutter
 export EXPECTED_SDK=dart EXPECTED_THRESHOLD=10
 run_case 0 "$WAVEFORM" dart
 [[ "$(cat "$SDK_LOG")" == $'dart|pub get\ndart|analyze --fatal-infos lib\ndart|pub downgrade\ndart|analyze --fatal-infos lib\npana' ]]
+PANA_STATUS=73 run_case 73 "$WAVEFORM" dart
 
 mkdir -p "$FIXTURE/rohd_hierarchy/lib"
 printf 'name: rohd_hierarchy\n' > "$FIXTURE/rohd_hierarchy/pubspec.yaml"
