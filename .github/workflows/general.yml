@@ -104,6 +104,10 @@ jobs:
         if: matrix.platform == 'vm'
         run: bash tool/gh_actions/install_verilator.sh
 
+      - name: Install software - GTKWave
+        if: matrix.platform == 'vm'
+        run: bash tool/gh_actions/install_gtkwave.sh
+
       - name: Run project tests
         run: tool/gh_actions/run_tests.sh ${{ matrix.platform }}
 
