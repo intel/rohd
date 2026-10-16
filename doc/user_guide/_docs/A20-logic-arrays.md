@@ -251,7 +251,7 @@ The mux inputs must have matching concrete array types and geometry, including
 dimensions, leaf widths, packed/unpacked configuration, and leaf structure.
 Use generic `cases`, `selectIndex`, or `selectFrom` when selecting one complete
 typed array from multiple choices. Specify the array type parameter on
-`StructurePipeline<T>` when its stages use inline transforms.
+`Pipeline` when its stages access the array with `p.get(array)`.
 
 ## Elements of arrays
 

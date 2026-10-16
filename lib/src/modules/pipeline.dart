@@ -9,280 +9,6 @@
 //
 
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/modules/operation_utils.dart';
-
-/// Builds the combinational value registered by one [StructurePipeline] stage.
-typedef StructurePipelineTransform<LogicType extends LogicStructure> = LogicType
-    Function(StructurePipelineStageInfo<LogicType> stage);
-
-/// Typed values and history visible while building one structure pipeline
-/// stage.
-class StructurePipelineStageInfo<LogicType extends LogicStructure> {
-  /// Zero-based transform stage being constructed.
-  final int stage;
-
-  final List<LogicType> _values;
-
-  StructurePipelineStageInfo._(this.stage, this._values);
-
-  /// Typed value entering this transform stage.
-  LogicType get value => _values[stage];
-
-  /// Returns a typed value relative to this transform stage's input.
-  ///
-  /// Zero selects [value], while negative values select earlier registered
-  /// stages. Future stages cannot be referenced during construction.
-  LogicType get([int stageAdjustment = 0]) => getAbs(stage + stageAdjustment);
-
-  /// Returns a typed value at an absolute pipeline boundary.
-  ///
-  /// Boundary zero is the original input. Boundary `n + 1` is the registered
-  /// output of transform stage `n`.
-  LogicType getAbs(int boundary) {
-    if (boundary < 0 || boundary >= _values.length) {
-      throw RangeError.range(boundary, 0, _values.length - 1, 'boundary');
-    }
-    return _values[boundary];
-  }
-}
-
-/// A single-payload pipeline that preserves a concrete structure type.
-///
-/// Every transform receives a [StructurePipelineStageInfo] whose `value` is the
-/// typed value entering that stage. The returned matching structure is
-/// registered through [FlipFlop]. [values] contains the original
-/// input followed by every registered stage output, so `stageCount` matches
-/// [Pipeline]'s boundary-count convention and `latency` is one less.
-class StructurePipeline<LogicType extends LogicStructure> {
-  /// Original input followed by each registered transform result.
-  late final List<LogicType> values;
-
-  /// Number of combinational boundaries, including the input boundary.
-  int get stageCount => values.length;
-
-  /// Number of registered transform stages.
-  int get latency => values.length - 1;
-
-  /// Final typed pipeline value.
-  LogicType get output => values.last;
-
-  /// Creates a typed structure pipeline.
-  ///
-  /// Each optional [stalls] entry is active-high. A high value prevents the
-  /// corresponding registered stage boundary from advancing.
-  StructurePipeline(
-    Logic clk,
-    LogicType input, {
-    required List<StructurePipelineTransform<LogicType>> stages,
-    List<Logic?>? stalls,
-    Logic? reset,
-    dynamic resetValue,
-    bool asyncReset = false,
-    String name = 'structure_pipeline',
-  }) {
-    if (stalls != null && stalls.length != stages.length) {
-      throw ArgumentError.value(
-        stalls,
-        'stalls',
-        'Must contain one optional stall signal per transform stage.',
-      );
-    }
-
-    final generatedValues = <LogicType>[input];
-    for (var stage = 0; stage < stages.length; stage++) {
-      final transformed = stages[stage](
-        StructurePipelineStageInfo<LogicType>._(stage, generatedValues),
-      );
-      validateMatchingLogicStructure(
-        transformed,
-        input,
-        operation: 'StructurePipeline stage $stage',
-      );
-      final stall = stalls?[stage];
-      if (stall != null && stall.width != 1) {
-        throw PortWidthMismatchException(stall, 1);
-      }
-      generatedValues.add(
-        FlipFlop<LogicType>(
-          clk,
-          transformed,
-          en: stall == null ? null : ~stall,
-          reset: reset,
-          resetValue: resetValue,
-          asyncReset: asyncReset,
-          name: '${name}_stage_$stage',
-        ).q,
-      );
-    }
-    values = List.unmodifiable(generatedValues);
-  }
-
-  /// Returns a typed value at [boundary], defaulting to [output].
-  LogicType get([int? boundary]) => values[boundary ?? values.length - 1];
-}
-
-/// Builds the combinational value registered by one ready/valid pipeline
-/// stage.
-typedef ReadyValidPipelineTransform<LogicType extends Logic> = LogicType
-    Function(ReadyValidPipelineStageInfo<LogicType> stage);
-
-/// Typed values and history visible while building one ready/valid pipeline
-/// stage.
-class ReadyValidPipelineStageInfo<LogicType extends Logic> {
-  /// Zero-based transform stage being constructed.
-  final int stage;
-
-  final List<LogicType> _values;
-
-  ReadyValidPipelineStageInfo._(this.stage, this._values);
-
-  /// Typed value entering this transform stage.
-  LogicType get value => _values[stage];
-
-  /// Returns a typed value relative to this transform stage's input.
-  ///
-  /// Zero selects [value], while negative values select earlier registered
-  /// stages. Future stages cannot be referenced during construction.
-  LogicType get([int stageAdjustment = 0]) => getAbs(stage + stageAdjustment);
-
-  /// Returns a typed value at an absolute pipeline boundary.
-  ///
-  /// Boundary zero is the original input. Boundary `n + 1` is the registered
-  /// output of transform stage `n`.
-  LogicType getAbs(int boundary) {
-    if (boundary < 0 || boundary >= _values.length) {
-      throw RangeError.range(boundary, 0, _values.length - 1, 'boundary');
-    }
-    return _values[boundary];
-  }
-}
-
-/// A ready/valid pipeline that preserves its payload's concrete type.
-///
-/// Each transform produces the payload registered at its corresponding stage.
-/// The pipeline accepts input when [readyPipeIn] is high and advances each
-/// occupied stage when the following stage can accept it.
-class ReadyValidPipeline<LogicType extends Logic> {
-  /// Original input followed by each registered stage output.
-  late final List<LogicType> values;
-
-  /// Indicates whether the final payload is valid.
-  late final Logic validPipeOut;
-
-  /// Indicates whether the first stage can accept an input payload.
-  late final Logic readyPipeIn;
-
-  /// Indicates whether the input payload is valid.
-  final Logic validPipeIn;
-
-  /// Indicates whether the receiver can accept the output payload.
-  final Logic readyPipeOut;
-
-  /// Number of combinational boundaries, including the input boundary.
-  int get stageCount => values.length;
-
-  /// Number of registered transform stages.
-  int get latency => values.length - 1;
-
-  /// Final typed pipeline value.
-  LogicType get output => values.last;
-
-  /// Creates a typed ready/valid pipeline.
-  ///
-  /// Every entry in [stages] creates one registered elastic stage. A pipeline
-  /// without stages passes [input] through combinationally.
-  ReadyValidPipeline(
-    Logic clk,
-    LogicType input, {
-    required this.validPipeIn,
-    required this.readyPipeOut,
-    required List<ReadyValidPipelineTransform<LogicType>> stages,
-    Logic? reset,
-    dynamic resetValue,
-    bool asyncReset = false,
-    String name = 'ready_valid_structure_pipeline',
-  }) {
-    if (clk.width != 1) {
-      throw PortWidthMismatchException(clk, 1);
-    }
-    if (validPipeIn.width != 1) {
-      throw PortWidthMismatchException(validPipeIn, 1);
-    }
-    if (readyPipeOut.width != 1) {
-      throw PortWidthMismatchException(readyPipeOut, 1);
-    }
-    if (reset != null && reset.width != 1) {
-      throw PortWidthMismatchException(reset, 1);
-    }
-
-    if (stages.isEmpty) {
-      values = List.unmodifiable([input]);
-      validPipeOut = validPipeIn;
-      readyPipeIn = readyPipeOut;
-      return;
-    }
-
-    final readyValues = List<Logic>.generate(
-      stages.length + 1,
-      (index) => index == stages.length
-          ? readyPipeOut
-          : Logic(
-              name: '${name}_ready_$index',
-              naming: Naming.mergeable,
-            ),
-    );
-    final generatedValues = <LogicType>[input];
-    final generatedValids = <Logic>[validPipeIn];
-
-    for (var stage = 0; stage < stages.length; stage++) {
-      final transformed = stages[stage](
-        ReadyValidPipelineStageInfo<LogicType>._(stage, generatedValues),
-      );
-      validateOperationSource(
-        transformed,
-        input,
-        operation: 'ReadyValidPipeline stage $stage',
-      );
-
-      generatedValues.add(
-        FlipFlop<LogicType>(
-          clk,
-          transformed,
-          en: readyValues[stage],
-          reset: reset,
-          resetValue: resetValue,
-          asyncReset: asyncReset,
-          name: '${name}_stage_$stage',
-        ).q,
-      );
-      generatedValids.add(
-        flop<Logic>(
-          clk,
-          generatedValids.last,
-          en: readyValues[stage],
-          reset: reset,
-          resetValue: 0,
-          asyncReset: asyncReset,
-        ).named(
-          '${name}_valid_${stage + 1}',
-          naming: Naming.mergeable,
-        ),
-      );
-    }
-
-    for (var stage = stages.length - 1; stage >= 0; stage--) {
-      readyValues[stage] <=
-          ~generatedValids[stage + 1] | readyValues[stage + 1];
-    }
-
-    values = List.unmodifiable(generatedValues);
-    validPipeOut = generatedValids.last;
-    readyPipeIn = readyValues.first;
-  }
-
-  /// Returns a typed value at [boundary], defaulting to [output].
-  LogicType get([int? boundary]) => values[boundary ?? values.length - 1];
-}
 
 /// Information and accessors associated with a [Pipeline] stage.
 class PipelineStageInfo {
@@ -306,15 +32,25 @@ class PipelineStageInfo {
   /// stage, you can access it relatively using [stageAdjustment].  For example,
   /// `p.get(x, -1)` will access the value of `x` at the output of one stage
   /// prior.
-  Logic get(Logic identifier, [int stageAdjustment = 0]) =>
+  T get<T extends Logic>(T identifier, [int stageAdjustment = 0]) =>
       getAbs(identifier, stage + stageAdjustment);
 
   /// Returns the output of [identifier] at the specified absolute [stageIndex]
   /// stage, if other than the current [stage].  Otherwise, returns the same
   /// thing as [get], for the current [stage].
-  Logic getAbs(Logic identifier, int stageIndex) {
+  T getAbs<T extends Logic>(T identifier, int stageIndex) {
     final l = _pipeline.get(identifier, stageIndex);
-    return stageIndex == stage ? _ssa(l) : l;
+    if (stageIndex != stage) {
+      return l;
+    }
+
+    final remapped = _ssa(l);
+    if (remapped is! T) {
+      throw LogicConstructionException(
+        'SSA remapping did not preserve the requested $T type.',
+      );
+    }
+    return remapped;
   }
 }
 
@@ -341,21 +77,83 @@ class _PipeStage {
   /// Registers [newLogic] with this stage and creates appropriate inputs,
   /// outputs, and internal signals for the stage.
   void _addLogic(Logic newLogic, int index) {
-    input[newLogic] = Logic(
+    input[newLogic] = _clonePipelineLogic(
+      newLogic,
       name: '${newLogic.name}_stage${index}_i',
-      width: newLogic.width,
-      naming: Naming.mergeable,
     );
-    output[newLogic] = Logic(
+    output[newLogic] = _clonePipelineLogic(
+      newLogic,
       name: '${newLogic.name}_stage${index}_o',
-      width: newLogic.width,
-      naming: Naming.mergeable,
     );
-    main[newLogic] = Logic(
+    main[newLogic] = _clonePipelineLogic(
+      newLogic,
       name: '${newLogic.name}_stage$index',
-      width: newLogic.width,
-      naming: Naming.mergeable,
     );
+  }
+}
+
+Logic _clonePipelineLogic(Logic source, {required String name}) {
+  if (_containsNonDriveablePipelineSignal(source)) {
+    throw LogicConstructionException(
+      'Pipeline signals must contain only driveable, non-net Logic values. '
+      'Create an ordinary Logic alias before adding $source to a Pipeline.',
+    );
+  }
+
+  final clone = source.clone(name: name);
+  if (clone.runtimeType != source.runtimeType) {
+    throw LogicConstructionException(
+      'Pipeline reconstruction did not preserve ${source.runtimeType}.',
+    );
+  }
+  return clone;
+}
+
+bool _containsNonDriveablePipelineSignal(Logic logic) {
+  if (logic is Const || logic is LogicNet) {
+    return true;
+  }
+  return logic is LogicStructure &&
+      logic.leafElements.any(_containsNonDriveablePipelineSignal);
+}
+
+Conditional _pipelineAssignment(Logic receiver, Logic driver) {
+  if (receiver is! LogicStructure || driver is! LogicStructure) {
+    return receiver < driver;
+  }
+
+  final receiverLeaves = receiver.leafElements;
+  final driverLeaves = driver.leafElements;
+  if (receiverLeaves.length != driverLeaves.length) {
+    throw LogicConstructionException(
+      'Pipeline reconstruction did not preserve the structure of '
+      '${receiver.name}.',
+    );
+  }
+
+  return ConditionalGroup([
+    for (var index = 0; index < receiverLeaves.length; index++)
+      receiverLeaves[index] < driverLeaves[index],
+  ]);
+}
+
+void _connectPipelineLogic(Logic receiver, Logic driver) {
+  if (receiver is! LogicStructure || driver is! LogicStructure) {
+    receiver <= driver;
+    return;
+  }
+
+  final receiverLeaves = receiver.leafElements;
+  final driverLeaves = driver.leafElements;
+  if (receiverLeaves.length != driverLeaves.length) {
+    throw LogicConstructionException(
+      'Pipeline reconstruction did not preserve the structure of '
+      '${receiver.name}.',
+    );
+  }
+
+  for (var index = 0; index < receiverLeaves.length; index++) {
+    receiverLeaves[index] <= driverLeaves[index];
   }
 }
 
@@ -454,7 +252,7 @@ class Pipeline {
     signals.forEach(_add);
 
     for (var stageIndex = 0; stageIndex < stageCount; stageIndex++) {
-      Combinational.ssa((ssa) {
+      Combinational.ssaWithTypes((ssa) {
         // keep track of the previously registered logics:
         final prevRegisteredLogics = _registeredLogics.toSet();
 
@@ -469,22 +267,22 @@ class Pipeline {
           if (!prevRegisteredLogics.contains(l)) {
             for (var i = 0; i < stageIndex; i++) {
               // make sure to hook up in-to-out through main for .get's
-              get(l, i) <= _i(l, i);
-              _o(l, i) <= get(l, i);
+              _connectPipelineLogic(get(l, i), _i(l, i));
+              _connectPipelineLogic(_o(l, i), get(l, i));
             }
           }
         }
 
         return [
           for (final l in _registeredLogics)
-            ssa(get(l, stageIndex)) < _i(l, stageIndex),
+            _pipelineAssignment(ssa(get(l, stageIndex)), _i(l, stageIndex)),
           ...stageConditionals,
         ];
       }, name: 'comb_stage$stageIndex');
 
       // do output connections as assignments so they can be collapsed
       for (final l in _registeredLogics) {
-        _o(l, stageIndex) <= get(l, stageIndex);
+        _connectPipelineLogic(_o(l, stageIndex), get(l, stageIndex));
       }
     }
 
@@ -519,40 +317,35 @@ class Pipeline {
       _stages[i]._addLogic(newLogic, i);
     }
 
-    _stages[0].input[newLogic]! <= newLogic;
-    final ffAssigns = <ConditionalAssign>[];
+    _connectPipelineLogic(_stages[0].input[newLogic]!, newLogic);
+    final ffAssigns = <Conditional>[];
     for (var i = 1; i < _stages.length; i++) {
-      ffAssigns.add(_i(newLogic, i) < _o(newLogic, i - 1) as ConditionalAssign);
+      final assignment =
+          _pipelineAssignment(_i(newLogic, i), _o(newLogic, i - 1));
+      final stall = _stages[i - 1].stall;
+      ffAssigns.add(
+        stall == null ? assignment : If(~stall, then: [assignment]),
+      );
     }
 
-    final ffAssignsWithStall = List<ConditionalAssign>.generate(
-      stageCount - 1,
-      (index) {
-        final stall = _stages[index].stall;
-        final ffAssign = ffAssigns[index];
-        final driver = stall != null
-            ? mux(stall, ffAssign.receiver, ffAssign.driver)
-            : ffAssign.driver;
-        return ffAssign.receiver < driver as ConditionalAssign;
-      },
-    );
-
-    final stageResetVal = _resetValues?[newLogic];
     final resetValuesForNewLogic = <Logic, dynamic>{};
-    if (stageResetVal != null) {
-      for (final ffAssign in ffAssignsWithStall) {
-        resetValuesForNewLogic[ffAssign.receiver] = stageResetVal;
+    if (_resetValues?.containsKey(newLogic) ?? false) {
+      final stageResetVal = _resetValues![newLogic];
+      for (var i = 1; i < _stages.length; i++) {
+        resetValuesForNewLogic[_i(newLogic, i)] = stageResetVal;
       }
     }
 
-    Sequential.multi(
-      _clks,
-      reset: reset,
-      resetValues: resetValuesForNewLogic,
-      asyncReset: asyncReset,
-      ffAssignsWithStall,
-      name: 'ff_${newLogic.name}',
-    );
+    if (ffAssigns.isNotEmpty) {
+      Sequential.multi(
+        _clks,
+        ffAssigns,
+        reset: reset,
+        resetValues: resetValuesForNewLogic,
+        asyncReset: asyncReset,
+        name: 'ff_${newLogic.name}',
+      );
+    }
   }
 
   /// The stage input for a signal associated with [logic] to [stageIndex].
@@ -588,7 +381,7 @@ class Pipeline {
   ///
   /// Use [stageIndex] to select the value of [logic] at a specific stage of the
   /// pipeline. The [stageIndex] must be less than [stageCount].
-  Logic get(Logic logic, [int? stageIndex]) {
+  T get<T extends Logic>(T logic, [int? stageIndex]) {
     if (!_isRegistered(logic)) {
       if (_constructionComplete) {
         throw PortDoesNotExistException(
@@ -602,16 +395,17 @@ class Pipeline {
     stageIndex ??= _stages.length - 1;
 
     final stageLogic = _stages[stageIndex].main[logic]!;
+    if (stageLogic is! T) {
+      throw LogicConstructionException(
+        'Pipeline reconstruction did not preserve the requested $T type.',
+      );
+    }
     return stageLogic;
   }
 }
 
-/// Legacy multi-signal ready/valid pipeline.
-///
-/// Use [ReadyValidPipeline] for a single typed payload. This class remains
-/// available for pipelines that need the legacy arbitrary-signal [Pipeline]
-/// stage API.
-class ReadyValidSignalPipeline extends Pipeline {
+/// A multi-signal ready/valid [Pipeline].
+class ReadyValidPipeline extends Pipeline {
   /// Indicates that valid contents are ready to be received
   /// at the output of the pipeline.
   late final Logic validPipeOut;
@@ -626,7 +420,7 @@ class ReadyValidSignalPipeline extends Pipeline {
   /// is ready to pull out of the pipeline.
   final Logic readyPipeOut;
 
-  /// Constructs a legacy multi-signal ready/valid pipeline.
+  /// Constructs a multi-signal ready/valid pipeline.
   ///
   /// The [validPipeIn] signal indicates that the input to the pipeline is
   /// valid.  The [readyPipeOut] signal indicates that the receiver of the
@@ -647,7 +441,7 @@ class ReadyValidSignalPipeline extends Pipeline {
   /// Note that the [resetValues] will take effect the same way as a normal
   /// [Pipeline], but the valid indication on the output will remain at 0 until
   /// a valid input has made its way from the input to the output.
-  ReadyValidSignalPipeline(
+  ReadyValidPipeline(
     Logic clk,
     Logic validPipeIn,
     Logic readyPipeOut, {
@@ -667,8 +461,8 @@ class ReadyValidSignalPipeline extends Pipeline {
           asyncReset: asyncReset,
         );
 
-  /// Creates a [ReadyValidSignalPipeline] with multiple triggers.
-  ReadyValidSignalPipeline.multi(
+  /// Creates a [ReadyValidPipeline] with multiple triggers.
+  ReadyValidPipeline.multi(
     super._clks,
     this.validPipeIn,
     this.readyPipeOut, {

@@ -113,9 +113,9 @@ class ConditionalAssign extends Conditional {
         context: context);
 
     final newMappings = <Logic, Logic>{...currentMappings};
-    // if the receiver is an ssa node, then update the mapping
-    if (receiver is SsaLogic) {
-      newMappings[(receiver as SsaLogic).ref] = receiver;
+    // If the receiver is an SSA node, update the mapping.
+    if (SsaLogic.isSsaProxy(receiver, context: context)) {
+      newMappings[SsaLogic.referenceOf(receiver, context: context)] = receiver;
     }
 
     return newMappings;

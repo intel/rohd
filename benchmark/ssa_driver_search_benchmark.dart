@@ -42,7 +42,7 @@ class LotsOfSsa extends Module {
     final signals = List.generate(signalsCount,
         (index) => Logic(name: 's$index')..gets(LotsOfLogic(a, b, counter).c));
 
-    ReadyValidSignalPipeline(a, a, b,
+    ReadyValidPipeline(a, a, b,
         reset: b,
         signals: signals,
         stages: List.generate(
