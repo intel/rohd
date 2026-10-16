@@ -5,6 +5,9 @@
 - Netlist JSON format is now `0.1.0`, preserving enum types and encodings on retained netnames using Yosys-style attributes, including constant-driven enum uses (<https://github.com/intel/rohd/pull/599>).
 - **Breaking:** `FiniteStateMachine`, `State`, and the deprecated `StateMachine` alias now require Dart enum state identifiers. Replace integer, string, or custom-object identifiers with enum members; update reset and transition targets accordingly. `currentState` and `nextState` are now `LogicEnum` signals (<https://github.com/intel/rohd/pull/599>).
 
+- Released `rohd_hierarchy` 0.2.0 with the hierarchy query and netlist
+  adapter APIs.
+
 ## 0.6.11
 
 - Added `NetlistSynthesizer` for generating JSON netlists, with configurable synthesis passes, validation, and hierarchy support (<https://github.com/intel/rohd/pull/675>).

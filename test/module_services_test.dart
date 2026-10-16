@@ -188,6 +188,16 @@ void main() {
       expect(NetlistService.current, isNull);
       expect(SystemVerilogService.current, isNull);
     });
+
+    test('reset clears TraceService current accessor', () async {
+      final mod = SimpleModule(Logic());
+      await mod.build();
+      final trace = TraceService(mod);
+
+      expect(TraceService.current, same(trace));
+      ModuleServices.instance.reset();
+      expect(TraceService.current, isNull);
+    });
   });
 
   group('SystemVerilogService', () {
@@ -282,6 +292,17 @@ void main() {
       expect(sv.instanceTypeOutput('DoesNotExist'), isNull);
     });
 
+    test('contentsByDefinitionName returns definition contents', () async {
+      final mod = SimpleModule(Logic());
+      await mod.build();
+      final sv = SystemVerilogService(mod);
+
+      expect(
+        sv.contentsByDefinitionName[mod.definitionName],
+        equals(sv.fileContents.single.contents),
+      );
+    });
+
     test('toJson lists generated modules', () async {
       final mod = SimpleModule(Logic());
       await mod.build();
@@ -319,6 +340,29 @@ void main() {
         )..writeOutputs();
         final path = '${dir.path}/out.sv';
         expect(File(path).readAsStringSync(), equals(configuredSv.output));
+      } finally {
+        dir.deleteSync(recursive: true);
+      }
+    });
+
+    test('write records the actual output path', () async {
+      final mod = SimpleModule(Logic());
+      await mod.build();
+      final dir = Directory.systemTemp.createTempSync('sv_test_');
+      try {
+        final sv = SystemVerilogService(
+          mod,
+          outputDirectory: dir.path,
+          outputBaseName: 'configured',
+        );
+        final configuredPath = '${dir.path}/configured.sv';
+        final writtenPath = '${dir.path}/custom.sv';
+
+        expect(sv.outputPath, equals(configuredPath));
+        sv.write(writtenPath);
+
+        expect(sv.outputPath, equals(writtenPath));
+        expect(File(writtenPath).readAsStringSync(), equals(sv.output));
       } finally {
         dir.deleteSync(recursive: true);
       }

@@ -207,6 +207,7 @@ class NetlistHierarchyAdapter extends BaseHierarchyAdapter {
             definition: cellType,
             isPrimitive: true,
             signals: cellSignals,
+            portCount: cellSignals.length,
           );
           childNodes.add(instNode);
         }
@@ -218,6 +219,7 @@ class NetlistHierarchyAdapter extends BaseHierarchyAdapter {
       name: name,
       definition: definition,
       signals: signalsList,
+      portCount: portsData?.length ?? 0,
       children: childNodes,
     );
   }

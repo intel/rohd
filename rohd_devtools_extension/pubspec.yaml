@@ -32,6 +32,9 @@ dev_dependencies:
     sdk: flutter
   mocktail: ^1.0.2
   path: ^1.9.0
+  rohd:
+    path: ../
+  test: ^1.25.15
   
 flutter:
   uses-material-design: true

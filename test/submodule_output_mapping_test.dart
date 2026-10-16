@@ -499,6 +499,27 @@ void main() {
     }
   });
 
+  test('maps concatenated output connection leaves to their columns', () {
+    final columns = <String, int>{};
+    final instantiation = SystemVerilogSynthesizer.instantiationVerilogFor(
+      module: BitStage(Logic()),
+      instanceType: 'BitStage',
+      instanceName: 'stage',
+      ports: {'data': 'inputData', 'result': '{high[3:2],low[1]}'},
+      outputPortColumns: columns,
+      forceStandardInstantiation: true,
+    );
+
+    for (final signalName in ['high[3:2]', 'low[1]']) {
+      final column = columns[signalName];
+      expect(column, isNotNull);
+      expect(
+        instantiation.substring(column! - 1, column - 1 + signalName.length),
+        equals(signalName),
+      );
+    }
+  });
+
   group('independent outputs to packed parent bits', () {
     for (final producer in ProducerKind.values) {
       for (final order in AssignmentOrder.values) {

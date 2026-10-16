@@ -97,7 +97,7 @@ class SystemCSynthesisResult extends SynthesisResult {
   ///
   /// This mirrors the approach used by the SystemVerilog synthesizer's
   /// `_buildSvLineMap` in the `source_debug` branch, enabling the
-  /// `SignalSourceTracer` to emit FLC data with both SV and SC positions.
+  /// `SourceTracer` to emit FLC data with both SV and SC positions.
   void _buildScLineMap(String scText) {
     _scLineMap.clear();
 
@@ -118,6 +118,14 @@ class SystemCSynthesisResult extends SynthesisResult {
     if (targets.isEmpty) {
       return;
     }
+
+    final outputBoundNames = <String>{
+      for (final smi in _synthModuleDefinition.subModuleInstantiations)
+        if (!_isHandledInline(smi as SystemCSynthSubModuleInstantiation))
+          for (final entry in smi.outputMapping.entries)
+            if (!entry.value.declarationCleared && !entry.value.isConstant)
+              _scName(entry.value.name),
+    };
 
     // Single-pass: tokenize each line once, check tokens against target set.
     // Record the first occurrence (declaration) and any subsequent occurrence
@@ -144,6 +152,10 @@ class SystemCSynthesisResult extends SynthesisResult {
               !list.contains(pos)) {
             // Subsequent occurrence on an assignment LHS — record it.
             list.add(pos);
+          } else if (outputBoundNames.contains(word) &&
+              _isOutputBindingArg(lineText, match.start, match.end) &&
+              !list.contains(pos)) {
+            list.add(pos);
           }
         }
         lineNum++;
@@ -151,6 +163,13 @@ class SystemCSynthesisResult extends SynthesisResult {
       }
     }
   }
+
+  static final RegExp _portCallPrefixRe = RegExp(r'\.\w+\($');
+
+  static bool _isOutputBindingArg(String lineText, int start, int end) =>
+      end < lineText.length &&
+      lineText[end] == ')' &&
+      _portCallPrefixRe.hasMatch(lineText.substring(0, start));
 
   /// Returns true if the identifier ending at [afterIdent] in [lineText] is
   /// followed (after optional whitespace) by a single `=` (and not `==`).
