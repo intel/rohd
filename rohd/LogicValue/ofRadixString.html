@@ -114,8 +114,10 @@ in the remaining width:</p>
             .firstMatch(valueString);
     if (formatStr != null) {
       if (valueString.length != formatStr.group(0)!.length) {
-        throw LogicValueConstructionException(&#39;radix string stopped &#39;
-            &#39;parsing at character position ${formatStr.group(0)!.length}&#39;);
+        throw LogicValueConstructionException(
+          &#39;radix string stopped &#39;
+          &#39;parsing at character position ${formatStr.group(0)!.length}&#39;,
+        );
       }
       final specifiedLength = int.parse(formatStr.group(1)!);
       final compressedStr = formatStr.group(3)!.replaceAll(sepChar, &#39;&#39;);
@@ -128,7 +130,8 @@ in the remaining width:</p>
         &#39;d&#39; =&gt; 10,
         &#39;h&#39; =&gt; 16,
         _ =&gt; throw LogicValueConstructionException(
-            &#39;Unsupported radix: $radixString&#39;),
+            &#39;Unsupported radix: $radixString&#39;,
+          ),
       };
       final span = (math.log(radix) &#47; math.log(2)).ceil();
 
@@ -173,8 +176,9 @@ in the remaining width:</p>
       }
       if ((radix != 10) &amp; (binaryLength - shorter &gt; specifiedLength)) {
         throw LogicValueConstructionException(
-            &#39;ofRadixString: cannot represent &#39;
-            &#39;$compressedStr in $specifiedLength&#39;);
+          &#39;ofRadixString: cannot represent &#39;
+          &#39;$compressedStr in $specifiedLength&#39;,
+        );
       }
       final noBinariesStr = reversedStr.replaceAll(fullBinaries, &#39;0&#39;);
       final xLocations = RegExp(&#39;x|X&#39;)
@@ -191,16 +195,17 @@ in the remaining width:</p>
       final BigInt intValue;
       if (noBinariesStr.isNotEmpty) {
         intValue = BigInt.parse(
-                _reverse(noBinariesStr.replaceAll(RegExp(&#39;[xXzZ]&#39;), &#39;0&#39;)),
-                radix: radix)
-            .toUnsigned(specifiedLength);
+          _reverse(noBinariesStr.replaceAll(RegExp(&#39;[xXzZ]&#39;), &#39;0&#39;)),
+          radix: radix,
+        ).toUnsigned(specifiedLength);
       } else {
         intValue = BigInt.zero;
       }
       final logicValList = List&lt;LogicValue&gt;.from(
-          LogicValue.ofString(intValue.toRadixString(2))
-              .zeroExtend(specifiedLength)
-              .toList());
+        LogicValue.ofString(intValue.toRadixString(2))
+            .zeroExtend(specifiedLength)
+            .toList(),
+      );
       &#47;&#47; Put all the X and Z&#39;s back into the list
       for (final x in xLocations) {
         if (x &lt; specifiedLength) {
@@ -239,7 +244,7 @@ in the remaining width:</p>
             &#39;0&#39; =&gt; LogicValue.zero,
             &#39;1&#39; =&gt; LogicValue.one,
             &#39;x&#39; =&gt; LogicValue.x,
-            _ =&gt; LogicValue.z
+            _ =&gt; LogicValue.z,
           };
         }
         lastCpos = i.$2.start;
@@ -249,7 +254,8 @@ in the remaining width:</p>
     }
   }
   throw LogicValueConstructionException(
-      &#39;Invalid LogicValue string $valueString&#39;);
+    &#39;Invalid LogicValue string $valueString&#39;,
+  );
 }</code></pre>
 </section>
 

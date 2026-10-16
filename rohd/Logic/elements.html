@@ -72,7 +72,8 @@ each element may be any positive number of bits.</p>
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">late final List&lt;Logic&gt; elements = UnmodifiableListView(
-    List.generate(width, (index) =&gt; this[index], growable: false));</code></pre>
+  List.generate(width, (index) =&gt; this[index], growable: false),
+);</code></pre>
 </section>
 
 

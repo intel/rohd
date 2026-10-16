@@ -77,13 +77,16 @@ if the position of the <code>update</code> would cause an overrun past the <a hr
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">Logic withSet(int startIndex, Logic update) {
   if (startIndex + update.width &gt; width) {
-    throw RangeError(&#39;Width of update $update at startIndex $startIndex would&#39;
-        &#39; overrun the width of the original ($width).&#39;);
+    throw RangeError(
+      &#39;Width of update $update at startIndex $startIndex would&#39;
+      &#39; overrun the width of the original ($width).&#39;,
+    );
   }
 
   if (startIndex &lt; 0) {
     throw RangeError(
-        &#39;Start index must be greater than zero but was $startIndex&#39;);
+      &#39;Start index must be greater than zero but was $startIndex&#39;,
+    );
   }
 
   if (startIndex == 0 &amp;&amp; update.width == width) {

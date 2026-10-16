@@ -69,6 +69,7 @@
 <li><span class="parameter" id="param-register"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">register</span> = <span class="default-value">true</span>, </span></li>
 <li><span class="parameter" id="param-writeToFile"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">writeToFile</span> = <span class="default-value">false</span>, </span></li>
 <li><span class="parameter" id="param-retainInMemory"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">retainInMemory</span>, </span></li>
+<li><span class="parameter" id="param-enableDevToolsStreaming"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">enableDevToolsStreaming</span> = <span class="default-value">false</span>, </span></li>
 </ol>})
     </section>
     
@@ -100,6 +101,7 @@ the current directory and <code>outputBaseName</code> defaults to
   bool register = true,
   bool writeToFile = false,
   bool? retainInMemory,
+  bool enableDevToolsStreaming = false,
 }) : this._(
         module,
         outputDirectory: outputDirectory ?? &#39;.&#39;,
@@ -115,6 +117,7 @@ the current directory and <code>outputBaseName</code> defaults to
         register: register,
         writeToFile: writeToFile,
         retainInMemory: retainInMemory,
+        enableDevToolsStreaming: enableDevToolsStreaming,
       );</code></pre>
 </section>
 

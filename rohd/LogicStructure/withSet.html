@@ -85,13 +85,16 @@ Logic withSet(int startIndex, Logic update) {
   final endIndex = startIndex + update.width;
 
   if (endIndex &gt; width) {
-    throw RangeError(&#39;Width of update $update at startIndex $startIndex would&#39;
-        &#39; overrun the width of the original ($width).&#39;);
+    throw RangeError(
+      &#39;Width of update $update at startIndex $startIndex would&#39;
+      &#39; overrun the width of the original ($width).&#39;,
+    );
   }
 
   if (startIndex &lt; 0) {
     throw RangeError(
-        &#39;Start index must be greater than zero but was $startIndex&#39;);
+      &#39;Start index must be greater than zero but was $startIndex&#39;,
+    );
   }
 
   final newWithSet = clone();
@@ -115,11 +118,12 @@ Logic withSet(int startIndex, Logic update) {
     if (elementInRange) {
       newElement &lt;=
           element.withSet(
-              max(startIndex - index, 0),
-              update.getRange(
-                max(index - startIndex, 0),
-                min(index - startIndex + elementWidth, update.width),
-              ));
+            max(startIndex - index, 0),
+            update.getRange(
+              max(index - startIndex, 0),
+              min(index - startIndex + elementWidth, update.width),
+            ),
+          );
     } else {
       newElement &lt;= element;
     }

@@ -119,12 +119,13 @@ bits to fill the first radix character.</p>
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">String toRadixString(
-    {int radix = 2,
-    int chunkSize = 4,
-    bool leadingZeros = false,
-    bool includeWidth = true,
-    String sepChar = &#39;_&#39;}) {
+  <pre class="language-dart"><code class="language-dart">String toRadixString({
+  int radix = 2,
+  int chunkSize = 4,
+  bool leadingZeros = false,
+  bool includeWidth = true,
+  String sepChar = &#39;_&#39;,
+}) {
   if (sepChar.isNotEmpty &amp;&amp; radixStringChars.contains(sepChar)) {
     throw LogicValueConversionException(&#39;separation character invalid&#39;);
   }
@@ -134,7 +135,7 @@ bits to fill the first radix character.</p>
     8 =&gt; &quot;&#39;o&quot;,
     10 =&gt; &quot;&#39;d&quot;,
     16 =&gt; &quot;&#39;h&quot;,
-    _ =&gt; throw LogicValueConversionException(&#39;Unsupported radix: $radix&#39;)
+    _ =&gt; throw LogicValueConversionException(&#39;Unsupported radix: $radix&#39;),
   };
   final String reversedStr;
   if (radix == 10) {
@@ -142,16 +143,20 @@ bits to fill the first radix character.</p>
       var radixString =
           toBigInt().toUnsigned(width).toRadixString(radix).toUpperCase();
       if (leadingZeros) {
-        final span =
-            math.max(1, (width * math.log(2) &#47; math.log(radix)).floor());
+        final span = math.max(
+          1,
+          (width * math.log(2) &#47; math.log(radix)).floor(),
+        );
         for (var i = radixString.length; i &lt; (width &#47; span).ceil(); i++) {
           radixString = &#39;0$radixString&#39;;
         }
       }
       reversedStr = _reverse(radixString);
     } else {
-      final span =
-          math.max(1, (width * math.log(2) &#47; math.log(radix)).floor());
+      final span = math.max(
+        1,
+        (width * math.log(2) &#47; math.log(radix)).floor(),
+      );
       if (toRadixString().contains(RegExp(&#39;[xX]&#39;))) {
         reversedStr = &#39;X&#39; * span;
       } else {
@@ -160,8 +165,10 @@ bits to fill the first radix character.</p>
     }
   } else {
     final span = (math.log(radix) &#47; math.log(2)).ceil();
-    final extendedStr =
-        LogicValue.of(this, width: span * (width &#47; span).ceil());
+    final extendedStr = LogicValue.of(
+      this,
+      width: span * (width &#47; span).ceil(),
+    );
     final buf = StringBuffer();
     var haveLeadingZeros = true;
     for (var i = (extendedStr.width ~&#47; span) - 1; i &gt;= 0; i--) {
@@ -170,7 +177,9 @@ bits to fill the first radix character.</p>
       if (i == extendedStr.width ~&#47; span - 1) {
         final chunkWidth = chunkString.length;
         chunkString = chunkString.substring(
-            chunkWidth - (width - i * span), chunkWidth);
+          chunkWidth - (width - i * span),
+          chunkWidth,
+        );
       }
       final s = [
         if (chunkString == &#39;z&#39; * chunkString.length)
@@ -180,7 +189,7 @@ bits to fill the first radix character.</p>
         else if (chunkString.contains(&#39;z&#39;) | chunkString.contains(&#39;x&#39;))
           &#39;&gt;${_reverse(chunkString)}&lt;&#39;
         else
-          binaryChunk.toBigInt().toUnsigned(span).toRadixString(radix)
+          binaryChunk.toBigInt().toUnsigned(span).toRadixString(radix),
       ].first;
       if (s != &#39;0&#39;) {
         haveLeadingZeros = false;
@@ -193,11 +202,14 @@ bits to fill the first radix character.</p>
     reversedStr = _reverse(buf.toString());
   }
 
-  final spaceString = _reverse(reversedStr
-      .replaceAllMapped(
+  final spaceString = _reverse(
+    reversedStr
+        .replaceAllMapped(
           RegExp(&#39;((&gt;(.){$chunkSize}&lt;)|([a-zA-Z0-9])){$chunkSize}&#39;),
-          (match) =&gt; &#39;${match.group(0)}$sepChar&#39;)
-      .replaceAll(&#39;$sepChar&lt;&#39;, &#39;&lt;&#39;));
+          (match) =&gt; &#39;${match.group(0)}$sepChar&#39;,
+        )
+        .replaceAll(&#39;$sepChar&lt;&#39;, &#39;&lt;&#39;),
+  );
 
   final fullString = (spaceString.isNotEmpty)
       ? (spaceString[0] == sepChar)

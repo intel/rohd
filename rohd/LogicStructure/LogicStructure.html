@@ -75,12 +75,14 @@
     ..forEach((element) {
       if (element.parentStructure != null) {
         throw LogicConstructionException(
-            &#39;$element already is a member of a structure&#39;
-            &#39; ${element.parentStructure}.&#39;);
+          &#39;$element already is a member of a structure&#39;
+          &#39; ${element.parentStructure}.&#39;,
+        );
       }
 
       element._parentStructure = this;
     });
+  SourceTracer.recordSignal(this);
 }</code></pre>
 </section>
 

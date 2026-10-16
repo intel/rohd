@@ -98,10 +98,16 @@ nextVal &lt;= val.getRange(-3); // the endIndex will be auto assign to val.width
 Logic getRange(int startIndex, [int? endIndex]) {
   endIndex ??= width;
 
-  final modifiedStartIndex =
-      IndexUtilities.wrapIndex(startIndex, width, allowWidth: true);
-  final modifiedEndIndex =
-      IndexUtilities.wrapIndex(endIndex, width, allowWidth: true);
+  final modifiedStartIndex = IndexUtilities.wrapIndex(
+    startIndex,
+    width,
+    allowWidth: true,
+  );
+  final modifiedEndIndex = IndexUtilities.wrapIndex(
+    endIndex,
+    width,
+    allowWidth: true,
+  );
 
   IndexUtilities.validateRange(modifiedStartIndex, modifiedEndIndex);
 
@@ -134,15 +140,18 @@ Logic getRange(int startIndex, [int? endIndex]) {
       final elementStartGrab = max(elementStart, modifiedStartIndex) - index;
       final elementEndGrab = min(elementEnd, modifiedEndIndex) - index;
 
-      matchingElements
-          .add(element.getRange(elementStartGrab, elementEndGrab));
+      matchingElements.add(
+        element.getRange(elementStartGrab, elementEndGrab),
+      );
     }
 
     index += element.width;
   }
 
-  assert(!(matchingElements.isEmpty &amp;&amp; requestedWidth != 0),
-      &#39;If the requested width is not 0, expect to get some matches.&#39;);
+  assert(
+    !(matchingElements.isEmpty &amp;&amp; requestedWidth != 0),
+    &#39;If the requested width is not 0, expect to get some matches.&#39;,
+  );
 
   return matchingElements.rswizzle();
 }</code></pre>

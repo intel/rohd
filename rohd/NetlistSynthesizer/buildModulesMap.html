@@ -57,7 +57,9 @@
 <span class="returntype"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Object-class.html">Object</a>?</span>&gt;</span></span>&gt;</span></span>
 <span class="name ">buildModulesMap</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="buildModulesMap-param-synth"><span class="type-annotation"><a href="../../rohd/SynthBuilder-class.html">SynthBuilder</a></span> <span class="parameter-name">synth</span>, </span></li>
 <li><span class="parameter" id="buildModulesMap-param-top"><span class="type-annotation"><a href="../../rohd/Module-class.html">Module</a></span> <span class="parameter-name">top</span>, {</span></li>
+<li><span class="parameter" id="buildModulesMap-param-packageRoot"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">packageRoot</span>, </span></li>
 <li><span class="parameter" id="buildModulesMap-param-slimMode"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">slimMode</span>, </span></li>
+<li><span class="parameter" id="buildModulesMap-param-fileTable"><span class="type-annotation"><a href="../../rohd/SourceTraceFileTable-class.html">SourceTraceFileTable</a>?</span> <span class="parameter-name">fileTable</span>, </span></li>
 </ol>})
 
       
@@ -71,6 +73,9 @@ after all post-processing passes have been applied.  This allows
 callers to retain per-module results for incremental serving while
 avoiding redundant re-synthesis. <code>slimMode</code> overrides the configured
 default for this projection without modifying the retained results.</p>
+<p><code>fileTable</code>, when supplied, gives every module's <code>rohd.src_trace</code>
+attribute a shared, netlist-wide file dictionary instead of an
+independent one per module (see <code>doc/netlist_json_format.md</code>).</p>
 </section>
 
 
@@ -78,12 +83,21 @@ default for this projection without modifying the retained results.</p>
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">Map&lt;String, Map&lt;String, Object?&gt;&gt; buildModulesMap(
-    SynthBuilder synth, Module top,
-    {bool? slimMode}) {
+  SynthBuilder synth,
+  Module top, {
+  String? packageRoot,
+  bool? slimMode,
+  SourceTraceFileTable? fileTable,
+}) {
   final effectiveSlimMode = slimMode ?? configuration.slimMode;
   final swEntries = Stopwatch()..start();
-  final modules = NetlistPasses.collectModuleEntries(synth.synthesisResults,
-      topModule: top, includeCellConnections: !effectiveSlimMode);
+  final modules = NetlistPasses.collectModuleEntries(
+    synth.synthesisResults,
+    topModule: top,
+    packageRoot: packageRoot,
+    includeCellConnections: !effectiveSlimMode,
+    fileTable: fileTable,
+  );
   swEntries.stop();
 
   final swPasses = Stopwatch()..start();

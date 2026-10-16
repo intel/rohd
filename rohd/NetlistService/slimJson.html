@@ -67,25 +67,14 @@
     </section>
     
 <section class="desc markdown">
-  <p>Returns a slim netlist JSON string with cell <code>connections</code> stripped.</p>
-<p>The returned JSON has this shape:</p>
-<pre class="language-json"><code class="language-json">{
-  "netlist": {
-    "creator": "ROHD NetlistService (slim)",
-    "version": "...",
-    "rootInstanceName": "...",
-    "modules": {
-      "DefinitionName": {"ports": {}, "cells": {}, "netnames": {}}
-    }
-  }
-}
-</code></pre>
-<p>Module lookup keys are the generated definition names in <a href="../../rohd/NetlistService/moduleNames.html">moduleNames</a>.</p>
+  <p>Returns a slim netlist JSON string — same structure as <a href="../../rohd/NetlistService/toJson.html">toJson</a> but
+with cell <code>connections</code> stripped.</p>
 <p>The slim representation preserves ports, cells (type + port_directions</p>
 <ul>
 <li>port_widths), and netnames so the DevTools extension can render the
 hierarchy and signal tree without the full connectivity payload.
-Full per-module connectivity is fetched on demand via <a href="../../rohd/NetlistService/moduleJson.html">moduleJson</a>.</li>
+Full per-module connectivity is fetched on demand via <a href="../../rohd/NetlistService/moduleJson.html">moduleJson</a>.
+The source-trace file dictionary is retained when present.</li>
 </ul>
 </section>
 

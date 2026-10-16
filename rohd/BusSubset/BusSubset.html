@@ -72,33 +72,42 @@ in the generated SystemVerilog.</p>
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">BusSubset(Logic bus, this.startIndex, this.endIndex,
-    {super.name = &#39;bussubset&#39;})
-    : _isNet = bus.isNet {
+  <pre class="language-dart"><code class="language-dart">BusSubset(
+  Logic bus,
+  this.startIndex,
+  this.endIndex, {
+  super.name = &#39;bussubset&#39;,
+}) : _isNet = bus.isNet {
   &#47;&#47; If a converted index value is still -ve then it&#39;s an Index out of bounds
   &#47;&#47; on a Logic Bus
   if (startIndex &lt; 0 || endIndex &lt; 0) {
     throw Exception(
-        &#39;Start ($startIndex) and End ($endIndex) must be greater than or &#39;
-        &#39;equal to 0.&#39;);
+      &#39;Start ($startIndex) and End ($endIndex) must be greater than or &#39;
+      &#39;equal to 0.&#39;,
+    );
   }
   &#47;&#47; If the +ve indices are more than Logic bus width, Index out of bounds
   if (endIndex &gt; bus.width - 1 || startIndex &gt; bus.width - 1) {
     throw Exception(
-        &#39;Index out of bounds, indices $startIndex and $endIndex must be less&#39;
-        &#39; than ${bus.width}&#39;);
+      &#39;Index out of bounds, indices $startIndex and $endIndex must be less&#39;
+      &#39; than ${bus.width}&#39;,
+    );
   }
 
   _originalName = Naming.unpreferredName(&#39;original_${bus.name}&#39;);
-  _subsetName =
-      Naming.unpreferredName(&#39;subset_${endIndex}_${startIndex}_${bus.name}&#39;);
+  _subsetName = Naming.unpreferredName(
+    &#39;subset_${endIndex}_${startIndex}_${bus.name}&#39;,
+  );
 
   final newWidth = (endIndex - startIndex).abs() + 1;
 
   if (_isNet) {
     original = addInOut(_originalName, bus, width: bus.width);
-    subset =
-        LogicNet(width: newWidth, name: _subsetName, naming: Naming.unnamed);
+    subset = LogicNet(
+      width: newWidth,
+      name: _subsetName,
+      naming: Naming.unnamed,
+    );
     final internalSubset = addInOut(_subsetName, subset, width: newWidth);
 
     if (startIndex &gt; endIndex) {
@@ -122,8 +131,9 @@ in the generated SystemVerilog.</p>
 
     &#47;&#47; so that people can&#39;t do a slice assign, not (yet?) implemented
     subset.makeUnassignable(
-        reason:
-            &#39;The output of a (non-LogicNet) BusSubset ($this) is read-only.&#39;);
+      reason: &#39;The output of a (non-LogicNet) &#39;
+          &#39;BusSubset (&quot;$name&quot;) is read-only.&#39;,
+    );
 
     _setup();
   }

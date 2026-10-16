@@ -101,8 +101,10 @@ print(lv); // This prints `6'b01xzx0`
       smallBuffer = lv.getRange(upperBound, lv.width);
     }
 
-    assert(smallBuffer.width &lt;= INT_BITS,
-        &#39;Keep smallBuffer small to meet invariants and efficiency&#39;);
+    assert(
+      smallBuffer.width &lt;= INT_BITS,
+      &#39;Keep smallBuffer small to meet invariants and efficiency&#39;,
+    );
   }
 
   &#47;&#47; grab what&#39;s left

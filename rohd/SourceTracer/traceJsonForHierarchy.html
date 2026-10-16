@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the traceJsonForHierarchy method from the SourceTracer class, for the Dart programming language.">
+  <title>traceJsonForHierarchy method - SourceTracer class - rohd library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">rohd</a></li>
+    <li><a href="../../rohd/">rohd.dart</a></li>
+    <li><a href="../../rohd/SourceTracer-class.html">SourceTracer</a></li>
+    <li class="self-crumb">traceJsonForHierarchy static method</li>
+  </ol>
+  <div class="self-name">traceJsonForHierarchy</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="rohd&#47;SourceTracer-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
+<h1><span class="kind-method">traceJsonForHierarchy</span> static method 
+</h1></div>
+
+    <section class="multi-line-signature">
+      
+<span class="returntype"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Object-class.html">Object</a></span>&gt;</span>?</span>
+<span class="name ">traceJsonForHierarchy</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="traceJsonForHierarchy-param-root"><span class="type-annotation"><a href="../../rohd/Module-class.html">Module</a></span> <span class="parameter-name">root</span>, {</span></li>
+<li><span class="parameter" id="traceJsonForHierarchy-param-packageRoot"><span>required</span> <span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">packageRoot</span>, </span></li>
+<li><span class="parameter" id="traceJsonForHierarchy-param-skipPatterns"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">skipPatterns</span> = <span class="default-value">defaultSkipPatterns</span>, </span></li>
+<li><span class="parameter" id="traceJsonForHierarchy-param-outputLineMaps"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span></span>&gt;</span></span>&gt;</span></span>&gt;</span>?</span> <span class="parameter-name">outputLineMaps</span>, </span></li>
+<li><span class="parameter" id="traceJsonForHierarchy-param-outputFiles"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span></span>&gt;</span></span>&gt;</span>?</span> <span class="parameter-name">outputFiles</span>, </span></li>
+<li><span class="parameter" id="traceJsonForHierarchy-param-moduleOutputLineMaps"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/Module-class.html">Module</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span></span>&gt;</span></span>&gt;</span></span>&gt;</span>?</span> <span class="parameter-name">moduleOutputLineMaps</span>, </span></li>
+<li><span class="parameter" id="traceJsonForHierarchy-param-moduleOutputFiles"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/Module-class.html">Module</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span></span>&gt;</span></span>&gt;</span>?</span> <span class="parameter-name">moduleOutputFiles</span>, </span></li>
+<li><span class="parameter" id="traceJsonForHierarchy-param-moduleImplementationNames"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/Module-class.html">Module</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span>?</span> <span class="parameter-name">moduleImplementationNames</span>, </span></li>
+<li><span class="parameter" id="traceJsonForHierarchy-param-svLineMaps"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span></span>&gt;</span></span>&gt;</span>?</span> <span class="parameter-name">svLineMaps</span>, </span></li>
+<li><span class="parameter" id="traceJsonForHierarchy-param-svFileMap"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span>?</span> <span class="parameter-name">svFileMap</span>, </span></li>
+<li><span class="parameter" id="traceJsonForHierarchy-param-packageMap"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span>?</span> <span class="parameter-name">packageMap</span>, </span></li>
+<li><span class="parameter" id="traceJsonForHierarchy-param-scLineMaps"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span></span>&gt;</span></span>&gt;</span>?</span> <span class="parameter-name">scLineMaps</span>, </span></li>
+<li><span class="parameter" id="traceJsonForHierarchy-param-scFileMap"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span>?</span> <span class="parameter-name">scFileMap</span>, </span></li>
+</ol>})
+
+      
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Produces a compact JSON-serialisable map containing trace data for the
+entire module hierarchy rooted at <code>root</code>, using the trie-based v5
+format.</p>
+<p>Each module's traces are encoded as a compact trie (nested JSON arrays)
+where shared call-site prefixes are stored once.  Leaf symbols are
+encoded as strings:</p>
+<ul>
+<li><code>"name"</code> — signal, no SV position</li>
+<li><code>"name@L:C"</code> — signal with SV position</li>
+<li><code>"name@L:C~origName"</code> — signal with SV position + original name</li>
+<li><code>"*name"</code> — instance (prefix <code>*</code>)</li>
+<li><code>"*name@L:C"</code> — instance with SV position</li>
+<li><code>"*name@L:C~origName"</code> — instance with SV position + original name</li>
+</ul>
+<p>A trie node is <code>[frame, ...children_and_symbols]</code> where children are
+nested arrays and symbols are strings.</p>
+<p><strong>Format (version 5):</strong></p>
+<pre class="language-json"><code class="language-json">{
+  "version": 5,
+  "files": ["lib/src/foo.dart", "lib/src/bar.dart"],
+  "modules": {
+    "ModuleName": {
+      "svFile": "ModuleName.sv",
+      "tree": [
+        ["1:10:3", ["0:42:5", "sig@10:5"], ["0:99:1", "*sub0@20:3"]]
+      ]
+    }
+  }
+}
+</code></pre>
+<p>When <code>moduleImplementationNames</code> is supplied, <code>modules</code> is keyed by the
+actual generated implementation name rather than the requested source
+definition name. Every entry records its source occurrences, so distinct
+source modules that share an implementation retain their separate
+construction provenance.</p>
+<p>Returns <code>null</code> if no traces were recorded at all.</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">static Map&lt;String, Object&gt;? traceJsonForHierarchy(
+  Module root, {
+  required String packageRoot,
+  List&lt;String&gt; skipPatterns = defaultSkipPatterns,
+  Map&lt;String, Map&lt;String, Map&lt;String, List&lt;String&gt;&gt;&gt;&gt;? outputLineMaps,
+  Map&lt;String, Map&lt;String, List&lt;String&gt;&gt;&gt;? outputFiles,
+  Map&lt;Module, Map&lt;String, Map&lt;String, List&lt;String&gt;&gt;&gt;&gt;? moduleOutputLineMaps,
+  Map&lt;Module, Map&lt;String, List&lt;String&gt;&gt;&gt;? moduleOutputFiles,
+  Map&lt;Module, String&gt;? moduleImplementationNames,
+  Map&lt;String, Map&lt;String, List&lt;String&gt;&gt;&gt;? svLineMaps,
+  Map&lt;String, String&gt;? svFileMap,
+  Map&lt;String, String&gt;? packageMap,
+  Map&lt;String, Map&lt;String, List&lt;String&gt;&gt;&gt;? scLineMaps,
+  Map&lt;String, String&gt;? scFileMap,
+}) {
+  if (!hasTraces) {
+    return null;
+  }
+
+  final pkgMap = packageMap ?? loadPackageMap(packageRoot);
+
+  &#47;&#47; Shared file table across all modules.
+  final fileIndex = &lt;String, int&gt;{};
+  final files = &lt;String&gt;[];
+
+  int fileIdx(String absPath) {
+    final rel = absPath.startsWith(&#39;$packageRoot&#47;&#39;)
+        ? absPath.substring(packageRoot.length + 1)
+        : absPath;
+    return fileIndex.putIfAbsent(rel, () {
+      files.add(rel);
+      return files.length - 1;
+    });
+  }
+
+  &#47;&#47;&#47; Encode a raw trace into a list of frame strings (innermost first).
+  &#47;&#47;&#47; Returns `null` if [trace] is null or yields no frames.
+  List&lt;String&gt;? encodeFrames(String? trace, Module module) {
+    if (trace == null) {
+      return null;
+    }
+    final frames = _parseFrames(
+      trace,
+      packageRoot: packageRoot,
+      skipPatterns: skipPatterns,
+      rootModuleName: module.runtimeType.toString(),
+      includeRootFrame: true,
+      packageMap: pkgMap,
+    );
+    if (frames.isEmpty) {
+      return null;
+    }
+    return [
+      for (final f in frames)
+        &#39;${fileIdx(f.absPath)}:${f.line}${f.col != null ? &#39;:${f.col}&#39; : &#39;&#39;}&#39;,
+    ];
+  }
+
+  &#47;&#47;&#47; Encode a symbol name + metadata as a compact string.
+  &#47;&#47;&#47;
+  &#47;&#47;&#47; [outputPositions] is a map of language type → list of `L:C` strings.
+  &#47;&#47;&#47; When only a single SV position is provided, the legacy `@L:C` format
+  &#47;&#47;&#47; is emitted for backward compatibility.  Otherwise each position is
+  &#47;&#47;&#47; prefixed with its language tag: `@sv:L:C;sc:L:C`.
+  String encodeSymbol(
+    String name, {
+    bool isInstance = false,
+    Map&lt;String, List&lt;String&gt;&gt;? outputPositions,
+    String? origName,
+  }) {
+    final buf = StringBuffer();
+    if (isInstance) {
+      buf.write(&#39;*&#39;);
+    }
+    buf.write(name);
+
+    if (outputPositions != null &amp;&amp; outputPositions.isNotEmpty) {
+      buf.write(&#39;@&#39;);
+      &#47;&#47; Check for legacy single-SV shorthand.
+      final allPositions = [
+        for (final e in outputPositions.entries)
+          for (final pos in e.value) (type: e.key, pos: pos),
+      ];
+      if (allPositions.length == 1 &amp;&amp; allPositions[0].type == &#39;sv&#39;) {
+        &#47;&#47; Legacy shorthand: just L:C without tag.
+        buf.write(allPositions[0].pos);
+      } else {
+        buf.write(allPositions.map((p) =&gt; &#39;${p.type}:${p.pos}&#39;).join(&#39;;&#39;));
+      }
+    }
+
+    if (origName != null) {
+      buf
+        ..write(&#39;~&#39;)
+        ..write(origName);
+    }
+    return buf.toString();
+  }
+
+  final modules = &lt;String, Object&gt;{};
+
+  void walk(Module module) {
+    final defName = module.definitionName;
+    final implementationName = moduleImplementationNames?[module];
+    final moduleName = implementationName ?? defName;
+    final moduleLineMaps = moduleOutputLineMaps?[module];
+    final lineMap = moduleLineMaps?[&#39;sv&#39;] ?? svLineMaps?[moduleName];
+    final scLineMap = moduleLineMaps?[&#39;sc&#39;] ?? scLineMaps?[moduleName];
+
+    Map&lt;String, List&lt;String&gt;&gt; outputPositionsFor(String name) {
+      final positions = &lt;String, List&lt;String&gt;&gt;{};
+      if (lineMap != null &amp;&amp; lineMap.containsKey(name)) {
+        positions[&#39;sv&#39;] = lineMap[name]!;
+      }
+      if (scLineMap != null &amp;&amp; scLineMap.containsKey(name)) {
+        positions[&#39;sc&#39;] = scLineMap[name]!;
+      }
+      if (moduleLineMaps != null) {
+        for (final entry in moduleLineMaps.entries) {
+          final languagePositions = entry.value[name];
+          if (languagePositions != null) {
+            positions[entry.key] = languagePositions;
+          }
+        }
+      } else if (outputLineMaps != null) {
+        for (final entry in outputLineMaps.entries) {
+          final languagePositions = entry.value[moduleName]?[name];
+          if (languagePositions != null) {
+            positions[entry.key] = languagePositions;
+          }
+        }
+      }
+      return positions;
+    }
+
+    &#47;&#47; Per-module trie: children keyed by frame string.
+    final trieChildren = &lt;String, _TrieNode&gt;{};
+
+    &#47;&#47;&#47; Insert frames (reversed to outermost-first) with a leaf symbol.
+    void insertIntoTrie(List&lt;String&gt; frames, String symbol) {
+      final reversed = frames.reversed.toList();
+      var children = trieChildren;
+      for (var i = 0; i &lt; reversed.length; i++) {
+        final frame = reversed[i];
+        final node = children.putIfAbsent(frame, () =&gt; _TrieNode(frame));
+        if (i == reversed.length - 1) {
+          node.symbols.add(symbol);
+        } else {
+          children = node.children;
+        }
+      }
+    }
+
+    &#47;&#47; --- Signals ---
+    final useSynthDef = _canBuildSynthDef(module);
+    final synthDef = useSynthDef ? SynthModuleDefinition(module) : null;
+    final allSynthLogics = useSynthDef
+        ? [
+            ...synthDef!.inputs,
+            ...synthDef.outputs,
+            ...synthDef.inOuts,
+            ...synthDef.internalSignals,
+          ]
+        : &lt;SynthLogic&gt;[];
+    final sourceLogics = useSynthDef
+        ? synthLogicSourceMap(module, synthDef!)
+        : const &lt;SynthLogic, Logic&gt;{};
+
+    if (useSynthDef) {
+      for (final sl in allSynthLogics) {
+        final logicNames = &lt;String&gt;{for (final l in sl.logics) l.name};
+        final frames = encodeFrames(
+          synthLogicTrace(module, sl, sourceLogics: sourceLogics),
+          module,
+        );
+        if (frames == null) {
+          continue;
+        }
+
+        final canonicalName = sl.name;
+        String? origName;
+        if (!logicNames.contains(canonicalName)) {
+          final base = canonicalName.replaceFirst(RegExp(r&#39;_\d+$&#39;), &#39;&#39;);
+          if (base != canonicalName &amp;&amp; logicNames.contains(base)) {
+            origName = base;
+          } else {
+            origName = logicNames
+                .where((n) =&gt; !n.startsWith(&#39;_&#39;))
+                .followedBy(logicNames)
+                .first;
+            if (origName == canonicalName) {
+              origName = null;
+            }
+          }
+        }
+
+        final needsOrig = origName != null &amp;&amp; origName != canonicalName;
+        final outputPositions = outputPositionsFor(canonicalName);
+
+        insertIntoTrie(
+          frames,
+          encodeSymbol(
+            canonicalName,
+            outputPositions:
+                outputPositions.isNotEmpty ? outputPositions : null,
+            origName: needsOrig ? origName : null,
+          ),
+        );
+      }
+    } else {
+      for (final sig in module.signals) {
+        final frames = encodeFrames(_current!._signalTraces[sig], module);
+        if (frames != null) {
+          insertIntoTrie(frames, encodeSymbol(sig.name));
+        }
+      }
+    }
+
+    &#47;&#47; --- Instances ---
+    for (final sub in module.subModules) {
+      final frames = encodeFrames(_current!._moduleTraces[sub], module);
+      if (frames == null) {
+        continue;
+      }
+      final instName = sub.uniqueInstanceName;
+      final instPositions = outputPositionsFor(instName);
+      insertIntoTrie(
+        frames,
+        encodeSymbol(
+          instName,
+          isInstance: true,
+          outputPositions: instPositions.isNotEmpty ? instPositions : null,
+        ),
+      );
+    }
+
+    &#47;&#47; Serialize trie.
+    if (trieChildren.isNotEmpty || modules.containsKey(moduleName)) {
+      final tree = [
+        for (final node in trieChildren.values) node.serialize(),
+      ];
+      final specificOutputFiles = moduleOutputFiles?[module];
+      final filesForModule = &lt;String, Object&gt;{
+        ...?specificOutputFiles ?? outputFiles?[moduleName],
+      };
+      if (specificOutputFiles == null) {
+        final hasSvFile =
+            svFileMap != null &amp;&amp; svFileMap.containsKey(moduleName);
+        final hasScFile =
+            scFileMap != null &amp;&amp; scFileMap.containsKey(moduleName);
+        if (hasSvFile &amp;&amp; !filesForModule.containsKey(&#39;sv&#39;)) {
+          filesForModule[&#39;sv&#39;] = [svFileMap[moduleName]!];
+        }
+        if (hasScFile &amp;&amp; !filesForModule.containsKey(&#39;sc&#39;)) {
+          filesForModule[&#39;sc&#39;] = [scFileMap[moduleName]!];
+        }
+      }
+      final constructionTrace =
+          encodeFrames(_current!._moduleTraces[module], module);
+      final sourceOccurrence = &lt;String, Object&gt;{
+        &#39;path&#39;: module.hierarchicalName,
+        &#39;definitionName&#39;: defName,
+        if (constructionTrace != null) &#39;constructionTrace&#39;: constructionTrace,
+      };
+      final existing = modules[moduleName];
+      if (existing == null) {
+        modules[moduleName] = &lt;String, Object&gt;{
+          if (implementationName != null)
+            &#39;implementationName&#39;: implementationName,
+          if (filesForModule.isNotEmpty) &#39;outputFiles&#39;: filesForModule,
+          &#39;sourceOccurrences&#39;: &lt;Object&gt;[sourceOccurrence],
+          &#39;tree&#39;: tree,
+        };
+      } else {
+        final moduleData = existing as Map&lt;String, Object&gt;;
+        (moduleData[&#39;tree&#39;]! as List&lt;Object&gt;).addAll(tree);
+        (moduleData[&#39;sourceOccurrences&#39;]! as List&lt;Object&gt;)
+            .add(sourceOccurrence);
+        if (filesForModule.isNotEmpty &amp;&amp;
+            !moduleData.containsKey(&#39;outputFiles&#39;)) {
+          moduleData[&#39;outputFiles&#39;] = filesForModule;
+        }
+      }
+    }
+
+    module.subModules.forEach(walk);
+  }
+
+  walk(root);
+
+  if (modules.isEmpty) {
+    return null;
+  }
+
+  final version = outputLineMaps != null ||
+          outputFiles != null ||
+          moduleOutputLineMaps != null ||
+          moduleOutputFiles != null ||
+          moduleImplementationNames != null ||
+          scLineMaps != null ||
+          scFileMap != null
+      ? 6
+      : 5;
+  return &lt;String, Object&gt;{
+    &#39;version&#39;: version,
+    &#39;files&#39;: files,
+    &#39;modules&#39;: modules,
+    if (packageRoot.isNotEmpty) &#39;packageRoot&#39;: packageRoot,
+  };
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">rohd</a></li>
+    <li><a href="../../rohd/">rohd</a></li>
+    <li><a href="../../rohd/SourceTracer-class.html">SourceTracer</a></li>
+    <li class="self-crumb">traceJsonForHierarchy static method</li>
+</ol>
+
+    <h5>SourceTracer class</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    rohd
+      0.6.11
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

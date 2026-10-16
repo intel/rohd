@@ -97,10 +97,16 @@ nextVal &lt;= val.getRange(-3); // the endIndex will be auto assign to val.width
 
   &#47;&#47; Given start and end index, if either of them are seen to be -ve index
   &#47;&#47; value(s) then conver them to a +ve index value(s)
-  final modifiedStartIndex =
-      IndexUtilities.wrapIndex(startIndex, width, allowWidth: true);
-  final modifiedEndIndex =
-      IndexUtilities.wrapIndex(endIndex, width, allowWidth: true);
+  final modifiedStartIndex = IndexUtilities.wrapIndex(
+    startIndex,
+    width,
+    allowWidth: true,
+  );
+  final modifiedEndIndex = IndexUtilities.wrapIndex(
+    endIndex,
+    width,
+    allowWidth: true,
+  );
 
   IndexUtilities.validateRange(modifiedStartIndex, modifiedEndIndex);
 

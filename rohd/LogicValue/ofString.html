@@ -87,7 +87,8 @@ print(lv); // This prints `3b'1x0`
 
   if (stringRepresentation.contains(RegExp(&#39;[^01xz]&#39;))) {
     throw LogicValueConstructionException(
-        &#39;Invalid characters found, must only contain 0, 1, x, and z.&#39;);
+      &#39;Invalid characters found, must only contain 0, 1, x, and z.&#39;,
+    );
   }
 
   final valueString = _valueString(stringRepresentation);

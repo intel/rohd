@@ -63,19 +63,13 @@
     </section>
     
 <section class="desc markdown">
-  <p>Returns the netlist JSON for the module named <code>definitionName</code>.</p>
-<p><code>definitionName</code> must be one of the generated definition names returned
-by <a href="../../rohd/NetlistService/moduleNames.html">moduleNames</a>. The returned JSON has this shape:</p>
-<pre class="language-json"><code class="language-json">{
-  "creator": "ROHD netlist synthesizer",
-  "version": "...",
-  "modules": {
-    "DefinitionName": {"ports": {}, "cells": {}, "netnames": {}}
-  }
-}
-</code></pre>
-<p>This matches the format expected by the DevTools schematic viewer
+  <p>Returns the netlist JSON for a single module <code>definitionName</code>.</p>
+<p>The returned JSON is keyed by definition name:
+<code>{"DefinitionName": { ports, cells, netnames }}</code>.
+This matches the format expected by the DevTools schematic viewer
 for incremental module fetches.</p>
+<p>When source tracing is enabled, the netlist-wide file dictionary is
+re-embedded as a top-level <code>"files"</code> array.</p>
 <p>If the module is not found, returns a JSON error object.</p>
 </section>
 
@@ -95,6 +89,8 @@ for incremental module fetches.</p>
       return jsonEncode(&lt;String, Object?&gt;{
         &#39;creator&#39;: &#39;ROHD netlist synthesizer&#39;,
         &#39;version&#39;: version,
+        if (_srcTraceFiles case final files? when files.isNotEmpty)
+          &#39;files&#39;: files,
         &#39;modules&#39;: &lt;String, Object?&gt;{definitionName: modData},
       });
     });</code></pre>

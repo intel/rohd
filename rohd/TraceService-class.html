@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the TraceService class from the rohd library, for the Dart programming language.">
+  <title>TraceService class - rohd library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">rohd</a></li>
+    <li><a href="../rohd/">rohd.dart</a></li>
+    <li class="self-crumb">TraceService class</li>
+  </ol>
+  <div class="self-name">TraceService</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="rohd&#47;rohd-library-sidebar.html"
+    data-below-sidebar="rohd&#47;TraceService-class-sidebar.html">
+    <div>
+<h1><span class="kind-class">TraceService</span> class 
+ 
+</h1></div>
+
+    
+<section class="desc markdown">
+  <p>A service that combines <a href="../rohd/SourceTracer-class.html">SourceTracer</a> stack traces with
+<a href="../rohd/SystemVerilogService-class.html">SystemVerilogService</a> line maps to produce FLC (File-Line-Column)
+cross-probing data.</p>
+<p>FLC data maps each signal and submodule instance in the generated
+SystemVerilog back to the Dart source location where it was constructed.</p>
+<p><strong>Prerequisite:</strong> A <a href="../rohd/SourceTracer-class.html">SourceTracer</a> must be constructed <em>before</em>
+building the module, so that construction-site stack traces are
+captured.</p>
+<p>Typical usage (see <code>tool/gen_filterbank_flc.dart</code> for a full example):</p>
+<pre class="language-dart"><code class="language-dart">SourceTracer.activate();
+final dut = MyModule(a, b);
+await dut.build();
+
+final sv = SystemVerilogService(dut, register: false);
+TraceService(dut, svService: sv, register: false)
+    .write('build/output');
+</code></pre>
+<p>Key accessors:</p>
+<ul>
+<li><a href="../rohd/TraceService/flcJson.html">flcJson</a> — full hierarchy as a JSON string.</li>
+<li><a href="../rohd/TraceService/flcModuleJson.html">flcModuleJson</a> — single module by definition name.</li>
+<li><a href="../rohd/TraceService/flcHtml.html">flcHtml</a> — self-contained HTML cross-probe viewer.</li>
+<li><a href="../rohd/TraceService/write.html">write</a> / <a href="../rohd/TraceService/writeHtml.html">writeHtml</a> — write JSON / HTML to a directory.</li>
+</ul>
+</section>
+
+
+    <section>
+      <dl class="dl-horizontal">
+        
+  <dt>Inheritance</dt>
+  <dd>
+    <ul class="gt-separated dark clazz-relationships">
+      <li><a href="https://api.dart.dev/stable/3.13.5/dart-core/Object-class.html">Object</a></li>
+        <li><a href="../rohd/ArtifactProducingService-class.html">ArtifactProducingService</a></li>
+      <li>TraceService</li>
+    </ul>
+  </dd>
+
+        
+        
+
+
+        
+        
+
+
+      </dl>
+    </section>
+
+    
+  <section class="summary offset-anchor" id="constructors">
+    <h2>Constructors</h2>
+    <dl class="constructor-summary-list">
+        <dt id="TraceService.new" class="callable">
+          <span class="name"><a href="../rohd/TraceService/TraceService.html">TraceService</a></span><span class="signature">(<span class="parameter" id="param-module"><span class="type-annotation"><a href="../rohd/Module-class.html">Module</a></span> <span class="parameter-name">module</span>, {</span><span class="parameter" id="param-svService"><span class="type-annotation"><a href="../rohd/SystemVerilogService-class.html">SystemVerilogService</a>?</span> <span class="parameter-name">svService</span>, </span><span class="parameter" id="param-scService"><span class="type-annotation"><a href="../rohd/SystemCService-class.html">SystemCService</a>?</span> <span class="parameter-name">scService</span>, </span><span class="parameter" id="param-packageRoot"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">packageRoot</span>, </span><span class="parameter" id="param-outputPath"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">outputPath</span>, </span><span class="parameter" id="param-register"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">register</span> = <span class="default-value">true</span>, </span><span class="parameter" id="param-svOutputMode"><span class="type-annotation"><a href="../rohd/SvOutputMode.html">SvOutputMode</a></span> <span class="parameter-name">svOutputMode</span> = <span class="default-value">SvOutputMode.singleFile</span>, </span><span class="parameter" id="param-scOutputMode"><span class="type-annotation"><a href="../rohd/ScOutputMode.html">ScOutputMode</a>?</span> <span class="parameter-name">scOutputMode</span>, </span><span class="parameter" id="param-outputDirectory"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">outputDirectory</span> = <span class="default-value">&#39;.&#39;</span>, </span><span class="parameter" id="param-outputBaseName"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">outputBaseName</span></span>})</span>
+        </dt>
+        <dd>
+          Creates a <a href="../rohd/TraceService-class.html">TraceService</a> for <code>module</code>.
+        </dd>
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-properties">
+    <h2>Properties</h2>
+    <dl class="properties">
+        <dt id="artifacts" class="property">
+  <span class="name"><a href="../rohd/TraceService/artifacts.html">artifacts</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/ModuleServiceArtifact-class.html">ModuleServiceArtifact</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  The generated FLC hierarchy artifact.
+  <div class="features"><span class="feature">no setter</span><span class="feature">override</span></div>
+
+</dd>
+
+        <dt id="flcHierarchy" class="property">
+  <span class="name"><a href="../rohd/TraceService/flcHierarchy.html">flcHierarchy</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Object-class.html">Object</a></span>&gt;</span>?</span>
+  
+
+</dt>
+<dd>
+  Returns the FLC JSON map for the full module hierarchy, or <code>null</code>
+if no traces were recorded.
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="flcHtml" class="property">
+  <span class="name"><a href="../rohd/TraceService/flcHtml.html">flcHtml</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Returns a self-contained HTML viewer for the FLC data.
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="flcJson" class="property">
+  <span class="name"><a href="../rohd/TraceService/flcJson.html">flcJson</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  Returns the FLC hierarchy as a JSON string, or an unavailable status.
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="hashCode" class="property inherited">
+  <span class="name"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Object/hashCode.html">hashCode</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  The hash code for this object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="hasTraces" class="property">
+  <span class="name"><a href="../rohd/TraceService/hasTraces.html">hasTraces</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  Whether any traces were captured during the build.
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="module" class="property inherited">
+  <span class="name"><a href="../rohd/ArtifactProducingService/module.html">module</a></span>
+  <span class="signature">&#8594; <a href="../rohd/Module-class.html">Module</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  The top-level <a href="../rohd/Module-class.html">Module</a> this service operates on.
+  <div class="features"><span class="feature">final</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="outputBaseName" class="property inherited">
+  <span class="name"><a href="../rohd/ArtifactProducingService/outputBaseName.html">outputBaseName</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  Filename stem used for primary artifacts.
+  <div class="features"><span class="feature">final</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="outputDirectory" class="property inherited">
+  <span class="name"><a href="../rohd/ArtifactProducingService/outputDirectory.html">outputDirectory</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  Directory receiving filesystem artifacts when this service writes them.
+  <div class="features"><span class="feature">final</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="outputPath" class="property">
+  <span class="name"><a href="../rohd/TraceService/outputPath.html">outputPath</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  The default directory written by <a href="../rohd/TraceService/write.html">write</a> when no path is supplied.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="packageRoot" class="property">
+  <span class="name"><a href="../rohd/TraceService/packageRoot.html">packageRoot</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  The package root directory, used to make source paths relative.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="runtimeType" class="property inherited">
+  <span class="name"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Object/runtimeType.html">runtimeType</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/Type-class.html">Type</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  A representation of the runtime type of the object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="scOutputMode" class="property">
+  <span class="name"><a href="../rohd/TraceService/scOutputMode.html">scOutputMode</a></span>
+  <span class="signature">&#8594; <a href="../rohd/ScOutputMode.html">ScOutputMode</a></span>
+  
+
+</dt>
+<dd>
+  How generated SystemC line numbers are interpreted.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="scService" class="property">
+  <span class="name"><a href="../rohd/TraceService/scService.html">scService</a></span>
+  <span class="signature">&#8594; <a href="../rohd/SystemCService-class.html">SystemCService</a>?</span>
+  
+
+</dt>
+<dd>
+  The optional <a href="../rohd/SystemCService-class.html">SystemCService</a> whose line maps enrich the FLC output.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="singleFileSvLineMaps" class="property">
+  <span class="name"><a href="../rohd/TraceService/singleFileSvLineMaps.html">singleFileSvLineMaps</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span></span>&gt;</span></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Returns <a href="../rohd/TraceService/svLineMaps.html">svLineMaps</a> with line numbers adjusted to file-global
+positions within <a href="../rohd/SystemVerilogService/synthOutput.html">SystemVerilogService.synthOutput</a>.
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="singleFileSvLineMapsByModule" class="property">
+  <span class="name"><a href="../rohd/TraceService/singleFileSvLineMapsByModule.html">singleFileSvLineMapsByModule</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Module-class.html">Module</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span></span>&gt;</span></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Returns source-module SV line maps with file-global line numbers.
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="svFileMap" class="property">
+  <span class="name"><a href="../rohd/TraceService/svFileMap.html">svFileMap</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Collects <code>svFileMap</code> (generated implementation name → <code>.sv</code> filename)
+from the <a href="../rohd/SystemVerilogService-class.html">SystemVerilogService</a> file contents.
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="svFileMapByModule" class="property">
+  <span class="name"><a href="../rohd/TraceService/svFileMapByModule.html">svFileMapByModule</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Module-class.html">Module</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Collects the emitted SV artifact for every source module occurrence.
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="svLineMaps" class="property">
+  <span class="name"><a href="../rohd/TraceService/svLineMaps.html">svLineMaps</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span></span>&gt;</span></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Collects header-adjusted <code>svLineMaps</code> keyed by generated implementation
+name.
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="svLineMapsByModule" class="property">
+  <span class="name"><a href="../rohd/TraceService/svLineMapsByModule.html">svLineMapsByModule</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Module-class.html">Module</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span></span>&gt;</span></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Collects per-source-module SV line maps.
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="svOutputMode" class="property">
+  <span class="name"><a href="../rohd/TraceService/svOutputMode.html">svOutputMode</a></span>
+  <span class="signature">&#8594; <a href="../rohd/SvOutputMode.html">SvOutputMode</a></span>
+  
+
+</dt>
+<dd>
+  How the generated SV is laid out on disk.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="svService" class="property">
+  <span class="name"><a href="../rohd/TraceService/svService.html">svService</a></span>
+  <span class="signature">&#8594; <a href="../rohd/SystemVerilogService-class.html">SystemVerilogService</a>?</span>
+  
+
+</dt>
+<dd>
+  The <a href="../rohd/SystemVerilogService-class.html">SystemVerilogService</a> whose line maps enrich the FLC output.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="writtenPath" class="property">
+  <span class="name"><a href="../rohd/TraceService/writtenPath.html">writtenPath</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  Returns the path to the FLC file written by <a href="../rohd/TraceService/write.html">write</a>, or <code>null</code> if
+<a href="../rohd/TraceService/write.html">write</a> has not been called.
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-methods">
+    <h2>Methods</h2>
+    <dl class="callables">
+        <dt id="flcForModule" class="callable">
+  <span class="name"><a href="../rohd/TraceService/flcForModule.html">flcForModule</a></span><span class="signature">(<wbr><span class="parameter" id="flcForModule-param-definitionName"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">definitionName</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Object-class.html">Object</a></span>&gt;</span>?</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Returns the FLC JSON for the sole source occurrence with
+<code>definitionName</code>, or <code>null</code> if no traces exist for that module.
+  
+
+</dd>
+
+        <dt id="flcForModuleInstance" class="callable">
+  <span class="name"><a href="../rohd/TraceService/flcForModuleInstance.html">flcForModuleInstance</a></span><span class="signature">(<wbr><span class="parameter" id="flcForModuleInstance-param-target"><span class="type-annotation"><a href="../rohd/Module-class.html">Module</a></span> <span class="parameter-name">target</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Object-class.html">Object</a></span>&gt;</span>?</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Returns FLC JSON for one exact source module occurrence, or <code>null</code> if
+no traces were captured for it.
+  
+
+</dd>
+
+        <dt id="flcModuleJson" class="callable">
+  <span class="name"><a href="../rohd/TraceService/flcModuleJson.html">flcModuleJson</a></span><span class="signature">(<wbr><span class="parameter" id="flcModuleJson-param-implementationName"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">implementationName</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Returns the FLC JSON for a generated <code>implementationName</code> as a JSON
+string (v6 format).
+  
+
+</dd>
+
+        <dt id="flcModuleJsonForModule" class="callable">
+  <span class="name"><a href="../rohd/TraceService/flcModuleJsonForModule.html">flcModuleJsonForModule</a></span><span class="signature">(<wbr><span class="parameter" id="flcModuleJsonForModule-param-sourceModule"><span class="type-annotation"><a href="../rohd/Module-class.html">Module</a></span> <span class="parameter-name">sourceModule</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Returns FLC JSON for the generated implementation of <code>sourceModule</code>.
+  
+
+</dd>
+
+        <dt id="noSuchMethod" class="callable inherited">
+  <span class="name"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
+    <span class="returntype parameter">&#8594; dynamic</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Invoked when a nonexistent method or property is accessed.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="singleFileFlcHierarchy" class="callable">
+  <span class="name"><a href="../rohd/TraceService/singleFileFlcHierarchy.html">singleFileFlcHierarchy</a></span><span class="signature">(<wbr><span class="parameter" id="singleFileFlcHierarchy-param-svFilename"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">svFilename</span>, {</span><span class="parameter" id="singleFileFlcHierarchy-param-scFilename"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">scFilename</span>, </span><span class="parameter" id="singleFileFlcHierarchy-param-packageMap"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span>?</span> <span class="parameter-name">packageMap</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Object-class.html">Object</a></span>&gt;</span>?</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Returns the FLC hierarchy with SV line numbers adjusted for
+single-file concatenated output.
+  
+
+</dd>
+
+        <dt id="singleFileSvFileMap" class="callable">
+  <span class="name"><a href="../rohd/TraceService/singleFileSvFileMap.html">singleFileSvFileMap</a></span><span class="signature">(<wbr><span class="parameter" id="singleFileSvFileMap-param-filename"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">filename</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Returns an <a href="../rohd/TraceService/svFileMap.html">svFileMap</a> where every module maps to <code>filename</code>.
+  
+
+</dd>
+
+        <dt id="singleFileSvFileMapByModule" class="callable">
+  <span class="name"><a href="../rohd/TraceService/singleFileSvFileMapByModule.html">singleFileSvFileMapByModule</a></span><span class="signature">(<wbr><span class="parameter" id="singleFileSvFileMapByModule-param-filename"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">filename</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Module-class.html">Module</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Returns a source-module SV file map where every occurrence maps to
+<code>filename</code>.
+  
+
+</dd>
+
+        <dt id="toJson" class="callable">
+  <span class="name"><a href="../rohd/TraceService/toJson.html">toJson</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Object-class.html">Object</a>?</span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  A JSON-serialisable view of the FLC (file-line-column) trace data.
+  <div class="features"><span class="feature">override</span></div>
+
+</dd>
+
+        <dt id="toString" class="callable inherited">
+  <span class="name"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Object/toString.html">toString</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  A string representation of this object.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="write" class="callable">
+  <span class="name"><a href="../rohd/TraceService/write.html">write</a></span><span class="signature">(<wbr>[<span class="parameter" id="write-param-path"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">path</span></span>])
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Writes the FLC JSON hierarchy file to <code>path</code> (or <a href="../rohd/TraceService/outputPath.html">outputPath</a>).
+  
+
+</dd>
+
+        <dt id="writeFlcFiles" class="callable">
+  <span class="name"><a href="../rohd/TraceService/writeFlcFiles.html">writeFlcFiles</a></span><span class="signature">(<wbr><span class="parameter" id="writeFlcFiles-param-directory"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">directory</span></span>)
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Writes the FLC hierarchy JSON file to <code>directory</code>.
+  
+
+</dd>
+
+        <dt id="writeFlcHtml" class="callable">
+  <span class="name"><a href="../rohd/TraceService/writeFlcHtml.html">writeFlcHtml</a></span><span class="signature">(<wbr><span class="parameter" id="writeFlcHtml-param-directory"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">directory</span></span>)
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Writes the self-contained HTML viewer to <code>directory</code>.
+  
+
+</dd>
+
+        <dt id="writeHtml" class="callable">
+  <span class="name"><a href="../rohd/TraceService/writeHtml.html">writeHtml</a></span><span class="signature">(<wbr>[<span class="parameter" id="writeHtml-param-path"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">path</span></span>])
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Writes the self-contained HTML viewer to <code>path</code> (or <a href="../rohd/TraceService/outputPath.html">outputPath</a>).
+  
+
+</dd>
+
+        <dt id="writeSingleFileFlc" class="callable">
+  <span class="name"><a href="../rohd/TraceService/writeSingleFileFlc.html">writeSingleFileFlc</a></span><span class="signature">(<wbr><span class="parameter" id="writeSingleFileFlc-param-directory"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">directory</span>, {</span><span class="parameter" id="writeSingleFileFlc-param-svFilename"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">svFilename</span>, </span><span class="parameter" id="writeSingleFileFlc-param-scFilename"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">scFilename</span></span>})
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Writes FLC JSON for single-file mode to <code>directory</code>.
+  
+
+</dd>
+
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor inherited"
+      id="operators">
+    <h2>Operators</h2>
+    <dl class="callables">
+        <dt id="operator ==" class="callable inherited">
+  <span class="name"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Object/operator_equals.html">operator ==</a></span><span class="signature">(<wbr><span class="parameter" id="==-param-other"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">other</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  The equality operator.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+  <section class="summary offset-anchor" id="static-properties">
+    <h2>Static Properties</h2>
+    <dl class="properties">
+        <dt id="current" class="property">
+  <span class="name"><a href="../rohd/TraceService/current.html">current</a></span>
+  <span class="signature">&#8594; <a href="../rohd/TraceService-class.html">TraceService</a>?</span>
+  
+
+</dt>
+<dd>
+  The most recently registered <a href="../rohd/TraceService-class.html">TraceService</a>, or <code>null</code>.
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+    
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">rohd</a></li>
+    <li><a href="../rohd/">rohd</a></li>
+    <li class="self-crumb">TraceService class</li>
+</ol>
+
+    <h5>rohd library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    rohd
+      0.6.11
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

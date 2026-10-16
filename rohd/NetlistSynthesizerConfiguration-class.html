@@ -87,7 +87,7 @@ for incremental synthesis.</p>
     <h2>Constructors</h2>
     <dl class="constructor-summary-list">
         <dt id="NetlistSynthesizerConfiguration.new" class="callable">
-          <span class="name"><a href="../rohd/NetlistSynthesizerConfiguration/NetlistSynthesizerConfiguration.html">NetlistSynthesizerConfiguration</a></span><span class="signature">({<span class="parameter" id="param-moduleStopPolicy"><span class="type-annotation"><a href="../rohd/SynthModuleStopPolicy-class.html">SynthModuleStopPolicy</a>?</span> <span class="parameter-name">moduleStopPolicy</span>, </span><span class="parameter" id="param-leafModulePredicate"><span class="type-annotation"><a href="../rohd/SynthModuleLeafPredicate.html">SynthModuleLeafPredicate</a></span> <span class="parameter-name">leafModulePredicate</span> = <span class="default-value">_isFlipFlop</span>, </span><span class="parameter" id="param-netlistCellMapper"><span class="type-annotation">NetlistCellMapper?</span> <span class="parameter-name">netlistCellMapper</span>, </span><span class="parameter" id="param-collapseTransparentClusters"><span>@<a href="https://pub.dev/documentation/meta/1.19.0/meta/visibleForTesting-constant.html">visibleForTesting</a></span> <span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">collapseTransparentClusters</span> = <span class="default-value">false</span>, </span><span class="parameter" id="param-enableDeadCellElimination"><span>@<a href="https://pub.dev/documentation/meta/1.19.0/meta/visibleForTesting-constant.html">visibleForTesting</a></span> <span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">enableDeadCellElimination</span> = <span class="default-value">true</span>, </span><span class="parameter" id="param-slimMode"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">slimMode</span> = <span class="default-value">false</span>, </span><span class="parameter" id="param-compressBitRanges"><span>@<a href="https://pub.dev/documentation/meta/1.19.0/meta/visibleForTesting-constant.html">visibleForTesting</a></span> <span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">compressBitRanges</span> = <span class="default-value">false</span>, </span><span class="parameter" id="param-compactJson"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">compactJson</span> = <span class="default-value">false</span></span>})</span>
+          <span class="name"><a href="../rohd/NetlistSynthesizerConfiguration/NetlistSynthesizerConfiguration.html">NetlistSynthesizerConfiguration</a></span><span class="signature">({<span class="parameter" id="param-moduleStopPolicy"><span class="type-annotation"><a href="../rohd/SynthModuleStopPolicy-class.html">SynthModuleStopPolicy</a>?</span> <span class="parameter-name">moduleStopPolicy</span>, </span><span class="parameter" id="param-leafModulePredicate"><span class="type-annotation"><a href="../rohd/SynthModuleLeafPredicate.html">SynthModuleLeafPredicate</a></span> <span class="parameter-name">leafModulePredicate</span> = <span class="default-value">_isFlipFlop</span>, </span><span class="parameter" id="param-netlistCellMapper"><span class="type-annotation">NetlistCellMapper?</span> <span class="parameter-name">netlistCellMapper</span>, </span><span class="parameter" id="param-collapseTransparentClusters"><span>@<a href="https://pub.dev/documentation/meta/1.19.0/meta/visibleForTesting-constant.html">visibleForTesting</a></span> <span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">collapseTransparentClusters</span> = <span class="default-value">false</span>, </span><span class="parameter" id="param-enableDeadCellElimination"><span>@<a href="https://pub.dev/documentation/meta/1.19.0/meta/visibleForTesting-constant.html">visibleForTesting</a></span> <span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">enableDeadCellElimination</span> = <span class="default-value">true</span>, </span><span class="parameter" id="param-slimMode"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">slimMode</span> = <span class="default-value">false</span>, </span><span class="parameter" id="param-compressBitRanges"><span>@<a href="https://pub.dev/documentation/meta/1.19.0/meta/visibleForTesting-constant.html">visibleForTesting</a></span> <span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">compressBitRanges</span> = <span class="default-value">false</span>, </span><span class="parameter" id="param-compactJson"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">compactJson</span> = <span class="default-value">false</span>, </span><span class="parameter" id="param-trace"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">trace</span> = <span class="default-value">false</span>, </span><span class="parameter" id="param-packageRoot"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">packageRoot</span></span>})</span>
         </dt>
         <dd>
           Creates a configuration for netlist synthesis.
@@ -112,6 +112,18 @@ for incremental synthesis.</p>
 When <code>false</code> (default), the JSON is pretty-printed with two-space
 indentation.
   <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="effectivePackageRoot" class="property">
+  <span class="name"><a href="../rohd/NetlistSynthesizerConfiguration/effectivePackageRoot.html">effectivePackageRoot</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  The package root used for trace emission, or <code>null</code> when disabled.
+  <div class="features"><span class="feature">no setter</span></div>
 
 </dd>
 
@@ -154,6 +166,18 @@ definitions. When <code>null</code>, <a href="../rohd/SynthModuleStopPolicy/Synt
 
 </dd>
 
+        <dt id="packageRoot" class="property">
+  <span class="name"><a href="../rohd/NetlistSynthesizerConfiguration/packageRoot.html">packageRoot</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd>
+  The package root used to make trace source paths relative.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
         <dt id="runtimeType" class="property inherited">
   <span class="name"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Object/runtimeType.html">runtimeType</a></span>
   <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/Type-class.html">Type</a></span>
@@ -177,6 +201,18 @@ definitions. When <code>null</code>, <a href="../rohd/SynthModuleStopPolicy/Synt
 are not copied into the emitted JSON projection. Netnames and ports are
 still emitted with full wire-ID fidelity, while per-module synthesis
 results retain complete connectivity.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="trace" class="property">
+  <span class="name"><a href="../rohd/NetlistSynthesizerConfiguration/trace.html">trace</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  Whether to embed <code>rohd.src_trace</code> attributes in generated modules.
   <div class="features"><span class="feature">final</span></div>
 
 </dd>

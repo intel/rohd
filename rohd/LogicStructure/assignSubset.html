@@ -88,7 +88,9 @@ receiverLogic.assignSubset([sig1, sig2], start: 2);
 void assignSubset(List&lt;Logic&gt; updatedSubset, {int start = 0}) {
   if (updatedSubset.length &gt; elements.length - start) {
     throw SignalWidthMismatchException.forWidthOverflow(
-        updatedSubset.length, elements.length - start);
+      updatedSubset.length,
+      elements.length - start,
+    );
   }
 
   &#47;&#47; Assign Logic array from `start` index to `start+updatedSubset.length`

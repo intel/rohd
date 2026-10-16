@@ -94,8 +94,10 @@ String toString({bool includeWidth = true}) {
   } else {
     return [
       if (includeWidth) &quot;$width&#39;b&quot;,
-      ...List&lt;String&gt;.generate(width, (index) =&gt; this[index]._bitString())
-          .reversed
+      ...List&lt;String&gt;.generate(
+        width,
+        (index) =&gt; this[index]._bitString(),
+      ).reversed,
     ].join();
   }
 }</code></pre>

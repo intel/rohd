@@ -67,6 +67,7 @@
 <li><span class="parameter" id="fst-param-register"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">register</span> = <span class="default-value">true</span>, </span></li>
 <li><span class="parameter" id="fst-param-writeToFile"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">writeToFile</span> = <span class="default-value">true</span>, </span></li>
 <li><span class="parameter" id="fst-param-config"><span class="type-annotation"><a href="../../rohd/FstWriterConfig-class.html">FstWriterConfig</a></span> <span class="parameter-name">config</span> = <span class="default-value">const FstWriterConfig()</span>, </span></li>
+<li><span class="parameter" id="fst-param-enableDevToolsStreaming"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">enableDevToolsStreaming</span> = <span class="default-value">false</span>, </span></li>
 </ol>})
     </section>
     
@@ -93,6 +94,7 @@ ordinary format selection remains available through <a href="../../rohd/Waveform
   bool register = true,
   bool writeToFile = true,
   FstWriterConfig config = const FstWriterConfig(),
+  bool enableDevToolsStreaming = false,
 }) : this._(
         module,
         outputDirectory: outputDirectory ?? &#39;.&#39;,
@@ -108,6 +110,7 @@ ordinary format selection remains available through <a href="../../rohd/Waveform
         writeToFile: writeToFile,
         retainInMemory: false,
         fstWriterConfig: config,
+        enableDevToolsStreaming: enableDevToolsStreaming,
       );</code></pre>
 </section>
 

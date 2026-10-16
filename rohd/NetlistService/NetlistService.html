@@ -88,20 +88,30 @@ service artifacts to <code>outputDirectory</code>.</p>
     throw ModuleNotBuiltException(module);
   }
 
-  final effectiveRoot = packageRoot;
+  final effectiveRoot = packageRoot ?? configuration.effectivePackageRoot;
   synthesizer = NetlistSynthesizer(configuration: configuration);
   this.packageRoot = effectiveRoot;
   synthBuilder = SynthBuilder(module, synthesizer);
-  final completeJson =
-      synthesizer.generateCombinedJson(synthBuilder, module, slimMode: false);
+  final completeJson = synthesizer.generateCombinedJson(
+    synthBuilder,
+    module,
+    packageRoot: effectiveRoot,
+    slimMode: false,
+  );
   _fullJson = configuration.slimMode
-      ? synthesizer.generateCombinedJson(synthBuilder, module, slimMode: true)
+      ? synthesizer.generateCombinedJson(
+          synthBuilder,
+          module,
+          packageRoot: effectiveRoot,
+          slimMode: true,
+        )
       : completeJson;
 
   final decoded = jsonDecode(completeJson) as Map&lt;String, dynamic&gt;;
   _modulesMap =
       (decoded[&#39;modules&#39;] as Map&lt;String, dynamic&gt;?) ?? &lt;String, dynamic&gt;{};
   _loadedVersion = decoded[&#39;version&#39;] as String?;
+  _srcTraceFiles = (decoded[&#39;files&#39;] as List&lt;dynamic&gt;?)?.cast&lt;String&gt;();
 
   if (register) {
     ModuleServices.instance.register&lt;NetlistService&gt;(this);

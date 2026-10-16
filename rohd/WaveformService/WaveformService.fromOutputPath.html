@@ -66,6 +66,7 @@
 <li><span class="parameter" id="fromOutputPath-param-overwritePolicy"><span class="type-annotation"><a href="../../rohd/OverwritePolicy.html">OverwritePolicy</a></span> <span class="parameter-name">overwritePolicy</span> = <span class="default-value">OverwritePolicy.overwrite</span>, </span></li>
 <li><span class="parameter" id="fromOutputPath-param-register"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">register</span> = <span class="default-value">true</span>, </span></li>
 <li><span class="parameter" id="fromOutputPath-param-retainInMemory"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">retainInMemory</span>, </span></li>
+<li><span class="parameter" id="fromOutputPath-param-enableDevToolsStreaming"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">enableDevToolsStreaming</span> = <span class="default-value">false</span>, </span></li>
 </ol>})
     </section>
     
@@ -81,35 +82,41 @@ still compile.</p>
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">factory WaveformService.fromOutputPath(Module module,
-    {required String outputPath,
-    WaveOutputFormat format = WaveOutputFormat.vcd,
-    bool Function(Logic signal)? signalFilter,
-    WaveformTimeScale timescale = WaveformTimeScale.onePicosecond,
-    int? startTime,
-    int? stopTime,
-    int flushBufferSize = 100000,
-    OverwritePolicy overwritePolicy = OverwritePolicy.overwrite,
-    bool register = true,
-    bool? retainInMemory}) {
+  <pre class="language-dart"><code class="language-dart">factory WaveformService.fromOutputPath(
+  Module module, {
+  required String outputPath,
+  WaveOutputFormat format = WaveOutputFormat.vcd,
+  bool Function(Logic signal)? signalFilter,
+  WaveformTimeScale timescale = WaveformTimeScale.onePicosecond,
+  int? startTime,
+  int? stopTime,
+  int flushBufferSize = 100000,
+  OverwritePolicy overwritePolicy = OverwritePolicy.overwrite,
+  bool register = true,
+  bool? retainInMemory,
+  bool enableDevToolsStreaming = false,
+}) {
   final normalized = outputPath.replaceAll(r&#39;\&#39;, &#39;&#47;&#39;);
   final sep = normalized.lastIndexOf(&#39;&#47;&#39;);
   final directory =
       switch (sep) { -1 =&gt; &#39;.&#39;, 0 =&gt; &#39;&#47;&#39;, _ =&gt; normalized.substring(0, sep) };
   final filename = normalized.substring(sep + 1);
-  return WaveformService(module,
-      outputDirectory: directory,
-      outputFileName: filename,
-      format: format,
-      signalFilter: signalFilter,
-      timescale: timescale,
-      startTime: startTime,
-      stopTime: stopTime,
-      flushBufferSize: flushBufferSize,
-      overwritePolicy: overwritePolicy,
-      register: register,
-      writeToFile: true,
-      retainInMemory: retainInMemory);
+  return WaveformService(
+    module,
+    outputDirectory: directory,
+    outputFileName: filename,
+    format: format,
+    signalFilter: signalFilter,
+    timescale: timescale,
+    startTime: startTime,
+    stopTime: stopTime,
+    flushBufferSize: flushBufferSize,
+    overwritePolicy: overwritePolicy,
+    register: register,
+    writeToFile: true,
+    retainInMemory: retainInMemory,
+    enableDevToolsStreaming: enableDevToolsStreaming,
+  );
 }</code></pre>
 </section>
 

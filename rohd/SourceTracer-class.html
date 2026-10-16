@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the SourceTracer class from the rohd library, for the Dart programming language.">
+  <title>SourceTracer class - rohd library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">rohd</a></li>
+    <li><a href="../rohd/">rohd.dart</a></li>
+    <li class="self-crumb">SourceTracer class</li>
+  </ol>
+  <div class="self-name">SourceTracer</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="rohd&#47;rohd-library-sidebar.html"
+    data-below-sidebar="rohd&#47;SourceTracer-class-sidebar.html">
+    <div>
+<h1><span class="kind-class">SourceTracer</span> class 
+ 
+</h1></div>
+
+    
+<section class="desc markdown">
+  <p>Captures and stores stack traces for signal and submodule construction
+sites, allowing later queries by hierarchical address.</p>
+<p>Constructing an instance activates recording; all <a href="../rohd/Logic-class.html">Logic</a> and <a href="../rohd/Module-class.html">Module</a>
+constructors that follow will have their call-sites captured.</p>
+<p>Example:</p>
+<pre class="language-dart"><code class="language-dart">SourceTracer.activate();          // activate tracing
+final mod = MyModule(a, b);   // Logic constructors record stack traces
+await mod.build();
+
+// Query a specific signal by hierarchical address
+final trace = SourceTracer.traceOf(mod, 'myInternalSignal');
+print(trace);
+
+// Or get all traces for the module
+final all = SourceTracer.tracesForModule(mod);
+for (final entry in all.entries) {
+  print('${entry.key}:\n${entry.value}\n');
+}
+</code></pre>
+</section>
+
+
+
+    
+  <section class="summary offset-anchor" id="constructors">
+    <h2>Constructors</h2>
+    <dl class="constructor-summary-list">
+        <dt id="SourceTracer.activate" class="callable">
+          <span class="name"><a href="../rohd/SourceTracer/SourceTracer.activate.html">SourceTracer.activate</a></span><span class="signature">()</span>
+        </dt>
+        <dd>
+          Creates a tracer and starts recording stack traces for all
+subsequently constructed <a href="../rohd/Logic-class.html">Logic</a> signals and <a href="../rohd/Module-class.html">Module</a>s.
+        </dd>
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor inherited"
+      id="instance-properties">
+    <h2>Properties</h2>
+    <dl class="properties">
+        <dt id="hashCode" class="property inherited">
+  <span class="name"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Object/hashCode.html">hashCode</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  The hash code for this object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="runtimeType" class="property inherited">
+  <span class="name"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Object/runtimeType.html">runtimeType</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/Type-class.html">Type</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  A representation of the runtime type of the object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+
+    
+  <section
+      class="summary offset-anchor inherited"
+      id="instance-methods">
+    <h2>Methods</h2>
+    <dl class="callables">
+        <dt id="noSuchMethod" class="callable inherited">
+  <span class="name"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
+    <span class="returntype parameter">&#8594; dynamic</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Invoked when a nonexistent method or property is accessed.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toString" class="callable inherited">
+  <span class="name"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Object/toString.html">toString</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  A string representation of this object.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor inherited"
+      id="operators">
+    <h2>Operators</h2>
+    <dl class="callables">
+        <dt id="operator ==" class="callable inherited">
+  <span class="name"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Object/operator_equals.html">operator ==</a></span><span class="signature">(<wbr><span class="parameter" id="==-param-other"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">other</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  The equality operator.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+  <section class="summary offset-anchor" id="static-properties">
+    <h2>Static Properties</h2>
+    <dl class="properties">
+        <dt id="frameRe" class="property">
+  <span class="name"><a href="../rohd/SourceTracer/frameRe.html">frameRe</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/RegExp-class.html">RegExp</a></span>
+  
+
+</dt>
+<dd>
+  A regular expression that matches Dart stack-trace frames of the form:
+<code>#N  description (URI:line:col)</code>
+or
+  <code>#N  description (URI:line)</code>
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="hasTraces" class="property">
+  <span class="name"><a href="../rohd/SourceTracer/hasTraces.html">hasTraces</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  Returns <code>true</code> if any traces have been recorded.
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="isActive" class="property">
+  <span class="name"><a href="../rohd/SourceTracer/isActive.html">isActive</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  Whether a tracer is currently capturing construction sites.
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="v8FrameRe" class="property">
+  <span class="name"><a href="../rohd/SourceTracer/v8FrameRe.html">v8FrameRe</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/RegExp-class.html">RegExp</a></span>
+  
+
+</dt>
+<dd>
+  Chrome V8 / DDC compiled-to-JS stack trace format.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="webFrameRe" class="property">
+  <span class="name"><a href="../rohd/SourceTracer/webFrameRe.html">webFrameRe</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/RegExp-class.html">RegExp</a></span>
+  
+
+</dt>
+<dd>
+  DDC (Dart Development Compiler) web stack trace format.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+  <section class="summary offset-anchor" id="static-methods">
+    <h2>Static Methods</h2>
+    <dl class="callables">
+        <dt id="clear" class="callable">
+  <span class="name"><a href="../rohd/SourceTracer/clear.html">clear</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Removes all recorded traces and deactivates the tracer.
+  
+
+</dd>
+
+        <dt id="clearIfCurrent" class="callable">
+  <span class="name"><a href="../rohd/SourceTracer/clearIfCurrent.html">clearIfCurrent</a></span><span class="signature">(<wbr><span class="parameter" id="clearIfCurrent-param-tracer"><span class="type-annotation"><a href="../rohd/SourceTracer-class.html">SourceTracer</a></span> <span class="parameter-name">tracer</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Deactivates <code>tracer</code> only when it is still the active tracer.
+  
+
+</dd>
+
+        <dt id="flcHtmlViewer" class="callable">
+  <span class="name"><a href="../rohd/SourceTracer/flcHtmlViewer.html">flcHtmlViewer</a></span><span class="signature">(<wbr><span class="parameter" id="flcHtmlViewer-param-flcJson"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">flcJson</span>, {</span><span class="parameter" id="flcHtmlViewer-param-title"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">title</span> = <span class="default-value">&#39;FLC Viewer&#39;</span>, </span><span class="parameter" id="flcHtmlViewer-param-packageRoot"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">packageRoot</span> = <span class="default-value">&#39;&#39;</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Generates a self-contained HTML viewer that loads FLC JSON data
+and renders it as a searchable, clickable table.
+  
+
+</dd>
+
+        <dt id="hierarchyReport" class="callable">
+  <span class="name"><a href="../rohd/SourceTracer/hierarchyReport.html">hierarchyReport</a></span><span class="signature">(<wbr><span class="parameter" id="hierarchyReport-param-root"><span class="type-annotation"><a href="../rohd/Module-class.html">Module</a></span> <span class="parameter-name">root</span>, {</span><span class="parameter" id="hierarchyReport-param-packageRoot"><span>required</span> <span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">packageRoot</span>, </span><span class="parameter" id="hierarchyReport-param-useFileUris"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">useFileUris</span> = <span class="default-value">false</span>, </span><span class="parameter" id="hierarchyReport-param-skipPatterns"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">skipPatterns</span> = <span class="default-value">defaultSkipPatterns</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Generates a plain-text report of every traced signal and submodule
+in the hierarchy rooted at <code>root</code>.
+  
+
+</dd>
+
+        <dt id="htmlReport" class="callable">
+  <span class="name"><a href="../rohd/SourceTracer/htmlReport.html">htmlReport</a></span><span class="signature">(<wbr><span class="parameter" id="htmlReport-param-root"><span class="type-annotation"><a href="../rohd/Module-class.html">Module</a></span> <span class="parameter-name">root</span>, {</span><span class="parameter" id="htmlReport-param-packageRoot"><span>required</span> <span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">packageRoot</span>, </span><span class="parameter" id="htmlReport-param-skipPatterns"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">skipPatterns</span> = <span class="default-value">defaultSkipPatterns</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Generates an HTML report that can be opened in VS Code's Simple Browser
+(or any browser) with clickable <code>vscode://file/</code> links.
+  
+
+</dd>
+
+        <dt id="loadPackageMap" class="callable">
+  <span class="name"><a href="../rohd/SourceTracer/loadPackageMap.html">loadPackageMap</a></span><span class="signature">(<wbr><span class="parameter" id="loadPackageMap-param-packageRoot"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">packageRoot</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Loads a map from package name to absolute lib directory path by reading
+<code>.dart_tool/package_config.json</code> from <code>packageRoot</code>.
+  
+
+</dd>
+
+        <dt id="moduleTrace" class="callable">
+  <span class="name"><a href="../rohd/SourceTracer/moduleTrace.html">moduleTrace</a></span><span class="signature">(<wbr><span class="parameter" id="moduleTrace-param-module"><span class="type-annotation"><a href="../rohd/Module-class.html">Module</a></span> <span class="parameter-name">module</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a>?</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Returns the stringified stack trace for <code>module</code>, or <code>null</code>.
+  
+
+</dd>
+
+        <dt id="recordModule" class="callable">
+  <span class="name"><a href="../rohd/SourceTracer/recordModule.html">recordModule</a></span><span class="signature">(<wbr><span class="parameter" id="recordModule-param-module"><span class="type-annotation"><a href="../rohd/Module-class.html">Module</a></span> <span class="parameter-name">module</span></span>)
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Records the current stack trace for <code>module</code>.
+  
+
+</dd>
+
+        <dt id="recordSignal" class="callable">
+  <span class="name"><a href="../rohd/SourceTracer/recordSignal.html">recordSignal</a></span><span class="signature">(<wbr><span class="parameter" id="recordSignal-param-signal"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">signal</span></span>)
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Records the current stack trace for <code>signal</code>.
+  
+
+</dd>
+
+        <dt id="signalTrace" class="callable">
+  <span class="name"><a href="../rohd/SourceTracer/signalTrace.html">signalTrace</a></span><span class="signature">(<wbr><span class="parameter" id="signalTrace-param-signal"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">signal</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a>?</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Returns the stringified stack trace for <code>signal</code>, or <code>null</code>.
+  
+
+</dd>
+
+        <dt id="synthLogicSourceMap" class="callable">
+  <span class="name"><a href="../rohd/SourceTracer/synthLogicSourceMap.html">synthLogicSourceMap</a></span><span class="signature">(<wbr><span class="parameter" id="synthLogicSourceMap-param-module"><span class="type-annotation"><a href="../rohd/Module-class.html">Module</a></span> <span class="parameter-name">module</span>, </span><span class="parameter" id="synthLogicSourceMap-param-synthDef"><span class="type-annotation">SynthModuleDefinition</span> <span class="parameter-name">synthDef</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter">SynthLogic</span>, <span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Builds a trace-local map from each <code>SynthLogic</code> to the <a href="../rohd/Logic-class.html">Logic</a> whose
+naming priority selected that synthesized net's final name.
+  
+
+</dd>
+
+        <dt id="synthLogicTrace" class="callable">
+  <span class="name"><a href="../rohd/SourceTracer/synthLogicTrace.html">synthLogicTrace</a></span><span class="signature">(<wbr><span class="parameter" id="synthLogicTrace-param-module"><span class="type-annotation"><a href="../rohd/Module-class.html">Module</a></span> <span class="parameter-name">module</span>, </span><span class="parameter" id="synthLogicTrace-param-synthLogic"><span class="type-annotation">SynthLogic</span> <span class="parameter-name">synthLogic</span>, {</span><span class="parameter" id="synthLogicTrace-param-sourceLogics"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter">SynthLogic</span>, <span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span>?</span> <span class="parameter-name">sourceLogics</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a>?</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Returns the stringified stack trace for the <a href="../rohd/Logic-class.html">Logic</a> selected to name
+<code>synthLogic</code> within <code>module</code>, or <code>null</code>.
+  
+
+</dd>
+
+        <dt id="traceAttributesForModule" class="callable">
+  <span class="name"><a href="../rohd/SourceTracer/traceAttributesForModule.html">traceAttributesForModule</a></span><span class="signature">(<wbr><span class="parameter" id="traceAttributesForModule-param-module"><span class="type-annotation"><a href="../rohd/Module-class.html">Module</a></span> <span class="parameter-name">module</span>, {</span><span class="parameter" id="traceAttributesForModule-param-packageRoot"><span>required</span> <span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">packageRoot</span>, </span><span class="parameter" id="traceAttributesForModule-param-skipPatterns"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">skipPatterns</span> = <span class="default-value">defaultSkipPatterns</span>, </span><span class="parameter" id="traceAttributesForModule-param-fileTable"><span class="type-annotation"><a href="../rohd/SourceTraceFileTable-class.html">SourceTraceFileTable</a>?</span> <span class="parameter-name">fileTable</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Object-class.html">Object</a></span>&gt;</span>?</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Returns a compact JSON-serialisable map of source-location traces for
+the signals and submodule instances directly inside <code>module</code>, or <code>null</code> if
+no traces were recorded for any element in <code>module</code>.
+  
+
+</dd>
+
+        <dt id="traceJsonForHierarchy" class="callable">
+  <span class="name"><a href="../rohd/SourceTracer/traceJsonForHierarchy.html">traceJsonForHierarchy</a></span><span class="signature">(<wbr><span class="parameter" id="traceJsonForHierarchy-param-root"><span class="type-annotation"><a href="../rohd/Module-class.html">Module</a></span> <span class="parameter-name">root</span>, {</span><span class="parameter" id="traceJsonForHierarchy-param-packageRoot"><span>required</span> <span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">packageRoot</span>, </span><span class="parameter" id="traceJsonForHierarchy-param-skipPatterns"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">skipPatterns</span> = <span class="default-value">defaultSkipPatterns</span>, </span><span class="parameter" id="traceJsonForHierarchy-param-outputLineMaps"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span></span>&gt;</span></span>&gt;</span></span>&gt;</span>?</span> <span class="parameter-name">outputLineMaps</span>, </span><span class="parameter" id="traceJsonForHierarchy-param-outputFiles"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span></span>&gt;</span></span>&gt;</span>?</span> <span class="parameter-name">outputFiles</span>, </span><span class="parameter" id="traceJsonForHierarchy-param-moduleOutputLineMaps"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Module-class.html">Module</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span></span>&gt;</span></span>&gt;</span></span>&gt;</span>?</span> <span class="parameter-name">moduleOutputLineMaps</span>, </span><span class="parameter" id="traceJsonForHierarchy-param-moduleOutputFiles"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Module-class.html">Module</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span></span>&gt;</span></span>&gt;</span>?</span> <span class="parameter-name">moduleOutputFiles</span>, </span><span class="parameter" id="traceJsonForHierarchy-param-moduleImplementationNames"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Module-class.html">Module</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span>?</span> <span class="parameter-name">moduleImplementationNames</span>, </span><span class="parameter" id="traceJsonForHierarchy-param-svLineMaps"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span></span>&gt;</span></span>&gt;</span>?</span> <span class="parameter-name">svLineMaps</span>, </span><span class="parameter" id="traceJsonForHierarchy-param-svFileMap"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span>?</span> <span class="parameter-name">svFileMap</span>, </span><span class="parameter" id="traceJsonForHierarchy-param-packageMap"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span>?</span> <span class="parameter-name">packageMap</span>, </span><span class="parameter" id="traceJsonForHierarchy-param-scLineMaps"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span></span>&gt;</span></span>&gt;</span>?</span> <span class="parameter-name">scLineMaps</span>, </span><span class="parameter" id="traceJsonForHierarchy-param-scFileMap"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span>?</span> <span class="parameter-name">scFileMap</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Object-class.html">Object</a></span>&gt;</span>?</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Produces a compact JSON-serialisable map containing trace data for the
+entire module hierarchy rooted at <code>root</code>, using the trie-based v5
+format.
+  
+
+</dd>
+
+        <dt id="traceJsonForModule" class="callable">
+  <span class="name"><a href="../rohd/SourceTracer/traceJsonForModule.html">traceJsonForModule</a></span><span class="signature">(<wbr><span class="parameter" id="traceJsonForModule-param-module"><span class="type-annotation"><a href="../rohd/Module-class.html">Module</a></span> <span class="parameter-name">module</span>, {</span><span class="parameter" id="traceJsonForModule-param-packageRoot"><span>required</span> <span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">packageRoot</span>, </span><span class="parameter" id="traceJsonForModule-param-skipPatterns"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">skipPatterns</span> = <span class="default-value">defaultSkipPatterns</span>, </span><span class="parameter" id="traceJsonForModule-param-outputLineMap"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span></span>&gt;</span></span>&gt;</span>?</span> <span class="parameter-name">outputLineMap</span>, </span><span class="parameter" id="traceJsonForModule-param-outputFile"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span></span>&gt;</span>?</span> <span class="parameter-name">outputFile</span>, </span><span class="parameter" id="traceJsonForModule-param-moduleOutputLineMap"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span></span>&gt;</span></span>&gt;</span>?</span> <span class="parameter-name">moduleOutputLineMap</span>, </span><span class="parameter" id="traceJsonForModule-param-moduleOutputFile"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span></span>&gt;</span>?</span> <span class="parameter-name">moduleOutputFile</span>, </span><span class="parameter" id="traceJsonForModule-param-implementationName"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">implementationName</span>, </span><span class="parameter" id="traceJsonForModule-param-svFile"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">svFile</span>, </span><span class="parameter" id="traceJsonForModule-param-svLineMap"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span></span>&gt;</span>?</span> <span class="parameter-name">svLineMap</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Object-class.html">Object</a></span>&gt;</span>?</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Produces a compact JSON-serialisable map containing trace data for
+a single <code>module</code>, in the same FLC v5 trie format as
+<a href="../rohd/SourceTracer/traceJsonForHierarchy.html">traceJsonForHierarchy</a> but with only one module entry.
+  
+
+</dd>
+
+        <dt id="traceOf" class="callable">
+  <span class="name"><a href="../rohd/SourceTracer/traceOf.html">traceOf</a></span><span class="signature">(<wbr><span class="parameter" id="traceOf-param-module"><span class="type-annotation"><a href="../rohd/Module-class.html">Module</a></span> <span class="parameter-name">module</span>, </span><span class="parameter" id="traceOf-param-address"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">address</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a>?</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Returns the <a href="https://api.dart.dev/stable/3.13.5/dart-core/StackTrace-class.html">StackTrace</a> captured when the signal or submodule at
+<code>address</code> inside <code>module</code> was constructed, or <code>null</code> if no trace was
+recorded.
+  
+
+</dd>
+
+        <dt id="tracesForHierarchy" class="callable">
+  <span class="name"><a href="../rohd/SourceTracer/tracesForHierarchy.html">tracesForHierarchy</a></span><span class="signature">(<wbr><span class="parameter" id="tracesForHierarchy-param-root"><span class="type-annotation"><a href="../rohd/Module-class.html">Module</a></span> <span class="parameter-name">root</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Returns a map from full hierarchical address to <a href="https://api.dart.dev/stable/3.13.5/dart-core/StackTrace-class.html">StackTrace</a> for every
+signal and submodule instance in the entire hierarchy rooted at <code>root</code>.
+  
+
+</dd>
+
+        <dt id="tracesForModule" class="callable">
+  <span class="name"><a href="../rohd/SourceTracer/tracesForModule.html">tracesForModule</a></span><span class="signature">(<wbr><span class="parameter" id="tracesForModule-param-module"><span class="type-annotation"><a href="../rohd/Module-class.html">Module</a></span> <span class="parameter-name">module</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Returns a map from name to <a href="https://api.dart.dev/stable/3.13.5/dart-core/StackTrace-class.html">StackTrace</a> for every signal and submodule
+instance inside <code>module</code> that has a recorded trace.
+  
+
+</dd>
+
+    </dl>
+  </section>
+    
+
+  <section class="summary offset-anchor" id="constants">
+    <h2>Constants</h2>
+    <dl class="properties">
+        <dt id="defaultSkipPatterns" class="constant">
+    <span class="name "><a href="../rohd/SourceTracer/defaultSkipPatterns-constant.html">defaultSkipPatterns</a></span>
+  <span class="signature">&#8594; const <a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Patterns matched against the URI portion of each stack frame to decide
+which frames to skip.  A frame is skipped when its URI contains any of
+these substrings.
+  
+
+</dd>
+
+    </dl>
+  </section>
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">rohd</a></li>
+    <li><a href="../rohd/">rohd</a></li>
+    <li class="self-crumb">SourceTracer class</li>
+</ol>
+
+    <h5>rohd library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    rohd
+      0.6.11
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

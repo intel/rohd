@@ -77,8 +77,14 @@ output mode for this call, allowing expansion after a slim request.</p>
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">String synthesizeToJson(Module top, {String? packageRoot, bool? slimMode}) {
+  final effectiveRoot = packageRoot ?? configuration.effectivePackageRoot;
   final sb = SynthBuilder(top, this);
-  return generateCombinedJson(sb, top, slimMode: slimMode);
+  return generateCombinedJson(
+    sb,
+    top,
+    packageRoot: effectiveRoot,
+    slimMode: slimMode,
+  );
 }</code></pre>
 </section>
 

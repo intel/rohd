@@ -81,6 +81,7 @@ without changing the service artifact naming convention.</p>
   File(outputPath)
     ..parent.createSync(recursive: true)
     ..writeAsStringSync(output);
+  _writtenOutputPath = outputPath;
 }</code></pre>
 </section>
 

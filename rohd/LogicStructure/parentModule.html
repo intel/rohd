@@ -117,8 +117,10 @@ optimize search.</p>
   <pre class="language-dart"><code class="language-dart">@internal
 @override
 set parentModule(Module? newParentModule) {
-  assert(_parentModule == null || _parentModule == newParentModule,
-      &#39;Should only set parent module once.&#39;);
+  assert(
+    _parentModule == null || _parentModule == newParentModule,
+    &#39;Should only set parent module once.&#39;,
+  );
 
   _parentModule = newParentModule;
 }</code></pre>

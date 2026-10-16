@@ -77,9 +77,7 @@
   for (final signal in signals.reversed) {
     &#47;&#47;reverse so bit 0 is the last thing in the input list
     final inputName = Naming.unpreferredName(&#39;in${idx++}&#39;);
-    _swizzleInputs.add(
-      inputCreator(inputName, signal, width: signal.width),
-    );
+    _swizzleInputs.add(inputCreator(inputName, signal, width: signal.width));
     outputWidth += signal.width;
   }
 
@@ -97,8 +95,9 @@
 
     &#47;&#47; so that you can&#39;t assign the output of a (Logic) swizzle
     out.makeUnassignable(
-        reason:
-            &#39;The output of a (non-LogicNet) Swizzle ($this) is read-only.&#39;);
+      reason:
+          &#39;The output of a (non-LogicNet) Swizzle (&quot;$name&quot;) is read-only.&#39;,
+    );
 
     _execute(); &#47;&#47; for initial values
     for (final swizzleInput in _swizzleInputs) {

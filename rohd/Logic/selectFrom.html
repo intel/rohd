@@ -83,22 +83,22 @@ selected &lt;= index.selectFrom(busList);
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">Logic selectFrom(List&lt;Logic&gt; busList, {Logic? defaultValue}) {
   final selected = Logic(
-      name: &#39;selectFrom&#39;,
-      width: busList.first.width,
-      naming: Naming.mergeable);
-
-  Combinational(
-    [
-      Case(
-          this,
-          [
-            for (var i = 0; i &lt; busList.length; i++)
-              CaseItem(Const(i, width: width), [selected &lt; busList[i]])
-          ],
-          conditionalType: ConditionalType.unique,
-          defaultItem: [selected &lt; (defaultValue ?? 0)])
-    ],
+    name: &#39;selectFrom&#39;,
+    width: busList.first.width,
+    naming: Naming.mergeable,
   );
+
+  Combinational([
+    Case(
+      this,
+      [
+        for (var i = 0; i &lt; busList.length; i++)
+          CaseItem(Const(i, width: width), [selected &lt; busList[i]]),
+      ],
+      conditionalType: ConditionalType.unique,
+      defaultItem: [selected &lt; (defaultValue ?? 0)],
+    ),
+  ]);
 
   return selected;
 }</code></pre>

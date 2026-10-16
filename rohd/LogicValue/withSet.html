@@ -78,8 +78,9 @@ the position of the <code>update</code> would cause an overrun past the <a href=
   <pre class="language-dart"><code class="language-dart">LogicValue withSet(int startIndex, LogicValue update) {
   if (startIndex + update.width &gt; width) {
     throw Exception(
-        &#39;Width of updatedValue $update at startIndex $startIndex would&#39;
-        &#39; overrun the width of the original ($width).&#39;);
+      &#39;Width of updatedValue $update at startIndex $startIndex would&#39;
+      &#39; overrun the width of the original ($width).&#39;,
+    );
   }
 
   return [

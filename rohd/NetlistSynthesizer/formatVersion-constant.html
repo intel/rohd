@@ -66,6 +66,11 @@
 <p>Consumers of ROHD-generated netlists must reject an unsupported version.
 This version changes when ROHD adds or changes fields that affect how a
 consumer interprets the netlist.</p>
+<p><code>0.0.2</code> added a top-level <code>"files"</code> array shared by every module's
+<code>rohd.src_trace</code> attribute (previously each module embedded its own,
+independently-indexed file list).</p>
+<p>See <code>doc/netlist_json_format.md</code> for the full list of fields this
+version adds beyond standard Yosys JSON.</p>
 </section>
 
       

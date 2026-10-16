@@ -62,9 +62,9 @@
       </section>
       
 <section class="desc markdown">
-  <p>The package root directory used for FLC trace injection.</p>
-<p>When non-null, downstream trace-enabled branches use this path to embed
-<code>rohd.src_trace</code> attributes in the netlist JSON.</p>
+  <p>The package root directory used for FLC output, when explicitly provided.</p>
+<p>Netlist JSON generation does not require filesystem access. Source/FLC
+data is only available when <a href="../../rohd/NetlistService/packageRoot.html">packageRoot</a> is explicitly provided.</p>
 </section>
 
       

@@ -90,8 +90,9 @@ Conditional operator &lt;(dynamic other) {
 
   var index = 0;
   for (final element in leafElements) {
-    conditionalAssigns
-        .add(element &lt; otherLogic.getRange(index, index + element.width));
+    conditionalAssigns.add(
+      element &lt; otherLogic.getRange(index, index + element.width),
+    );
     index += element.width;
   }
 

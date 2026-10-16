@@ -74,15 +74,19 @@ it is unable to keep from uniquifying <code>definitionName</code> to avoid confl
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">Module(
-    {this.name = &#39;unnamed_module&#39;,
-    this.reserveName = false,
-    String? definitionName,
-    this.reserveDefinitionName = false})
-    : _uniqueInstanceName =
+  <pre class="language-dart"><code class="language-dart">Module({
+  this.name = &#39;unnamed_module&#39;,
+  this.reserveName = false,
+  String? definitionName,
+  this.reserveDefinitionName = false,
+})  : _uniqueInstanceName =
           Naming.validatedName(name, reserveName: reserveName) ?? name,
-      _definitionName = Naming.validatedName(definitionName,
-          reserveName: reserveDefinitionName);</code></pre>
+      _definitionName = Naming.validatedName(
+        definitionName,
+        reserveName: reserveDefinitionName,
+      ) {
+  SourceTracer.recordModule(this);
+}</code></pre>
 </section>
 
 

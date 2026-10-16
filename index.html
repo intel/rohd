@@ -51,8 +51,7 @@
 <a href="https://intel.github.io/rohd/rohd/rohd-library.html"><img src="https://img.shields.io/badge/API%20Docs-generated-success" alt="API Docs"></a>
 <a href="https://discord.gg/jubxF84yGw"><img src="https://img.shields.io/discord/1001179329411166267?label=Chat" alt="Chat"></a>
 <a href="https://github.com/intel/rohd/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-BSD--3-blue" alt="License"></a>
-<a href="https://github.com/intel/rohd/blob/main/CODE_OF_CONDUCT.md"><img src="https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg" alt="Contributor Covenant"></a>
-<a href="https://github.com/intel/rohd/blob/main/.github/workflows/coverage.yml"><img src="https://raw.githubusercontent.com/intel/rohd/refs/heads/badges/coverage/main.svg" alt="Coverage"></a></p>
+<a href="https://github.com/intel/rohd/blob/main/CODE_OF_CONDUCT.md"><img src="https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg" alt="Contributor Covenant"></a></p>
 <p>ROHD (pronounced like "road") is a silicon-proven framework for describing and verifying hardware in the Dart programming language.</p>
 <h2 id="documentation">Documentation</h2>
 <p>For documentation, guides, and more, <a href="https://intel.github.io/rohd-website/"><strong>visit the ROHD Website!</strong></a></p>
@@ -82,8 +81,8 @@
 <li>Easy <strong>IP integration</strong> and <strong>interfaces</strong>; using an IP is as easy as an import.  Reduces tedious, redundant, and error prone aspects of integration</li>
 <li><strong>Simple and fast build</strong>, free of complex build systems and EDA vendor tools</li>
 <li>Can use the excellent pub.dev <strong>package manager</strong> and all the packages it has to offer</li>
-<li>Built-in event-based <strong>fast simulator</strong> with <strong>4-value</strong> (0, 1, X, and Z) support and a <strong>waveform dumper</strong> to .vcd file format</li>
-<li>Conversion of modules to equivalent, human-readable, structurally similar <strong>SystemVerilog</strong> for integration or downstream tool consumption</li>
+<li>Built-in event-based <strong>fast simulator</strong> with <strong>4-value</strong> (0, 1, X, and Z) support and a <strong>waveform capture service</strong> to .vcd or .fst file format</li>
+<li>Conversion of modules to human-readable, structurally similar <strong>SystemVerilog</strong> and <strong>SystemC</strong> for integration or downstream tool consumption</li>
 <li><strong>Run-time dynamic</strong> module port definitions (numbers, names, widths, etc.) and internal module logic, including recursive module contents</li>
 <li>Leverage the <a href="https://github.com/intel/rohd-hcl">ROHD Hardware Component Library (ROHD-HCL)</a> with reusable and configurable design and verification components.</li>
 <li>Simple, free, <strong>open source tool stack</strong> without any headaches from library dependencies, file ordering, elaboration/analysis options, +defines, etc.</li>
@@ -110,6 +109,20 @@ SPDX-License-Identifier: BSD-3-Clause</p>
       <section class="summary">
           <h2>Libraries</h2>
         <dl>
+          <dt id="design_session_protocol">
+  <span class="name"><a href="design_session_protocol/">design_session_protocol</a></span> 
+
+</dt>
+<dd>
+</dd>
+
+          <dt id="examples">
+  <span class="name"><a href="examples/">examples</a></span> 
+
+</dt>
+<dd>
+</dd>
+
           <dt id="rohd">
   <span class="name"><a href="rohd/">rohd</a></span> 
 
@@ -134,6 +147,8 @@ SPDX-License-Identifier: BSD-3-Clause</p>
     <h5 class="hidden-xs"><span class="package-name">rohd</span> <span class="package-kind">package</span></h5>
     <ol>
       <li class="section-title">Libraries</li>
+      <li><a href="design_session_protocol/">design_session_protocol</a></li>
+      <li><a href="examples/">examples</a></li>
       <li><a href="rohd/">rohd</a></li>
 </ol>
 

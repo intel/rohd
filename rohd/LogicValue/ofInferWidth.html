@@ -79,14 +79,16 @@ be thrown.</p>
   if (val is int) {
     if (val &lt; 0) {
       throw LogicValueConstructionException(
-          &#39;Cannot infer width of a negative int.&#39;);
+        &#39;Cannot infer width of a negative int.&#39;,
+      );
     } else {
       width = val.bitLength;
     }
   } else if (val is BigInt) {
     if (val.isNegative) {
       throw LogicValueConstructionException(
-          &#39;Cannot infer width of a negative BigInt.&#39;);
+        &#39;Cannot infer width of a negative BigInt.&#39;,
+      );
     } else {
       width = val.bitLength;
     }

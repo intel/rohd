@@ -76,8 +76,10 @@
       File(&#39;${directory.path}&#47;${fc.name}.sv&#39;)
           .writeAsStringSync(header + fc.contents);
     }
+    _writtenOutputPath = directory.path;
   } else {
     File(&#39;${directory.path}&#47;$outputBaseName.sv&#39;).writeAsStringSync(output);
+    _writtenOutputPath = &#39;$outputDirectory&#47;$outputBaseName.sv&#39;;
   }
 }</code></pre>
 </section>

@@ -75,7 +75,10 @@ of bits.</p>
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">static LogicValue ofInt(int value, int width) =&gt; width &gt; INT_BITS
     ? _bigLogicValueOrFilled(
-        BigInt.from(value).toUnsigned(INT_BITS), BigInt.zero, width)
+        BigInt.from(value).toUnsigned(INT_BITS),
+        BigInt.zero,
+        width,
+      )
     : _smallLogicValueOrFilled(value, 0, width);</code></pre>
 </section>
 

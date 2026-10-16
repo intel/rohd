@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the SystemCService class from the rohd library, for the Dart programming language.">
+  <title>SystemCService class - rohd library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">rohd</a></li>
+    <li><a href="../rohd/">rohd.dart</a></li>
+    <li class="self-crumb">SystemCService class</li>
+  </ol>
+  <div class="self-name">SystemCService</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="rohd&#47;rohd-library-sidebar.html"
+    data-below-sidebar="rohd&#47;SystemCService-class-sidebar.html">
+    <div>
+<h1><span class="kind-class">SystemCService</span> class 
+ 
+</h1></div>
+
+    
+<section class="desc markdown">
+  <p>A service that wraps SystemC synthesis of a <a href="../rohd/Module-class.html">Module</a> hierarchy.</p>
+<p>Provides access to the generated SystemC file contents and per-module
+synthesis results.</p>
+<p>ROHD's emitted SystemC representation uses two-state <code>bool</code>, <code>sc_uint</code>, and
+<code>sc_biguint</code> types. It does not preserve X/Z semantics. When any bit of a
+constant is X or Z, the emitted value for the entire constant is zero.
+This is a limitation of ROHD's emitted representation, not SystemC itself.</p>
+</section>
+
+
+    <section>
+      <dl class="dl-horizontal">
+        
+  <dt>Inheritance</dt>
+  <dd>
+    <ul class="gt-separated dark clazz-relationships">
+      <li><a href="https://api.dart.dev/stable/3.13.5/dart-core/Object-class.html">Object</a></li>
+        <li><a href="../rohd/ArtifactProducingService-class.html">ArtifactProducingService</a></li>
+        <li><a href="../rohd/CodeGenService-class.html">CodeGenService</a></li>
+      <li>SystemCService</li>
+    </ul>
+  </dd>
+
+        
+        
+
+
+        
+        
+
+
+      </dl>
+    </section>
+
+    
+  <section class="summary offset-anchor" id="constructors">
+    <h2>Constructors</h2>
+    <dl class="constructor-summary-list">
+        <dt id="SystemCService.new" class="callable">
+          <span class="name"><a href="../rohd/SystemCService/SystemCService.html">SystemCService</a></span><span class="signature">(<span class="parameter" id="param-module"><span class="type-annotation"><a href="../rohd/Module-class.html">Module</a></span> <span class="parameter-name">module</span>, {</span><span class="parameter" id="param-register"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">register</span> = <span class="default-value">true</span>, </span><span class="parameter" id="param-outputDirectory"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">outputDirectory</span> = <span class="default-value">&#39;.&#39;</span>, </span><span class="parameter" id="param-outputBaseName"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">outputBaseName</span>, </span><span class="parameter" id="param-multiFile"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">multiFile</span> = <span class="default-value">true</span>, </span><span class="parameter" id="param-configuration"><span class="type-annotation"><a href="../rohd/SystemCSynthesizerConfiguration-class.html">SystemCSynthesizerConfiguration</a></span> <span class="parameter-name">configuration</span> = <span class="default-value">const SystemCSynthesizerConfiguration()</span></span>})</span>
+        </dt>
+        <dd>
+          Creates an <a href="../rohd/SystemCService-class.html">SystemCService</a> for <code>module</code>.
+        </dd>
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-properties">
+    <h2>Properties</h2>
+    <dl class="properties">
+        <dt id="allContents" class="property">
+  <span class="name"><a href="../rohd/SystemCService/allContents.html">allContents</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  The concatenated SystemC module definitions, without the generation
+header.
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="artifacts" class="property">
+  <span class="name"><a href="../rohd/SystemCService/artifacts.html">artifacts</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/ModuleServiceArtifact-class.html">ModuleServiceArtifact</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  The generated SystemC artifacts.
+  <div class="features"><span class="feature">no setter</span><span class="feature">override</span></div>
+
+</dd>
+
+        <dt id="configuration" class="property">
+  <span class="name"><a href="../rohd/SystemCService/configuration.html">configuration</a></span>
+  <span class="signature">&#8594; <a href="../rohd/SystemCSynthesizerConfiguration-class.html">SystemCSynthesizerConfiguration</a></span>
+  
+
+</dt>
+<dd>
+  Configuration controlling unsupported SystemC functionality.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="contentsByDefinitionName" class="property">
+  <span class="name"><a href="../rohd/SystemCService/contentsByDefinitionName.html">contentsByDefinitionName</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Map from module definition name to the generated SystemC source text.
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="diagnostics" class="property">
+  <span class="name"><a href="../rohd/SystemCService/diagnostics.html">diagnostics</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/SystemCGenerationDiagnostic-class.html">SystemCGenerationDiagnostic</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Unsupported module instances whose behavior was emitted as empty stubs.
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="fileContents" class="property">
+  <span class="name"><a href="../rohd/SystemCService/fileContents.html">fileContents</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/SynthFileContents-class.html">SynthFileContents</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  The generated file contents (one entry per generated SystemC file).
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="hashCode" class="property inherited">
+  <span class="name"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Object/hashCode.html">hashCode</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  The hash code for this object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="headerLineCount" class="property">
+  <span class="name"><a href="../rohd/SystemCService/headerLineCount.html">headerLineCount</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd>
+  The number of newlines in <a href="../rohd/SystemCService/scHeader.html">scHeader</a>.
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="instanceTypeLineOffsets" class="property">
+  <span class="name"><a href="../rohd/SystemCService/instanceTypeLineOffsets.html">instanceTypeLineOffsets</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/int-class.html">int</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  The 0-based line offset of each generated implementation within <a href="../rohd/SystemCService/output.html">output</a>.
+  <div class="features"><span class="feature">late</span><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="module" class="property inherited">
+  <span class="name"><a href="../rohd/ArtifactProducingService/module.html">module</a></span>
+  <span class="signature">&#8594; <a href="../rohd/Module-class.html">Module</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  The top-level <a href="../rohd/Module-class.html">Module</a> this service operates on.
+  <div class="features"><span class="feature">final</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="moduleLineOffsets" class="property">
+  <span class="name"><a href="../rohd/SystemCService/moduleLineOffsets.html">moduleLineOffsets</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/int-class.html">int</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  The 0-based line offsets keyed by requested source definition name.
+  <div class="features"><span class="feature">late</span><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="multiFile" class="property">
+  <span class="name"><a href="../rohd/SystemCService/multiFile.html">multiFile</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  Whether <a href="../rohd/SystemCService/writeOutputs.html">writeOutputs</a> emits one <code>.sc</code> file per module definition
+(<code>true</code>) or a single concatenated file (<code>false</code>). Defaults to <code>true</code> for
+SystemC.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="output" class="property">
+  <span class="name"><a href="../rohd/SystemCService/output.html">output</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  The full single-file SystemC output with its generation header.
+  <div class="features"><span class="feature">late</span><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="outputBaseName" class="property inherited">
+  <span class="name"><a href="../rohd/ArtifactProducingService/outputBaseName.html">outputBaseName</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  Filename stem used for primary artifacts.
+  <div class="features"><span class="feature">final</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="outputDirectory" class="property inherited">
+  <span class="name"><a href="../rohd/ArtifactProducingService/outputDirectory.html">outputDirectory</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  Directory receiving filesystem artifacts when this service writes them.
+  <div class="features"><span class="feature">final</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="runtimeType" class="property inherited">
+  <span class="name"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Object/runtimeType.html">runtimeType</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/Type-class.html">Type</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  A representation of the runtime type of the object.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="scFileMap" class="property">
+  <span class="name"><a href="../rohd/SystemCService/scFileMap.html">scFileMap</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Map from generated implementation name to the list of generated SC
+files for that implementation (typically one element today;
+future-proof for header + impl).
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="scFileMapByModule" class="property">
+  <span class="name"><a href="../rohd/SystemCService/scFileMapByModule.html">scFileMapByModule</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Module-class.html">Module</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Maps each source module occurrence to the generated SC artifact list.
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="scHeader" class="property">
+  <span class="name"><a href="../rohd/SystemCService/scHeader.html">scHeader</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  The ROHD generation header prepended to single-file SystemC output.
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="scLineMaps" class="property">
+  <span class="name"><a href="../rohd/SystemCService/scLineMaps.html">scLineMaps</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span></span>&gt;</span></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Map from generated implementation name to the
+<code>SystemCSynthesisResult</code>
+<code>scLineMap</code>s (signal/instance name → list of <code>'line:col'</code> positions).
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="scLineMapsByModule" class="property">
+  <span class="name"><a href="../rohd/SystemCService/scLineMapsByModule.html">scLineMapsByModule</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Module-class.html">Module</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span></span>&gt;</span></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Maps each source module occurrence to its generated SC line map.
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="singleFileScLineMaps" class="property">
+  <span class="name"><a href="../rohd/SystemCService/singleFileScLineMaps.html">singleFileScLineMaps</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span></span>&gt;</span></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Returns SystemC line maps adjusted to positions in <a href="../rohd/SystemCService/output.html">output</a>, keyed by
+generated implementation name.
+  <div class="features"><span class="feature">late</span><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="singleFileScLineMapsByModule" class="property">
+  <span class="name"><a href="../rohd/SystemCService/singleFileScLineMapsByModule.html">singleFileScLineMapsByModule</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Module-class.html">Module</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span></span>&gt;</span></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Returns single-file line maps for the generated implementation
+associated with each source module occurrence.
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="synthesisResults" class="property">
+  <span class="name"><a href="../rohd/SystemCService/synthesisResults.html">synthesisResults</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/SynthesisResult-class.html">SynthesisResult</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  All <a href="../rohd/SynthesisResult-class.html">SynthesisResult</a>s produced by synthesis.
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-methods">
+    <h2>Methods</h2>
+    <dl class="callables">
+        <dt id="noSuchMethod" class="callable inherited">
+  <span class="name"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
+    <span class="returntype parameter">&#8594; dynamic</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Invoked when a nonexistent method or property is accessed.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="singleFileScFileMap" class="callable">
+  <span class="name"><a href="../rohd/SystemCService/singleFileScFileMap.html">singleFileScFileMap</a></span><span class="signature">(<wbr><span class="parameter" id="singleFileScFileMap-param-filename"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">filename</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Returns a single-file map using <code>filename</code> for every generated
+implementation.
+  
+
+</dd>
+
+        <dt id="singleFileScFileMapByModule" class="callable">
+  <span class="name"><a href="../rohd/SystemCService/singleFileScFileMapByModule.html">singleFileScFileMapByModule</a></span><span class="signature">(<wbr><span class="parameter" id="singleFileScFileMapByModule-param-filename"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">filename</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Module-class.html">Module</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Returns a single-file artifact map for every source module occurrence.
+  
+
+</dd>
+
+        <dt id="toJson" class="callable">
+  <span class="name"><a href="../rohd/SystemCService/toJson.html">toJson</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Object-class.html">Object</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Returns a JSON-serialisable summary of the SystemC synthesis.
+  <div class="features"><span class="feature">override</span></div>
+
+</dd>
+
+        <dt id="toString" class="callable inherited">
+  <span class="name"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Object/toString.html">toString</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  A string representation of this object.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="writeOutputs" class="callable">
+  <span class="name"><a href="../rohd/SystemCService/writeOutputs.html">writeOutputs</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Writes this service's artifacts to <a href="../rohd/ArtifactProducingService/outputDirectory.html">outputDirectory</a>.
+  
+
+</dd>
+
+    </dl>
+  </section>
+    
+  <section
+      class="summary offset-anchor inherited"
+      id="operators">
+    <h2>Operators</h2>
+    <dl class="callables">
+        <dt id="operator ==" class="callable inherited">
+  <span class="name"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Object/operator_equals.html">operator ==</a></span><span class="signature">(<wbr><span class="parameter" id="==-param-other"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">other</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  The equality operator.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+  <section class="summary offset-anchor" id="static-properties">
+    <h2>Static Properties</h2>
+    <dl class="properties">
+        <dt id="current" class="property">
+  <span class="name"><a href="../rohd/SystemCService/current.html">current</a></span>
+  <span class="signature">&#8596; <a href="../rohd/SystemCService-class.html">SystemCService</a>?</span>
+  
+
+</dt>
+<dd>
+  The most recently registered <a href="../rohd/SystemCService-class.html">SystemCService</a>, or <code>null</code>.
+  <div class="features"><span class="feature">getter/setter pair</span></div>
+
+</dd>
+
+    </dl>
+  </section>
+    
+    
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">rohd</a></li>
+    <li><a href="../rohd/">rohd</a></li>
+    <li class="self-crumb">SystemCService class</li>
+</ol>
+
+    <h5>rohd library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    rohd
+      0.6.11
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

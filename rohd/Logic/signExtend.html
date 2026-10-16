@@ -80,16 +80,14 @@ an exception will be thrown.</p>
   if (width == 1) {
     return replicate(newWidth);
   } else if (newWidth &gt; width) {
-    return [
-      this[-1].replicate(newWidth - width),
-      this,
-    ].swizzle();
+    return [this[-1].replicate(newWidth - width), this].swizzle();
   } else if (newWidth == width) {
     return this;
   }
 
   throw Exception(
-      &#39;New width $newWidth must be greater than or equal to width $width.&#39;);
+    &#39;New width $newWidth must be greater than or equal to width $width.&#39;,
+  );
 }</code></pre>
 </section>
 

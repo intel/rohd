@@ -187,6 +187,14 @@ under certain conditions.
   Represents a <a href="../rohd/Logic-class.html">Logic</a> that never changes value.
 </dd>
 
+          <dt id="DebugSession">
+  <span class="name "><a href="../rohd/DebugSession-class.html">DebugSession</a></span> 
+
+</dt>
+<dd>
+  An opt-in debugging workflow for one built module hierarchy.
+</dd>
+
           <dt id="Divide">
   <span class="name "><a href="../rohd/Divide-class.html">Divide</a></span> 
 
@@ -357,6 +365,14 @@ in SystemVerilog.
 </dt>
 <dd>
   A two-input bit index gate <a href="../rohd/Module-class.html">Module</a>.
+</dd>
+
+          <dt id="InProcessRohdDesignSession">
+  <span class="name "><a href="../rohd/InProcessRohdDesignSession-class.html">InProcessRohdDesignSession</a></span> 
+
+</dt>
+<dd>
+  A <a href="../rohd/RohdDesignSession-class.html">RohdDesignSession</a> backed directly by a synthesized <a href="../rohd/NetlistService-class.html">NetlistService</a>.
 </dd>
 
           <dt id="Interface">
@@ -623,6 +639,102 @@ inputs and outputs of <a href="../rohd/Module-class.html">Module</a>s.
   A Replication Operator <a href="../rohd/Module-class.html">Module</a>.
 </dd>
 
+          <dt id="RohdConnectivitySession">
+  <span class="name "><a href="../rohd/RohdConnectivitySession-class.html">RohdConnectivitySession</a></span> 
+
+</dt>
+<dd>
+  Connectivity operations offered by a <a href="../rohd/RohdDesignSession-class.html">RohdDesignSession</a>.
+</dd>
+
+          <dt id="RohdDesignEpoch">
+  <span class="name "><a href="../rohd/RohdDesignEpoch-class.html">RohdDesignEpoch</a></span> 
+
+</dt>
+<dd>
+  Identifies one loaded design revision within a <a href="../rohd/RohdDesignSession-class.html">RohdDesignSession</a>.
+</dd>
+
+          <dt id="RohdDesignSession">
+  <span class="name "><a href="../rohd/RohdDesignSession-class.html">RohdDesignSession</a></span> 
+
+</dt>
+<dd>
+  Transport-independent entry point for inspecting a live ROHD design.
+</dd>
+
+          <dt id="RohdDesignSessionProtocol">
+  <span class="name "><a href="../rohd/RohdDesignSessionProtocol-class.html">RohdDesignSessionProtocol</a></span> 
+
+</dt>
+<dd>
+  Versioned method names and response envelope fields for design sessions.
+</dd>
+
+          <dt id="RohdDesignSessionProtocolHandler">
+  <span class="name "><a href="../rohd/RohdDesignSessionProtocolHandler-class.html">RohdDesignSessionProtocolHandler</a></span> 
+
+</dt>
+<dd>
+  Converts <a href="../rohd/RohdDesignSession-class.html">RohdDesignSession</a> calls to JSON-ready protocol envelopes.
+</dd>
+
+          <dt id="RohdDesignStatus">
+  <span class="name "><a href="../rohd/RohdDesignStatus-class.html">RohdDesignStatus</a></span> 
+
+</dt>
+<dd>
+  Availability and metadata reported by a <a href="../rohd/RohdDesignSession-class.html">RohdDesignSession</a>.
+</dd>
+
+          <dt id="RohdHierarchySession">
+  <span class="name "><a href="../rohd/RohdHierarchySession-class.html">RohdHierarchySession</a></span> 
+
+</dt>
+<dd>
+  Hierarchy operations offered by a <a href="../rohd/RohdDesignSession-class.html">RohdDesignSession</a>.
+</dd>
+
+          <dt id="RohdPage">
+  <span class="name "><a href="../rohd/RohdPage-class.html">RohdPage</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></span> 
+
+</dt>
+<dd>
+  Result page for bounded search and traversal requests.
+</dd>
+
+          <dt id="RohdQueryOptions">
+  <span class="name "><a href="../rohd/RohdQueryOptions-class.html">RohdQueryOptions</a></span> 
+
+</dt>
+<dd>
+  Options common to hierarchy searches and connectivity traversals.
+</dd>
+
+          <dt id="RohdShellService">
+  <span class="name "><a href="../rohd/RohdShellService-class.html">RohdShellService</a></span> 
+
+</dt>
+<dd>
+  Hosts the typed ROHD design-session protocol in the debugged isolate.
+</dd>
+
+          <dt id="RohdSignalValue">
+  <span class="name "><a href="../rohd/RohdSignalValue-class.html">RohdSignalValue</a></span> 
+
+</dt>
+<dd>
+  A packed signal value sampled from waveform data.
+</dd>
+
+          <dt id="RohdSynchronousDesignSession">
+  <span class="name "><a href="../rohd/RohdSynchronousDesignSession-class.html">RohdSynchronousDesignSession</a></span> 
+
+</dt>
+<dd>
+  Synchronous operations exposed by an in-process design session.
+</dd>
+
           <dt id="RShift">
   <span class="name "><a href="../rohd/RShift-class.html">RShift</a></span> 
 
@@ -637,6 +749,30 @@ inputs and outputs of <a href="../rohd/Module-class.html">Module</a>s.
 </dt>
 <dd>
   Represents a block of sequential logic.
+</dd>
+
+          <dt id="ShellCommandInvocation">
+  <span class="name "><a href="../rohd/ShellCommandInvocation-class.html">ShellCommandInvocation</a></span> 
+
+</dt>
+<dd>
+  Input supplied to a registered shell command.
+</dd>
+
+          <dt id="ShellCommandRegistry">
+  <span class="name "><a href="../rohd/ShellCommandRegistry-class.html">ShellCommandRegistry</a></span> 
+
+</dt>
+<dd>
+  Registry of manifest-selected shell commands and their live variables.
+</dd>
+
+          <dt id="ShellCommandResult">
+  <span class="name "><a href="../rohd/ShellCommandResult-class.html">ShellCommandResult</a></span> 
+
+</dt>
+<dd>
+  A command result that retains a live value and exposes a JSON-ready view.
 </dd>
 
           <dt id="SimpleClockGenerator">
@@ -654,6 +790,24 @@ representation.
 </dt>
 <dd>
   A functional event-based static simulator for logic behavior.
+</dd>
+
+          <dt id="SourceTraceFileTable">
+  <span class="name "><a href="../rohd/SourceTraceFileTable-class.html">SourceTraceFileTable</a></span> 
+
+</dt>
+<dd>
+  A shared, deduplicated file table for <code>attributes.rohd.src_trace</code>
+(see <code>doc/netlist_json_format.md</code>).
+</dd>
+
+          <dt id="SourceTracer">
+  <span class="name "><a href="../rohd/SourceTracer-class.html">SourceTracer</a></span> 
+
+</dt>
+<dd>
+  Captures and stores stack traces for signal and submodule construction
+sites, allowing later queries by hierarchical address.
 </dd>
 
           <dt id="State">
@@ -721,6 +875,39 @@ a <a href="../rohd/Synthesizer-class.html">Synthesizer</a>.
   Shared hierarchy stopping policy for synthesis backends.
 </dd>
 
+          <dt id="SystemCGenerationDiagnostic">
+  <span class="name "><a href="../rohd/SystemCGenerationDiagnostic-class.html">SystemCGenerationDiagnostic</a></span> 
+
+</dt>
+<dd>
+  Describes behavior omitted from generated SystemC.
+</dd>
+
+          <dt id="SystemCService">
+  <span class="name "><a href="../rohd/SystemCService-class.html">SystemCService</a></span> 
+
+</dt>
+<dd>
+  A service that wraps SystemC synthesis of a <a href="../rohd/Module-class.html">Module</a> hierarchy.
+</dd>
+
+          <dt id="SystemCSynthesizer">
+  <span class="name "><a href="../rohd/SystemCSynthesizer-class.html">SystemCSynthesizer</a></span> 
+
+</dt>
+<dd>
+  A <a href="../rohd/Synthesizer-class.html">Synthesizer</a> which generates a two-state SystemC representation of the
+given <a href="../rohd/Module-class.html">Module</a>.
+</dd>
+
+          <dt id="SystemCSynthesizerConfiguration">
+  <span class="name "><a href="../rohd/SystemCSynthesizerConfiguration-class.html">SystemCSynthesizerConfiguration</a></span> 
+
+</dt>
+<dd>
+  Configuration for SystemC synthesis.
+</dd>
+
           <dt id="SystemVerilogParameterDefinition">
   <span class="name "><a href="../rohd/SystemVerilogParameterDefinition-class.html">SystemVerilogParameterDefinition</a></span> 
 
@@ -763,12 +950,38 @@ given <a href="../rohd/Module-class.html">Module</a>.
   Configuration for SystemVerilog synthesis.
 </dd>
 
+          <dt id="TraceService">
+  <span class="name "><a href="../rohd/TraceService-class.html">TraceService</a></span> 
+
+</dt>
+<dd>
+  A service that combines <a href="../rohd/SourceTracer-class.html">SourceTracer</a> stack traces with
+<a href="../rohd/SystemVerilogService-class.html">SystemVerilogService</a> line maps to produce FLC (File-Line-Column)
+cross-probing data.
+</dd>
+
+          <dt id="TrackedSignal">
+  <span class="name "><a href="../rohd/TrackedSignal-class.html">TrackedSignal</a></span> 
+
+</dt>
+<dd>
+  Represents metadata for a signal being tracked.
+</dd>
+
           <dt id="TriStateBuffer">
   <span class="name "><a href="../rohd/TriStateBuffer-class.html">TriStateBuffer</a></span> 
 
 </dt>
 <dd>
   A tri-state buffer: can drive 0, 1, or leave the output floating.
+</dd>
+
+          <dt id="ValueChange">
+  <span class="name "><a href="../rohd/ValueChange-class.html">ValueChange</a></span> 
+
+</dt>
+<dd>
+  Represents a single value change for a signal.
 </dd>
 
           <dt id="VcdWaveformWriter">
@@ -785,6 +998,15 @@ given <a href="../rohd/Module-class.html">Module</a>.
 </dt>
 <dd>
   Deprecated: use <a href="../rohd/Module/dumpWaves.html">Module.dumpWaves</a> instead.
+</dd>
+
+          <dt id="WaveformDataService">
+  <span class="name "><a href="../rohd/WaveformDataService-class.html">WaveformDataService</a></span> 
+
+</dt>
+<dd>
+  <code>WaveformDataService</code> implements the Singleton design pattern to track
+signal value changes during simulation for DevTools inspection.
 </dd>
 
           <dt id="WaveformInitialValue">
@@ -825,6 +1047,14 @@ given <a href="../rohd/Module-class.html">Module</a>.
 </dt>
 <dd>
   A waveform capture service that writes signal changes to a file.
+</dd>
+
+          <dt id="WaveformSignalValue">
+  <span class="name "><a href="../rohd/WaveformSignalValue-class.html">WaveformSignalValue</a></span> 
+
+</dt>
+<dd>
+  A waveform value sampled at or immediately before a requested time.
 </dd>
 
           <dt id="WaveformValueChange">
@@ -953,12 +1183,36 @@ given <a href="../rohd/Module-class.html">Module</a>.
   The role that a component in a pair plays.
 </dd>
 
+          <dt id="RohdDesignCapability">
+  <span class="name "><a href="../rohd/RohdDesignCapability.html">RohdDesignCapability</a></span> 
+
+</dt>
+<dd>
+  A capability exposed by a <a href="../rohd/RohdDesignSession-class.html">RohdDesignSession</a>.
+</dd>
+
+          <dt id="ScOutputMode">
+  <span class="name "><a href="../rohd/ScOutputMode.html">ScOutputMode</a></span> 
+
+</dt>
+<dd>
+  How generated SystemC is laid out on disk.
+</dd>
+
           <dt id="SimulatorPhase">
   <span class="name "><a href="../rohd/SimulatorPhase.html">SimulatorPhase</a></span> 
 
 </dt>
 <dd>
   An enum for the various phases of the <a href="../rohd/Simulator-class.html">Simulator</a>.
+</dd>
+
+          <dt id="SvOutputMode">
+  <span class="name "><a href="../rohd/SvOutputMode.html">SvOutputMode</a></span> 
+
+</dt>
+<dd>
+  How the generated SystemVerilog is laid out on disk.
 </dd>
 
           <dt id="SystemVerilogPortType">
@@ -1225,6 +1479,21 @@ by a <a href="../rohd/Logic-class.html">Logic</a> index value.
 
 
           
+  <dt id="FlcService" class="">
+  <span class="name deprecated"><a class="deprecated" href="../rohd/FlcService.html">FlcService</a></span>
+    = <a href="../rohd/TraceService-class.html">TraceService</a>
+  </span>
+  
+
+</dt>
+<dd>
+  Deprecated alias for the trace lookup service.
+  
+
+</dd>
+
+
+          
   <dt id="Iff" class="">
   <span class="name"><a href="../rohd/Iff.html">Iff</a></span>
     = <a href="../rohd/ElseIf-class.html">ElseIf</a>
@@ -1253,6 +1522,34 @@ by a <a href="../rohd/Logic-class.html">Logic</a> index value.
 
 </dd>
 
+
+          
+  <dt id="ShellArgumentParser" class="callable">
+    <span class="name"><a href="../rohd/ShellArgumentParser.html">ShellArgumentParser</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.dart.dev/stable/3.13.5/dart-core/Object-class.html">Object</a>? Function<span class="signature">(<span class="parameter" id="param-value"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">value</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Converts a shell literal or live variable to a declared command argument.
+    
+
+  </dd>
+
+          
+  <dt id="ShellCommandHandler" class="callable">
+    <span class="name"><a href="../rohd/ShellCommandHandler.html">ShellCommandHandler</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="../rohd/ShellCommandResult-class.html">ShellCommandResult</a> Function<span class="signature">(<span class="parameter" id="param-invocation"><span class="type-annotation"><a href="../rohd/ShellCommandInvocation-class.html">ShellCommandInvocation</a></span> <span class="parameter-name">invocation</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    A Dart implementation registered for a manifest command binding.
+    
+
+  </dd>
 
           
   <dt id="StateMachine" class="">
@@ -1295,6 +1592,20 @@ definition before leaf predicates are applied.
   <dd>
     Determines whether a synthesizer should stop hierarchy traversal at a
 <a href="../rohd/Module-class.html">Module</a> and treat it as a leaf in its parent.
+    
+
+  </dd>
+
+          
+  <dt id="SystemCUnsupportedModulePredicate" class="callable">
+    <span class="name"><a href="../rohd/SystemCUnsupportedModulePredicate.html">SystemCUnsupportedModulePredicate</a></span><span class="signature">
+      <span class="returntype parameter">= <a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a> Function<span class="signature">(<span class="parameter" id="param-module"><span class="type-annotation"><a href="../rohd/Module-class.html">Module</a></span> <span class="parameter-name">module</span>, </span><span class="parameter" id="param-reason"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">reason</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Selects an unsupported <code>module</code> for emission as an empty SystemC stub.
     
 
   </dd>
@@ -1581,6 +1892,14 @@ driven multiple times.
 signal is being used before it was initialized.
 </dd>
 
+          <dt id="UnsupportedSystemCModuleException">
+  <span class="name "><a href="../rohd/UnsupportedSystemCModuleException-class.html">UnsupportedSystemCModuleException</a></span> 
+
+</dt>
+<dd>
+  Thrown when required module behavior has no SystemC translation.
+</dd>
+
           <dt id="UnsupportedTypeException">
   <span class="name "><a href="../rohd/UnsupportedTypeException-class.html">UnsupportedTypeException</a></span> 
 
@@ -1623,6 +1942,8 @@ signal is being used before it was initialized.
     <h5><span class="package-name">rohd</span> <span class="package-kind">package</span></h5>
     <ol>
       <li class="section-title">Libraries</li>
+      <li><a href="../design_session_protocol/">design_session_protocol</a></li>
+      <li><a href="../examples/">examples</a></li>
       <li><a href="../rohd/">rohd</a></li>
 </ol>
 

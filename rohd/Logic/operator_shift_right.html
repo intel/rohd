@@ -82,10 +82,7 @@ the original signal.</p>
     &#47;&#47; many SV simulators don&#39;t support shifting of nets, so default this
     final shamt = _constShiftAmount(other);
     if (shamt != null) {
-      return [
-        this[-1].replicate(shamt),
-        getRange(shamt),
-      ].swizzle();
+      return [this[-1].replicate(shamt), getRange(shamt)].swizzle();
     }
   }
 

@@ -80,16 +80,21 @@ by <code>getInstanceTypeOfModule</code>.</p>
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@override
 SynthesisResult synthesize(
-    Module module, String Function(Module module) getInstanceTypeOfModule) {
+  Module module,
+  String Function(Module module) getInstanceTypeOfModule,
+) {
   assert(
-      module is! SystemVerilog ||
-          module.generatedDefinitionType != DefinitionGenerationType.none,
-      &#39;SystemVerilog modules synthesized must generate a definition.&#39;);
+    module is! SystemVerilog ||
+        module.generatedDefinitionType != DefinitionGenerationType.none,
+    &#39;SystemVerilog modules synthesized must generate a definition.&#39;,
+  );
 
   return module is SystemVerilog &amp;&amp;
           module.generatedDefinitionType == DefinitionGenerationType.custom
       ? SystemVerilogCustomDefinitionSynthesisResult(
-          module, getInstanceTypeOfModule)
+          module,
+          getInstanceTypeOfModule,
+        )
       : SystemVerilogSynthesisResult(
           module,
           getInstanceTypeOfModule,

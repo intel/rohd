@@ -94,14 +94,15 @@ outputs: <code>{ 'c' : 'sig_c' }</code></p>
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@Deprecated(&#39;Use `instantiationVerilogFor` instead.&#39;)
 static String instantiationVerilogWithParameters(
-        Module module,
-        String instanceType,
-        String instanceName,
-        Map&lt;String, String&gt; inputs,
-        Map&lt;String, String&gt; outputs,
-        {Map&lt;String, String&gt; inOuts = const {},
-        Map&lt;String, String&gt;? parameters,
-        bool forceStandardInstantiation = false}) =&gt;
+  Module module,
+  String instanceType,
+  String instanceName,
+  Map&lt;String, String&gt; inputs,
+  Map&lt;String, String&gt; outputs, {
+  Map&lt;String, String&gt; inOuts = const {},
+  Map&lt;String, String&gt;? parameters,
+  bool forceStandardInstantiation = false,
+}) =&gt;
     instantiationVerilogFor(
       module: module,
       instanceType: instanceType,

@@ -81,10 +81,7 @@
     &#47;&#47; many SV simulators don&#39;t support shifting of nets, so default this
     final shamt = _constShiftAmount(other);
     if (shamt != null) {
-      return [
-        Const(0, width: shamt),
-        getRange(shamt),
-      ].swizzle();
+      return [Const(0, width: shamt), getRange(shamt)].swizzle();
     }
   }
 

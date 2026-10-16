@@ -67,15 +67,9 @@
     </section>
     
 <section class="desc markdown">
-  <p>Read-only, zero-copy access to the parsed modules map.</p>
+  <p>Read-only access to the parsed modules map.</p>
 <p>Each key is a definition name and each value is the Yosys-style
-module descriptor containing <code>ports</code>, <code>cells</code>, and <code>netnames</code>. The
-outer map is unmodifiable, but its nested module/cell maps and bit lists
-are shared with this service's internal representation.</p>
-<p>Callers must treat the complete returned object graph as immutable.
-Mutating nested values is unsupported and can make uncached <a href="../../rohd/NetlistService/moduleJson.html">moduleJson</a>
-or <a href="../../rohd/NetlistService/slimJson.html">slimJson</a> results disagree with previously serialized or cached
-service views. Create a caller-owned copy before making modifications.</p>
+module descriptor containing <code>ports</code>, <code>cells</code>, and <code>netnames</code>.</p>
 </section>
 
     

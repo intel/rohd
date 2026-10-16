@@ -73,12 +73,14 @@
   <pre class="language-dart"><code class="language-dart">bool toBool() {
   if (!isValid) {
     throw LogicValueConversionException(
-        &#39;Cannot convert value &quot;$this&quot; to bool&#39;);
+      &#39;Cannot convert value &quot;$this&quot; to bool&#39;,
+    );
   }
   if (width != 1) {
     throw LogicValueConversionException(
-        &#39;Only single bit values can be converted to a bool,&#39;
-        &#39; but found width $width in $this&#39;);
+      &#39;Only single bit values can be converted to a bool,&#39;
+      &#39; but found width $width in $this&#39;,
+    );
   }
   return this == LogicValue.one;
 }</code></pre>

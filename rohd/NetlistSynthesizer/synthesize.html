@@ -90,10 +90,12 @@ SynthesisResult synthesize(
 }) {
   final attr = &lt;String, Object?&gt;{&#39;src&#39;: &#39;generated&#39;};
 
-  final translation = NetlistModuleTranslation(module,
-      netlistCellMapper: netlistCellMapper,
-      generatesDefinition: generatesDefinition,
-      getInstanceTypeOfModule: getInstanceTypeOfModule)
+  final translation = NetlistModuleTranslation(
+    module,
+    netlistCellMapper: netlistCellMapper,
+    generatesDefinition: generatesDefinition,
+    getInstanceTypeOfModule: getInstanceTypeOfModule,
+  )
     ..processPorts()
     ..processInternalWires()
     ..processCells();
@@ -126,7 +128,7 @@ SynthesisResult synthesize(
     int width,
     Logic elemLogic,
     Logic parentLogic,
-    List&lt;int&gt; fullParentIds
+    List&lt;int&gt; fullParentIds,
   })&gt;[];
 
   &#47;&#47; Pending $struct_pack fields: for output struct ports, instead of
@@ -139,7 +141,7 @@ SynthesisResult synthesize(
     int dstLowerIndex,
     int dstUpperIndex,
     SynthLogic srcSynthLogic,
-    SynthLogic dstSynthLogic
+    SynthLogic dstSynthLogic,
   })&gt;[];
 
   &#47;&#47; Track struct ports (both output ports of the current module AND
@@ -187,8 +189,9 @@ SynthesisResult synthesize(
       }
     }
 
-    for (final assignment
-        in synthDef.assignments.where((a) =&gt; a is! PartialSynthAssignment)) {
+    for (final assignment in synthDef.assignments.where(
+      (a) =&gt; a is! PartialSynthAssignment,
+    )) {
       final srcIds = getIds(assignment.src);
       final dstIds = getIds(assignment.dst);
       final len =
@@ -521,10 +524,7 @@ SynthesisResult synthesize(
         conns[portEntry.key] = [
           for (final b in oldBits)
             if (b is int)
-              arraySliceOldToNew.putIfAbsent(
-                b,
-                translation.allocateWireId,
-              )
+              arraySliceOldToNew.putIfAbsent(b, translation.allocateWireId)
             else
               b,
         ];
@@ -624,7 +624,7 @@ SynthesisResult synthesize(
               int width,
               Logic elemLogic,
               Logic parentLogic,
-              List&lt;int&gt; fullParentIds
+              List&lt;int&gt; fullParentIds,
             })&gt;&gt;{};
     for (final sf in structFieldCells) {
       (groups[sf.parentLogic] ??= []).add(sf);
@@ -645,14 +645,16 @@ SynthesisResult synthesize(
               resolvedElemBits: resolvedElemBits,
               offset: sf.offset,
               width: sf.width,
-              elemLogic: sf.elemLogic
+              elemLogic: sf.elemLogic,
             );
           })
-          .where((f) =&gt; !f.resolvedElemBits.indexed.every((e) {
-                final (i, bit) = e;
-                return f.offset + i &lt; resolvedParentBits.length &amp;&amp;
-                    bit == resolvedParentBits[f.offset + i];
-              }))
+          .where(
+            (f) =&gt; !f.resolvedElemBits.indexed.every((e) {
+              final (i, bit) = e;
+              return f.offset + i &lt; resolvedParentBits.length &amp;&amp;
+                  bit == resolvedParentBits[f.offset + i];
+            }),
+          )
           .toList();
 
       if (nonTrivialFields.isEmpty) {
@@ -674,8 +676,11 @@ SynthesisResult synthesize(
 
       for (var i = 0; i &lt; nonTrivialFields.length; i++) {
         final f = nonTrivialFields[i];
-        final fieldName = structLayout?.fieldNameAt(f.offset,
-                fallbackName: f.elemLogic.name, anonymousUnpreferred: true) ??
+        final fieldName = structLayout?.fieldNameAt(
+              f.offset,
+              fallbackName: f.elemLogic.name,
+              anonymousUnpreferred: true,
+            ) ??
             f.elemLogic.name;
         &#47;&#47; Disambiguate duplicate field names with index suffix.
         var portName = fieldName;
@@ -693,8 +698,11 @@ SynthesisResult synthesize(
       };
       for (var i = 0; i &lt; nonTrivialFields.length; i++) {
         final f = nonTrivialFields[i];
-        params[&#39;FIELD_${i}_NAME&#39;] = structLayout?.fieldNameAt(f.offset,
-                fallbackName: f.elemLogic.name, anonymousUnpreferred: true) ??
+        params[&#39;FIELD_${i}_NAME&#39;] = structLayout?.fieldNameAt(
+              f.offset,
+              fallbackName: f.elemLogic.name,
+              anonymousUnpreferred: true,
+            ) ??
             f.elemLogic.name;
         params[&#39;FIELD_${i}_OFFSET&#39;] = f.offset;
         params[&#39;FIELD_${i}_WIDTH&#39;] = f.width;
@@ -743,19 +751,23 @@ SynthesisResult synthesize(
           .map((sc) {
             final resolvedSrcBits = applyAlias(sc.srcIds.cast&lt;Object&gt;());
             final yBits = resolvedDstBits.sublist(
-                sc.dstLowerIndex, sc.dstUpperIndex + 1);
+              sc.dstLowerIndex,
+              sc.dstUpperIndex + 1,
+            );
             return (
               resolvedSrcBits: resolvedSrcBits,
               yBits: yBits,
               dstLowerIndex: sc.dstLowerIndex,
               dstUpperIndex: sc.dstUpperIndex,
-              srcSynthLogic: sc.srcSynthLogic
+              srcSynthLogic: sc.srcSynthLogic,
             );
           })
-          .where((f) =&gt; !f.resolvedSrcBits
-              .take(f.yBits.length)
-              .indexed
-              .every((e) =&gt; e.$2 == f.yBits[e.$1]))
+          .where(
+            (f) =&gt; !f.resolvedSrcBits
+                .take(f.yBits.length)
+                .indexed
+                .every((e) =&gt; e.$2 == f.yBits[e.$1]),
+          )
           .toList();
 
       if (nonTrivialFields.isEmpty) {
@@ -781,8 +793,10 @@ SynthesisResult synthesize(
 
       for (var i = 0; i &lt; nonTrivialFields.length; i++) {
         final f = nonTrivialFields[i];
-        final fieldName = structLayout?.fieldNameAt(f.dstLowerIndex,
-                fallbackName: f.srcSynthLogic.resolved.name) ??
+        final fieldName = structLayout?.fieldNameAt(
+              f.dstLowerIndex,
+              fallbackName: f.srcSynthLogic.resolved.name,
+            ) ??
             f.srcSynthLogic.resolved.name;
         var portName = fieldName;
         if (portDirs.containsKey(portName)) {
@@ -803,8 +817,10 @@ SynthesisResult synthesize(
       };
       for (var i = 0; i &lt; nonTrivialFields.length; i++) {
         final f = nonTrivialFields[i];
-        params[&#39;FIELD_${i}_NAME&#39;] = structLayout?.fieldNameAt(f.dstLowerIndex,
-                fallbackName: f.srcSynthLogic.resolved.name) ??
+        params[&#39;FIELD_${i}_NAME&#39;] = structLayout?.fieldNameAt(
+              f.dstLowerIndex,
+              fallbackName: f.srcSynthLogic.resolved.name,
+            ) ??
             f.srcSynthLogic.resolved.name;
         params[&#39;FIELD_${i}_OFFSET&#39;] = f.dstLowerIndex;
         params[&#39;FIELD_${i}_WIDTH&#39;] = f.dstUpperIndex - f.dstLowerIndex + 1;
@@ -870,9 +886,11 @@ SynthesisResult synthesize(
       }
       final oldBits = (portEntry.value as List).cast&lt;Object&gt;();
       final oldBitSet = oldBits.whereType&lt;int&gt;().toSet();
-      if (outputPortBitSets.any((outputBits) =&gt;
-          outputBits.length == oldBitSet.length &amp;&amp;
-          outputBits.containsAll(oldBitSet))) {
+      if (outputPortBitSets.any(
+        (outputBits) =&gt;
+            outputBits.length == oldBitSet.length &amp;&amp;
+            outputBits.containsAll(oldBitSet),
+      )) {
         continue;
       }
       final newBits = [
@@ -880,8 +898,11 @@ SynthesisResult synthesize(
           if (b is int) translation.allocateWireId() else b,
       ];
       conns[portEntry.key] = newBits;
-      arrayConcatReplacements
-          .add((cellKey: cellEntry.key, oldBits: oldBits, newBits: newBits));
+      arrayConcatReplacements.add((
+        cellKey: cellEntry.key,
+        oldBits: oldBits,
+        newBits: newBits,
+      ));
     }
   }
 
@@ -903,8 +924,9 @@ SynthesisResult synthesize(
           replacement.oldBits.length != bits.length) {
         continue;
       }
-      if (bits.indexed
-          .every((entry) =&gt; entry.$2 == replacement.oldBits[entry.$1])) {
+      if (bits.indexed.every(
+        (entry) =&gt; entry.$2 == replacement.oldBits[entry.$1],
+      )) {
         return replacement.newBits;
       }
     }
@@ -917,8 +939,10 @@ SynthesisResult synthesize(
         continue;
       }
       final producerIndices = arrayConcatOutputProducers[bit]
-          ?.where((index) =&gt;
-              arrayConcatReplacements[index].cellKey != consumingCellKey)
+          ?.where(
+            (index) =&gt;
+                arrayConcatReplacements[index].cellKey != consumingCellKey,
+          )
           .toList();
       if (producerIndices == null || producerIndices.length != 1) {
         newBits.add(bit);
@@ -961,8 +985,10 @@ SynthesisResult synthesize(
           continue;
         }
         final bits = (portEntry.value as List).cast&lt;Object&gt;();
-        final newBits = rewriteArrayConcatConsumerBits(bits,
-            consumingCellKey: cellEntry.key);
+        final newBits = rewriteArrayConcatConsumerBits(
+          bits,
+          consumingCellKey: cellEntry.key,
+        );
         if (bits.indexed.any((e) =&gt; e.$2 != newBits[e.$1])) {
           conns[portEntry.key] = newBits;
         }
@@ -971,22 +997,32 @@ SynthesisResult synthesize(
   }
 
   translation.processNetnames(
-      applyAlias: applyAlias,
-      arraySliceOldToNew: arraySliceOldToNew,
-      arrayConcatOldToNew: arrayConcatOldToNew,
-      pruneUndriven: configuration.enableDeadCellElimination,
-      drivenBits: configuration.enableDeadCellElimination
-          ? NetlistValidation.connectedBits(ports, cells,
-              portDirections: const {&#39;input&#39;, &#39;inout&#39;},
-              cellDirection: &#39;output&#39;)
-          : const {});
+    applyAlias: applyAlias,
+    arraySliceOldToNew: arraySliceOldToNew,
+    arrayConcatOldToNew: arrayConcatOldToNew,
+    pruneUndriven: configuration.enableDeadCellElimination,
+    drivenBits: configuration.enableDeadCellElimination
+        ? NetlistValidation.connectedBits(
+            ports,
+            cells,
+            portDirections: const {&#39;input&#39;, &#39;inout&#39;},
+            cellDirection: &#39;output&#39;,
+          )
+        : const {},
+  );
   final netnames = translation.netnames;
 
   &#47;&#47; -- Structural validation -------------------------------------------
   NetlistValidation.validate(ports, cells, module.name);
 
-  return NetlistSynthesisResult(module, getInstanceTypeOfModule,
-      ports: ports, cells: cells, netnames: netnames, attributes: attr);
+  return NetlistSynthesisResult(
+    module,
+    getInstanceTypeOfModule,
+    ports: ports,
+    cells: cells,
+    netnames: netnames,
+    attributes: attr,
+  );
 }</code></pre>
 </section>
 

@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the callSynchronously method from the RohdDesignSessionProtocolHandler class, for the Dart programming language.">
+  <title>callSynchronously method - RohdDesignSessionProtocolHandler class - rohd library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">rohd</a></li>
+    <li><a href="../../rohd/">rohd.dart</a></li>
+    <li><a href="../../rohd/RohdDesignSessionProtocolHandler-class.html">RohdDesignSessionProtocolHandler</a></li>
+    <li class="self-crumb">callSynchronously method</li>
+  </ol>
+  <div class="self-name">callSynchronously</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="rohd&#47;RohdDesignSessionProtocolHandler-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
+<h1><span class="kind-method">callSynchronously</span> method 
+</h1></div>
+
+    <section class="multi-line-signature">
+      
+<span class="returntype"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Object-class.html">Object</a>?</span>&gt;</span></span>
+<span class="name ">callSynchronously</span>(<wbr><ol class="parameter-list single-line"> <li><span class="parameter" id="callSynchronously-param-method"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">method</span>, </span></li>
+<li><span class="parameter" id="callSynchronously-param-parameters"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Object-class.html">Object</a>?</span>&gt;</span></span> <span class="parameter-name">parameters</span></span></li>
+</ol>)
+
+      
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Invokes <code>method</code> without awaiting the target isolate's event loop.</p>
+<p>This is intended for debugger evaluation against an in-process session
+while its isolate is paused.</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">Map&lt;String, Object?&gt; callSynchronously(
+  String method,
+  Map&lt;String, Object?&gt; parameters,
+) {
+  final synchronousSession = session;
+  if (synchronousSession is! RohdSynchronousDesignSession) {
+    throw StateError(
+      &#39;The design session does not support synchronous calls.&#39;,
+    );
+  }
+  final now = synchronousSession as RohdSynchronousDesignSession;
+  try {
+    final result = switch (method) {
+      RohdDesignSessionProtocol.status =&gt; _status(now.statusNow()),
+      RohdDesignSessionProtocol.findCell =&gt; _cell(
+          now.findCellNow(_string(parameters, &#39;path&#39;)),
+        ),
+      RohdDesignSessionProtocol.findSignal =&gt; _signal(
+          now.findSignalNow(_string(parameters, &#39;path&#39;)),
+        ),
+      RohdDesignSessionProtocol.findPort =&gt; _signal(
+          now.findPortNow(_string(parameters, &#39;path&#39;)),
+        ),
+      RohdDesignSessionProtocol.completeCellPaths =&gt; _paths(
+          now.completeCellPathsNow(
+            _string(parameters, &#39;prefix&#39;),
+            limit: _limit(parameters),
+          ),
+        ),
+      RohdDesignSessionProtocol.completeSignalPaths =&gt; _paths(
+          now.completeSignalPathsNow(
+            _string(parameters, &#39;prefix&#39;),
+            limit: _limit(parameters),
+          ),
+        ),
+      RohdDesignSessionProtocol.completePortPaths =&gt; _paths(
+          now.completePortPathsNow(
+            _string(parameters, &#39;prefix&#39;),
+            limit: _limit(parameters),
+          ),
+        ),
+      RohdDesignSessionProtocol.findCells =&gt; _cells(
+          now.findCellsNow(
+            _string(parameters, &#39;pattern&#39;),
+            root: _cellHandle(parameters[&#39;root&#39;]),
+            transparent: _bool(parameters, &#39;transparent&#39;),
+            options: _options(parameters),
+          ),
+        ),
+      RohdDesignSessionProtocol.findSignals =&gt; _signals(
+          now.findSignalsNow(
+            _string(parameters, &#39;pattern&#39;),
+            root: _cellHandle(parameters[&#39;root&#39;]),
+            transparent: _bool(parameters, &#39;transparent&#39;),
+            options: _options(parameters),
+          ),
+        ),
+      RohdDesignSessionProtocol.findPorts =&gt; _signals(
+          now.findPortsNow(
+            _string(parameters, &#39;pattern&#39;),
+            root: _cellHandle(parameters[&#39;root&#39;]),
+            transparent: _bool(parameters, &#39;transparent&#39;),
+            options: _options(parameters),
+          ),
+        ),
+      RohdDesignSessionProtocol.fanin =&gt; _signals(
+          now.faninNow(
+            _signalHandle(parameters[&#39;signal&#39;]),
+            transparent: _bool(parameters, &#39;transparent&#39;),
+            options: _options(parameters),
+          ),
+        ),
+      RohdDesignSessionProtocol.fanout =&gt; _signals(
+          now.fanoutNow(
+            _signalHandle(parameters[&#39;signal&#39;]),
+            transparent: _bool(parameters, &#39;transparent&#39;),
+            options: _options(parameters),
+          ),
+        ),
+      RohdDesignSessionProtocol.getSignalValue =&gt; _value(
+          now.getSignalValueNow(
+            _signalHandle(parameters[&#39;signal&#39;]),
+            time: _time(parameters),
+          ),
+        ),
+      RohdDesignSessionProtocol.name =&gt; _name(parameters[&#39;occurrence&#39;]),
+      _ =&gt; throw FormatException(&#39;Unknown design session method: $method&#39;),
+    };
+    return {
+      &#39;schemaVersion&#39;: RohdDesignSessionProtocol.schemaVersion,
+      &#39;ok&#39;: true,
+      &#39;result&#39;: result,
+    };
+  } on FormatException catch (error) {
+    return _error(&#39;invalidArgument&#39;, error.message);
+    &#47;&#47; Caller-provided protocol arguments become structured errors.
+    &#47;&#47; ignore: avoid_catching_errors
+  } on ArgumentError catch (error) {
+    return _error(&#39;invalidArgument&#39;, error.message?.toString() ?? &#39;$error&#39;);
+    &#47;&#47; Invalid session state is a protocol precondition failure.
+    &#47;&#47; ignore: avoid_catching_errors
+  } on StateError catch (error) {
+    return _error(&#39;failedPrecondition&#39;, error.message);
+  }
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">rohd</a></li>
+    <li><a href="../../rohd/">rohd</a></li>
+    <li><a href="../../rohd/RohdDesignSessionProtocolHandler-class.html">RohdDesignSessionProtocolHandler</a></li>
+    <li class="self-crumb">callSynchronously method</li>
+</ol>
+
+    <h5>RohdDesignSessionProtocolHandler class</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    rohd
+      0.6.11
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

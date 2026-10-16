@@ -92,36 +92,42 @@ but will default to a width of 1 unless <code>width</code> is specified.</p>
   if (val is int) {
     if (width == null) {
       throw LogicValueConstructionException(
-          &#39;`width` must be provided for `int`.&#39;);
+        &#39;`width` must be provided for `int`.&#39;,
+      );
     }
 
     if (fill) {
       return LogicValue.filled(
-          width,
-          val == 0
-              ? LogicValue.zero
-              : val == 1
-                  ? LogicValue.one
-                  : throw LogicValueConstructionException(
-                      &#39;`int` can only can fill 0 or 1, but saw $val.&#39;));
+        width,
+        val == 0
+            ? LogicValue.zero
+            : val == 1
+                ? LogicValue.one
+                : throw LogicValueConstructionException(
+                    &#39;`int` can only can fill 0 or 1, but saw $val.&#39;,
+                  ),
+      );
     } else {
       return LogicValue.ofInt(val, width);
     }
   } else if (val is BigInt) {
     if (width == null) {
       throw LogicValueConstructionException(
-          &#39;`width` must be provided for `BigInt`.&#39;);
+        &#39;`width` must be provided for `BigInt`.&#39;,
+      );
     }
 
     if (fill) {
       return LogicValue.filled(
-          width,
-          val == BigInt.zero
-              ? LogicValue.zero
-              : val == BigInt.one
-                  ? LogicValue.one
-                  : throw LogicValueConstructionException(
-                      &#39;`BigInt` can only fill 0 or 1, but saw $val.&#39;));
+        width,
+        val == BigInt.zero
+            ? LogicValue.zero
+            : val == BigInt.one
+                ? LogicValue.one
+                : throw LogicValueConstructionException(
+                    &#39;`BigInt` can only fill 0 or 1, but saw $val.&#39;,
+                  ),
+      );
     } else {
       return LogicValue.ofBigInt(val, width);
     }
@@ -135,7 +141,8 @@ but will default to a width of 1 unless <code>width</code> is specified.</p>
   } else if (val is LogicValue) {
     if (fill &amp;&amp; val.width != 1) {
       throw LogicValueConstructionException(
-          &#39;Only 1-bit `LogicValue`s can be filled&#39;);
+        &#39;Only 1-bit `LogicValue`s can be filled&#39;,
+      );
     }
 
     if (val.width == 1 &amp;&amp; (!val.isValid || fill)) {
@@ -144,7 +151,8 @@ but will default to a width of 1 unless <code>width</code> is specified.</p>
       }
       if (width == null) {
         throw LogicValueConstructionException(
-            &#39;Filled `LogicValue` $val must have provided a width.&#39;);
+          &#39;Filled `LogicValue` $val must have provided a width.&#39;,
+        );
       }
       return LogicValue.filled(width, val);
     } else {
@@ -159,7 +167,8 @@ but will default to a width of 1 unless <code>width</code> is specified.</p>
   } else if (val is String) {
     if (fill &amp;&amp; val.length != 1) {
       throw LogicValueConstructionException(
-          &#39;Only 1-bit values can be filled&#39;);
+        &#39;Only 1-bit values can be filled&#39;,
+      );
     }
 
     if (val.length == 1 &amp;&amp; (val == &#39;x&#39; || val == &#39;z&#39; || fill)) {
@@ -168,7 +177,8 @@ but will default to a width of 1 unless <code>width</code> is specified.</p>
       }
       if (width == null) {
         throw LogicValueConstructionException(
-            &#39;Filled `String` $val must have provided a width.&#39;);
+          &#39;Filled `String` $val must have provided a width.&#39;,
+        );
       }
       return LogicValue.filled(width, LogicValue.ofString(val));
     } else {
@@ -183,7 +193,8 @@ but will default to a width of 1 unless <code>width</code> is specified.</p>
   } else if (val is Iterable&lt;LogicValue&gt;) {
     if (fill &amp;&amp; val.length != 1) {
       throw LogicValueConstructionException(
-          &#39;Only 1-bit values can be filled&#39;);
+        &#39;Only 1-bit values can be filled&#39;,
+      );
     }
 
     if (val.length == 1 &amp;&amp;
@@ -193,7 +204,8 @@ but will default to a width of 1 unless <code>width</code> is specified.</p>
       }
       if (width == null) {
         throw LogicValueConstructionException(
-            &#39;Filled `Iterable&lt;LogicValue&gt;` $val must have provided a width.&#39;);
+          &#39;Filled `Iterable&lt;LogicValue&gt;` $val must have provided a width.&#39;,
+        );
       }
       return LogicValue.filled(width, val.first);
     } else {
@@ -208,8 +220,14 @@ but will default to a width of 1 unless <code>width</code> is specified.</p>
   } else if (val == null) {
     throw LogicValueConstructionException(&#39;Cannot construct from `null`.&#39;);
   } else {
-    throw UnsupportedTypeException(val,
-        const [LogicValue, int, BigInt, bool, String, Iterable&lt;LogicValue&gt;]);
+    throw UnsupportedTypeException(val, const [
+      LogicValue,
+      int,
+      BigInt,
+      bool,
+      String,
+      Iterable&lt;LogicValue&gt;,
+    ]);
   }
 }</code></pre>
 </section>

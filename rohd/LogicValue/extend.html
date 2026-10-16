@@ -78,15 +78,13 @@ exception will be thrown. <code>fill</code> must be a single bit (<a href="../..
   <pre class="language-dart"><code class="language-dart">LogicValue extend(int newWidth, LogicValue fill) {
   if (newWidth &lt; width) {
     throw Exception(
-        &#39;New width $newWidth must be greater than or equal to width $width.&#39;);
+      &#39;New width $newWidth must be greater than or equal to width $width.&#39;,
+    );
   }
   if (fill.width != 1) {
     throw Exception(&#39;The fill must be 1 bit, but got $fill.&#39;);
   }
-  return [
-    LogicValue.filled(newWidth - width, fill),
-    this,
-  ].swizzle();
+  return [LogicValue.filled(newWidth - width, fill), this].swizzle();
 }</code></pre>
 </section>
 

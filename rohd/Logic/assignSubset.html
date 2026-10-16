@@ -82,7 +82,9 @@ receiverLogic.assignSubset([sig1, sig2], start: 2);
   <pre class="language-dart"><code class="language-dart">void assignSubset(List&lt;Logic&gt; updatedSubset, {int start = 0}) {
   if (updatedSubset.length &gt; width - start) {
     throw SignalWidthMismatchException.forWidthOverflow(
-        updatedSubset.length, width - start);
+      updatedSubset.length,
+      width - start,
+    );
   }
 
   if (_subsetDriver == null) {

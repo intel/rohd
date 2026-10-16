@@ -95,10 +95,16 @@ LogicValue.ofString('0101').getRange(0, 7);
   <pre class="language-dart"><code class="language-dart">LogicValue getRange(int startIndex, [int? endIndex]) {
   endIndex ??= width;
 
-  final modifiedStartIndex =
-      IndexUtilities.wrapIndex(startIndex, width, allowWidth: true);
-  final modifiedEndIndex =
-      IndexUtilities.wrapIndex(endIndex, width, allowWidth: true);
+  final modifiedStartIndex = IndexUtilities.wrapIndex(
+    startIndex,
+    width,
+    allowWidth: true,
+  );
+  final modifiedEndIndex = IndexUtilities.wrapIndex(
+    endIndex,
+    width,
+    allowWidth: true,
+  );
 
   &#47;&#47; if we&#39;re getting the whole thing, just return itself immediately
   if (modifiedStartIndex == 0 &amp;&amp; modifiedEndIndex == width) {

@@ -86,10 +86,11 @@ proper order of operations.</p>
   <pre class="language-dart"><code class="language-dart">@override
 String inlineVerilog(Map&lt;String, String&gt; inputs) {
   assert(
-      inputs.length == _swizzleInputs.length ||
-          (inputs.length == _swizzleInputs.length + 1 &amp;&amp; isNet),
-      &#39;This swizzle has ${_swizzleInputs.length} inputs,&#39;
-      &#39; but saw $inputs with ${inputs.length} values.&#39;);
+    inputs.length == _swizzleInputs.length ||
+        (inputs.length == _swizzleInputs.length + 1 &amp;&amp; isNet),
+    &#39;This swizzle has ${_swizzleInputs.length} inputs,&#39;
+    &#39; but saw $inputs with ${inputs.length} values.&#39;,
+  );
 
   &#47;&#47; Calculate all width descriptions upfront to determine alignment
   final validInputs =

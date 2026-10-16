@@ -78,7 +78,13 @@ returns the original signal (same object identity).</p>
   <pre class="language-dart"><code class="language-dart">Logic zeroExtend(int newWidth) {
   if (newWidth &lt; width) {
     throw Exception(
-        &#39;New width $newWidth must be greater than or equal to width $width.&#39;);
+      &#39;New width $newWidth must be greater than or equal to width $width.&#39;,
+    );
+  }
+  &#47;&#47; Nothing to extend: reuse the original signal instead of building a
+  &#47;&#47; zero-width Const + Swizzle (matches signExtend&#39;s same-width path).
+  if (newWidth == width) {
+    return this;
   }
   &#47;&#47; Nothing to extend: reuse the original signal instead of building a
   &#47;&#47; zero-width Const + Swizzle (matches signExtend&#39;s same-width path).

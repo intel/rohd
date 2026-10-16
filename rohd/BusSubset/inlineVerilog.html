@@ -85,13 +85,17 @@ proper order of operations.</p>
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@override
 String inlineVerilog(Map&lt;String, String&gt; inputs) {
-  assert(inputs.length == 1 || (inputs.length == 2 &amp;&amp; _isNet),
-      &#39;BusSubset has exactly one input, but saw $inputs.&#39;);
+  assert(
+    inputs.length == 1 || (inputs.length == 2 &amp;&amp; _isNet),
+    &#39;BusSubset has exactly one input, but saw $inputs.&#39;,
+  );
 
   final a = inputs[_originalName]!;
 
-  assert(!a.contains(_expressionRegex),
-      &#39;Inputs to bus swizzle cannot contain any expressions.&#39;);
+  assert(
+    !a.contains(_expressionRegex),
+    &#39;Inputs to bus swizzle cannot contain any expressions.&#39;,
+  );
 
   &#47;&#47; When, input width is 1, ignore startIndex and endIndex
   if (original.width == 1) {
@@ -101,9 +105,10 @@ String inlineVerilog(Map&lt;String, String&gt; inputs) {
   &#47;&#47; SystemVerilog doesn&#39;t allow reverse-order select to reverse a bus,
   &#47;&#47; so do it manually
   if (startIndex &gt; endIndex) {
-    final swizzleContents =
-        List.generate(startIndex - endIndex + 1, (i) =&gt; &#39;$a[${endIndex + i}]&#39;)
-            .join(&#39;,&#39;);
+    final swizzleContents = List.generate(
+      startIndex - endIndex + 1,
+      (i) =&gt; &#39;$a[${endIndex + i}]&#39;,
+    ).join(&#39;,&#39;);
     return &#39;{$swizzleContents}&#39;;
   }
 

@@ -77,9 +77,10 @@ print(lv); // This prints `[1'h0, 1'bx, 1'h1]`
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">List&lt;LogicValue&gt; toList() =&gt;
-    List&lt;LogicValue&gt;.generate(width, (index) =&gt; this[index])
-        .toList(growable: false);</code></pre>
+  <pre class="language-dart"><code class="language-dart">List&lt;LogicValue&gt; toList() =&gt; List&lt;LogicValue&gt;.generate(
+      width,
+      (index) =&gt; this[index],
+    ).toList(growable: false);</code></pre>
 </section>
 
 

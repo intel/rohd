@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the FilterChannel.new constructor from Class FilterChannel from the examples library, for the Dart programming language.">
+  <title>FilterChannel.new constructor - FilterChannel - examples library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">rohd</a></li>
+    <li><a href="../../examples/">examples.dart</a></li>
+    <li><a href="../../examples/FilterChannel-class.html">FilterChannel</a></li>
+    <li class="self-crumb">FilterChannel.new constructor</li>
+  </ol>
+  <div class="self-name">FilterChannel.new</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div
+      id="dartdoc-main-content"
+      class="main-content"
+      data-above-sidebar="examples&#47;FilterChannel-class-sidebar.html"
+      data-below-sidebar="">
+      <div>
+<h1><span class="kind-constructor">FilterChannel</span> constructor 
+</h1></div>
+
+    <section class="multi-line-signature">
+      
+      <span class="name ">FilterChannel</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="param-srcIntf"><span class="type-annotation"><a href="../../examples/FilterDataInterface-class.html">FilterDataInterface</a></span> <span class="parameter-name">srcIntf</span>, </span></li>
+<li><span class="parameter" id="param-clk"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">clk</span>, </span></li>
+<li><span class="parameter" id="param-reset"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">reset</span>, </span></li>
+<li><span class="parameter" id="param-enable"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">enable</span>, {</span></li>
+<li><span class="parameter" id="param-numTaps"><span>required</span> <span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/int-class.html">int</a></span> <span class="parameter-name">numTaps</span>, </span></li>
+<li><span class="parameter" id="param-dataWidth"><span>required</span> <span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/int-class.html">int</a></span> <span class="parameter-name">dataWidth</span>, </span></li>
+<li><span class="parameter" id="param-coefficients"><span>required</span> <span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/int-class.html">int</a></span>&gt;</span></span> <span class="parameter-name">coefficients</span>, </span></li>
+<li><span class="parameter" id="param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span> = <span class="default-value">&#39;FilterChannel&#39;</span>, </span></li>
+</ol>})
+    </section>
+    
+<section class="desc markdown">
+  <p>Creates a <a href="../../examples/FilterChannel-class.html">FilterChannel</a> with <code>numTaps</code> taps at <code>dataWidth</code> bits.</p>
+<p><code>srcIntf</code> provides the sample/valid input ports.  <code>coefficients</code>
+supplies per-tap constant coefficients.</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">FilterChannel(
+  FilterDataInterface srcIntf,
+  Logic clk,
+  Logic reset,
+  Logic enable, {
+  required this.numTaps,
+  required this.dataWidth,
+  required List&lt;int&gt; coefficients,
+  super.name = &#39;FilterChannel&#39;,
+}) : super(definitionName: &#39;FilterChannel_T${numTaps}_W$dataWidth&#39;) {
+  &#47;&#47; Connect the Interface — creates module input&#47;output ports
+  intf = FilterDataInterface(dataWidth: dataWidth)
+    ..connectIO(
+      this,
+      srcIntf,
+      inputTags: [FilterPortTag.inputPorts],
+      outputTags: [FilterPortTag.outputPorts],
+    );
+
+  final sampleIn = intf.sampleIn;
+  final validIn = intf.validIn;
+  clk = addInput(&#39;clk&#39;, clk);
+  reset = addInput(&#39;reset&#39;, reset);
+  enable = addInput(&#39;enable&#39;, enable);
+
+  final tapIdxWidth = _bitsFor(numTaps);
+
+  &#47;&#47; ── Delay line (shift register via explicit flop bank + gates) ──
+  &#47;&#47; AND gate: shift enable = enable &amp; validIn &amp; tapCounter==0
+  &#47;&#47; Samples shift in only when starting a new accumulation cycle.
+  final tapCounter = Logic(width: tapIdxWidth, name: &#39;tapCounter&#39;);
+  final atFirstTap =
+      tapCounter.eq(Const(0, width: tapIdxWidth)).named(&#39;atFirstTap&#39;);
+  final shiftEn = Logic(name: &#39;shiftEn&#39;);
+  shiftEn &lt;= (enable &amp; validIn).named(&#39;enableAndValid&#39;) &amp; atFirstTap;
+
+  &#47;&#47; LogicArray-backed delay line: one element per tap register.
+  final delayLine = LogicArray([numTaps], dataWidth, name: &#39;delayLine&#39;);
+  for (var i = 0; i &lt; numTaps; i++) {
+    final tapInput = (i == 0) ? sampleIn : delayLine.elements[i - 1];
+    &#47;&#47; Mux: hold current value or shift in new sample
+    final tapNext = Logic(width: dataWidth, name: &#39;nextTap$i&#39;);
+    tapNext &lt;= mux(shiftEn, tapInput, delayLine.elements[i]);
+    &#47;&#47; Flop: register the next-state value
+    delayLine.elements[i] &lt;= flop(clk, reset: reset, tapNext);
+  }
+
+  &#47;&#47; ── Coefficient bank — driven by tapCounter ──
+  &#47;&#47; Build a LogicArray of constants from the coefficient list and
+  &#47;&#47; pass it as an input port to CoeffBank (demonstrates addInputArray
+  &#47;&#47; on a sub-module).
+  final coeffArray = LogicArray([numTaps], dataWidth, name: &#39;coeffArray&#39;);
+  for (var i = 0; i &lt; numTaps; i++) {
+    coeffArray.elements[i] &lt;= Const(coefficients[i], width: dataWidth);
+  }
+
+  final coeffBank = CoeffBank(
+    tapCounter,
+    coeffArray,
+    numTaps: numTaps,
+    dataWidth: dataWidth,
+    name: &#39;coeffBank&#39;,
+  );
+
+  &#47;&#47; ── Delay-line mux — select sample for current tap ──
+  var selectedSample = delayLine.elements[0];
+  for (var i = 1; i &lt; numTaps; i++) {
+    final tapSelect =
+        tapCounter.eq(Const(i, width: tapIdxWidth)).named(&#39;tapSelect$i&#39;);
+    selectedSample = mux(
+      tapSelect,
+      delayLine.elements[i],
+      selectedSample,
+    ).named(&#39;tapMux$i&#39;);
+  }
+
+  &#47;&#47; ── Running accumulator (feedback register) ──
+  final accumReg = Logic(width: dataWidth, name: &#39;accumReg&#39;);
+  &#47;&#47; Reset accumulator at the start of each new sample (tap 0).
+  &#47;&#47; Combinational block: equivalent to `always_comb` in SystemVerilog.
+  final accumFeedback = Logic(width: dataWidth, name: &#39;accumFeedback&#39;);
+  Combinational([
+    If(
+      atFirstTap,
+      then: [accumFeedback &lt; Const(0, width: dataWidth)],
+      orElse: [accumFeedback &lt; accumReg],
+    ),
+  ]);
+
+  &#47;&#47; ── Single MAC unit — time-multiplexed across taps ──
+  final mac = MacUnit(
+    selectedSample,
+    coeffBank.coeffOut,
+    accumFeedback,
+    clk,
+    reset,
+    enable,
+    dataWidth: dataWidth,
+    name: &#39;mac&#39;,
+  );
+
+  &#47;&#47; Register the MAC result for accumulator feedback.
+  accumReg &lt;= flop(clk, reset: reset, mac.result);
+
+  &#47;&#47; ── Tap counter: cycles 0 … numTaps-1 while enabled ──
+  &#47;&#47; Sequential block: equivalent to `always_ff @(posedge clk)` in SV.
+  &#47;&#47; When enabled, the counter increments and wraps at numTaps-1.
+  &#47;&#47; When disabled, it resets to 0.
+  final lastTap =
+      tapCounter.eq(Const(numTaps - 1, width: tapIdxWidth)).named(&#39;lastTap&#39;);
+  Sequential(clk, reset: reset, [
+    If(
+      enable,
+      then: [
+        If(
+          lastTap,
+          then: [tapCounter &lt; Const(0, width: tapIdxWidth)],
+          orElse: [tapCounter &lt; tapCounter + Const(1, width: tapIdxWidth)],
+        ),
+      ],
+      orElse: [tapCounter &lt; Const(0, width: tapIdxWidth)],
+    ),
+  ]);
+
+  &#47;&#47; ── Output latch: capture accumulator when all taps processed ──
+  &#47;&#47; The MAC pipeline has 2 stages, so the result is ready 2 cycles
+  &#47;&#47; after the last tap enters.  A 2-stage shift register of lastTap
+  &#47;&#47; creates the latch strobe.
+  final lastTapD1 = Logic(name: &#39;lastTapD1&#39;);
+  final lastTapD2 = Logic(name: &#39;lastTapD2&#39;);
+  final outputReg = Logic(width: dataWidth, name: &#39;outputReg&#39;);
+
+  &#47;&#47; Sequential block with If: latch strobe delay and output register.
+  Sequential(clk, reset: reset, [
+    lastTapD1 &lt; lastTap,
+    lastTapD2 &lt; lastTapD1,
+    If(lastTapD2, then: [outputReg &lt; accumReg]),
+  ]);
+
+  &#47;&#47; ── Valid pipeline: track whether we have a valid output ──
+  &#47;&#47; validIn is high during data injection.  After the MAC pipeline
+  &#47;&#47; latency (numTaps + 2 cycles), outputs become valid.
+  final validPipe = Logic(name: &#39;validPipe&#39;);
+  final outputReady = (lastTapD2 &amp; enable).named(&#39;outputReady&#39;);
+
+  &#47;&#47; Sequential block: register the valid strobe and hold it.
+  Sequential(clk, reset: reset, [
+    If(enable, then: [validPipe &lt; outputReady]),
+  ]);
+
+  &#47;&#47; Combinational block: gate the output to zero when not valid.
+  final dataOut = intf.dataOut;
+  final validOut = intf.validOut;
+  Combinational([
+    If(
+      validPipe,
+      then: [dataOut &lt; outputReg],
+      orElse: [dataOut &lt; Const(0, width: dataWidth)],
+    ),
+    validOut &lt; validPipe,
+  ]);
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">rohd</a></li>
+    <li><a href="../../examples/">examples</a></li>
+    <li><a href="../../examples/FilterChannel-class.html">FilterChannel</a></li>
+    <li class="self-crumb">FilterChannel.new constructor</li>
+</ol>
+
+    <h5>FilterChannel class</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-left-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    rohd
+      0.6.11
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

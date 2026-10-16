@@ -72,7 +72,8 @@
   this.configuration = const NetlistSynthesizerConfiguration(),
 })  : _moduleStopPolicy = configuration.moduleStopPolicy ??
           SynthModuleStopPolicy.netlist(
-              leafModulePredicate: configuration.leafModulePredicate),
+            leafModulePredicate: configuration.leafModulePredicate,
+          ),
       _netlistCellMapper =
           configuration.netlistCellMapper ?? NetlistCellMapper.withDefaults();</code></pre>
 </section>

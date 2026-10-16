@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the SharedDataBus.new constructor from Class SharedDataBus from the examples library, for the Dart programming language.">
+  <title>SharedDataBus.new constructor - SharedDataBus - examples library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">rohd</a></li>
+    <li><a href="../../examples/">examples.dart</a></li>
+    <li><a href="../../examples/SharedDataBus-class.html">SharedDataBus</a></li>
+    <li class="self-crumb">SharedDataBus.new constructor</li>
+  </ol>
+  <div class="self-name">SharedDataBus.new</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div
+      id="dartdoc-main-content"
+      class="main-content"
+      data-above-sidebar="examples&#47;SharedDataBus-class-sidebar.html"
+      data-below-sidebar="">
+      <div>
+<h1><span class="kind-constructor">SharedDataBus</span> constructor 
+</h1></div>
+
+    <section class="multi-line-signature">
+      
+      <span class="name ">SharedDataBus</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="param-dataBusNet"><span class="type-annotation"><a href="../../rohd/LogicNet-class.html">LogicNet</a></span> <span class="parameter-name">dataBusNet</span>, </span></li>
+<li><span class="parameter" id="param-writeEnable"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">writeEnable</span>, </span></li>
+<li><span class="parameter" id="param-clk"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">clk</span>, </span></li>
+<li><span class="parameter" id="param-reset"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">reset</span>, {</span></li>
+<li><span class="parameter" id="param-dataWidth"><span>required</span> <span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/int-class.html">int</a></span> <span class="parameter-name">dataWidth</span>, </span></li>
+<li><span class="parameter" id="param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span> = <span class="default-value">&#39;SharedDataBus&#39;</span>, </span></li>
+</ol>})
+    </section>
+    
+<section class="desc markdown">
+  <p>Creates a <a href="../../examples/SharedDataBus-class.html">SharedDataBus</a> with a <code>dataWidth</code>-bit bidirectional port.</p>
+<p><code>dataBusNet</code> is the external <a href="../../rohd/LogicNet-class.html">LogicNet</a> to connect.
+<code>writeEnable</code> controls bus direction: 1 = module drives bus,
+0 = external drives bus (module reads).
+<code>clk</code> and <code>reset</code> provide synchronous storage.</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">SharedDataBus(
+  LogicNet dataBusNet,
+  Logic writeEnable,
+  Logic clk,
+  Logic reset, {
+  required this.dataWidth,
+  super.name = &#39;SharedDataBus&#39;,
+}) : super(definitionName: &#39;SharedDataBus&#39;) {
+  final bus = addInOut(&#39;dataBus&#39;, dataBusNet, width: dataWidth);
+  writeEnable = addInput(&#39;writeEnable&#39;, writeEnable);
+  clk = addInput(&#39;clk&#39;, clk);
+  reset = addInput(&#39;reset&#39;, reset);
+
+  final storedValue = addOutput(&#39;storedValue&#39;, width: dataWidth);
+
+  &#47;&#47; Latch the bus value on clock edge when the external side is driving.
+  storedValue &lt;=
+      flop(
+        clk,
+        bus,
+        reset: reset,
+        en: ~writeEnable,
+        resetValue: Const(0, width: dataWidth),
+      );
+
+  &#47;&#47; Drive the latched value back onto the bus when writeEnable is high.
+  &#47;&#47; TriStateBuffer drives its out (a LogicNet) with storedValue when
+  &#47;&#47; enabled; otherwise it outputs high-Z.  Joining out↔bus makes the
+  &#47;&#47; two nets share the same wire.
+  TriStateBuffer(
+    storedValue,
+    enable: writeEnable,
+    name: &#39;busDriver&#39;,
+  ).out.gets(bus);
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">rohd</a></li>
+    <li><a href="../../examples/">examples</a></li>
+    <li><a href="../../examples/SharedDataBus-class.html">SharedDataBus</a></li>
+    <li class="self-crumb">SharedDataBus.new constructor</li>
+</ol>
+
+    <h5>SharedDataBus class</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-left-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    rohd
+      0.6.11
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+
