@@ -111,6 +111,23 @@ class SignalOccurrence {
     this.logicType,
   });
 
+  /// Creates a signal occurrence from the legacy DevTools map format.
+  factory SignalOccurrence.fromMap(Map<String, dynamic> map) =>
+      SignalOccurrence(
+        name: map['name'] as String,
+        direction: map['direction'] as String,
+        value: map['value'] as String,
+        width: map['width'] as int,
+      );
+
+  /// Converts this occurrence to the legacy DevTools map format.
+  Map<String, dynamic> toMap() => {
+        'name': name,
+        'direction': direction,
+        'value': value,
+        'width': width,
+      };
+
   /// Whether this signal is a LogicStructure (has named sub-fields).
   bool get isStruct => logicType != null && logicType!.containsKey('fields');
 
@@ -261,13 +278,13 @@ class SignalOccurrence {
   bool get isPort => direction != null;
 
   /// Returns true if this is an input port.
-  bool get isInput => direction == 'input';
+  bool get isInput => direction?.toLowerCase() == 'input';
 
   /// Returns true if this is an output port.
-  bool get isOutput => direction == 'output';
+  bool get isOutput => direction?.toLowerCase() == 'output';
 
   /// Returns true if this is a bidirectional port.
-  bool get isInout => direction == 'inout';
+  bool get isInout => direction?.toLowerCase() == 'inout';
 
   @override
   String toString() => '$name (width=$width${isPort ? ', $direction' : ''})';
