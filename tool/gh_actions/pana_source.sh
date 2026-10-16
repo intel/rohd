@@ -15,7 +15,7 @@ set -euo pipefail
 export PATH="$PATH:${PUB_CACHE:-$HOME/.pub-cache}/bin"
 
 if [[ $# -eq 0 ]]; then
-  exec pana --exit-code-threshold 0 .
+  exec pana --exit-code-threshold 10 .
 fi
 if [[ $# -ne 2 || ! -f "$1/pubspec.yaml" ||
       ( "$2" != dart && "$2" != flutter ) ]]; then

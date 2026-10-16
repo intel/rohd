@@ -72,7 +72,7 @@ cat > "$PUB_CACHE/bin/pana" <<'EOF'
 #!/bin/bash
 set -euo pipefail
 if [[ "$PWD" == "$SOURCE" ]]; then
-  [[ "$*" == '--exit-code-threshold 0 .' ]]
+  [[ "$*" == '--exit-code-threshold 10 .' ]]
 else
   [[ "$PWD" == "$TMPDIR"/rohd-pana.*/package && "$PANA_ANALYSIS_INCLUDES" == 0 ]]
   if [[ "$EXPECTED_SDK" == flutter ]]; then
