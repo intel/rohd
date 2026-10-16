@@ -14,6 +14,7 @@ trap 'rm -rf "$FIXTURE"' EXIT
 export SOURCE="$FIXTURE/source package" SDK_LOG="$FIXTURE/sdk.log"
 export NAVIGATOR="$FIXTURE/rohd_source_navigator"
 export WIDGETS="$FIXTURE/rohd_devtools_widgets"
+export WAVEFORM="$FIXTURE/rohd_waveform"
 export PUB_CACHE="$FIXTURE/pub cache" TMPDIR="$FIXTURE/temp space"
 export FLUTTER_ROOT="$FIXTURE/flutter sdk" PANA_ANALYSIS_INCLUDES=1
 
@@ -33,6 +34,8 @@ cp -R "$SOURCE" "$NAVIGATOR"
 cp -R "$NAVIGATOR" "$FIXTURE/original-navigator"
 cp -R "$SOURCE" "$WIDGETS"
 cp -R "$WIDGETS" "$FIXTURE/original-widgets"
+cp -R "$SOURCE" "$WAVEFORM"
+cp -R "$WAVEFORM" "$FIXTURE/original-waveform"
 
 cat > "$FIXTURE/bin/dart" <<'EOF'
 #!/bin/bash
@@ -104,6 +107,7 @@ run_case() {
   diff -ru "$FIXTURE/original" "$SOURCE"
   diff -ru "$FIXTURE/original-navigator" "$NAVIGATOR"
   diff -ru "$FIXTURE/original-widgets" "$WIDGETS"
+  diff -ru "$FIXTURE/original-waveform" "$WAVEFORM"
   [[ -z "$(find "$TMPDIR" -mindepth 1 -print -quit)" ]]
   passed=$((passed + 1))
 }
@@ -141,6 +145,11 @@ PANA_SCORE=150 run_case 0 "$WIDGETS" flutter
 [[ "$(cat "$SDK_LOG")" == $'flutter|pub get\nflutter|analyze --fatal-infos --no-pub lib\nflutter|pub downgrade\nflutter|analyze --fatal-infos --no-pub lib\npana' ]]
 PANA_SCORE=149 run_case 1 "$WIDGETS" flutter
 PANA_STATUS=73 run_case 73 "$WIDGETS" flutter
+
+export EXPECTED_SDK=dart EXPECTED_THRESHOLD=10
+run_case 0 "$WAVEFORM" dart
+[[ "$(cat "$SDK_LOG")" == $'dart|pub get\ndart|analyze --fatal-infos lib\ndart|pub downgrade\ndart|analyze --fatal-infos lib\npana' ]]
+PANA_STATUS=73 run_case 73 "$WAVEFORM" dart
 
 mv "$PUB_CACHE/bin/pana" "$FIXTURE/pana"
 export EXPECTED_THRESHOLD=0
