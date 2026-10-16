@@ -216,39 +216,45 @@ abstract class Conditional {
 
     // take all the "current" names for these signals
     for (final ssaDriver in ssaDrivers) {
-      if (!mappings.containsKey(ssaDriver.ref)) {
-        throw UninitializedSignalException(ssaDriver.ref.name);
+      final reference = SsaLogic.referenceOf(ssaDriver, context: context);
+      if (!mappings.containsKey(reference)) {
+        throw UninitializedSignalException(reference.name);
       }
 
       // if these are already connected, just skip it, we're fine already
       if (ssaDriver.srcConnection != null &&
-          ssaDriver.srcConnection == mappings[ssaDriver.ref]!) {
+          ssaDriver.srcConnection == mappings[reference]!) {
         continue;
       }
 
       // if these are the same signal, also just skip it
-      if (ssaDriver == mappings[ssaDriver.ref]!) {
+      if (ssaDriver == mappings[reference]!) {
         continue;
       }
 
       // if at this point there's still a srcConnection, then something is wrong
       // and someone probably reused a signal when they shouldn't have
       if (ssaDriver.srcConnection != null) {
-        throw MappedSignalAlreadyAssignedException(ssaDriver.ref.name);
+        throw MappedSignalAlreadyAssignedException(reference.name);
       }
 
-      ssaDriver <= mappings[ssaDriver.ref]!;
+      ssaDriver <= mappings[reference]!;
     }
   }
 
   /// Searches for SSA nodes from a source [driver] which match the [context].
-  static List<SsaLogic> _findSsaDriversFrom(Logic driver, int context) {
-    if (driver is SsaLogic && driver.context == context) {
+  static List<Logic> _findSsaDriversFrom(Logic driver, int context) {
+    if (SsaLogic.isSsaProxy(driver, context: context)) {
       return [driver];
     }
 
     // no need to check for context on this map since it clears each time
-    return Combinational.signalToSsaDrivers[driver]?.toList() ?? const [];
+    return Combinational.signalToSsaDrivers[driver]
+            ?.where(
+              (signal) => SsaLogic.isSsaProxy(signal, context: context),
+            )
+            .toList() ??
+        const [];
   }
 
   /// Given existing [currentMappings], connects [drivers] and [receivers]

@@ -96,9 +96,10 @@ output's representation. Different structured domain types should be converted
 to `packed` explicitly before that bit reinterpretation.
 
 Use `selectIndex` and `selectFrom` for structure-preserving indexed selection.
-`StructurePipeline<T>` preserves the same concrete type at every
-registered pipeline boundary. Specify `T` when creating a pipeline with inline
-stage transforms so Dart can type the transform parameter.
+`Pipeline.get`, `PipelineStageInfo.get`, and `PipelineStageInfo.getAbs`
+preserve the concrete type of each supplied identifier. A single `Pipeline`
+can therefore carry structures alongside unrelated arrays, enums, and scalar
+signals.
 
 ### Migrating type-preserving operations
 

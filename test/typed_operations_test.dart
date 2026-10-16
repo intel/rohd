@@ -173,29 +173,32 @@ class _TypedOperationsSynthesisHarness extends Module {
       resetValue: 0,
       outputGenerator: passed.clone,
     ).q;
-    final piped = StructurePipeline<_TypedPacket>(
+    final pipeline = Pipeline(
       clk,
-      registered,
       reset: reset,
-      resetValue: 0,
+      resetValues: {registered: 0},
       stages: [
-        (stage) => stage.value.namedTyped('pipeline_stage_value'),
+        (p) => [p.get(registered) < p.get(registered)],
       ],
-    ).output;
+    );
+    final piped = pipeline.get(registered);
     addTypedOutput('out', piped.clone).gets(piped);
 
-    final readyValidPiped = ReadyValidPipeline<_TypedPacket>(
+    final readyValidPipeline = ReadyValidPipeline(
       clk,
-      registered,
-      validPipeIn: control,
-      readyPipeOut: reset,
+      control,
+      reset,
       reset: reset,
-      stages: [(stage) => stage.value],
+      resetValues: {registered: 0},
+      stages: [
+        (p) => [p.get(registered) < p.get(registered)],
+      ],
     );
-    addTypedOutput('ready_valid_out', readyValidPiped.output.clone)
-        .gets(readyValidPiped.output);
-    addOutput('ready_valid').gets(readyValidPiped.validPipeOut);
-    addOutput('ready_ready').gets(readyValidPiped.readyPipeIn);
+    final readyValidPiped = readyValidPipeline.get(registered);
+    addTypedOutput('ready_valid_out', readyValidPiped.clone)
+        .gets(readyValidPiped);
+    addOutput('ready_valid').gets(readyValidPipeline.validPipeOut);
+    addOutput('ready_ready').gets(readyValidPipeline.readyPipeIn);
   }
 }
 
@@ -561,11 +564,13 @@ void main() {
     final selectedFromArray = selector.selectFrom([array0, array1]);
     final clonedArray = array0.cloneTyped();
     final namedArray = array0.namedTyped('named_array');
-    final pipelinedArray = StructurePipeline<LogicArray>(
+    final arrayPipeline = Pipeline(
       clk,
-      array0,
-      stages: [(stage) => stage.value],
-    ).output;
+      stages: [
+        (p) => [p.get(array0) < p.get(array0)]
+      ],
+    );
+    final LogicArray pipelinedArray = arrayPipeline.get(array0);
 
     final muxedTypedArray = Mux(selector[0], typedArray1, typedArray0).out;
     final floppedTypedArray = FlipFlop(clk, typedArray0).q;
@@ -577,12 +582,14 @@ void main() {
         selector.selectFrom([typedArray0, typedArray1]);
     final clonedTypedArray = typedArray0.cloneTyped();
     final namedTypedArray = typedArray0.namedTyped('named_typed_array');
-    final pipelinedTypedArray =
-        StructurePipeline<TypedLogicArray<_TypedLane, LogicValue>>(
+    final typedArrayPipeline = Pipeline(
       clk,
-      typedArray0,
-      stages: [(stage) => stage.value],
-    ).output;
+      stages: [
+        (p) => [p.get(typedArray0) < p.get(typedArray0)]
+      ],
+    );
+    final TypedLogicArray<_TypedLane, LogicValue> pipelinedTypedArray =
+        typedArrayPipeline.get(typedArray0);
 
     [
       muxedArray,
@@ -1064,51 +1071,55 @@ void main() {
     expect(selectedByIndex.value, LogicValue.ofInt(0, selectedByIndex.width));
   });
 
-  test('StructurePipeline preserves typed stages and history', () async {
+  test('Pipeline preserves typed structures, arrays, and history', () async {
     final clk = SimpleClockGenerator(10).clk;
     final reset = Logic();
     final stall = Logic();
     final input = _TypedPacket(name: 'pipeline_input');
-    final pipeline = StructurePipeline<_TypedPacket>(
+    final pipeline = Pipeline(
       clk,
-      input,
       reset: reset,
-      resetValue: 0,
+      resetValues: {input: 0},
       stalls: [null, stall],
       stages: [
-        (stage) {
-          final next = stage.value.cloneTyped(name: 'stage_0_next');
-          next.opcode <= stage.value.opcode + 1;
-          for (var lane = 0; lane < next.lanes.arrayElements.length; lane++) {
-            next.lanes.arrayElements[lane].data <=
-                stage.value.lanes.arrayElements[lane].data;
-            next.lanes.arrayElements[lane].enable <=
-                stage.value.lanes.arrayElements[lane].enable;
-          }
-          return next;
+        (p) {
+          final source = p.get(input);
+          final target = p.get(input);
+          return [
+            target.opcode < source.opcode + 1,
+            for (var lane = 0;
+                lane < target.lanes.arrayElements.length;
+                lane++) ...[
+              target.lanes.arrayElements[lane].data <
+                  source.lanes.arrayElements[lane].data,
+              target.lanes.arrayElements[lane].enable <
+                  source.lanes.arrayElements[lane].enable,
+            ],
+          ];
         },
-        (stage) {
-          final next = stage.value.cloneTyped(name: 'stage_1_next');
-          next.opcode <= stage.value.opcode + stage.get(-1).opcode;
-          for (var lane = 0; lane < next.lanes.arrayElements.length; lane++) {
-            next.lanes.arrayElements[lane].data <=
-                stage.value.lanes.arrayElements[lane].data;
-            next.lanes.arrayElements[lane].enable <=
-                stage.value.lanes.arrayElements[lane].enable;
-          }
-          return next;
+        (p) {
+          final target = p.get(input);
+          final previous = p.get(input, -1);
+          return [
+            target.opcode < previous.opcode,
+            for (var lane = 0;
+                lane < target.lanes.arrayElements.length;
+                lane++) ...[
+              target.lanes.arrayElements[lane].data <
+                  previous.lanes.arrayElements[lane].data,
+              target.lanes.arrayElements[lane].enable <
+                  previous.lanes.arrayElements[lane].enable,
+            ],
+          ];
         },
       ],
     );
+    final output = pipeline.get(input);
     unawaited(Simulator.run());
 
     expect(pipeline.stageCount, 3);
-    expect(pipeline.latency, 2);
-    expect(pipeline.output, isA<_TypedPacket>());
-    expect(pipeline.get(0), same(input));
-    expect(
-        pipeline.output.lanes, isA<TypedLogicArray<_TypedLane, LogicValue>>());
-    expect(() => pipeline.values.add(input), throwsUnsupportedError);
+    expect(output, isA<_TypedPacket>());
+    expect(output.lanes, isA<TypedLogicArray<_TypedLane, LogicValue>>());
 
     reset.inject(1);
     stall.inject(0);
@@ -1121,68 +1132,186 @@ void main() {
     input.opcode.inject(4);
     input.lanes.arrayElements[0].data.inject(0x67);
     await clk.nextPosedge;
-    expect(pipeline.output.opcode.value.toInt(), 7);
-    expect(pipeline.output.lanes.arrayElements[0].data.value.toInt(), 0x45);
+    expect(output.opcode.value.toInt(), 5);
+    expect(output.lanes.arrayElements[0].data.value.toInt(), 0x67);
 
     stall.inject(1);
     input.opcode.inject(1);
     await clk.nextPosedge;
-    expect(pipeline.output.opcode.value.toInt(), 7);
+    expect(output.opcode.value.toInt(), 5);
     await Simulator.endSimulation();
   });
 
-  test('StructurePipeline treats constant stalls as active-high', () async {
+  test(
+      'Pipeline preserves heterogeneous identifiers through relative and '
+      'absolute access', () async {
+    final clk = SimpleClockGenerator(10).clk;
+    final reset = Logic();
+    final stall = Logic();
+    final packet = _TypedPacket(name: 'heterogeneous_packet');
+    final array = TypedLogicArray<_TypedLane, LogicValue>(
+      [1],
+      _TypedLane.new,
+      name: 'heterogeneous_array',
+    );
+    final state = _operationEnum(name: 'heterogeneous_state');
+    final enable = Logic(name: 'heterogeneous_enable');
+
+    final pipeline = Pipeline(
+      clk,
+      reset: reset,
+      resetValues: {
+        packet: 0,
+        array: 0,
+        state: _OperationEnum.idle,
+        enable: 0,
+      },
+      stalls: [null, stall],
+      stages: [
+        (p) {
+          final sourcePacket = p.get(packet);
+          final targetPacket = p.get(packet);
+          final sourceArray = p.get(array);
+          final targetArray = p.get(array);
+          final targetState = p.get(state);
+          final sourceEnable = p.get(enable);
+          final targetEnable = p.get(enable);
+          final stateCondition = p.get(enable);
+          return [
+            targetPacket.opcode < sourcePacket.opcode + 1,
+            targetPacket.lanes < sourcePacket.lanes,
+            targetArray < sourceArray,
+            If(
+              stateCondition,
+              then: [targetState < _OperationEnum.active],
+              orElse: [targetState < _OperationEnum.idle],
+            ),
+            targetEnable < ~sourceEnable,
+          ];
+        },
+        (p) {
+          final targetPacket = p.get(packet);
+          final priorPacket = p.get(packet, -1);
+          final firstPacket = p.getAbs(packet, 0);
+          final targetArray = p.get(array);
+          final firstArray = p.getAbs(array, 0);
+          final targetState = p.get(state);
+          final firstState = p.getAbs(state, 0);
+          final targetEnable = p.get(enable);
+          final firstEnable = p.getAbs(enable, 0);
+          return [
+            targetPacket.opcode < priorPacket.opcode,
+            targetPacket.lanes < firstPacket.lanes,
+            targetArray < firstArray,
+            targetState < firstState,
+            targetEnable < firstEnable,
+          ];
+        },
+      ],
+    );
+
+    final pipedPacket = pipeline.get(packet);
+    final pipedArray = pipeline.get(array);
+    final pipedState = pipeline.get(state);
+    final pipedEnable = pipeline.get(enable);
+    unawaited(Simulator.run());
+
+    reset.inject(1);
+    stall.inject(0);
+    await clk.nextPosedge;
+    expect(pipedState.valueEnum, _OperationEnum.idle);
+    expect(pipedEnable.value, LogicValue.zero);
+    reset.inject(0);
+
+    packet.opcode.inject(1);
+    packet.lanes.arrayElements[0].data.inject(0x10);
+    array.arrayElements[0].data.inject(0x20);
+    state.inject(_OperationEnum.active);
+    enable.inject(0);
+    await clk.nextPosedge;
+
+    packet.opcode.inject(3);
+    packet.lanes.arrayElements[0].data.inject(0x30);
+    array.arrayElements[0].data.inject(0x40);
+    state.inject(_OperationEnum.active);
+    enable.inject(1);
+    await clk.nextPosedge;
+    expect(pipedPacket.opcode.value.toInt(), 4);
+    expect(pipedPacket.lanes.arrayElements[0].data.value.toInt(), 0x30);
+    expect(pipedArray.arrayElements[0].data.value.toInt(), 0x40);
+    expect(pipedState.valueEnum, _OperationEnum.active);
+    expect(pipedEnable.value, LogicValue.zero);
+
+    stall.inject(1);
+    packet.opcode.inject(6);
+    array.arrayElements[0].data.inject(0x60);
+    await clk.nextPosedge;
+    expect(pipedPacket.opcode.value.toInt(), 4);
+    expect(pipedArray.arrayElements[0].data.value.toInt(), 0x40);
+    await Simulator.endSimulation();
+  });
+
+  test('Pipeline treats constant stalls as active-high', () async {
     final clk = SimpleClockGenerator(10).clk;
     final input = _TypedPacket(name: 'constant_stall_input');
-    final running = StructurePipeline<_TypedPacket>(
+    final running = Pipeline(
       clk,
-      input,
       stalls: [Const(0)],
-      stages: [(stage) => stage.value.namedTyped('running_stage')],
+      stages: [
+        (p) => [p.get(input) < p.get(input)],
+      ],
     );
-    final stalled = StructurePipeline<_TypedPacket>(
+    final stalled = Pipeline(
       clk,
-      input,
       stalls: [Const(1)],
-      stages: [(stage) => stage.value.namedTyped('stalled_stage')],
+      stages: [
+        (p) => [p.get(input) < p.get(input)],
+      ],
     );
+    final runningOutput = running.get(input);
+    final stalledOutput = stalled.get(input);
     unawaited(Simulator.run());
 
     input.opcode.inject(6);
     await clk.nextPosedge;
-    expect(running.output.opcode.value.toInt(), 6);
-    expect(stalled.output.opcode.value.isValid, isFalse);
+    expect(runningOutput.opcode.value.toInt(), 6);
+    expect(stalledOutput.opcode.value.isValid, isFalse);
     await Simulator.endSimulation();
   });
 
-  test('ReadyValidPipeline preserves structured payloads under backpressure',
+  test('ReadyValidPipeline preserves structured signals under backpressure',
       () async {
     final clk = SimpleClockGenerator(10).clk;
     final reset = Logic();
     final valid = Logic();
     final ready = Logic();
     final input = _TypedPacket(name: 'ready_valid_pipeline_input');
-    final pipeline = ReadyValidPipeline<_TypedPacket>(
+    final pipeline = ReadyValidPipeline(
       clk,
-      input,
-      validPipeIn: valid,
-      readyPipeOut: ready,
+      valid,
+      ready,
       reset: reset,
+      resetValues: {input: 0},
       stages: [
-        (stage) {
-          final next = stage.value.cloneTyped(name: 'ready_valid_stage_0');
-          next.opcode <= stage.value.opcode + 1;
-          next.lanes <= stage.value.lanes;
-          return next;
+        (p) {
+          final source = p.get(input);
+          final target = p.get(input);
+          return [
+            target.opcode < source.opcode + 1,
+            target.lanes < source.lanes,
+          ];
         },
-        (stage) {
-          final next = stage.value.cloneTyped(name: 'ready_valid_stage_1');
-          next.opcode <= stage.value.opcode + 1;
-          next.lanes <= stage.value.lanes;
-          return next;
+        (p) {
+          final source = p.get(input);
+          final target = p.get(input);
+          return [
+            target.opcode < source.opcode + 1,
+            target.lanes < source.lanes,
+          ];
         },
       ],
     );
+    final output = pipeline.get(input);
     unawaited(Simulator.run());
 
     reset.inject(1);
@@ -1199,37 +1328,39 @@ void main() {
 
     await clk.nextPosedge;
     expect(pipeline.validPipeOut.value.toInt(), 1);
-    expect(pipeline.output.opcode.value.toInt(), 4);
-    expect(pipeline.output.lanes.arrayElements[0].data.value.toInt(), 0x45);
+    expect(output.opcode.value.toInt(), 4);
+    expect(output.lanes.arrayElements[0].data.value.toInt(), 0x45);
 
     ready.inject(0);
     input.opcode.inject(5);
     await clk.nextPosedge;
     expect(pipeline.validPipeOut.value.toInt(), 1);
-    expect(pipeline.output.opcode.value.toInt(), 4);
+    expect(output.opcode.value.toInt(), 4);
 
     ready.inject(1);
     await clk.nextPosedge;
-    expect(pipeline.output.opcode.value.toInt(), 4);
+    expect(output.opcode.value.toInt(), 4);
     await clk.nextPosedge;
-    expect(pipeline.output.opcode.value.toInt(), 7);
+    expect(output.opcode.value.toInt(), 7);
     await Simulator.endSimulation();
   });
 
-  test('ReadyValidPipeline preserves scalar payloads', () async {
+  test('ReadyValidPipeline preserves scalar signals', () async {
     final clk = SimpleClockGenerator(10).clk;
     final reset = Logic();
     final valid = Logic();
     final ready = Logic();
     final input = Logic(width: 4);
-    final pipeline = ReadyValidPipeline<Logic>(
+    final pipeline = ReadyValidPipeline(
       clk,
-      input,
-      validPipeIn: valid,
-      readyPipeOut: ready,
+      valid,
+      ready,
       reset: reset,
-      stages: [(stage) => stage.value],
+      stages: [
+        (p) => [p.get(input) < p.get(input)],
+      ],
     );
+    final output = pipeline.get(input);
     unawaited(Simulator.run());
 
     reset.inject(1);
@@ -1242,7 +1373,7 @@ void main() {
     valid.inject(1);
     await clk.nextPosedge;
     expect(pipeline.validPipeOut.value.toInt(), 1);
-    expect(pipeline.output.value.toInt(), 0xa);
+    expect(output.value.toInt(), 0xa);
     await Simulator.endSimulation();
   });
 

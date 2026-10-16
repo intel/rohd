@@ -38,7 +38,7 @@
 - `LogicArray` remains source-compatible for construction and operations. Its `value` and `previousValue` now return shape-carrying `LogicValueArray` instances, which remain `LogicValue` subtypes; code relying on their exact concrete runtime types may observe this behavior change (<https://github.com/intel/rohd/pull/686>).
 - Added support for structures with constant leaves when their `clone()` implementation produces driveable fields, preserving domain-specific constant structures through generic operations.
 - Integrated `LogicEnum` with generic operations. Enum mappings are preserved through typed operation results, enum members can be used as `cases` keys, and incompatible enum mappings are rejected.
-- Added typed `ReadyValidPipeline` payload support, preserving structured, typed-array, and aggregate assignments through pipeline stages.
+- `Pipeline.get`, `PipelineStageInfo.get`, and `PipelineStageInfo.getAbs` now preserve each identifier's concrete type through stage reconstruction and SSA, allowing structures, typed arrays, enums, and scalar signals in one pipeline. `ReadyValidPipeline` retains its established multi-signal API and gains the same per-identifier typed access without separate payload pipeline classes.
 - Preserved aggregate structure assignment metadata through synthesis and netlist generation.
 - Fixed SystemVerilog synthesis of internally computed packed logic assigned to packed-array outputs, retaining required intermediate declarations.
 - Upgraded `Mux`, `FlipFlop`, `Passthrough`, `mux`, `flop`, `cases`,
