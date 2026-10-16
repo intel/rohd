@@ -201,6 +201,33 @@ void main() {
   });
 
   group('SystemVerilogService', () {
+    for (final multiFile in [false, true]) {
+      test('can disable trace comments with multiFile=$multiFile', () async {
+        SourceTracer.activate();
+        addTearDown(SourceTracer.clear);
+        final mod = SimpleModule(Logic());
+        await mod.build();
+
+        final withComments = SystemVerilogService(mod, multiFile: multiFile);
+        expect(withComments.output, contains('// ROHD:'));
+
+        final withoutComments = SystemVerilogService(
+          mod,
+          multiFile: multiFile,
+          embedSourceTraceComments: false,
+        );
+        expect(withoutComments.output, isNot(contains('// ROHD:')));
+        for (final file in withoutComments.fileContents) {
+          expect(file.contents, isNot(contains('// ROHD:')));
+        }
+        expect(withoutComments.singleFileSvLineMapsByModule[mod], isNotEmpty);
+        expect(
+          TraceService(mod, svService: withoutComments).flcHierarchy,
+          isNotNull,
+        );
+      });
+    }
+
     test('legacy generateSynth does not register a service', () async {
       final mod = SimpleModule(Logic());
       await mod.build();

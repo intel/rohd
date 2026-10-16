@@ -18,9 +18,15 @@ class SystemVerilogSynthesizer extends Synthesizer {
   /// Configuration controlling generated SystemVerilog.
   final SystemVerilogSynthesizerConfiguration configuration;
 
+  /// Whether generated SV includes source-trace comments.
+  ///
+  /// Source-trace line maps are collected even when comments are disabled.
+  final bool embedSourceTraceComments;
+
   /// Creates a SystemVerilog synthesizer with the specified [configuration].
   SystemVerilogSynthesizer({
     this.configuration = const SystemVerilogSynthesizerConfiguration(),
+    this.embedSourceTraceComments = true,
   });
 
   @override
@@ -190,6 +196,7 @@ class SystemVerilogSynthesizer extends Synthesizer {
             module,
             getInstanceTypeOfModule,
             configuration: configuration,
+            embedSourceTraceComments: embedSourceTraceComments,
           );
   }
 }

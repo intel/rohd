@@ -27,7 +27,7 @@ def remove_obvious_types(content):
     # Patterns to match obvious assignments
     patterns = [
         # String literal
-        (r'\bfinal\s+String\s+(\w+)\s*=\s*["\']', r'final \1 = "'),
+        (r'\bfinal\s+String\s+(\w+)\s*=\s*(["\'])', r'final \1 = \2'),
         # Boolean
         (r'\bfinal\s+bool\s+(\w+)\s*=\s*(true|false)', r'final \1 = \2'),
         # Integer
