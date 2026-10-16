@@ -275,10 +275,12 @@ class TraceService extends ArtifactProducingService {
 
   /// The file path advertised for single-file SystemC output.
   String get _singleFileScPath {
-    final path = scService?.multiFile == false ? scService?.outputPath : null;
-    return path == null
+    final service = scService;
+    return service == null || service.multiFile
         ? '${module.definitionName}.sc'
-        : File(path).absolute.path;
+        : File(
+            '${service.outputDirectory}/${service.outputBaseName}.sc',
+          ).absolute.path;
   }
 
   // ─── Mode-dependent helpers ──────────────────────────────────
@@ -372,7 +374,7 @@ class TraceService extends ArtifactProducingService {
     }
     final sc = scService;
     if (sc != null) {
-      for (final entry in sc.synthBuilder.moduleInstanceTypes.entries) {
+      for (final entry in sc.moduleInstanceTypes.entries) {
         result.putIfAbsent(entry.key, () => entry.value);
       }
     }

@@ -201,7 +201,7 @@ void main() {
     expect(topLineMap['low']!.length, greaterThan(1));
     expect(topLineMap['high']!.length, greaterThan(1));
     expect(
-      SystemCService(dut, register: false).systemCResults,
+      SystemCService(dut, register: false).synthesisResults,
       isNotEmpty,
     );
   });
@@ -231,8 +231,8 @@ void main() {
 
       final firstType = sv.synthBuilder.instanceTypeOf(dut.first)!;
       final secondType = sv.synthBuilder.instanceTypeOf(dut.second)!;
-      final firstScType = sc.synthBuilder.instanceTypeOf(dut.first)!;
-      final secondScType = sc.synthBuilder.instanceTypeOf(dut.second)!;
+      final firstScType = sc.moduleInstanceTypes[dut.first]!;
+      final secondScType = sc.moduleInstanceTypes[dut.second]!;
       expect(firstType, isNot(secondType));
       expect(sv.instanceTypeOutput(firstType),
           isNot(sv.instanceTypeOutput(secondType)));

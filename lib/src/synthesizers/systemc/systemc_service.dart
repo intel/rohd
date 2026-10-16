@@ -11,6 +11,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:collection/collection.dart';
+import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/synthesizers/systemc/systemc_synthesis_result.dart';
 import 'package:rohd/src/utilities/config.dart';
@@ -97,12 +98,13 @@ class SystemCService extends CodeGenService {
   Iterable<SynthesisResult> get synthesisResults =>
       _synthBuilder.synthesisResults;
 
-  /// The underlying [SynthBuilder] that drove synthesis.
-  SynthBuilder get synthBuilder => _synthBuilder;
-
-  /// All [SystemCSynthesisResult]s produced by synthesis.
-  Iterable<SystemCSynthesisResult> get systemCResults =>
+  Iterable<SystemCSynthesisResult> get _systemCResults =>
       _synthBuilder.synthesisResults.whereType<SystemCSynthesisResult>();
+
+  /// Generated implementation names keyed by source module occurrence.
+  @internal
+  Map<Module, String> get moduleInstanceTypes =>
+      Map.unmodifiable(_synthBuilder.moduleInstanceTypes);
 
   /// Unsupported module instances whose behavior was emitted as empty stubs.
   List<SystemCGenerationDiagnostic> get diagnostics =>
@@ -142,7 +144,7 @@ class SystemCService extends CodeGenService {
   /// [SystemCSynthesisResult]
   /// `scLineMap`s (signal/instance name → list of `'line:col'` positions).
   Map<String, Map<String, List<String>>> get scLineMaps => {
-        for (final sr in systemCResults) sr.instanceTypeName: sr.scLineMap,
+        for (final sr in _systemCResults) sr.instanceTypeName: sr.scLineMap,
       };
 
   /// Maps each source module occurrence to its generated SC line map.
@@ -267,7 +269,7 @@ class SystemCService extends CodeGenService {
   Map<String, List<String>> singleFileScFileMap(String filename) => {
         for (final result in _systemCResults)
           result.instanceTypeName: [filename],
-          };
+      };
 
   /// Returns a single-file artifact map for every source module occurrence.
   Map<Module, List<String>> singleFileScFileMapByModule(String filename) {
