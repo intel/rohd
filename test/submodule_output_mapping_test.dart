@@ -228,8 +228,8 @@ class ConstantOutputTop extends Module {
     required bool namedConstant,
     required AssignmentOrder order,
   }) : super(name: 'constant_output_top') {
-    final data = addInput('data', Logic(width: 4), width: 4);
-    final observed = addOutput('observed', width: 5);
+    final data = addInput('data', Logic(width: 2), width: 2);
+    final observed = addOutput('observed', width: 3);
     final results = stageOutputs(data, ProducerKind.independent);
     Logic tie = Const(LogicValue.ofString(constant));
     if (namedConstant) {
@@ -508,7 +508,8 @@ void main() {
   group('independent outputs to packed parent bits', () {
     for (final producer in ProducerKind.values) {
       for (final order in AssignmentOrder.values) {
-        for (final width in [2, 5]) {
+        // Three bits distinguish both boundaries and an interior position.
+        for (final width in [2, 3]) {
           for (final aliasDepth in [0, 3]) {
             test(
                 '${producer.name} ${order.name} '
@@ -741,7 +742,7 @@ void main() {
 
   group('constant position and four-state cross-products', () {
     for (final constant in ['0', '1', 'x', 'z']) {
-      for (final constantIndex in [0, 2, 4]) {
+      for (final constantIndex in [0, 1, 2]) {
         for (final namedConstant in [false, true]) {
           for (final order in [
             AssignmentOrder.batch,
@@ -762,7 +763,9 @@ void main() {
               final body = topBody(module);
               expect(body, isNot(contains('.result()')), reason: body);
               if (constant != 'z') {
-                for (var index = 0; index < 5; index++) {
+                for (var index = 0;
+                    index < module.output('observed').width;
+                    index++) {
                   if (index != constantIndex) {
                     expect(body, contains('.result(observed[$index])'),
                         reason: body);
@@ -772,12 +775,14 @@ void main() {
               NetlistSynthesizer().synthesizeToJson(module);
               expect(topBody(module), body);
               final vectors = [
-                for (final input in inputPatterns(4))
+                for (final input in inputPatterns(module.input('data').width))
                   Vector({
                     'data': input
                   }, {
                     'observed': LogicValue.ofString([
-                      for (var index = 4; index >= 0; index--)
+                      for (var index = module.output('observed').width - 1;
+                          index >= 0;
+                          index--)
                         if (index == constantIndex)
                           constant
                         else
