@@ -6,7 +6,7 @@ version: 1.0.0+1
 
 environment:
   sdk: ^3.6.0
-  flutter: '>=3.47.0'
+  flutter: '>=3.44.0'
 
 dependencies:
   cupertino_icons: '>=1.0.9 <3.0.0'
@@ -26,7 +26,7 @@ dependencies:
   flutter_web_plugins:
     sdk: flutter
   logging: ^1.2.0
-  material_ui: ^1.7.0
+  material_ui: ^1.1.0
   path: ^1.9.0
   path_provider: ^2.1.0
   rohd: ^0.7.0

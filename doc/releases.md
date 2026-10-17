@@ -360,8 +360,8 @@ Publish `dart_wellen` before the wave viewer.
 Widgets and viewers retain Flutter 3.44 as their lower bound and allow
 Material UI 1.1.0 through 1.x, including 1.7.0. Resolving the newer UI stack
 requires a suitable newer Flutter SDK; consumers on an older SDK can retain
-older compatible dependencies. The DevTools application intentionally requires
-Material UI 1.7.0 and Flutter 3.47. The wave viewer accepts Cupertino Icons 1.x
+older compatible dependencies. The DevTools application also accepts Flutter
+3.44 and Material UI 1.1.0 through 1.x. The wave viewer accepts Cupertino Icons 1.x
 and 2.x. The application, wave viewer, and waveform package allow Equatable
 2.x and 3.x. These changes do not increase package Dart language-version floors.
 
