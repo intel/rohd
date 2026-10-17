@@ -2,7 +2,8 @@
 
 ### Breaking Changes
 
-- `FiniteStateMachine`, `State`, and the deprecated `StateMachine` alias now require Dart enum state identifiers. Replace integer, string, or custom-object identifiers with enum members; update reset and transition targets accordingly. `currentState` and `nextState` are now `LogicEnum` signals (<https://github.com/intel/rohd/pull/599>).
+- `FiniteStateMachine` and `State` now require Dart enum state identifiers. Replace integer, string, or custom-object identifiers with enum members; update reset and transition targets accordingly. `currentState` and `nextState` are now `LogicEnum` signals (<https://github.com/intel/rohd/pull/599>).
+- Removed deprecated APIs, including `StateMachine`, `FF`, `IfBlock`, `Port`, `LogicValues`, `CustomSystemVerilog`, `WaveDumper`/`Dumper`, `FlcService`, `Module.generateSynth`, legacy signal/value helpers, `PairInterface.modify` and its clone constructor, and old synthesis/service accessors. Use their supported replacements rather than compatibility aliases. See the [0.7.0 migration guide](doc/releases.md#core-api-migration-for-070).
 
 ### Major Features
 
@@ -10,7 +11,7 @@
 - Added compact FST waveform capture alongside VCD, with block-based reading and waveform query APIs for incremental access (<https://github.com/intel/rohd/pull/671>).
 - Added SystemC generation, runtime support, and `SystemCService` for generating and writing module artifacts. Generated SystemC uses a two-state representation and does not preserve X/Z semantics (<https://github.com/intel/rohd/pull/662>).
 - Added source tracing and FLC (File-Line-Column) sidecars for cross-probing signals and module instances between Dart source and generated SystemVerilog or SystemC, with an optional standalone HTML report (<https://github.com/intel/rohd/pull/707>).
-- Released `rohd_hierarchy` 0.2.0 with hierarchy query and netlist adapter APIs, and added design-shell APIs using `SignalOccurrence` and `HierarchyOccurrence` handles for hierarchy search and connectivity traversal (<https://github.com/intel/rohd/pull/707>, <https://github.com/intel/rohd/pull/716>).
+- Added `rohd_hierarchy` 0.1.1 hierarchy query and netlist adapter APIs, and design-shell APIs using `SignalOccurrence` and `HierarchyOccurrence` handles for hierarchy search and connectivity traversal (<https://github.com/intel/rohd/pull/707>, <https://github.com/intel/rohd/pull/716>).
 - Added the standalone ROHD Live Debugger with hierarchy browsing, signal inspection, connectivity traversal, source navigation, waveform access, and cross-probing over DTD and VM-service transports (<https://github.com/intel/rohd/pull/736>).
 - Added `rohd-shell`, a DTD-attached terminal client for hierarchy, port, signal, and fan-in/fan-out queries, JSON output, and cross-probe selections (<https://github.com/intel/rohd/pull/736>).
 
@@ -20,7 +21,7 @@
 - Added configurable waveform timescales, recording windows, and output overwrite policies (<https://github.com/intel/rohd/pull/671>).
 - Added opt-in `DebugSession` setup for source tracing, netlist and FLC services, and live waveform recording (<https://github.com/intel/rohd/pull/707>).
 - Expanded reusable `rohd_devtools_widgets` components for hierarchy browsing, signal formatting, bit expansion, overlays, help, capture, and cross-probing (<https://github.com/intel/rohd/pull/736>).
-- Added `rohd_waveform` 0.2.0 client APIs for hierarchy normalization, repository-backed waveform access, caching, readiness, streaming, computed signals, and sub-field/bit-slice waveforms (<https://github.com/intel/rohd/pull/736>).
+- Added `rohd_waveform` 0.1.1 client APIs for hierarchy normalization, repository-backed waveform access, caching, readiness, streaming, computed signals, and sub-field/bit-slice waveforms (<https://github.com/intel/rohd/pull/736>).
 
 ### Bug Fixes
 

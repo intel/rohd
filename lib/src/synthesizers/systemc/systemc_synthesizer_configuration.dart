@@ -135,13 +135,6 @@ bool _isSystemCSupportedInlineExpression(Module module) =>
 /// while translating otherwise supported structure.
 @internal
 String? systemCUnsupportedReason(Module module) {
-  // Preserve detection for the deprecated customization API until callers
-  // migrate to the current SystemVerilog mixin.
-  // ignore: deprecated_member_use_from_same_package
-  if (module is CustomSystemVerilog) {
-    return 'the module provides only a custom SystemVerilog instantiation';
-  }
-
   if (module is! SystemVerilog) {
     return null;
   }

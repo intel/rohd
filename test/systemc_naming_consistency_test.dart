@@ -241,7 +241,7 @@ void main() {
       );
     });
 
-    test('SystemCService does not crash after generateSynth', () async {
+    test('SystemCService does not crash after dumpSystemVerilog', () async {
       final mod = _FlopModule(Logic(), Logic(width: 8));
       await mod.build();
 
@@ -253,7 +253,7 @@ void main() {
       expect(sc, contains('SC_MODULE'));
     });
 
-    test('generateSynth does not crash after SystemCService', () async {
+    test('dumpSystemVerilog does not crash after SystemCService', () async {
       final mod = _FlopModule(Logic(), Logic(width: 8));
       await mod.build();
 
@@ -300,7 +300,7 @@ void main() {
       expect(topResult, isA<SystemCSynthesisResult>());
       final scResult = topResult as SystemCSynthesisResult
         // Force text generation (which populates the line map).
-        ..toFileContents();
+        ..toSynthFileContents();
 
       final lineMap = scResult.scLineMap;
 
@@ -337,7 +337,7 @@ void main() {
       final results = synthBuilder.synthesisResults;
       final topResult =
           results.firstWhere((r) => r.module == mod) as SystemCSynthesisResult;
-      final text = topResult.toFileContents();
+      final text = topResult.toSynthFileContents().single.contents;
       final lineMap = topResult.scLineMap;
       final lines = text.split('\n');
 
@@ -387,7 +387,7 @@ void main() {
         final topResult = results.firstWhere(
           (r) => r.module == mod,
         ) as SystemCSynthesisResult;
-        final text = topResult.toFileContents();
+        final text = topResult.toSynthFileContents().single.contents;
         final lineMap = topResult.scLineMap;
         final lines = text.split('\n');
 

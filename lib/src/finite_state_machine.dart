@@ -13,10 +13,6 @@ import 'dart:math';
 import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
 
-/// Deprecated: use [FiniteStateMachine] instead.
-@Deprecated('Use FiniteStateMachine instead')
-typedef StateMachine<T extends Enum> = FiniteStateMachine<T>;
-
 /// Simple class for FSM [FiniteStateMachine].
 ///
 /// Abstraction for representing Finite state machines (FSM).
@@ -54,13 +50,6 @@ class FiniteStateMachine<StateIdentifier extends Enum> {
   /// represent that state in the state machine.
   late final Map<StateIdentifier, int> stateIndexLookup = UnmodifiableMapView(
       _stateValueLookup.map((key, value) => MapEntry(key.identifier, value)));
-
-  /// The clock signal to the FSM (when only single-triggered). Otherwise, the
-  /// first clock.
-  ///
-  /// Deprecated: do not reference the clock from [FiniteStateMachine].
-  @Deprecated('Do not reference the clock from the `FiniteStateMachine`.')
-  Logic get clk => _clks.first;
 
   /// The clock signals to the FSM.
   final List<Logic> _clks;

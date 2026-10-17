@@ -1021,7 +1021,3 @@ class _SystemCVectorRunResult {
 
   const _SystemCVectorRunResult.failure(this.diagnostics) : passed = false;
 }
-
-/// Legacy name for [SystemCVectorExecutable].
-@Deprecated('Use SystemCVectorExecutable instead.')
-typedef SystemCExecutable = SystemCVectorExecutable;

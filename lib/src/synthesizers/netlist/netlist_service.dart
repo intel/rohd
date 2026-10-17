@@ -60,9 +60,6 @@ class NetlistService extends ArtifactProducingService {
   /// Cached per-module JSON, keyed by definition name.
   final Map<String, String> _moduleJsonCache = {};
 
-  /// Cached per-module FLC JSON, keyed by definition name.
-  final Map<String, String> _flcModuleJsonCache = {};
-
   /// The parsed modules map from the combined JSON.
   late final Map<String, dynamic> _modulesMap;
 
@@ -224,95 +221,6 @@ class NetlistService extends ArtifactProducingService {
 
   /// Returns the set of module definition names in the netlist.
   Set<String> get moduleNames => _modulesMap.keys.toSet();
-
-  // ─── FLC (File-Line-Column) output ────────────────
-
-  /// Returns the FLC hierarchy JSON map for the module hierarchy,
-  /// or `null` if no traces were recorded.
-  ///
-  /// Requires [packageRoot] to have been set at construction.
-  /// Unlike the inline `rohd.src_trace` attributes embedded in the
-  /// netlist, this produces the standalone FLC format (with a shared
-  /// `"files"` table) suitable for writing to `.flc.json` files.
-  @Deprecated('Use TraceService for FLC output and lookup.')
-  Map<String, Object>? get flcHierarchy {
-    if (packageRoot == null || !SourceTracer.hasTraces) {
-      return null;
-    }
-    return SourceTracer.traceJsonForHierarchy(
-      module,
-      packageRoot: packageRoot!,
-    );
-  }
-
-  /// Returns the FLC hierarchy as a JSON string, or an unavailable status.
-  @Deprecated('Use TraceService for FLC output and lookup.')
-  String get flcJson {
-    final hierarchy = flcHierarchy;
-    return hierarchy != null
-        ? jsonEncode(hierarchy)
-        : '{"status":"unavailable","reason":"no traces or packageRoot"}';
-  }
-
-  /// Returns the FLC JSON for a single module as a JSON string.
-  @Deprecated('Use TraceService for FLC output and lookup.')
-  String flcModuleJson(String definitionName) =>
-      _flcModuleJsonCache.putIfAbsent(definitionName, () {
-        final hierarchy = flcHierarchy;
-        if (hierarchy == null) {
-          return '{"status":"unavailable","reason":"no traces or packageRoot"}';
-        }
-        final modules = hierarchy['modules'] as Map<String, Object>?;
-        if (modules == null || !modules.containsKey(definitionName)) {
-          return jsonEncode(<String, String>{
-            'status': 'unavailable',
-            'reason': 'module "$definitionName" not in FLC hierarchy',
-          });
-        }
-        return jsonEncode(<String, Object>{
-          'version': hierarchy['version'] ?? 6,
-          'files': hierarchy['files'] ?? <Object>[],
-          'modules': <String, Object>{definitionName: modules[definitionName]!},
-        });
-      });
-
-  /// Returns a self-contained HTML viewer for the FLC data, or `null`
-  /// if no traces were recorded.
-  @Deprecated('Use TraceService for FLC output and lookup.')
-  String? get flcHtml {
-    final hierarchy = flcHierarchy;
-    if (hierarchy == null) {
-      return null;
-    }
-    return SourceTracer.flcHtmlViewer(
-      jsonEncode(hierarchy),
-      title: '${module.definitionName} Netlist FLC Viewer',
-      packageRoot: packageRoot ?? '',
-    );
-  }
-
-  /// Writes the FLC hierarchy JSON to [directory] as
-  /// `<definitionName>.flc.json`.
-  @Deprecated('Use TraceService.write for FLC output.')
-  void writeFlcFiles(String directory) {
-    final hierarchy = flcHierarchy;
-    if (hierarchy == null) {
-      return;
-    }
-    writeOutputTextFile(
-      '$directory/${module.definitionName}.flc.json',
-      const JsonEncoder.withIndent('  ').convert(hierarchy),
-    );
-  }
-
-  /// Writes the HTML viewer to [directory].
-  @Deprecated('Use TraceService.writeHtml for FLC HTML output.')
-  void writeFlcHtml(String directory) {
-    final html = flcHtml;
-    if (html != null) {
-      writeOutputTextFile('$directory/${module.definitionName}.flc.html', html);
-    }
-  }
 
   /// Read-only access to the parsed modules map.
   ///

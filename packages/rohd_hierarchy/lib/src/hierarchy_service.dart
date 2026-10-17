@@ -25,6 +25,9 @@ import 'package:rohd_hierarchy/src/hierarchy_models.dart';
 ///   objects
 /// - [autocompletePaths] — incremental path completion
 abstract mixin class HierarchyService {
+  /// Creates a hierarchy service whose implementation supplies [root].
+  HierarchyService();
+
   /// The root occurrence for the hierarchy.
   HierarchyOccurrence get root;
 

@@ -14,6 +14,9 @@ import 'package:rohd_hierarchy/src/occurrence_address.dart';
 /// Common address prefixes are stored once, making this more compact than a
 /// conventional map when many values belong to the same hierarchy subtree.
 class OccurrenceTrie<T extends Object> {
+  /// Creates an empty trie keyed by hierarchy occurrence addresses.
+  OccurrenceTrie();
+
   /// The root node, which represents [OccurrenceAddress.root].
   final _OccurrenceTrieNode<T> _root = _OccurrenceTrieNode<T>();
 

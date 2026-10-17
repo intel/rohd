@@ -17,9 +17,6 @@ import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
 import 'package:rohd_hierarchy/rohd_hierarchy.dart';
 
-// WaveDumper remains supported for compatibility with existing waveform users.
-// ignore_for_file: deprecated_member_use_from_same_package
-
 /// Represents a single value change for a signal.
 class ValueChange {
   /// The simulation time of the change.
@@ -105,8 +102,8 @@ class TrackedSignal {
 ///
 /// ## Usage
 ///
-/// The service is automatically populated when a [WaveDumper] is created with
-/// `enableDevTools: true`. Alternatively, you can manually record value
+/// A [WaveformService] with `enableDevToolsStreaming: true` automatically
+/// populates this service. Alternatively, you can manually record value
 /// changes:
 ///
 /// ```dart
@@ -333,7 +330,7 @@ class WaveformDataService {
   /// future changes, populating the in-memory store for DevTools queries.
   ///
   /// [init] builds the Logic→id map and registers the service extensions but
-  /// deliberately does *not* attach change listeners: the [WaveDumper]
+  /// deliberately does *not* attach change listeners: the [WaveformService]
   /// integration attaches its own as it writes the VCD/FST file.  A
   /// dedicated debugging workflow calls this once after [init], so the live
   /// DevTools data is populated without re-implementing the module-tree
@@ -879,7 +876,7 @@ class WaveformDataService {
       _signalIdToAddress[id] = addrStr;
     }
     // Don't record initial value here - signals may not be driven yet.
-    // WaveDumper._writeScope() will record initial values at the right time.
+    // WaveformService records initial values when capture starts.
   }
 
   /// Register a signal for tracking.
@@ -917,7 +914,7 @@ class WaveformDataService {
 
   /// Record a value change for a Logic object.
   ///
-  /// This is the preferred method when called from WaveDumper.
+  /// This is the preferred method when called from [WaveformService].
   void recordLogicChange(Logic logic, int time) {
     final signalId = _logicToIdMap[logic];
     if (signalId == null) {
@@ -929,7 +926,7 @@ class WaveformDataService {
 
     // Debug logging disabled to reduce noise.
     // The WaveformDataService maintains a separate in-memory copy of waveforms
-    // for DevTools queries (parallel to WaveDumper which writes to file).
+    // for DevTools queries (parallel to WaveformService's file output).
     // This is necessary because DevTools needs a queryable API.
   }
 

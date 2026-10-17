@@ -7,9 +7,6 @@
 // 2023 November 3
 // Author: Max Korbel <max.korbel@intel.com>
 
-// Legacy API calls are intentional coverage for deprecated generateSynth().
-// ignore_for_file: deprecated_member_use_from_same_package
-
 import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/synthesizers/systemverilog/systemverilog_synth_module_definition.dart';
@@ -204,8 +201,8 @@ void main() {
             expect(definition.getSynthLogic(signal), same(shared));
             expect(dut.namer.signalNameOf(signal), 'shared');
           }
-          expect(dut.generateSynth(), isNot(contains('shared_')));
-          expect(dut.generateSynth(), isNot(contains('bridge')));
+          expect(dut.dumpSystemVerilog(), isNot(contains('shared_')));
+          expect(dut.dumpSystemVerilog(), isNot(contains('bridge')));
 
           final vectors = [
             for (final value in [0, 1, 'x', 'z'])
@@ -238,7 +235,7 @@ void main() {
         for (final signal in signals) {
           expect(definition.getSynthLogic(signal), same(shared));
         }
-        expect(dut.generateSynth(), isNot(contains('shared_')));
+        expect(dut.dumpSystemVerilog(), isNot(contains('shared_')));
         final vectors = [
           Vector({'in1': 0}, {'out1': 0}),
           Vector({'in1': 1}, {'out1': 1}),
@@ -287,7 +284,7 @@ void main() {
           out1 <= second;
         });
         await dut.build();
-        final sv = dut.generateSynth();
+        final sv = dut.dumpSystemVerilog();
         expect(sv, contains('assign second = first;'));
         expect('logic'.allMatches(sv).length, 5);
       });
@@ -303,7 +300,7 @@ void main() {
         await dut.build();
         final names = collectSynthNames(SynthModuleDefinition(dut));
         expect(aliases.map((alias) => names[alias]), everyElement('shared'));
-        expect(dut.generateSynth(), contains("assign shared = 1'h1;"));
+        expect(dut.dumpSystemVerilog(), contains("assign shared = 1'h1;"));
       });
 
       test('${naming.name} unrelated same-name port is still a collision',
@@ -314,10 +311,10 @@ void main() {
         });
         await dut.build();
         if (naming == Naming.reserved) {
-          expect(dut.generateSynth,
+          expect(dut.dumpSystemVerilog,
               throwsA(isA<UnavailableReservedNameException>()));
         } else {
-          expect(dut.generateSynth(), contains('assign in1_0 = in2;'));
+          expect(dut.dumpSystemVerilog(), contains('assign in1_0 = in2;'));
         }
       });
     }
@@ -379,7 +376,7 @@ void main() {
                 same(definition.getSynthLogic(port.leafElements[index])));
           }
         }
-        expect(dut.generateSynth(), isNot(contains('shared_')));
+        expect(dut.dumpSystemVerilog(), isNot(contains('shared_')));
         final vectors = [
           for (final value in [0, 0xa5, 0x5a, '10xz01zx'])
             Vector({'source': value},
@@ -410,7 +407,7 @@ void main() {
         for (final alias in dut.aliases) {
           expect(definition.getSynthLogic(alias), same(shared));
         }
-        expect(dut.generateSynth(), isNot(contains('net_connect')));
+        expect(dut.dumpSystemVerilog(), isNot(contains('net_connect')));
         final vectors = [
           for (final value in [0, 1, 'x', 'z'])
             Vector({'shared': value}, {'result': value, 'early': value}),
@@ -466,7 +463,7 @@ void main() {
       out1 <= intermediate;
     });
     await dut.build();
-    final sv = dut.generateSynth();
+    final sv = dut.dumpSystemVerilog();
 
     expect(sv, contains('intermediate'));
   });
@@ -481,7 +478,7 @@ void main() {
       out1 <= intermediate;
     });
     await dut.build();
-    final sv = dut.generateSynth();
+    final sv = dut.dumpSystemVerilog();
 
     // no intermediate
     expect(sv.contains('intermediate'), isFalse);
@@ -494,7 +491,7 @@ void main() {
       out1 <= intermediate;
     });
     await dut.build();
-    final sv = dut.generateSynth();
+    final sv = dut.dumpSystemVerilog();
 
     // just the ports
     expect('logic'.allMatches(sv).length, 3);
@@ -507,7 +504,7 @@ void main() {
       out1 <= intermediate;
     });
     await dut.build();
-    final sv = dut.generateSynth();
+    final sv = dut.dumpSystemVerilog();
 
     // just the ports
     expect('logic'.allMatches(sv).length, 3);
@@ -526,7 +523,7 @@ void main() {
       out1 <= intermediate;
     });
     await dut.build();
-    final sv = dut.generateSynth();
+    final sv = dut.dumpSystemVerilog();
 
     // held one sticks
     expect(sv, contains('intermediate_1 = in1'));
@@ -544,7 +541,7 @@ void main() {
         out1 <= intermediate;
       });
       await dut.build();
-      final sv = dut.generateSynth();
+      final sv = dut.dumpSystemVerilog();
 
       expect('logic'.allMatches(sv).length, 3);
       expect(sv, contains('assign out1 = in1;'));
@@ -558,7 +555,7 @@ void main() {
         out1 <= intermediate;
       });
       await dut.build();
-      final sv = dut.generateSynth();
+      final sv = dut.dumpSystemVerilog();
 
       expect('logic'.allMatches(sv).length, 3);
       expect(sv, contains('assign out1 = in1;'));
@@ -579,7 +576,7 @@ void main() {
         out1 <= intermediate | intermediate2;
       });
       await dut.build();
-      dut.generateSynth();
+      dut.dumpSystemVerilog();
       fail('expected an exception!');
     } on Exception catch (e) {
       expect(e, isA<UnavailableReservedNameException>());
@@ -601,7 +598,7 @@ void main() {
       out1 <= ~intermediatePost;
     });
     await dut.build();
-    final sv = dut.generateSynth();
+    final sv = dut.dumpSystemVerilog();
 
     expect(sv, contains('goodname'));
   });
@@ -654,7 +651,7 @@ void main() {
         out1 <= ~prev;
       });
       await dut.build();
-      final sv = dut.generateSynth();
+      final sv = dut.dumpSystemVerilog();
 
       final expectedName = expectedSignal.naming == Naming.unnamed
           ? driver.name
@@ -672,7 +669,7 @@ void main() {
       intermediate <= in1;
     });
     await dut.build();
-    final sv = dut.generateSynth();
+    final sv = dut.dumpSystemVerilog();
 
     expect(sv, contains('intermediate'));
   });

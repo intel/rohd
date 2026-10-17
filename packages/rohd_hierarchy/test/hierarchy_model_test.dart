@@ -11,6 +11,31 @@ import 'package:rohd_hierarchy/rohd_hierarchy.dart';
 import 'package:test/test.dart';
 
 void main() {
+  group('HierarchyOccurrence legacy ports', () {
+    test('returns independent mutable snapshots of the current signals', () {
+      final first =
+          SignalOccurrence(name: 'first', width: 1, direction: 'input');
+      final second =
+          SignalOccurrence(name: 'second', width: 1, direction: 'output');
+      final signals = [first];
+      final occurrence = HierarchyOccurrence(name: 'root', signals: signals);
+
+      final snapshot = occurrence.ports;
+      snapshot.clear();
+      expect(occurrence.ports, [first]);
+      expect(occurrence.portByName('first'), same(first));
+
+      signals.add(second);
+      expect(occurrence.ports, [first, second]);
+      expect(occurrence.portCount, 2);
+      expect(occurrence.portByName('second'), same(second));
+
+      signals.remove(first);
+      expect(occurrence.ports, [second]);
+      expect(occurrence.portByName('first'), isNull);
+    });
+  });
+
   group('HierarchyOccurrence primitive detection', () {
     test(r'isPrimitiveType is true for $-prefixed types', () {
       expect(HierarchyOccurrence.isPrimitiveType(r'$mux'), isTrue);

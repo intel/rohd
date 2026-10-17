@@ -27,10 +27,6 @@ class SimpleInterface extends PairInterface {
             LogicNet.port('io'),
             LogicArray.netPort('io_arr', [3])
           ],
-
-          // keep this around to test deprecated functionality
-          // ignore: deprecated_member_use_from_same_package
-          modify: (original) => 'simple_$original',
         );
 
   @override
@@ -76,7 +72,11 @@ class HierarchicalInterface extends PairInterface {
 class SimpleProvider extends Module {
   late final SimpleInterface _intf;
   SimpleProvider(SimpleInterface intf) {
-    _intf = addPairInterfacePorts(intf, PairRole.provider);
+    _intf = addPairInterfacePorts(
+      intf,
+      PairRole.provider,
+      uniquify: (original) => 'simple_$original',
+    );
 
     SimpleSubProvider(_intf);
   }
@@ -84,13 +84,21 @@ class SimpleProvider extends Module {
 
 class SimpleSubProvider extends Module {
   SimpleSubProvider(SimpleInterface intf) {
-    addPairInterfacePorts(intf, PairRole.provider);
+    addPairInterfacePorts(
+      intf,
+      PairRole.provider,
+      uniquify: (original) => 'simple_$original',
+    );
   }
 }
 
 class SimpleConsumer extends Module {
   SimpleConsumer(SimpleInterface intf) {
-    addPairInterfacePorts(intf, PairRole.consumer);
+    addPairInterfacePorts(
+      intf,
+      PairRole.consumer,
+      uniquify: (original) => 'simple_$original',
+    );
   }
 }
 
@@ -111,14 +119,14 @@ class PassthroughPairIntfModule extends Module {
         ? addPairInterfacePorts(
             intf1,
             PairRole.consumer,
-            uniquify: (original) => '${original}_1',
+            uniquify: (original) => 'simple_${original}_1',
           )
         : (intf1.clone()
           ..pairConnectIO(
             this,
             intf1,
             PairRole.consumer,
-            uniquify: (original) => '${original}_1',
+            uniquify: (original) => 'simple_${original}_1',
           ));
     intf2 = useConnectApi
         ? addInterfacePorts(
@@ -126,7 +134,7 @@ class PassthroughPairIntfModule extends Module {
             inputTags: {PairDirection.fromConsumer},
             outputTags: {PairDirection.fromProvider},
             inOutTags: {PairDirection.commonInOuts},
-            uniquify: (original) => '${original}_2',
+            uniquify: (original) => 'simple_${original}_2',
           )
         : (intf2.clone()
           ..connectIO(
@@ -135,7 +143,7 @@ class PassthroughPairIntfModule extends Module {
             inputTags: {PairDirection.fromConsumer},
             outputTags: {PairDirection.fromProvider},
             inOutTags: {PairDirection.commonInOuts},
-            uniquify: (original) => '${original}_2',
+            uniquify: (original) => 'simple_${original}_2',
           ));
 
     if (useConditional) {

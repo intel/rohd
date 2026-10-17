@@ -395,26 +395,6 @@ abstract class Module {
     await module.build();
   }
 
-  /// Makes a signal name "unpreferred" when considering between multiple
-  /// possible signal names.
-  ///
-  /// When logic is synthesized out (e.g. to SystemVerilog), there are cases
-  /// where two signals might be logically equivalent (e.g. directly connected
-  /// to each other).  In those scenarios, one of the two signals is collapsed
-  /// into the other.  If one of the two signals is "unpreferred", it will
-  /// choose the other one for the final signal name.  Marking signals as
-  /// "unpreferred" can have the effect of making generated output easier to
-  /// read.
-  @Deprecated('Use `Naming.unpreferredName` or `Logic.naming` instead.')
-  @protected
-  static String unpreferredName(String name) => Naming.unpreferredName(name);
-
-  /// Returns true iff the signal name is "unpreferred".
-  ///
-  /// See documentation for [unpreferredName] for more details.
-  @Deprecated('Use `Naming.isUnpreferred` or `Logic.naming` instead.')
-  static bool isUnpreferred(String name) => Naming.isUnpreferred(name);
-
   /// Searches for [Logic]s and [Module]s within this [Module] from its inputs.
   Future<void> _traceInputForModuleContents(Logic signal,
       {bool dontAddSignal = false}) async {
@@ -1167,21 +1147,4 @@ abstract class Module {
         outputFileName: outputFileName,
         writeToFile: true);
   }
-
-  /// Returns a synthesized version of this [Module].
-  ///
-  /// Currently returns one long file in SystemVerilog, but in the future may
-  /// have other output formats, languages, files, etc.
-  ///
-  /// For richer access to per-module file contents, named maps, and individual
-  /// file writing, see [SystemVerilogService] (and
-  /// [SystemVerilogService.output] for the equivalent one-shot string).
-  /// The [configuration] controls options specific to SystemVerilog output.
-  @Deprecated('Use Module.dumpSystemVerilog(configuration: ...) for in-memory '
-      'output or SystemVerilogService for advanced options.')
-  String generateSynth({
-    SystemVerilogSynthesizerConfiguration configuration =
-        const SystemVerilogSynthesizerConfiguration(),
-  }) =>
-      dumpSystemVerilog(configuration: configuration);
 }
