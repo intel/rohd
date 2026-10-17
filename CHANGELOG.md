@@ -3,10 +3,11 @@
 ### Breaking Changes
 
 - `FiniteStateMachine` and `State` now require Dart enum state identifiers. Replace integer, string, or custom-object identifiers with enum members; update reset and transition targets accordingly. `currentState` and `nextState` are now `LogicEnum` signals (<https://github.com/intel/rohd/pull/599>).
-- Removed long-deprecated APIs, including `StateMachine`, `FF`, `IfBlock`, `Port`, `LogicValues`, `CustomSystemVerilog`, `Dumper`, legacy signal/value helpers, `PairInterface.modify` and its clone constructor, and old synthesis accessors. These were already deprecated before 0.6.10. See the [0.7.0 migration guide](doc/releases.md#core-api-migration-for-070) for replacements.
+- Removed long-deprecated APIs, including `StateMachine`, `FF`, `IfBlock`, `Port`, `LogicValues`, `CustomSystemVerilog`, `Dumper`, legacy signal/value helpers, and old synthesis accessors. These were already deprecated before 0.6.10. See the [0.7.0 migration guide](doc/releases.md#core-api-migration-for-070) for replacements.
 
 ### Deprecated APIs retained for a later release
 
+- `PairInterface.modify`, its constructor argument, and the `PairInterface.clone` constructor remain deprecated but available for downstream interface compatibility. Prefer `uniquify` when connecting or adding sub-interfaces, and `other.clone()`.
 - `WaveDumper`, `Module.generateSynth`, and `ModuleTree.hierarchyJSON` remain available with deprecation warnings. They were released APIs in 0.6.11, but their deprecations had not shipped in a tagged release. Use `Module.dumpWaves`, `Module.dumpSystemVerilog`, and `ModuleTree.hierarchyJson`, respectively.
 - `NetlistSynthesisResult.toFileContents()` remains deprecated but available because it first shipped in 0.6.11. Use `toSynthFileContents()` and read the returned artifacts' `contents`.
 - These APIs are not removed in 0.7.0; migrate callers now in preparation for removal in a later release. Compatibility retention follows the same approach as a 0.6.12 release, despite the version change.
