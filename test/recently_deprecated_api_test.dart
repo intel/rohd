@@ -63,6 +63,20 @@ void main() {
         result.toFileContents(), result.toSynthFileContents().single.contents);
   });
 
+  test('pair interface modify and clone constructor remain compatible', () {
+    String prefixed(String original) => 'x_$original';
+    final source = PairInterface(
+      portsFromConsumer: [Logic(name: 'a')],
+      portsFromProvider: [Logic(name: 'b')],
+      modify: prefixed,
+    );
+
+    final copy = PairInterface.clone(source);
+
+    expect(copy.modify, same(prefixed));
+    expect(copy.ports.keys, unorderedEquals(['a', 'b']));
+  });
+
   test('released waveform wrapper still captures VCD', () async {
     final directory =
         Directory.systemTemp.createTempSync('rohd_compatibility_');
