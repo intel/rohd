@@ -29,7 +29,7 @@ dependencies:
   material_ui: ^1.1.0
   path: ^1.9.0
   path_provider: ^2.1.0
-  rohd: ^0.7.0
+  rohd: ^0.6.11
   rohd_devtools_widgets: ^0.1.2
   rohd_hierarchy: ^0.1.1
   rohd_schematic_viewer: ^0.2.4

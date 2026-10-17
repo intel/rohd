@@ -294,8 +294,8 @@ coordinated release.
 
 ### Core API migration for 0.7.0
 
-ROHD 0.7.0 removes deprecated core APIs, including deprecated service
-compatibility APIs. Migrate consumers before widening a `^0.6.11` core
+ROHD 0.7.0 removes long-deprecated core APIs, but retains released APIs whose
+deprecation has not had a sufficient release cycle. Migrate consumers before widening a `^0.6.11` core
 constraint to include 0.7.x. The independently versioned shared packages do not
 need breaking releases just because core removes these APIs.
 
@@ -320,17 +320,28 @@ need breaking releases just because core removes these APIs.
 | `PairInterface.clone(other)` | `other.clone()` |
 | `Module.unpreferredName`, `Module.isUnpreferred` | `Naming.unpreferredName`, `Naming.isUnpreferred`, or `Logic.naming` |
 | `FiniteStateMachine.clk`, `Pipeline.clk` | Retain the clock supplied at construction; do not retrieve it from the module |
-| `Module.generateSynth` | `Module.dumpSystemVerilog` or `SystemVerilogService` |
-| `WaveDumper`, `Dumper` | `module.dumpWaves(outputPath: ...)` or `WaveformService` |
-| `FlcService` | `TraceService` |
-| `ModuleTree.hierarchyJSON`, `ModuleServices.hierarchyJSON` | `hierarchyJson` |
-| FLC output/lookup methods on `NetlistService` | `TraceService.flcHierarchy`, `flcJson`, `flcModuleJson`, `flcHtml`, `write`, and `writeHtml` |
-| `SystemVerilogService.contentsByName` | `instanceTypeOutput(instanceTypeName)` or iterate `fileContents` |
+| `Dumper` | `module.dumpWaves(outputPath: ...)` or `WaveformService` |
 | `SynthBuilder.top`, `getFileContents()` | `tops`, `getSynthFileContents()` |
-| `SynthesisResult.toFileContents()` and backend overrides | `toSynthFileContents()`; use each artifact's `contents` |
+| `SynthesisResult.toFileContents()` and older backend overrides | `toSynthFileContents()`; use each artifact's `contents` |
 | `CustomSystemVerilog` | `SystemVerilog`; combine input/output mappings into the `ports` map of `instantiationVerilog` |
 | `SystemVerilogSynthesizer.instantiationVerilogWithParameters` | `instantiationVerilogFor` with named arguments and a combined `ports` map |
-| `SystemCExecutable` | `SystemCVectorExecutable` |
+
+The following released APIs remain available, with `@Deprecated` warnings,
+in 0.7.0. They will be removed in a later release, not as part of this version
+change. Update callers now; do not add new uses outside compatibility tests.
+
+| Retained deprecated API | Replacement | Release history |
+| --- | --- | --- |
+| `Module.generateSynth` | `Module.dumpSystemVerilog` or `SystemVerilogService` | Released without deprecation in 0.6.11 |
+| `WaveDumper` | `module.dumpWaves(outputPath: ...)` or `WaveformService` | Released without deprecation in 0.6.11 |
+| `ModuleTree.hierarchyJSON` | `ModuleTree.hierarchyJson` | Released without deprecation in 0.6.11 |
+| `NetlistSynthesisResult.toFileContents()` | `toSynthFileContents()` and each artifact's `contents` | First released, already deprecated, in 0.6.11 |
+
+Compatibility APIs introduced and removed only during unreleased development
+are not retained: `FlcService` (use `TraceService`), `SystemCExecutable` (use
+`SystemCVectorExecutable`), `ModuleServices.hierarchyJSON` (use `hierarchyJson`),
+FLC methods on `NetlistService` (use `TraceService`), and
+`SystemVerilogService.contentsByName` (use `instanceTypeOutput` or `fileContents`).
 
 For example, replace `WaveDumper(dut, outputPath: 'waves.vcd')` with
 `dut.dumpWaves(outputPath: 'waves.vcd')`. If code needs advanced waveform

@@ -106,6 +106,10 @@ class SystemCService extends CodeGenService {
   Map<Module, String> get moduleInstanceTypes =>
       Map.unmodifiable(_synthBuilder.moduleInstanceTypes);
 
+  /// Returns the generated implementation name for [module], if it emits a
+  /// definition.
+  String? instanceTypeOf(Module module) => _synthBuilder.instanceTypeOf(module);
+
   /// Unsupported module instances whose behavior was emitted as empty stubs.
   List<SystemCGenerationDiagnostic> get diagnostics =>
       List.unmodifiable(_systemCSynthesizer.diagnostics);

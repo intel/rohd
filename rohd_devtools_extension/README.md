@@ -246,6 +246,29 @@ override those defaults. The web application loads Schematic Viewer assets
 through Flutter's package asset namespace, so hosted Schematic Viewer builds
 do not require a local viewer checkout.
 
+### CI Local-Package Smoke Test
+
+The DevTools CI jobs run
+[`tool/gh_actions/write_local_package_overrides.sh`](../tool/gh_actions/write_local_package_overrides.sh)
+before resolving dependencies. In a clean checkout this creates the ignored
+`pubspec_overrides.yaml` with relative paths to ROHD and the companion packages
+that are released from this repository: `rohd_hierarchy`, `rohd_waveform`,
+`rohd_devtools_widgets`, and `rohd_source_navigator`.
+
+Both the extension test and web-build commands run
+[`tool/verify_local_package_resolution.dart`](tool/verify_local_package_resolution.dart)
+immediately after `flutter pub get`. It fails unless
+`.dart_tool/package_config.json` resolves every one of those packages to the
+current checkout.
+
+The pull-request and artifact workflows run
+[`tool/gh_actions/devtool/smoke_test_local_packages.sh`](../tool/gh_actions/devtool/smoke_test_local_packages.sh).
+That smoke test performs the production `flutter build web` and then asks the
+real DevTools extension loader to discover the generated artifact. It requires
+no DTD session and no widget test: a successful build proves that the
+extension's production dependency graph compiles against the exact ROHD source
+being released, and discovery verifies that the output is installable.
+
 ## Command-Line Interface
 
 The supported terminal entrypoint is the DTD-attached shell in

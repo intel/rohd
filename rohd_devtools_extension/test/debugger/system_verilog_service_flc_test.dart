@@ -231,8 +231,8 @@ void main() {
 
       final firstType = sv.synthBuilder.instanceTypeOf(dut.first)!;
       final secondType = sv.synthBuilder.instanceTypeOf(dut.second)!;
-      final firstScType = sc.moduleInstanceTypes[dut.first]!;
-      final secondScType = sc.moduleInstanceTypes[dut.second]!;
+      final firstScType = sc.instanceTypeOf(dut.first)!;
+      final secondScType = sc.instanceTypeOf(dut.second)!;
       expect(firstType, isNot(secondType));
       expect(sv.instanceTypeOutput(firstType),
           isNot(sv.instanceTypeOutput(secondType)));

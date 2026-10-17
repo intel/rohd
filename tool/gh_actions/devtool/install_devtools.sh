@@ -26,6 +26,7 @@ bash tool/gh_actions/write_local_package_overrides.sh
 cd rohd_devtools_extension
 
 flutter pub get
+dart run tool/verify_local_package_resolution.dart
 
 echo ""
 echo "════════════════════════════════════════════════════════════"

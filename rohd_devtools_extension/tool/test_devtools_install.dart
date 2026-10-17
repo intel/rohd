@@ -8,8 +8,8 @@
 // 2026 July
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
-import 'dart:io';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:devtools_shared/devtools_extensions_io.dart';
 import 'package:path/path.dart' as p;

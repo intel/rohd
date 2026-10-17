@@ -1147,4 +1147,21 @@ abstract class Module {
         outputFileName: outputFileName,
         writeToFile: true);
   }
+
+  /// Returns a synthesized version of this [Module].
+  ///
+  /// Currently returns one long file in SystemVerilog, but in the future may
+  /// have other output formats, languages, files, etc.
+  ///
+  /// For richer access to per-module file contents, named maps, and individual
+  /// file writing, see [SystemVerilogService] (and
+  /// [SystemVerilogService.output] for the equivalent one-shot string).
+  /// The [configuration] controls options specific to SystemVerilog output.
+  @Deprecated('Use Module.dumpSystemVerilog(configuration: ...) for in-memory '
+      'output or SystemVerilogService for advanced options.')
+  String generateSynth({
+    SystemVerilogSynthesizerConfiguration configuration =
+        const SystemVerilogSynthesizerConfiguration(),
+  }) =>
+      dumpSystemVerilog(configuration: configuration);
 }
