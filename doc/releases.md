@@ -365,16 +365,23 @@ Material UI 1.7.0 and Flutter 3.47. The wave viewer accepts Cupertino Icons 1.x
 and 2.x. The application, wave viewer, and waveform package allow Equatable
 2.x and 3.x. These changes do not increase package Dart language-version floors.
 
-The DevTools application requires hierarchy and waveform 0.1.1, widgets
-0.1.2, and the viewer compatibility releases. All required versions must be
-hosted before final validation against pub.dev. Until then, a build using
-local overrides is a development check, not proof of hosted resolution.
+The DevTools application requires hierarchy and waveform 0.1.1 and widgets
+0.1.2, but accepts the published wave viewer and `dart_wellen` 0.1.0 and
+schematic viewer 0.2.4 as well as the planned compatibility releases. Its
+Cupertino Icons range accepts 1.x and 2.x. Checkout CI uses local ROHD and
+companion-package overrides, allowing the published viewers to be checked
+against the current sources despite their ROHD `^0.6.11` constraints.
+Final hosted resolution with ROHD 0.7.0 still requires the compatibility
+viewer releases. A build using local overrides is a development check,
+not proof of hosted resolution.
 
-The wave viewer and `dart_wellen` must use Flutter Rust Bridge 2.7.1 consistently
-in their Dart runtime dependency, Rust runtime and generator dependencies, and
-generated bindings. Use the wave viewer Makefile to regenerate and validate the
-bridge before preparing either archive. A dependency-constraint edit alone is
-not sufficient for this runtime update.
+The published wave viewer and `dart_wellen` 0.1.0 use Flutter Rust Bridge 2.7.0
+together; do not override that runtime independently. The planned 0.1.1 releases
+must use Flutter Rust Bridge 2.7.1 consistently in their Dart runtime dependency,
+Rust runtime and generator dependencies, and generated bindings. Use the wave
+viewer Makefile to regenerate and validate the bridge before preparing either
+archive. A dependency-constraint edit alone is not sufficient for this runtime
+update.
 
 `rohd_source_navigator` has only hosted Dart dependencies and can be published
 independently of ROHD and the Flutter packages. Once its version is available on
