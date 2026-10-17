@@ -18,10 +18,8 @@ void main() {
       final second =
           SignalOccurrence(name: 'second', width: 1, direction: 'output');
       final signals = [first];
-      final occurrence = HierarchyOccurrence(name: 'root', signals: signals);
-
-      final snapshot = occurrence.ports;
-      snapshot.clear();
+      final occurrence = HierarchyOccurrence(name: 'root', signals: signals)
+        ..ports.clear();
       expect(occurrence.ports, [first]);
       expect(occurrence.portByName('first'), same(first));
 

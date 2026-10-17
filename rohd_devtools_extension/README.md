@@ -7,6 +7,121 @@ and displays live signal information while the debugged program is paused.
 Initial proposals and discussions for the devtool can be found at
 <https://github.com/intel/rohd/discussions/418>.
 
+For a visual walkthrough of hierarchy navigation, waveforms, schematics,
+snapshots, and cross-probing, see
+[The ROHD Live Debugger](https://intel.github.io/rohd-website/blog/rohd-live-debugger/).
+
+## Preparing the Program Being Debugged
+
+The debugger UI and the ROHD simulation are separate programs. Opening the UI
+does not instrument the simulation: the program being debugged must register
+the services it needs after building its top module and before simulation.
+Import `package:rohd/rohd.dart` in that program; it does not need to import the
+Flutter DevTools application.
+
+Two runnable examples use the same clocked, parallel-load serializer:
+
+| Example | Debugging capabilities | Files written |
+| --- | --- | --- |
+| [Basic serializer](../example/serializer_debug.dart) | Hierarchy, live values, schematics, and live waveforms | None |
+| [Serializer with SystemVerilog](../example/serializer_debug_systemverilog.dart) | All of the above, plus Dart/generated-SystemVerilog source cross-probing | Netlist JSON, SystemVerilog, FLC mapping, and VCD under `build/serializer_debug/` |
+
+These examples use the service APIs in this checkout. Run commands from the
+ROHD repository root so package-relative source paths resolve correctly.
+
+### Minimal Setup: Netlist and Live Waveforms
+
+After constructing your design:
+
+```dart
+await dut.build();
+
+NetlistService(dut);
+WaveformService(dut, enableDevToolsStreaming: true);
+
+// Start simulation and drive your inputs only after registering the services.
+```
+
+`NetlistService` supplies hierarchy and schematic connectivity. Its default
+`register: true` makes the design discoverable through `NetlistService.current`.
+`WaveformService` supplies captured values to `WaveformDataService` when
+`enableDevToolsStreaming` is enabled. The default capture is in memory, with
+no waveform file written. A waveform file alone does not enable live streaming.
+Neither service requires SystemVerilog generation or source tracing.
+
+Run the basic example without a debugger to let the simulation finish:
+
+```sh
+dart run example/serializer_debug.dart
+```
+
+For an interactive demonstration, open that file in VS Code and start it with
+**Run > Start Debugging** (F5), not **Run Without Debugging**. Before starting,
+set a breakpoint in
+[`simulateSerializer`](../example/serializer/serializer.dart) on
+`load.inject(0)`. At each hit, the serializer has loaded the next byte. Set a
+breakpoint on the inner loop's `await clk.nextNegedge` to inspect each bit.
+The stimulus sends `0xa5`, `0x3c`, and `0x81`, least significant bit first.
+The clock period is 10 simulation time units; inputs change on falling edges,
+away from the rising-edge register updates.
+
+Attach the UI while paused at one of these breakpoints, **after** service setup.
+A pause at program entry is too early: no design has been built yet. Resume
+between breakpoints to accumulate waveform history. This short simulation
+exits when complete, so do not let it finish before attaching.
+
+### Expanded Setup: SystemVerilog and Source Navigation
+
+The [expanded example](../example/serializer_debug_systemverilog.dart) activates
+`SourceTracer` **before constructing any signals or modules**. After `build()`,
+it registers the netlist and waveform services and adds:
+
+```dart
+final sv = SystemVerilogService(
+  dut,
+  outputDirectory: outputDirectory,
+  multiFile: true,
+  embedSourceTraceComments: false,
+)..writeOutputs();
+TraceService(
+  dut,
+  svService: sv,
+  packageRoot: packageRoot,
+  svOutputMode: SvOutputMode.perModule,
+).write(outputDirectory);
+```
+
+Here `packageRoot` is the absolute package directory and `outputDirectory` is
+an absolute directory beneath it. Pass `packageRoot` to `NetlistService` as
+well, so its netlist carries the captured Dart source locations.
+
+`SystemVerilogService` writes one `.sv` file per generated implementation.
+`TraceService` registers the file-line-column (FLC) mapping between Dart
+construction sites and those files. Keep `svOutputMode` consistent with the
+generated layout: `perModule` for `multiFile: true`, or `singleFile` for a
+concatenated output. Source comments can be disabled without losing line maps.
+The example also writes the netlist and a VCD while streaming live waveforms.
+Do not set `register: false` on services the live debugger needs to discover.
+
+```sh
+dart run example/serializer_debug_systemverilog.dart
+```
+
+Use the same VS Code breakpoint workflow as the basic example. Install the
+[ROHD VS Code extension](../rohd_extension/README.md) for **Go to Design**
+navigation from the browser back into VS Code. It bridges source-navigation
+requests over DTD; a direct VM-only connection does not provide that editor
+bridge. Keep tracing active while inspecting the design; the example clears it
+only after simulation ends.
+
+For SystemC output, the equivalent addition is `SystemCService`, passed as
+`scService` to `TraceService`; both generated languages can share one FLC
+sidecar. See [SystemC enrichment](../doc/cross_probing.md#systemc-enrichment).
+For source tracing and live capture without generated output,
+[`DebugSession`](../lib/src/diagnostics/debug_session.dart) is an alternative
+bundled lifecycle; use it instead of independently starting the same capture
+services. The examples above deliberately show the individual services.
+
 ## Opening from Flutter DevTools
 
 The normal user flow is through Flutter DevTools:
@@ -16,12 +131,59 @@ The normal user flow is through Flutter DevTools:
 3. Use **Open DevTools in Browser** from VS Code.
 4. In the browser DevTools page, open the **ROHD** tab.
 
+If prompted, enable the ROHD extension for the connected application. Start
+with a breakpoint after the service setup described above. Select `serializer`
+in the Module Tree, inspect `clk`, `reset`, `load`, `parallelData`, and
+`serialOut` in Details, then send signals to Waveform or Schematic. Resume to
+the next breakpoint to see the next simulation state. The UI's pause-tracking
+control freezes display refreshes; it does not pause the Dart simulation.
+
 See the Flutter DevTools documentation for the surrounding DevTools workflow:
 <https://docs.flutter.dev/tools/devtools>.
 
 When opened this way, the extension runs inside Flutter DevTools and uses VS
 Code's Dart Tooling Daemon (DTD) integration to attach to and control the
 debugged Dart VM.
+
+## Opening the Hosted Web Debugger
+
+You can use the standalone
+[ROHD Live Debugger](https://intel.github.io/rohd/rohd-live-debugger/)
+without building the Flutter application locally:
+
+1. Start a VS Code debug session for your instrumented ROHD program and pause
+   after service setup.
+2. Copy the **DTD URI** for that VS Code session. With the ROHD VS Code
+   extension installed, the Debug Console banner lists `DTD: URI` and offers a
+   **Copy** notification. For remote sessions, use the forwarded URI when one
+   is listed.
+3. Open the web debugger and its connection form (the connection/chain-link
+   icon). Paste the URI into **DTD URI (auto-discover VMs)** and click
+   **Discover**.
+4. Select the Dart VM for your simulation, then connect. DTD can expose
+   multiple debug sessions; choose the one containing your design.
+5. Inspect the paused design and resume/step it using VS Code's debug controls.
+
+The DTD URI and VM service URI are different addresses. DTD discovers available
+VMs and supports the editor bridge; the VM service connects to one specific
+simulation. The standalone form also accepts a VM service URI directly.
+For a terminal-launched simulation, start with the VM service enabled:
+
+```sh
+dart run --observe --pause-isolates-on-start example/serializer_debug.dart
+```
+
+Copy the VM service URI printed by Dart, not its DevTools browser URL.
+Connect to that VM and use Dart DevTools' debugger to set a breakpoint in the
+stimulus and resume past entry; the ROHD services are not available until the
+setup code has executed. Terminal-only attachment does not create VS Code's
+DTD or its source-navigation bridge.
+
+The browser must be able to reach the supplied WebSocket addresses. For SSH,
+containers, or other remote development, forward the DTD and selected VM
+service ports as needed. If browser HTTPS/WebSocket restrictions block the
+connection, use the locally served or native standalone form below. Treat
+both URIs as access credentials and do not publish them.
 
 ## Standalone Release Mode
 
