@@ -10,9 +10,6 @@
 export 'debug_session.dart';
 export 'design_session.dart';
 export 'design_session_protocol.dart';
-// Retained so existing users can migrate from FlcService to TraceService.
-// ignore: deprecated_member_use_from_same_package
-export 'flc_service.dart' show FlcService;
 export 'in_process_design_session.dart';
 export 'module_service.dart';
 export 'module_services.dart';

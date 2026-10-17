@@ -58,9 +58,6 @@ class SystemCSynthesisResult extends SynthesisResult {
   int get matchHashCode => _portsString.hashCode ^ _moduleBodyString.hashCode;
 
   @override
-  String toFileContents() => _toSystemC();
-
-  @override
   List<SynthFileContents> toSynthFileContents() => List.unmodifiable([
         SynthFileContents(
           name: instanceTypeName,
@@ -1969,8 +1966,7 @@ class SystemCStubSynthesisResult extends SynthesisResult {
   @override
   int get matchHashCode => Object.hash(_portsString, reason);
 
-  @override
-  String toFileContents() {
+  String _toSystemC() {
     final moduleName = SystemCSynthesisResult.systemCIdentifier(
       getInstanceTypeOfModule(module),
     );
@@ -1990,7 +1986,7 @@ class SystemCStubSynthesisResult extends SynthesisResult {
         SynthFileContents(
           name: instanceTypeName,
           description: 'Empty SystemC stub for $instanceTypeName',
-          contents: toFileContents(),
+          contents: _toSystemC(),
         ),
       ]);
 }

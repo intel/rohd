@@ -64,7 +64,7 @@ jobs:
         run: tool/gh_actions/analyze_source.sh
 
       - name: Run Pana on project source
-        run: tool/gh_actions/pana_source.sh
+        run: tool/gh_actions/pana_source.sh . dart
 
       - name: Check project documentation
         run: tool/gh_actions/generate_documentation.sh
@@ -167,6 +167,9 @@ jobs:
           channel: stable
           version: 3.44.0
 
+      - name: Configure local package overrides
+        run: bash tool/gh_actions/write_local_package_overrides.sh
+
       - name: Install root Dart dependencies
         run: dart pub get
 
@@ -224,6 +227,9 @@ jobs:
           channel: stable
           version: 3.44.0
 
+      - name: Configure local package overrides
+        run: bash ../../tool/gh_actions/write_local_package_overrides.sh
+
       - name: Install package dependencies
         run: ${{ matrix.sdk }} pub get
 
@@ -266,11 +272,11 @@ jobs:
       - name: Generate project documentation
         run: tool/gh_actions/generate_documentation.sh
 
-      - name: Add standalone DevTools application
+      - name: Add ROHD Live Debugger application
         uses: actions/download-artifact@v4
         with:
-          name: rohd-devtools-standalone
-          path: doc/api/rohd_devtools_extension
+          name: rohd-live-debugger
+          path: doc/api/rohd-live-debugger
 
       - name: Deploy generated documentation
         uses: JamesIves/github-pages-deploy-action@v4
@@ -279,7 +285,7 @@ jobs:
           branch: docs
 
   build-devtool:
-    name: Build Devtools
+    name: Build ROHD Live Debugger
     timeout-minutes: 30
     runs-on: ${{ github.repository_owner == 'intel' && 'intel-ubuntu-latest' || 'ubuntu-latest' }}
     steps:
@@ -294,19 +300,16 @@ jobs:
       - name: Run Flutter Test
         run: tool/gh_actions/devtool/run_devtool_test.sh
 
-      - name: Build Static Web
-        run: tool/gh_actions/devtool/install_devtools.sh
+      - name: Smoke test DevTools against local ROHD packages
+        run: tool/gh_actions/devtool/smoke_test_local_packages.sh
 
-      - name: Test DevTools Installation
-        run: tool/gh_actions/devtool/test_devtools_install.sh extension/devtools
+      - name: Build standalone ROHD Live Debugger application
+        run: rohd_devtools_extension/tool/gh_actions/build_app.sh /rohd/rohd-live-debugger/
 
-      - name: Build standalone DevTools application
-        run: rohd_devtools_extension/tool/gh_actions/build_app.sh /rohd/rohd_devtools_extension/
-
-      - name: Upload standalone DevTools application
+      - name: Upload standalone ROHD Live Debugger application
         uses: actions/upload-artifact@v4
         with:
-          name: rohd-devtools-standalone
+          name: rohd-live-debugger
           path: rohd_devtools_extension/build/web
           if-no-files-found: error
           include-hidden-files: true

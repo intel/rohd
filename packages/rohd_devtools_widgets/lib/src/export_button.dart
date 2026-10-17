@@ -7,7 +7,6 @@
 // 2026 April
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
-import 'package:flutter/foundation.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// Small camera-icon button for triggering PNG export.
@@ -21,10 +20,9 @@ class ExportPngButton extends StatelessWidget {
   /// Tooltip text shown on hover.
   final String tooltip;
 
-  /// Creates a PNG export button.
   const ExportPngButton({
-    required this.onPressed,
     super.key,
+    required this.onPressed,
     this.tooltip = 'Export as PNG',
   });
 
@@ -51,13 +49,5 @@ class ExportPngButton extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  @override
-  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-    super.debugFillProperties(properties);
-    properties
-      ..add(ObjectFlagProperty<VoidCallback>.has('onPressed', onPressed))
-      ..add(StringProperty('tooltip', tooltip));
   }
 }

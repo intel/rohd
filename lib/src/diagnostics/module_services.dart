@@ -63,10 +63,6 @@ class ModuleServices {
   /// DevTools client from the relevant registered service.
   String get hierarchyJson => ModuleTree.instance.hierarchyJson;
 
-  /// Returns the module hierarchy as a JSON string.
-  @Deprecated('Use hierarchyJson instead.')
-  String get hierarchyJSON => hierarchyJson;
-
   // ─── Type-keyed service registry ──────────────────────────────
 
   final Map<Type, ModuleService> _services = <Type, ModuleService>{};

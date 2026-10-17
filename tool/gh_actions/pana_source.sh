@@ -74,11 +74,21 @@ copy_package() {
 }
 
 copy_package "$package_dir" "$temp_dir/package"
-if grep -A 1 -E '^[[:space:]]*rohd_hierarchy:[[:space:]]*$' \
-  "$package_dir/pubspec.yaml" |
-  grep -Eq '^[[:space:]]*path:[[:space:]]*\.\./rohd_hierarchy[[:space:]]*$'; then
-  hierarchy_dir="$(cd "$package_dir/../rohd_hierarchy" && pwd)"
+hierarchy_dir=""
+if [[ -f "$package_dir/../rohd_hierarchy/pubspec.yaml" ]]; then
+  hierarchy_dir="$package_dir/../rohd_hierarchy"
+elif [[ -f "$package_dir/packages/rohd_hierarchy/pubspec.yaml" ]]; then
+  hierarchy_dir="$package_dir/packages/rohd_hierarchy"
+fi
+if grep -Eq '^[[:space:]]*rohd_hierarchy:' "$package_dir/pubspec.yaml" &&
+    [[ -n "$hierarchy_dir" ]]; then
+  hierarchy_dir="$(cd "$hierarchy_dir" && pwd)"
   copy_package "$hierarchy_dir" "$temp_dir/rohd_hierarchy"
+  cat > "$temp_dir/package/pubspec_overrides.yaml" <<'EOF'
+dependency_overrides:
+  rohd_hierarchy:
+    path: ../rohd_hierarchy
+EOF
   uses_local_hierarchy=true
 fi
 cd "$temp_dir/package"

@@ -20,7 +20,7 @@ export FLUTTER_ROOT="$FIXTURE/flutter sdk" PANA_ANALYSIS_INCLUDES=1
 
 mkdir -p "$SOURCE/lib" "$SOURCE/.dart_tool" "$SOURCE/example" \
   "$FIXTURE/bin" "$PUB_CACHE/bin" "$TMPDIR" "$FLUTTER_ROOT/bin"
-for executable in bash cmp dirname grep mkdir mktemp readlink rm tar; do
+for executable in bash cat cmp dirname grep mkdir mktemp readlink rm tar; do
   ln -s "$(command -v "$executable")" "$FIXTURE/bin/$executable"
 done
 printf 'name: fixture\n' > "$SOURCE/pubspec.yaml"
@@ -44,13 +44,20 @@ set -euo pipefail
 printf '%s|%s\n' "${0##*/}" "$*" >> "$SDK_LOG"
 case "$*" in
   'pub get')
-    for file in pubspec.lock pubspec_overrides.yaml analysis_options.yaml \
-      .dart_tool example/pubspec.lock example/pubspec_overrides.yaml; do
+    for file in pubspec.lock analysis_options.yaml .dart_tool \
+      example/pubspec.lock example/pubspec_overrides.yaml; do
       [[ ! -e "$file" ]]
     done
-    cmp pubspec.yaml "$SOURCE/pubspec.yaml"
-    cmp lib/fixture.dart "$SOURCE/lib/fixture.dart"
-    if grep -q 'path: ../rohd_hierarchy' pubspec.yaml; then
+    if grep -q 'rohd_hierarchy:' pubspec.yaml; then
+      [[ "$(cat pubspec_overrides.yaml)" == $'dependency_overrides:\n  rohd_hierarchy:\n    path: ../rohd_hierarchy' ]]
+    else
+      [[ ! -e pubspec_overrides.yaml ]]
+    fi
+    cmp pubspec.yaml "${EXPECTED_PACKAGE_SOURCE:-$SOURCE}/pubspec.yaml"
+    if [[ -f "${EXPECTED_PACKAGE_SOURCE:-$SOURCE}/lib/fixture.dart" ]]; then
+      cmp lib/fixture.dart "${EXPECTED_PACKAGE_SOURCE:-$SOURCE}/lib/fixture.dart"
+    fi
+    if grep -q 'rohd_hierarchy:' pubspec.yaml; then
       [[ -f ../rohd_hierarchy/pubspec.yaml ]]
     fi
     printf 'hosted resolution\n' > pubspec.lock ;;
@@ -157,6 +164,21 @@ cp "$SOURCE/pubspec.yaml" "$FIXTURE/original/pubspec.yaml"
 export EXPECTED_THRESHOLD=0
 run_case 0 "$SOURCE" dart
 [[ "$(cat "$SDK_LOG")" == $'dart|pub get\ndart|analyze --fatal-infos lib\ndart|pub downgrade\ndart|analyze --fatal-infos lib' ]]
+
+mkdir -p "$FIXTURE/root-package/packages"
+cp -R "$SOURCE" "$FIXTURE/root-package/package"
+mv "$FIXTURE/root-package/package" "$FIXTURE/root-package/packages/rohd_hierarchy"
+mkdir -p "$FIXTURE/root-package/lib"
+printf 'name: rohd\n' > "$FIXTURE/root-package/pubspec.yaml"
+printf 'dependencies:\n  rohd_hierarchy: ^0.2.0\n' >> \
+  "$FIXTURE/root-package/pubspec.yaml"
+printf 'library rohd;\n' > "$FIXTURE/root-package/lib/rohd.dart"
+cp -R "$FIXTURE/root-package" "$FIXTURE/original-root-package"
+export EXPECTED_PACKAGE_SOURCE="$FIXTURE/root-package"
+run_case 0 "$FIXTURE/root-package" dart
+diff -ru "$FIXTURE/original-root-package" "$FIXTURE/root-package"
+[[ "$(cat "$SDK_LOG")" == $'dart|pub get\ndart|analyze --fatal-infos lib\ndart|pub downgrade\ndart|analyze --fatal-infos lib' ]]
+unset EXPECTED_PACKAGE_SOURCE
 
 mv "$PUB_CACHE/bin/pana" "$FIXTURE/pana"
 run_case 2 "$SOURCE" dart

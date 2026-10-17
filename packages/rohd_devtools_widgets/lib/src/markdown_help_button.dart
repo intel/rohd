@@ -20,9 +20,6 @@
 // 2026 March
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
-import 'dart:async';
-
-import 'package:flutter/foundation.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// A help button that loads its content from a markdown asset file.
@@ -112,22 +109,6 @@ class MarkdownHelpButton extends StatefulWidget {
 
   @override
   State<MarkdownHelpButton> createState() => _MarkdownHelpButtonState();
-
-  @override
-  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-    super.debugFillProperties(properties);
-    properties
-      ..add(StringProperty('assetPath', assetPath))
-      ..add(DiagnosticsProperty<bool>('isDark', isDark))
-      ..add(StringProperty('label', label))
-      ..add(StringProperty('package', package))
-      ..add(
-        DiagnosticsProperty<Map<String, String>?>(
-          'substitutions',
-          substitutions,
-        ),
-      );
-  }
 }
 
 class _MarkdownHelpButtonState extends State<MarkdownHelpButton> {
@@ -137,7 +118,7 @@ class _MarkdownHelpButtonState extends State<MarkdownHelpButton> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    unawaited(_loadContent());
+    _loadContent();
   }
 
   @override
@@ -145,7 +126,7 @@ class _MarkdownHelpButtonState extends State<MarkdownHelpButton> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.assetPath != widget.assetPath ||
         oldWidget.package != widget.package) {
-      unawaited(_loadContent());
+      _loadContent();
     }
   }
 
@@ -319,57 +300,53 @@ class _MarkdownHelpButtonState extends State<MarkdownHelpButton> {
       }
     }
 
-    unawaited(
-      showDialog<void>(
-        context: context,
-        builder: (ctx) => Dialog(
-          backgroundColor: bgColor,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 600, maxHeight: 600),
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Title row
-                  Row(
-                    children: [
-                      if (titleIcon != null) ...[
-                        titleIcon,
-                        const SizedBox(width: 10),
-                      ],
-                      Expanded(
-                        child: Text(
-                          content.title,
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: fgColor,
-                          ),
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: bgColor,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 600, maxHeight: 600),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Title row
+                Row(
+                  children: [
+                    if (titleIcon != null) ...[
+                      titleIcon,
+                      const SizedBox(width: 10),
+                    ],
+                    Expanded(
+                      child: Text(
+                        content.title,
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: fgColor,
                         ),
                       ),
-                      IconButton(
-                        icon: Icon(Icons.close, color: fgColor, size: 20),
-                        onPressed: () => Navigator.of(ctx).pop(),
-                      ),
-                    ],
-                  ),
-                  Divider(color: dividerColor),
-                  // Scrollable content
-                  Flexible(
-                    child: SingleChildScrollView(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: widgets,
-                      ),
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.close, color: fgColor, size: 20),
+                      onPressed: () => Navigator.of(ctx).pop(),
+                    ),
+                  ],
+                ),
+                Divider(color: dividerColor),
+                // Scrollable content
+                Flexible(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: widgets,
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
@@ -411,7 +388,7 @@ class _HelpContent {
     final title = _extractTitle(raw) ?? 'Help';
 
     // Extract tooltip text.
-    var tooltip = '';
+    String tooltip = '';
     if (tooltipIdx >= 0 && detailsIdx > tooltipIdx) {
       tooltip =
           raw.substring(tooltipIdx + tooltipMarker.length, detailsIdx).trim();
@@ -436,7 +413,7 @@ class _HelpContent {
     final blocks = <_DetailBlock>[];
     final lines = raw.split('\n');
 
-    for (var i = 0; i < lines.length; i++) {
+    for (int i = 0; i < lines.length; i++) {
       final line = lines[i];
       final trimmed = line.trim();
 

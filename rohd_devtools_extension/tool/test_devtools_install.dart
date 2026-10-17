@@ -24,8 +24,9 @@ Future<void> main(List<String> args) async {
   }
 
   final installRoot = _installRootFor(targetDir);
-  final extensionDir =
-      Directory(p.join(installRoot.path, 'extension', 'devtools'));
+  final extensionDir = Directory(
+    p.join(installRoot.path, 'extension', 'devtools'),
+  );
   final projectRoot = await _writeProjectRootPointingTo(installRoot);
 
   try {
@@ -39,9 +40,11 @@ Future<void> main(List<String> args) async {
 
     final extensionAssetsPath = p.join(extensionDir.path, 'build');
     final rohdExtensions = manager.devtoolsExtensions
-        .where((extension) =>
-            extension.name == 'rohd' &&
-            p.equals(extension.extensionAssetsPath, extensionAssetsPath))
+        .where(
+          (extension) =>
+              extension.name == 'rohd' &&
+              p.equals(extension.extensionAssetsPath, extensionAssetsPath),
+        )
         .toList();
 
     if (rohdExtensions.length != 1) {
@@ -53,8 +56,11 @@ Future<void> main(List<String> args) async {
     }
 
     final extension = rohdExtensions.single;
-    _requireValue(extension.issueTrackerLink, 'issueTracker',
-        'https://github.com/intel/rohd/issues');
+    _requireValue(
+      extension.issueTrackerLink,
+      'issueTracker',
+      'https://github.com/intel/rohd/issues',
+    );
     _requireNonEmpty(extension.version, 'version');
 
     _requireFile(extensionAssetsPath, 'index.html');
@@ -62,10 +68,7 @@ Future<void> main(List<String> args) async {
     _requireFile(extensionAssetsPath, 'flutter.js');
     _requireFile(extensionAssetsPath, 'main.dart.js');
     _requireFile(extensionAssetsPath, 'version.json');
-    _requireFile(
-      extensionAssetsPath,
-      p.join('assets', 'AssetManifest.bin.json'),
-    );
+    _requireFile(extensionAssetsPath, p.join('assets', 'AssetManifest.bin'));
     _requireFile(extensionAssetsPath, p.join('assets', 'FontManifest.json'));
     _requireFile(extensionAssetsPath, p.join('canvaskit', 'canvaskit.js'));
     _requireFile(extensionAssetsPath, p.join('canvaskit', 'canvaskit.wasm'));
@@ -83,7 +86,8 @@ Future<void> main(List<String> args) async {
 Future<_ResolvedTarget> _resolveTarget(String target) async {
   final githubTree = _parseGithubTreeTarget(target);
   if (githubTree != null) {
-    return _downloadGithubTree(githubTree);
+    final resolved = await _downloadGithubTree(githubTree);
+    return resolved;
   }
 
   if (target.startsWith('http://') || target.startsWith('https://')) {
@@ -93,9 +97,7 @@ Future<_ResolvedTarget> _resolveTarget(String target) async {
     );
   }
 
-  return _ResolvedTarget(
-    Directory(p.normalize(p.absolute(target))),
-  );
+  return _ResolvedTarget(Directory(p.normalize(p.absolute(target))));
 }
 
 _GithubTreeTarget? _parseGithubTreeTarget(String target) {
@@ -126,9 +128,7 @@ _GithubTreeTarget? _parseGithubTreeTarget(String target) {
   return null;
 }
 
-Future<_ResolvedTarget> _downloadGithubTree(
-  _GithubTreeTarget target,
-) async {
+Future<_ResolvedTarget> _downloadGithubTree(_GithubTreeTarget target) async {
   final tempDir = await Directory.systemTemp.createTemp(
     'rohd_devtools_install_tree_',
   );
@@ -139,15 +139,7 @@ Future<_ResolvedTarget> _downloadGithubTree(
   final archiveUrl = 'https://github.com/${target.owner}/${target.repo}/'
       'archive/refs/heads/${target.branch}.zip';
 
-  await _runChecked(
-    'curl',
-    [
-      '-fsSL',
-      archiveUrl,
-      '-o',
-      archivePath,
-    ],
-  );
+  await _runChecked('curl', ['-fsSL', archiveUrl, '-o', archivePath]);
   await _runChecked('unzip', ['-q', archivePath, '-d', tempDir.path]);
 
   final extractedRoot = Directory(
@@ -157,10 +149,7 @@ Future<_ResolvedTarget> _downloadGithubTree(
       ? extractedRoot.path
       : p.join(extractedRoot.path, target.treePath);
 
-  return _ResolvedTarget(
-    Directory(resolvedPath),
-    cleanupDir: tempDir,
-  );
+  return _ResolvedTarget(Directory(resolvedPath), cleanupDir: tempDir);
 }
 
 Future<void> _runChecked(String executable, List<String> arguments) async {
@@ -201,8 +190,9 @@ Directory _installRootFor(Directory extensionDir) {
     return extensionParent.parent;
   }
 
-  final nestedExtensionDir =
-      Directory(p.join(extensionDir.path, 'extension', 'devtools'));
+  final nestedExtensionDir = Directory(
+    p.join(extensionDir.path, 'extension', 'devtools'),
+  );
   if (nestedExtensionDir.existsSync()) {
     return extensionDir;
   }
@@ -217,31 +207,43 @@ Future<Directory> _writeProjectRootPointingTo(Directory packageRoot) async {
   final projectRoot = await Directory.systemTemp.createTemp(
     'rohd_devtools_extension_discovery_',
   );
-  final packageConfig = File(
-    p.join(projectRoot.path, '.dart_tool', 'package_config.json'),
+  final pubspec = File(p.join(projectRoot.path, 'pubspec.yaml'));
+  await pubspec.writeAsString('''
+name: rohd_devtools_extension_discovery
+environment:
+  sdk: ^3.6.0
+dependencies:
+  rohd:
+    path: ${jsonEncode(packageRoot.path)}
+''');
+  final hierarchyDir = Directory(
+    p.join(packageRoot.path, 'packages', 'rohd_hierarchy'),
   );
-  await packageConfig.parent.create(recursive: true);
-  await packageConfig.writeAsString(
-    jsonEncode({
-      'configVersion': 2,
-      'packages': [
-        {
-          'name': 'rohd',
-          'rootUri': packageRoot.uri.toString(),
-          'packageUri': 'lib/',
-          'languageVersion': '3.0',
-        },
-      ],
-    }),
+  if (hierarchyDir.existsSync()) {
+    final overrides = File(p.join(projectRoot.path, 'pubspec_overrides.yaml'));
+    await overrides.writeAsString('''
+dependency_overrides:
+  rohd_hierarchy:
+    path: ${jsonEncode(hierarchyDir.path)}
+''');
+  }
+
+  final result = await Process.run(
+    Platform.resolvedExecutable,
+    ['pub', 'get'],
+    workingDirectory: projectRoot.path,
   );
+  if (result.exitCode != 0) {
+    _fail(
+      'Failed to resolve the temporary DevTools discovery project.\n'
+      '${result.stderr}',
+    );
+  }
+
   return projectRoot;
 }
 
-void _requireValue(
-  String value,
-  String key,
-  String expectedValue,
-) {
+void _requireValue(String value, String key, String expectedValue) {
   if (value != expectedValue) {
     _fail('Expected config "$key" to be "$expectedValue", got "$value".');
   }

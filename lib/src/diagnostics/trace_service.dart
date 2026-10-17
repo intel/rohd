@@ -24,7 +24,7 @@ enum SvOutputMode {
   perModule,
 
   /// All module definitions are concatenated into a single `.sv` file
-  /// (the output of `Module.generateSynth()`).
+  /// (the output of `Module.dumpSystemVerilog()`).
   ///
   /// Line numbers include the header offset so they match the
   /// concatenated output directly.
@@ -236,7 +236,7 @@ class TraceService extends ArtifactProducingService {
   ///
   /// Use this when the generated SV is a single concatenated file.
   /// Line numbers include the header offset so they match
-  /// [SystemVerilogService.synthOutput] (and `Module.generateSynth()`)
+  /// [SystemVerilogService.synthOutput] (and `Module.dumpSystemVerilog()`)
   /// directly.
   Map<String, Map<String, List<String>>> get singleFileSvLineMaps =>
       _declarationsLast(svService?.singleFileSvLineMaps ?? const {});
@@ -429,7 +429,7 @@ class TraceService extends ArtifactProducingService {
   ///
   /// Produces a single `<definitionName>.flc.json` with file-global
   /// SV line numbers matching [SystemVerilogService.synthOutput]
-  /// (and `Module.generateSynth()`).
+  /// (and `Module.dumpSystemVerilog()`).
   void writeSingleFileFlc(
     String directory, {
     String? svFilename,

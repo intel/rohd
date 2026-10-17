@@ -7,9 +7,6 @@
 // 2026 September 15
 // Author: Max Korbel <max.korbel@intel.com>
 
-// Legacy API calls are intentional coverage for deprecated generateSynth().
-// ignore_for_file: deprecated_member_use_from_same_package
-
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
@@ -175,7 +172,8 @@ void main() {
         drive: ArrayDrive.elements,
         value: 0x39);
     await module.build();
-    expect(module.generateSynth(), contains(".array(({2'h3, 2'h2, 2'h1}))"));
+    expect(
+        module.dumpSystemVerilog(), contains(".array(({2'h3, 2'h2, 2'h1}))"));
   });
 
   for (final value in [0, 2, LogicValue.x]) {
@@ -188,7 +186,7 @@ void main() {
           value: value);
       await module.build();
       final literal = LogicValue.of(value, width: 2);
-      expect(module.generateSynth(), contains('.array(({$literal}))'));
+      expect(module.dumpSystemVerilog(), contains('.array(({$literal}))'));
     });
   }
 
@@ -199,7 +197,7 @@ void main() {
         numUnpackedDimensions: 1,
         drive: ArrayDrive.live);
     await module.build();
-    expect(module.generateSynth(), contains('.array(({value}))'));
+    expect(module.dumpSystemVerilog(), contains('.array(({value}))'));
   });
 
   test('floating singleton retains its unpacked array shape', () async {
@@ -210,7 +208,7 @@ void main() {
         drive: ArrayDrive.constant,
         value: LogicValue.z);
     await module.build();
-    final verilog = module.generateSynth();
+    final verilog = module.dumpSystemVerilog();
     expect(verilog, contains('logic [1:0] array [0:0];'));
     expect(verilog, contains('.array(array)'));
   });
@@ -223,7 +221,7 @@ void main() {
         drive: ArrayDrive.constant,
         value: 2);
     await module.build();
-    expect(module.generateSynth(), contains(".array((2'h2))"));
+    expect(module.dumpSystemVerilog(), contains(".array((2'h2))"));
   });
 
   test('preserved singleton array stays declared', () async {
@@ -234,7 +232,7 @@ void main() {
         drive: ArrayDrive.constant,
         naming: Naming.reserved);
     await module.build();
-    final verilog = module.generateSynth();
+    final verilog = module.dumpSystemVerilog();
     expect(verilog, contains('logic [1:0] tieoff [0:0];'));
     expect(verilog, contains('.array(tieoff)'));
   });

@@ -24,6 +24,7 @@ coverage/
 
 # Exceptions
 !.vscode/extensions.json
+!rohd_devtools_extension/test/fixtures/filter_bank.vcd
 !test/example_icarus_waves.vcd
 !test/example_verilator_waves.vcd
 !test/sv_param_passthrough.sv

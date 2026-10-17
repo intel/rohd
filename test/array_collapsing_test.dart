@@ -7,9 +7,6 @@
 // 2024 June 5
 // Author: Shankar Sharma <shankar.sharma@intel.com>
 
-// Legacy API calls are intentional coverage for deprecated generateSynth().
-// ignore_for_file: deprecated_member_use_from_same_package
-
 import 'dart:convert';
 
 import 'package:rohd/rohd.dart';
@@ -2470,7 +2467,7 @@ void main() {
       () async {
     final mod = SplitPackedOutputTop();
     await mod.build();
-    final topBody = _topModuleBody(mod.generateSynth());
+    final topBody = _topModuleBody(mod.dumpSystemVerilog());
     expect(topBody, contains('.result({high,low})'));
     expect(topBody, isNot(contains('splitStage')));
     expect(topBody, isNot(contains('assign ')));
@@ -2492,7 +2489,7 @@ void main() {
       ...(ports['high'] as Map<String, dynamic>)['bits'] as List<dynamic>,
     ]);
     expect(cells.any((cell) => cell['type'] == r'$slice'), isFalse);
-    expect(_topModuleBody(mod.generateSynth()), topBody);
+    expect(_topModuleBody(mod.dumpSystemVerilog()), topBody);
     final vectors = [
       for (final pattern in [0, 1, 2, 0x55, 0xaa, 0x80, 0xff])
         Vector({'source': pattern}, {'high': pattern >> 1, 'low': pattern & 1}),
@@ -2504,7 +2501,7 @@ void main() {
   test('packed child output split maps singleton destinations', () async {
     final mod = SplitPackedOutputTop(singleBits: true);
     await mod.build();
-    final topBody = _topModuleBody(mod.generateSynth());
+    final topBody = _topModuleBody(mod.dumpSystemVerilog());
     expect(topBody,
         contains('.result({bit7,bit6,bit5,bit4,bit3,bit2,bit1,bit0})'));
     expect(topBody, isNot(contains('splitStage')));
@@ -2525,7 +2522,7 @@ void main() {
   test('packed child output split maps range assignment consumers', () async {
     final mod = SplitPackedOutputTop(useAssignSubset: true, custom: true);
     await mod.build();
-    final topBody = _topModuleBody(mod.generateSynth());
+    final topBody = _topModuleBody(mod.dumpSystemVerilog());
     expect(topBody, contains('.result({high,low})'));
     expect(topBody, isNot(contains('splitStage')));
     expect(topBody, isNot(contains('assign ')));
@@ -2557,7 +2554,7 @@ void main() {
         internalArray: configuration.internal,
       );
       await mod.build();
-      final topBody = _topModuleBody(mod.generateSynth());
+      final topBody = _topModuleBody(mod.dumpSystemVerilog());
       final concat = configuration.permuted
           ? '{parts[0][1],parts[1][1],parts[0][0],parts[1][0]}'
           : '{parts[1][1],parts[1][0],parts[0][1],parts[0][0]}';
@@ -2565,7 +2562,7 @@ void main() {
       expect(topBody, isNot(contains('splitStage')));
       expect(topBody, isNot(contains('assign parts')));
       NetlistSynthesizer().synthesizeToJson(mod);
-      expect(_topModuleBody(mod.generateSynth()), topBody);
+      expect(_topModuleBody(mod.dumpSystemVerilog()), topBody);
       final vectors = [
         for (final text in [
           for (final pattern in [0, 0xff, 0xe4, 0x1b, 0x55, 0xaa])
@@ -2597,7 +2594,7 @@ void main() {
         () async {
       final mod = SplitPackedMixedOutputTop(unpacked: unpacked);
       await mod.build();
-      final topBody = _topModuleBody(mod.generateSynth());
+      final topBody = _topModuleBody(mod.dumpSystemVerilog());
       expect(topBody, contains('.result({flag,high[0],low[1],low[0]})'));
       expect(topBody, isNot(contains('splitStage')));
       expect(topBody, isNot(contains('assign ')));
@@ -2647,7 +2644,7 @@ void main() {
         inoutDestination: guard == 'inout destination',
       );
       await mod.build();
-      final topBody = _topModuleBody(mod.generateSynth());
+      final topBody = _topModuleBody(mod.dumpSystemVerilog());
       expect(topBody, isNot(contains('.result({')));
       if (guard == 'reserved' || guard == 'renameable') {
         expect(topBody, contains('splitStage'));
@@ -4696,7 +4693,7 @@ void main() {
           'maps directly', () async {
         final mod = Top(useRange: useRange);
         await mod.build();
-        final sv = mod.generateSynth();
+        final sv = mod.dumpSystemVerilog();
         final topBody = _topModuleBody(sv);
 
         expect(
@@ -4727,7 +4724,7 @@ void main() {
         () async {
       final mod = ArrayTop();
       await mod.build();
-      final sv = mod.generateSynth();
+      final sv = mod.dumpSystemVerilog();
       final topBody = _topModuleBody(sv);
 
       expect(topBody, contains('logic [1:0] data_in;'));
@@ -4752,7 +4749,7 @@ void main() {
     test('contiguous bitwise connection maps through hierarchy', () async {
       final mod = HierarchyTop();
       await mod.build();
-      final sv = mod.generateSynth();
+      final sv = mod.dumpSystemVerilog();
       final topBody = _topModuleBody(sv);
 
       expect(

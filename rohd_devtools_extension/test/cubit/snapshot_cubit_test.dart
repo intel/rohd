@@ -53,49 +53,53 @@ class _ThrowingSignalValueSource implements SignalValueSource {
 
 void main() {
   group('SnapshotCubit', () {
-    test('maps source data into snapshots and supports both lookup methods',
-        () async {
-      final cubit = SnapshotCubit();
-      addTearDown(cubit.close);
-      final source = _FakeSignalValueSource({
-        'top.counter': {
-          'name': 'counter',
-          'value': "8'h2a",
-          'width': 8,
-          'direction': 'output',
-        },
-        'top.internal': <String, dynamic>{},
-      });
+    test(
+      'maps source data into snapshots and supports both lookup methods',
+      () async {
+        final cubit = SnapshotCubit();
+        addTearDown(cubit.close);
+        final source = _FakeSignalValueSource({
+          'top.counter': {
+            'name': 'counter',
+            'value': "8'h2a",
+            'width': 8,
+            'direction': 'output',
+          },
+          'top.internal': <String, dynamic>{},
+        });
 
-      final takingSnapshot = cubit.takeSnapshot(source, 42);
-      expect(cubit.state, const SnapshotLoading(42));
-      await takingSnapshot;
+        final takingSnapshot = cubit.takeSnapshot(source, 42);
+        expect(cubit.state, const SnapshotLoading(42));
+        await takingSnapshot;
 
-      final state = cubit.state as SnapshotLoaded;
-      expect(state.time, 42);
-      expect(
-        state.getSignal('top.counter'),
-        const SignalSnapshot(
-          signalId: 'top.counter',
-          name: 'counter',
-          value: "8'h2a",
-          width: 8,
-          direction: 'output',
-        ),
-      );
-      expect(state.getSignalByName('counter'),
-          same(state.getSignal('top.counter')));
-      expect(
-        state.getSignal('top.internal'),
-        const SignalSnapshot(
-          signalId: 'top.internal',
-          name: 'top.internal',
-          value: '?',
-          width: 1,
-        ),
-      );
-      expect(state.getSignalByName('missing'), isNull);
-    });
+        final state = cubit.state as SnapshotLoaded;
+        expect(state.time, 42);
+        expect(
+          state.getSignal('top.counter'),
+          const SignalSnapshot(
+            signalId: 'top.counter',
+            name: 'counter',
+            value: "8'h2a",
+            width: 8,
+            direction: 'output',
+          ),
+        );
+        expect(
+          state.getSignalByName('counter'),
+          same(state.getSignal('top.counter')),
+        );
+        expect(
+          state.getSignal('top.internal'),
+          const SignalSnapshot(
+            signalId: 'top.internal',
+            name: 'top.internal',
+            value: '?',
+            width: 1,
+          ),
+        );
+        expect(state.getSignalByName('missing'), isNull);
+      },
+    );
 
     test('reports an error when no snapshot data is available', () async {
       final cubit = SnapshotCubit();
@@ -156,7 +160,7 @@ void main() {
       expect(state.getSignal('top.counter')!.width, 8);
     });
 
-    test('clear returns to camera mode and its initial state', () async {
+    test('clear returns to camera mode and its initial state', () {
       final cubit = SnapshotCubit();
       addTearDown(cubit.close);
 

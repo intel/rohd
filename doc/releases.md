@@ -292,6 +292,108 @@ dependencies determine ordering only when the required versions have not yet
 been published. Sharing a repository or source commit does not require a
 coordinated release.
 
+### Core API migration for 0.7.0
+
+ROHD 0.7.0 removes long-deprecated core APIs, but retains released APIs whose
+deprecation has not had a sufficient release cycle. Migrate consumers before widening a `^0.6.11` core
+constraint to include 0.7.x. The independently versioned shared packages do not
+need breaking releases just because core removes these APIs.
+
+| Removed API | Replacement |
+| --- | --- |
+| `StateMachine` | `FiniteStateMachine`, with enum state identifiers |
+| `FF`, `IfBlock` | `Sequential`, `If.block` |
+| `ExternalModule` | `ExternalSystemVerilogModule` |
+| `Port` | `Logic.port` |
+| `LogicValues` | `LogicValue` |
+| `Logic.bit`, `LogicStructure.bit` | `value`; explicitly check `width == 1` when required |
+| `valueInt`, `valueBigInt` | `value.toInt()`, `value.toBigInt()` |
+| `hasValidValue()`, `isFloating()` on signals | `value.isValid`, `value.isFloating` |
+| `LogicValue.length`, `LogicValue.bit` | `width`, or the value itself with an explicit single-bit width check |
+| `LogicValue.fromBool`, `fromInt`, `fromBigInt`, `fromString` | `ofBool`, `ofInt`, `ofBigInt`, `ofString` |
+| `LogicValue.from(iterable)` | `LogicValue.ofIterable(iterable)` |
+| Global `swizzle(signals)`, `rswizzle(signals)` | `signals.swizzle()`, `signals.rswizzle()` |
+| Gate `y` output aliases | `out`, `Add.sum`, or `Mux.mux`, as appropriate |
+| `Add.out` | `Add.sum` |
+| `getReceivers()`, `getDrivers()`, `getConditionals()` | `receivers`, `drivers`, `conditionals` |
+| `PairInterface.modify` and its constructor argument | Pass `uniquify` when connecting or adding sub-interfaces |
+| `PairInterface.clone(other)` | `other.clone()` |
+| `Module.unpreferredName`, `Module.isUnpreferred` | `Naming.unpreferredName`, `Naming.isUnpreferred`, or `Logic.naming` |
+| `FiniteStateMachine.clk`, `Pipeline.clk` | Retain the clock supplied at construction; do not retrieve it from the module |
+| `Dumper` | `module.dumpWaves(outputPath: ...)` or `WaveformService` |
+| `SynthBuilder.top`, `getFileContents()` | `tops`, `getSynthFileContents()` |
+| `SynthesisResult.toFileContents()` and older backend overrides | `toSynthFileContents()`; use each artifact's `contents` |
+| `CustomSystemVerilog` | `SystemVerilog`; combine input/output mappings into the `ports` map of `instantiationVerilog` |
+| `SystemVerilogSynthesizer.instantiationVerilogWithParameters` | `instantiationVerilogFor` with named arguments and a combined `ports` map |
+
+The following released APIs remain available, with `@Deprecated` warnings,
+in 0.7.0. They will be removed in a later release, not as part of this version
+change. Update callers now; do not add new uses outside compatibility tests.
+
+| Retained deprecated API | Replacement | Release history |
+| --- | --- | --- |
+| `Module.generateSynth` | `Module.dumpSystemVerilog` or `SystemVerilogService` | Released without deprecation in 0.6.11 |
+| `WaveDumper` | `module.dumpWaves(outputPath: ...)` or `WaveformService` | Released without deprecation in 0.6.11 |
+| `ModuleTree.hierarchyJSON` | `ModuleTree.hierarchyJson` | Released without deprecation in 0.6.11 |
+| `NetlistSynthesisResult.toFileContents()` | `toSynthFileContents()` and each artifact's `contents` | First released, already deprecated, in 0.6.11 |
+
+Compatibility APIs introduced and removed only during unreleased development
+are not retained: `FlcService` (use `TraceService`), `SystemCExecutable` (use
+`SystemCVectorExecutable`), `ModuleServices.hierarchyJSON` (use `hierarchyJson`),
+FLC methods on `NetlistService` (use `TraceService`), and
+`SystemVerilogService.contentsByName` (use `instanceTypeOutput` or `fileContents`).
+
+For example, replace `WaveDumper(dut, outputPath: 'waves.vcd')` with
+`dut.dumpWaves(outputPath: 'waves.vcd')`. If code needs advanced waveform
+options or the resulting service, use `WaveformService` directly. To retain the
+old single-string synthesis result, read `toSynthFileContents().single.contents`
+only when exactly one artifact is expected; otherwise iterate the artifacts.
+
+### Backward-compatible shared-package updates
+
+Release the additive hierarchy and waveform updates as `rohd_hierarchy` 0.1.1
+and `rohd_waveform` 0.1.1, and the widgets update as
+`rohd_devtools_widgets` 0.1.2. New capabilities alone do not require a 0.2.0
+release. Legacy hierarchy occurrences retain fresh, mutable port snapshots;
+the new cached port-prefix behavior is opt-in through `portCount`.
+
+Waveform and widgets retain `rohd_hierarchy: ^0.1.0`; their updates do not
+require hierarchy 0.1.1 to be published first. ROHD 0.7.0 does require hierarchy
+0.1.1 for its new APIs, so publish hierarchy before ROHD. Widgets accepts ROHD
+0.6.10 through 0.7.x and can be published before ROHD 0.7.0.
+
+The viewer compatibility releases are `rohd_wave_viewer` 0.1.1,
+`dart_wellen` 0.1.1, and `rohd_schematic_viewer` 0.2.5. They accept ROHD
+0.6.11 through 0.7.x and widen shared-package constraints to accept both
+0.1.x and 0.2.x. They do not need the new shared-package releases first.
+Publish `dart_wellen` before the wave viewer.
+
+Widgets and viewers retain Flutter 3.44 as their lower bound and allow
+Material UI 1.1.0 through 1.x, including 1.7.0. Resolving the newer UI stack
+requires a suitable newer Flutter SDK; consumers on an older SDK can retain
+older compatible dependencies. The DevTools application also accepts Flutter
+3.44 and Material UI 1.1.0 through 1.x. The wave viewer accepts Cupertino Icons 1.x
+and 2.x. The application, wave viewer, and waveform package allow Equatable
+2.x and 3.x. These changes do not increase package Dart language-version floors.
+
+The DevTools application requires hierarchy and waveform 0.1.1 and widgets
+0.1.2, but accepts the published wave viewer and `dart_wellen` 0.1.0 and
+schematic viewer 0.2.4 as well as the planned compatibility releases. Its
+Cupertino Icons range accepts 1.x and 2.x. Checkout CI uses local ROHD and
+companion-package overrides, allowing the published viewers to be checked
+against the current sources despite their ROHD `^0.6.11` constraints.
+Final hosted resolution with ROHD 0.7.0 still requires the compatibility
+viewer releases. A build using local overrides is a development check,
+not proof of hosted resolution.
+
+The published wave viewer and `dart_wellen` 0.1.0 use Flutter Rust Bridge 2.7.0
+together; do not override that runtime independently. The planned 0.1.1 releases
+must use Flutter Rust Bridge 2.7.1 consistently in their Dart runtime dependency,
+Rust runtime and generator dependencies, and generated bindings. Use the wave
+viewer Makefile to regenerate and validate the bridge before preparing either
+archive. A dependency-constraint edit alone is not sufficient for this runtime
+update.
+
 `rohd_source_navigator` has only hosted Dart dependencies and can be published
 independently of ROHD and the Flutter packages. Once its version is available on
 pub.dev, consumers such as the ROHD Schematic Viewer can replace their Git

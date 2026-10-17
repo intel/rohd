@@ -165,13 +165,14 @@ class HierarchyOccurrence {
   ///
   /// Ports occupy a contiguous prefix of [signals], so this never scans
   /// internal signals when [portCount] was provided by the producer.
+  /// Legacy occurrences without [portCount] return a fresh, mutable list
+  /// reflecting the current [signals].
   List<SignalOccurrence> get ports {
     final portCount = _explicitPortCount;
-    return _ports ??= List.unmodifiable(
-      portCount == null
-          ? signals.where((signal) => signal.isPort)
-          : signals.take(portCount),
-    );
+    if (portCount == null) {
+      return signals.where((signal) => signal.isPort).toList();
+    }
+    return _ports ??= List.unmodifiable(signals.take(portCount));
   }
 
   /// Return the offset (index) of the child with [name] in [children],
@@ -197,6 +198,14 @@ class HierarchyOccurrence {
   /// Returns the port named [name], or `null` when it is not an interface
   /// port on this occurrence. Case-sensitive.
   SignalOccurrence? portByName(String name) {
+    if (_explicitPortCount == null) {
+      for (final signal in signals) {
+        if (signal.isPort && signal.name == name) {
+          return signal;
+        }
+      }
+      return null;
+    }
     _portByName ??= {for (final port in ports) port.name: port};
     return _portByName![name];
   }

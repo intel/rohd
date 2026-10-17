@@ -11,9 +11,8 @@ import 'package:material_ui/material_ui.dart';
 
 const _fontFallback = <String>['Noto Color Emoji'];
 
-TextTheme _withFontFallback(TextTheme theme) => theme.apply(
-      fontFamilyFallback: _fontFallback,
-    );
+TextTheme _withFontFallback(TextTheme theme) =>
+    theme.apply(fontFamilyFallback: _fontFallback);
 
 /// Dark theme colors
 class DarkThemeColors {

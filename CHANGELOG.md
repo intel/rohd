@@ -1,12 +1,40 @@
 ## Next Release
 
-- Fixed `LogicValue.ofRadixString` round trips with empty separators and separators containing regular-expression metacharacters (<https://github.com/intel/rohd/issues/722>).
-- Added `LogicEnum<T>` hardware signals with explicit enum encodings, mapped member assignments, driveable cloning, and SystemVerilog enum generation (<https://github.com/intel/rohd/pull/599>).
-- Netlist JSON format is now `0.1.0`, preserving enum types and encodings on retained netnames using Yosys-style attributes, including constant-driven enum uses (<https://github.com/intel/rohd/pull/599>).
-- **Breaking:** `FiniteStateMachine`, `State`, and the deprecated `StateMachine` alias now require Dart enum state identifiers. Replace integer, string, or custom-object identifiers with enum members; update reset and transition targets accordingly. `currentState` and `nextState` are now `LogicEnum` signals (<https://github.com/intel/rohd/pull/599>).
+### Breaking Changes
 
-- Released `rohd_hierarchy` 0.2.0 with the hierarchy query and netlist
-  adapter APIs.
+- `FiniteStateMachine` and `State` now require Dart enum state identifiers. Replace integer, string, or custom-object identifiers with enum members; update reset and transition targets accordingly. `currentState` and `nextState` are now `LogicEnum` signals (<https://github.com/intel/rohd/pull/599>).
+- Removed long-deprecated APIs, including `StateMachine`, `FF`, `IfBlock`, `Port`, `LogicValues`, `CustomSystemVerilog`, `Dumper`, legacy signal/value helpers, `PairInterface.modify` and its clone constructor, and old synthesis accessors. These were already deprecated before 0.6.10. See the [0.7.0 migration guide](doc/releases.md#core-api-migration-for-070) for replacements.
+
+### Deprecated APIs retained for a later release
+
+- `WaveDumper`, `Module.generateSynth`, and `ModuleTree.hierarchyJSON` remain available with deprecation warnings. They were released APIs in 0.6.11, but their deprecations had not shipped in a tagged release. Use `Module.dumpWaves`, `Module.dumpSystemVerilog`, and `ModuleTree.hierarchyJson`, respectively.
+- `NetlistSynthesisResult.toFileContents()` remains deprecated but available because it first shipped in 0.6.11. Use `toSynthFileContents()` and read the returned artifacts' `contents`.
+- These APIs are not removed in 0.7.0; migrate callers now in preparation for removal in a later release. Compatibility retention follows the same approach as a 0.6.12 release, despite the version change.
+- Unreleased compatibility APIs (`FlcService`, `SystemCExecutable`, `ModuleServices.hierarchyJSON`, FLC methods on `NetlistService`, and `SystemVerilogService.contentsByName`) remain removed. They were never part of a tagged core release.
+
+### Major Features
+
+- Added `LogicEnum<T>` hardware signals with explicit enum encodings, mapped member assignments, driveable cloning, and SystemVerilog enum generation (<https://github.com/intel/rohd/pull/599>).
+- Added compact FST waveform capture alongside VCD, with block-based reading and waveform query APIs for incremental access (<https://github.com/intel/rohd/pull/671>).
+- Added SystemC generation, runtime support, and `SystemCService` for generating and writing module artifacts. Generated SystemC uses a two-state representation and does not preserve X/Z semantics (<https://github.com/intel/rohd/pull/662>).
+- Added source tracing and FLC (File-Line-Column) sidecars for cross-probing signals and module instances between Dart source and generated SystemVerilog or SystemC, with an optional standalone HTML report (<https://github.com/intel/rohd/pull/707>).
+- Added `rohd_hierarchy` 0.1.1 hierarchy query and netlist adapter APIs, and design-shell APIs using `SignalOccurrence` and `HierarchyOccurrence` handles for hierarchy search and connectivity traversal (<https://github.com/intel/rohd/pull/707>, <https://github.com/intel/rohd/pull/716>).
+- Added the standalone ROHD Live Debugger with hierarchy browsing, signal inspection, connectivity traversal, source navigation, waveform access, and cross-probing over DTD and VM-service transports (<https://github.com/intel/rohd/pull/736>).
+- Added `rohd-shell`, a DTD-attached terminal client for hierarchy, port, signal, and fan-in/fan-out queries, JSON output, and cross-probe selections (<https://github.com/intel/rohd/pull/736>).
+- Added the `ModuleService` API, the `ModuleServices` registry, `ArtifactProducingService`, `ModuleServiceArtifact`, `SystemVerilogService`, and `WaveformService` for module-scoped generation, capture, and inspection.
+- Added `Module.dumpSystemVerilog` and `Module.dumpWaves` convenience methods. `dumpSystemVerilog()` returns in-memory SystemVerilog; `dumpWaves()` provides standard VCD capture. The released `generateSynth` and `WaveDumper` APIs now delegate to these methods and remain available as deprecated wrappers.
+
+### Improvements
+
+- Netlist JSON format is now `0.1.0`, preserving enum types and encodings on retained netnames using Yosys-style attributes, including constant-driven enum uses (<https://github.com/intel/rohd/pull/599>).
+- Added configurable waveform timescales, recording windows, and output overwrite policies (<https://github.com/intel/rohd/pull/671>).
+- Added opt-in `DebugSession` setup for source tracing, netlist and FLC services, and live waveform recording (<https://github.com/intel/rohd/pull/707>).
+- Expanded reusable `rohd_devtools_widgets` components for hierarchy browsing, signal formatting, bit expansion, overlays, help, capture, and cross-probing (<https://github.com/intel/rohd/pull/736>).
+- Added `rohd_waveform` 0.1.1 client APIs for hierarchy normalization, repository-backed waveform access, caching, readiness, streaming, computed signals, and sub-field/bit-slice waveforms (<https://github.com/intel/rohd/pull/736>).
+
+### Bug Fixes
+
+- Fixed `LogicValue.ofRadixString` round trips with empty separators and separators containing regular-expression metacharacters (<https://github.com/intel/rohd/issues/722>).
 
 ## 0.6.11
 
@@ -22,24 +50,6 @@
 - Added targeted Verilator compilation and two-state vector simulation checks, including a `buildOnly` mode, required in native CI and explicitly skipped locally when Verilator is unavailable (<https://github.com/intel/rohd/pull/714>).
 - Improved generated SystemVerilog to inline packed `Logic.assignSubset` connections into submodule inputs (<https://github.com/intel/rohd/pull/711>).
 - Fixed a bug where isolated bit drivers could be lost beside collapsed ranges (<https://github.com/intel/rohd/pull/711>).
-
-- Added the `ModuleService` API for module-scoped generation, capture, and
-  inspection services. `ModuleServices` registers and looks up services for a
-  built module hierarchy, and `hierarchyJson` exposes its hierarchy as JSON.
-- Added `ArtifactProducingService` and `ModuleServiceArtifact` for
-  transport-neutral output. Artifact-producing services default
-  `outputDirectory` to the current directory and `outputBaseName` to the
-  module definition name, and expose named, media-typed byte streams without
-  requiring filesystem output.
-- Added `SystemVerilogService` for configured SystemVerilog synthesis,
-  in-memory source output, artifact inspection, and explicit directory writes.
-  Added `WaveformService` for in-memory waveform capture with optional file
-  writing through `writeToFile`.
-- Added legacy-compatible `Module.dumpSystemVerilog` and `Module.dumpWaves`
-  convenience methods. `dumpSystemVerilog()` returns simple in-memory output;
-  `dumpWaves()` provides standard VCD capture as the replacement for
-  `WaveDumper`. `WaveDumper` and `generateSynth` are deprecated in favor of
-  these `Module` methods.
 
 ## 0.6.10
 

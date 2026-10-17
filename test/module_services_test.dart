@@ -71,21 +71,12 @@ void main() {
       expect(() => jsonDecode(json), returnsNormally);
     });
 
-    test('legacy hierarchyJSON aliases return the current hierarchy JSON',
-        () async {
+    test('hierarchy services return the same hierarchy JSON', () async {
       final mod = SimpleModule(Logic());
       await mod.build();
 
       expect(
-        // Exercise the legacy API to preserve its compatibility coverage.
-        // ignore: deprecated_member_use_from_same_package
-        ModuleTree.instance.hierarchyJSON,
-        equals(ModuleTree.instance.hierarchyJson),
-      );
-      expect(
-        // Exercise the legacy API to preserve its compatibility coverage.
-        // ignore: deprecated_member_use_from_same_package
-        ModuleServices.instance.hierarchyJSON,
+        ModuleTree.instance.hierarchyJson,
         equals(ModuleServices.instance.hierarchyJson),
       );
     });
@@ -201,12 +192,38 @@ void main() {
   });
 
   group('SystemVerilogService', () {
-    test('legacy generateSynth does not register a service', () async {
+    for (final multiFile in [false, true]) {
+      test('can disable trace comments with multiFile=$multiFile', () async {
+        SourceTracer.activate();
+        addTearDown(SourceTracer.clear);
+        final mod = SimpleModule(Logic());
+        await mod.build();
+
+        final withComments = SystemVerilogService(mod, multiFile: multiFile);
+        expect(withComments.output, contains('// ROHD:'));
+
+        final withoutComments = SystemVerilogService(
+          mod,
+          multiFile: multiFile,
+          embedSourceTraceComments: false,
+        );
+        expect(withoutComments.output, isNot(contains('// ROHD:')));
+        for (final file in withoutComments.fileContents) {
+          expect(file.contents, isNot(contains('// ROHD:')));
+        }
+        expect(withoutComments.singleFileSvLineMapsByModule[mod], isNotEmpty);
+        expect(
+          TraceService(mod, svService: withoutComments).flcHierarchy,
+          isNotNull,
+        );
+      });
+    }
+
+    test('dumpSystemVerilog does not register a service', () async {
       final mod = SimpleModule(Logic());
       await mod.build();
 
-      // ignore: deprecated_member_use_from_same_package - compatibility coverage
-      expect(mod.generateSynth(), isNotEmpty);
+      expect(mod.dumpSystemVerilog(), isNotEmpty);
       expect(SystemVerilogService.current, isNull);
       expect(
         ModuleServices.instance.lookup<SystemVerilogService>(),
@@ -214,11 +231,10 @@ void main() {
       );
     });
 
-    test('legacy generateSynth preserves ModuleNotBuiltException', () {
+    test('dumpSystemVerilog preserves ModuleNotBuiltException', () {
       final mod = SimpleModule(Logic());
 
-      // ignore: deprecated_member_use_from_same_package - compatibility coverage
-      expect(mod.generateSynth, throwsA(isA<ModuleNotBuiltException>()));
+      expect(mod.dumpSystemVerilog, throwsA(isA<ModuleNotBuiltException>()));
     });
 
     test('registers by default', () async {
