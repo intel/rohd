@@ -6,6 +6,7 @@
 // ranges that drive separate signals.
 //
 // 2026 October 7
+// Author: Desmond A. Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';

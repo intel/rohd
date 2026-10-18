@@ -1058,6 +1058,7 @@ class SystemCSynthesisResult extends SynthesisResult {
           condBuf.write(_conditionalToSC(c, 3, inputsMap, outputsMap));
         }
         group.whileBodyLines.add(condBuf.toString());
+        group.resetBodyLines.add(condBuf.toString());
         ssmi.clearInstantiation();
       } else if (m is FlipFlop) {
         // Resolve port signals via the input/output mapping
@@ -1114,6 +1115,7 @@ class SystemCSynthesisResult extends SynthesisResult {
           resetValExpr = '0';
         }
         group.resetLines.add('    ${_scName(qSl.name)} = $resetValExpr;');
+        group.asyncResetLines.add('    ${_scName(qSl.name)} = $resetValExpr;');
 
         // Build the data assignment (with optional enable gate)
         final assignExpr =
@@ -1217,7 +1219,8 @@ class SystemCSynthesisResult extends SynthesisResult {
           ..writeln('      wait($waitExpr);');
         if (group.resetName != null && group.isAsyncReset) {
           bodyBuf.writeln('      if (${_scName(group.resetName!)}.read()) {');
-          group.resetLines.forEach(bodyBuf.writeln);
+          group.asyncResetLines.forEach(bodyBuf.writeln);
+          group.resetBodyLines.forEach(bodyBuf.write);
           bodyBuf.writeln('      } else {');
           group.whileBodyLines.forEach(bodyBuf.write);
           bodyBuf.writeln('      }');
@@ -1913,6 +1916,14 @@ class _ClockedGroupData {
 
   final List<String> resetLines = [];
   final List<String> whileBodyLines = [];
+
+  /// Reset assignments taken by the asynchronous reset branch: flop reset
+  /// values only.
+  final List<String> asyncResetLines = [];
+
+  /// Sequential bodies, which already contain their own reset branch.
+  final List<String> resetBodyLines = [];
+
   _ClockedGroupData({this.resetName, this.isAsyncReset = false});
 }
 

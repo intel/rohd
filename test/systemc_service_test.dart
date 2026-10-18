@@ -3,6 +3,9 @@
 //
 // systemc_service_test.dart
 // Tests SystemC service multi-file output support.
+//
+// 2026 October 16
+// Author: Desmond A. Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 @TestOn('vm')
 library;
