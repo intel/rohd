@@ -126,44 +126,6 @@ print(netlist.moduleJson('FilterChannel'));
 
 </dd>
 
-        <dt id="flcHierarchy" class="property">
-  <span class="name"><a class="deprecated" href="../rohd/NetlistService/flcHierarchy.html">flcHierarchy</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Object-class.html">Object</a></span>&gt;</span>?</span>
-  
-
-</dt>
-<dd>
-  Returns the FLC hierarchy JSON map for the module hierarchy,
-or <code>null</code> if no traces were recorded.
-  <div class="features"><span class="feature">no setter</span></div>
-
-</dd>
-
-        <dt id="flcHtml" class="property">
-  <span class="name"><a class="deprecated" href="../rohd/NetlistService/flcHtml.html">flcHtml</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a>?</span>
-  
-
-</dt>
-<dd>
-  Returns a self-contained HTML viewer for the FLC data, or <code>null</code>
-if no traces were recorded.
-  <div class="features"><span class="feature">no setter</span></div>
-
-</dd>
-
-        <dt id="flcJson" class="property">
-  <span class="name"><a class="deprecated" href="../rohd/NetlistService/flcJson.html">flcJson</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>
-  
-
-</dt>
-<dd>
-  Returns the FLC hierarchy as a JSON string, or an unavailable status.
-  <div class="features"><span class="feature">no setter</span></div>
-
-</dd>
-
         <dt id="hashCode" class="property inherited">
   <span class="name"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Object/hashCode.html">hashCode</a></span>
   <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/int-class.html">int</a></span>
@@ -381,19 +343,6 @@ with cell <code>connections</code> stripped.
 
 </dd>
 
-        <dt id="flcModuleJson" class="callable">
-  <span class="name deprecated"><a class="deprecated" href="../rohd/NetlistService/flcModuleJson.html">flcModuleJson</a></span><span class="signature">(<wbr><span class="parameter" id="flcModuleJson-param-definitionName"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">definitionName</span></span>)
-    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>
-  </span>
-  
-
-</dt>
-<dd>
-  Returns the FLC JSON for a single module as a JSON string.
-  
-
-</dd>
-
         <dt id="moduleJson" class="callable">
   <span class="name"><a href="../rohd/NetlistService/moduleJson.html">moduleJson</a></span><span class="signature">(<wbr><span class="parameter" id="moduleJson-param-definitionName"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">definitionName</span></span>)
     <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>
@@ -443,33 +392,6 @@ with cell <code>connections</code> stripped.
 <dd class="inherited">
   A string representation of this object.
   <div class="features"><span class="feature">inherited</span></div>
-
-</dd>
-
-        <dt id="writeFlcFiles" class="callable">
-  <span class="name deprecated"><a class="deprecated" href="../rohd/NetlistService/writeFlcFiles.html">writeFlcFiles</a></span><span class="signature">(<wbr><span class="parameter" id="writeFlcFiles-param-directory"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">directory</span></span>)
-    <span class="returntype parameter">&#8594; void</span>
-  </span>
-  
-
-</dt>
-<dd>
-  Writes the FLC hierarchy JSON to <code>directory</code> as
-<code>&lt;definitionName&gt;.flc.json</code>.
-  
-
-</dd>
-
-        <dt id="writeFlcHtml" class="callable">
-  <span class="name deprecated"><a class="deprecated" href="../rohd/NetlistService/writeFlcHtml.html">writeFlcHtml</a></span><span class="signature">(<wbr><span class="parameter" id="writeFlcHtml-param-directory"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">directory</span></span>)
-    <span class="returntype parameter">&#8594; void</span>
-  </span>
-  
-
-</dt>
-<dd>
-  Writes the HTML viewer to <code>directory</code>.
-  
 
 </dd>
 

@@ -65,7 +65,7 @@
   <p>Records the current value of every mapped signal and subscribes to
 future changes, populating the in-memory store for DevTools queries.</p>
 <p><a href="../../rohd/WaveformDataService/init.html">init</a> builds the Logic→id map and registers the service extensions but
-deliberately does <em>not</em> attach change listeners: the <a class="deprecated" href="../../rohd/WaveDumper-class.html">WaveDumper</a>
+deliberately does <em>not</em> attach change listeners: the <a href="../../rohd/WaveformService-class.html">WaveformService</a>
 integration attaches its own as it writes the VCD/FST file.  A
 dedicated debugging workflow calls this once after <a href="../../rohd/WaveformDataService/init.html">init</a>, so the live
 DevTools data is populated without re-implementing the module-tree

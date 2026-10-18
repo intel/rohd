@@ -110,23 +110,6 @@ provided.</p>
             forceStandardInstantiation: true,
           );
     }
-    &#47;&#47; ignore: deprecated_member_use_from_same_package - backwards compatibility with CustomSystemVerilog
-    else if (module is CustomSystemVerilog) {
-      return module.instantiationVerilog(
-        instanceType,
-        instanceName,
-        Map.fromEntries(
-          ports.entries.where(
-            (element) =&gt; module.inputs.containsKey(element.key),
-          ),
-        ),
-        Map.fromEntries(
-          ports.entries.where(
-            (element) =&gt; module.outputs.containsKey(element.key),
-          ),
-        ),
-      );
-    }
   }
 
   &#47;&#47;non-custom needs more details

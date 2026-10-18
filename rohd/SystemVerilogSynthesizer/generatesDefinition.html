@@ -77,11 +77,8 @@ described in-line.</p>
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@override
-bool generatesDefinition(Module module) =&gt;
-    &#47;&#47; ignore: deprecated_member_use_from_same_package - backwards compatibility with CustomSystemVerilog
-    !((module is CustomSystemVerilog) ||
-        (module is SystemVerilog &amp;&amp;
-            module.generatedDefinitionType == DefinitionGenerationType.none));</code></pre>
+bool generatesDefinition(Module module) =&gt; !(module is SystemVerilog &amp;&amp;
+    module.generatedDefinitionType == DefinitionGenerationType.none);</code></pre>
 </section>
 
 

@@ -350,15 +350,6 @@ in SystemVerilog.
 <code>if</code>/<code>else if</code>/<code>else</code>.
 </dd>
 
-          <dt id="IfBlock">
-  <span class="name deprecated"><a class="deprecated" href="../rohd/IfBlock-class.html">IfBlock</a></span> 
-
-</dt>
-<dd>
-  Represents a chain of blocks of code to be conditionally executed, like
-<code>if</code>/<code>else if</code>/<code>else</code>.
-</dd>
-
           <dt id="IndexGate">
   <span class="name "><a href="../rohd/IndexGate-class.html">IndexGate</a></span> 
 
@@ -604,15 +595,6 @@ common inputs.
 </dt>
 <dd>
   Information and accessors associated with a <a href="../rohd/Pipeline-class.html">Pipeline</a> stage.
-</dd>
-
-          <dt id="Port">
-  <span class="name deprecated"><a class="deprecated" href="../rohd/Port-class.html">Port</a></span> 
-
-</dt>
-<dd>
-  An extension of <a href="../rohd/Logic-class.html">Logic</a> which performs some additional validation for
-inputs and outputs of <a href="../rohd/Module-class.html">Module</a>s.
 </dd>
 
           <dt id="Power">
@@ -997,7 +979,7 @@ cross-probing data.
 
 </dt>
 <dd>
-  Deprecated: use <a href="../rohd/Module/dumpWaves.html">Module.dumpWaves</a> instead.
+  Records VCD waveforms through <a href="../rohd/Module/dumpWaves.html">Module.dumpWaves</a> for legacy callers.
 </dd>
 
           <dt id="WaveformDataService">
@@ -1253,15 +1235,6 @@ signal value changes during simulation for DevTools inspection.
     <section class="summary offset-anchor" id="mixins">
       <h2>Mixins</h2>
       <dl>
-          <dt id="CustomSystemVerilog">
-  <span class="name deprecated"><a class="deprecated" href="../rohd/CustomSystemVerilog-mixin.html">CustomSystemVerilog</a></span> 
-
-</dt>
-<dd>
-  Allows a <a href="../rohd/Module-class.html">Module</a> to define a custom implementation of SystemVerilog to be
-injected in generated output instead of instantiating a separate <code>module</code>.
-</dd>
-
           <dt id="InlineSystemVerilog">
   <span class="name "><a href="../rohd/InlineSystemVerilog-mixin.html">InlineSystemVerilog</a></span> 
 
@@ -1399,100 +1372,12 @@ by a <a href="../rohd/Logic-class.html">Logic</a> index value.
 
 </dd>
 
-          <dt id="rswizzle" class="callable">
-  <span class="name deprecated"><a class="deprecated" href="../rohd/rswizzle.html">rswizzle</a></span><span class="signature">(<wbr><span class="parameter" id="rswizzle-param-signals"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> <span class="parameter-name">signals</span></span>)
-    <span class="returntype parameter">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span>
-  </span>
-  
-
-</dt>
-<dd>
-  Performs a concatenation operation on the list of signals, where index 0 of
-<code>signals</code> is the <em>least</em> significant bit(s).
-  
-
-</dd>
-
-          <dt id="swizzle" class="callable">
-  <span class="name deprecated"><a class="deprecated" href="../rohd/swizzle.html">swizzle</a></span><span class="signature">(<wbr><span class="parameter" id="swizzle-param-signals"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> <span class="parameter-name">signals</span></span>)
-    <span class="returntype parameter">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span>
-  </span>
-  
-
-</dt>
-<dd>
-  Performs a concatenation operation on the list of signals, where index 0 of
-<code>signals</code> is the <em>most</em> significant bit(s).
-  
-
-</dd>
-
       </dl>
     </section>
 
     <section class="summary offset-anchor" id="typedefs">
       <h2>Typedefs</h2>
       <dl>
-          
-  <dt id="Dumper" class="">
-  <span class="name deprecated"><a class="deprecated" href="../rohd/Dumper.html">Dumper</a></span>
-    = <a class="deprecated" href="../rohd/WaveDumper-class.html">WaveDumper</a>
-  </span>
-  
-
-</dt>
-<dd>
-  Deprecated: use <a href="../rohd/Module/dumpWaves.html">Module.dumpWaves</a> instead.
-  
-
-</dd>
-
-
-          
-  <dt id="ExternalModule" class="">
-  <span class="name deprecated"><a class="deprecated" href="../rohd/ExternalModule.html">ExternalModule</a></span>
-    = <a href="../rohd/ExternalSystemVerilogModule-class.html">ExternalSystemVerilogModule</a>
-  </span>
-  
-
-</dt>
-<dd>
-  Deprecated - Use <a href="../rohd/ExternalSystemVerilogModule-class.html">ExternalSystemVerilogModule</a> instead.
-  
-
-</dd>
-
-
-          
-  <dt id="FF" class="">
-  <span class="name deprecated"><a class="deprecated" href="../rohd/FF.html">FF</a></span>
-    = <a href="../rohd/Sequential-class.html">Sequential</a>
-  </span>
-  
-
-</dt>
-<dd>
-  Deprecated: use <a href="../rohd/Sequential-class.html">Sequential</a> instead.
-  
-
-</dd>
-
-
-          
-  <dt id="FlcService" class="">
-  <span class="name deprecated"><a class="deprecated" href="../rohd/FlcService.html">FlcService</a></span>
-    = <a href="../rohd/TraceService-class.html">TraceService</a>
-  </span>
-  
-
-</dt>
-<dd>
-  Deprecated alias for the trace lookup service.
-  
-
-</dd>
-
-
           
   <dt id="Iff" class="">
   <span class="name"><a href="../rohd/Iff.html">Iff</a></span>
@@ -1503,21 +1388,6 @@ by a <a href="../rohd/Logic-class.html">Logic</a> index value.
 </dt>
 <dd>
   A conditional block to execute only if <code>condition</code> is satisfied.
-  
-
-</dd>
-
-
-          
-  <dt id="LogicValues" class="">
-  <span class="name deprecated"><a class="deprecated" href="../rohd/LogicValues.html">LogicValues</a></span>
-    = <a href="../rohd/LogicValue-class.html">LogicValue</a>
-  </span>
-  
-
-</dt>
-<dd>
-  Deprecated: use <a href="../rohd/LogicValue-class.html">LogicValue</a> instead.
   
 
 </dd>
@@ -1550,21 +1420,6 @@ by a <a href="../rohd/Logic-class.html">Logic</a> index value.
     
 
   </dd>
-
-          
-  <dt id="StateMachine" class="">
-  <span class="name deprecated"><a class="deprecated" href="../rohd/StateMachine.html">StateMachine</a></span>&lt;<wbr><span class="type-parameter">T extends <a href="https://api.dart.dev/stable/3.13.5/dart-core/Enum-class.html">Enum</a></span>&gt;
-    = <a href="../rohd/FiniteStateMachine-class.html">FiniteStateMachine</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span>
-  </span>
-  
-
-</dt>
-<dd>
-  Deprecated: use <a href="../rohd/FiniteStateMachine-class.html">FiniteStateMachine</a> instead.
-  
-
-</dd>
-
 
           
   <dt id="SynthModuleDefinitionPredicate" class="callable">

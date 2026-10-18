@@ -88,7 +88,7 @@ given <a href="../rohd/Module-class.html">Module</a>.</p>
     <h2>Constructors</h2>
     <dl class="constructor-summary-list">
         <dt id="SystemVerilogSynthesizer.new" class="callable">
-          <span class="name"><a href="../rohd/SystemVerilogSynthesizer/SystemVerilogSynthesizer.html">SystemVerilogSynthesizer</a></span><span class="signature">({<span class="parameter" id="param-configuration"><span class="type-annotation"><a href="../rohd/SystemVerilogSynthesizerConfiguration-class.html">SystemVerilogSynthesizerConfiguration</a></span> <span class="parameter-name">configuration</span> = <span class="default-value">const SystemVerilogSynthesizerConfiguration()</span></span>})</span>
+          <span class="name"><a href="../rohd/SystemVerilogSynthesizer/SystemVerilogSynthesizer.html">SystemVerilogSynthesizer</a></span><span class="signature">({<span class="parameter" id="param-configuration"><span class="type-annotation"><a href="../rohd/SystemVerilogSynthesizerConfiguration-class.html">SystemVerilogSynthesizerConfiguration</a></span> <span class="parameter-name">configuration</span> = <span class="default-value">const SystemVerilogSynthesizerConfiguration()</span>, </span><span class="parameter" id="param-embedSourceTraceComments"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">embedSourceTraceComments</span> = <span class="default-value">true</span></span>})</span>
         </dt>
         <dd>
           Creates a SystemVerilog synthesizer with the specified <code>configuration</code>.
@@ -109,6 +109,18 @@ given <a href="../rohd/Module-class.html">Module</a>.</p>
 </dt>
 <dd>
   Configuration controlling generated SystemVerilog.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="embedSourceTraceComments" class="property">
+  <span class="name"><a href="../rohd/SystemVerilogSynthesizer/embedSourceTraceComments.html">embedSourceTraceComments</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  Whether generated SV includes source-trace comments.
   <div class="features"><span class="feature">final</span></div>
 
 </dd>
@@ -230,19 +242,6 @@ by <code>getInstanceTypeOfModule</code>.
     <dl class="callables">
         <dt id="instantiationVerilogFor" class="callable">
   <span class="name"><a href="../rohd/SystemVerilogSynthesizer/instantiationVerilogFor.html">instantiationVerilogFor</a></span><span class="signature">(<wbr>{<span class="parameter" id="instantiationVerilogFor-param-module"><span>required</span> <span class="type-annotation"><a href="../rohd/Module-class.html">Module</a></span> <span class="parameter-name">module</span>, </span><span class="parameter" id="instantiationVerilogFor-param-instanceType"><span>required</span> <span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">instanceType</span>, </span><span class="parameter" id="instantiationVerilogFor-param-instanceName"><span>required</span> <span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">instanceName</span>, </span><span class="parameter" id="instantiationVerilogFor-param-ports"><span>required</span> <span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">ports</span>, </span><span class="parameter" id="instantiationVerilogFor-param-parameters"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span>?</span> <span class="parameter-name">parameters</span>, </span><span class="parameter" id="instantiationVerilogFor-param-forceStandardInstantiation"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">forceStandardInstantiation</span> = <span class="default-value">false</span>, </span><span class="parameter" id="instantiationVerilogFor-param-outputPortColumns"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/int-class.html">int</a></span>&gt;</span>?</span> <span class="parameter-name">outputPortColumns</span></span>})
-    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>
-  </span>
-  
-
-</dt>
-<dd>
-  Creates a line of SystemVerilog that instantiates <code>module</code>.
-  
-
-</dd>
-
-        <dt id="instantiationVerilogWithParameters" class="callable">
-  <span class="name deprecated"><a class="deprecated" href="../rohd/SystemVerilogSynthesizer/instantiationVerilogWithParameters.html">instantiationVerilogWithParameters</a></span><span class="signature">(<wbr><span class="parameter" id="instantiationVerilogWithParameters-param-module"><span class="type-annotation"><a href="../rohd/Module-class.html">Module</a></span> <span class="parameter-name">module</span>, </span><span class="parameter" id="instantiationVerilogWithParameters-param-instanceType"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">instanceType</span>, </span><span class="parameter" id="instantiationVerilogWithParameters-param-instanceName"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">instanceName</span>, </span><span class="parameter" id="instantiationVerilogWithParameters-param-inputs"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">inputs</span>, </span><span class="parameter" id="instantiationVerilogWithParameters-param-outputs"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">outputs</span>, {</span><span class="parameter" id="instantiationVerilogWithParameters-param-inOuts"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">inOuts</span> = <span class="default-value">const {}</span>, </span><span class="parameter" id="instantiationVerilogWithParameters-param-parameters"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span>?</span> <span class="parameter-name">parameters</span>, </span><span class="parameter" id="instantiationVerilogWithParameters-param-forceStandardInstantiation"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">forceStandardInstantiation</span> = <span class="default-value">false</span></span>})
     <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>
   </span>
   

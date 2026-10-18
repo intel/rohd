@@ -96,18 +96,6 @@ of <code>0</code>, <code>1</code>, <code>x</code> (contention), or <code>z</code
       id="instance-properties">
     <h2>Properties</h2>
     <dl class="properties">
-        <dt id="bit" class="property">
-  <span class="name"><a class="deprecated" href="../rohd/LogicValue/bit.html">bit</a></span>
-  <span class="signature">&#8594; <a href="../rohd/LogicValue-class.html">LogicValue</a></span>
-  
-
-</dt>
-<dd>
-  The current active value of this, if it has width 1, as a <a href="../rohd/LogicValue-class.html">LogicValue</a>.
-  <div class="features"><span class="feature">no setter</span></div>
-
-</dd>
-
         <dt id="hashCode" class="property">
   <span class="name"><a href="../rohd/LogicValue/hashCode.html">hashCode</a></span>
   <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/int-class.html">int</a></span>
@@ -152,18 +140,6 @@ of <code>0</code>, <code>1</code>, <code>x</code> (contention), or <code>z</code
 </dt>
 <dd>
   Returns true if this value is <code>0</code>.
-  <div class="features"><span class="feature">no setter</span></div>
-
-</dd>
-
-        <dt id="length" class="property">
-  <span class="name"><a class="deprecated" href="../rohd/LogicValue/length.html">length</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/int-class.html">int</a></span>
-  
-
-</dt>
-<dd>
-  The number of bits in this <code>LogicValue</code>.
   <div class="features"><span class="feature">no setter</span></div>
 
 </dd>
@@ -814,75 +790,6 @@ zeros as the most significant bits.
 <dd>
   Constructs a <a href="../rohd/LogicValue-class.html">LogicValue</a> with the <code>width</code> number of bits, where every
 bit has the same value of <code>fill</code>.
-  
-
-</dd>
-
-        <dt id="from" class="callable">
-  <span class="name deprecated"><a class="deprecated" href="../rohd/LogicValue/from.html">from</a></span><span class="signature">(<wbr><span class="parameter" id="from-param-it"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/LogicValue-class.html">LogicValue</a></span>&gt;</span></span> <span class="parameter-name">it</span></span>)
-    <span class="returntype parameter">&#8594; <a href="../rohd/LogicValue-class.html">LogicValue</a></span>
-  </span>
-  
-
-</dt>
-<dd>
-  Constructs a <a href="../rohd/LogicValue-class.html">LogicValue</a> from <code>it</code>.
-  
-
-</dd>
-
-        <dt id="fromBigInt" class="callable">
-  <span class="name deprecated"><a class="deprecated" href="../rohd/LogicValue/fromBigInt.html">fromBigInt</a></span><span class="signature">(<wbr><span class="parameter" id="fromBigInt-param-value"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/BigInt-class.html">BigInt</a></span> <span class="parameter-name">value</span>, </span><span class="parameter" id="fromBigInt-param-width"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/int-class.html">int</a></span> <span class="parameter-name">width</span></span>)
-    <span class="returntype parameter">&#8594; <a href="../rohd/LogicValue-class.html">LogicValue</a></span>
-  </span>
-  
-
-</dt>
-<dd>
-  Converts <code>BigInt</code> <code>value</code> to a valid <a href="../rohd/LogicValue-class.html">LogicValue</a> with <code>width</code>
-number of bits.
-  
-
-</dd>
-
-        <dt id="fromBool" class="callable">
-  <span class="name deprecated"><a class="deprecated" href="../rohd/LogicValue/fromBool.html">fromBool</a></span><span class="signature">(<wbr><span class="parameter" id="fromBool-param-value"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">value</span></span>)
-    <span class="returntype parameter">&#8594; <a href="../rohd/LogicValue-class.html">LogicValue</a></span>
-  </span>
-  
-
-</dt>
-<dd>
-  Converts <code>bool</code> <code>value</code> to a valid <a href="../rohd/LogicValue-class.html">LogicValue</a> with 1 bits either
-one or zero.
-  
-
-</dd>
-
-        <dt id="fromInt" class="callable">
-  <span class="name deprecated"><a class="deprecated" href="../rohd/LogicValue/fromInt.html">fromInt</a></span><span class="signature">(<wbr><span class="parameter" id="fromInt-param-value"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/int-class.html">int</a></span> <span class="parameter-name">value</span>, </span><span class="parameter" id="fromInt-param-width"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/int-class.html">int</a></span> <span class="parameter-name">width</span></span>)
-    <span class="returntype parameter">&#8594; <a href="../rohd/LogicValue-class.html">LogicValue</a></span>
-  </span>
-  
-
-</dt>
-<dd>
-  Converts <code>int</code> <code>value</code> to a valid <a href="../rohd/LogicValue-class.html">LogicValue</a> with <code>width</code>
-number of bits.
-  
-
-</dd>
-
-        <dt id="fromString" class="callable">
-  <span class="name deprecated"><a class="deprecated" href="../rohd/LogicValue/fromString.html">fromString</a></span><span class="signature">(<wbr><span class="parameter" id="fromString-param-stringRepresentation"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">stringRepresentation</span></span>)
-    <span class="returntype parameter">&#8594; <a href="../rohd/LogicValue-class.html">LogicValue</a></span>
-  </span>
-  
-
-</dt>
-<dd>
-  Converts a binary <a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a> representation of a <a href="../rohd/LogicValue-class.html">LogicValue</a> into a
-<a href="../rohd/LogicValue-class.html">LogicValue</a>.
   
 
 </dd>

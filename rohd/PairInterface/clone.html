@@ -79,8 +79,14 @@ returns the same type as itself.</p>
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@override
 @mustBeOverridden
-&#47;&#47; ignore: deprecated_member_use_from_same_package - deprecated backwards compat
-PairInterface clone() =&gt; PairInterface.clone(this);</code></pre>
+PairInterface clone() =&gt; PairInterface(
+      portsFromConsumer: _getMatchPorts(this, PairDirection.fromConsumer),
+      portsFromProvider: _getMatchPorts(this, PairDirection.fromProvider),
+      sharedInputPorts: _getMatchPorts(this, PairDirection.sharedInputs),
+      commonInOutPorts: _getMatchPorts(this, PairDirection.commonInOuts),
+      &#47;&#47; ignore: deprecated_member_use_from_same_package - deprecated backwards compat
+      modify: modify,
+    );</code></pre>
 </section>
 
 

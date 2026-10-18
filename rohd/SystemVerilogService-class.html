@@ -105,7 +105,7 @@ print(sv.output);
     <h2>Constructors</h2>
     <dl class="constructor-summary-list">
         <dt id="SystemVerilogService.new" class="callable">
-          <span class="name"><a href="../rohd/SystemVerilogService/SystemVerilogService.html">SystemVerilogService</a></span><span class="signature">(<span class="parameter" id="param-module"><span class="type-annotation"><a href="../rohd/Module-class.html">Module</a></span> <span class="parameter-name">module</span>, {</span><span class="parameter" id="param-outputDirectory"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">outputDirectory</span> = <span class="default-value">&#39;.&#39;</span>, </span><span class="parameter" id="param-outputBaseName"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">outputBaseName</span>, </span><span class="parameter" id="param-multiFile"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">multiFile</span> = <span class="default-value">false</span>, </span><span class="parameter" id="param-includeHeader"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">includeHeader</span>, </span><span class="parameter" id="param-configuration"><span class="type-annotation"><a href="../rohd/SystemVerilogSynthesizerConfiguration-class.html">SystemVerilogSynthesizerConfiguration</a></span> <span class="parameter-name">configuration</span> = <span class="default-value">const SystemVerilogSynthesizerConfiguration()</span>, </span><span class="parameter" id="param-register"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">register</span> = <span class="default-value">true</span></span>})</span>
+          <span class="name"><a href="../rohd/SystemVerilogService/SystemVerilogService.html">SystemVerilogService</a></span><span class="signature">(<span class="parameter" id="param-module"><span class="type-annotation"><a href="../rohd/Module-class.html">Module</a></span> <span class="parameter-name">module</span>, {</span><span class="parameter" id="param-outputDirectory"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">outputDirectory</span> = <span class="default-value">&#39;.&#39;</span>, </span><span class="parameter" id="param-outputBaseName"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">outputBaseName</span>, </span><span class="parameter" id="param-multiFile"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">multiFile</span> = <span class="default-value">false</span>, </span><span class="parameter" id="param-includeHeader"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">includeHeader</span>, </span><span class="parameter" id="param-embedSourceTraceComments"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">embedSourceTraceComments</span> = <span class="default-value">true</span>, </span><span class="parameter" id="param-configuration"><span class="type-annotation"><a href="../rohd/SystemVerilogSynthesizerConfiguration-class.html">SystemVerilogSynthesizerConfiguration</a></span> <span class="parameter-name">configuration</span> = <span class="default-value">const SystemVerilogSynthesizerConfiguration()</span>, </span><span class="parameter" id="param-register"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">register</span> = <span class="default-value">true</span></span>})</span>
         </dt>
         <dd>
           Creates a <a href="../rohd/SystemVerilogService-class.html">SystemVerilogService</a> for <code>module</code>.
@@ -167,15 +167,15 @@ string, without the generation header.
 
 </dd>
 
-        <dt id="contentsByName" class="property">
-  <span class="name"><a class="deprecated" href="../rohd/SystemVerilogService/contentsByName.html">contentsByName</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span></span>
+        <dt id="embedSourceTraceComments" class="property">
+  <span class="name"><a href="../rohd/SystemVerilogService/embedSourceTraceComments.html">embedSourceTraceComments</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span>
   
 
 </dt>
 <dd>
-  Returns a map from generated module instance type name to its SV contents.
-  <div class="features"><span class="feature">no setter</span></div>
+  Whether generated SV includes embedded source-trace comments.
+  <div class="features"><span class="feature">final</span></div>
 
 </dd>
 

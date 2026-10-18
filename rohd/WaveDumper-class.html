@@ -54,29 +54,9 @@
 
     
 <section class="desc markdown">
-  <p>Deprecated: use <a href="../rohd/Module/dumpWaves.html">Module.dumpWaves</a> instead.</p>
-<p><a class="deprecated" href="../rohd/WaveDumper-class.html">WaveDumper</a> is a simple wrapper around <a href="../rohd/WaveformService-class.html">WaveformService</a> for backward
-compatibility. It provides the legacy API for recording all signal changes
-in a simulation to a VCD file without retaining the complete VCD in memory.</p>
-<p><strong>Migration guide:</strong></p>
-<p>Replace:</p>
-<pre class="language-dart"><code class="language-dart">var dumper = WaveDumper(module, outputPath: 'output.vcd');
-</code></pre>
-<p>With:</p>
-<pre class="language-dart"><code class="language-dart">var service = module.dumpWaves(outputPath: 'output.vcd');
-</code></pre>
-<p>For more control over filtering, timescale, and recording windows, create a
-<a href="../rohd/WaveformService-class.html">WaveformService</a> directly:</p>
-<pre class="language-dart"><code class="language-dart">final service = WaveformService(
-  module,
-  outputDirectory: 'build',
-  outputBaseName: 'debug',
-  writeToFile: true,
-  timescale: WaveformTimeScale.oneNanosecond,
-  startTime: 100,
-  signalFilter: (signal) =&gt; signal.name.startsWith('debug_'),
-);
-</code></pre>
+  <p>Records VCD waveforms through <a href="../rohd/Module/dumpWaves.html">Module.dumpWaves</a> for legacy callers.</p>
+<p>Use <a href="../rohd/Module/dumpWaves.html">Module.dumpWaves</a> for simple VCD output or <a href="../rohd/WaveformService-class.html">WaveformService</a> for
+filtering, timescales, and recording windows.</p>
 </section>
 
 
@@ -109,8 +89,7 @@ in a simulation to a VCD file without retaining the complete VCD in memory.</p>
           <span class="name"><a class="deprecated" href="../rohd/WaveDumper/WaveDumper.html">WaveDumper</a></span><span class="signature">(<span class="parameter" id="param-module"><span class="type-annotation"><a href="../rohd/Module-class.html">Module</a></span> <span class="parameter-name">module</span>, {</span><span class="parameter" id="param-outputPath"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">outputPath</span> = <span class="default-value">&#39;waves.vcd&#39;</span></span>})</span>
         </dt>
         <dd>
-          Attaches a <a class="deprecated" href="../rohd/WaveDumper-class.html">WaveDumper</a> to record all signal changes in a simulation of
-<code>module</code> in a VCD file at <code>outputPath</code>.
+          Records all signal changes in the built <code>module</code> at <code>outputPath</code>.
         </dd>
     </dl>
   </section>

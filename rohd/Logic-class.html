@@ -71,7 +71,6 @@
               <li><a href="../rohd/LogicEnum-class.html">LogicEnum</a></li>
               <li><a href="../rohd/LogicNet-class.html">LogicNet</a></li>
               <li><a href="../rohd/LogicStructure-class.html">LogicStructure</a></li>
-              <li><a class="deprecated" href="../rohd/Port-class.html">Port</a></li>
           </ul></dd>
 
         
@@ -116,19 +115,6 @@
 <dd>
   If this is a part of a <a href="../rohd/LogicArray-class.html">LogicArray</a>, the index within that array.
 Othwerise, returns <code>null</code>.
-  <div class="features"><span class="feature">no setter</span></div>
-
-</dd>
-
-        <dt id="bit" class="property">
-  <span class="name"><a class="deprecated" href="../rohd/Logic/bit.html">bit</a></span>
-  <span class="signature">&#8594; <a href="../rohd/LogicValue-class.html">LogicValue</a></span>
-  
-
-</dt>
-<dd>
-  The current active value of this signal if it has width 1, as
-a <a href="../rohd/LogicValue-class.html">LogicValue</a>.
   <div class="features"><span class="feature">no setter</span></div>
 
 </dd>
@@ -485,30 +471,6 @@ one exists.  Otherwise, this is the same as <a href="../rohd/Logic/name.html">na
 
 </dd>
 
-        <dt id="valueBigInt" class="property">
-  <span class="name"><a class="deprecated" href="../rohd/Logic/valueBigInt.html">valueBigInt</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/BigInt-class.html">BigInt</a></span>
-  
-
-</dt>
-<dd>
-  The current valid active value of this signal as a <a href="https://api.dart.dev/stable/3.13.5/dart-core/BigInt-class.html">BigInt</a>.
-  <div class="features"><span class="feature">no setter</span></div>
-
-</dd>
-
-        <dt id="valueInt" class="property">
-  <span class="name"><a class="deprecated" href="../rohd/Logic/valueInt.html">valueInt</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/int-class.html">int</a></span>
-  
-
-</dt>
-<dd>
-  The current valid active value of this signal as an <a href="https://api.dart.dev/stable/3.13.5/dart-core/int-class.html">int</a>.
-  <div class="features"><span class="feature">no setter</span></div>
-
-</dd>
-
         <dt id="width" class="property">
   <span class="name"><a href="../rohd/Logic/width.html">width</a></span>
   <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/int-class.html">int</a></span>
@@ -678,19 +640,6 @@ the corresponding index, plus <code>start</code>, of this signal.
 
 </dd>
 
-        <dt id="hasValidValue" class="callable">
-  <span class="name deprecated"><a class="deprecated" href="../rohd/Logic/hasValidValue.html">hasValidValue</a></span><span class="signature">(<wbr>)
-    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span>
-  </span>
-  
-
-</dt>
-<dd>
-  Returns <code>true</code> iff the value of this signal is valid (no <code>x</code> or <code>z</code>).
-  
-
-</dd>
-
         <dt id="incr" class="callable">
   <span class="name"><a href="../rohd/Logic/incr.html">incr</a></span><span class="signature">(<wbr>{<span class="parameter" id="incr-param-s"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">s</span>(<span class="parameter" id="param-"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span></span>)?, </span><span class="parameter" id="incr-param-val"><span class="type-annotation">dynamic</span> <span class="parameter-name">val</span> = <span class="default-value">1</span></span>})
     <span class="returntype parameter">&#8594; <a href="../rohd/Conditional-class.html">Conditional</a></span>
@@ -713,19 +662,6 @@ the corresponding index, plus <code>start</code>, of this signal.
 </dt>
 <dd>
   Injects a value onto this signal in the current <a href="../rohd/Simulator-class.html">Simulator</a> tick.
-  
-
-</dd>
-
-        <dt id="isFloating" class="callable">
-  <span class="name deprecated"><a class="deprecated" href="../rohd/Logic/isFloating.html">isFloating</a></span><span class="signature">(<wbr>)
-    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span>
-  </span>
-  
-
-</dt>
-<dd>
-  Returns <code>true</code> iff <em>all</em> bits of the current value are floating (<code>z</code>).
   
 
 </dd>

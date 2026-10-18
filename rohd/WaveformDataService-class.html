@@ -60,8 +60,8 @@ signal value changes during simulation for DevTools inspection.</p>
 ModuleTree provides the structure, WaveformDataService provides the
 time-series signal values.</p>
 <h2 id="usage">Usage</h2>
-<p>The service is automatically populated when a <a class="deprecated" href="../rohd/WaveDumper-class.html">WaveDumper</a> is created with
-<code>enableDevTools: true</code>. Alternatively, you can manually record value
+<p>A <a href="../rohd/WaveformService-class.html">WaveformService</a> with <code>enableDevToolsStreaming: true</code> automatically
+populates this service. Alternatively, you can manually record value
 changes:</p>
 <pre class="language-dart"><code class="language-dart">// Initialize with a module
 WaveformDataService.init(myModule);
