@@ -181,12 +181,9 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
             : configuration.outputPortType;
         return _verilogPort(
           'output',
-          useIverilogWorkaround || _requiresNetDeclaration(sig)
-              ? 'wire'
-              : 'var',
+          useIverilogWorkaround ? 'wire' : 'var',
           portType,
           sig,
-          forceObjectType: useIverilogWorkaround || _requiresNetDeclaration(sig),
         );
       });
 
@@ -210,14 +207,11 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
     String direction,
     String objectType,
     SystemVerilogPortTypeConfiguration portType,
-    SynthLogic sig, {
-    bool forceObjectType = false,
-  }) =>
+    SynthLogic sig,
+  ) =>
       [
         direction,
-        if (forceObjectType ||
-            portType.objectType == SystemVerilogPortType.explicit)
-          objectType,
+        if (portType.objectType == SystemVerilogPortType.explicit) objectType,
         if (portType.dataType == SystemVerilogPortType.explicit) 'logic',
         sig.definitionName(useEnumType: false),
       ].join(' ');
@@ -227,27 +221,6 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
     final array = sig.logics.whereType<BaseLogicArray>().firstOrNull;
     return array != null && array.numUnpackedDimensions > 0;
   }
-
-  bool _requiresNetDeclaration(SynthLogic sig) {
-    final logic = sig.logics.firstOrNull;
-    if (logic is! BaseLogicArray || !logic.arrayElements.any(_containsArray)) {
-      return false;
-    }
-
-    final resolved = sig.resolved;
-    return module.tryOutput(sig.name) != null ||
-        _synthModuleDefinition.assignments.any(
-          (assignment) => identical(_referenceRoot(assignment.dst), resolved),
-        ) ||
-        _synthModuleDefinition.subModuleInstantiations.any(
-          (instantiation) => instantiation.outputMapping.values
-              .any((mapped) => identical(mapped.resolved, resolved)),
-        );
-  }
-
-  static bool _containsArray(Logic logic) =>
-      logic is BaseLogicArray ||
-      (logic is LogicStructure && logic.elements.any(_containsArray));
 
   /// Whether [sig] is driven by a submodule output.
   bool _isDrivenBySubmoduleOutput(SynthLogic sig) {
@@ -287,11 +260,10 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
           configuration.iverilogWorkaroundForUnpackedArrayVariables &&
               _isUnpackedArray(sig) &&
               _isDrivenBySubmoduleOutput(sig);
-      final type = useIverilogWorkaround || _requiresNetDeclaration(sig)
+      final type = useIverilogWorkaround
           ? 'wire'
           : sig.definitionType(useEnumType: configuration.generateEnums);
-      final decl =
-          '$type '
+      final decl = '$type '
           '${sig.definitionName(useEnumType: configuration.generateEnums)};';
       declarations.add(_SvTraceHelper._pad(decl, comment));
     }

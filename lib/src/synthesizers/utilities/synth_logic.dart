@@ -769,7 +769,6 @@ class SynthLogicPackedBitReference extends SynthLogic {
           !packedBase.isArray,
           'Packed reference base must not be an array.',
         ),
-        assert(!packedBase.isNet, 'Packed reference base must not be a net.'),
         assert(
           !packedBase.isConstant,
           'Packed reference base must not be a constant.',
