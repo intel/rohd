@@ -53,7 +53,7 @@ You can also open this repository in a GitHub Codespace to run the example in yo
 - Fewer bugs and lines of code means **shorter development schedule**
 - Use **modern IDEs** like Visual Studio Code, with excellent static analysis, fast autocomplete, built-in debugger, linting, git integration, extensions, and much more
 
-- The ROHD Framework is a complete Design and Verification Framework:
+- The **ROHD Framework** is a complete design and verification framework:
   - Built-in event-based **fast simulator** with **4-value** (0, 1, X, and Z) support and a **waveform capture service** to .vcd or .fst file format
   - Leverage the [ROHD Hardware Component Library (ROHD-HCL)](https://github.com/intel/rohd-hcl) with reusable and configurable design and verification components
   - Makes **validation collateral** simpler to develop and debug.  The [ROHD Verification Framework](https://github.com/intel/rohd-vf) helps build well-structured testbenches

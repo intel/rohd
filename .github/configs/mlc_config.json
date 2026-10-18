@@ -31,6 +31,9 @@
       "pattern": "^https://marketplace\\.visualstudio\\.com/items\\?itemName=Dart-Code\\.dart-code$"
     },
     {
+      "pattern": "^https://raw\\.githubusercontent\\.com/intel/rohd/refs/heads/badges/coverage/rohd_devtools_extension/main\\.svg$"
+    },
+    {
       "pattern": "^https://www.nandland.com"
     },
     {
