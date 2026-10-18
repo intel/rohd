@@ -1,5 +1,7 @@
 # ROHD DevTools Extension
 
+[![Coverage](https://raw.githubusercontent.com/intel/rohd/refs/heads/badges/coverage/rohd_devtools_extension/main.svg)](https://github.com/intel/rohd/actions/workflows/coverage.yml)
+
 The ROHD DevTools extension provides debugging support for ROHD hardware
 designers. It connects to a running Dart VM, reads the ROHD module hierarchy,
 and displays live signal information while the debugged program is paused.

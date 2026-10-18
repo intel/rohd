@@ -40,8 +40,8 @@ case "$package" in
     pana_score_threshold=10
     ;;
   rohd_devtools_widgets|rohd_waveform)
-    # These packages intentionally retain dependency bounds for their
-    # supported SDK ranges. Allow the corresponding 10-point Pana deduction.
+    # Pana gates points lost: 10 permits a score of 150/160. These packages
+    # retain dependency bounds for their supported SDK ranges.
     pana_score_threshold=10
     ;;
 esac

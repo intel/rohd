@@ -45,7 +45,7 @@ rm -rf coverage
 if [ "${IS_FLUTTER_PACKAGE}" = true ]; then
     # Flutter writes LCOV directly, unlike `dart test --coverage` which writes
     # VM coverage JSON that must be converted with coverage:format_coverage.
-    flutter test --coverage --coverage-path=coverage/lcov.info || true
+    flutter test --coverage --coverage-path=coverage/lcov.info
 else
     # Benchmarks are smoke-tested separately and can take too long under
     # coverage instrumentation.

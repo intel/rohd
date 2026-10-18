@@ -15,6 +15,7 @@
 
 ### Major Features
 
+- Added `TypedLogicArray<TLogic, TValue>` for multidimensional arrays with fixed typed hardware elements and associated semantic values, including typed snapshots and ports, traversal, cloning, net support, and synthesis. Added shaped `LogicValueArray` and codec-backed `TypedLogicValueArray<TValue>` values with nested construction, packed `LogicValue` interoperability, and hardware-array assignment. Existing `LogicArray`, `LogicValueArray`, and concrete array port APIs remain available as specializations (<https://github.com/intel/rohd/pull/686>).
 - Added `LogicEnum<T>` hardware signals with explicit enum encodings, mapped member assignments, driveable cloning, and SystemVerilog enum generation (<https://github.com/intel/rohd/pull/599>).
 - Added compact FST waveform capture alongside VCD, with block-based reading and waveform query APIs for incremental access (<https://github.com/intel/rohd/pull/671>).
 - Added SystemC generation, runtime support, and `SystemCService` for generating and writing module artifacts. Generated SystemC uses a two-state representation and does not preserve X/Z semantics (<https://github.com/intel/rohd/pull/662>).
@@ -27,7 +28,12 @@
 
 ### Improvements
 
+- Improved generated synthesis wiring across module boundaries and driver-name selection (<https://github.com/intel/rohd/pull/726>).
+- Same-width `Logic.zeroExtend` now returns the original signal instead of creating a redundant extension (<https://github.com/intel/rohd/pull/729>).
+- Migrated `rohd_source_navigator` into its package in preparation for independent publication (<https://github.com/intel/rohd/pull/718>).
 - Netlist JSON format is now `0.1.0`, preserving enum types and encodings on retained netnames using Yosys-style attributes, including constant-driven enum uses (<https://github.com/intel/rohd/pull/599>).
+- Refined the typed-array hierarchy so `LogicArray` directly specializes `TypedLogicArray<Logic, LogicValue>`, and strengthened custom `TypedLogicArray` cloning to preserve runtime types, codecs, unpacked dimensions, and constructor-only naming prefixes without exposing them as public axis metadata (<https://github.com/intel/rohd/pull/686>).
+- Expanded `TypedLogicArray` support for recursively nested typed and ordinary arrays, structures containing array fields, mixed packed/unpacked dimensions, structured net and inout ports, and recursive netlist type metadata. Fixed generated SystemVerilog for array-valued elements to use packed offsets consistent with declarations and module-port connections, avoiding invalid chained selections in Icarus and Verilator (<https://github.com/intel/rohd/pull/686>).
 - Added configurable waveform timescales, recording windows, and output overwrite policies (<https://github.com/intel/rohd/pull/671>).
 - Added opt-in `DebugSession` setup for source tracing, netlist and FLC services, and live waveform recording (<https://github.com/intel/rohd/pull/707>).
 - Expanded reusable `rohd_devtools_widgets` components for hierarchy browsing, signal formatting, bit expansion, overlays, help, capture, and cross-probing (<https://github.com/intel/rohd/pull/736>).
@@ -35,6 +41,7 @@
 
 ### Bug Fixes
 
+- Fixed a netlist pass that could drop connections to module output ports (<https://github.com/intel/rohd/pull/731>).
 - Fixed `LogicValue.ofRadixString` round trips with empty separators and separators containing regular-expression metacharacters (<https://github.com/intel/rohd/issues/722>).
 
 ## 0.6.11

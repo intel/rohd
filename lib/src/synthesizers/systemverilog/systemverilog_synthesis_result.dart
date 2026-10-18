@@ -170,7 +170,12 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
           module.tryOutput(sig.name) != null,
           'Named output ${sig.name} not found in module ${module.name}.',
         );
-        return _verilogPort('output', 'var', configuration.outputPortType, sig);
+        return _verilogPort(
+          'output',
+          'var',
+          configuration.outputPortType,
+          sig,
+        );
       });
 
   /// Representation of all inout port declarations in generated SV.
@@ -215,8 +220,8 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
       final comment = _assignedSignalNames.contains(sig.name)
           ? ''
           : traceHelper.signalComment(sig);
-      final decl =
-          '${sig.definitionType(useEnumType: configuration.generateEnums)} '
+      final type = sig.definitionType(useEnumType: configuration.generateEnums);
+      final decl = '$type '
           '${sig.definitionName(useEnumType: configuration.generateEnums)};';
       declarations.add(_SvTraceHelper._pad(decl, comment));
     }
@@ -230,11 +235,6 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
     // that only the *first* assignment for each signal is annotated.
     final tracedDsts = <String>{};
 
-    String rangeString(int upperIndex, int lowerIndex) =>
-        upperIndex == lowerIndex
-            ? '[$upperIndex]'
-            : '[$upperIndex:$lowerIndex]';
-
     for (final assignment in _synthModuleDefinition.assignments) {
       assert(
         !(assignment.src.isNet && assignment.dst.isNet),
@@ -242,39 +242,37 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
         ' bidirectional net connections.',
       );
 
-      var dstSliceString = '';
-      var srcSliceString = '';
       final assignsWholeDestination = assignment is! PartialSynthAssignment ||
           (assignment.dstLowerIndex == 0 &&
               assignment.dstUpperIndex == assignment.dst.width - 1);
       final normalizesWholeEnumDestination =
           assignment.dst.isEnum && assignsWholeDestination;
+      var destination = assignment.dst.name;
+      var source = assignment.src.name;
       if (assignment is RangeSynthAssignment) {
         if (!normalizesWholeEnumDestination) {
-          dstSliceString = rangeString(
-            assignment.dstUpperIndex,
+          destination = assignment.dst.rangeName(
             assignment.dstLowerIndex,
+            assignment.dstUpperIndex,
           );
         }
-        if (assignment.src.isArray ||
-            assignment.src.width <= 1 ||
-            assignment.srcLowerIndex != 0 ||
-            assignment.srcUpperIndex != assignment.src.width - 1) {
-          srcSliceString = rangeString(
-            assignment.srcUpperIndex,
-            assignment.srcLowerIndex,
-          );
-        }
+        source = assignment.srcLowerIndex == 0 &&
+                assignment.srcUpperIndex == assignment.src.width - 1
+            ? assignment.src.name
+            : assignment.src.rangeName(
+                assignment.srcLowerIndex,
+                assignment.srcUpperIndex,
+              );
       } else if (assignment is PartialSynthAssignment &&
           assignment.width > 1 &&
           !normalizesWholeEnumDestination) {
-        dstSliceString = rangeString(
-          assignment.dstUpperIndex,
+        destination = assignment.dst.rangeName(
           assignment.dstLowerIndex,
+          assignment.dstUpperIndex,
         );
       }
 
-      var sourceExpression = '${assignment.src.name}$srcSliceString';
+      var sourceExpression = source;
 
       final sourceIsPackedEnumInput = assignment.src.isEnum &&
           _synthModuleDefinition.inputs.contains(assignment.src.resolved);
@@ -283,6 +281,8 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
       if (configuration.generateEnums &&
           normalizesWholeEnumDestination &&
           (sourceIsPackedEnumInput ||
+              assignment.src is SynthLogicArrayElement ||
+              assignment.src is SynthLogicArrayStructureElement ||
               !assignment.src.isEnum ||
               assignment is RangeSynthAssignment ||
               !identical(
@@ -293,8 +293,7 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
         sourceExpression = "$enumType'($sourceExpression)";
       }
 
-      final line = 'assign ${assignment.dst.name}$dstSliceString'
-          ' = $sourceExpression;';
+      final line = 'assign $destination = $sourceExpression;';
 
       // Emit the trace comment on the first assignment to this signal.
       final comment = tracedDsts.add(assignment.dst.name)

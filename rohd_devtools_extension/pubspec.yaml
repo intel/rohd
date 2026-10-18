@@ -26,11 +26,13 @@ dependencies:
   flutter_web_plugins:
     sdk: flutter
   logging: ^1.2.0
-  material_ui: ^1.1.0
+  # Keep below 1.3.0 for the Dart 3.6 CI toolchain.
+  material_ui: ">=1.1.0 <1.3.0"
   path: ^1.9.0
   path_provider: ^2.1.0
   rohd: ^0.6.11
-  rohd_devtools_widgets: ^0.1.2
+  rohd_devtools_widgets:
+    path: ../packages/rohd_devtools_widgets
   rohd_hierarchy: ^0.1.1
   rohd_schematic_viewer: ^0.2.4
   rohd_source_navigator: ^0.1.0
