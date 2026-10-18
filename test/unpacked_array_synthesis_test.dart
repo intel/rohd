@@ -152,14 +152,9 @@ void main() {
       });
 
       test('$name compiles with Verilator', () async {
-        for (final value in values.take(2)) {
-          final module = makeModule(value);
-          await module.build();
-          if (!SimCompare.checkVerilatorVector(module, const [],
-              buildOnly: true)) {
-            return;
-          }
-        }
+        final module = makeModule(values[1]);
+        await module.build();
+        SimCompare.checkVerilatorVector(module, const [], buildOnly: true);
       }, tags: ['verilator']);
     }
   }

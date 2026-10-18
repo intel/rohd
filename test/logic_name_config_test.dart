@@ -446,7 +446,7 @@ void main() {
         }
       }
 
-      final sv = dut.generateSynth();
+      final sv = dut.dumpSystemVerilog();
       expect(sv, isNot(contains('shared_')));
       final vectors = [
         for (final value in [0, 0xa5, 0x5a, '10xz01zx'])
