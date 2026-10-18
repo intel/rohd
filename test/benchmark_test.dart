@@ -7,6 +7,7 @@
 // 2022 September 28
 // Author: Max Korbel <max.korbel@intel.com>
 
+import 'package:benchmark_harness/benchmark_harness.dart';
 import 'package:rohd/src/utilities/web.dart';
 import 'package:test/test.dart';
 
@@ -19,44 +20,59 @@ import '../benchmark/pipeline_benchmark.dart';
 import '../benchmark/ssa_driver_search_benchmark.dart';
 import '../benchmark/wave_dump_benchmark.dart';
 
+/// Runs one pass of each phase. The timing loop in `measure()` runs for
+/// seconds per benchmark, which is unnecessary for checking they still work.
+void smokeRun(BenchmarkBase benchmark) {
+  benchmark
+    ..setup()
+    ..run()
+    ..teardown();
+}
+
+Future<void> smokeRunAsync(AsyncBenchmarkBase benchmark) async {
+  await benchmark.setup();
+  await benchmark.run();
+  await benchmark.teardown();
+}
+
 void main() {
   group('benchmark', tags: 'benchmark', () {
     test('pipeline', () async {
-      await PipelineBenchmark().measure();
+      await smokeRunAsync(PipelineBenchmark());
     });
 
     test('logic value of', () {
-      LogicValueOfBenchmark().measure();
+      smokeRun(LogicValueOfBenchmark());
     });
 
     test('byte enable', () {
-      ByteEnableBenchmark().measure();
+      smokeRun(ByteEnableBenchmark());
     });
 
     if (!kIsWeb) {
       test('waveform', () async {
-        await WaveDumpBenchmark().measure();
+        await smokeRunAsync(WaveDumpBenchmark());
       });
     }
 
     group('many seq and comb', () {
       for (final connectionType in ManySeqAndCombCombConnectionType.values) {
         test(connectionType.name, () async {
-          await ManySeqAndCombBenchmark(connectionType).measure();
+          await smokeRunAsync(ManySeqAndCombBenchmark(connectionType));
         });
       }
     });
 
     test('comb guard fanout', () async {
-      await CombGuardFanoutBenchmark().measure();
+      await smokeRunAsync(CombGuardFanoutBenchmark());
     });
 
     test('ssa driver search', () {
-      SsaDriverSearchBenchmark().measure();
+      smokeRun(SsaDriverSearchBenchmark());
     });
 
     test('many submodule', () async {
-      await ManySubmodulesBenchmark().measure();
+      await smokeRunAsync(ManySubmodulesBenchmark());
     });
   });
 }

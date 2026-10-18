@@ -316,8 +316,6 @@ need breaking releases just because core removes these APIs.
 | Gate `y` output aliases | `out`, `Add.sum`, or `Mux.mux`, as appropriate |
 | `Add.out` | `Add.sum` |
 | `getReceivers()`, `getDrivers()`, `getConditionals()` | `receivers`, `drivers`, `conditionals` |
-| `PairInterface.modify` and its constructor argument | Pass `uniquify` when connecting or adding sub-interfaces |
-| `PairInterface.clone(other)` | `other.clone()` |
 | `Module.unpreferredName`, `Module.isUnpreferred` | `Naming.unpreferredName`, `Naming.isUnpreferred`, or `Logic.naming` |
 | `FiniteStateMachine.clk`, `Pipeline.clk` | Retain the clock supplied at construction; do not retrieve it from the module |
 | `Dumper` | `module.dumpWaves(outputPath: ...)` or `WaveformService` |
@@ -332,6 +330,8 @@ change. Update callers now; do not add new uses outside compatibility tests.
 
 | Retained deprecated API | Replacement | Release history |
 | --- | --- | --- |
+| `PairInterface.modify` and its constructor argument | Pass `uniquify` when connecting or adding sub-interfaces | Retained for downstream interface compatibility |
+| `PairInterface.clone(other)` | `other.clone()` | Retained for downstream interface compatibility |
 | `Module.generateSynth` | `Module.dumpSystemVerilog` or `SystemVerilogService` | Released without deprecation in 0.6.11 |
 | `WaveDumper` | `module.dumpWaves(outputPath: ...)` or `WaveformService` | Released without deprecation in 0.6.11 |
 | `ModuleTree.hierarchyJSON` | `ModuleTree.hierarchyJson` | Released without deprecation in 0.6.11 |

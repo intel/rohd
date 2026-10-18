@@ -21,6 +21,15 @@ class _CompatibilityModule extends Module {
   }
 }
 
+class _CompatibilityPairModule extends Module {
+  _CompatibilityPairModule(PairInterface source,
+      {String Function(String original)? uniquify}) {
+    source
+        .clone()
+        .pairConnectIO(this, source, PairRole.provider, uniquify: uniquify);
+  }
+}
+
 void main() {
   tearDown(() async {
     await Simulator.reset();
@@ -62,6 +71,39 @@ void main() {
     expect(
         result.toFileContents(), result.toSynthFileContents().single.contents);
   });
+
+  test('pair interface modify and clone constructor remain compatible', () {
+    String prefixed(String original) => 'x_$original';
+    final source = PairInterface(
+      portsFromConsumer: [Logic(name: 'a')],
+      portsFromProvider: [Logic(name: 'b')],
+      modify: prefixed,
+    );
+
+    final copy = PairInterface.clone(source);
+
+    expect(copy.modify, same(prefixed));
+    expect(copy.ports.keys, unorderedEquals(['a', 'b']));
+    expect(source.clone().modify, same(prefixed));
+  });
+
+  for (final uniquify in [false, true]) {
+    test('pair interface modify composes with uniquify=$uniquify', () async {
+      final source = PairInterface(
+        portsFromConsumer: [Logic(name: 'a')..put(1)],
+        portsFromProvider: [Logic(name: 'b')],
+        modify: (original) => 'legacy_$original',
+      );
+      final module = _CompatibilityPairModule(source,
+          uniquify: uniquify ? (original) => 'outer_$original' : null);
+      await module.build();
+
+      final prefix = uniquify ? 'outer_legacy_' : 'legacy_';
+      expect(module.inputs.keys, ['${prefix}a']);
+      expect(module.outputs.keys, ['${prefix}b']);
+      expect(module.input('${prefix}a').value, LogicValue.one);
+    });
+  }
 
   test('released waveform wrapper still captures VCD', () async {
     final directory =
