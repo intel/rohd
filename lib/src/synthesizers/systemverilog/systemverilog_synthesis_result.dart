@@ -11,7 +11,6 @@ import 'dart:io';
 
 import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/signals/signals.dart';
 import 'package:rohd/src/synthesizers/systemverilog/systemverilog_synth_module_definition.dart';
 import 'package:rohd/src/synthesizers/systemverilog/systemverilog_synth_sub_module_instantiation.dart';
 import 'package:rohd/src/synthesizers/utilities/synth_enum_definition.dart';
@@ -171,18 +170,10 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
           module.tryOutput(sig.name) != null,
           'Named output ${sig.name} not found in module ${module.name}.',
         );
-        final useIverilogWorkaround =
-            configuration.iverilogWorkaroundForUnpackedArrayVariables &&
-                _isUnpackedArray(sig);
-        final portType = useIverilogWorkaround
-            ? SystemVerilogPortTypeConfiguration(
-                dataType: configuration.outputPortType.dataType,
-              )
-            : configuration.outputPortType;
         return _verilogPort(
           'output',
-          useIverilogWorkaround ? 'wire' : 'var',
-          portType,
+          'var',
+          configuration.outputPortType,
           sig,
         );
       });
@@ -216,33 +207,6 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
         sig.definitionName(useEnumType: false),
       ].join(' ');
 
-  /// Whether [sig] represents an array with an unpacked dimension.
-  bool _isUnpackedArray(SynthLogic sig) {
-    final array = sig.logics.whereType<BaseLogicArray>().firstOrNull;
-    return array != null && array.numUnpackedDimensions > 0;
-  }
-
-  /// Whether [sig] is driven by a submodule output.
-  bool _isDrivenBySubmoduleOutput(SynthLogic sig) {
-    final target = sig.resolved;
-    return _synthModuleDefinition.subModuleInstantiations.any(
-      (instantiation) => instantiation.outputMapping.values.any(
-        (mapped) => identical(_referenceRoot(mapped), target),
-      ),
-    );
-  }
-
-  SynthLogic _referenceRoot(SynthLogic signal) {
-    final resolved = signal.resolved;
-    return switch (resolved) {
-      SynthLogicArrayElement() => _referenceRoot(resolved.parentArray),
-      SynthLogicArrayStructureElement() => _referenceRoot(resolved.rootArray),
-      SynthLogicPackedBitReference() => _referenceRoot(resolved.packedBase),
-      SynthLogicPackedRangeReference() => _referenceRoot(resolved.packedBase),
-      _ => resolved,
-    };
-  }
-
   /// Representation of all internal net declarations in generated SV.
   String _verilogInternalSignals(_SvTraceHelper traceHelper) {
     final declarations = <String>[];
@@ -256,13 +220,7 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
       final comment = _assignedSignalNames.contains(sig.name)
           ? ''
           : traceHelper.signalComment(sig);
-      final useIverilogWorkaround =
-          configuration.iverilogWorkaroundForUnpackedArrayVariables &&
-              _isUnpackedArray(sig) &&
-              _isDrivenBySubmoduleOutput(sig);
-      final type = useIverilogWorkaround
-          ? 'wire'
-          : sig.definitionType(useEnumType: configuration.generateEnums);
+      final type = sig.definitionType(useEnumType: configuration.generateEnums);
       final decl = '$type '
           '${sig.definitionName(useEnumType: configuration.generateEnums)};';
       declarations.add(_SvTraceHelper._pad(decl, comment));

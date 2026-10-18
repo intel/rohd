@@ -80,7 +80,7 @@ void main() {
       expect(flat.packed, nested.packed);
     });
 
-    test('maps, reshapes, transposes, and converts typed values', () {
+    test('maps, reshapes, and transposes typed values', () {
       const codec = LogicValueCodec<int>(
         decode: _decodeLogicValue,
         encode: _encodeLogicValue,
@@ -98,9 +98,6 @@ void main() {
       expect(values.map((value) => value + 1).at([1, 1]), 6);
       expect(values.reshape([3, 2]).at([2, 1]), 6);
       expect(values.transpose2D().arrayValues, [1, 4, 2, 5, 3, 6]);
-      final signals = values.toLogicArray();
-      expect(signals.dimensions, [2, 3]);
-      expect(signals.value, values);
     });
 
     test('supports slices, indexed mapping, and compatible stacking', () {

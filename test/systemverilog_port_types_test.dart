@@ -243,16 +243,6 @@ void main() {
         expectedCount: 2,
         checkIverilog: true,
       ),
-      (
-        name: 'Icarus unpacked variable workaround',
-        configuration: const SystemVerilogSynthesizerConfiguration(
-          outputPortType: SystemVerilogPortTypeConfiguration(),
-          iverilogWorkaroundForUnpackedArrayVariables: true,
-        ),
-        declaration: 'output wire logic [8:0] valuesOut [1:0]',
-        expectedCount: 2,
-        checkIverilog: true,
-      ),
     ];
 
     for (final configuration in configurations) {

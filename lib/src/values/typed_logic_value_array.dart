@@ -292,10 +292,6 @@ class TypedLogicValueArray<T> extends LogicValue {
     return _createStored(newDimensions, semanticValues, packedElements);
   }
 
-  /// Creates a [LogicArray] with the same shape and drives it with this value.
-  LogicArray toLogicArray({String? name}) =>
-      LogicArray(dimensions, elementWidth, name: name)..put(this);
-
   /// Rebuilds a shaped value from already-normalized semantic and packed data.
   TypedLogicValueArray<T> _createStored(
     List<int> dimensions,

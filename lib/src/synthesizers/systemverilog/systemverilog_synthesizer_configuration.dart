@@ -50,16 +50,6 @@ class SystemVerilogSynthesizerConfiguration {
   /// Type configuration for inout ports.
   final SystemVerilogPortTypeConfiguration inOutPortType;
 
-  /// Whether to work around Icarus Verilog's unpacked array variable issue.
-  ///
-  /// Icarus Verilog 12.0 accepts child-driven unpacked array variables,
-  /// including output ports and internal intermediates, but their values remain
-  /// unknown during simulation. Enabling this option emits an explicit `wire`
-  /// object type for unpacked array output ports and child-driven internal
-  /// unpacked arrays. It overrides `outputPortType.objectType` for those ports
-  /// and is disabled by default.
-  final bool iverilogWorkaroundForUnpackedArrayVariables;
-
   /// Creates a new configuration for SystemVerilog synthesis.
   const SystemVerilogSynthesizerConfiguration({
     this.generateEnums = true,
@@ -72,6 +62,5 @@ class SystemVerilogSynthesizerConfiguration {
     this.inOutPortType = const SystemVerilogPortTypeConfiguration(
       dataType: SystemVerilogPortType.implicit,
     ),
-    this.iverilogWorkaroundForUnpackedArrayVariables = false,
   });
 }

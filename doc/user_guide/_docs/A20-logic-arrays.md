@@ -122,10 +122,6 @@ Zero-sized arrays are supported for simulation and value operations.
 SystemVerilog generation rejects them because the language has no portable
 zero-width array declaration.
 
-Icarus Verilog 12.0 can leave child-driven unpacked array variables unknown
-during simulation. When targeting that tool, enable
-`SystemVerilogSynthesizerConfiguration.iverilogWorkaroundForUnpackedArrayVariables`.
-
 See the [`TypedLogicArray` API documentation](https://intel.github.io/rohd/rohd/TypedLogicArray-class.html)
 for subclassing and cloning details.
 
@@ -153,7 +149,6 @@ final emptyRows =
     LogicValueArray.fromFlat([2, 0], const [], elementWidth: 8);
 
 final transposed = values.transpose2D(); // Dimensions: [3, 2]
-final signals = values.toLogicArray(name: 'values'); // signals are driven by values
 ```
 
 Nested lists infer shape and reject ragged or inconsistent input. Use `fromFlat`

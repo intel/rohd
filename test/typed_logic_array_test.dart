@@ -17,10 +17,6 @@ import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
 
-const _iverilogUnpackedArrayWorkaround = SystemVerilogSynthesizerConfiguration(
-  iverilogWorkaroundForUnpackedArrayVariables: true,
-);
-
 class _SampleStructure extends LogicStructure {
   final Logic low;
   final Logic high;
@@ -2092,19 +2088,6 @@ void main() {
         mixedSv,
         contains('logic [2:0] valuesIn_0__0__samples [1:0];'),
       );
-      final workaroundSv = mixedModule.dumpSystemVerilog(
-        configuration: _iverilogUnpackedArrayWorkaround,
-      );
-      expect(
-        RegExp(
-          RegExp.escape('output wire logic [44:0] valuesOut [1:0]'),
-        ).allMatches(workaroundSv),
-        hasLength(2),
-      );
-      expect(
-        workaroundSv,
-        contains('wire [44:0] valuesOut_0 [1:0];'),
-      );
       final mixedNetlist = jsonDecode(
         NetlistSynthesizer().synthesizeToJson(mixedModule),
       ) as Map<String, dynamic>;
@@ -2112,11 +2095,7 @@ void main() {
         mixedNetlist['modules'],
         containsPair('_NestedArrayBoundaryModule', isA<Map<String, dynamic>>()),
       );
-      SimCompare.checkIverilogVector(
-        mixedModule,
-        vectors,
-        synthesizerConfiguration: _iverilogUnpackedArrayWorkaround,
-      );
+      // Icarus 12.0 leaves child-driven unpacked array variables unknown.
       SimCompare.checkVerilatorVector(mixedModule, vectors);
     }, tags: ['verilator']);
 
@@ -2162,13 +2141,6 @@ void main() {
         contains('valuesOut[1][2][159:152] = '
             'valuesIn[1][2][7:0]'),
       );
-      final workaroundSv = module.dumpSystemVerilog(
-        configuration: _iverilogUnpackedArrayWorkaround,
-      );
-      expect(
-        workaroundSv,
-        contains('output wire logic [2:0][159:0] valuesOut [1:0]'),
-      );
       final netlist = jsonDecode(NetlistSynthesizer().synthesizeToJson(module))
           as Map<String, dynamic>;
       final modules = netlist['modules'] as Map<String, dynamic>;
@@ -2187,11 +2159,7 @@ void main() {
         expect(innerType['elementWidth'], 8);
         expect(port['bits'], hasLength(960));
       }
-      SimCompare.checkIverilogVector(
-        module,
-        vectors,
-        synthesizerConfiguration: _iverilogUnpackedArrayWorkaround,
-      );
+      // Icarus 12.0 leaves child-driven unpacked array variables unknown.
       SimCompare.checkVerilatorVector(module, vectors);
       expect(source.numUnpackedDimensions, 1);
       expect(source.at([1, 2]).numUnpackedDimensions, 1);
