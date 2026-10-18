@@ -65,13 +65,11 @@
 <section class="desc markdown">
   <p>Creates an array with specified <code>dimensions</code> and <code>elementWidth</code> named
 <code>name</code>.</p>
-<p>Setting the <code>numUnpackedDimensions</code> gives a hint to <a href="../../rohd/Synthesizer-class.html">Synthesizer</a>s about
-the intent for declaration of signals. By default, all dimensions are
-packed, but if the value is set to more than <code>0</code>, then the outer-most
-dimensions (first in <code>dimensions</code>) will become unpacked.  It must be less
-than or equal to the length of <code>dimensions</code>. Modifying it will have no
-impact on simulation functionality or behavior. In SystemVerilog, there
-are some differences in access patterns for packed vs. unpacked arrays.</p>
+<p><code>numUnpackedDimensions</code> is a <a href="../../rohd/Synthesizer-class.html">Synthesizer</a> hint. When it is greater than
+zero, that many outermost dimensions are emitted as unpacked dimensions
+in SystemVerilog. It has no effect on simulation behavior.</p>
+<p>Zero-sized arrays are supported for simulation and value operations, but
+cannot be represented in generated SystemVerilog.</p>
 </section>
 
 
@@ -80,16 +78,13 @@ are some differences in access patterns for packed vs. unpacked arrays.</p>
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">factory LogicArray(List&lt;int&gt; dimensions, int elementWidth,
         {String? name, int numUnpackedDimensions = 0, Naming? naming}) =&gt;
-    LogicArray._factory(
-      dimensions,
-      elementWidth,
-      name: name,
-      numUnpackedDimensions: numUnpackedDimensions,
-      naming: naming,
-      logicBuilder: Logic.new,
-      logicArrayBuilder: LogicArray.new,
-      isNet: false,
-    );</code></pre>
+    LogicArray._factory(dimensions, elementWidth,
+        name: name,
+        numUnpackedDimensions: numUnpackedDimensions,
+        naming: naming,
+        logicBuilder: Logic.new,
+        logicArrayBuilder: LogicArray.new,
+        isNet: false);</code></pre>
 </section>
 
 

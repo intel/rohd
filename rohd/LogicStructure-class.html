@@ -75,7 +75,7 @@ in a similar way as an individual <a href="../rohd/Logic-class.html">Logic</a>.<
           <dt>Implementers</dt>
           <dd><ul class="comma-separated clazz-relationships">
               <li><a href="../examples/FilterSample-class.html">FilterSample</a></li>
-              <li><a href="../rohd/LogicArray-class.html">LogicArray</a></li>
+              <li><a href="../rohd/TypedLogicArray-class.html">TypedLogicArray</a></li>
           </ul></dd>
 
         
@@ -110,8 +110,7 @@ in a similar way as an individual <a href="../rohd/Logic-class.html">Logic</a>.<
 
 </dt>
 <dd>
-  If this is a part of a <a href="../rohd/LogicArray-class.html">LogicArray</a>, the index within that array.
-Othwerise, returns <code>null</code>.
+  The index within the immediate parent array, if there is one.
   <div class="features"><span class="feature">no setter</span><span class="feature">override</span></div>
 
 </dd>
@@ -209,7 +208,7 @@ transitions at any time during a <a href="../rohd/Simulator-class.html">Simulato
 
 </dt>
 <dd>
-  True if this is a member of a <a href="../rohd/LogicArray-class.html">LogicArray</a>.
+  Whether the immediate <a href="../rohd/LogicStructure/parentStructure.html">parentStructure</a> is a <code>BaseLogicArray</code>.
   <div class="features"><span class="feature">no setter</span><span class="feature">override</span></div>
 
 </dd>

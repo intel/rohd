@@ -71,11 +71,14 @@ implements clone functionality that matches the type and properly updates
 the <a href="../../rohd/Logic/name.html">Logic.name</a> as well.</p>
 <p>This is a good way to construct <a href="../../rohd/Module/input.html">input</a>s that have matching widths or
 dimensions to their <code>source</code> signal, or to make a <a href="../../rohd/LogicStructure-class.html">LogicStructure</a> an
-<a href="../../rohd/Module/input.html">input</a>. You can use this on a <a href="../../rohd/Logic-class.html">Logic</a>, <a href="../../rohd/LogicArray-class.html">LogicArray</a>, or <a href="../../rohd/LogicStructure-class.html">LogicStructure</a>.</p>
+<a href="../../rohd/Module/input.html">input</a>. You can use this on a <a href="../../rohd/Logic-class.html">Logic</a>, <a href="../../rohd/LogicArray-class.html">LogicArray</a>,
+<a href="../../rohd/TypedLogicArray-class.html">TypedLogicArray</a>, or <a href="../../rohd/LogicStructure-class.html">LogicStructure</a>. A <a href="../../rohd/TypedLogicArray-class.html">TypedLogicArray</a> retains both
+its hardware element type and semantic value type.</p>
 <p>The <code>source</code> cannot be or contain any <a href="../../rohd/LogicNet-class.html">LogicNet</a>s. If <code>source</code> is a
-<a href="../../rohd/Const-class.html">Const</a> (or is a <a href="../../rohd/LogicStructure-class.html">LogicStructure</a> that includes a <a href="../../rohd/Const-class.html">Const</a>), the
-<code>LogicType</code> must be set to <a href="../../rohd/Logic-class.html">Logic</a>, since <a href="../../rohd/Const-class.html">Const</a>s cannot be driven and
-are not suitable as ports.</p>
+<a href="../../rohd/Const-class.html">Const</a>, the <code>LogicType</code> must be set to <a href="../../rohd/Logic-class.html">Logic</a>, since <a href="../../rohd/Const-class.html">Const</a>s cannot be
+driven and are not suitable as ports. A <a href="../../rohd/LogicStructure-class.html">LogicStructure</a> containing
+<a href="../../rohd/Const-class.html">Const</a>s is accepted when its <a href="../../rohd/Logic/clone.html">Logic.clone</a> implementation creates a
+matching structure with only driveable elements.</p>
 <p>The return value is the same as what is returned by <a href="../../rohd/Module/input.html">input</a> and should
 only be used within this <a href="../../rohd/Module-class.html">Module</a>. The provided <code>source</code> is accessible via
 <a href="../../rohd/Module/inputSource.html">inputSource</a>.</p>
@@ -89,13 +92,26 @@ only be used within this <a href="../../rohd/Module-class.html">Module</a>. The 
     String name, LogicType source) {
   _checkForSafePortName(name);
 
-  source = _validateType&lt;LogicType&gt;(source, isOutput: false, name: name);
+  final hasTypedStructuredConstants =
+      LogicType != Logic &amp;&amp; source is LogicStructure &amp;&amp; source.hasConsts;
+  if (!hasTypedStructuredConstants) {
+    source = _validateType&lt;LogicType&gt;(source, isOutput: false, name: name);
+  }
 
   if (source.isNet || (source is LogicStructure &amp;&amp; source.hasNets)) {
     throw PortTypeException(source, &#39;Typed inputs cannot have nets in them.&#39;);
   }
 
-  final inPort = (source.clone(name: name) as LogicType)..gets(source);
+  final cloned = source.clone(name: name);
+  if (cloned is! LogicType) {
+    throw PortTypeException(source,
+        &#39;The `clone` method did not preserve the requested port type.&#39;);
+  }
+  final inPort = _validateType&lt;LogicType&gt;(
+    cloned,
+    isOutput: true,
+    name: name,
+  )..gets(source);
 
   if (inPort.name != name) {
     throw PortTypeException.forIntendedName(name,

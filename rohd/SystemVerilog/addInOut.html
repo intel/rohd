@@ -85,7 +85,7 @@ only be used within this <a href="../../rohd/Module-class.html">Module</a>. The 
   _inOutDrivers.add(source);
 
   &#47;&#47; we need to properly detect all inout sources, even for arrays
-  if (source.isArrayMember || source is LogicArray) {
+  if (source.isArrayMember || source is BaseLogicArray) {
     final sourceElems = TraverseableCollection&lt;Logic&gt;()..add(source);
     for (var i = 0; i &lt; sourceElems.length; i++) {
       final sei = sourceElems[i];
@@ -95,7 +95,7 @@ only be used within this <a href="../../rohd/Module-class.html">Module</a>. The 
         sourceElems.add(sei.parentStructure!);
       }
 
-      if (sei is LogicArray) {
+      if (sei is BaseLogicArray) {
         sourceElems.addAll(sei.elements);
       }
     }

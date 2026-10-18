@@ -67,9 +67,11 @@
     </section>
     
 <section class="desc markdown">
-  <p>If this is a part of a <a href="../../rohd/LogicArray-class.html">LogicArray</a>, the index within that array.
-Othwerise, returns <code>null</code>.</p>
-<p>If <a href="../../rohd/Logic/isArrayMember.html">isArrayMember</a> is true, this will be non-<code>null</code>.</p>
+  <p>The index within the immediate parent array, if there is one.</p>
+<p>This is non-<code>null</code> exactly when <a href="../../rohd/Logic/isArrayMember.html">isArrayMember</a> is true, including for
+elements of a <a href="../../rohd/TypedLogicArray-class.html">TypedLogicArray</a>. A field whose immediate parent is a
+non-array <a href="../../rohd/LogicStructure-class.html">LogicStructure</a> has no <a href="../../rohd/Logic/arrayIndex.html">arrayIndex</a>, even when that structure
+has an array ancestor.</p>
 </section>
 
     

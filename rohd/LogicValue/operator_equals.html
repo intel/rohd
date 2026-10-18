@@ -81,11 +81,13 @@ bool operator ==(Object other) {
     return false;
   }
 
-  if (other.width != width) {
+  final left = packed;
+  final right = other.packed;
+  if (right.width != left.width) {
     return false;
   }
 
-  return _equals(other);
+  return left._equals(right);
 }</code></pre>
 </section>
 

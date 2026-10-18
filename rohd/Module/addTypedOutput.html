@@ -71,7 +71,9 @@ port will be <code>LogicType</code> and constructed via <code>logicGenerator</co
 properly update the <code>name</code> of the generated <code>LogicType</code> as well.</p>
 <p>This is a good way to construct <a href="../../rohd/Module/output.html">output</a>s that have matching widths or
 dimensions to another signal, or to make a <a href="../../rohd/LogicStructure-class.html">LogicStructure</a> an <a href="../../rohd/Module/output.html">output</a>.
-You can use this on a <a href="../../rohd/Logic-class.html">Logic</a>, <a href="../../rohd/LogicArray-class.html">LogicArray</a>, or <a href="../../rohd/LogicStructure-class.html">LogicStructure</a>.</p>
+You can use this on a <a href="../../rohd/Logic-class.html">Logic</a>, <a href="../../rohd/LogicArray-class.html">LogicArray</a>, <a href="../../rohd/TypedLogicArray-class.html">TypedLogicArray</a>, or
+<a href="../../rohd/LogicStructure-class.html">LogicStructure</a>. A <a href="../../rohd/TypedLogicArray-class.html">TypedLogicArray</a> retains both its hardware element
+type and semantic value type.</p>
 <p>The <code>logicGenerator</code> cannot create ports that are or contain any
 <a href="../../rohd/LogicNet-class.html">LogicNet</a>s in them. If a <a href="../../rohd/Const-class.html">Const</a> is generated (or included in a
 <a href="../../rohd/LogicStructure-class.html">LogicStructure</a>), the <code>LogicType</code> must be set to <a href="../../rohd/Logic-class.html">Logic</a>, since <a href="../../rohd/Const-class.html">Const</a>s

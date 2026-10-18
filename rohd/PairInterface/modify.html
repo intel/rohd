@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
-  <meta name="description" content="API docs for the elementWidth property from the LogicArray class, for the Dart programming language.">
-  <title>elementWidth property - LogicArray class - rohd library - Dart API</title>
+  <meta name="description" content="API docs for the modify property from the PairInterface class, for the Dart programming language.">
+  <title>modify property - PairInterface class - rohd library - Dart API</title>
 
 
   
@@ -26,10 +26,10 @@
   <ol class="breadcrumbs gt-separated dark hidden-xs">
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/">rohd.dart</a></li>
-    <li><a href="../../rohd/LogicArray-class.html">LogicArray</a></li>
-    <li class="self-crumb">elementWidth property</li>
+    <li><a href="../../rohd/PairInterface-class.html">PairInterface</a></li>
+    <li class="self-crumb"><span class="deprecated">modify</span> property</li>
   </ol>
-  <div class="self-name">elementWidth</div>
+  <div class="self-name">modify</div>
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
@@ -46,31 +46,36 @@
 <div
     id="dartdoc-main-content"
     class="main-content"
-    data-above-sidebar="rohd&#47;LogicArray-class-sidebar.html"
+    data-above-sidebar="rohd&#47;PairInterface-class-sidebar.html"
     data-below-sidebar="">
     <div>
-<h1><span class="kind-property">elementWidth</span> property 
+<h1><span class="kind-property">modify</span> property 
 </h1></div>
 
     
       <section class="multi-line-signature">
         
-        <a href="https://api.dart.dev/stable/3.13.5/dart-core/int-class.html">int</a>
-        <span class="name ">elementWidth</span>
-        <div class="features"><span class="feature">final</span></div>
+  <div>
+    <ol class="annotation-list">
+        <li>@<a href="https://api.dart.dev/stable/3.13.5/dart-core/Deprecated/Deprecated.html">Deprecated</a>(&#39;Use `uniquify` when connecting or adding sub interfaces instead.&#39;)</li>
+    </ol>
+  </div>
+        <a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a> Function<span class="signature">(<span class="parameter" id="param-original"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">original</span></span>)</span>?
+        <span class="name deprecated">modify</span>
+        <div class="features"><span class="feature">getter/setter pair</span></div>
 
       </section>
       
 <section class="desc markdown">
-  <p>The width of leaf elements in this array.</p>
-<p>If the array has no leaf elements and/or the <a href="../../rohd/LogicStructure/width.html">width</a> is 0, then the
-<a href="../../rohd/LogicArray/elementWidth.html">elementWidth</a> is always 0.</p>
+  <p>A function that can be used to modify all port names in a certain way.</p>
 </section>
 
       
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">final int elementWidth;</code></pre>
+  <pre class="language-dart"><code class="language-dart">@Deprecated(
+    &#39;Use `uniquify` when connecting or adding sub interfaces instead.&#39;)
+String Function(String original)? modify;</code></pre>
 </section>
 
 
@@ -86,11 +91,11 @@
 <ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/">rohd</a></li>
-    <li><a href="../../rohd/LogicArray-class.html">LogicArray</a></li>
-    <li class="self-crumb">elementWidth property</li>
+    <li><a href="../../rohd/PairInterface-class.html">PairInterface</a></li>
+    <li class="self-crumb"><span class="deprecated">modify</span> property</li>
 </ol>
 
-  <h5>LogicArray class</h5>
+  <h5>PairInterface class</h5>
   <div id="dartdoc-sidebar-left-content"></div>
 </div><!--/.sidebar-offcanvas-->
 <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">

@@ -403,7 +403,7 @@ in SystemVerilog.
 
 </dt>
 <dd>
-  Represents a multi-dimensional array structure of independent <a href="../rohd/Logic-class.html">Logic</a>s.
+  A multi-dimensional array structure of independent <a href="../rohd/Logic-class.html">Logic</a>s.
 </dd>
 
           <dt id="LogicEnum">
@@ -440,12 +440,28 @@ in a similar way as an individual <a href="../rohd/Logic-class.html">Logic</a>.
   An immutable 4-value representation of an arbitrary number of bits.
 </dd>
 
+          <dt id="LogicValueArray">
+  <span class="name "><a href="../rohd/LogicValueArray-class.html">LogicValueArray</a></span> 
+
+</dt>
+<dd>
+  A shaped <a href="../rohd/LogicValue-class.html">LogicValue</a> containing fixed-width <a href="../rohd/LogicValue-class.html">LogicValue</a> array elements.
+</dd>
+
           <dt id="LogicValueChanged">
   <span class="name "><a href="../rohd/LogicValueChanged-class.html">LogicValueChanged</a></span> 
 
 </dt>
 <dd>
   Represents the event of a <a href="../rohd/Logic-class.html">Logic</a> changing value.
+</dd>
+
+          <dt id="LogicValueCodec">
+  <span class="name "><a href="../rohd/LogicValueCodec-class.html">LogicValueCodec</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></span> 
+
+</dt>
+<dd>
+  Converts semantic values of type <code>T</code> to and from packed <a href="../rohd/LogicValue-class.html">LogicValue</a>s.
 </dd>
 
           <dt id="LShift">
@@ -958,6 +974,23 @@ cross-probing data.
   A tri-state buffer: can drive 0, 1, or leave the output floating.
 </dd>
 
+          <dt id="TypedLogicArray">
+  <span class="name "><a href="../rohd/TypedLogicArray-class.html">TypedLogicArray</a><span class="signature">&lt;<wbr><span class="type-parameter">T extends <a href="../rohd/Logic-class.html">Logic</a></span>, <span class="type-parameter">V</span>&gt;</span></span> 
+
+</dt>
+<dd>
+  A multidimensional logic array with hardware leaves of type <code>T</code> and
+semantic values of type <code>V</code>.
+</dd>
+
+          <dt id="TypedLogicValueArray">
+  <span class="name "><a href="../rohd/TypedLogicValueArray-class.html">TypedLogicValueArray</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></span> 
+
+</dt>
+<dd>
+  A multidimensional array of semantic values backed by packed logic values.
+</dd>
+
           <dt id="ValueChange">
   <span class="name "><a href="../rohd/ValueChange-class.html">ValueChange</a></span> 
 
@@ -1461,6 +1494,34 @@ definition before leaf predicates are applied.
   </dt>
   <dd>
     Selects an unsupported <code>module</code> for emission as an empty SystemC stub.
+    
+
+  </dd>
+
+          
+  <dt id="TypedLogicArrayElementBuilder" class="callable">
+    <span class="name"><a href="../rohd/TypedLogicArrayElementBuilder.html">TypedLogicArrayElementBuilder</a></span>&lt;<wbr><span class="type-parameter">T extends <a href="../rohd/Logic-class.html">Logic</a></span>&gt;<span class="signature">
+      <span class="returntype parameter">= T Function<span class="signature">({<span class="parameter" id="param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">name</span></span>})</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Builds one leaf element of a <a href="../rohd/TypedLogicArray-class.html">TypedLogicArray</a>.
+    
+
+  </dd>
+
+          
+  <dt id="TypedLogicArrayElementCompatibility" class="callable">
+    <span class="name"><a href="../rohd/TypedLogicArrayElementCompatibility.html">TypedLogicArrayElementCompatibility</a></span>&lt;<wbr><span class="type-parameter">T extends <a href="../rohd/Logic-class.html">Logic</a></span>&gt;<span class="signature">
+      <span class="returntype parameter">= <a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a> Function<span class="signature">(<span class="parameter" id="param-prototype"><span class="type-annotation">T</span> <span class="parameter-name">prototype</span>, </span><span class="parameter" id="param-element"><span class="type-annotation">T</span> <span class="parameter-name">element</span></span>)</span></span>
+    </span>
+    
+
+  </dt>
+  <dd>
+    Checks whether two typed hardware elements use compatible value formats.
     
 
   </dd>

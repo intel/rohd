@@ -102,35 +102,45 @@ respectively, no inputs, outputs, or inOuts will be added.</p>
   if (inputTags != null) {
     for (final port in getPorts(inputTags).values) {
       port &lt;=
-          (port is LogicArray
-              ? module.addInputArray(
-                  uniquify(port.name),
-                  srcInterface.port(port.name),
-                  dimensions: port.dimensions,
-                  elementWidth: port.elementWidth,
-                  numUnpackedDimensions: port.numUnpackedDimensions,
-                )
-              : module.addInput(
-                  uniquify(port.name),
-                  srcInterface.port(port.name),
-                  width: port.width,
-                ));
+          switch (port) {
+            LogicArray() =&gt; module.addInputArray(
+                uniquify(port.name),
+                srcInterface.port(port.name),
+                dimensions: port.dimensions,
+                elementWidth: port.elementWidth,
+                numUnpackedDimensions: port.numUnpackedDimensions,
+              ),
+            BaseLogicArray() =&gt; module.addTypedInput(
+                uniquify(port.name),
+                srcInterface.port(port.name) as BaseLogicArray,
+              ),
+            _ =&gt; module.addInput(
+                uniquify(port.name),
+                srcInterface.port(port.name),
+                width: port.width,
+              ),
+          };
     }
   }
 
   if (outputTags != null) {
     for (final port in getPorts(outputTags).values) {
-      final output = (port is LogicArray
-          ? module.addOutputArray(
-              uniquify(port.name),
-              dimensions: port.dimensions,
-              elementWidth: port.elementWidth,
-              numUnpackedDimensions: port.numUnpackedDimensions,
-            )
-          : module.addOutput(
-              uniquify(port.name),
-              width: port.width,
-            ));
+      final output = switch (port) {
+        LogicArray() =&gt; module.addOutputArray(
+            uniquify(port.name),
+            dimensions: port.dimensions,
+            elementWidth: port.elementWidth,
+            numUnpackedDimensions: port.numUnpackedDimensions,
+          ),
+        BaseLogicArray() =&gt; module.addTypedOutput(
+            uniquify(port.name),
+            port.clone,
+          ),
+        _ =&gt; module.addOutput(
+            uniquify(port.name),
+            width: port.width,
+          ),
+      };
       output &lt;= port;
       srcInterface.port(port.name) &lt;= output;
     }
@@ -138,7 +148,7 @@ respectively, no inputs, outputs, or inOuts will be added.</p>
 
   if (inOutTags != null) {
     for (final port in getPorts(inOutTags).values) {
-      if (port is LogicArray) {
+      if (port is BaseLogicArray) {
         if (!port.isNet) {
           throw PortTypeException(
               port, &#39;LogicArray nets must be used for inOut array ports.&#39;);
@@ -149,19 +159,24 @@ respectively, no inputs, outputs, or inOuts will be added.</p>
       }
 
       port &lt;=
-          (port is LogicArray
-              ? module.addInOutArray(
-                  uniquify(port.name),
-                  srcInterface.port(port.name),
-                  dimensions: port.dimensions,
-                  elementWidth: port.elementWidth,
-                  numUnpackedDimensions: port.numUnpackedDimensions,
-                )
-              : module.addInOut(
-                  uniquify(port.name),
-                  srcInterface.port(port.name),
-                  width: port.width,
-                ));
+          switch (port) {
+            LogicArray() =&gt; module.addInOutArray(
+                uniquify(port.name),
+                srcInterface.port(port.name),
+                dimensions: port.dimensions,
+                elementWidth: port.elementWidth,
+                numUnpackedDimensions: port.numUnpackedDimensions,
+              ),
+            BaseLogicArray() =&gt; module.addTypedInOut(
+                uniquify(port.name),
+                srcInterface.port(port.name) as BaseLogicArray,
+              ),
+            _ =&gt; module.addInOut(
+                uniquify(port.name),
+                srcInterface.port(port.name),
+                width: port.width,
+              ),
+          };
     }
   }
 }</code></pre>

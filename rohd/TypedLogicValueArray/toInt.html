@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
-  <meta name="description" content="API docs for the naming property from the LogicArray class, for the Dart programming language.">
-  <title>naming property - LogicArray class - rohd library - Dart API</title>
+  <meta name="description" content="API docs for the toInt method from the TypedLogicValueArray class, for the Dart programming language.">
+  <title>toInt method - TypedLogicValueArray class - rohd library - Dart API</title>
 
 
   
@@ -26,10 +26,10 @@
   <ol class="breadcrumbs gt-separated dark hidden-xs">
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/">rohd.dart</a></li>
-    <li><a href="../../rohd/LogicArray-class.html">LogicArray</a></li>
-    <li class="self-crumb">naming property</li>
+    <li><a href="../../rohd/TypedLogicValueArray-class.html">TypedLogicValueArray<span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></a></li>
+    <li class="self-crumb">toInt method</li>
   </ol>
-  <div class="self-name">naming</div>
+  <div class="self-name">toInt</div>
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
@@ -46,43 +46,44 @@
 <div
     id="dartdoc-main-content"
     class="main-content"
-    data-above-sidebar="rohd&#47;LogicArray-class-sidebar.html"
+    data-above-sidebar="rohd&#47;TypedLogicValueArray-class-sidebar.html"
     data-below-sidebar="">
     <div>
-<h1><span class="kind-property">naming</span> property 
+<h1><span class="kind-method">toInt</span> method 
 </h1></div>
 
-    
-      <section class="multi-line-signature">
-        
+    <section class="multi-line-signature">
+      
   <div>
     <ol class="annotation-list">
         <li>@<a href="https://api.dart.dev/stable/3.13.5/dart-core/override-constant.html">override</a></li>
     </ol>
   </div>
-        <a href="../../rohd/Naming.html">Naming</a>
-        <span class="name ">naming</span>
-        <div class="features"><span class="feature">final</span></div>
+<span class="returntype"><a href="https://api.dart.dev/stable/3.13.5/dart-core/int-class.html">int</a></span>
+<span class="name ">toInt</span>(<wbr>)
 
-      </section>
-      
+      <div class="features"><span class="feature">override</span></div>
+
+    </section>
+    
 <section class="desc markdown">
-  <p>Controls the naming (and renaming) preferences of this signal in generated
-outputs.</p>
-</section>
-
-      
-<section class="summary source-code" id="source">
-  <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">@override
-final Naming naming;</code></pre>
+  <p>Converts valid a <a href="../../rohd/LogicValue-class.html">LogicValue</a> to an <a href="https://api.dart.dev/stable/3.13.5/dart-core/int-class.html">int</a>.</p>
+<p>Throws an <code>Exception</code> if not <a href="../../rohd/TypedLogicValueArray/isValid.html">isValid</a> or the value doesn't fit in
+an <a href="https://api.dart.dev/stable/3.13.5/dart-core/int-class.html">int</a>.</p>
 </section>
 
 
     
-</div> <!-- /.main-content -->
-<div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
-  <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">@override
+int toInt() =&gt; packed.toInt();</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
 <header id="header-search-sidebar" class="hidden-l">
   <form class="search-sidebar" role="search">
     <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
@@ -91,14 +92,14 @@ final Naming naming;</code></pre>
 <ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/">rohd</a></li>
-    <li><a href="../../rohd/LogicArray-class.html">LogicArray</a></li>
-    <li class="self-crumb">naming property</li>
+    <li><a href="../../rohd/TypedLogicValueArray-class.html">TypedLogicValueArray<span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></a></li>
+    <li class="self-crumb">toInt method</li>
 </ol>
 
-  <h5>LogicArray class</h5>
-  <div id="dartdoc-sidebar-left-content"></div>
-</div><!--/.sidebar-offcanvas-->
-<div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+    <h5>TypedLogicValueArray class</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
 </div><!--/.sidebar-offcanvas-->
 </main>
 <footer>

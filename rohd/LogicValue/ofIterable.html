@@ -86,7 +86,8 @@ print(lv); // This prints `6'b01xzx0`
 
   &#47;&#47; shift small chunks in together before shifting BigInt&#39;s, since
   &#47;&#47; shifting BigInt&#39;s is expensive
-  for (final lv in it) {
+  for (final value in it) {
+    final lv = value.packed;
     final lvPlusSmall = lv.width + smallBuffer.width;
     if (lvPlusSmall &lt;= INT_BITS) {
       smallBuffer = lv._concatenate(smallBuffer);

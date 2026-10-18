@@ -67,13 +67,17 @@
     </section>
     
 <section class="desc markdown">
-  <p>True if this is a member of a <a href="../../rohd/LogicArray-class.html">LogicArray</a>.</p>
+  <p>Whether the immediate <a href="../../rohd/Logic/parentStructure.html">parentStructure</a> is a <code>BaseLogicArray</code>.</p>
+<p>This tests direct membership, not recursive array containment. For
+example, a structure configured as an element of a <a href="../../rohd/TypedLogicArray-class.html">TypedLogicArray</a> has
+<code>isArrayMember == true</code>, while a field inside that structure has
+<code>isArrayMember == false</code> even though the field has an array ancestor.</p>
 </section>
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">bool get isArrayMember =&gt; parentStructure is LogicArray;</code></pre>
+  <pre class="language-dart"><code class="language-dart">bool get isArrayMember =&gt; parentStructure is BaseLogicArray;</code></pre>
 </section>
 
   </section>

@@ -62,9 +62,9 @@
     </section>
     
 <section class="desc markdown">
-  <p>Constructs a new <a href="../../rohd/LogicArray-class.html">LogicArray</a> with a more convenient constructor signature
-for when many ports in an interface are declared together.  Also performs
-some basic checks on the legality of the array as a port of a <a href="../../rohd/Module-class.html">Module</a>.</p>
+  <p>Creates an array port with a convenient constructor signature.</p>
+<p>The port uses mergeable naming so repeated interface connections retain a
+single SystemVerilog port declaration.</p>
 </section>
 
 
@@ -79,14 +79,10 @@ some basic checks on the legality of the array as a port of a <a href="../../roh
     throw InvalidPortNameException(name);
   }
 
-  return LogicArray(
-    dimensions, elementWidth,
-    numUnpackedDimensions: numUnpackedDimensions, name: name,
-
-    &#47;&#47; make port names mergeable so we don&#39;t duplicate the ports
-    &#47;&#47; when calling connectIO
-    naming: Naming.mergeable,
-  );
+  return LogicArray(dimensions, elementWidth,
+      numUnpackedDimensions: numUnpackedDimensions,
+      name: name,
+      naming: Naming.mergeable);
 }</code></pre>
 </section>
 

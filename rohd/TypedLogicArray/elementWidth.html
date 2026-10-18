@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
-  <meta name="description" content="API docs for the numUnpackedDimensions property from the LogicArray class, for the Dart programming language.">
-  <title>numUnpackedDimensions property - LogicArray class - rohd library - Dart API</title>
+  <meta name="description" content="API docs for the elementWidth property from the TypedLogicArray class, for the Dart programming language.">
+  <title>elementWidth property - TypedLogicArray class - rohd library - Dart API</title>
 
 
   
@@ -26,10 +26,10 @@
   <ol class="breadcrumbs gt-separated dark hidden-xs">
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/">rohd.dart</a></li>
-    <li><a href="../../rohd/LogicArray-class.html">LogicArray</a></li>
-    <li class="self-crumb">numUnpackedDimensions property</li>
+    <li><a href="../../rohd/TypedLogicArray-class.html">TypedLogicArray<span class="signature">&lt;<wbr><span class="type-parameter">T extends Logic</span>, <span class="type-parameter">V</span>&gt;</span></a></li>
+    <li class="self-crumb">elementWidth property</li>
   </ol>
-  <div class="self-name">numUnpackedDimensions</div>
+  <div class="self-name">elementWidth</div>
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
@@ -46,32 +46,31 @@
 <div
     id="dartdoc-main-content"
     class="main-content"
-    data-above-sidebar="rohd&#47;LogicArray-class-sidebar.html"
+    data-above-sidebar="rohd&#47;TypedLogicArray-class-sidebar.html"
     data-below-sidebar="">
     <div>
-<h1><span class="kind-property">numUnpackedDimensions</span> property 
+<h1><span class="kind-property">elementWidth</span> property 
 </h1></div>
 
     
       <section class="multi-line-signature">
         
         <a href="https://api.dart.dev/stable/3.13.5/dart-core/int-class.html">int</a>
-        <span class="name ">numUnpackedDimensions</span>
-        <div class="features"><span class="feature">final</span></div>
+        <span class="name ">elementWidth</span>
+        <div class="features"><span class="feature">final</span><span class="feature">inherited</span></div>
 
       </section>
       
 <section class="desc markdown">
-  <p>The number of <a href="../../rohd/LogicArray/dimensions.html">dimensions</a> which should be treated as "unpacked", starting
-from the outermost (first) elements of <a href="../../rohd/LogicArray/dimensions.html">dimensions</a>.</p>
-<p>This has no functional impact on simulation or behavior.  It is only used
-as a hint for <a href="../../rohd/Synthesizer-class.html">Synthesizer</a>s.</p>
+  <p>The width of leaf elements in this array.</p>
+<p>An empty <a href="../../rohd/LogicArray-class.html">LogicArray</a> retains its historical zero element width.
+An empty <a href="../../rohd/TypedLogicArray-class.html">TypedLogicArray</a> retains the width of its constructed prototype.</p>
 </section>
 
       
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">final int numUnpackedDimensions;</code></pre>
+  <pre class="language-dart"><code class="language-dart">final int elementWidth;</code></pre>
 </section>
 
 
@@ -87,11 +86,11 @@ as a hint for <a href="../../rohd/Synthesizer-class.html">Synthesizer</a>s.</p>
 <ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/">rohd</a></li>
-    <li><a href="../../rohd/LogicArray-class.html">LogicArray</a></li>
-    <li class="self-crumb">numUnpackedDimensions property</li>
+    <li><a href="../../rohd/TypedLogicArray-class.html">TypedLogicArray<span class="signature">&lt;<wbr><span class="type-parameter">T extends Logic</span>, <span class="type-parameter">V</span>&gt;</span></a></li>
+    <li class="self-crumb">elementWidth property</li>
 </ol>
 
-  <h5>LogicArray class</h5>
+  <h5>TypedLogicArray class</h5>
   <div id="dartdoc-sidebar-left-content"></div>
 </div><!--/.sidebar-offcanvas-->
 <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">

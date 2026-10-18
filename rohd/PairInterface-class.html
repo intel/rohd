@@ -90,10 +90,17 @@ complex situations.</p>
     <h2>Constructors</h2>
     <dl class="constructor-summary-list">
         <dt id="PairInterface.new" class="callable">
-          <span class="name"><a href="../rohd/PairInterface/PairInterface.html">PairInterface</a></span><span class="signature">({<span class="parameter" id="param-portsFromConsumer"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span>?</span> <span class="parameter-name">portsFromConsumer</span>, </span><span class="parameter" id="param-portsFromProvider"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span>?</span> <span class="parameter-name">portsFromProvider</span>, </span><span class="parameter" id="param-sharedInputPorts"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span>?</span> <span class="parameter-name">sharedInputPorts</span>, </span><span class="parameter" id="param-commonInOutPorts"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span>?</span> <span class="parameter-name">commonInOutPorts</span></span>})</span>
+          <span class="name"><a href="../rohd/PairInterface/PairInterface.html">PairInterface</a></span><span class="signature">({<span class="parameter" id="param-portsFromConsumer"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span>?</span> <span class="parameter-name">portsFromConsumer</span>, </span><span class="parameter" id="param-portsFromProvider"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span>?</span> <span class="parameter-name">portsFromProvider</span>, </span><span class="parameter" id="param-sharedInputPorts"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span>?</span> <span class="parameter-name">sharedInputPorts</span>, </span><span class="parameter" id="param-commonInOutPorts"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span>?</span> <span class="parameter-name">commonInOutPorts</span>, </span><span class="parameter" id="param-modify"><span>@<a href="https://api.dart.dev/stable/3.13.5/dart-core/Deprecated/Deprecated.html">Deprecated</a>(&#39;Use `uniquify` when connecting or adding sub interfaces instead.&#39;)</span> <span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">modify</span>(<span class="parameter" id="param-original"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">original</span></span>)?</span>})</span>
         </dt>
         <dd>
           Constructs an instance of a <a href="../rohd/PairInterface-class.html">PairInterface</a> with the specified ports.
+        </dd>
+        <dt id="PairInterface.clone" class="callable">
+          <span class="name"><a class="deprecated" href="../rohd/PairInterface/PairInterface.clone.html">PairInterface.clone</a></span><span class="signature">(<span class="parameter" id="clone-param-otherInterface"><span class="type-annotation"><a href="../rohd/PairInterface-class.html">PairInterface</a></span> <span class="parameter-name">otherInterface</span></span>)</span>
+        </dt>
+        <dd>
+          Creates a new instance of a <a href="../rohd/PairInterface-class.html">PairInterface</a> with the same ports and other
+characteristics.
         </dd>
     </dl>
   </section>
@@ -112,6 +119,18 @@ complex situations.</p>
 <dd class="inherited">
   The hash code for this object.
   <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="modify" class="property">
+  <span class="name"><a class="deprecated" href="../rohd/PairInterface/modify.html">modify</a></span>
+  <span class="signature">&#8596; <a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a> Function<span class="signature">(<span class="parameter" id="param-original"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">original</span></span>)</span>?</span>
+  
+
+</dt>
+<dd>
+  A function that can be used to modify all port names in a certain way.
+  <div class="features"><span class="feature">getter/setter pair</span></div>
 
 </dd>
 

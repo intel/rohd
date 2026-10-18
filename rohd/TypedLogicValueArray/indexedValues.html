@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
-  <meta name="description" content="API docs for the isNet property from the LogicArray class, for the Dart programming language.">
-  <title>isNet property - LogicArray class - rohd library - Dart API</title>
+  <meta name="description" content="API docs for the indexedValues property from the TypedLogicValueArray class, for the Dart programming language.">
+  <title>indexedValues property - TypedLogicValueArray class - rohd library - Dart API</title>
 
 
   
@@ -26,10 +26,10 @@
   <ol class="breadcrumbs gt-separated dark hidden-xs">
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/">rohd.dart</a></li>
-    <li><a href="../../rohd/LogicArray-class.html">LogicArray</a></li>
-    <li class="self-crumb">isNet property</li>
+    <li><a href="../../rohd/TypedLogicValueArray-class.html">TypedLogicValueArray<span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></a></li>
+    <li class="self-crumb">indexedValues property</li>
   </ol>
-  <div class="self-name">isNet</div>
+  <div class="self-name">indexedValues</div>
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
@@ -46,40 +46,45 @@
 <div
     id="dartdoc-main-content"
     class="main-content"
-    data-above-sidebar="rohd&#47;LogicArray-class-sidebar.html"
+    data-above-sidebar="rohd&#47;TypedLogicValueArray-class-sidebar.html"
     data-below-sidebar="">
     <div>
-<h1><span class="kind-property">isNet</span> property 
+<h1><span class="kind-property">indexedValues</span> property 
 </h1></div>
 
     
-      <section class="multi-line-signature">
-        
-  <div>
-    <ol class="annotation-list">
-        <li>@<a href="https://api.dart.dev/stable/3.13.5/dart-core/override-constant.html">override</a></li>
-    </ol>
-  </div>
-        <a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a>
-        <span class="name ">isNet</span>
-        <div class="features"><span class="feature">final</span></div>
-
-      </section>
-      
-<section class="desc markdown">
-  <p>Indicates whether this signal behaves like a <a href="../../rohd/LogicNet-class.html">LogicNet</a>, allowing multiple
-drivers.</p>
-</section>
-
-      
-<section class="summary source-code" id="source">
-  <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">@override
-final bool isNet;</code></pre>
-</section>
-
 
     
+        
+  <section id="getter">
+    <section class="multi-line-signature">
+      
+      <span class="returntype"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter">(<span class="field"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/int-class.html">int</a></span>&gt;</span></span>, </span><span class="field"><span class="type-annotation">T</span></span>)</span>&gt;</span></span>
+      get
+      <span class="name ">indexedValues</span>
+      
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Values paired with their row-major multidimensional indices.</p>
+</section>
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">Iterable&lt;(List&lt;int&gt;, T)&gt; get indexedValues =&gt; Iterable.generate(
+      arrayValues.length,
+      (index) =&gt; (
+        _valueArrayIndices(dimensions, index),
+        _arrayValues[index],
+      ),
+    );</code></pre>
+</section>
+
+  </section>
+
+
 </div> <!-- /.main-content -->
 <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
   <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
@@ -91,11 +96,11 @@ final bool isNet;</code></pre>
 <ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/">rohd</a></li>
-    <li><a href="../../rohd/LogicArray-class.html">LogicArray</a></li>
-    <li class="self-crumb">isNet property</li>
+    <li><a href="../../rohd/TypedLogicValueArray-class.html">TypedLogicValueArray<span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></a></li>
+    <li class="self-crumb">indexedValues property</li>
 </ol>
 
-  <h5>LogicArray class</h5>
+  <h5>TypedLogicValueArray class</h5>
   <div id="dartdoc-sidebar-left-content"></div>
 </div><!--/.sidebar-offcanvas-->
 <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">

@@ -75,28 +75,65 @@
 </ul>
 <h2 id="about-rohd">About ROHD</h2>
 <ul>
-<li>Full power of the modern <strong>Dart language</strong> for hardware design and verification</li>
-<li>Makes <strong>validation collateral</strong> simpler to develop and debug.  The <a href="https://github.com/intel/rohd-vf">ROHD Verification Framework</a> helps build well-structured testbenches.</li>
-<li>Develop <strong>layers of abstraction</strong> within a hardware design, making it more flexible and powerful</li>
-<li>Easy <strong>IP integration</strong> and <strong>interfaces</strong>; using an IP is as easy as an import.  Reduces tedious, redundant, and error prone aspects of integration</li>
-<li><strong>Simple and fast build</strong>, free of complex build systems and EDA vendor tools</li>
-<li>Can use the excellent pub.dev <strong>package manager</strong> and all the packages it has to offer</li>
+<li>
+<p>Full power of the modern <strong>Dart language</strong> for hardware design and verification</p>
+</li>
+<li>
+<p>Can use the excellent pub.dev <strong>package manager</strong> and all the packages it has to offer</p>
+</li>
+<li>
+<p>Develop <strong>layers of abstraction</strong> within a hardware design, making it more flexible and powerful</p>
+</li>
+<li>
+<p><strong>Less verbose</strong> than alternatives (fewer lines of code)</p>
+</li>
+<li>
+<p>Fewer bugs and lines of code means <strong>shorter development schedule</strong></p>
+</li>
+<li>
+<p>Enables <strong>higher quality</strong> development</p>
+</li>
+<li>
+<p><strong>Simple and fast build</strong>, free of complex build systems and EDA vendor tools</p>
+</li>
+<li>
+<p>Excellent, simple, fast <strong>unit-testing</strong> framework</p>
+</li>
+<li>
+<p>Simulate with <strong>various abstraction levels of models</strong> from architectural, to functional, to cycle-accurate, to RTL levels in the same language and environment</p>
+</li>
+<li>
+<p>Simple, free, <strong>open source tool stack</strong> without any headaches from library dependencies, file ordering, elaboration/analysis options, +defines, etc.</p>
+</li>
+<li>
+<p>Use <strong>modern IDEs</strong> like Visual Studio Code, with excellent static analysis, fast autocomplete, built-in debugger, linting, git integration, extensions, and much more</p>
+</li>
+<li>
+<p>Easy <strong>IP integration</strong> and <strong>interfaces</strong>; using an IP is as easy as an import.  Reduces tedious, redundant, and error prone aspects of integration</p>
+</li>
+<li>
+<p>Conversion of modules to human-readable, structurally similar <strong>SystemVerilog</strong> and <strong>SystemC</strong> for integration or downstream tool consumption</p>
+</li>
+<li>
+<p><strong>Run-time dynamic</strong> module port definitions (numbers, names, widths, etc.) and internal module logic, including recursive module contents</p>
+</li>
+<li>
+<p>Replaces hacky perl/python scripting for automation with powerful <strong>native control of design generation</strong></p>
+</li>
+<li>
+<p>The <strong>ROHD Framework</strong> is a complete design and verification framework:</p>
+<ul>
 <li>Built-in event-based <strong>fast simulator</strong> with <strong>4-value</strong> (0, 1, X, and Z) support and a <strong>waveform capture service</strong> to .vcd or .fst file format</li>
-<li>Conversion of modules to human-readable, structurally similar <strong>SystemVerilog</strong> and <strong>SystemC</strong> for integration or downstream tool consumption</li>
-<li><strong>Run-time dynamic</strong> module port definitions (numbers, names, widths, etc.) and internal module logic, including recursive module contents</li>
-<li>Leverage the <a href="https://github.com/intel/rohd-hcl">ROHD Hardware Component Library (ROHD-HCL)</a> with reusable and configurable design and verification components.</li>
-<li>Simple, free, <strong>open source tool stack</strong> without any headaches from library dependencies, file ordering, elaboration/analysis options, +defines, etc.</li>
-<li>Excellent, simple, fast <strong>unit-testing</strong> framework</li>
-<li><strong>Less verbose</strong> than alternatives (fewer lines of code)</li>
-<li>Enables <strong>higher quality</strong> development</li>
-<li>Replaces hacky perl/python scripting for automation with powerful <strong>native control of design generation</strong></li>
-<li>Fewer bugs and lines of code means <strong>shorter development schedule</strong></li>
+<li>Leverage the <a href="https://github.com/intel/rohd-hcl">ROHD Hardware Component Library (ROHD-HCL)</a> with reusable and configurable design and verification components</li>
+<li>Makes <strong>validation collateral</strong> simpler to develop and debug.  The <a href="https://github.com/intel/rohd-vf">ROHD Verification Framework</a> helps build well-structured testbenches</li>
+<li>Powerful capabilities like the <a href="https://github.com/rohd-schematic-viewer">ROHD Schematic Viewer</a> for high-fidelity rendering of ROHD designs as well as <a href="https://github.com/rohd-wave-viewer">ROHD Wave Viewer</a> for viewing simulation waveforms even for complex ROHD structures</li>
+<li>Debug your design with <a href="https://github.com/intel/rohd/rohd_devtools_extension">ROHD Live Debugger</a>, an integrated debugger with cross-probing into ROHD source and synthesized RTL output from schematics rendering and waveform display all connected to live RTL simulation</li>
 <li>Support for <strong>cosimulation with verilog modules</strong> (via <a href="https://github.com/intel/rohd-cosim">ROHD Cosim</a>) and <strong>instantiation of verilog modules</strong> in generated SystemVerilog code</li>
-<li>Use <strong>modern IDEs</strong> like Visual Studio Code, with excellent static analysis, fast autocomplete, built-in debugger, linting, git integration, extensions, and much more</li>
-<li>Simulate with <strong>various abstraction levels of models</strong> from architectural, to functional, to cycle-accurate, to RTL levels in the same language and environment.</li>
 </ul>
-<p>ROHD is <em>not</em> a new language, it is <em>not</em> a hardware description language (HDL), and it is <em>not</em> a version of High-Level Synthesis (HLS).  ROHD can be classified as a generator framework.</p>
-<p>You can think of this project as an attempt to <em>replace</em> SystemVerilog and related build systems as the front-end methodology of choice in the industry.</p>
+</li>
+</ul>
+<p>ROHD is <em>not</em> a new language, it is <em>not</em> a hardware description language (HDL), and it is <em>not</em> a version of High-Level Synthesis (HLS).  ROHD can be classified as a generator framework, extending a powerful software language into the hardware domain and providing a full suite of tools and capabilities to accelerate hardware design and validation.</p>
+<p>You can think of this project as an attempt to <em>replace</em> SystemVerilog and related design systems as the front-end methodology of choice in the industry.</p>
 <p>One of ROHD's goals is to help grow an open-source community around reusable hardware designs and verification components.</p>
 <h2 id="contributing">Contributing</h2>
 <p>ROHD is under active development.  If you're interested in contributing, have feedback or a question, or found a bug, please see <a href="https://github.com/intel/rohd/blob/main/CONTRIBUTING.md">CONTRIBUTING.md</a>.</p>

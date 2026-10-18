@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the TypedLogicArray.new constructor from Class TypedLogicArray from the rohd library, for the Dart programming language.">
+  <title>TypedLogicArray.new constructor - TypedLogicArray - rohd library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">rohd</a></li>
+    <li><a href="../../rohd/">rohd.dart</a></li>
+    <li><a href="../../rohd/TypedLogicArray-class.html">TypedLogicArray<span class="signature">&lt;<wbr><span class="type-parameter">T extends Logic</span>, <span class="type-parameter">V</span>&gt;</span></a></li>
+    <li class="self-crumb">TypedLogicArray.new constructor</li>
+  </ol>
+  <div class="self-name">TypedLogicArray.new</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div
+      id="dartdoc-main-content"
+      class="main-content"
+      data-above-sidebar="rohd&#47;TypedLogicArray-class-sidebar.html"
+      data-below-sidebar="">
+      <div>
+<h1><span class="kind-constructor">TypedLogicArray&lt;<wbr><span class="type-parameter">T extends Logic</span>, <span class="type-parameter">V</span>&gt;</span> constructor 
+</h1></div>
+
+    <section class="multi-line-signature">
+      
+      <span class="name ">TypedLogicArray&lt;<wbr><span class="type-parameter">T extends Logic</span>, <span class="type-parameter">V</span>&gt;</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="param-dimensions"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/int-class.html">int</a></span>&gt;</span></span> <span class="parameter-name">dimensions</span>, </span></li>
+<li><span class="parameter" id="param-elementBuilder"><span class="type-annotation"><a href="../../rohd/TypedLogicArrayElementBuilder.html">TypedLogicArrayElementBuilder</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></span> <span class="parameter-name">elementBuilder</span>, {</span></li>
+<li><span class="parameter" id="param-valueCodec"><span class="type-annotation"><a href="../../rohd/LogicValueCodec-class.html">LogicValueCodec</a><span class="signature">&lt;<wbr><span class="type-parameter">V</span>&gt;</span>?</span> <span class="parameter-name">valueCodec</span>, </span></li>
+<li><span class="parameter" id="param-elementCompatibility"><span class="type-annotation"><a href="../../rohd/TypedLogicArrayElementCompatibility.html">TypedLogicArrayElementCompatibility</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span>?</span> <span class="parameter-name">elementCompatibility</span>, </span></li>
+<li><span class="parameter" id="param-dimensionNames"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span>?</span> <span class="parameter-name">dimensionNames</span>, </span></li>
+<li><span class="parameter" id="param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">name</span>, </span></li>
+<li><span class="parameter" id="param-naming"><span class="type-annotation"><a href="../../rohd/Naming.html">Naming</a>?</span> <span class="parameter-name">naming</span>, </span></li>
+<li><span class="parameter" id="param-numUnpackedDimensions"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/int-class.html">int</a></span> <span class="parameter-name">numUnpackedDimensions</span> = <span class="default-value">0</span>, </span></li>
+</ol>})
+    </section>
+    
+<section class="desc markdown">
+  <p>Creates an array with <code>dimensions</code> and typed leaves from <code>elementBuilder</code>.</p>
+<p><code>valueCodec</code> may be omitted only when <code>V</code> is <a href="../../rohd/LogicValue-class.html">LogicValue</a>, in which case
+the canonical identity codec is used.</p>
+<p>Every element produced by <code>elementBuilder</code> must have the same recursive
+hardware layout and must contain only driveable signals.</p>
+<p><code>numUnpackedDimensions</code> controls how many outer dimensions are emitted as
+unpacked dimensions by synthesis.</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">TypedLogicArray(
+  List&lt;int&gt; dimensions,
+  TypedLogicArrayElementBuilder&lt;T&gt; elementBuilder, {
+  LogicValueCodec&lt;V&gt;? valueCodec,
+  TypedLogicArrayElementCompatibility&lt;T&gt;? elementCompatibility,
+  List&lt;String&gt;? dimensionNames,
+  String? name,
+  Naming? naming,
+  int numUnpackedDimensions = 0,
+}) : this._(
+          _TypedLogicArrayBuild&lt;T, V&gt;.build(dimensions, elementBuilder,
+              _resolveTypedLogicValueCodec(valueCodec), elementCompatibility,
+              dimensionNames: dimensionNames,
+              numUnpackedDimensions: numUnpackedDimensions),
+          elementBuilder,
+          _resolveTypedLogicValueCodec(valueCodec),
+          elementCompatibility,
+          name: name,
+          naming: naming,
+          numUnpackedDimensions: numUnpackedDimensions);</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">rohd</a></li>
+    <li><a href="../../rohd/">rohd</a></li>
+    <li><a href="../../rohd/TypedLogicArray-class.html">TypedLogicArray<span class="signature">&lt;<wbr><span class="type-parameter">T extends Logic</span>, <span class="type-parameter">V</span>&gt;</span></a></li>
+    <li class="self-crumb">TypedLogicArray.new constructor</li>
+</ol>
+
+    <h5>TypedLogicArray class</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-left-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    rohd
+      0.6.11
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

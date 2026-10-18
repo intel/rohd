@@ -71,7 +71,9 @@ the <code>source</code> implements clone functionality that matches the type and
 properly updates the <a href="../../rohd/Logic/name.html">Logic.name</a> as well.</p>
 <p>This is a good way to construct <a href="../../rohd/Module/inOut.html">inOut</a>s that have matching widths or
 dimensions to their <code>source</code> signal, or to make a <a href="../../rohd/LogicStructure-class.html">LogicStructure</a> an
-<a href="../../rohd/Module/inOut.html">inOut</a>. You can use this on a <a href="../../rohd/Logic-class.html">Logic</a>, <a href="../../rohd/LogicArray-class.html">LogicArray</a>, or <a href="../../rohd/LogicStructure-class.html">LogicStructure</a>.</p>
+<a href="../../rohd/Module/inOut.html">inOut</a>. You can use this on a <a href="../../rohd/Logic-class.html">Logic</a>, <a href="../../rohd/LogicArray-class.html">LogicArray</a>,
+<a href="../../rohd/TypedLogicArray-class.html">TypedLogicArray</a>, or <a href="../../rohd/LogicStructure-class.html">LogicStructure</a>. A <a href="../../rohd/TypedLogicArray-class.html">TypedLogicArray</a> retains both
+its hardware element type and semantic value type.</p>
 <p>The <code>source</code> must be or exclusively contain <a href="../../rohd/LogicNet-class.html">LogicNet</a>s. If <code>source</code> is a
 <a href="../../rohd/Const-class.html">Const</a> (or is a <a href="../../rohd/LogicStructure-class.html">LogicStructure</a> that includes a <a href="../../rohd/Const-class.html">Const</a>), the
 <code>LogicType</code> must be set to <a href="../../rohd/Logic-class.html">Logic</a>, since <a href="../../rohd/Const-class.html">Const</a>s cannot be driven and

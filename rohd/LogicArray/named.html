@@ -69,11 +69,7 @@
     </section>
     
 <section class="desc markdown">
-  <p>Makes a <a href="../../rohd/LogicArray/clone.html">clone</a> with the provided <code>name</code> and optionally <code>naming</code>, then
-assigns it to be driven by <code>this</code>.</p>
-<p>This is a useful utility for naming the result of some hardware
-construction without separately declaring a new named signal and then
-assigning.</p>
+  <p>Clones this array with <code>name</code> and connects the clone to this array.</p>
 </section>
 
 
@@ -81,8 +77,21 @@ assigning.</p>
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@override
+
+&#47;&#47;&#47; Clones this array with [name] and connects the clone to this array.
 LogicArray named(String name, {Naming? naming}) =&gt;
-    _clone(name: name, naming: naming)..gets(this);</code></pre>
+    LogicArray._factory(dimensions, elementWidth,
+        name: name,
+        numUnpackedDimensions: numUnpackedDimensions,
+        naming: Naming.chooseCloneNaming(
+            originalName: this.name,
+            newName: name,
+            originalNaming: this.naming,
+            newNaming: naming),
+        logicBuilder: isNet ? LogicNet.new : Logic.new,
+        logicArrayBuilder: isNet ? LogicArray.net : LogicArray.new,
+        isNet: isNet)
+      ..gets(this);</code></pre>
 </section>
 
 

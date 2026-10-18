@@ -78,7 +78,7 @@ one exists.  Otherwise, this is the same as <a href="../../rohd/Logic/name.html"
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">String get structureName {
   if (parentStructure != null) {
-    if (parentStructure is LogicArray) {
+    if (parentStructure is BaseLogicArray) {
       return &#39;${parentStructure!.structureName}[${arrayIndex!}]&#39;;
     } else {
       return &#39;${parentStructure!.structureName}.$name&#39;;

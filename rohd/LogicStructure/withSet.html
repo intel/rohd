@@ -111,9 +111,7 @@ Logic withSet(int startIndex, Logic update) {
     final elementStart = index;
     final elementEnd = index + elementWidth;
 
-    final elementInRange =
-        ((elementStart &gt;= startIndex) &amp;&amp; (elementStart &lt; endIndex)) ||
-            ((elementEnd &gt; startIndex) &amp;&amp; (elementEnd &lt;= endIndex));
+    final elementInRange = elementStart &lt; endIndex &amp;&amp; elementEnd &gt; startIndex;
 
     if (elementInRange) {
       newElement &lt;=
