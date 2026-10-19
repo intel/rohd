@@ -63,7 +63,7 @@ void main() {
           out <= Logic();
           fail('Should have thrown an exception');
         } on UnassignableException catch (e) {
-          expect(e.toString(), contains('${out.parentModule.runtimeType}'));
+          expect(e.toString(), contains(out.parentModule!.definitionName));
         }
       });
     }

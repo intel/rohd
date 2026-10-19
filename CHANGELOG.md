@@ -38,6 +38,7 @@
 - `LogicArray` remains source-compatible for construction and operations. Its `value` and `previousValue` now return shape-carrying `LogicValueArray` instances, which remain `LogicValue` subtypes; code relying on their exact concrete runtime types may observe this behavior change (<https://github.com/intel/rohd/pull/686>).
 - Added support for structures with constant leaves when their `clone()` implementation produces driveable fields, preserving domain-specific constant structures through generic operations.
 - Integrated `LogicEnum` with generic operations. Enum mappings are preserved through typed operation results, enum members can be used as `cases` keys, and incompatible enum mappings are rejected.
+- Fixed generic operations to reject incompatible `LogicEnum` mappings inside structures and typed arrays, and to preserve mapped enum constant reset values in netlist register cells.
 - `Pipeline.get`, `PipelineStageInfo.get`, and `PipelineStageInfo.getAbs` now preserve each identifier's concrete type through stage reconstruction and SSA, allowing structures, typed arrays, enums, and scalar signals in one pipeline. `ReadyValidPipeline` retains its established multi-signal API and gains the same per-identifier typed access without separate payload pipeline classes.
 - Preserved aggregate structure assignment metadata through synthesis and netlist generation.
 - Fixed SystemVerilog synthesis of internally computed packed logic assigned to packed-array outputs, retaining required intermediate declarations.
@@ -48,9 +49,8 @@
 - **Migration:** plain `Const` and `LogicNet` sources no longer infer
   driveable outputs for operations that construct hardware. Request
   `<Logic>`, for example `flop<Logic>(clk, Const(1))`, to normalize them.
-  Use an operation `outputGenerator` (or `Passthrough.withOutput`) when an
-  explicit output representation is required, including mixed packed and
-  structured `cases` branches.
+  Use an operation `outputGenerator` when an explicit output representation is
+  required, including mixed packed and structured `cases` branches.
 - **Migration:** type-preserving operations on `TypedLogicArray` operands now
   require the identical `valueCodec` instance. Reuse a shared codec or cross
   an explicit `packed` boundary to reinterpret compatible bits.

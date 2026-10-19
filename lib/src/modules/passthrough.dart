@@ -10,9 +10,8 @@ import 'package:rohd/src/signals/logic_structure_signature.dart';
 
 /// A no-op module that preserves [LogicType].
 ///
-/// The input supplies the output representation when `outputGenerator` is
-/// omitted. Request `<Logic>` explicitly to normalize a constant or net input
-/// into a driveable scalar output.
+/// The input supplies the output representation. Request `<Logic>` explicitly
+/// to normalize a constant or net input into a driveable scalar output.
 abstract class Passthrough<LogicType extends Logic> extends Module {
   /// Input port.
   LogicType get in_;
@@ -25,27 +24,17 @@ abstract class Passthrough<LogicType extends Logic> extends Module {
     LogicType input, [
     String name = 'passthrough',
   ]) =>
-      Passthrough._create(input, name, null);
-
-  /// Constructs a pass-through with an explicit output representation.
-  factory Passthrough.withOutput(
-    LogicType input, {
-    required LogicType Function({String? name}) outputGenerator,
-    String name = 'passthrough',
-  }) =>
-      Passthrough._create(input, name, outputGenerator);
+      Passthrough._create(input, name);
 
   static Passthrough<LogicType> _create<LogicType extends Logic>(
     LogicType input,
     String name,
-    LogicType Function({String? name})? outputGenerator,
   ) {
     final outputSchema = createOperationOutput<LogicType>(
       width: input.width,
       name: 'out',
       operation: 'Passthrough<$LogicType>',
       prototype: input,
-      outputGenerator: outputGenerator,
     );
     validateOperationSource(
       input,
@@ -56,8 +45,6 @@ abstract class Passthrough<LogicType extends Logic> extends Module {
     if (LogicType == Logic) {
       return _ScalarPassthrough(
         input,
-        outputSchema as Logic,
-        usesOutputGenerator: outputGenerator != null,
         name: name,
       ) as Passthrough<LogicType>;
     }
@@ -79,22 +66,9 @@ class _ScalarPassthrough extends Passthrough<Logic> {
   @override
   late final Logic out;
 
-  _ScalarPassthrough(
-    Logic input,
-    Logic outputSchema, {
-    required bool usesOutputGenerator,
-    super.name = 'passthrough',
-  }) : super._() {
+  _ScalarPassthrough(Logic input, {super.name = 'passthrough'}) : super._() {
     in_ = addInput('in', input, width: input.width);
-    out = usesOutputGenerator
-        ? addTypedOutput(
-            'out',
-            operationOutputClone(outputSchema),
-          )
-        : addOutput(
-            'out',
-            width: input.width,
-          );
+    out = addOutput('out', width: input.width);
     final inner = Logic(name: 'inner', width: in_.width);
     inner <= in_;
     out <= inner;

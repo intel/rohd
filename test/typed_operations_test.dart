@@ -50,6 +50,20 @@ LogicEnum<_OperationEnum> _operationEnum({String? name}) =>
       name: name,
     );
 
+LogicEnum<_OperationEnum> _operationEnumWithActiveEncoding(
+  int activeEncoding, {
+  String? name,
+}) =>
+    LogicEnum<_OperationEnum>.withMapping(
+      {
+        _OperationEnum.idle: 0,
+        _OperationEnum.active: activeEncoding,
+        _OperationEnum.done: 3,
+      },
+      width: 2,
+      name: name,
+    );
+
 LogicValueCodec<int> _typedLaneCodec() => LogicValueCodec(
       decode: (value) => value.isValid ? value.toInt() : 0,
       encode: (value) => LogicValue.ofInt(value, 9),
@@ -62,17 +76,41 @@ class _TypedPacket extends LogicStructure {
 
   final List<int> laneDimensions;
 
-  _TypedPacket({this.laneDimensions = const [2], String? name})
-      : super([
+  final int laneNumUnpackedDimensions;
+
+  _TypedPacket({
+    this.laneDimensions = const [2],
+    this.laneNumUnpackedDimensions = 0,
+    String? name,
+  }) : super([
           Logic(name: 'opcode', width: 3),
           TypedLogicArray<_TypedLane, LogicValue>(
               laneDimensions, _TypedLane.new,
-              name: 'lanes'),
+              name: 'lanes', numUnpackedDimensions: laneNumUnpackedDimensions),
         ], name: name ?? 'typed_packet');
 
   @override
-  _TypedPacket clone({String? name}) =>
-      _TypedPacket(laneDimensions: laneDimensions, name: name ?? this.name);
+  _TypedPacket clone({String? name}) => _TypedPacket(
+        laneDimensions: laneDimensions,
+        laneNumUnpackedDimensions: laneNumUnpackedDimensions,
+        name: name ?? this.name,
+      );
+}
+
+class _EnumPacket extends LogicStructure {
+  LogicEnum<_OperationEnum> get state =>
+      elements.single as LogicEnum<_OperationEnum>;
+
+  final int activeEncoding;
+
+  _EnumPacket({required this.activeEncoding, String? name})
+      : super([
+          _operationEnumWithActiveEncoding(activeEncoding, name: 'state'),
+        ], name: name ?? 'enum_packet');
+
+  @override
+  _EnumPacket clone({String? name}) =>
+      _EnumPacket(activeEncoding: activeEncoding, name: name ?? this.name);
 }
 
 class _BadClonePacket extends LogicStructure {
@@ -134,6 +172,87 @@ class _ConfiguredPacketGenerator {
   }
 }
 
+class _ScalarDomainVectorHarness extends Module {
+  _ScalarDomainVectorHarness(
+    Logic control,
+    Logic reset,
+    _ScalarDomainLogic d0,
+    _ScalarDomainLogic d1,
+  ) {
+    final clk = SimpleClockGenerator(10).clk;
+    control = addInput('control', control);
+    reset = addInput('reset', reset);
+    d0 = addTypedInput('d0', d0);
+    d1 = addTypedInput('d1', d1);
+
+    final selected = Mux(control, d1, d0).out;
+    final registered = FlipFlop(
+      clk,
+      selected,
+      reset: reset,
+      resetValue: 0,
+    ).q;
+    addTypedOutput('selected', selected.clone).gets(selected);
+    addTypedOutput('registered', registered.clone).gets(registered);
+  }
+}
+
+class _ArrayOperationVectorHarness extends Module {
+  _ArrayOperationVectorHarness(
+    Logic control,
+    Logic enable,
+    Logic reset,
+    LogicArray first,
+    LogicArray second,
+  ) {
+    final clk = SimpleClockGenerator(10).clk;
+    control = addInput('control', control);
+    enable = addInput('enable', enable);
+    reset = addInput('reset', reset);
+    first = addTypedInput('first', first);
+    second = addTypedInput('second', second);
+
+    final selected = Mux(control, second, first).out;
+    final registered = FlipFlop(
+      clk,
+      selected,
+      en: enable,
+      reset: reset,
+      resetValue: 0,
+    ).q;
+    addTypedOutput('selected', selected.clone).gets(selected);
+    addTypedOutput('out', registered.clone).gets(registered);
+  }
+}
+
+class _PacketArrayOperationVectorHarness extends Module {
+  _PacketArrayOperationVectorHarness(
+    Logic control,
+    Logic enable,
+    Logic reset,
+    _TypedPacket first,
+    _TypedPacket second,
+  ) {
+    final clk = SimpleClockGenerator(10).clk;
+    control = addInput('control', control);
+    enable = addInput('enable', enable);
+    reset = addInput('reset', reset);
+    first = addTypedInput('first', first);
+    second = addTypedInput('second', second);
+
+    final selected = Mux(control, second, first).out;
+    final registered = FlipFlop(
+      clk,
+      selected,
+      en: enable,
+      reset: reset,
+      resetValue: 0,
+    ).q;
+    addTypedOutput('selected', selected.clone).gets(selected);
+    addTypedOutput('out', registered.clone).gets(registered);
+  }
+}
+
 class _TypedOperationsSynthesisHarness extends Module {
   _TypedOperationsSynthesisHarness(Logic clk, Logic reset, Logic control,
       Logic selector, _TypedPacket first, _TypedPacket second) {
@@ -162,10 +281,7 @@ class _TypedOperationsSynthesisHarness extends Module {
       defaultValue: first,
       name: 'selected_by_index',
     );
-    final passed = Passthrough.withOutput(
-      selectedByIndex,
-      outputGenerator: selectedByIndex.clone,
-    ).out;
+    final passed = Passthrough(selectedByIndex).out;
     final registered = FlipFlop(
       clk,
       passed,
@@ -358,6 +474,371 @@ void main() {
     await Simulator.endSimulation();
   });
 
+  test('scalar domain muxes and flops emit directly and match vectors',
+      () async {
+    final harness = _ScalarDomainVectorHarness(
+      Logic(),
+      Logic(),
+      _ScalarDomainLogic(schema: 'd0', name: 'd0'),
+      _ScalarDomainLogic(schema: 'd1', name: 'd1'),
+    );
+    await harness.build();
+
+    final systemVerilog = harness.dumpSystemVerilog();
+    expect(systemVerilog, contains('always_ff'));
+    expect(systemVerilog, contains('?'));
+    expect(
+      systemVerilog,
+      isNot(matches(RegExp(r'module\s+\w*(?:Mux|FlipFlop)'))),
+    );
+
+    final vectors = [
+      Vector(
+        {
+          'control': 0,
+          'reset': 1,
+          'd0': 0x3,
+          'd1': 0xc,
+        },
+        {
+          'selected': 0x3,
+        },
+      ),
+      Vector(
+        {
+          'control': 0,
+          'reset': 1,
+          'd0': 0x3,
+          'd1': 0xc,
+        },
+        {
+          'selected': 0x3,
+          'registered': 0,
+        },
+      ),
+      Vector(
+        {
+          'control': 1,
+          'reset': 0,
+          'd0': 0x3,
+          'd1': 0xc,
+        },
+        {
+          'selected': 0xc,
+          'registered': 0,
+        },
+      ),
+      Vector(
+        {
+          'control': 1,
+          'reset': 0,
+          'd0': 0x3,
+          'd1': 0xc,
+        },
+        {
+          'selected': 0xc,
+          'registered': 0xc,
+        },
+      ),
+      Vector(
+        {
+          'control': 0,
+          'reset': 0,
+          'd0': 0x5,
+          'd1': 0xa,
+        },
+        {
+          'selected': 0x5,
+          'registered': 0xc,
+        },
+      ),
+      Vector(
+        {
+          'control': 0,
+          'reset': 0,
+          'd0': 0x5,
+          'd1': 0xa,
+        },
+        {
+          'selected': 0x5,
+          'registered': 0x5,
+        },
+      ),
+    ];
+    await SimCompare.checkFunctionalVector(harness, vectors);
+    SimCompare.checkIverilogVector(harness, vectors);
+  });
+
+  test('array muxes and flops match packed and unpacked backends', () async {
+    final configurations = [
+      (
+        label: 'packed',
+        numUnpackedDimensions: 0,
+      ),
+      (
+        label: 'mixed',
+        numUnpackedDimensions: 1,
+      ),
+      (
+        label: 'unpacked',
+        numUnpackedDimensions: 2,
+      ),
+    ];
+    final vectors = [
+      Vector(
+        {
+          'control': 0,
+          'enable': 1,
+          'reset': 1,
+          'first': 0x3,
+          'second': 0xc,
+        },
+        {
+          'selected': 0x3,
+        },
+      ),
+      Vector(
+        {
+          'control': 0,
+          'enable': 1,
+          'reset': 1,
+          'first': 0x3,
+          'second': 0xc,
+        },
+        {
+          'selected': 0x3,
+          'out': 0,
+        },
+      ),
+      Vector(
+        {
+          'control': 1,
+          'enable': 1,
+          'reset': 0,
+          'first': 0x3,
+          'second': 0xc,
+        },
+        {
+          'selected': 0xc,
+          'out': 0,
+        },
+      ),
+      Vector(
+        {
+          'control': 1,
+          'enable': 1,
+          'reset': 0,
+          'first': 0x3,
+          'second': 0xc,
+        },
+        {
+          'selected': 0xc,
+          'out': 0xc,
+        },
+      ),
+      Vector(
+        {
+          'control': 0,
+          'enable': 0,
+          'reset': 0,
+          'first': 0x5,
+          'second': 0xa,
+        },
+        {
+          'selected': 0x5,
+          'out': 0xc,
+        },
+      ),
+      Vector(
+        {
+          'control': 0,
+          'enable': 1,
+          'reset': 0,
+          'first': 0x5,
+          'second': 0xa,
+        },
+        {
+          'selected': 0x5,
+          'out': 0xc,
+        },
+      ),
+      Vector(
+        {
+          'control': 0,
+          'enable': 1,
+          'reset': 0,
+          'first': 0x5,
+          'second': 0xa,
+        },
+        {
+          'selected': 0x5,
+          'out': 0x5,
+        },
+      ),
+    ];
+
+    for (final configuration in configurations) {
+      final first = LogicArray(
+        [2, 2],
+        1,
+        name: 'first_${configuration.label}',
+        numUnpackedDimensions: configuration.numUnpackedDimensions,
+      );
+      final second = LogicArray(
+        [2, 2],
+        1,
+        name: 'second_${configuration.label}',
+        numUnpackedDimensions: configuration.numUnpackedDimensions,
+      );
+      final harness = _ArrayOperationVectorHarness(
+        Logic(),
+        Logic(),
+        Logic(),
+        first,
+        second,
+      );
+      await harness.build();
+
+      await SimCompare.checkFunctionalVector(harness, vectors);
+      SimCompare.checkVerilatorVector(harness, vectors);
+      if (configuration.numUnpackedDimensions == 0) {
+        SimCompare.checkIverilogVector(harness, vectors);
+      }
+      await Simulator.reset();
+    }
+  }, timeout: const Timeout(Duration(minutes: 2)));
+
+  test('nested typed-array packet operations match an emitted backend',
+      () async {
+    final configurations = [
+      (
+        label: 'mixed',
+        laneDimensions: const [2, 2],
+        laneNumUnpackedDimensions: 1,
+      ),
+    ];
+
+    for (final configuration in configurations) {
+      final first = _TypedPacket(
+        laneDimensions: configuration.laneDimensions,
+        laneNumUnpackedDimensions: configuration.laneNumUnpackedDimensions,
+        name: 'first_${configuration.label}',
+      );
+      final second = _TypedPacket(
+        laneDimensions: configuration.laneDimensions,
+        laneNumUnpackedDimensions: configuration.laneNumUnpackedDimensions,
+        name: 'second_${configuration.label}',
+      );
+      final firstValue = LogicValue.ofInt(0x15, first.width);
+      final secondValue = LogicValue.ofBigInt(
+          (BigInt.one << second.width) - BigInt.one, second.width);
+      final harness = _PacketArrayOperationVectorHarness(
+        Logic(),
+        Logic(),
+        Logic(),
+        first,
+        second,
+      );
+      final vectors = [
+        Vector(
+          {
+            'control': 0,
+            'enable': 1,
+            'reset': 1,
+            'first': firstValue,
+            'second': secondValue,
+          },
+          {
+            'selected': firstValue,
+          },
+        ),
+        Vector(
+          {
+            'control': 0,
+            'enable': 1,
+            'reset': 1,
+            'first': firstValue,
+            'second': secondValue,
+          },
+          {
+            'selected': firstValue,
+            'out': LogicValue.ofInt(0, first.width),
+          },
+        ),
+        Vector(
+          {
+            'control': 1,
+            'enable': 1,
+            'reset': 0,
+            'first': firstValue,
+            'second': secondValue,
+          },
+          {
+            'selected': secondValue,
+            'out': LogicValue.ofInt(0, first.width),
+          },
+        ),
+        Vector(
+          {
+            'control': 1,
+            'enable': 1,
+            'reset': 0,
+            'first': firstValue,
+            'second': secondValue,
+          },
+          {
+            'selected': secondValue,
+            'out': secondValue,
+          },
+        ),
+        Vector(
+          {
+            'control': 0,
+            'enable': 0,
+            'reset': 0,
+            'first': firstValue,
+            'second': secondValue,
+          },
+          {
+            'selected': firstValue,
+            'out': secondValue,
+          },
+        ),
+        Vector(
+          {
+            'control': 0,
+            'enable': 1,
+            'reset': 0,
+            'first': firstValue,
+            'second': secondValue,
+          },
+          {
+            'selected': firstValue,
+            'out': secondValue,
+          },
+        ),
+        Vector(
+          {
+            'control': 0,
+            'enable': 1,
+            'reset': 0,
+            'first': firstValue,
+            'second': secondValue,
+          },
+          {
+            'selected': firstValue,
+            'out': firstValue,
+          },
+        ),
+      ];
+
+      await harness.build();
+      await SimCompare.checkFunctionalVector(harness, vectors);
+      SimCompare.checkVerilatorVector(harness, vectors);
+      await Simulator.reset();
+    }
+  });
+
   test('LogicEnum domains compose with generic operations', () async {
     final clk = SimpleClockGenerator(10).clk;
     final control = Logic();
@@ -435,6 +916,43 @@ void main() {
     await clk.nextPosedge;
     expect(registered.valueEnum, _OperationEnum.done);
     await Simulator.endSimulation();
+  });
+
+  test('operations reject incompatible nested enum mappings', () {
+    final firstPacket = _EnumPacket(activeEncoding: 2, name: 'first_packet');
+    final secondPacket = _EnumPacket(activeEncoding: 1, name: 'second_packet');
+    final firstArray = TypedLogicArray<LogicEnum<_OperationEnum>, LogicValue>(
+      [2],
+      ({name}) => _operationEnumWithActiveEncoding(2, name: name),
+      name: 'first_array',
+    );
+    final secondArray = TypedLogicArray<LogicEnum<_OperationEnum>, LogicValue>(
+      [2],
+      ({name}) => _operationEnumWithActiveEncoding(1, name: name),
+      name: 'second_array',
+    );
+
+    expect(
+      () => Mux(Logic(), secondPacket, firstPacket),
+      throwsA(isA<LogicConstructionException>()),
+    );
+    expect(
+      () => Mux(
+        Logic(),
+        firstPacket,
+        firstPacket,
+        outputGenerator: ({name}) => _EnumPacket(activeEncoding: 1, name: name),
+      ),
+      throwsA(isA<LogicConstructionException>()),
+    );
+    expect(
+      () => Mux(Logic(), secondArray, firstArray),
+      throwsA(isA<LogicConstructionException>()),
+    );
+    expect(
+      Mux<Logic>(Logic(), secondArray.packed, firstArray.packed).out,
+      isA<Logic>(),
+    );
   });
 
   test('inferred constants and nets reject driveable operation results', () {
@@ -515,24 +1033,19 @@ void main() {
     expect(generatedSchema.data.value.toInt(), 0xe);
   });
 
-  test('flop and passthrough generators override output schemas', () async {
+  test('flop generators override output schemas', () async {
     final clk = SimpleClockGenerator(10).clk;
     final source = _ConfiguredPacket(schema: 'source', name: 'source');
-    final passthroughGenerator = _ConfiguredPacketGenerator('passthrough');
     final flopGenerator = _ConfiguredPacketGenerator('flop');
-    final forwarded = Passthrough.withOutput(
-      source,
-      outputGenerator: passthroughGenerator.call,
-    ).out;
+    final forwarded = Passthrough(source).out;
     final registered = FlipFlop(
       clk,
       source,
       outputGenerator: flopGenerator.call,
     ).q;
 
-    expect(forwarded.schema, 'passthrough');
+    expect(forwarded.schema, 'source');
     expect(registered.schema, 'flop');
-    expect(passthroughGenerator.calls, 1);
     expect(flopGenerator.calls, 1);
 
     unawaited(Simulator.run());

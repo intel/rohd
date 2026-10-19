@@ -68,6 +68,7 @@ class ConditionalGroup extends Conditional {
 /// The contained leaf assignments preserve the normal ROHD connection graph,
 /// while [receiver] and [driver] retain the aggregate operation for backends
 /// that can emit it directly.
+@internal
 class StructureConditionalGroup extends ConditionalGroup {
   /// The complete structure assigned by this group.
   final LogicStructure receiver;

@@ -37,9 +37,9 @@ nested typed arrays. A mux uses its `d0` operand as the default output
 prototype. Both operands must have matching concrete types and recursive
 geometry: field widths, array dimensions, packing hints, and leaf structure.
 Pass an `outputGenerator` to `Mux`, `FlipFlop`, `mux`, `flop`, or `cases` to
-select a different result representation. Use `Passthrough.withOutput` for
-the corresponding pass-through override while retaining the historical
-positional `name` argument of `Passthrough`.
+select a different result representation. `Passthrough` always preserves its
+input representation; create and connect an explicit destination when another
+representation is needed.
 
 These operations can consume a structure containing `Const` leaves when its
 `clone()` implementation returns the same concrete structure type with

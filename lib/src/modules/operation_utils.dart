@@ -8,6 +8,82 @@
 
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/signals/signals.dart' show BaseLogicArray;
+
+bool _sameDimensions(List<int> first, List<int> second) =>
+    first.length == second.length &&
+    first.indexed.every((entry) => entry.$2 == second[entry.$1]);
+
+void _validateMatchingOperationStructure(
+  Logic first,
+  Logic second,
+  String operation,
+  String path,
+) {
+  if (first.width != second.width) {
+    throw LogicConstructionException(
+      '$operation operands differ in width at $path.',
+    );
+  }
+
+  if (first is LogicEnum || second is LogicEnum) {
+    if (first is! LogicEnum || !first.isEquivalentTypeTo(second)) {
+      throw LogicConstructionException(
+        '$operation operands use incompatible LogicEnum mappings at $path.',
+      );
+    }
+  }
+
+  if (first is LogicStructure || second is LogicStructure) {
+    if (first is! LogicStructure ||
+        second is! LogicStructure ||
+        first.runtimeType != second.runtimeType ||
+        first.elements.length != second.elements.length) {
+      throw LogicConstructionException(
+        '$operation operands differ in structure at $path.',
+      );
+    }
+
+    if (first is BaseLogicArray && second is BaseLogicArray) {
+      if (!_sameDimensions(first.dimensions, second.dimensions) ||
+          first.elementWidth != second.elementWidth ||
+          first.numUnpackedDimensions != second.numUnpackedDimensions ||
+          first.isNet != second.isNet) {
+        throw LogicConstructionException(
+          '$operation array operands differ in shape at $path.',
+        );
+      }
+      if (first is TypedLogicArray &&
+          second is TypedLogicArray &&
+          !identical(first.valueCodec, second.valueCodec)) {
+        throw LogicConstructionException(
+          '$operation typed-array operands use different value codecs at '
+          '$path. Convert through packed to reinterpret their bits explicitly.',
+        );
+      }
+    }
+
+    for (var index = 0; index < first.elements.length; index++) {
+      _validateMatchingOperationStructure(
+        first.elements[index],
+        second.elements[index],
+        operation,
+        '$path[$index]',
+      );
+    }
+  }
+}
+
+/// Verifies structural compatibility for type-preserving operations.
+///
+/// This is an internal operation-building contract, not a signal API.
+@internal
+void validateMatchingOperationStructure(
+  LogicStructure first,
+  LogicStructure second, {
+  required String operation,
+}) =>
+    _validateMatchingOperationStructure(first, second, operation, 'root');
 
 /// Creates the output representation for a type-preserving operation.
 ///
@@ -91,7 +167,7 @@ void validateOperationSource(
   }
 
   if (source is LogicStructure && output is LogicStructure) {
-    validateMatchingLogicStructure(source, output, operation: operation);
+    validateMatchingOperationStructure(source, output, operation: operation);
   } else if (source is LogicStructure && output is! LogicStructure) {
     // An explicit <Logic> result intentionally normalizes packed structures.
     return;

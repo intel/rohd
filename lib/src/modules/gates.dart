@@ -828,7 +828,7 @@ LogicType mux<LogicType extends Logic>(
     throw PortWidthMismatchException.equalWidth(d0, d1);
   }
   if (d0 is LogicStructure && d1 is LogicStructure) {
-    validateMatchingLogicStructure(d1, d0, operation: 'mux');
+    validateMatchingOperationStructure(d1, d0, operation: 'mux');
   }
 
   if (outputGenerator == null && control is Const && control.value.isValid) {
@@ -875,7 +875,7 @@ abstract class Mux<LogicType extends Logic> extends Module {
       throw PortWidthMismatchException.equalWidth(d0, d1);
     }
     if (d0 is LogicStructure && d1 is LogicStructure) {
-      validateMatchingLogicStructure(d1, d0, operation: 'Mux');
+      validateMatchingOperationStructure(d1, d0, operation: 'Mux');
     }
 
     final outputSchema = createOperationOutput<LogicType>(
@@ -888,15 +888,15 @@ abstract class Mux<LogicType extends Logic> extends Module {
     validateOperationSource(d0, outputSchema, operation: 'Mux d0');
     validateOperationSource(d1, outputSchema, operation: 'Mux d1');
 
-    if (LogicType == Logic) {
-      return _ScalarMux(
+    if (LogicType == Logic || d0 is! LogicStructure) {
+      return _ScalarMux<LogicType>(
         control,
         d1,
         d0,
-        outputSchema as Logic,
+        outputSchema,
         usesOutputGenerator: outputGenerator != null,
         name: name,
-      ) as Mux<LogicType>;
+      );
     }
     return _DomainMux<LogicType>(
       control,
@@ -911,7 +911,8 @@ abstract class Mux<LogicType extends Logic> extends Module {
 }
 
 /// A scalar inline implementation of [Mux].
-class _ScalarMux extends Mux<Logic> with InlineSystemVerilog {
+class _ScalarMux<LogicType extends Logic> extends Mux<LogicType>
+    with InlineSystemVerilog {
   /// Name for the control signal of this mux.
   late final String _controlName;
 
@@ -935,13 +936,13 @@ class _ScalarMux extends Mux<Logic> with InlineSystemVerilog {
 
   /// Output port of the mux.
   @override
-  late final Logic out;
+  late final LogicType out;
 
   _ScalarMux(
     Logic control,
-    Logic d1,
-    Logic d0,
-    Logic outputSchema, {
+    LogicType d1,
+    LogicType d0,
+    LogicType outputSchema, {
     required bool usesOutputGenerator,
     super.name = 'mux',
   }) : super._() {
@@ -951,9 +952,14 @@ class _ScalarMux extends Mux<Logic> with InlineSystemVerilog {
     _outName = Naming.unpreferredName('out');
 
     addInput(_controlName, control);
-    addInput(_d0Name, d0, width: d0.width);
-    addInput(_d1Name, d1, width: d1.width);
-    out = (usesOutputGenerator
+    if (LogicType == Logic) {
+      addInput(_d0Name, d0, width: d0.width);
+      addInput(_d1Name, d1, width: d1.width);
+    } else {
+      addTypedInput(_d0Name, d0);
+      addTypedInput(_d1Name, d1);
+    }
+    out = (LogicType != Logic || usesOutputGenerator
         ? addTypedOutput(
             _outName,
             operationOutputClone(outputSchema),
@@ -961,7 +967,7 @@ class _ScalarMux extends Mux<Logic> with InlineSystemVerilog {
         : addOutput(
             _outName,
             width: d0.width,
-          ))
+          ) as LogicType)
       ..makeUnassignable(reason: 'Output of a gate $this cannot be assigned.');
 
     _setup();

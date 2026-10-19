@@ -151,6 +151,39 @@ class ControlledFlopModule extends Module {
   }
 }
 
+enum _NetlistResetState { idle, active, done }
+
+LogicEnum<_NetlistResetState> _netlistResetState({String? name}) =>
+    LogicEnum<_NetlistResetState>.withMapping(
+      {
+        _NetlistResetState.idle: 0,
+        _NetlistResetState.active: 2,
+        _NetlistResetState.done: 3,
+      },
+      width: 2,
+      name: name,
+    );
+
+class EnumResetFlopModule extends Module {
+  EnumResetFlopModule(
+    Logic clk,
+    Logic reset, {
+    required bool asyncReset,
+  }) : super(name: 'enumresetflop') {
+    clk = addInput('clk', clk);
+    reset = addInput('reset', reset);
+    final d = addTypedInput('d', _netlistResetState(name: 'd'));
+    final q = flop(
+      clk,
+      d,
+      reset: reset,
+      resetValue: _NetlistResetState.active,
+      asyncReset: asyncReset,
+    );
+    addTypedOutput('q', q.clone).gets(q);
+  }
+}
+
 /// Exercises Add.
 class AddModule extends Module {
   Logic get sum => output('sum');
@@ -1230,6 +1263,41 @@ void main() {
         (dff['port_directions'] as Map<String, dynamic>).keys.toSet(),
         equals({'CLK', 'D', 'EN', 'Q'}),
       );
+    });
+
+    test('LogicEnum constant resets preserve mapped netlist parameters',
+        () async {
+      final cases = [
+        (
+          asyncReset: false,
+          type: r'$sdff',
+          parameter: 'SRST_VALUE',
+        ),
+        (
+          asyncReset: true,
+          type: r'$adff',
+          parameter: 'ARST_VALUE',
+        ),
+      ];
+
+      for (final testCase in cases) {
+        final module = EnumResetFlopModule(
+          SimpleClockGenerator(10).clk,
+          Logic(),
+          asyncReset: testCase.asyncReset,
+        );
+        final json = await _synthToMap(module);
+        final moduleDef =
+            _modules(json)[module.definitionName] as Map<String, dynamic>;
+        final cell =
+            _cells(moduleDef).values.cast<Map<String, dynamic>>().singleWhere(
+                  (candidate) => candidate['type'] == testCase.type,
+                );
+        final parameters = cell['parameters'] as Map<String, dynamic>;
+
+        expect(parameters['WIDTH'], 2);
+        expect(parameters[testCase.parameter], '10');
+      }
     });
 
     test(r'Add maps to $add cell', () async {

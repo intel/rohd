@@ -93,28 +93,15 @@ class FlipFlop<LogicType extends Logic> extends Module {
       throw PortWidthMismatchException.equalWidth(resetValue, outputSchema);
     }
     if (resetValue is LogicStructure && outputSchema is LogicStructure) {
-      validateMatchingLogicStructure(
+      validateMatchingOperationStructure(
         resetValue,
         outputSchema,
         operation: 'FlipFlop reset',
       );
     }
 
-    if (LogicType == Logic) {
-      return _ScalarFlipFlop(
-        clk,
-        d,
-        outputSchema as Logic,
-        en: en,
-        reset: reset,
-        resetValue: resetValue,
-        asyncReset: asyncReset,
-        usesOutputGenerator: outputGenerator != null,
-        name: name,
-      ) as FlipFlop<LogicType>;
-    }
-    if (d is LogicStructure) {
-      return _StructuredFlipFlop<LogicType>(
+    if (LogicType == Logic || d is! LogicStructure) {
+      return _ScalarFlipFlop<LogicType>(
         clk,
         d,
         outputSchema,
@@ -122,10 +109,11 @@ class FlipFlop<LogicType extends Logic> extends Module {
         reset: reset,
         resetValue: resetValue,
         asyncReset: asyncReset,
+        usesOutputGenerator: outputGenerator != null,
         name: name,
       );
     }
-    return _TypedScalarFlipFlop<LogicType>(
+    return _StructuredFlipFlop<LogicType>(
       clk,
       d,
       outputSchema,
@@ -200,8 +188,31 @@ class FlipFlop<LogicType extends Logic> extends Module {
   }
 }
 
+LogicValue? _mappedConstantResetValue(
+  Logic outputSchema,
+  Logic? reset,
+  dynamic resetValue,
+) {
+  if (reset == null || resetValue is Logic) {
+    return null;
+  }
+  if (outputSchema is LogicEnum && resetValue is Enum) {
+    final encodedValue = outputSchema.mapping[resetValue];
+    if (encodedValue == null) {
+      throw ArgumentError.value(
+        resetValue,
+        'resetValue',
+        'Not present in the mapping for ${outputSchema.runtimeType}.',
+      );
+    }
+    return encodedValue;
+  }
+  return LogicValue.of(resetValue ?? 0, width: outputSchema.width);
+}
+
 /// Scalar SystemVerilog implementation of [FlipFlop].
-class _ScalarFlipFlop extends FlipFlop<Logic> with SystemVerilog {
+class _ScalarFlipFlop<LogicType extends Logic> extends FlipFlop<LogicType>
+    with SystemVerilog {
   final String _enName = Naming.unpreferredName('en');
   final String _clkName = Naming.unpreferredName('clk');
   final String _dName = Naming.unpreferredName('d');
@@ -215,10 +226,10 @@ class _ScalarFlipFlop extends FlipFlop<Logic> with SystemVerilog {
   late final Logic _d = input(_dName);
 
   @override
-  late final Logic q;
+  late final LogicType q;
 
   Logic? _resetValuePort;
-  late LogicValue _resetValueConst;
+  LogicValue? _resetValueConst;
 
   @override
   final bool asyncReset;
@@ -229,8 +240,8 @@ class _ScalarFlipFlop extends FlipFlop<Logic> with SystemVerilog {
 
   _ScalarFlipFlop(
     Logic clk,
-    Logic d,
-    Logic outputSchema, {
+    LogicType d,
+    LogicType outputSchema, {
     required this.asyncReset,
     required bool usesOutputGenerator,
     Logic? en,
@@ -239,8 +250,12 @@ class _ScalarFlipFlop extends FlipFlop<Logic> with SystemVerilog {
     super.name = 'flipflop',
   }) : super._() {
     addInput(_clkName, clk);
-    addInput(_dName, d, width: d.width);
-    q = usesOutputGenerator
+    if (LogicType == Logic) {
+      addInput(_dName, d, width: d.width);
+    } else {
+      addTypedInput(_dName, d);
+    }
+    q = (LogicType != Logic || usesOutputGenerator
         ? addTypedOutput(
             _qName,
             operationOutputClone(outputSchema),
@@ -248,7 +263,7 @@ class _ScalarFlipFlop extends FlipFlop<Logic> with SystemVerilog {
         : addOutput(
             _qName,
             width: d.width,
-          );
+          ) as LogicType);
 
     if (en != null) {
       addInput(_enName, en);
@@ -259,7 +274,8 @@ class _ScalarFlipFlop extends FlipFlop<Logic> with SystemVerilog {
       if (resetValue != null && resetValue is Logic) {
         _resetValuePort = addInput(_resetValueName, resetValue, width: d.width);
       } else {
-        _resetValueConst = LogicValue.of(resetValue ?? 0, width: d.width);
+        _resetValueConst =
+            _mappedConstantResetValue(outputSchema, reset, resetValue);
       }
     }
 
@@ -278,7 +294,7 @@ class _ScalarFlipFlop extends FlipFlop<Logic> with SystemVerilog {
       reset: _reset,
       asyncReset: asyncReset,
       resetValues:
-          _reset != null ? {q: _resetValuePort ?? _resetValueConst} : null,
+          _reset != null ? {q: _resetValuePort ?? _resetValueConst!} : null,
     );
   }
 
@@ -428,58 +444,5 @@ class _StructuredFlipFlop<LogicType extends Logic> extends FlipFlop<LogicType> {
           );
       offset += width;
     }
-  }
-}
-
-/// Generic scalar-subclass implementation of [FlipFlop].
-///
-/// This path supports scalar domain types such as future `LogicEnum` signals.
-class _TypedScalarFlipFlop<LogicType extends Logic>
-    extends FlipFlop<LogicType> {
-  @override
-  late final LogicType q;
-
-  @override
-  final bool asyncReset;
-
-  @override
-  LogicValue? get constantResetValue => null;
-
-  _TypedScalarFlipFlop(
-    Logic clk,
-    LogicType d,
-    LogicType outputSchema, {
-    required this.asyncReset,
-    Logic? en,
-    Logic? reset,
-    dynamic resetValue,
-    super.name = 'flipflop',
-  }) : super._(
-          definitionName:
-              'FlipFlop_${outputSchema.runtimeType}_W${outputSchema.width}',
-        ) {
-    final localClock = addInput('clk', clk);
-    final localD = addTypedInput('d', d);
-    final localEnable = en == null ? null : addInput('en', en);
-    final localReset = reset == null ? null : addInput('reset', reset);
-    final localResetValue = reset != null && resetValue is Logic
-        ? addInput('resetValue', resetValue, width: d.width)
-        : resetValue;
-    q = addTypedOutput(
-      'q',
-      operationOutputClone(outputSchema),
-    );
-
-    var contents = [q < localD];
-    if (localEnable case final enable?) {
-      contents = [If(enable, then: contents)];
-    }
-    Sequential(
-      localClock,
-      contents,
-      reset: localReset,
-      asyncReset: asyncReset,
-      resetValues: localReset == null ? null : {q: localResetValue ?? 0},
-    );
   }
 }

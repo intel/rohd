@@ -9,73 +9,6 @@
 
 part of 'signals.dart';
 
-void _validateMatchingStructure(
-  Logic first,
-  Logic second,
-  String operation,
-  String path,
-) {
-  if (first.width != second.width) {
-    throw LogicConstructionException(
-      '$operation operands differ in width at $path.',
-    );
-  }
-
-  if (first is LogicStructure || second is LogicStructure) {
-    if (first is! LogicStructure ||
-        second is! LogicStructure ||
-        first.runtimeType != second.runtimeType ||
-        first.elements.length != second.elements.length) {
-      throw LogicConstructionException(
-        '$operation operands differ in structure at $path.',
-      );
-    }
-
-    if (first is BaseLogicArray && second is BaseLogicArray) {
-      if (!_sameDimensions(first.dimensions, second.dimensions) ||
-          first.elementWidth != second.elementWidth ||
-          first.numUnpackedDimensions != second.numUnpackedDimensions ||
-          first.isNet != second.isNet) {
-        throw LogicConstructionException(
-          '$operation array operands differ in shape at $path.',
-        );
-      }
-      if (first is TypedLogicArray &&
-          second is TypedLogicArray &&
-          !identical(first.valueCodec, second.valueCodec)) {
-        throw LogicConstructionException(
-          '$operation typed-array operands use different value codecs at '
-          '$path. Convert through packed to reinterpret their bits explicitly.',
-        );
-      }
-    }
-
-    for (var index = 0; index < first.elements.length; index++) {
-      _validateMatchingStructure(
-        first.elements[index],
-        second.elements[index],
-        operation,
-        '$path[$index]',
-      );
-    }
-  }
-}
-
-/// Verifies that [first] and [second] have identical recursive structure.
-///
-/// Compatibility requires matching concrete structure types, element counts,
-/// leaf widths, array geometry, and typed-array codec identity. Field names
-/// may differ because separately constructed instances of one structure type
-/// can use different root names.
-///
-/// Throws a [LogicConstructionException] when the structures do not match.
-void validateMatchingLogicStructure(
-  LogicStructure first,
-  LogicStructure second, {
-  String operation = 'Typed operation',
-}) =>
-    _validateMatchingStructure(first, second, operation, 'root');
-
 LogicType _checkedTypedClone<LogicType extends Logic>(
   LogicType source, {
   String? name,
@@ -305,44 +238,6 @@ class LogicStructure implements Logic {
   late final List<Logic> leafElements = UnmodifiableListView(
     _calculateLeafElements(),
   );
-
-  /// Promotes direct non-array child structures into a new generic structure.
-  ///
-  /// Each promoted element is cloned and connected to its source. When
-  /// [prefixFieldNames] is `true`, promoted fields are named
-  /// `${child.name}_${field.name}`. This preserves the immediate structure
-  /// path and avoids common field-name collisions. The method throws a
-  /// [LogicConstructionException] when the resulting field names collide.
-  LogicStructure flattenOuter({String? name, bool prefixFieldNames = true}) {
-    final sources = <(Logic, String)>[];
-    for (final element in elements) {
-      if (element is LogicStructure && element is! BaseLogicArray) {
-        for (final field in element.elements) {
-          final prefix =
-              element.name.endsWith('_') ? element.name : '${element.name}_';
-          final fieldName =
-              prefixFieldNames ? '$prefix${field.name}' : field.name;
-          sources.add((field, fieldName));
-        }
-      } else {
-        sources.add((element, element.name));
-      }
-    }
-
-    final names = <String>{};
-    for (final source in sources) {
-      if (!names.add(source.$2)) {
-        throw LogicConstructionException(
-          'Flattened structure contains duplicate field name ${source.$2}.',
-        );
-      }
-    }
-
-    final flattenedElements = sources
-        .map((source) => source.$1.clone(name: source.$2)..gets(source.$1))
-        .toList(growable: false);
-    return LogicStructure(flattenedElements, name: name ?? this.name);
-  }
 
   /// Compute the list of all leaf elements, to be cached in [leafElements].
   List<Logic> _calculateLeafElements() {
