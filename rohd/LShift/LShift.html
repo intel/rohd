@@ -71,8 +71,13 @@
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">LShift(Logic in_, dynamic shiftAmount, {super.name = &#39;lshift&#39;})
-    : super((a, shamt) =&gt; a &lt;&lt; shamt, &#39;&lt;&lt;&#39;, in_, shiftAmount,
-          outputSvWidthExpansion: true);</code></pre>
+    : super(
+        (a, shamt) =&gt; a &lt;&lt; shamt,
+        &#39;&lt;&lt;&#39;,
+        in_,
+        shiftAmount,
+        outputSvWidthExpansion: true,
+      );</code></pre>
 </section>
 
 

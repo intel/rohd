@@ -80,25 +80,30 @@ accordingly to <code>SsaLogic</code>s and returns an updated set of mappings.</p
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@override
-Map&lt;Logic, Logic&gt; processSsa(Map&lt;Logic, Logic&gt; currentMappings,
-    {required int context}) {
+Map&lt;Logic, Logic&gt; processSsa(
+  Map&lt;Logic, Logic&gt; currentMappings, {
+  required int context,
+}) {
   &#47;&#47; add an empty default if there isn&#39;t already one, since we need it for phi
   _defaultItem ??= [];
 
   &#47;&#47; first connect direct drivers into the case statement
-  Conditional.connectSsaDriverFromMappings(expression, currentMappings,
-      context: context);
+  Conditional.connectSsaDriverFromMappings(
+    expression,
+    currentMappings,
+    context: context,
+  );
   for (final itemDriver in items.map((e) =&gt; e.value)) {
-    Conditional.connectSsaDriverFromMappings(itemDriver, currentMappings,
-        context: context);
+    Conditional.connectSsaDriverFromMappings(
+      itemDriver,
+      currentMappings,
+      context: context,
+    );
   }
 
   &#47;&#47; calculate mappings locally within each item
   final phiMappings = &lt;Logic, Logic&gt;{};
-  for (final conditionals in [
-    ...items.map((e) =&gt; e.then),
-    defaultItem!,
-  ]) {
+  for (final conditionals in [...items.map((e) =&gt; e.then), defaultItem!]) {
     var localMappings = {...currentMappings};
 
     for (final conditional in conditionals) {
@@ -107,10 +112,10 @@ Map&lt;Logic, Logic&gt; processSsa(Map&lt;Logic, Logic&gt; currentMappings,
 
     for (final localMapping in localMappings.entries) {
       if (!phiMappings.containsKey(localMapping.key)) {
-        phiMappings[localMapping.key] = Logic(
+        phiMappings[localMapping.key] = SsaLogic.cloneLike(
+          localMapping.key,
+          localMapping.value,
           name: &#39;${localMapping.key.name}_phi&#39;,
-          width: localMapping.key.width,
-          naming: Naming.mergeable,
         );
       }
 
@@ -125,25 +130,24 @@ Map&lt;Logic, Logic&gt; processSsa(Map&lt;Logic, Logic&gt; currentMappings,
   &#47;&#47; an inferred latch
   final signalsNeedingInit = [
     ...items.map((e) =&gt; e.then).flattened,
-    ...defaultItem!,
+    ...defaultItem!
   ]
       .map((e) =&gt; e.calculateReceivers())
       .flattened
-      .whereType&lt;SsaLogic&gt;()
+      .where((signal) =&gt; SsaLogic.isSsaProxy(signal, context: context))
       .toSet();
-  for (final conditionals in [
-    ...items.map((e) =&gt; e.then),
-    defaultItem!,
-  ]) {
+  for (final conditionals in [...items.map((e) =&gt; e.then), defaultItem!]) {
     final alreadyDrivenSsaSignals = conditionals
         .map((e) =&gt; e.calculateReceivers())
         .flattened
-        .whereType&lt;SsaLogic&gt;()
+        .where((signal) =&gt; SsaLogic.isSsaProxy(signal, context: context))
         .toSet();
 
     for (final signalNeedingInit in signalsNeedingInit) {
       if (!alreadyDrivenSsaSignals.contains(signalNeedingInit)) {
-        conditionals.add(signalNeedingInit &lt; 0);
+        conditionals.add(
+          signalNeedingInit &lt; SsaLogic.branchDefaultValue(signalNeedingInit),
+        );
       }
     }
   }

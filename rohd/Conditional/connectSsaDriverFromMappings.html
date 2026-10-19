@@ -86,28 +86,29 @@ static void connectSsaDriverFromMappings(
 
   &#47;&#47; take all the &quot;current&quot; names for these signals
   for (final ssaDriver in ssaDrivers) {
-    if (!mappings.containsKey(ssaDriver.ref)) {
-      throw UninitializedSignalException(ssaDriver.ref.name);
+    final reference = SsaLogic.referenceOf(ssaDriver, context: context);
+    if (!mappings.containsKey(reference)) {
+      throw UninitializedSignalException(reference.name);
     }
 
     &#47;&#47; if these are already connected, just skip it, we&#39;re fine already
     if (ssaDriver.srcConnection != null &amp;&amp;
-        ssaDriver.srcConnection == mappings[ssaDriver.ref]!) {
+        ssaDriver.srcConnection == mappings[reference]!) {
       continue;
     }
 
     &#47;&#47; if these are the same signal, also just skip it
-    if (ssaDriver == mappings[ssaDriver.ref]!) {
+    if (ssaDriver == mappings[reference]!) {
       continue;
     }
 
     &#47;&#47; if at this point there&#39;s still a srcConnection, then something is wrong
     &#47;&#47; and someone probably reused a signal when they shouldn&#39;t have
     if (ssaDriver.srcConnection != null) {
-      throw MappedSignalAlreadyAssignedException(ssaDriver.ref.name);
+      throw MappedSignalAlreadyAssignedException(reference.name);
     }
 
-    ssaDriver &lt;= mappings[ssaDriver.ref]!;
+    ssaDriver &lt;= mappings[reference]!;
   }
 }</code></pre>
 </section>

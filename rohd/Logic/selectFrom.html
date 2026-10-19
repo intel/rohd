@@ -27,7 +27,7 @@
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/">rohd.dart</a></li>
     <li><a href="../../rohd/Logic-class.html">Logic</a></li>
-    <li class="self-crumb">selectFrom method</li>
+    <li class="self-crumb">selectFrom&lt;<wbr><span class="type-parameter">LogicType extends Logic</span>&gt; method</li>
   </ol>
   <div class="self-name">selectFrom</div>
   <form class="search navbar-right" role="search">
@@ -49,14 +49,17 @@
     data-above-sidebar="rohd&#47;Logic-class-sidebar.html"
     data-below-sidebar="">
     <div>
-<h1><span class="kind-method">selectFrom</span> method 
+<h1><span class="kind-method">selectFrom&lt;<wbr><span class="type-parameter">LogicType extends Logic</span>&gt;</span> method 
 </h1></div>
 
     <section class="multi-line-signature">
       
-<span class="returntype"><a href="../../rohd/Logic-class.html">Logic</a></span>
-<span class="name ">selectFrom</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="selectFrom-param-busList"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> <span class="parameter-name">busList</span>, {</span></li>
-<li><span class="parameter" id="selectFrom-param-defaultValue"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a>?</span> <span class="parameter-name">defaultValue</span>, </span></li>
+<span class="returntype">LogicType</span>
+<span class="name ">selectFrom</span>&lt;<wbr><span class="type-parameter">LogicType extends Logic</span>&gt;(<wbr><ol class="parameter-list"> <li><span class="parameter" id="selectFrom-param-busList"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter">LogicType</span>&gt;</span></span> <span class="parameter-name">busList</span>, {</span></li>
+<li><span class="parameter" id="selectFrom-param-defaultValue"><span class="type-annotation">dynamic</span> <span class="parameter-name">defaultValue</span>, </span></li>
+<li><span class="parameter" id="selectFrom-param-outputGenerator"><span class="type-annotation">LogicType</span> <span class="parameter-name">outputGenerator</span>({<ol class="parameter-list"> <li><span class="parameter" id="param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">name</span>, </span></li>
+</ol>})?, </span></li>
+<li><span class="parameter" id="selectFrom-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span> = <span class="default-value">&#39;selectFrom&#39;</span>, </span></li>
 </ol>})
 
       
@@ -64,12 +67,11 @@
     </section>
     
 <section class="desc markdown">
-  <p>Performs a <a href="../../rohd/Logic-class.html">Logic</a> <code>index</code> based selection on an <a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a> of <a href="../../rohd/Logic-class.html">Logic</a>
-named <code>busList</code>.</p>
+  <p>Performs a <a href="../../rohd/Logic-class.html">Logic</a> <code>index</code> based selection on <code>busList</code>.</p>
 <p>Using the <a href="../../rohd/Logic-class.html">Logic</a> <code>index</code> on which <a href="../../rohd/Logic/selectFrom.html">selectFrom</a> is performed on and
 a <a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a> of <a href="../../rohd/Logic-class.html">Logic</a> named <code>busList</code> for <code>index</code> based selection, we can
-select any valid element of type <a href="../../rohd/Logic-class.html">Logic</a> within the <code>logicList</code> using
-the <code>index</code> of <a href="../../rohd/Logic-class.html">Logic</a> type.</p>
+select any valid element of type <code>LogicType</code> within the <code>logicList</code>
+using the <code>index</code> of <a href="../../rohd/Logic-class.html">Logic</a> type.</p>
 <p>Alternatively we can approach this with <code>busList.selectIndex(index)</code></p>
 <p>Example:</p>
 <pre class="language-dart"><code class="language-dart">// ordering matches closer to array indexing with `0` index-based.
@@ -81,26 +83,28 @@ selected &lt;= index.selectFrom(busList);
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">Logic selectFrom(List&lt;Logic&gt; busList, {Logic? defaultValue}) {
-  final selected = Logic(
-    name: &#39;selectFrom&#39;,
-    width: busList.first.width,
-    naming: Naming.mergeable,
+  <pre class="language-dart"><code class="language-dart">LogicType selectFrom&lt;LogicType extends Logic&gt;(
+  List&lt;LogicType&gt; busList, {
+  dynamic defaultValue,
+  LogicType Function({String? name})? outputGenerator,
+  String name = &#39;selectFrom&#39;,
+}) {
+  if (busList.isEmpty) {
+    throw LogicConstructionException(
+      &#39;selectFrom requires at least one value.&#39;,
+    );
+  }
+  return cases&lt;LogicType&gt;(
+    this,
+    {
+      for (var index = 0; index &lt; busList.length; index++)
+        index: busList[index],
+    },
+    conditionalType: ConditionalType.unique,
+    defaultValue: defaultValue ?? 0,
+    outputGenerator: outputGenerator,
+    name: name,
   );
-
-  Combinational([
-    Case(
-      this,
-      [
-        for (var i = 0; i &lt; busList.length; i++)
-          CaseItem(Const(i, width: width), [selected &lt; busList[i]]),
-      ],
-      conditionalType: ConditionalType.unique,
-      defaultItem: [selected &lt; (defaultValue ?? 0)],
-    ),
-  ]);
-
-  return selected;
 }</code></pre>
 </section>
 
@@ -117,7 +121,7 @@ selected &lt;= index.selectFrom(busList);
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/">rohd</a></li>
     <li><a href="../../rohd/Logic-class.html">Logic</a></li>
-    <li class="self-crumb">selectFrom method</li>
+    <li class="self-crumb">selectFrom&lt;<wbr><span class="type-parameter">LogicType extends Logic</span>&gt; method</li>
 </ol>
 
     <h5>Logic class</h5>

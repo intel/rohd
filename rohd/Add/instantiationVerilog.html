@@ -89,7 +89,10 @@ returned and thus a standard instantiation is used.</p>
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@override
 String instantiationVerilog(
-    String instanceType, String instanceName, Map&lt;String, String&gt; ports) {
+  String instanceType,
+  String instanceName,
+  Map&lt;String, String&gt; ports,
+) {
   assert(inputs.length == 2, &#39;Gate has exactly two inputs&#39;);
   assert(outputs.length == 2, &#39;Gate has exactly two outputs&#39;);
 

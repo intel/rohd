@@ -68,8 +68,8 @@
 <p>The <code>stringRepresentation</code> should only contain bit values (e.g. no <code>0b</code>
 at the start). The order of the created <a href="../../rohd/LogicValue-class.html">LogicValue</a> will be such that
 the <code>i</code>th character in <code>stringRepresentation</code> corresponds to the
-<code>length - i - 1</code>th bit.  That is, the last character of
-<code>stringRepresentation</code> will be the 0th bit of the returned <a href="../../rohd/LogicValue-class.html">LogicValue</a>.</p>
+<code>width - i - 1</code>th bit. That is, the last character in
+<code>stringRepresentation</code> is the 0th bit of the returned <a href="../../rohd/LogicValue-class.html">LogicValue</a>.</p>
 <pre class="language-dart"><code class="language-dart">var stringRepresentation = '1x0';
 var lv = LogicValue.ofString(stringRepresentation);
 print(lv); // This prints `3b'1x0`

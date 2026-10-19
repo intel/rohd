@@ -26,8 +26,8 @@
   <ol class="breadcrumbs gt-separated dark hidden-xs">
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/">rohd.dart</a></li>
-    <li><a href="../../rohd/Mux-class.html">Mux</a></li>
-    <li class="self-crumb">Mux.new constructor</li>
+    <li><a href="../../rohd/Mux-class.html">Mux<span class="signature">&lt;<wbr><span class="type-parameter">LogicType extends Logic</span>&gt;</span></a></li>
+    <li class="self-crumb">Mux.new factory constructor</li>
   </ol>
   <div class="self-name">Mux.new</div>
   <form class="search navbar-right" role="search">
@@ -49,47 +49,72 @@
       data-above-sidebar="rohd&#47;Mux-class-sidebar.html"
       data-below-sidebar="">
       <div>
-<h1><span class="kind-constructor">Mux</span> constructor 
+<h1><span class="kind-constructor">Mux&lt;<wbr><span class="type-parameter">LogicType extends Logic</span>&gt;</span> constructor 
 </h1></div>
 
     <section class="multi-line-signature">
       
-      <span class="name ">Mux</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="param-control"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">control</span>, </span></li>
-<li><span class="parameter" id="param-d1"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">d1</span>, </span></li>
-<li><span class="parameter" id="param-d0"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">d0</span>, {</span></li>
+      <span class="name ">Mux&lt;<wbr><span class="type-parameter">LogicType extends Logic</span>&gt;</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="param-control"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">control</span>, </span></li>
+<li><span class="parameter" id="param-d1"><span class="type-annotation">LogicType</span> <span class="parameter-name">d1</span>, </span></li>
+<li><span class="parameter" id="param-d0"><span class="type-annotation">LogicType</span> <span class="parameter-name">d0</span>, {</span></li>
+<li><span class="parameter" id="param-outputGenerator"><span class="type-annotation">LogicType</span> <span class="parameter-name">outputGenerator</span>({<ol class="parameter-list"> <li><span class="parameter" id="param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">name</span>, </span></li>
+</ol>})?, </span></li>
 <li><span class="parameter" id="param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span> = <span class="default-value">&#39;mux&#39;</span>, </span></li>
 </ol>})
     </section>
     
 <section class="desc markdown">
-  <p>Constructs a multiplexer which passes <code>d0</code> or <code>d1</code> to <a href="../../rohd/Mux/out.html">out</a> depending
-on if <code>control</code> is 0 or 1, respectively.</p>
+  <p>Constructs a mux preserving <code>LogicType</code>.</p>
 </section>
 
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">Mux(Logic control, Logic d1, Logic d0, {super.name = &#39;mux&#39;}) {
+  <pre class="language-dart"><code class="language-dart">factory Mux(
+  Logic control,
+  LogicType d1,
+  LogicType d0, {
+  LogicType Function({String? name})? outputGenerator,
+  String name = &#39;mux&#39;,
+}) {
   if (control.width != 1) {
     throw PortWidthMismatchException(control, 1);
   }
   if (d0.width != d1.width) {
     throw PortWidthMismatchException.equalWidth(d0, d1);
   }
+  if (d0 is LogicStructure &amp;&amp; d1 is LogicStructure) {
+    validateMatchingOperationStructure(d1, d0, operation: &#39;Mux&#39;);
+  }
 
-  _controlName = Naming.unpreferredName(&#39;control_${control.name}&#39;);
-  _d0Name = Naming.unpreferredName(&#39;d0_${d0.name}&#39;);
-  _d1Name = Naming.unpreferredName(&#39;d1_${d1.name}&#39;);
-  _outName = Naming.unpreferredName(&#39;out&#39;);
+  final outputSchema = createOperationOutput&lt;LogicType&gt;(
+    width: d0.width,
+    name: &#39;out&#39;,
+    operation: &#39;Mux&lt;$LogicType&gt;&#39;,
+    prototype: d0,
+    outputGenerator: outputGenerator,
+  );
+  validateOperationSource(d0, outputSchema, operation: &#39;Mux d0&#39;);
+  validateOperationSource(d1, outputSchema, operation: &#39;Mux d1&#39;);
 
-  addInput(_controlName, control);
-  addInput(_d0Name, d0, width: d0.width);
-  addInput(_d1Name, d1, width: d1.width);
-  addOutput(_outName, width: d0.width)
-      .makeUnassignable(reason: &#39;Output of a gate $this cannot be assigned.&#39;);
-
-  _setup();
+  if (LogicType == Logic || d0 is! LogicStructure) {
+    return _ScalarMux&lt;LogicType&gt;(
+      control,
+      d1,
+      d0,
+      outputSchema,
+      usesOutputGenerator: outputGenerator != null,
+      name: name,
+    );
+  }
+  return _DomainMux&lt;LogicType&gt;(
+    control,
+    d1,
+    d0,
+    outputSchema,
+    name: name,
+  );
 }</code></pre>
 </section>
 
@@ -105,8 +130,8 @@ on if <code>control</code> is 0 or 1, respectively.</p>
 <ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/">rohd</a></li>
-    <li><a href="../../rohd/Mux-class.html">Mux</a></li>
-    <li class="self-crumb">Mux.new constructor</li>
+    <li><a href="../../rohd/Mux-class.html">Mux<span class="signature">&lt;<wbr><span class="type-parameter">LogicType extends Logic</span>&gt;</span></a></li>
+    <li class="self-crumb">Mux.new factory constructor</li>
 </ol>
 
     <h5>Mux class</h5>

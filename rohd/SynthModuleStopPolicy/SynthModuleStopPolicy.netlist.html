@@ -54,7 +54,7 @@
 
     <section class="multi-line-signature">
       
-      <span class="name ">SynthModuleStopPolicy.netlist</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="netlist-param-leafModulePredicate"><span class="type-annotation"><a href="../../rohd/SynthModuleLeafPredicate.html">SynthModuleLeafPredicate</a></span> <span class="parameter-name">leafModulePredicate</span> = <span class="default-value">_isFlipFlop</span>, </span></li>
+      <span class="name ">SynthModuleStopPolicy.netlist</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="netlist-param-leafModulePredicate"><span class="type-annotation"><a href="../../rohd/SynthModuleLeafPredicate.html">SynthModuleLeafPredicate</a></span> <span class="parameter-name">leafModulePredicate</span> = <span class="default-value">_isNetlistPrimitive</span>, </span></li>
 </ol>})
     </section>
     
@@ -67,7 +67,7 @@
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">factory SynthModuleStopPolicy.netlist({
-  SynthModuleLeafPredicate leafModulePredicate = _isFlipFlop,
+  SynthModuleLeafPredicate leafModulePredicate = _isNetlistPrimitive,
 }) =&gt;
     SynthModuleStopPolicy(
       generatesDefinitionByDefault: (module) =&gt; module.subModules.isNotEmpty,

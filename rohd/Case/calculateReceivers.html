@@ -80,16 +80,20 @@ for <a href="../../rohd/Case/receivers.html">receivers</a> itself.</p>
 List&lt;Logic&gt; calculateReceivers() {
   final receivers = &lt;Logic&gt;[];
   for (final item in items) {
-    receivers.addAll(item.then
-        .map((conditional) =&gt; conditional.receivers)
-        .flattened
-        .toList(growable: false));
+    receivers.addAll(
+      item.then
+          .map((conditional) =&gt; conditional.receivers)
+          .flattened
+          .toList(growable: false),
+    );
   }
   if (defaultItem != null) {
-    receivers.addAll(defaultItem!
-        .map((conditional) =&gt; conditional.receivers)
-        .flattened
-        .toList(growable: false));
+    receivers.addAll(
+      defaultItem!
+          .map((conditional) =&gt; conditional.receivers)
+          .flattened
+          .toList(growable: false),
+    );
   }
   return receivers;
 }</code></pre>

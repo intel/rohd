@@ -64,8 +64,8 @@
 <section class="desc markdown">
   <p>Determines which modules should stop netlist hierarchy traversal and be
 emitted as cells in their parent.</p>
-<p>Defaults to matching <a href="../../rohd/FlipFlop-class.html">FlipFlop</a> and its subclasses, which contain internal
-sequential submodules but should be emitted as <code>$dff</code> netlist cells.</p>
+<p>Defaults to matching <a href="../../rohd/Mux-class.html">Mux</a>, <a href="../../rohd/FlipFlop-class.html">FlipFlop</a>, and <a href="../../rohd/Passthrough-class.html">Passthrough</a> and their
+subclasses, which should be emitted as aggregate primitive netlist cells.</p>
 </section>
 
       

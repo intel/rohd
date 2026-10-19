@@ -109,29 +109,9 @@ that it will not be noticeable.</p>
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">factory Combinational.ssa(
-    List&lt;Conditional&gt; Function(Logic Function(Logic signal) s) construct,
-    {String name = &#39;combinational_ssa&#39;}) {
-  final context = _ssaContextCounter++;
-
-  final ssas = &lt;SsaLogic&gt;[];
-
-  Logic getSsa(Logic ref) {
-    final newSsa = SsaLogic(ref, context);
-    ssas.add(newSsa);
-    return newSsa;
-  }
-
-  final conditionals = construct(getSsa);
-
-  ssas.forEach(_updateSsaDriverMap);
-
-  _processSsa(conditionals, context: context);
-
-  &#47;&#47; no need to keep any of this old info around anymore
-  signalToSsaDrivers.clear();
-
-  return Combinational(conditionals, name: name);
-}</code></pre>
+        List&lt;Conditional&gt; Function(Logic Function(Logic signal) s) construct,
+        {String name = &#39;combinational_ssa&#39;}) =&gt;
+    Combinational._constructSsa(construct, name: name);</code></pre>
 </section>
 
 

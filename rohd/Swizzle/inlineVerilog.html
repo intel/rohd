@@ -92,6 +92,11 @@ String inlineVerilog(Map&lt;String, String&gt; inputs) {
     &#39; but saw $inputs with ${inputs.length} values.&#39;,
   );
 
+  final packedArrayAlias = _packedArrayAlias(inputs);
+  if (packedArrayAlias != null) {
+    return packedArrayAlias;
+  }
+
   &#47;&#47; Calculate all width descriptions upfront to determine alignment
   final validInputs =
       _swizzleInputs.reversed.where((e) =&gt; e.width &gt; 0).toList();

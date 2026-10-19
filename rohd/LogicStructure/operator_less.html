@@ -96,7 +96,9 @@ Conditional operator &lt;(dynamic other) {
     index += element.width;
   }
 
-  return ConditionalGroup(conditionalAssigns);
+  return this is BaseLogicArray
+      ? ConditionalGroup(conditionalAssigns)
+      : StructureConditionalGroup(this, otherLogic, conditionalAssigns);
 }</code></pre>
 </section>
 

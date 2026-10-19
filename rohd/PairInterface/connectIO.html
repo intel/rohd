@@ -116,7 +116,7 @@ void connectIO(Module module, Interface&lt;dynamic&gt; srcInterface,
           subInterfaceEntry.value.uniquify ?? (original) =&gt; original;
 
       String newSubIntfUniquify(String original) =&gt;
-          nonNullUniquify(nonNullSubIntfUniquify(nonNullModify(original)));
+          nonNullUniquify(nonNullSubIntfUniquify(original));
 
       if (!srcInterface._subInterfaces.containsKey(subInterfaceName)) {
         throw InterfaceTypeException(

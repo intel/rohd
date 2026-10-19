@@ -27,7 +27,7 @@
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/">rohd.dart</a></li>
     <li><a href="../../rohd/Pipeline-class.html">Pipeline</a></li>
-    <li class="self-crumb">get method</li>
+    <li class="self-crumb">get&lt;<wbr><span class="type-parameter">T extends Logic</span>&gt; method</li>
   </ol>
   <div class="self-name">get</div>
   <form class="search navbar-right" role="search">
@@ -49,13 +49,13 @@
     data-above-sidebar="rohd&#47;Pipeline-class-sidebar.html"
     data-below-sidebar="">
     <div>
-<h1><span class="kind-method">get</span> method 
+<h1><span class="kind-method">get&lt;<wbr><span class="type-parameter">T extends Logic</span>&gt;</span> method 
 </h1></div>
 
     <section class="multi-line-signature">
       
-<span class="returntype"><a href="../../rohd/Logic-class.html">Logic</a></span>
-<span class="name ">get</span>(<wbr><ol class="parameter-list single-line"> <li><span class="parameter" id="get-param-logic"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">logic</span>, [</span></li>
+<span class="returntype">T</span>
+<span class="name ">get</span>&lt;<wbr><span class="type-parameter">T extends Logic</span>&gt;(<wbr><ol class="parameter-list single-line"> <li><span class="parameter" id="get-param-logic"><span class="type-annotation">T</span> <span class="parameter-name">logic</span>, [</span></li>
 <li><span class="parameter" id="get-param-stageIndex"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">stageIndex</span></span></li>
 </ol>])
 
@@ -77,11 +77,12 @@ pipeline. The <code>stageIndex</code> must be less than <a href="../../rohd/Pipe
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">Logic get(Logic logic, [int? stageIndex]) {
+  <pre class="language-dart"><code class="language-dart">T get&lt;T extends Logic&gt;(T logic, [int? stageIndex]) {
   if (!_isRegistered(logic)) {
     if (_constructionComplete) {
       throw PortDoesNotExistException(
-          &#39;Signal $logic was not piped through this Pipeline.&#39;);
+        &#39;Signal $logic was not piped through this Pipeline.&#39;,
+      );
     } else {
       _add(logic);
     }
@@ -90,6 +91,11 @@ pipeline. The <code>stageIndex</code> must be less than <a href="../../rohd/Pipe
   stageIndex ??= _stages.length - 1;
 
   final stageLogic = _stages[stageIndex].main[logic]!;
+  if (stageLogic is! T) {
+    throw LogicConstructionException(
+      &#39;Pipeline reconstruction did not preserve the requested $T type.&#39;,
+    );
+  }
   return stageLogic;
 }</code></pre>
 </section>
@@ -107,7 +113,7 @@ pipeline. The <code>stageIndex</code> must be less than <a href="../../rohd/Pipe
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/">rohd</a></li>
     <li><a href="../../rohd/Pipeline-class.html">Pipeline</a></li>
-    <li class="self-crumb">get method</li>
+    <li class="self-crumb">get&lt;<wbr><span class="type-parameter">T extends Logic</span>&gt; method</li>
 </ol>
 
     <h5>Pipeline class</h5>

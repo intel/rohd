@@ -104,10 +104,10 @@ Map&lt;Logic, Logic&gt; processSsa(Map&lt;Logic, Logic&gt; currentMappings,
 
     for (final localMapping in localMappings.entries) {
       if (!phiMappings.containsKey(localMapping.key)) {
-        phiMappings[localMapping.key] = Logic(
+        phiMappings[localMapping.key] = SsaLogic.cloneLike(
+          localMapping.key,
+          localMapping.value,
           name: &#39;${localMapping.key.name}_phi&#39;,
-          width: localMapping.key.width,
-          naming: Naming.mergeable,
         );
       }
 
@@ -125,18 +125,20 @@ Map&lt;Logic, Logic&gt; processSsa(Map&lt;Logic, Logic&gt; currentMappings,
       .flattened
       .map((e) =&gt; e.calculateReceivers())
       .flattened
-      .whereType&lt;SsaLogic&gt;()
+      .where((signal) =&gt; SsaLogic.isSsaProxy(signal, context: context))
       .toSet();
   for (final iff in iffs) {
     final alreadyDrivenSsaSignals = iff.then
         .map((e) =&gt; e.calculateReceivers())
         .flattened
-        .whereType&lt;SsaLogic&gt;()
+        .where((signal) =&gt; SsaLogic.isSsaProxy(signal, context: context))
         .toSet();
 
     for (final signalNeedingInit in signalsNeedingInit) {
       if (!alreadyDrivenSsaSignals.contains(signalNeedingInit)) {
-        iff.then.add(signalNeedingInit &lt; 0);
+        iff.then.add(
+          signalNeedingInit &lt; SsaLogic.branchDefaultValue(signalNeedingInit),
+        );
       }
     }
   }

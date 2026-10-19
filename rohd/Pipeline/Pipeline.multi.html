@@ -72,14 +72,15 @@
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">Pipeline.multi(this._clks,
-    {List&lt;List&lt;Conditional&gt; Function(PipelineStageInfo p)&gt; stages = const [],
-    List&lt;Logic?&gt;? stalls,
-    List&lt;Logic&gt; signals = const [],
-    Map&lt;Logic, dynamic&gt;? resetValues,
-    this.reset,
-    this.asyncReset = false})
-    : _resetValues = resetValues == null ? null : Map.from(resetValues) {
+  <pre class="language-dart"><code class="language-dart">Pipeline.multi(
+  this._clks, {
+  List&lt;List&lt;Conditional&gt; Function(PipelineStageInfo p)&gt; stages = const [],
+  List&lt;Logic?&gt;? stalls,
+  List&lt;Logic&gt; signals = const [],
+  Map&lt;Logic, dynamic&gt;? resetValues,
+  this.reset,
+  this.asyncReset = false,
+}) : _resetValues = resetValues == null ? null : Map.from(resetValues) {
   _stages = stages.map(_PipeStage.new).toList();
   _stages.add(_PipeStage((p) =&gt; [])); &#47;&#47; output stage
 
@@ -88,7 +89,7 @@
   signals.forEach(_add);
 
   for (var stageIndex = 0; stageIndex &lt; stageCount; stageIndex++) {
-    Combinational.ssa((ssa) {
+    Combinational.ssaWithTypes((ssa) {
       &#47;&#47; keep track of the previously registered logics:
       final prevRegisteredLogics = _registeredLogics.toSet();
 
@@ -103,22 +104,22 @@
         if (!prevRegisteredLogics.contains(l)) {
           for (var i = 0; i &lt; stageIndex; i++) {
             &#47;&#47; make sure to hook up in-to-out through main for .get&#39;s
-            get(l, i) &lt;= _i(l, i);
-            _o(l, i) &lt;= get(l, i);
+            _connectPipelineLogic(get(l, i), _i(l, i));
+            _connectPipelineLogic(_o(l, i), get(l, i));
           }
         }
       }
 
       return [
         for (final l in _registeredLogics)
-          ssa(get(l, stageIndex)) &lt; _i(l, stageIndex),
+          _pipelineAssignment(ssa(get(l, stageIndex)), _i(l, stageIndex)),
         ...stageConditionals,
       ];
     }, name: &#39;comb_stage$stageIndex&#39;);
 
     &#47;&#47; do output connections as assignments so they can be collapsed
     for (final l in _registeredLogics) {
-      _o(l, stageIndex) &lt;= get(l, stageIndex);
+      _connectPipelineLogic(_o(l, stageIndex), get(l, stageIndex));
     }
   }
 

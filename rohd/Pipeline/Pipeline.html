@@ -96,20 +96,23 @@ stage's stall is asserted, the output of that stage will not change.</p>
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">Pipeline(Logic clk,
-    {List&lt;List&lt;Conditional&gt; Function(PipelineStageInfo p)&gt; stages = const [],
-    List&lt;Logic?&gt;? stalls,
-    List&lt;Logic&gt; signals = const [],
-    Map&lt;Logic, dynamic&gt; resetValues = const {},
-    Logic? reset,
-    bool asyncReset = false})
-    : this.multi([clk],
-          stages: stages,
-          stalls: stalls,
-          signals: signals,
-          resetValues: resetValues,
-          reset: reset,
-          asyncReset: asyncReset);</code></pre>
+  <pre class="language-dart"><code class="language-dart">Pipeline(
+  Logic clk, {
+  List&lt;List&lt;Conditional&gt; Function(PipelineStageInfo p)&gt; stages = const [],
+  List&lt;Logic?&gt;? stalls,
+  List&lt;Logic&gt; signals = const [],
+  Map&lt;Logic, dynamic&gt; resetValues = const {},
+  Logic? reset,
+  bool asyncReset = false,
+}) : this.multi(
+        [clk],
+        stages: stages,
+        stalls: stalls,
+        signals: signals,
+        resetValues: resetValues,
+        reset: reset,
+        asyncReset: asyncReset,
+      );</code></pre>
 </section>
 
 

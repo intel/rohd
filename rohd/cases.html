@@ -26,7 +26,7 @@
   <ol class="breadcrumbs gt-separated dark hidden-xs">
     <li><a href="../index.html">rohd</a></li>
     <li><a href="../rohd/">rohd.dart</a></li>
-    <li class="self-crumb">cases function</li>
+    <li class="self-crumb">cases&lt;<wbr><span class="type-parameter">LogicType extends Logic</span>&gt; function</li>
   </ol>
   <div class="self-name">cases</div>
   <form class="search navbar-right" role="search">
@@ -48,18 +48,21 @@
       data-above-sidebar="rohd&#47;rohd-library-sidebar.html"
       data-below-sidebar="">
       <div>
-<h1><span class="kind-function">cases</span> function 
+<h1><span class="kind-function">cases&lt;<wbr><span class="type-parameter">LogicType extends Logic</span>&gt;</span> function 
  
 </h1></div>
 
     <section class="multi-line-signature">
         
-<span class="returntype"><a href="../rohd/Logic-class.html">Logic</a></span>
-<span class="name ">cases</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="cases-param-expression"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">expression</span>, </span></li>
+<span class="returntype">LogicType</span>
+<span class="name ">cases</span>&lt;<wbr><span class="type-parameter">LogicType extends Logic</span>&gt;(<wbr><ol class="parameter-list"> <li><span class="parameter" id="cases-param-expression"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">expression</span>, </span></li>
 <li><span class="parameter" id="cases-param-conditions"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a></span> <span class="parameter-name">conditions</span>, {</span></li>
 <li><span class="parameter" id="cases-param-width"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">width</span>, </span></li>
 <li><span class="parameter" id="cases-param-conditionalType"><span class="type-annotation"><a href="../rohd/ConditionalType.html">ConditionalType</a></span> <span class="parameter-name">conditionalType</span> = <span class="default-value">ConditionalType.none</span>, </span></li>
 <li><span class="parameter" id="cases-param-defaultValue"><span class="type-annotation">dynamic</span> <span class="parameter-name">defaultValue</span>, </span></li>
+<li><span class="parameter" id="cases-param-outputGenerator"><span class="type-annotation">LogicType</span> <span class="parameter-name">outputGenerator</span>({<ol class="parameter-list"> <li><span class="parameter" id="param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">name</span>, </span></li>
+</ol>})?, </span></li>
+<li><span class="parameter" id="cases-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span> = <span class="default-value">&#39;result&#39;</span>, </span></li>
 </ol>})
 
         
@@ -70,26 +73,33 @@
   <p>Shorthand for a <a href="../rohd/Case-class.html">Case</a> inside a <a href="../rohd/Conditional-class.html">Conditional</a> block.</p>
 <p>It is used to assign a signal based on a condition with multiple cases to
 consider. For e.g., this can be used instead of a nested <a href="../rohd/mux.html">mux</a>.</p>
-<p>The result is of type <a href="../rohd/Logic-class.html">Logic</a> and it is determined by conditionaly matching
-the expression with the values of each item in conditions. If width of the
-input is not provided, then the width of  the result is inferred from the
-width of the entries. Bare <a href="https://api.dart.dev/stable/3.13.5/dart-core/Enum-class.html">Enum</a> values are not supported as results
-because an untyped result has no hardware encoding for them; use explicitly
-mapped <a href="../rohd/LogicEnum-class.html">LogicEnum</a> signals instead.</p>
+<p>The result is of type <code>LogicType</code> and is determined by conditionally
+matching <code>expression</code> with values in <code>conditions</code>.</p>
+<p>When <code>outputGenerator</code> is omitted, a requested <a href="../rohd/Logic-class.html">Logic</a> result is
+normalized to ordinary <a href="../rohd/Logic-class.html">Logic</a>. For a more specific <code>LogicType</code>, the first
+matching typed branch supplies the output prototype. Supply
+<code>outputGenerator</code> to establish an explicit result representation when
+sources are mixed or no typed branch is available.</p>
 </section>
 
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">Logic cases(Logic expression, Map&lt;dynamic, dynamic&gt; conditions,
-    {int? width,
-    ConditionalType conditionalType = ConditionalType.none,
-    dynamic defaultValue}) {
+  <pre class="language-dart"><code class="language-dart">LogicType cases&lt;LogicType extends Logic&gt;(
+  Logic expression,
+  Map&lt;dynamic, dynamic&gt; conditions, {
+  int? width,
+  ConditionalType conditionalType = ConditionalType.none,
+  dynamic defaultValue,
+  LogicType Function({String? name})? outputGenerator,
+  String name = &#39;result&#39;,
+}) {
   final resultValues = [
     ...conditions.values,
-    if (defaultValue != null) defaultValue
+    if (defaultValue != null) defaultValue,
   ];
+
   if (resultValues.any((value) =&gt; value is Enum)) {
     throw ArgumentError.value(
       resultValues,
@@ -110,13 +120,17 @@ mapped <a href="../rohd/LogicEnum-class.html">LogicEnum</a> signals instead.</p>
 
     if (width != inferredWidth &amp;&amp; width != null &amp;&amp; inferredWidth != null) {
       throw SignalWidthMismatchException.forDynamic(
-          conditionValue, width, inferredWidth);
+        conditionValue,
+        width,
+        inferredWidth,
+      );
     }
 
     width ??= inferredWidth;
   }
 
-  if (width == null) {
+  final prototype = resultValues.whereType&lt;LogicType&gt;().firstOrNull;
+  if (width == null &amp;&amp; prototype == null &amp;&amp; outputGenerator == null) {
     throw SignalWidthMismatchException.forNull(conditions);
   }
 
@@ -138,33 +152,67 @@ mapped <a href="../rohd/LogicEnum-class.html">LogicEnum</a> signals instead.</p>
     }
   }
 
+  final result = createOperationOutput&lt;LogicType&gt;(
+    width: width ?? prototype?.width,
+    name: name,
+    operation: &#39;cases&lt;$LogicType&gt;&#39;,
+    naming: Naming.mergeable,
+    prototype: prototype,
+    outputGenerator: outputGenerator,
+  );
+
   for (final condition in conditions.entries) {
     if (condition.key is Logic) {
       if (expression.width != (condition.key as Logic).width) {
         throw SignalWidthMismatchException.forDynamic(
-            condition.key, expression.width, (condition.key as Logic).width);
+          condition.key,
+          expression.width,
+          (condition.key as Logic).width,
+        );
       }
     }
 
     if (condition.key is LogicValue) {
       if (expression.width != (condition.key as LogicValue).width) {
-        throw SignalWidthMismatchException.forDynamic(condition.key,
-            expression.width, (condition.key as LogicValue).width);
+        throw SignalWidthMismatchException.forDynamic(
+          condition.key,
+          expression.width,
+          (condition.key as LogicValue).width,
+        );
       }
     }
   }
 
-  final result = Logic(name: &#39;result&#39;, width: width, naming: Naming.mergeable);
+  for (final conditionValue in resultValues) {
+    if (conditionValue is Logic) {
+      validateOperationSource(
+        conditionValue,
+        result,
+        operation: &#39;cases branch&#39;,
+      );
+    } else if (conditionValue is LogicValue &amp;&amp;
+        conditionValue.width != result.width) {
+      throw SignalWidthMismatchException.forDynamic(
+        conditionValue,
+        result.width,
+        conditionValue.width,
+      );
+    }
+  }
 
   Combinational([
     Case(
-        expression,
-        [
-          for (final condition in conditions.entries)
-            CaseItem(conditionLogic(condition.key), [result &lt; condition.value])
-        ],
-        conditionalType: conditionalType,
-        defaultItem: defaultValue != null ? [result &lt; defaultValue] : null)
+      expression,
+      [
+        for (final condition in conditions.entries)
+          CaseItem(
+            conditionLogic(condition.key),
+            [result &lt; condition.value],
+          ),
+      ],
+      conditionalType: conditionalType,
+      defaultItem: defaultValue != null ? [result &lt; defaultValue] : null,
+    ),
   ]);
 
   return result;
@@ -183,7 +231,7 @@ mapped <a href="../rohd/LogicEnum-class.html">LogicEnum</a> signals instead.</p>
 <ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
     <li><a href="../index.html">rohd</a></li>
     <li><a href="../rohd/">rohd</a></li>
-    <li class="self-crumb">cases function</li>
+    <li class="self-crumb">cases&lt;<wbr><span class="type-parameter">LogicType extends Logic</span>&gt; function</li>
 </ol>
 
     <h5>rohd library</h5>

@@ -27,7 +27,7 @@
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/">rohd.dart</a></li>
     <li><a href="../../rohd/PipelineStageInfo-class.html">PipelineStageInfo</a></li>
-    <li class="self-crumb">getAbs method</li>
+    <li class="self-crumb">getAbs&lt;<wbr><span class="type-parameter">T extends Logic</span>&gt; method</li>
   </ol>
   <div class="self-name">getAbs</div>
   <form class="search navbar-right" role="search">
@@ -49,13 +49,13 @@
     data-above-sidebar="rohd&#47;PipelineStageInfo-class-sidebar.html"
     data-below-sidebar="">
     <div>
-<h1><span class="kind-method">getAbs</span> method 
+<h1><span class="kind-method">getAbs&lt;<wbr><span class="type-parameter">T extends Logic</span>&gt;</span> method 
 </h1></div>
 
     <section class="multi-line-signature">
       
-<span class="returntype"><a href="../../rohd/Logic-class.html">Logic</a></span>
-<span class="name ">getAbs</span>(<wbr><ol class="parameter-list single-line"> <li><span class="parameter" id="getAbs-param-identifier"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">identifier</span>, </span></li>
+<span class="returntype">T</span>
+<span class="name ">getAbs</span>&lt;<wbr><span class="type-parameter">T extends Logic</span>&gt;(<wbr><ol class="parameter-list single-line"> <li><span class="parameter" id="getAbs-param-identifier"><span class="type-annotation">T</span> <span class="parameter-name">identifier</span>, </span></li>
 <li><span class="parameter" id="getAbs-param-stageIndex"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/int-class.html">int</a></span> <span class="parameter-name">stageIndex</span></span></li>
 </ol>)
 
@@ -73,9 +73,19 @@ thing as <a href="../../rohd/PipelineStageInfo/get.html">get</a>, for the curren
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">Logic getAbs(Logic identifier, int stageIndex) {
+  <pre class="language-dart"><code class="language-dart">T getAbs&lt;T extends Logic&gt;(T identifier, int stageIndex) {
   final l = _pipeline.get(identifier, stageIndex);
-  return stageIndex == stage ? _ssa(l) : l;
+  if (stageIndex != stage) {
+    return l;
+  }
+
+  final remapped = _ssa(l);
+  if (remapped is! T) {
+    throw LogicConstructionException(
+      &#39;SSA remapping did not preserve the requested $T type.&#39;,
+    );
+  }
+  return remapped;
 }</code></pre>
 </section>
 
@@ -92,7 +102,7 @@ thing as <a href="../../rohd/PipelineStageInfo/get.html">get</a>, for the curren
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/">rohd</a></li>
     <li><a href="../../rohd/PipelineStageInfo-class.html">PipelineStageInfo</a></li>
-    <li class="self-crumb">getAbs method</li>
+    <li class="self-crumb">getAbs&lt;<wbr><span class="type-parameter">T extends Logic</span>&gt; method</li>
 </ol>
 
     <h5>PipelineStageInfo class</h5>

@@ -26,7 +26,7 @@
   <ol class="breadcrumbs gt-separated dark hidden-xs">
     <li><a href="../index.html">rohd</a></li>
     <li><a href="../rohd/">rohd.dart</a></li>
-    <li class="self-crumb">FlipFlop class</li>
+    <li class="self-crumb">FlipFlop<span class="signature">&lt;<wbr><span class="type-parameter">LogicType extends <a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span> class</li>
   </ol>
   <div class="self-name">FlipFlop</div>
   <form class="search navbar-right" role="search">
@@ -48,13 +48,16 @@
     data-above-sidebar="rohd&#47;rohd-library-sidebar.html"
     data-below-sidebar="rohd&#47;FlipFlop-class-sidebar.html">
     <div>
-<h1><span class="kind-class">FlipFlop</span> class 
+<h1><span class="kind-class">FlipFlop&lt;<wbr><span class="type-parameter">LogicType extends Logic</span>&gt;</span> class 
  
 </h1></div>
 
     
 <section class="desc markdown">
-  <p>Represents a single flip-flop with no reset.</p>
+  <p>A positive-edge-triggered flip-flop preserving <code>LogicType</code>.</p>
+<p>The returned <code>q</code> is created from <code>d</code>'s clone by default, or from
+<code>outputGenerator</code> when supplied. Dynamic operation outputs must be
+driveable, so a concrete <a href="../rohd/Const-class.html">Const</a> or <a href="../rohd/LogicNet-class.html">LogicNet</a> result type is rejected.</p>
 </section>
 
 
@@ -72,12 +75,6 @@
 
         
         
-  <dt>Mixed-in types</dt>
-  <dd>
-    <ul class="comma-separated clazz-relationships">
-        <li><a href="../rohd/SystemVerilog-mixin.html">SystemVerilog</a></li>
-    </ul>
-  </dd>
 
 
         
@@ -92,10 +89,17 @@
     <h2>Constructors</h2>
     <dl class="constructor-summary-list">
         <dt id="FlipFlop.new" class="callable">
-          <span class="name"><a href="../rohd/FlipFlop/FlipFlop.html">FlipFlop</a></span><span class="signature">(<span class="parameter" id="param-clk"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">clk</span>, </span><span class="parameter" id="param-d"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">d</span>, {</span><span class="parameter" id="param-en"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a>?</span> <span class="parameter-name">en</span>, </span><span class="parameter" id="param-reset"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a>?</span> <span class="parameter-name">reset</span>, </span><span class="parameter" id="param-resetValue"><span class="type-annotation">dynamic</span> <span class="parameter-name">resetValue</span>, </span><span class="parameter" id="param-asyncReset"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">asyncReset</span> = <span class="default-value">false</span>, </span><span class="parameter" id="param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span> = <span class="default-value">&#39;flipflop&#39;</span></span>})</span>
+          <span class="name"><a href="../rohd/FlipFlop/FlipFlop.html">FlipFlop</a></span><span class="signature">(<span class="parameter" id="param-clk"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">clk</span>, </span><span class="parameter" id="param-d"><span class="type-annotation">LogicType</span> <span class="parameter-name">d</span>, {</span><span class="parameter" id="param-en"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a>?</span> <span class="parameter-name">en</span>, </span><span class="parameter" id="param-reset"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a>?</span> <span class="parameter-name">reset</span>, </span><span class="parameter" id="param-resetValue"><span class="type-annotation">dynamic</span> <span class="parameter-name">resetValue</span>, </span><span class="parameter" id="param-asyncReset"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">asyncReset</span> = <span class="default-value">false</span>, </span><span class="parameter" id="param-outputGenerator"><span class="type-annotation">LogicType</span> <span class="parameter-name">outputGenerator</span>({<span class="parameter" id="param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">name</span></span>})?, </span><span class="parameter" id="param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span> = <span class="default-value">&#39;flipflop&#39;</span></span>})</span>
         </dt>
         <dd>
-          Constructs a flip flop which is positive edge triggered on <code>clk</code>.
+          Constructs a flip-flop preserving <code>LogicType</code>.
+            <div class="constructor-modifier features">factory</div>
+        </dd>
+        <dt id="FlipFlop.scalar" class="callable">
+          <span class="name"><a href="../rohd/FlipFlop/FlipFlop.scalar.html">FlipFlop.scalar</a></span><span class="signature">(<span class="parameter" id="scalar-param-clk"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">clk</span>, </span><span class="parameter" id="scalar-param-d"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">d</span>, {</span><span class="parameter" id="scalar-param-en"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a>?</span> <span class="parameter-name">en</span>, </span><span class="parameter" id="scalar-param-reset"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a>?</span> <span class="parameter-name">reset</span>, </span><span class="parameter" id="scalar-param-resetValue"><span class="type-annotation">dynamic</span> <span class="parameter-name">resetValue</span>, </span><span class="parameter" id="scalar-param-asyncReset"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">asyncReset</span> = <span class="default-value">false</span>, </span><span class="parameter" id="scalar-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span> = <span class="default-value">&#39;flipflop&#39;</span></span>})</span>
+        </dt>
+        <dd>
+          Constructs a scalar sequential flip-flop for subclass implementations.
         </dd>
     </dl>
   </section>
@@ -105,19 +109,6 @@
       id="instance-properties">
     <h2>Properties</h2>
     <dl class="properties">
-        <dt id="acceptsEmptyPortConnections" class="property inherited">
-  <span class="name"><a href="../rohd/SystemVerilog/acceptsEmptyPortConnections.html">acceptsEmptyPortConnections</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span>
-  
-
-</dt>
-<dd class="inherited">
-  Indicates whether this module accepts empty port connections when being
-instantiated in SystemVerilog.
-  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
-
-</dd>
-
         <dt id="asyncReset" class="property">
   <span class="name"><a href="../rohd/FlipFlop/asyncReset.html">asyncReset</a></span>
   <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span>
@@ -125,9 +116,8 @@ instantiated in SystemVerilog.
 
 </dt>
 <dd>
-  Indicates whether provided <code>reset</code> signals should be treated as an async
-reset. If no <code>reset</code> is provided, this will have no effect.
-  <div class="features"><span class="feature">final</span></div>
+  Indicates whether reset is asynchronous.
+  <div class="features"><span class="feature">no setter</span></div>
 
 </dd>
 
@@ -138,7 +128,7 @@ reset. If no <code>reset</code> is provided, this will have no effect.
 
 </dt>
 <dd>
-  The constant reset value, or <code>null</code> when reset is absent or data-driven.
+  Constant packed reset value, when one is used.
   <div class="features"><span class="feature">no setter</span></div>
 
 </dd>
@@ -152,47 +142,6 @@ reset. If no <code>reset</code> is provided, this will have no effect.
 <dd class="inherited">
   The definition name of this <a href="../rohd/Module-class.html">Module</a> used when instantiating instances in
 generated code.
-  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
-
-</dd>
-
-        <dt id="definitionParameters" class="property inherited">
-  <span class="name"><a href="../rohd/SystemVerilog/definitionParameters.html">definitionParameters</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/SystemVerilogParameterDefinition-class.html">SystemVerilogParameterDefinition</a></span>&gt;</span>?</span>
-  
-
-</dt>
-<dd class="inherited">
-  A collection of SystemVerilog <a href="../rohd/SystemVerilogParameterDefinition-class.html">SystemVerilogParameterDefinition</a>s to be
-declared on the definition when generating SystemVerilog for this <a href="../rohd/Module-class.html">Module</a>
-if <a href="../rohd/SystemVerilog/generatedDefinitionType.html">generatedDefinitionType</a> is <a href="../rohd/DefinitionGenerationType.html">DefinitionGenerationType.standard</a>.
-  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
-
-</dd>
-
-        <dt id="expressionlessInputs" class="property inherited">
-  <span class="name"><a href="../rohd/SystemVerilog/expressionlessInputs.html">expressionlessInputs</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span></span>
-  
-
-</dt>
-<dd class="inherited">
-  A list of names of <a href="../rohd/Module/input.html">input</a>s which should not have any SystemVerilog
-expressions (including constants) in-lined into them. Only signal names
-will be fed into these.
-  <div class="features"><span class="feature">final</span><span class="feature">inherited</span></div>
-
-</dd>
-
-        <dt id="generatedDefinitionType" class="property inherited">
-  <span class="name"><a href="../rohd/SystemVerilog/generatedDefinitionType.html">generatedDefinitionType</a></span>
-  <span class="signature">&#8594; <a href="../rohd/DefinitionGenerationType.html">DefinitionGenerationType</a></span>
-  
-
-</dt>
-<dd class="inherited">
-  What kind of SystemVerilog definition this <a href="../rohd/Module-class.html">Module</a> generates, or whether
-it does at all.
   <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
 
 </dd>
@@ -286,6 +235,18 @@ signals.
 
 </dd>
 
+        <dt id="out" class="property">
+  <span class="name"><a href="../rohd/FlipFlop/out.html">out</a></span>
+  <span class="signature">&#8594; LogicType</span>
+  
+
+</dt>
+<dd>
+  Alias for <a href="../rohd/FlipFlop/q.html">q</a> shared with other single-output operations.
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
         <dt id="outputs" class="property inherited">
   <span class="name"><a href="../rohd/Module/outputs.html">outputs</a></span>
   <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span>
@@ -313,13 +274,13 @@ signals.
 
         <dt id="q" class="property">
   <span class="name"><a href="../rohd/FlipFlop/q.html">q</a></span>
-  <span class="signature">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span>
+  <span class="signature">&#8594; LogicType</span>
   
 
 </dt>
 <dd>
-  The output of the flop.
-  <div class="features"><span class="feature">late</span><span class="feature">final</span></div>
+  Registered output.
+  <div class="features"><span class="feature">no setter</span></div>
 
 </dd>
 
@@ -404,7 +365,7 @@ unique name within its scope.
 
     
   <section
-      class="summary offset-anchor"
+      class="summary offset-anchor inherited"
       id="instance-methods">
     <h2>Methods</h2>
     <dl class="callables">
@@ -586,19 +547,6 @@ properly update the <code>name</code> of the generated <code>LogicType</code> as
 
 </dd>
 
-        <dt id="definitionVerilog" class="callable inherited">
-  <span class="name"><a href="../rohd/SystemVerilog/definitionVerilog.html">definitionVerilog</a></span><span class="signature">(<wbr><span class="parameter" id="definitionVerilog-param-definitionType"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">definitionType</span></span>)
-    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a>?</span>
-  </span>
-  
-
-</dt>
-<dd class="inherited">
-  A custom SystemVerilog definition to be produced for this <a href="../rohd/Module-class.html">Module</a>.
-  <div class="features"><span class="feature">inherited</span></div>
-
-</dd>
-
         <dt id="dumpSystemVerilog" class="callable inherited">
   <span class="name"><a href="../rohd/Module/dumpSystemVerilog.html">dumpSystemVerilog</a></span><span class="signature">(<wbr>{<span class="parameter" id="dumpSystemVerilog-param-configuration"><span class="type-annotation"><a href="../rohd/SystemVerilogSynthesizerConfiguration-class.html">SystemVerilogSynthesizerConfiguration</a></span> <span class="parameter-name">configuration</span> = <span class="default-value">const SystemVerilogSynthesizerConfiguration()</span></span>})
     <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>
@@ -719,20 +667,6 @@ named <code>name</code>.
   The original <code>source</code> provided to the creation of the <a href="../rohd/Module/input.html">input</a> port <code>name</code>
 via <a href="../rohd/Module/addInput.html">addInput</a> or <a href="../rohd/Module/addInputArray.html">addInputArray</a>.
   <div class="features"><span class="feature">inherited</span></div>
-
-</dd>
-
-        <dt id="instantiationVerilog" class="callable">
-  <span class="name"><a href="../rohd/FlipFlop/instantiationVerilog.html">instantiationVerilog</a></span><span class="signature">(<wbr><span class="parameter" id="instantiationVerilog-param-instanceType"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">instanceType</span>, </span><span class="parameter" id="instantiationVerilog-param-instanceName"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">instanceName</span>, </span><span class="parameter" id="instantiationVerilog-param-ports"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">ports</span></span>)
-    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>
-  </span>
-  
-
-</dt>
-<dd>
-  Generates custom SystemVerilog to be injected in place of a <code>module</code>
-instantiation.
-  <div class="features"><span class="feature">override</span></div>
 
 </dd>
 
@@ -909,7 +843,7 @@ named <code>name</code>.
 <ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
     <li><a href="../index.html">rohd</a></li>
     <li><a href="../rohd/">rohd</a></li>
-    <li class="self-crumb">FlipFlop class</li>
+    <li class="self-crumb">FlipFlop<span class="signature">&lt;<wbr><span class="type-parameter">LogicType extends <a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span> class</li>
 </ol>
 
     <h5>rohd library</h5>

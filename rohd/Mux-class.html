@@ -26,7 +26,7 @@
   <ol class="breadcrumbs gt-separated dark hidden-xs">
     <li><a href="../index.html">rohd</a></li>
     <li><a href="../rohd/">rohd.dart</a></li>
-    <li class="self-crumb">Mux class</li>
+    <li class="self-crumb">Mux<span class="signature">&lt;<wbr><span class="type-parameter">LogicType extends <a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span> class</li>
   </ol>
   <div class="self-name">Mux</div>
   <form class="search navbar-right" role="search">
@@ -48,15 +48,20 @@
     data-above-sidebar="rohd&#47;rohd-library-sidebar.html"
     data-below-sidebar="rohd&#47;Mux-class-sidebar.html">
     <div>
-<h1><span class="kind-class">Mux</span> class 
+<h1><span class="kind-class">Mux&lt;<wbr><span class="type-parameter">LogicType extends Logic</span>&gt;</span> class 
+    <a href="https://dart.dev/language/class-modifiers#abstract" class="feature feature-abstract" title="This type can not be directly constructed.">abstract</a>
  
 </h1></div>
 
     
 <section class="desc markdown">
-  <p>A mux (multiplexer) module.</p>
-<p>If <code>_control</code> has value <code>1</code>, then <a href="../rohd/Mux/out.html">out</a> gets <code>_d1</code>.
-If <code>_control</code> has value <code>0</code>, then <a href="../rohd/Mux/out.html">out</a> gets <code>_d0</code>.</p>
+  <p>A multiplexer with an output represented by <code>LogicType</code>.</p>
+<p>The false/default data operand <code>d0</code> supplies the output representation when
+<code>outputGenerator</code> is omitted. A supplied <code>outputGenerator</code> overrides that
+default and is invoked exactly once to create the output schema.</p>
+<p>Plain <a href="../rohd/Logic-class.html">Logic</a> results normalize scalar constants and nets into driveable
+outputs. A concrete <a href="../rohd/Const-class.html">Const</a> or <a href="../rohd/LogicNet-class.html">LogicNet</a> result type is rejected because a
+dynamic mux output must be driveable.</p>
 </section>
 
 
@@ -74,12 +79,6 @@ If <code>_control</code> has value <code>0</code>, then <a href="../rohd/Mux/out
 
         
         
-  <dt>Mixed-in types</dt>
-  <dd>
-    <ul class="comma-separated clazz-relationships">
-        <li><a href="../rohd/InlineSystemVerilog-mixin.html">InlineSystemVerilog</a></li>
-    </ul>
-  </dd>
 
 
         
@@ -94,11 +93,11 @@ If <code>_control</code> has value <code>0</code>, then <a href="../rohd/Mux/out
     <h2>Constructors</h2>
     <dl class="constructor-summary-list">
         <dt id="Mux.new" class="callable">
-          <span class="name"><a href="../rohd/Mux/Mux.html">Mux</a></span><span class="signature">(<span class="parameter" id="param-control"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">control</span>, </span><span class="parameter" id="param-d1"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">d1</span>, </span><span class="parameter" id="param-d0"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">d0</span>, {</span><span class="parameter" id="param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span> = <span class="default-value">&#39;mux&#39;</span></span>})</span>
+          <span class="name"><a href="../rohd/Mux/Mux.html">Mux</a></span><span class="signature">(<span class="parameter" id="param-control"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">control</span>, </span><span class="parameter" id="param-d1"><span class="type-annotation">LogicType</span> <span class="parameter-name">d1</span>, </span><span class="parameter" id="param-d0"><span class="type-annotation">LogicType</span> <span class="parameter-name">d0</span>, {</span><span class="parameter" id="param-outputGenerator"><span class="type-annotation">LogicType</span> <span class="parameter-name">outputGenerator</span>({<span class="parameter" id="param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">name</span></span>})?, </span><span class="parameter" id="param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span> = <span class="default-value">&#39;mux&#39;</span></span>})</span>
         </dt>
         <dd>
-          Constructs a multiplexer which passes <code>d0</code> or <code>d1</code> to <a href="../rohd/Mux/out.html">out</a> depending
-on if <code>control</code> is 0 or 1, respectively.
+          Constructs a mux preserving <code>LogicType</code>.
+            <div class="constructor-modifier features">factory</div>
         </dd>
     </dl>
   </section>
@@ -108,19 +107,6 @@ on if <code>control</code> is 0 or 1, respectively.
       id="instance-properties">
     <h2>Properties</h2>
     <dl class="properties">
-        <dt id="acceptsEmptyPortConnections" class="property inherited">
-  <span class="name"><a href="../rohd/InlineSystemVerilog/acceptsEmptyPortConnections.html">acceptsEmptyPortConnections</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span>
-  
-
-</dt>
-<dd class="inherited">
-  Indicates whether this module accepts empty port connections when being
-instantiated in SystemVerilog.
-  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
-
-</dd>
-
         <dt id="definitionName" class="property inherited">
   <span class="name"><a href="../rohd/Module/definitionName.html">definitionName</a></span>
   <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>
@@ -130,47 +116,6 @@ instantiated in SystemVerilog.
 <dd class="inherited">
   The definition name of this <a href="../rohd/Module-class.html">Module</a> used when instantiating instances in
 generated code.
-  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
-
-</dd>
-
-        <dt id="definitionParameters" class="property inherited">
-  <span class="name"><a href="../rohd/InlineSystemVerilog/definitionParameters.html">definitionParameters</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/SystemVerilogParameterDefinition-class.html">SystemVerilogParameterDefinition</a></span>&gt;</span>?</span>
-  
-
-</dt>
-<dd class="inherited">
-  A collection of SystemVerilog <code>SystemVerilogParameterDefinition</code>s to be
-declared on the definition when generating SystemVerilog for this <a href="../rohd/Module-class.html">Module</a>
-if <a href="../rohd/InlineSystemVerilog/generatedDefinitionType.html">generatedDefinitionType</a> is <a href="../rohd/DefinitionGenerationType.html">DefinitionGenerationType.standard</a>.
-  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
-
-</dd>
-
-        <dt id="expressionlessInputs" class="property inherited">
-  <span class="name"><a href="../rohd/InlineSystemVerilog/expressionlessInputs.html">expressionlessInputs</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span></span>
-  
-
-</dt>
-<dd class="inherited">
-  A list of names of <a href="../rohd/Module/input.html">input</a>s which should not have any SystemVerilog
-expressions (including constants) in-lined into them. Only signal names
-will be fed into these.
-  <div class="features"><span class="feature">final</span><span class="feature">inherited</span></div>
-
-</dd>
-
-        <dt id="generatedDefinitionType" class="property inherited">
-  <span class="name"><a href="../rohd/InlineSystemVerilog/generatedDefinitionType.html">generatedDefinitionType</a></span>
-  <span class="signature">&#8594; <a href="../rohd/DefinitionGenerationType.html">DefinitionGenerationType</a></span>
-  
-
-</dt>
-<dd class="inherited">
-  What kind of SystemVerilog definition this <a href="../rohd/Module-class.html">Module</a> generates, or whether
-it does at all.
   <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
 
 </dd>
@@ -266,13 +211,13 @@ signals.
 
         <dt id="out" class="property">
   <span class="name"><a href="../rohd/Mux/out.html">out</a></span>
-  <span class="signature">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span>
+  <span class="signature">&#8594; LogicType</span>
   
 
 </dt>
 <dd>
-  Output port of the <a href="../rohd/Mux-class.html">Mux</a>.
-  <div class="features"><span class="feature">late</span><span class="feature">final</span></div>
+  Output selected by the control input.
+  <div class="features"><span class="feature">no setter</span></div>
 
 </dd>
 
@@ -324,19 +269,6 @@ or else it will fail.
   If true, guarantees <a href="../rohd/Module/uniqueInstanceName.html">uniqueInstanceName</a> matches <a href="../rohd/Module/name.html">name</a> or else the
 <a href="../rohd/Module/build.html">build</a> will fail.
   <div class="features"><span class="feature">final</span><span class="feature">inherited</span></div>
-
-</dd>
-
-        <dt id="resultSignalName" class="property inherited">
-  <span class="name"><a href="../rohd/InlineSystemVerilog/resultSignalName.html">resultSignalName</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>
-  
-
-</dt>
-<dd class="inherited">
-  The name of the <a href="../rohd/Module/output.html">output</a> (or <a href="../rohd/Module/inOut.html">inOut</a>) port which can be the in-lined
-symbol.
-  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
 
 </dd>
 
@@ -395,7 +327,7 @@ unique name within its scope.
 
     
   <section
-      class="summary offset-anchor"
+      class="summary offset-anchor inherited"
       id="instance-methods">
     <h2>Methods</h2>
     <dl class="callables">
@@ -577,19 +509,6 @@ properly update the <code>name</code> of the generated <code>LogicType</code> as
 
 </dd>
 
-        <dt id="definitionVerilog" class="callable inherited">
-  <span class="name"><a href="../rohd/InlineSystemVerilog/definitionVerilog.html">definitionVerilog</a></span><span class="signature">(<wbr><span class="parameter" id="definitionVerilog-param-definitionType"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">definitionType</span></span>)
-    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a>?</span>
-  </span>
-  
-
-</dt>
-<dd class="inherited">
-  A custom SystemVerilog definition to be produced for this <a href="../rohd/Module-class.html">Module</a>.
-  <div class="features"><span class="feature">inherited</span></div>
-
-</dd>
-
         <dt id="dumpSystemVerilog" class="callable inherited">
   <span class="name"><a href="../rohd/Module/dumpSystemVerilog.html">dumpSystemVerilog</a></span><span class="signature">(<wbr>{<span class="parameter" id="dumpSystemVerilog-param-configuration"><span class="type-annotation"><a href="../rohd/SystemVerilogSynthesizerConfiguration-class.html">SystemVerilogSynthesizerConfiguration</a></span> <span class="parameter-name">configuration</span> = <span class="default-value">const SystemVerilogSynthesizerConfiguration()</span></span>})
     <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>
@@ -657,20 +576,6 @@ this <a href="../rohd/Module-class.html">Module</a>.
 
 </dd>
 
-        <dt id="inlineVerilog" class="callable">
-  <span class="name"><a href="../rohd/Mux/inlineVerilog.html">inlineVerilog</a></span><span class="signature">(<wbr><span class="parameter" id="inlineVerilog-param-inputs"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">inputs</span></span>)
-    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>
-  </span>
-  
-
-</dt>
-<dd>
-  Generates custom SystemVerilog to be injected in place of the output
-port's corresponding signal name.
-  <div class="features"><span class="feature">override</span></div>
-
-</dd>
-
         <dt id="inOut" class="callable inherited">
   <span class="name"><a href="../rohd/Module/inOut.html">inOut</a></span><span class="signature">(<wbr><span class="parameter" id="inOut-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span></span>)
     <span class="returntype parameter">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span>
@@ -723,20 +628,6 @@ named <code>name</code>.
 <dd class="inherited">
   The original <code>source</code> provided to the creation of the <a href="../rohd/Module/input.html">input</a> port <code>name</code>
 via <a href="../rohd/Module/addInput.html">addInput</a> or <a href="../rohd/Module/addInputArray.html">addInputArray</a>.
-  <div class="features"><span class="feature">inherited</span></div>
-
-</dd>
-
-        <dt id="instantiationVerilog" class="callable inherited">
-  <span class="name"><a href="../rohd/InlineSystemVerilog/instantiationVerilog.html">instantiationVerilog</a></span><span class="signature">(<wbr><span class="parameter" id="instantiationVerilog-param-instanceType"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">instanceType</span>, </span><span class="parameter" id="instantiationVerilog-param-instanceName"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">instanceName</span>, </span><span class="parameter" id="instantiationVerilog-param-ports"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">ports</span></span>)
-    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>
-  </span>
-  
-
-</dt>
-<dd class="inherited">
-  Generates custom SystemVerilog to be injected in place of a <code>module</code>
-instantiation.
   <div class="features"><span class="feature">inherited</span></div>
 
 </dd>
@@ -914,7 +805,7 @@ named <code>name</code>.
 <ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
     <li><a href="../index.html">rohd</a></li>
     <li><a href="../rohd/">rohd</a></li>
-    <li class="self-crumb">Mux class</li>
+    <li class="self-crumb">Mux<span class="signature">&lt;<wbr><span class="type-parameter">LogicType extends <a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span> class</li>
 </ol>
 
     <h5>rohd library</h5>

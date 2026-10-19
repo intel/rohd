@@ -70,10 +70,12 @@
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">Case(this.expression, this.items,
-    {List&lt;Conditional&gt;? defaultItem,
-    this.conditionalType = ConditionalType.none})
-    : _defaultItem = defaultItem {
+  <pre class="language-dart"><code class="language-dart">Case(
+  this.expression,
+  this.items, {
+  List&lt;Conditional&gt;? defaultItem,
+  this.conditionalType = ConditionalType.none,
+}) : _defaultItem = defaultItem {
   for (final item in items) {
     if (item.value.width != expression.width) {
       throw PortWidthMismatchException.equalWidth(expression, item.value);

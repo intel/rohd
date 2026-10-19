@@ -26,8 +26,8 @@
   <ol class="breadcrumbs gt-separated dark hidden-xs">
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/">rohd.dart</a></li>
-    <li><a href="../../rohd/FlipFlop-class.html">FlipFlop</a></li>
-    <li class="self-crumb">FlipFlop.new constructor</li>
+    <li><a href="../../rohd/FlipFlop-class.html">FlipFlop<span class="signature">&lt;<wbr><span class="type-parameter">LogicType extends Logic</span>&gt;</span></a></li>
+    <li class="self-crumb">FlipFlop.new factory constructor</li>
   </ol>
   <div class="self-name">FlipFlop.new</div>
   <form class="search navbar-right" role="search">
@@ -49,72 +49,94 @@
       data-above-sidebar="rohd&#47;FlipFlop-class-sidebar.html"
       data-below-sidebar="">
       <div>
-<h1><span class="kind-constructor">FlipFlop</span> constructor 
+<h1><span class="kind-constructor">FlipFlop&lt;<wbr><span class="type-parameter">LogicType extends Logic</span>&gt;</span> constructor 
 </h1></div>
 
     <section class="multi-line-signature">
       
-      <span class="name ">FlipFlop</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="param-clk"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">clk</span>, </span></li>
-<li><span class="parameter" id="param-d"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">d</span>, {</span></li>
+      <span class="name ">FlipFlop&lt;<wbr><span class="type-parameter">LogicType extends Logic</span>&gt;</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="param-clk"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">clk</span>, </span></li>
+<li><span class="parameter" id="param-d"><span class="type-annotation">LogicType</span> <span class="parameter-name">d</span>, {</span></li>
 <li><span class="parameter" id="param-en"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a>?</span> <span class="parameter-name">en</span>, </span></li>
 <li><span class="parameter" id="param-reset"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a>?</span> <span class="parameter-name">reset</span>, </span></li>
 <li><span class="parameter" id="param-resetValue"><span class="type-annotation">dynamic</span> <span class="parameter-name">resetValue</span>, </span></li>
 <li><span class="parameter" id="param-asyncReset"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">asyncReset</span> = <span class="default-value">false</span>, </span></li>
+<li><span class="parameter" id="param-outputGenerator"><span class="type-annotation">LogicType</span> <span class="parameter-name">outputGenerator</span>({<ol class="parameter-list"> <li><span class="parameter" id="param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">name</span>, </span></li>
+</ol>})?, </span></li>
 <li><span class="parameter" id="param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span> = <span class="default-value">&#39;flipflop&#39;</span>, </span></li>
 </ol>})
     </section>
     
 <section class="desc markdown">
-  <p>Constructs a flip flop which is positive edge triggered on <code>clk</code>.</p>
-<p>When optional <code>en</code> is provided, an additional input will be created for
-flop. If optional <code>en</code> is high or not provided, output will vary as per
-input<code>d</code>. For low <code>en</code>, output remains frozen irrespective of input <code>d</code></p>
-<p>When the optional <code>reset</code> is provided, the flop will be reset active-high.
-If no <code>resetValue</code> is provided, the reset value is always <code>0</code>. Otherwise,
-it will reset to the provided <code>resetValue</code>. The type of <code>resetValue</code> must
-be a valid driver of a <a href="../../rohd/ConditionalAssign-class.html">ConditionalAssign</a> (e.g. <a href="../../rohd/Logic-class.html">Logic</a>, <a href="../../rohd/LogicValue-class.html">LogicValue</a>,
-<a href="https://api.dart.dev/stable/3.13.5/dart-core/int-class.html">int</a>, etc.).</p>
-<p>If <code>asyncReset</code> is true, the <code>reset</code> signal (if provided) will be treated
-as an async reset. If <code>asyncReset</code> is false, the reset signal will be
-treated as synchronous.</p>
+  <p>Constructs a flip-flop preserving <code>LogicType</code>.</p>
 </section>
 
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">FlipFlop(
+  <pre class="language-dart"><code class="language-dart">factory FlipFlop(
   Logic clk,
-  Logic d, {
+  LogicType d, {
   Logic? en,
   Logic? reset,
   dynamic resetValue,
-  this.asyncReset = false,
-  super.name = &#39;flipflop&#39;,
+  bool asyncReset = false,
+  LogicType Function({String? name})? outputGenerator,
+  String name = &#39;flipflop&#39;,
 }) {
   if (clk.width != 1) {
-    throw Exception(&#39;clk must be 1 bit&#39;);
+    throw PortWidthMismatchException(clk, 1);
+  }
+  if (en != null &amp;&amp; en.width != 1) {
+    throw PortWidthMismatchException(en, 1);
+  }
+  if (reset != null &amp;&amp; reset.width != 1) {
+    throw PortWidthMismatchException(reset, 1);
   }
 
-  addInput(_clkName, clk);
-  addInput(_dName, d, width: d.width);
-  addOutput(_qName, width: d.width);
+  final outputSchema = createOperationOutput&lt;LogicType&gt;(
+    width: d.width,
+    name: &#39;q&#39;,
+    operation: &#39;FlipFlop&lt;$LogicType&gt;&#39;,
+    prototype: d,
+    outputGenerator: outputGenerator,
+  );
+  validateOperationSource(d, outputSchema, operation: &#39;FlipFlop d&#39;);
 
-  if (en != null) {
-    addInput(_enName, en);
+  if (resetValue is Logic &amp;&amp; resetValue.width != outputSchema.width) {
+    throw PortWidthMismatchException.equalWidth(resetValue, outputSchema);
+  }
+  if (resetValue is LogicStructure &amp;&amp; outputSchema is LogicStructure) {
+    validateMatchingOperationStructure(
+      resetValue,
+      outputSchema,
+      operation: &#39;FlipFlop reset&#39;,
+    );
   }
 
-  if (reset != null) {
-    addInput(_resetName, reset);
-
-    if (resetValue != null &amp;&amp; resetValue is Logic) {
-      _resetValuePort = addInput(_resetValueName, resetValue, width: d.width);
-    } else {
-      _resetValueConst = LogicValue.of(resetValue ?? 0, width: d.width);
-    }
+  if (LogicType == Logic || d is! LogicStructure) {
+    return _ScalarFlipFlop&lt;LogicType&gt;(
+      clk,
+      d,
+      outputSchema,
+      en: en,
+      reset: reset,
+      resetValue: resetValue,
+      asyncReset: asyncReset,
+      usesOutputGenerator: outputGenerator != null,
+      name: name,
+    );
   }
-
-  _setup();
+  return _StructuredFlipFlop&lt;LogicType&gt;(
+    clk,
+    d,
+    outputSchema,
+    en: en,
+    reset: reset,
+    resetValue: resetValue,
+    asyncReset: asyncReset,
+    name: name,
+  );
 }</code></pre>
 </section>
 
@@ -130,8 +152,8 @@ treated as synchronous.</p>
 <ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/">rohd</a></li>
-    <li><a href="../../rohd/FlipFlop-class.html">FlipFlop</a></li>
-    <li class="self-crumb">FlipFlop.new constructor</li>
+    <li><a href="../../rohd/FlipFlop-class.html">FlipFlop<span class="signature">&lt;<wbr><span class="type-parameter">LogicType extends Logic</span>&gt;</span></a></li>
+    <li class="self-crumb">FlipFlop.new factory constructor</li>
 </ol>
 
     <h5>FlipFlop class</h5>

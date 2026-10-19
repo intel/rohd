@@ -84,19 +84,25 @@ thrown, otherwise.
   if (_isNet) {
     original = addInOut(_inputName, original, width: original.width);
 
-    replicated =
-        LogicNet(name: _outputName, width: newWidth, naming: Naming.unnamed);
+    replicated = LogicNet(
+      name: _outputName,
+      width: newWidth,
+      naming: Naming.unnamed,
+    );
     final internalOut = addInOut(_outputName, replicated, width: newWidth);
 
     for (var i = 0; i &lt; _multiplier; i++) {
-      internalOut.quietlyMergeSubsetTo(original as LogicNet,
-          start: i * original.width);
+      internalOut.quietlyMergeSubsetTo(
+        original as LogicNet,
+        start: i * original.width,
+      );
     }
   } else {
     addInput(_inputName, original, width: original.width);
-    replicated = addOutput(_outputName, width: original.width * _multiplier)
-      ..makeUnassignable(
-          reason: &#39;Output of a gate $this cannot be assigned.&#39;);
+    replicated = addOutput(
+      _outputName,
+      width: original.width * _multiplier,
+    )..makeUnassignable(reason: &#39;Output of a gate $this cannot be assigned.&#39;);
     _setup();
   }
 }</code></pre>

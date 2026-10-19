@@ -26,7 +26,7 @@
   <ol class="breadcrumbs gt-separated dark hidden-xs">
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/">rohd.dart</a></li>
-    <li><a href="../../rohd/FlipFlop-class.html">FlipFlop</a></li>
+    <li><a href="../../rohd/FlipFlop-class.html">FlipFlop<span class="signature">&lt;<wbr><span class="type-parameter">LogicType extends Logic</span>&gt;</span></a></li>
     <li class="self-crumb">constantResetValue property</li>
   </ol>
   <div class="self-name">constantResetValue</div>
@@ -67,14 +67,13 @@
     </section>
     
 <section class="desc markdown">
-  <p>The constant reset value, or <code>null</code> when reset is absent or data-driven.</p>
+  <p>Constant packed reset value, when one is used.</p>
 </section>
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">LogicValue? get constantResetValue =&gt;
-    _reset == null || _resetValuePort != null ? null : _resetValueConst;</code></pre>
+  <pre class="language-dart"><code class="language-dart">LogicValue? get constantResetValue =&gt; _scalarConstantResetValue;</code></pre>
 </section>
 
   </section>
@@ -91,7 +90,7 @@
 <ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/">rohd</a></li>
-    <li><a href="../../rohd/FlipFlop-class.html">FlipFlop</a></li>
+    <li><a href="../../rohd/FlipFlop-class.html">FlipFlop<span class="signature">&lt;<wbr><span class="type-parameter">LogicType extends Logic</span>&gt;</span></a></li>
     <li class="self-crumb">constantResetValue property</li>
 </ol>
 

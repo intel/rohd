@@ -86,9 +86,9 @@ Map&lt;Logic, Logic&gt; processSsa(Map&lt;Logic, Logic&gt; currentMappings,
       context: context);
 
   final newMappings = &lt;Logic, Logic&gt;{...currentMappings};
-  &#47;&#47; if the receiver is an ssa node, then update the mapping
-  if (receiver is SsaLogic) {
-    newMappings[(receiver as SsaLogic).ref] = receiver;
+  &#47;&#47; If the receiver is an SSA node, update the mapping.
+  if (SsaLogic.isSsaProxy(receiver, context: context)) {
+    newMappings[SsaLogic.referenceOf(receiver, context: context)] = receiver;
   }
 
   return newMappings;
