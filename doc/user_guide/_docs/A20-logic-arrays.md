@@ -27,7 +27,44 @@ LogicArray([5, 5, 5], 128);
 
 As long as the total width of a `LogicArray` and another type of `Logic` (including `Logic`, `LogicStructure`, and another `LogicArray`) are the same, assignments and bitwise operations will work in per-element order.  This means you can assign two `LogicArray`s of different dimensions to each other as long as the total width matches.
 
-## Typed arrays
+## Assigning arrays
+
+Use `<=` for continuous assignments outside conditional blocks. You can assign
+an entire array or an individual element:
+
+```dart
+final source = LogicArray([4], 8, name: 'source');
+final copied = LogicArray([4], 8, name: 'copied');
+final updated = LogicArray([4], 8, name: 'updated');
+final replacement = Logic(name: 'replacement', width: 8);
+
+copied <= source;
+updated.elements[0] <= replacement;
+```
+
+Use `<` for assignments inside `Combinational`, just as with ordinary
+`Logic` signals. Whole-array conditional assignments preserve the array's
+element ordering:
+
+```dart
+final select = Logic(name: 'select');
+final sourceA = LogicArray([4], 8, name: 'sourceA');
+final sourceB = LogicArray([4], 8, name: 'sourceB');
+final selected = LogicArray([4], 8, name: 'selected');
+
+Combinational([
+  If(
+    select,
+    then: [selected < sourceA],
+    orElse: [selected < sourceB],
+  ),
+]);
+```
+
+The `elements` list follows array index order, so `array.elements[0]`
+corresponds to `array[0]` in generated SystemVerilog.
+
+## Typed and value-domain arrays
 
 Use `TypedLogicArray<TLogic, TValue>` when every array position has the same
 specialized hardware type and associated semantic value type. `LogicArray` is
@@ -85,6 +122,9 @@ representations.
 
 `valueCodec` is optional only when `TValue` is `LogicValue`. A custom codec
 should decode every four-state value that can appear in its hardware.
+Type-preserving operations require compatible arrays to use the identical
+`valueCodec` instance; reuse a shared codec instance or pass `packed`
+explicitly when intentionally reinterpreting the bits with a different codec.
 `dimensionNames` controls child naming during construction and cloning; it is
 not public axis metadata. See the
 [`TypedLogicArray` API documentation](https://intel.github.io/rohd/rohd/TypedLogicArray-class.html)
@@ -188,6 +228,25 @@ You can declare ports of `Module`s as being arrays (including with some dimensio
 Array ports in generated SystemVerilog will match dimensions (including unpacked) as specified when the port is created.
 
 Use the existing `addTypedInput`, `addTypedOutput`, and `addTypedInOut` methods for `TypedLogicArray` ports. Their generic `LogicType` preserves the complete array subtype, including its hardware element type, semantic value type, codec, net kind, dimensions, and unpacked-dimension configuration. This allows the module to access fields such as `samples.at([1, 2]).data` directly. The established `addInputArray`, `addOutputArray`, and `addInOutArray` APIs remain the concrete `LogicArray` helpers.
+
+## Type-preserving operations
+
+Use generic `Mux`, `FlipFlop`, and `Passthrough` when the output must retain
+the array's concrete type, dimensions, and specialized leaf type:
+
+```dart
+final selected = Mux(select, samplesA, samplesB).out;
+final delayed = FlipFlop(clk, selected, reset: reset).q;
+final forwarded = Passthrough(delayed).out;
+
+final bottomRightData = forwarded.at([1, 2]).data;
+```
+
+The mux inputs must have matching concrete array types and geometry, including
+dimensions, leaf widths, packed/unpacked configuration, and leaf structure.
+Use generic `cases`, `selectIndex`, or `selectFrom` when selecting one complete
+typed array from multiple choices. Specify the array type parameter on
+`Pipeline` when its stages access the array with `p.get(array)`.
 
 ## Elements of arrays
 

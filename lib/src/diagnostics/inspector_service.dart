@@ -118,7 +118,7 @@ class ModuleTree {
         json.encode({'status': 'fail', 'reason': 'module not yet build'});
   }
 
-  /// Returns the module hierarchy as a JSON string.
+  /// Returns the built module hierarchy as JSON.
   @Deprecated('Use hierarchyJson instead.')
   String get hierarchyJSON => hierarchyJson;
 }

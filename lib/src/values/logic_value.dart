@@ -425,8 +425,8 @@ abstract class LogicValue implements Comparable<LogicValue> {
   /// The [stringRepresentation] should only contain bit values (e.g. no `0b`
   /// at the start). The order of the created [LogicValue] will be such that
   /// the `i`th character in [stringRepresentation] corresponds to the
-  /// `length - i - 1`th bit.  That is, the last character of
-  /// [stringRepresentation] will be the 0th bit of the returned [LogicValue].
+  /// `width - i - 1`th bit. That is, the last character in
+  /// [stringRepresentation] is the 0th bit of the returned [LogicValue].
   ///
   /// ```dart
   /// var stringRepresentation = '1x0';

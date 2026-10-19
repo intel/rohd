@@ -244,6 +244,17 @@ void main() {
       expect(orig.clone(name: 'newName').name, 'newName');
     });
 
+    test('whole structure conditional assignment groups leaf assignments', () {
+      final receiver = MyStruct(name: 'receiver');
+      final driver = MyStruct(name: 'driver');
+
+      final assignment = receiver < driver;
+
+      expect(assignment, isA<ConditionalGroup>());
+      final group = assignment as ConditionalGroup;
+      expect(group.conditionals, hasLength(receiver.leafElements.length));
+    });
+
     test('tricky withSet', () {
       // first field has width of 72 so this is the starting point
       // second field has a width of 12

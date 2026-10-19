@@ -14,8 +14,10 @@ import 'package:rohd/rohd.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_cell_mapper.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_module_translation.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_passes.dart';
+import 'package:rohd/src/synthesizers/netlist/netlist_synth_module_definition.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_validation.dart';
 import 'package:rohd/src/synthesizers/utilities/synth_logic.dart';
+import 'package:rohd/src/synthesizers/utilities/synth_module_definition.dart';
 import 'package:rohd/src/synthesizers/utilities/synth_structure_concat.dart';
 import 'package:test/test.dart';
 
@@ -70,6 +72,14 @@ class NotModule extends Module {
   }
 }
 
+/// Splits a packed input across a packed array output.
+class PackedInputArrayOutputModule extends Module {
+  PackedInputArrayOutputModule(Logic data) {
+    data = addInput('data', data, width: 8);
+    addOutputArray('out', dimensions: [4], elementWidth: 2) <= data;
+  }
+}
+
 /// Exercises preservation of user-named internal signals.
 class UserNamedInternalSignalsModule extends Module {
   UserNamedInternalSignalsModule(Logic a, Logic b)
@@ -103,8 +113,8 @@ class FlopModule extends Module {
 }
 
 /// A custom [FlipFlop] used to verify inheritance-aware leaf matching.
-class CustomFlipFlop extends FlipFlop {
-  CustomFlipFlop(super.clk, super.d);
+class CustomFlipFlop extends FlipFlop<Logic> {
+  CustomFlipFlop(super.clk, super.d) : super.scalar();
 }
 
 /// Exercises flip-flops with optional control signals.
@@ -138,6 +148,39 @@ class ControlledFlopModule extends Module {
           resetValue: resetValue ?? constantResetValue,
           asyncReset: asyncReset,
         );
+  }
+}
+
+enum _NetlistResetState { idle, active, done }
+
+LogicEnum<_NetlistResetState> _netlistResetState({String? name}) =>
+    LogicEnum<_NetlistResetState>.withMapping(
+      {
+        _NetlistResetState.idle: 0,
+        _NetlistResetState.active: 2,
+        _NetlistResetState.done: 3,
+      },
+      width: 2,
+      name: name,
+    );
+
+class EnumResetFlopModule extends Module {
+  EnumResetFlopModule(
+    Logic clk,
+    Logic reset, {
+    required bool asyncReset,
+  }) : super(name: 'enumresetflop') {
+    clk = addInput('clk', clk);
+    reset = addInput('reset', reset);
+    final d = addTypedInput('d', _netlistResetState(name: 'd'));
+    final q = flop(
+      clk,
+      d,
+      reset: reset,
+      resetValue: _NetlistResetState.active,
+      asyncReset: asyncReset,
+    );
+    addTypedOutput('q', q.clone).gets(q);
   }
 }
 
@@ -449,6 +492,26 @@ class StructOutputProducerModule extends Module {
     pair.low <= low;
     pair.high <= high ^ Const(1, width: 4);
     addTypedOutput('pair', pair.clone).gets(pair);
+  }
+}
+
+/// Applies structure-preserving primitive operations to an aggregate port.
+class TypedStructOperationModule extends Module {
+  TypedStructOperationModule(
+    Logic clk,
+    Logic control,
+    NetlistPairStruct first,
+    NetlistPairStruct second,
+  ) : super(name: 'typedstructoperation') {
+    clk = addInput('clk', clk);
+    control = addInput('control', control);
+    first = addTypedInput('first', first);
+    second = addTypedInput('second', second);
+
+    final selected = Mux(control, second, first).out;
+    final forwarded = Passthrough(selected).out;
+    final registered = FlipFlop(clk, forwarded);
+    addTypedOutput('out', first.clone) <= registered.q;
   }
 }
 
@@ -853,6 +916,38 @@ void main() {
     expect(replacementIds, isNot(equals(storageIds)));
   });
 
+  test('shared packed-array rewrite applies before backend rendering',
+      () async {
+    final module = PackedInputArrayOutputModule(Logic(width: 8));
+    await module.build();
+
+    void expectSharedRewrite(SynthModuleDefinition definition) {
+      final input =
+          definition.inputs.singleWhere((signal) => signal.name == 'data');
+      final output =
+          definition.outputs.singleWhere((signal) => signal.name == 'out');
+      expect(
+        definition.assignments.any(
+          (assignment) =>
+              identical(assignment.src.resolved, input.resolved) &&
+              identical(assignment.dst.resolved, output.resolved),
+        ),
+        isTrue,
+      );
+
+      final subsets = definition.subModuleInstantiations
+          .where((instantiation) => instantiation.module is BusSubset)
+          .toList();
+      expect(subsets, isNotEmpty);
+      expect(
+          subsets.every((instantiation) => !instantiation.needsInstantiation),
+          isTrue);
+    }
+
+    expectSharedRewrite(SynthModuleDefinition(module));
+    expectSharedRewrite(NetlistSynthModuleDefinition(module));
+  });
+
   for (final unpackedDimensions in [0, 2]) {
     test('split packed child drives permuted array bits $unpackedDimensions',
         () async {
@@ -969,6 +1064,45 @@ void main() {
       final clk = SimpleClockGenerator(10).clk;
       final json = await _synthToMap(FlopModule(clk, Logic(width: 8)));
       expect(_hasCellType(json, r'$dff'), isTrue);
+    });
+
+    test('typed structure operations map to aggregate primitive cells',
+        () async {
+      final module = TypedStructOperationModule(
+        SimpleClockGenerator(10).clk,
+        Logic(),
+        NetlistPairStruct(name: 'first'),
+        NetlistPairStruct(name: 'second'),
+      );
+      final json = await _synthToMap(module);
+      final moduleDef =
+          _modules(json)[module.definitionName] as Map<String, dynamic>;
+      final cells = _cells(moduleDef).values.cast<Map<String, dynamic>>();
+
+      for (final cellType in [r'$mux', r'$buf', r'$dff']) {
+        final matchingCells =
+            cells.where((candidate) => candidate['type'] == cellType).toList();
+        expect(
+          matchingCells,
+          hasLength(1),
+          reason: cells.map((candidate) => candidate['type']).join(', '),
+        );
+        final cell = matchingCells.single;
+        final parameters = cell['parameters'] as Map<String, dynamic>;
+        final connections = cell['connections'] as Map<String, dynamic>;
+        if (cellType == r'$buf') {
+          expect(parameters['A_WIDTH'], 8);
+          expect(parameters['Y_WIDTH'], 8);
+          expect(connections['A'] as List, hasLength(8));
+          expect(connections['Y'] as List, hasLength(8));
+        } else {
+          expect(parameters['WIDTH'], 8);
+          final dataPorts = cellType == r'$mux' ? ['A', 'B', 'Y'] : ['D', 'Q'];
+          for (final port in dataPorts) {
+            expect(connections[port] as List, hasLength(8));
+          }
+        }
+      }
     });
 
     test('FlipFlop controls map to standard Yosys register cells', () async {
@@ -1129,6 +1263,41 @@ void main() {
         (dff['port_directions'] as Map<String, dynamic>).keys.toSet(),
         equals({'CLK', 'D', 'EN', 'Q'}),
       );
+    });
+
+    test('LogicEnum constant resets preserve mapped netlist parameters',
+        () async {
+      final cases = [
+        (
+          asyncReset: false,
+          type: r'$sdff',
+          parameter: 'SRST_VALUE',
+        ),
+        (
+          asyncReset: true,
+          type: r'$adff',
+          parameter: 'ARST_VALUE',
+        ),
+      ];
+
+      for (final testCase in cases) {
+        final module = EnumResetFlopModule(
+          SimpleClockGenerator(10).clk,
+          Logic(),
+          asyncReset: testCase.asyncReset,
+        );
+        final json = await _synthToMap(module);
+        final moduleDef =
+            _modules(json)[module.definitionName] as Map<String, dynamic>;
+        final cell =
+            _cells(moduleDef).values.cast<Map<String, dynamic>>().singleWhere(
+                  (candidate) => candidate['type'] == testCase.type,
+                );
+        final parameters = cell['parameters'] as Map<String, dynamic>;
+
+        expect(parameters['WIDTH'], 2);
+        expect(parameters[testCase.parameter], '10');
+      }
     });
 
     test(r'Add maps to $add cell', () async {

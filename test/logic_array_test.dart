@@ -7,13 +7,10 @@
 // 2023 May 2
 // Author: Max Korbel <max.korbel@intel.com>
 
-import 'dart:math';
-
 import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:rohd/src/utilities/sv_cleaner.dart';
-import 'package:rohd/src/utilities/web.dart';
 import 'package:test/test.dart';
 
 class _TypedInputModule<T extends Logic> extends Module {
@@ -580,14 +577,14 @@ class PartialArrayAssignTop extends Module {
 
 void main() {
   List<Vector> passthroughVectors(int width) {
-    const randWidth = 23;
-    final rand = Random(1234);
-    final values = List.generate(
-        10,
-        (index) =>
-            LogicValue.ofInt(rand.nextInt(oneSllBy(randWidth)), randWidth)
-                .replicate(width ~/ randWidth + 1)
-                .getRange(0, width));
+    final values = [
+      LogicValue.ofInt(0, width),
+      LogicValue.filled(width, LogicValue.one),
+      LogicValue.ofString([
+        for (var bit = width - 1; bit >= 0; bit--)
+          if (bit.isEven) '1' else '0',
+      ].join()),
+    ];
     return [
       for (final value in values) Vector({'laIn': value}, {'laOut': value})
     ];
@@ -881,7 +878,7 @@ void main() {
 
     group('simple', () {
       test('single dimension', () async {
-        final mod = SimpleLAPassthrough(LogicArray([3], 8));
+        final mod = SimpleLAPassthrough(LogicArray([3], 3));
         await testArrayPassthrough(mod);
       });
 
@@ -891,12 +888,12 @@ void main() {
       });
 
       test('2 dimensions', () async {
-        final mod = SimpleLAPassthrough(LogicArray([3, 2], 8));
+        final mod = SimpleLAPassthrough(LogicArray([3, 2], 3));
         await testArrayPassthrough(mod);
       });
 
       test('3 dimensions', () async {
-        final mod = SimpleLAPassthrough(LogicArray([3, 2, 3], 8));
+        final mod = SimpleLAPassthrough(LogicArray([3, 2, 2], 3));
         await testArrayPassthrough(mod);
       });
 
@@ -941,7 +938,7 @@ void main() {
       });
 
       test('sub-array', () async {
-        final superArray = LogicArray([4, 3, 2], 8);
+        final superArray = LogicArray([3, 2, 2], 3);
         final subArray = superArray.elements[0] as LogicArray;
         final mod = SimpleLAPassthrough(subArray);
         await testArrayPassthrough(mod);
@@ -949,8 +946,8 @@ void main() {
 
       test('3 dimensions with interface', () async {
         final mod = LAPassthroughWithIntf(LAPassthroughIntf(
-          dimensions: [3, 2, 3],
-          elementWidth: 3,
+          dimensions: [3, 2, 2],
+          elementWidth: 2,
           numUnpackedDimensions: 0,
         ));
 
@@ -958,29 +955,29 @@ void main() {
 
         // ensure ports with interface are still an array
         final sv = mod.dumpSystemVerilog();
-        expect(sv, contains('input logic [2:0][1:0][2:0][2:0] laIn'));
-        expect(sv, contains('output logic [2:0][1:0][2:0][2:0] laOut'));
+        expect(sv, contains('input logic [2:0][1:0][1:0][1:0] laIn'));
+        expect(sv, contains('output logic [2:0][1:0][1:0][1:0] laOut'));
       });
 
       testWithVerilator(
           '3 dimensions with interface and unpacked',
           () => LAPassthroughWithIntf(LAPassthroughIntf(
-                dimensions: [3, 2, 3],
-                elementWidth: 3,
+                dimensions: [3, 2, 2],
+                elementWidth: 2,
                 numUnpackedDimensions: 1,
               )), (mod) async {
         await testArrayPassthrough(mod, noSvSim: true);
 
         // ensure ports with interface are still an array
         final sv = mod.dumpSystemVerilog();
-        expect(sv, contains('input logic [1:0][2:0][2:0] laIn [2:0]'));
-        expect(sv, contains('output logic [1:0][2:0][2:0] laOut [2:0]'));
+        expect(sv, contains('input logic [1:0][1:0][1:0] laIn [2:0]'));
+        expect(sv, contains('output logic [1:0][1:0][1:0] laOut [2:0]'));
       });
     });
 
     group('pack and unpack', () {
       test('3d', () async {
-        final mod = PackAndUnpackPassthrough(LogicArray([5, 3, 2], 8));
+        final mod = PackAndUnpackPassthrough(LogicArray([3, 2, 2], 3));
         await testArrayPassthrough(mod, checkNoSwizzle: false);
       });
 
@@ -995,13 +992,13 @@ void main() {
 
     group('pack and unpack with arrays', () {
       test('2d', () async {
-        final mod = PackAndUnpackWithArraysPassthrough(LogicArray([3, 2], 8));
+        final mod = PackAndUnpackWithArraysPassthrough(LogicArray([3, 2], 3));
         await testArrayPassthrough(mod, checkNoSwizzle: false);
       });
 
       test('3d', () async {
         final mod =
-            PackAndUnpackWithArraysPassthrough(LogicArray([4, 3, 2], 8));
+            PackAndUnpackWithArraysPassthrough(LogicArray([3, 2, 2], 3));
         await testArrayPassthrough(mod, checkNoSwizzle: false);
       });
 
@@ -1017,31 +1014,31 @@ void main() {
 
     group('change array dimensions around and back', () {
       test('3d', () async {
-        final mod = RearrangeArraysPassthrough(LogicArray([4, 3, 2], 8));
+        final mod = RearrangeArraysPassthrough(LogicArray([3, 2, 2], 3));
         await testArrayPassthrough(mod);
       });
 
       testWithVerilator(
           '3d unpacked',
           () => RearrangeArraysPassthrough(
-              LogicArray([4, 3, 2], 3, numUnpackedDimensions: 2),
+              LogicArray([3, 2, 2], 3, numUnpackedDimensions: 2),
               intermediateUnpacked: 1), (mod) async {
         // unpacked array assignment not fully supported in iverilog
         await testArrayPassthrough(mod, noSvSim: true);
 
         final sv = mod.dumpSystemVerilog();
-        expect(sv.contains('logic [2:0][3:0][2:0] intermediate [1:0]'), true);
+        expect(sv.contains('logic [1:0][2:0][2:0] intermediate [1:0]'), true);
       });
     });
 
     group('different port and input widths', () {
       test('array param mismatch', () async {
-        final i = LogicArray([3, 2], 8, numUnpackedDimensions: 1);
-        final o = LogicArray([3, 2], 8, numUnpackedDimensions: 1);
+        final i = LogicArray([3, 2], 3, numUnpackedDimensions: 1);
+        final o = LogicArray([3, 2], 3, numUnpackedDimensions: 1);
         final mod = SimpleLAPassthrough(
           i,
           dimOverride: [1, 3],
-          elemWidthOverride: 16,
+          elemWidthOverride: 6,
           numUnpackedOverride: 0,
         );
         o <= mod.laOut;
@@ -1049,12 +1046,12 @@ void main() {
       });
 
       test('logic into array', () async {
-        final i = Logic(width: 3 * 2 * 8);
-        final o = Logic(width: 3 * 2 * 8);
+        final i = Logic(width: 3 * 2 * 3);
+        final o = Logic(width: 3 * 2 * 3);
         final mod = SimpleLAPassthroughLogic(
           i,
           dimensions: [1, 3],
-          elementWidth: 16,
+          elementWidth: 6,
           numUnpackedDimensions: 0,
         );
         o <= mod.laOut;
@@ -1064,7 +1061,7 @@ void main() {
 
     group('name collisions', () {
       test('3d', () async {
-        final mod = ArrayNameConflicts(LogicArray([4, 3, 2], 8));
+        final mod = ArrayNameConflicts(LogicArray([3, 2, 2], 3));
         await testArrayPassthrough(mod, checkNoSwizzle: false);
       });
 
@@ -1080,7 +1077,7 @@ void main() {
 
     group('simple hierarchy', () {
       test('3d', () async {
-        final mod = SimpleArraysAndHierarchy(LogicArray([2], 8));
+        final mod = SimpleArraysAndHierarchy(LogicArray([2], 3));
         await testArrayPassthrough(mod);
         final sv = mod.dumpSystemVerilog();
         expect(sv, contains('SimpleLAPassthrough  simple_la_passthrough'));
@@ -1099,7 +1096,7 @@ void main() {
 
     group('fancy hierarchy', () {
       test('3d', () async {
-        final mod = FancyArraysAndHierarchy(LogicArray([4, 3, 2], 8));
+        final mod = FancyArraysAndHierarchy(LogicArray([3, 2, 2], 3));
         await testArrayPassthrough(mod, checkNoSwizzle: false);
 
         final sv = mod.dumpSystemVerilog();
@@ -1120,7 +1117,7 @@ void main() {
 
     group('conditionals', () {
       test('3 dimensions conditional assignment', () async {
-        final mod = CondAssignArray(LogicArray([3, 2, 3], 8));
+        final mod = CondAssignArray(LogicArray([3, 2, 2], 3));
         await testArrayPassthrough(mod);
       });
 

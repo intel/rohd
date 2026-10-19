@@ -34,6 +34,37 @@
 - Netlist JSON format is now `0.1.0`, preserving enum types and encodings on retained netnames using Yosys-style attributes, including constant-driven enum uses (<https://github.com/intel/rohd/pull/599>).
 - Refined the typed-array hierarchy so `LogicArray` directly specializes `TypedLogicArray<Logic, LogicValue>`, and strengthened custom `TypedLogicArray` cloning to preserve runtime types, codecs, unpacked dimensions, and constructor-only naming prefixes without exposing them as public axis metadata (<https://github.com/intel/rohd/pull/686>).
 - Expanded `TypedLogicArray` support for recursively nested typed and ordinary arrays, structures containing array fields, mixed packed/unpacked dimensions, structured net and inout ports, and recursive netlist type metadata. Fixed generated SystemVerilog for array-valued elements to use packed offsets consistent with declarations and module-port connections, avoiding invalid chained selections in Icarus and Verilator (<https://github.com/intel/rohd/pull/686>).
+- Preserved configured SystemVerilog output object types for nested arrays and added the opt-in `iverilogWorkaroundForUnpackedArrayVariables` setting for child-driven unpacked array variables that remain unknown in Icarus Verilog 12.0 (<https://github.com/intel/rohd/pull/686>).
+- `LogicArray` remains source-compatible for construction and operations. Its `value` and `previousValue` now return shape-carrying `LogicValueArray` instances, which remain `LogicValue` subtypes; code relying on their exact concrete runtime types may observe this behavior change (<https://github.com/intel/rohd/pull/686>).
+- Added support for structures with constant leaves when their `clone()` implementation produces driveable fields, preserving domain-specific constant structures through generic operations.
+- Integrated `LogicEnum` with generic operations. Enum mappings are preserved through typed operation results, enum members can be used as `cases` keys, and incompatible enum mappings are rejected.
+- Fixed generic operations to reject incompatible `LogicEnum` mappings inside structures and typed arrays, and to preserve mapped enum constant reset values in netlist register cells.
+- `Pipeline.get`, `PipelineStageInfo.get`, and `PipelineStageInfo.getAbs` now preserve each identifier's concrete type through stage reconstruction and SSA, allowing structures, typed arrays, enums, and scalar signals in one pipeline. `ReadyValidPipeline` retains its established multi-signal API and gains the same per-identifier typed access without separate payload pipeline classes.
+- Preserved aggregate structure assignment metadata through synthesis and netlist generation.
+- Fixed SystemVerilog synthesis of internally computed packed logic assigned to packed-array outputs, retaining required intermediate declarations.
+- Upgraded `Mux`, `FlipFlop`, `Passthrough`, `mux`, `flop`, `cases`,
+  `selectIndex`, and `selectFrom` to preserve compatible concrete `Logic`
+  subtypes, including nested `LogicArray` and `TypedLogicArray` boundaries.
+  Removed the parallel structure-only operation APIs.
+- **Migration:** plain `Const` and `LogicNet` sources no longer infer
+  driveable outputs for operations that construct hardware. Request
+  `<Logic>`, for example `flop<Logic>(clk, Const(1))`, to normalize them.
+  Use an operation `outputGenerator` when an explicit output representation is
+  required, including mixed packed and structured `cases` branches.
+- **Migration:** type-preserving operations on `TypedLogicArray` operands now
+  require the identical `valueCodec` instance. Reuse a shared codec or cross
+  an explicit `packed` boundary to reinterpret compatible bits.
+- **Breaking:** Removed compatibility APIs deprecated before `0.6.11`. Use the
+  canonical `ExternalSystemVerilogModule`, `FiniteStateMachine`, `Sequential`,
+  `If.block`, `Logic.port`, `LogicValue` `of...` constructors, `SystemVerilog`,
+  `SynthFileContents`, and instance `clone()` APIs. Apply interface port names
+  at connection time with `uniquify`; use canonical operation outputs such as
+  `out` and `sum`; and access signal values through `value`. Compatibility APIs
+  first deprecated in `0.6.11` remain available, including `generateSynth`,
+  `WaveDumper`, `hierarchyJSON`, and `contentsByName`.
+- Added public `cloneTyped()` and `namedTyped()` conveniences for retaining a
+  receiver's static type. `Const.cloneTyped()` remains a literal clone;
+  `Const.namedTyped()` is rejected because a named alias must be driveable.
 - Added configurable waveform timescales, recording windows, and output overwrite policies (<https://github.com/intel/rohd/pull/671>).
 - Added opt-in `DebugSession` setup for source tracing, netlist and FLC services, and live waveform recording (<https://github.com/intel/rohd/pull/707>).
 - Expanded reusable `rohd_devtools_widgets` components for hierarchy browsing, signal formatting, bit expansion, overlays, help, capture, and cross-probing (<https://github.com/intel/rohd/pull/736>).

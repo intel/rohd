@@ -37,6 +37,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
     _expandNestedUnpackedArrayAssignments();
     _inlinePackedRangesIntoSubmoduleInputs();
     _collapseAggregateConnections();
+    super.process();
     _collapseWholeNetBuses();
     _forwardPassthroughElementsIntoInlineables();
     _replaceNetConnections();
@@ -465,7 +466,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
       // sources that are tied through a pass-through net bus rather than via a
       // direct assignment (see [_traceNetSubsetSource]).
       final netSubsets = _netSubsetLookups();
-      final logicSubsets = _logicSubsetLookups();
+      final logicSubsets = logicSubsetLookups();
 
       // Count how many times each array [SynthLogic] is used "as a whole",
       // along with where (a submodule port mapping is the only use we can
@@ -592,7 +593,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
             aggregateLogic.elementWidth == 1 &&
             aggregateLogic.numUnpackedDimensions == 0;
         final packedSubsetSource = isPackedBitArray
-            ? _packedLogicSubsetSource(
+            ? packedLogicSubsetSource(
                 elementLogics,
                 logicSubsets,
                 expectedWidth: agg.width,
@@ -734,70 +735,6 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
       }
       assignments.removeWhere(removedAssignments.contains);
     }
-  }
-
-  /// Indexes non-net [BusSubset] views by their resolved subset output.
-  Map<SynthLogic, List<_LogicSubsetView>> _logicSubsetLookups() {
-    final bySubset = <SynthLogic, List<_LogicSubsetView>>{};
-    for (final instantiation in subModuleInstantiations) {
-      instantiation as SystemVerilogSynthSubModuleInstantiation;
-      final subsetModule = instantiation.module;
-      if (subsetModule is! BusSubset || subsetModule.original.isNet) {
-        continue;
-      }
-      final original =
-          instantiation.inputMapping[subsetModule.original.name]?.resolved;
-      final subset =
-          instantiation.outputMapping[subsetModule.subset.name]?.resolved;
-      if (original == null || subset == null) {
-        continue;
-      }
-      final view = (
-        inst: instantiation,
-        original: original,
-        subset: subset,
-        start: subsetModule.startIndex,
-        end: subsetModule.endIndex,
-      );
-      bySubset.putIfAbsent(subset, () => []).add(view);
-    }
-    return bySubset;
-  }
-
-  /// Reconstructs one fully covered packed source from ordered element subset
-  /// mappings, returning the source and helper instantiations to clear.
-  ({
-    SynthLogic source,
-    Set<SystemVerilogSynthSubModuleInstantiation> subsets,
-  })? _packedLogicSubsetSource(
-    List<SynthLogic?> elements,
-    Map<SynthLogic, List<_LogicSubsetView>> subsetsByOutput, {
-    required int expectedWidth,
-  }) {
-    SynthLogic? source;
-    var nextBit = 0;
-    final subsets = <SystemVerilogSynthSubModuleInstantiation>{};
-    for (final element in elements) {
-      if (element == null) {
-        return null;
-      }
-      final view = subsetsByOutput[element]?.singleOrNull;
-      if (view == null ||
-          view.start != nextBit ||
-          view.end != nextBit + element.width - 1 ||
-          (source != null && source != view.original)) {
-        return null;
-      }
-      source ??= view.original;
-      subsets.add(view.inst);
-      nextBit += element.width;
-    }
-    if (source == null ||
-        source.width != expectedWidth ||
-        nextBit != expectedWidth) {
-      return null;
-    }
-    return (source: source, subsets: subsets);
   }
 
   /// Builds resolved lookups over every net [BusSubset] instantiation: a list
@@ -1617,16 +1554,6 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
 /// and `subset` signals and the (non-reversed) `[start, end]` inclusive bit
 /// range of the slice on the original bus.
 typedef _NetSubsetView = ({
-  SystemVerilogSynthSubModuleInstantiation inst,
-  SynthLogic original,
-  SynthLogic subset,
-  int start,
-  int end,
-});
-
-/// A resolved view of a non-net [BusSubset] used to reconstruct a packed bus
-/// from an array input's element mappings.
-typedef _LogicSubsetView = ({
   SystemVerilogSynthSubModuleInstantiation inst,
   SynthLogic original,
   SynthLogic subset,

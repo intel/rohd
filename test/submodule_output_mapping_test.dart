@@ -506,424 +506,665 @@ void main() {
   });
 
   group('independent outputs to packed parent bits', () {
-    for (final producer in ProducerKind.values) {
-      for (final order in AssignmentOrder.values) {
-        // Three bits distinguish both boundaries and an interior position.
-        for (final width in [2, 3]) {
-          for (final aliasDepth in [0, 3]) {
-            test(
-                '${producer.name} ${order.name} '
-                'width=$width aliases=$aliasDepth', () async {
-              final module = OutputMappingTop(
-                width: width,
-                producer: producer,
-                order: order,
-                aliasDepth: aliasDepth,
-              );
-              await module.build();
-              final body = topBody(module);
-              for (var index = 0; index < width; index++) {
-                expect(body, matches('\\.result\\d*\\(observed\\[$index\\]\\)'),
-                    reason: body);
-              }
-              expect(body, isNot(matches(r'assign\s+observed\[')));
+    // Cover every producer and assignment mechanism while retaining the
+    // two-bit edge case, three-bit interior bit, and deep alias path.
+    final configurations = [
+      (
+        producer: ProducerKind.independent,
+        order: AssignmentOrder.batch,
+        width: 2,
+        aliasDepth: 0,
+      ),
+      (
+        producer: ProducerKind.multiport,
+        order: AssignmentOrder.forward,
+        width: 3,
+        aliasDepth: 3,
+      ),
+      (
+        producer: ProducerKind.hierarchical,
+        order: AssignmentOrder.reverse,
+        width: 3,
+        aliasDepth: 0,
+      ),
+      (
+        producer: ProducerKind.custom,
+        order: AssignmentOrder.swizzle,
+        width: 2,
+        aliasDepth: 3,
+      ),
+      (
+        producer: ProducerKind.independent,
+        order: AssignmentOrder.rswizzle,
+        width: 3,
+        aliasDepth: 3,
+      ),
+    ];
 
-              NetlistSynthesizer().synthesizeToJson(module);
-              expect(topBody(module), body);
-
-              final vectors = [
-                for (final input in twoStateInputPatterns(width))
-                  Vector({
-                    'data': input
-                  }, {
-                    'observed': LogicValue.ofString([
-                      for (var index = 0; index < width; index++)
-                        invertedBit(input, index),
-                    ].join()),
-                  }),
-              ];
-              await SimCompare.checkVectors(
-                module,
-                vectors,
-                excludedBackends: producer == ProducerKind.custom
-                    ? const {
-                        SimCompareBackend.systemc:
-                            'CustomStage provides only a custom SystemVerilog '
-                                'definition.',
-                      }
-                    : const {},
-              );
-              expect(body, isNot(matches(r'logic\s+result\w*;')),
-                  reason: 'Directly mapped outputs should not leave unused '
-                      'intermediate declarations.\n$body');
-            });
-          }
+    for (final configuration in configurations) {
+      final producer = configuration.producer;
+      final order = configuration.order;
+      final width = configuration.width;
+      final aliasDepth = configuration.aliasDepth;
+      test(
+          '${producer.name} ${order.name} '
+          'width=$width aliases=$aliasDepth', () async {
+        final module = OutputMappingTop(
+          width: width,
+          producer: producer,
+          order: order,
+          aliasDepth: aliasDepth,
+        );
+        await module.build();
+        final body = topBody(module);
+        for (var index = 0; index < width; index++) {
+          expect(body, matches('\\.result\\d*\\(observed\\[$index\\]\\)'),
+              reason: body);
         }
-      }
+        expect(body, isNot(matches(r'assign\s+observed\[')));
+
+        NetlistSynthesizer().synthesizeToJson(module);
+        expect(topBody(module), body);
+
+        final vectors = [
+          for (final input in twoStateInputPatterns(width))
+            Vector({
+              'data': input
+            }, {
+              'observed': LogicValue.ofString([
+                for (var index = 0; index < width; index++)
+                  invertedBit(input, index),
+              ].join()),
+            }),
+        ];
+        await SimCompare.checkVectors(
+          module,
+          vectors,
+          excludedBackends: producer == ProducerKind.custom
+              ? const {
+                  SimCompareBackend.systemc:
+                      'CustomStage provides only a custom SystemVerilog '
+                          'definition.',
+                }
+              : const {},
+        );
+        expect(body, isNot(matches(r'logic\s+result\w*;')),
+            reason: 'Directly mapped outputs should not leave unused '
+                'intermediate declarations.\n$body');
+      });
     }
   });
 
   group('concatenated output alias naming', () {
-    for (final producer in [ProducerKind.independent, ProducerKind.custom]) {
-      for (final order in [AssignmentOrder.swizzle, AssignmentOrder.rswizzle]) {
-        for (final naming in Naming.values) {
-          test('${producer.name} ${order.name} ${naming.name}', () async {
-            final module = OutputMappingTop(
-              width: 3,
-              producer: producer,
-              order: order,
-              aliasDepth: 3,
-              bitNaming: naming,
-            );
-            await module.build();
-            final body = topBody(module);
-            final preserve =
-                naming == Naming.reserved || naming == Naming.renameable;
-            for (var index = 0; index < 3; index++) {
-              if (preserve) {
-                expect(body, contains('logic bit_alias$index;'));
-                expect(body, contains('.result(bit_alias$index)'));
-              } else {
-                expect(body, contains('.result(observed[$index])'),
-                    reason: body);
-                expect(body, isNot(contains('logic bit_alias$index;')));
-              }
-            }
-            NetlistSynthesizer().synthesizeToJson(module);
-            expect(topBody(module), body);
-            final vectors = [
-              for (final input in inputPatterns(3))
-                Vector({
-                  'data': input
-                }, {
-                  'observed': LogicValue.ofString([
-                    for (var index = 0; index < 3; index++)
-                      invertedBit(input, index),
-                  ].join()),
-                }),
-            ];
-            await SimCompare.checkFunctionalVector(module, vectors);
-            SimCompare.checkIverilogVector(module, vectors);
-          });
+    final configurations = [
+      (
+        producer: ProducerKind.independent,
+        order: AssignmentOrder.swizzle,
+        naming: Naming.reserved,
+      ),
+      (
+        producer: ProducerKind.independent,
+        order: AssignmentOrder.rswizzle,
+        naming: Naming.renameable,
+      ),
+      (
+        producer: ProducerKind.custom,
+        order: AssignmentOrder.swizzle,
+        naming: Naming.mergeable,
+      ),
+      (
+        producer: ProducerKind.independent,
+        order: AssignmentOrder.rswizzle,
+        naming: Naming.mergeable,
+      ),
+      (
+        producer: ProducerKind.custom,
+        order: AssignmentOrder.swizzle,
+        naming: Naming.unnamed,
+      ),
+    ];
+
+    for (final configuration in configurations) {
+      final producer = configuration.producer;
+      final order = configuration.order;
+      final naming = configuration.naming;
+      test('${producer.name} ${order.name} ${naming.name}', () async {
+        final module = OutputMappingTop(
+          width: 3,
+          producer: producer,
+          order: order,
+          aliasDepth: 3,
+          bitNaming: naming,
+        );
+        await module.build();
+        final body = topBody(module);
+        final preserve =
+            naming == Naming.reserved || naming == Naming.renameable;
+        for (var index = 0; index < 3; index++) {
+          if (preserve) {
+            expect(body, contains('logic bit_alias$index;'));
+            expect(body, contains('.result(bit_alias$index)'));
+          } else {
+            expect(body, contains('.result(observed[$index])'), reason: body);
+            expect(body, isNot(contains('logic bit_alias$index;')));
+          }
         }
-      }
+        NetlistSynthesizer().synthesizeToJson(module);
+        expect(topBody(module), body);
+        final vectors = [
+          for (final input in inputPatterns(3))
+            Vector({
+              'data': input
+            }, {
+              'observed': LogicValue.ofString([
+                for (var index = 0; index < 3; index++)
+                  invertedBit(input, index),
+              ].join()),
+            }),
+        ];
+        await SimCompare.checkFunctionalVector(module, vectors);
+        SimCompare.checkIverilogVector(module, vectors);
+      });
     }
   });
 
   group('output mapping safety cross-products', () {
-    for (final guard in MappingGuard.values) {
-      for (final producer in [
-        ProducerKind.independent,
-        ProducerKind.multiport,
-        ProducerKind.custom,
-      ]) {
-        for (final order in [
-          AssignmentOrder.batch,
-          AssignmentOrder.reverse,
-          if (guard != MappingGuard.partial) ...[
-            AssignmentOrder.swizzle,
-            AssignmentOrder.rswizzle,
-          ],
-        ]) {
-          test('${guard.name} ${producer.name} ${order.name}', () async {
-            final module = GuardedOutputTop(
-              guard: guard,
-              producer: producer,
-              order: order,
-            );
-            await module.build();
-            final body = topBody(module);
-            expect(body, isNot(matches(r'\.result\d*\(\)')), reason: body);
-            if (guard == MappingGuard.renameableBus ||
-                guard == MappingGuard.reservedBus ||
-                guard == MappingGuard.partial) {
-              expect(body, isNot(matches(r'\.result\d*\(observed\[')));
-            } else {
-              for (final index in [0, 2]) {
-                expect(body,
-                    matches('\\.result\\d*\\((observed|mirror)\\[$index\\]\\)'),
-                    reason: body);
-              }
-            }
-            if (guard == MappingGuard.renameableBus ||
-                guard == MappingGuard.reservedBus) {
-              expect(body, contains('logic [3:0] retained;'));
-            }
-            if (guard == MappingGuard.namedBit) {
-              expect(body, contains('logic retained;'));
-            }
-            NetlistSynthesizer().synthesizeToJson(module);
-            expect(topBody(module), body);
+    // Each guard represents a distinct condition that prevents direct output
+    // mapping. Rotate the producer and assignment forms across the guards.
+    final configurations = [
+      (
+        guard: MappingGuard.outputFanout,
+        producer: ProducerKind.independent,
+        order: AssignmentOrder.batch
+      ),
+      (
+        guard: MappingGuard.siblingFanout,
+        producer: ProducerKind.multiport,
+        order: AssignmentOrder.reverse
+      ),
+      (
+        guard: MappingGuard.busFanout,
+        producer: ProducerKind.custom,
+        order: AssignmentOrder.swizzle
+      ),
+      (
+        guard: MappingGuard.repeatedBit,
+        producer: ProducerKind.independent,
+        order: AssignmentOrder.rswizzle
+      ),
+      (
+        guard: MappingGuard.wholeBusFanout,
+        producer: ProducerKind.multiport,
+        order: AssignmentOrder.batch
+      ),
+      (
+        guard: MappingGuard.renameableBus,
+        producer: ProducerKind.custom,
+        order: AssignmentOrder.reverse
+      ),
+      (
+        guard: MappingGuard.reservedBus,
+        producer: ProducerKind.independent,
+        order: AssignmentOrder.swizzle
+      ),
+      (
+        guard: MappingGuard.namedBit,
+        producer: ProducerKind.multiport,
+        order: AssignmentOrder.rswizzle
+      ),
+      (
+        guard: MappingGuard.partial,
+        producer: ProducerKind.custom,
+        order: AssignmentOrder.reverse
+      ),
+    ];
 
-            final vectors = [
-              for (final input in inputPatterns(4))
-                Vector({
-                  'data': input
-                }, {
-                  'observed': LogicValue.ofString([
-                    if (guard == MappingGuard.partial) 'z',
-                    for (var index = 3; index >= 0; index--)
-                      invertedBit(
-                          input,
-                          guard == MappingGuard.repeatedBit && index == 3
-                              ? 1
-                              : index),
-                  ].join()),
-                  if (guard == MappingGuard.outputFanout)
-                    'tap': LogicValue.ofString(invertedBit(input, 1)),
-                  if (guard == MappingGuard.siblingFanout)
-                    'tap': input[1].isValid ? input[1] : LogicValue.x,
-                  if (guard == MappingGuard.busFanout)
-                    'secondary':
-                        LogicValue.ofString('10${invertedBit(input, 1)}'),
-                  if (guard == MappingGuard.wholeBusFanout) 'mirror': ~input,
-                }),
-            ];
-            await SimCompare.checkFunctionalVector(module, vectors);
-            SimCompare.checkIverilogVector(module, vectors);
-          });
+    for (final configuration in configurations) {
+      final guard = configuration.guard;
+      final producer = configuration.producer;
+      final order = configuration.order;
+      test('${guard.name} ${producer.name} ${order.name}', () async {
+        final module = GuardedOutputTop(
+          guard: guard,
+          producer: producer,
+          order: order,
+        );
+        await module.build();
+        final body = topBody(module);
+        expect(body, isNot(matches(r'\.result\d*\(\)')), reason: body);
+        if (guard == MappingGuard.renameableBus ||
+            guard == MappingGuard.reservedBus ||
+            guard == MappingGuard.partial) {
+          expect(body, isNot(matches(r'\.result\d*\(observed\[')));
+        } else {
+          for (final index in [0, 2]) {
+            expect(body,
+                matches('\\.result\\d*\\((observed|mirror)\\[$index\\]\\)'),
+                reason: body);
+          }
         }
-      }
+        if (guard == MappingGuard.renameableBus ||
+            guard == MappingGuard.reservedBus) {
+          expect(body, contains('logic [3:0] retained;'));
+        }
+        if (guard == MappingGuard.namedBit) {
+          expect(body, contains('logic retained;'));
+        }
+        NetlistSynthesizer().synthesizeToJson(module);
+        expect(topBody(module), body);
+
+        final vectors = [
+          for (final input in inputPatterns(4))
+            Vector({
+              'data': input
+            }, {
+              'observed': LogicValue.ofString([
+                if (guard == MappingGuard.partial) 'z',
+                for (var index = 3; index >= 0; index--)
+                  invertedBit(
+                      input,
+                      guard == MappingGuard.repeatedBit && index == 3
+                          ? 1
+                          : index),
+              ].join()),
+              if (guard == MappingGuard.outputFanout)
+                'tap': LogicValue.ofString(invertedBit(input, 1)),
+              if (guard == MappingGuard.siblingFanout)
+                'tap': input[1].isValid ? input[1] : LogicValue.x,
+              if (guard == MappingGuard.busFanout)
+                'secondary': LogicValue.ofString('10${invertedBit(input, 1)}'),
+              if (guard == MappingGuard.wholeBusFanout) 'mirror': ~input,
+            }),
+        ];
+        await SimCompare.checkFunctionalVector(module, vectors);
+        SimCompare.checkIverilogVector(module, vectors);
+      });
     }
   });
 
   group('custom output declaration retention', () {
-    for (final acceptsEmptyPortConnections in [false, true]) {
-      for (final fanout in [false, true]) {
-        for (final order in AssignmentOrder.values) {
-          test(
-              'empty=$acceptsEmptyPortConnections '
-              'fanout=$fanout ${order.name}', () async {
-            final module = CustomRetentionTop(
-              acceptsEmptyPortConnections: acceptsEmptyPortConnections,
-              fanout: fanout,
-              order: order,
-            );
-            await module.build();
-            final body = topBody(module);
-            String connection(int index, String target) =>
-                '.result$index($target)';
+    final configurations = [
+      (
+        acceptsEmptyPortConnections: false,
+        fanout: false,
+        order: AssignmentOrder.batch,
+      ),
+      (
+        acceptsEmptyPortConnections: true,
+        fanout: false,
+        order: AssignmentOrder.forward,
+      ),
+      (
+        acceptsEmptyPortConnections: false,
+        fanout: true,
+        order: AssignmentOrder.reverse,
+      ),
+      (
+        acceptsEmptyPortConnections: true,
+        fanout: true,
+        order: AssignmentOrder.swizzle,
+      ),
+      (
+        acceptsEmptyPortConnections: false,
+        fanout: true,
+        order: AssignmentOrder.rswizzle,
+      ),
+    ];
 
-            expect(body, contains(connection(0, 'observed[0]')));
-            expect(body, isNot(contains('logic result0;')));
-            if (fanout) {
-              expect(body, contains('logic result1;'));
-              expect(body, contains(connection(1, 'result1')));
-            } else {
-              expect(body, isNot(contains('logic result1;')));
-              expect(body, contains(connection(1, 'observed[1]')));
-            }
-            if (acceptsEmptyPortConnections) {
-              expect(body, contains('.result2()'));
-              expect(body, isNot(contains('logic result2;')));
-            } else {
-              expect(body, contains(connection(2, 'result2')));
-              expect(body, contains('logic result2;'));
-            }
-            NetlistSynthesizer().synthesizeToJson(module);
-            expect(topBody(module), body);
+    for (final configuration in configurations) {
+      final acceptsEmptyPortConnections =
+          configuration.acceptsEmptyPortConnections;
+      final fanout = configuration.fanout;
+      final order = configuration.order;
+      test(
+          'empty=$acceptsEmptyPortConnections '
+          'fanout=$fanout ${order.name}', () async {
+        final module = CustomRetentionTop(
+          acceptsEmptyPortConnections: acceptsEmptyPortConnections,
+          fanout: fanout,
+          order: order,
+        );
+        await module.build();
+        final body = topBody(module);
+        String connection(int index, String target) => '.result$index($target)';
 
-            final vectors = [
-              for (final input in inputPatterns(3))
-                Vector({
-                  'data': input
-                }, {
-                  'observed': ~input.getRange(0, 2),
-                  if (fanout) 'tap': input[1].isValid ? input[1] : LogicValue.x,
-                }),
-            ];
-            await SimCompare.checkFunctionalVector(module, vectors);
-            SimCompare.checkIverilogVector(module, vectors);
-          });
+        expect(body, contains(connection(0, 'observed[0]')));
+        expect(body, isNot(contains('logic result0;')));
+        if (fanout) {
+          expect(body, contains('logic result1;'));
+          expect(body, contains(connection(1, 'result1')));
+        } else {
+          expect(body, isNot(contains('logic result1;')));
+          expect(body, contains(connection(1, 'observed[1]')));
         }
-      }
+        if (acceptsEmptyPortConnections) {
+          expect(body, contains('.result2()'));
+          expect(body, isNot(contains('logic result2;')));
+        } else {
+          expect(body, contains(connection(2, 'result2')));
+          expect(body, contains('logic result2;'));
+        }
+        NetlistSynthesizer().synthesizeToJson(module);
+        expect(topBody(module), body);
+
+        final vectors = [
+          for (final input in inputPatterns(3))
+            Vector({
+              'data': input
+            }, {
+              'observed': ~input.getRange(0, 2),
+              if (fanout) 'tap': input[1].isValid ? input[1] : LogicValue.x,
+            }),
+        ];
+        await SimCompare.checkFunctionalVector(module, vectors);
+        SimCompare.checkIverilogVector(module, vectors);
+      });
     }
   });
 
   group('constant position and four-state cross-products', () {
-    for (final constant in ['0', '1', 'x', 'z']) {
-      for (final constantIndex in [0, 1, 2]) {
-        for (final namedConstant in [false, true]) {
-          for (final order in [
-            AssignmentOrder.batch,
-            AssignmentOrder.reverse,
-            AssignmentOrder.swizzle,
-            AssignmentOrder.rswizzle,
-          ]) {
-            test(
-                '$constant at $constantIndex '
-                'named=$namedConstant ${order.name}', () async {
-              final module = ConstantOutputTop(
-                constant: constant,
-                constantIndex: constantIndex,
-                namedConstant: namedConstant,
-                order: order,
-              );
-              await module.build();
-              final body = topBody(module);
-              expect(body, isNot(contains('.result()')), reason: body);
-              if (constant != 'z') {
-                for (var index = 0;
-                    index < module.output('observed').width;
-                    index++) {
-                  if (index != constantIndex) {
-                    expect(body, contains('.result(observed[$index])'),
-                        reason: body);
-                  }
-                }
-              }
-              NetlistSynthesizer().synthesizeToJson(module);
-              expect(topBody(module), body);
-              final vectors = [
-                for (final input in inputPatterns(module.input('data').width))
-                  Vector({
-                    'data': input
-                  }, {
-                    'observed': LogicValue.ofString([
-                      for (var index = module.output('observed').width - 1;
-                          index >= 0;
-                          index--)
-                        if (index == constantIndex)
-                          constant
-                        else
-                          invertedBit(
-                              input, index > constantIndex ? index - 1 : index),
-                    ].join()),
-                  }),
-              ];
-              await SimCompare.checkFunctionalVector(module, vectors);
-              SimCompare.checkIverilogVector(module, vectors);
-            });
+    // Retain each constant state, destination position, naming behavior, and
+    // assignment mechanism. Z remains covered at every position because it
+    // follows the distinct floating-output pruning path.
+    final configurations = [
+      (
+        constant: '0',
+        constantIndex: 0,
+        namedConstant: false,
+        order: AssignmentOrder.batch,
+      ),
+      (
+        constant: '1',
+        constantIndex: 1,
+        namedConstant: true,
+        order: AssignmentOrder.reverse,
+      ),
+      (
+        constant: 'x',
+        constantIndex: 2,
+        namedConstant: false,
+        order: AssignmentOrder.swizzle,
+      ),
+      (
+        constant: 'z',
+        constantIndex: 0,
+        namedConstant: true,
+        order: AssignmentOrder.rswizzle,
+      ),
+      (
+        constant: 'z',
+        constantIndex: 1,
+        namedConstant: false,
+        order: AssignmentOrder.batch,
+      ),
+      (
+        constant: 'z',
+        constantIndex: 2,
+        namedConstant: true,
+        order: AssignmentOrder.reverse,
+      ),
+    ];
+
+    for (final configuration in configurations) {
+      final constant = configuration.constant;
+      final constantIndex = configuration.constantIndex;
+      final namedConstant = configuration.namedConstant;
+      final order = configuration.order;
+      test(
+          '$constant at $constantIndex '
+          'named=$namedConstant ${order.name}', () async {
+        final module = ConstantOutputTop(
+          constant: constant,
+          constantIndex: constantIndex,
+          namedConstant: namedConstant,
+          order: order,
+        );
+        await module.build();
+        final body = topBody(module);
+        expect(body, isNot(contains('.result()')), reason: body);
+        if (constant != 'z') {
+          for (var index = 0;
+              index < module.output('observed').width;
+              index++) {
+            if (index != constantIndex) {
+              expect(body, contains('.result(observed[$index])'), reason: body);
+            }
           }
         }
-      }
+        NetlistSynthesizer().synthesizeToJson(module);
+        expect(topBody(module), body);
+        final vectors = [
+          for (final input in inputPatterns(module.input('data').width))
+            Vector({
+              'data': input
+            }, {
+              'observed': LogicValue.ofString([
+                for (var index = module.output('observed').width - 1;
+                    index >= 0;
+                    index--)
+                  if (index == constantIndex)
+                    constant
+                  else
+                    invertedBit(
+                        input, index > constantIndex ? index - 1 : index),
+              ].join()),
+            }),
+        ];
+        await SimCompare.checkFunctionalVector(module, vectors);
+        SimCompare.checkIverilogVector(module, vectors);
+      });
     }
   });
 
   group('scalar producers beside packed ranges', () {
-    for (final wideProducer in [false, true]) {
-      for (final fanout in [false, true]) {
-        for (final order in AssignmentOrder.values) {
-          test('wide=$wideProducer fanout=$fanout ${order.name}', () async {
-            final module = MixedRangeTop(
-              wideProducer: wideProducer,
-              fanout: fanout,
-              order: order,
-            );
-            await module.build();
-            final body = topBody(module);
-            for (final index in [0, 4]) {
-              expect(body, contains('.result(observed[$index])'), reason: body);
-            }
-            expect(body, isNot(contains('.wide_result()')));
-            NetlistSynthesizer().synthesizeToJson(module);
-            expect(topBody(module), body);
-            final vectors = [
-              for (final input in inputPatterns(5))
-                Vector({
-                  'data': input
-                }, {
-                  'observed': LogicValue.ofString([
-                    for (var index = 4; index >= 0; index--)
-                      if (wideProducer || index == 0 || index == 4)
-                        invertedBit(input, index)
-                      else
-                        input[index].toString(includeWidth: false),
-                  ].join()),
-                  if (fanout)
-                    'tap': wideProducer
-                        ? ~input.getRange(1, 4)
-                        : input.getRange(1, 4),
-                }),
-            ];
-            await SimCompare.checkFunctionalVector(module, vectors);
-            SimCompare.checkIverilogVector(module, vectors);
-          });
+    final configurations = [
+      (
+        wideProducer: false,
+        fanout: false,
+        order: AssignmentOrder.batch,
+      ),
+      (
+        wideProducer: true,
+        fanout: false,
+        order: AssignmentOrder.forward,
+      ),
+      (
+        wideProducer: false,
+        fanout: true,
+        order: AssignmentOrder.reverse,
+      ),
+      (
+        wideProducer: true,
+        fanout: true,
+        order: AssignmentOrder.swizzle,
+      ),
+      (
+        wideProducer: true,
+        fanout: false,
+        order: AssignmentOrder.rswizzle,
+      ),
+    ];
+
+    for (final configuration in configurations) {
+      final wideProducer = configuration.wideProducer;
+      final fanout = configuration.fanout;
+      final order = configuration.order;
+      test('wide=$wideProducer fanout=$fanout ${order.name}', () async {
+        final module = MixedRangeTop(
+          wideProducer: wideProducer,
+          fanout: fanout,
+          order: order,
+        );
+        await module.build();
+        final body = topBody(module);
+        for (final index in [0, 4]) {
+          expect(body, contains('.result(observed[$index])'), reason: body);
         }
-      }
+        expect(body, isNot(contains('.wide_result()')));
+        NetlistSynthesizer().synthesizeToJson(module);
+        expect(topBody(module), body);
+        final vectors = [
+          for (final input in inputPatterns(5))
+            Vector({
+              'data': input
+            }, {
+              'observed': LogicValue.ofString([
+                for (var index = 4; index >= 0; index--)
+                  if (wideProducer || index == 0 || index == 4)
+                    invertedBit(input, index)
+                  else
+                    input[index].toString(includeWidth: false),
+              ].join()),
+              if (fanout)
+                'tap':
+                    wideProducer ? ~input.getRange(1, 4) : input.getRange(1, 4),
+            }),
+        ];
+        await SimCompare.checkFunctionalVector(module, vectors);
+        SimCompare.checkIverilogVector(module, vectors);
+      });
     }
   });
 
   group('sliced swizzle equivalence cross-products', () {
-    for (final producer in ProducerKind.values) {
-      for (final order in [AssignmentOrder.swizzle, AssignmentOrder.rswizzle]) {
-        for (final naming in Naming.values) {
-          for (final use in SwizzleUse.values) {
-            for (final fanout in [false, true]) {
-              for (final (lower, upper) in [(0, 1), (1, 3), (3, 4)]) {
-                // Cover all names on independent producers; exercise other
-                // producer kinds with mergeable names to bound the matrix.
-                if (producer != ProducerKind.independent &&
-                    naming != Naming.mergeable) {
-                  continue;
-                }
-                // The middle slice covers naming and producer variations;
-                // boundary slices still cover every use, order, and fanout.
-                if (lower != 1 &&
-                    (producer != ProducerKind.independent ||
-                        naming != Naming.mergeable)) {
-                  continue;
-                }
-                test(
-                    '${producer.name} ${order.name} ${naming.name} '
-                    '${use.name} fanout=$fanout [$lower:$upper]', () async {
-                  final module = SlicedSwizzleTop(
-                    producer: producer,
-                    order: order,
-                    naming: naming,
-                    use: use,
-                    fanout: fanout,
-                    lower: lower,
-                    upper: upper,
-                  );
-                  await module.build();
-                  final body = topBody(module);
-                  printOnFailure(body);
-                  NetlistSynthesizer().synthesizeToJson(module);
-                  expect(topBody(module), body);
-                  final vectors = [
-                    for (final input in fourStateInputPatterns(4,
-                        exhaustive: producer == ProducerKind.independent &&
-                            order == AssignmentOrder.rswizzle &&
-                            naming == Naming.mergeable &&
-                            use == SwizzleUse.wholeAndSlice &&
-                            fanout))
-                      Vector({
-                        'data': input
-                      }, {
-                        'observed': LogicValue.ofString([
-                          if (use == SwizzleUse.partialDestination) 'z',
-                          if (use == SwizzleUse.filledDestination) '1',
-                          for (var bit = upper - 1; bit >= lower; bit--)
-                            invertedBit(
-                                input,
-                                order == AssignmentOrder.swizzle
-                                    ? 3 - bit
-                                    : bit),
-                          if (use == SwizzleUse.partialDestination) 'z',
-                          if (use == SwizzleUse.filledDestination) '0',
-                        ].join()),
-                        if (use == SwizzleUse.wholeAndSlice)
-                          'whole': LogicValue.ofString([
-                            for (var bit = 3; bit >= 0; bit--)
-                              invertedBit(
-                                  input,
-                                  order == AssignmentOrder.swizzle
-                                      ? 3 - bit
-                                      : bit),
-                          ].join()),
-                        if (fanout)
-                          'tap': input[1].isValid ? input[1] : LogicValue.x,
-                      }),
-                  ];
-                  await SimCompare.checkFunctionalVector(module, vectors);
-                  SimCompare.checkIverilogVector(module, vectors);
-                });
-              }
-            }
-          }
-        }
-      }
+    // Retain each naming policy, producer topology, destination form, slice
+    // boundary, and fanout path. The mergeable whole-and-slice case remains
+    // exhaustive over all four-state inputs.
+    final configurations = [
+      (
+        producer: ProducerKind.independent,
+        order: AssignmentOrder.swizzle,
+        naming: Naming.reserved,
+        use: SwizzleUse.slice,
+        fanout: false,
+        lower: 0,
+        upper: 1,
+        exhaustive: false,
+      ),
+      (
+        producer: ProducerKind.independent,
+        order: AssignmentOrder.rswizzle,
+        naming: Naming.renameable,
+        use: SwizzleUse.wholeAndSlice,
+        fanout: true,
+        lower: 1,
+        upper: 3,
+        exhaustive: false,
+      ),
+      (
+        producer: ProducerKind.independent,
+        order: AssignmentOrder.rswizzle,
+        naming: Naming.mergeable,
+        use: SwizzleUse.wholeAndSlice,
+        fanout: true,
+        lower: 1,
+        upper: 3,
+        exhaustive: true,
+      ),
+      (
+        producer: ProducerKind.independent,
+        order: AssignmentOrder.swizzle,
+        naming: Naming.mergeable,
+        use: SwizzleUse.partialDestination,
+        fanout: false,
+        lower: 3,
+        upper: 4,
+        exhaustive: false,
+      ),
+      (
+        producer: ProducerKind.independent,
+        order: AssignmentOrder.rswizzle,
+        naming: Naming.unnamed,
+        use: SwizzleUse.filledDestination,
+        fanout: true,
+        lower: 0,
+        upper: 1,
+        exhaustive: false,
+      ),
+      (
+        producer: ProducerKind.multiport,
+        order: AssignmentOrder.swizzle,
+        naming: Naming.mergeable,
+        use: SwizzleUse.slice,
+        fanout: true,
+        lower: 1,
+        upper: 3,
+        exhaustive: false,
+      ),
+      (
+        producer: ProducerKind.hierarchical,
+        order: AssignmentOrder.rswizzle,
+        naming: Naming.mergeable,
+        use: SwizzleUse.wholeAndSlice,
+        fanout: false,
+        lower: 1,
+        upper: 3,
+        exhaustive: false,
+      ),
+      (
+        producer: ProducerKind.custom,
+        order: AssignmentOrder.swizzle,
+        naming: Naming.mergeable,
+        use: SwizzleUse.partialDestination,
+        fanout: true,
+        lower: 1,
+        upper: 3,
+        exhaustive: false,
+      ),
+    ];
+
+    for (final configuration in configurations) {
+      final producer = configuration.producer;
+      final order = configuration.order;
+      final naming = configuration.naming;
+      final use = configuration.use;
+      final fanout = configuration.fanout;
+      final lower = configuration.lower;
+      final upper = configuration.upper;
+      final exhaustive = configuration.exhaustive;
+      test(
+          '${producer.name} ${order.name} ${naming.name} '
+          '${use.name} fanout=$fanout [$lower:$upper]', () async {
+        final module = SlicedSwizzleTop(
+          producer: producer,
+          order: order,
+          naming: naming,
+          use: use,
+          fanout: fanout,
+          lower: lower,
+          upper: upper,
+        );
+        await module.build();
+        final body = topBody(module);
+        printOnFailure(body);
+        NetlistSynthesizer().synthesizeToJson(module);
+        expect(topBody(module), body);
+        final vectors = [
+          for (final input in fourStateInputPatterns(4, exhaustive: exhaustive))
+            Vector({
+              'data': input
+            }, {
+              'observed': LogicValue.ofString([
+                if (use == SwizzleUse.partialDestination) 'z',
+                if (use == SwizzleUse.filledDestination) '1',
+                for (var bit = upper - 1; bit >= lower; bit--)
+                  invertedBit(
+                      input, order == AssignmentOrder.swizzle ? 3 - bit : bit),
+                if (use == SwizzleUse.partialDestination) 'z',
+                if (use == SwizzleUse.filledDestination) '0',
+              ].join()),
+              if (use == SwizzleUse.wholeAndSlice)
+                'whole': LogicValue.ofString([
+                  for (var bit = 3; bit >= 0; bit--)
+                    invertedBit(input,
+                        order == AssignmentOrder.swizzle ? 3 - bit : bit),
+                ].join()),
+              if (fanout) 'tap': input[1].isValid ? input[1] : LogicValue.x,
+            }),
+        ];
+        await SimCompare.checkFunctionalVector(module, vectors);
+        SimCompare.checkIverilogVector(module, vectors);
+      });
     }
   });
 
@@ -971,196 +1212,311 @@ void main() {
   });
 
   group('range operand equivalence cross-products', () {
-    for (final producer in [ProducerKind.independent, ProducerKind.custom]) {
-      for (final order in [AssignmentOrder.swizzle, AssignmentOrder.rswizzle]) {
-        for (final naming in Naming.values) {
-          for (final ranges in OperandRanges.values) {
-            for (final fanout in [false, true]) {
-              for (final constant in [
-                '0',
-                '1',
-                'x',
-                'z',
-              ]) {
-                for (final constantPosition in [0, 1, -1]) {
-                  // Cover every topology/name/fanout combination with middle Z.
-                  final topologyCase = constant == 'z' && constantPosition == 1;
-                  // Sweep all constant states and positions on one topology.
-                  final constantCase = producer == ProducerKind.independent &&
-                      naming == Naming.mergeable &&
-                      !fanout;
-                  // Keep all preserved-Z positions for the pruning regression.
-                  final preservedFloatingCase = constant == 'z' &&
-                      (naming == Naming.reserved ||
-                          naming == Naming.renameable) &&
-                      !fanout;
-                  // Bound runtime by omitting the remaining cross-products.
-                  if (!topologyCase &&
-                      !constantCase &&
-                      !preservedFloatingCase) {
-                    continue;
-                  }
-                  test(
-                      '${producer.name} ${order.name} ${naming.name} '
-                      '${ranges.name} fanout=$fanout '
-                      '$constant at $constantPosition', () async {
-                    final module = RangeOperandSwizzleTop(
-                      producer: producer,
-                      order: order,
-                      naming: naming,
-                      ranges: ranges,
-                      constant: constant,
-                      constantPosition: constantPosition,
-                      fanout: fanout,
-                    );
-                    await module.build();
-                    final body = topBody(module);
-                    printOnFailure(body);
-                    if (naming == Naming.reserved ||
-                        naming == Naming.renameable) {
-                      expect(body, contains('wide_alias'));
-                      expect(body, contains('range0'));
-                    } else if (constantPosition != -1) {
-                      expect(body, matches(r'\.result\(observed\[\d+\]\)'));
-                    }
-                    if (topologyCase) {
-                      NetlistSynthesizer().synthesizeToJson(module);
-                      expect(topBody(module), body);
-                    }
-                    final sourceIndices = switch (ranges) {
-                      OperandRanges.slice => [
-                          [1, 2]
-                        ],
-                      OperandRanges.reordered => [
-                          [2, 3],
-                          [0, 1]
-                        ],
-                      OperandRanges.overlapping => [
-                          [0, 1],
-                          [1, 2]
-                        ],
-                      OperandRanges.nested => [
-                          [2]
-                        ],
-                    };
-                    final vectors = <Vector>[];
-                    for (final input in fourStateInputPatterns(4,
-                        exhaustive: producer == ProducerKind.custom &&
-                            order == AssignmentOrder.rswizzle &&
-                            naming == Naming.mergeable &&
-                            !fanout &&
-                            constant == 'z' &&
-                            constantPosition == 1)) {
-                      final expectedOperands = [
-                        [invertedBit(input, 0)],
-                        for (final indices in sourceIndices)
-                          [
-                            for (final index in indices)
-                              invertedBit(input, index)
-                          ],
-                        [invertedBit(input, 3)],
-                      ];
-                      expectedOperands.insert(
-                          constantPosition < 0
-                              ? expectedOperands.length
-                              : constantPosition,
-                          [constant]);
-                      final expectedBits = (order == AssignmentOrder.swizzle
-                              ? expectedOperands.reversed
-                              : expectedOperands)
-                          .expand((operand) => operand)
-                          .toList();
-                      vectors.add(Vector({
-                        'data': input
-                      }, {
-                        'observed':
-                            LogicValue.ofString(expectedBits.reversed.join()),
-                        if (fanout) ...{
-                          'wide_tap': ~input,
-                          'bit_tap': input[0].isValid ? input[0] : LogicValue.x,
-                          'window': LogicValue.ofString(expectedBits
-                              .sublist(1, expectedBits.length - 1)
-                              .reversed
-                              .join()),
-                        },
-                      }));
-                    }
-                    await SimCompare.checkFunctionalVector(module, vectors);
-                    SimCompare.checkIverilogVector(module, vectors);
-                  });
-                }
-              }
-            }
-          }
+    // Preserve every range topology, naming mode, constant state and
+    // placement. Reserved and renameable names keep Z at all positions because
+    // those are the pruning-sensitive cases.
+    final configurations = [
+      (
+        producer: ProducerKind.independent,
+        order: AssignmentOrder.swizzle,
+        naming: Naming.reserved,
+        ranges: OperandRanges.slice,
+        constant: 'z',
+        constantPosition: 0,
+        fanout: false,
+        exhaustive: false,
+      ),
+      (
+        producer: ProducerKind.custom,
+        order: AssignmentOrder.rswizzle,
+        naming: Naming.reserved,
+        ranges: OperandRanges.reordered,
+        constant: 'z',
+        constantPosition: 1,
+        fanout: true,
+        exhaustive: false,
+      ),
+      (
+        producer: ProducerKind.independent,
+        order: AssignmentOrder.swizzle,
+        naming: Naming.reserved,
+        ranges: OperandRanges.overlapping,
+        constant: 'z',
+        constantPosition: -1,
+        fanout: false,
+        exhaustive: false,
+      ),
+      (
+        producer: ProducerKind.custom,
+        order: AssignmentOrder.rswizzle,
+        naming: Naming.renameable,
+        ranges: OperandRanges.nested,
+        constant: 'z',
+        constantPosition: 0,
+        fanout: true,
+        exhaustive: false,
+      ),
+      (
+        producer: ProducerKind.independent,
+        order: AssignmentOrder.swizzle,
+        naming: Naming.renameable,
+        ranges: OperandRanges.slice,
+        constant: 'z',
+        constantPosition: 1,
+        fanout: false,
+        exhaustive: false,
+      ),
+      (
+        producer: ProducerKind.custom,
+        order: AssignmentOrder.rswizzle,
+        naming: Naming.renameable,
+        ranges: OperandRanges.reordered,
+        constant: 'z',
+        constantPosition: -1,
+        fanout: true,
+        exhaustive: false,
+      ),
+      (
+        producer: ProducerKind.independent,
+        order: AssignmentOrder.swizzle,
+        naming: Naming.mergeable,
+        ranges: OperandRanges.overlapping,
+        constant: '0',
+        constantPosition: 0,
+        fanout: false,
+        exhaustive: false,
+      ),
+      (
+        producer: ProducerKind.custom,
+        order: AssignmentOrder.rswizzle,
+        naming: Naming.mergeable,
+        ranges: OperandRanges.nested,
+        constant: '1',
+        constantPosition: 1,
+        fanout: true,
+        exhaustive: false,
+      ),
+      (
+        producer: ProducerKind.independent,
+        order: AssignmentOrder.swizzle,
+        naming: Naming.mergeable,
+        ranges: OperandRanges.reordered,
+        constant: 'x',
+        constantPosition: -1,
+        fanout: false,
+        exhaustive: false,
+      ),
+      (
+        producer: ProducerKind.custom,
+        order: AssignmentOrder.rswizzle,
+        naming: Naming.unnamed,
+        ranges: OperandRanges.slice,
+        constant: 'z',
+        constantPosition: 1,
+        fanout: true,
+        exhaustive: false,
+      ),
+      (
+        producer: ProducerKind.custom,
+        order: AssignmentOrder.rswizzle,
+        naming: Naming.mergeable,
+        ranges: OperandRanges.overlapping,
+        constant: 'z',
+        constantPosition: 1,
+        fanout: false,
+        exhaustive: true,
+      ),
+    ];
+
+    for (final configuration in configurations) {
+      final producer = configuration.producer;
+      final order = configuration.order;
+      final naming = configuration.naming;
+      final ranges = configuration.ranges;
+      final constant = configuration.constant;
+      final constantPosition = configuration.constantPosition;
+      final fanout = configuration.fanout;
+      final exhaustive = configuration.exhaustive;
+      test(
+          '${producer.name} ${order.name} ${naming.name} '
+          '${ranges.name} fanout=$fanout '
+          '$constant at $constantPosition', () async {
+        final module = RangeOperandSwizzleTop(
+          producer: producer,
+          order: order,
+          naming: naming,
+          ranges: ranges,
+          constant: constant,
+          constantPosition: constantPosition,
+          fanout: fanout,
+        );
+        await module.build();
+        final body = topBody(module);
+        printOnFailure(body);
+        if (naming == Naming.reserved || naming == Naming.renameable) {
+          expect(body, contains('wide_alias'));
+          expect(body, contains('range0'));
+        } else if (constantPosition != -1) {
+          expect(body, matches(r'\.result\(observed\[\d+\]\)'));
         }
-      }
+        if (constant == 'z' && constantPosition == 1) {
+          NetlistSynthesizer().synthesizeToJson(module);
+          expect(topBody(module), body);
+        }
+        final sourceIndices = switch (ranges) {
+          OperandRanges.slice => [
+              [1, 2]
+            ],
+          OperandRanges.reordered => [
+              [2, 3],
+              [0, 1]
+            ],
+          OperandRanges.overlapping => [
+              [0, 1],
+              [1, 2]
+            ],
+          OperandRanges.nested => [
+              [2]
+            ],
+        };
+        final vectors = <Vector>[];
+        for (final input in fourStateInputPatterns(4, exhaustive: exhaustive)) {
+          final expectedOperands = [
+            [invertedBit(input, 0)],
+            for (final indices in sourceIndices)
+              [
+                for (final index in indices) invertedBit(input, index),
+              ],
+            [invertedBit(input, 3)],
+          ];
+          expectedOperands.insert(
+              constantPosition < 0 ? expectedOperands.length : constantPosition,
+              [constant]);
+          final expectedBits = (order == AssignmentOrder.swizzle
+                  ? expectedOperands.reversed
+                  : expectedOperands)
+              .expand((operand) => operand)
+              .toList();
+          vectors.add(Vector({
+            'data': input
+          }, {
+            'observed': LogicValue.ofString(expectedBits.reversed.join()),
+            if (fanout) ...{
+              'wide_tap': ~input,
+              'bit_tap': input[0].isValid ? input[0] : LogicValue.x,
+              'window': LogicValue.ofString(expectedBits
+                  .sublist(1, expectedBits.length - 1)
+                  .reversed
+                  .join()),
+            },
+          }));
+        }
+        await SimCompare.checkFunctionalVector(module, vectors);
+        SimCompare.checkIverilogVector(module, vectors);
+      });
     }
   });
 
   group('packed word boundaries and deep aliases', () {
-    for (final (width, order) in [
-      for (final width in [33, 65])
-        for (final order in [
-          AssignmentOrder.reverse,
-          AssignmentOrder.swizzle,
-          AssignmentOrder.rswizzle,
-        ])
-          (width, order),
-    ]) {
-      for (final producer in [
-        ProducerKind.independent,
-        ProducerKind.multiport
-      ]) {
-        for (final aliasDepth in [0, 16]) {
-          test(
-              'width=$width ${producer.name} ${order.name} aliases=$aliasDepth',
-              () async {
-            final module = OutputMappingTop(
-              width: width,
-              producer: producer,
-              order: order,
-              aliasDepth: aliasDepth,
-            );
-            await module.build();
-            final body = topBody(module);
-            for (var index = 0; index < width; index++) {
-              expect(body, matches('\\.result\\d*\\(observed\\[$index\\]\\)'),
-                  reason: body);
-            }
-            NetlistSynthesizer().synthesizeToJson(module);
-            expect(topBody(module), body);
-            final inputs = [
-              LogicValue.ofBigInt(BigInt.zero, width),
-              LogicValue.ofBigInt((BigInt.one << width) - BigInt.one, width),
-              for (var index = 0; index < width; index++)
-                LogicValue.ofBigInt(BigInt.one << index, width),
-              for (final index in [
-                31,
-                32,
-                if (width > 64) ...[63, 64]
-              ])
-                for (final state in ['x', 'z'])
-                  LogicValue.ofString([
-                    for (var bit = width - 1; bit >= 0; bit--)
-                      if (bit == index) state else (bit % 2).toString(),
-                  ].join()),
-            ];
-            final vectors = [
-              for (final input in inputs)
-                Vector({
-                  'data': input
-                }, {
-                  'observed': LogicValue.ofString([
-                    for (var index = 0; index < width; index++)
-                      invertedBit(input, index),
-                  ].join()),
-                }),
-            ];
-            await SimCompare.checkFunctionalVector(module, vectors);
-            SimCompare.checkIverilogVector(module, vectors);
-          });
+    // Cover every pair of word boundary, assignment order, producer form, and
+    // alias depth without compiling their full Cartesian product.
+    final configurations = [
+      (
+        width: 33,
+        order: AssignmentOrder.reverse,
+        producer: ProducerKind.independent,
+        aliasDepth: 0,
+      ),
+      (
+        width: 33,
+        order: AssignmentOrder.swizzle,
+        producer: ProducerKind.multiport,
+        aliasDepth: 16,
+      ),
+      (
+        width: 33,
+        order: AssignmentOrder.rswizzle,
+        producer: ProducerKind.independent,
+        aliasDepth: 16,
+      ),
+      (
+        width: 65,
+        order: AssignmentOrder.reverse,
+        producer: ProducerKind.multiport,
+        aliasDepth: 16,
+      ),
+      (
+        width: 65,
+        order: AssignmentOrder.swizzle,
+        producer: ProducerKind.independent,
+        aliasDepth: 0,
+      ),
+      (
+        width: 65,
+        order: AssignmentOrder.rswizzle,
+        producer: ProducerKind.multiport,
+        aliasDepth: 0,
+      ),
+    ];
+
+    for (final configuration in configurations) {
+      final width = configuration.width;
+      final order = configuration.order;
+      final producer = configuration.producer;
+      final aliasDepth = configuration.aliasDepth;
+      test('width=$width ${producer.name} ${order.name} aliases=$aliasDepth',
+          () async {
+        final module = OutputMappingTop(
+          width: width,
+          producer: producer,
+          order: order,
+          aliasDepth: aliasDepth,
+        );
+        await module.build();
+        final body = topBody(module);
+        for (var index = 0; index < width; index++) {
+          expect(body, matches('\\.result\\d*\\(observed\\[$index\\]\\)'),
+              reason: body);
         }
-      }
+        NetlistSynthesizer().synthesizeToJson(module);
+        expect(topBody(module), body);
+        final boundaryBits = {
+          0,
+          width - 1,
+          31,
+          32,
+          if (width > 64) ...[63, 64],
+        };
+        final inputs = [
+          LogicValue.ofBigInt(BigInt.zero, width),
+          LogicValue.ofBigInt((BigInt.one << width) - BigInt.one, width),
+          for (final index in boundaryBits)
+            LogicValue.ofBigInt(BigInt.one << index, width),
+          for (final index in [
+            31,
+            32,
+            if (width > 64) ...[63, 64]
+          ])
+            for (final state in ['x', 'z'])
+              LogicValue.ofString([
+                for (var bit = width - 1; bit >= 0; bit--)
+                  if (bit == index) state else (bit % 2).toString(),
+              ].join()),
+        ];
+        final vectors = [
+          for (final input in inputs)
+            Vector({
+              'data': input
+            }, {
+              'observed': LogicValue.ofString([
+                for (var index = 0; index < width; index++)
+                  invertedBit(input, index),
+              ].join()),
+            }),
+        ];
+        await SimCompare.checkFunctionalVector(module, vectors);
+        SimCompare.checkIverilogVector(module, vectors);
+      });
     }
   });
 

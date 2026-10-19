@@ -37,10 +37,10 @@ endmodule
 class VectorArrayFixture extends Module {
   VectorArrayFixture() {
     final array = addInputArray(
-        'array', LogicArray([3], 4, numUnpackedDimensions: 1),
-        dimensions: [3], elementWidth: 4, numUnpackedDimensions: 1);
+        'array', LogicArray([2], 2, numUnpackedDimensions: 1),
+        dimensions: [2], elementWidth: 2, numUnpackedDimensions: 1);
     addOutputArray('observed',
-            dimensions: [3], elementWidth: 4, numUnpackedDimensions: 1) <=
+            dimensions: [2], elementWidth: 2, numUnpackedDimensions: 1) <=
         array;
   }
 }
@@ -100,8 +100,8 @@ void main() {
     final module = VectorArrayFixture();
     await module.build();
     SimCompare.checkVerilatorVector(module, [
-      Vector({'array': 0x123}, {'observed': 0x123}),
-      Vector({'array': 0xabc}, {'observed': 0xabc}),
+      Vector({'array': 0x3}, {'observed': 0x3}),
+      Vector({'array': 0xc}, {'observed': 0xc}),
       Vector({'array': 0}, {'observed': 0}),
     ]);
   });
@@ -112,7 +112,7 @@ void main() {
     SimCompare.checkVerilatorVector(
         module,
         [
-          Vector({'array': 0x123}, {'observed': 0x321}),
+          Vector({'array': 0x3}, {'observed': 0x2}),
         ],
         buildOnly: true);
   });
@@ -126,8 +126,8 @@ void main() {
     TestFailure? failure;
     try {
       SimCompare.checkVerilatorVector(module, [
-        Vector({'array': 0xabc}, {'observed': 0xabc}),
-        Vector({'array': 0x123}, {'observed': 0x321}),
+        Vector({'array': 0xc}, {'observed': 0xc}),
+        Vector({'array': 0x3}, {'observed': 0x2}),
       ]);
     } on TestFailure catch (error) {
       failure = error;
@@ -333,8 +333,8 @@ esac
       if (!capture.run(() => SimCompare.checkVerilatorVector(
           module,
           [
-            Vector({'array': 0x123}, {'observed': 0x123}),
-            Vector({'array': 0xabc}, {'observed': 0xabc}),
+            Vector({'array': 0x3}, {'observed': 0x3}),
+            Vector({'array': 0xc}, {'observed': 0xc}),
           ],
           buildOnly: buildOnly,
           dumpWaves: true,

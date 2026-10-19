@@ -59,7 +59,7 @@ You can also open this repository in a GitHub Codespace to run the example in yo
   - Makes **validation collateral** simpler to develop and debug.  The [ROHD Verification Framework](https://github.com/intel/rohd-vf) helps build well-structured testbenches
   - Powerful capabilities like the [ROHD Schematic Viewer](https://github.com/rohd-schematic-viewer) for high-fidelity rendering of ROHD designs as well as [ROHD Wave Viewer](https://github.com/rohd-wave-viewer) for viewing simulation waveforms even for complex ROHD structures
   - Debug your design with [ROHD Live Debugger](https://github.com/intel/rohd/rohd_devtools_extension), an integrated debugger with cross-probing into ROHD source and synthesized RTL output from schematics rendering and waveform display all connected to live RTL simulation
-  - Support for **cosimulation with verilog modules** (via [ROHD Cosim](https://github.com/intel/rohd-cosim)) and **instantiation of verilog modules** in generated SystemVerilog code
+  - Support for **cosimulation with Verilog modules** (via [ROHD Cosim](https://github.com/intel/rohd-cosim)) and **instantiation of Verilog modules** in generated SystemVerilog code
 
 ROHD is *not* a new language, it is *not* a hardware description language (HDL), and it is *not* a version of High-Level Synthesis (HLS).  ROHD can be classified as a generator framework, extending a powerful software language into the hardware domain and providing a full suite of tools and capabilities to accelerate hardware design and validation.
 

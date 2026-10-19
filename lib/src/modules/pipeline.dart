@@ -32,15 +32,25 @@ class PipelineStageInfo {
   /// stage, you can access it relatively using [stageAdjustment].  For example,
   /// `p.get(x, -1)` will access the value of `x` at the output of one stage
   /// prior.
-  Logic get(Logic identifier, [int stageAdjustment = 0]) =>
+  T get<T extends Logic>(T identifier, [int stageAdjustment = 0]) =>
       getAbs(identifier, stage + stageAdjustment);
 
   /// Returns the output of [identifier] at the specified absolute [stageIndex]
   /// stage, if other than the current [stage].  Otherwise, returns the same
   /// thing as [get], for the current [stage].
-  Logic getAbs(Logic identifier, int stageIndex) {
+  T getAbs<T extends Logic>(T identifier, int stageIndex) {
     final l = _pipeline.get(identifier, stageIndex);
-    return stageIndex == stage ? _ssa(l) : l;
+    if (stageIndex != stage) {
+      return l;
+    }
+
+    final remapped = _ssa(l);
+    if (remapped is! T) {
+      throw LogicConstructionException(
+        'SSA remapping did not preserve the requested $T type.',
+      );
+    }
+    return remapped;
   }
 }
 
@@ -67,21 +77,83 @@ class _PipeStage {
   /// Registers [newLogic] with this stage and creates appropriate inputs,
   /// outputs, and internal signals for the stage.
   void _addLogic(Logic newLogic, int index) {
-    input[newLogic] = Logic(
+    input[newLogic] = _clonePipelineLogic(
+      newLogic,
       name: '${newLogic.name}_stage${index}_i',
-      width: newLogic.width,
-      naming: Naming.mergeable,
     );
-    output[newLogic] = Logic(
+    output[newLogic] = _clonePipelineLogic(
+      newLogic,
       name: '${newLogic.name}_stage${index}_o',
-      width: newLogic.width,
-      naming: Naming.mergeable,
     );
-    main[newLogic] = Logic(
+    main[newLogic] = _clonePipelineLogic(
+      newLogic,
       name: '${newLogic.name}_stage$index',
-      width: newLogic.width,
-      naming: Naming.mergeable,
     );
+  }
+}
+
+Logic _clonePipelineLogic(Logic source, {required String name}) {
+  if (_containsNonDriveablePipelineSignal(source)) {
+    throw LogicConstructionException(
+      'Pipeline signals must contain only driveable, non-net Logic values. '
+      'Create an ordinary Logic alias before adding $source to a Pipeline.',
+    );
+  }
+
+  final clone = source.clone(name: name);
+  if (clone.runtimeType != source.runtimeType) {
+    throw LogicConstructionException(
+      'Pipeline reconstruction did not preserve ${source.runtimeType}.',
+    );
+  }
+  return clone;
+}
+
+bool _containsNonDriveablePipelineSignal(Logic logic) {
+  if (logic is Const || logic is LogicNet) {
+    return true;
+  }
+  return logic is LogicStructure &&
+      logic.leafElements.any(_containsNonDriveablePipelineSignal);
+}
+
+Conditional _pipelineAssignment(Logic receiver, Logic driver) {
+  if (receiver is! LogicStructure || driver is! LogicStructure) {
+    return receiver < driver;
+  }
+
+  final receiverLeaves = receiver.leafElements;
+  final driverLeaves = driver.leafElements;
+  if (receiverLeaves.length != driverLeaves.length) {
+    throw LogicConstructionException(
+      'Pipeline reconstruction did not preserve the structure of '
+      '${receiver.name}.',
+    );
+  }
+
+  return ConditionalGroup([
+    for (var index = 0; index < receiverLeaves.length; index++)
+      receiverLeaves[index] < driverLeaves[index],
+  ]);
+}
+
+void _connectPipelineLogic(Logic receiver, Logic driver) {
+  if (receiver is! LogicStructure || driver is! LogicStructure) {
+    receiver <= driver;
+    return;
+  }
+
+  final receiverLeaves = receiver.leafElements;
+  final driverLeaves = driver.leafElements;
+  if (receiverLeaves.length != driverLeaves.length) {
+    throw LogicConstructionException(
+      'Pipeline reconstruction did not preserve the structure of '
+      '${receiver.name}.',
+    );
+  }
+
+  for (var index = 0; index < receiverLeaves.length; index++) {
+    receiverLeaves[index] <= driverLeaves[index];
   }
 }
 
@@ -144,30 +216,34 @@ class Pipeline {
   /// Each stage can be stalled independently using [stalls], where every index
   /// of [stalls] corresponds to the index of the stage to be stalled.  When a
   /// stage's stall is asserted, the output of that stage will not change.
-  Pipeline(Logic clk,
-      {List<List<Conditional> Function(PipelineStageInfo p)> stages = const [],
-      List<Logic?>? stalls,
-      List<Logic> signals = const [],
-      Map<Logic, dynamic> resetValues = const {},
-      Logic? reset,
-      bool asyncReset = false})
-      : this.multi([clk],
-            stages: stages,
-            stalls: stalls,
-            signals: signals,
-            resetValues: resetValues,
-            reset: reset,
-            asyncReset: asyncReset);
+  Pipeline(
+    Logic clk, {
+    List<List<Conditional> Function(PipelineStageInfo p)> stages = const [],
+    List<Logic?>? stalls,
+    List<Logic> signals = const [],
+    Map<Logic, dynamic> resetValues = const {},
+    Logic? reset,
+    bool asyncReset = false,
+  }) : this.multi(
+          [clk],
+          stages: stages,
+          stalls: stalls,
+          signals: signals,
+          resetValues: resetValues,
+          reset: reset,
+          asyncReset: asyncReset,
+        );
 
   /// Constructs a [Pipeline] with multiple triggers on any of [_clks].
-  Pipeline.multi(this._clks,
-      {List<List<Conditional> Function(PipelineStageInfo p)> stages = const [],
-      List<Logic?>? stalls,
-      List<Logic> signals = const [],
-      Map<Logic, dynamic>? resetValues,
-      this.reset,
-      this.asyncReset = false})
-      : _resetValues = resetValues == null ? null : Map.from(resetValues) {
+  Pipeline.multi(
+    this._clks, {
+    List<List<Conditional> Function(PipelineStageInfo p)> stages = const [],
+    List<Logic?>? stalls,
+    List<Logic> signals = const [],
+    Map<Logic, dynamic>? resetValues,
+    this.reset,
+    this.asyncReset = false,
+  }) : _resetValues = resetValues == null ? null : Map.from(resetValues) {
     _stages = stages.map(_PipeStage.new).toList();
     _stages.add(_PipeStage((p) => [])); // output stage
 
@@ -176,7 +252,7 @@ class Pipeline {
     signals.forEach(_add);
 
     for (var stageIndex = 0; stageIndex < stageCount; stageIndex++) {
-      Combinational.ssa((ssa) {
+      Combinational.ssaWithTypes((ssa) {
         // keep track of the previously registered logics:
         final prevRegisteredLogics = _registeredLogics.toSet();
 
@@ -191,22 +267,22 @@ class Pipeline {
           if (!prevRegisteredLogics.contains(l)) {
             for (var i = 0; i < stageIndex; i++) {
               // make sure to hook up in-to-out through main for .get's
-              get(l, i) <= _i(l, i);
-              _o(l, i) <= get(l, i);
+              _connectPipelineLogic(get(l, i), _i(l, i));
+              _connectPipelineLogic(_o(l, i), get(l, i));
             }
           }
         }
 
         return [
           for (final l in _registeredLogics)
-            ssa(get(l, stageIndex)) < _i(l, stageIndex),
+            _pipelineAssignment(ssa(get(l, stageIndex)), _i(l, stageIndex)),
           ...stageConditionals,
         ];
       }, name: 'comb_stage$stageIndex');
 
       // do output connections as assignments so they can be collapsed
       for (final l in _registeredLogics) {
-        _o(l, stageIndex) <= get(l, stageIndex);
+        _connectPipelineLogic(_o(l, stageIndex), get(l, stageIndex));
       }
     }
 
@@ -217,8 +293,10 @@ class Pipeline {
   void _setStalls(List<Logic?>? stalls) {
     if (stalls != null) {
       if (stalls.length != stageCount - 1) {
-        throw Exception('Stall list length (${stalls.length}) must match '
-            'number of stages (${stageCount - 1}).');
+        throw Exception(
+          'Stall list length (${stalls.length}) must match '
+          'number of stages (${stageCount - 1}).',
+        );
       }
       for (var i = 0; i < stageCount - 1; i++) {
         final stall = stalls[i];
@@ -239,37 +317,35 @@ class Pipeline {
       _stages[i]._addLogic(newLogic, i);
     }
 
-    _stages[0].input[newLogic]! <= newLogic;
-    final ffAssigns = <ConditionalAssign>[];
+    _connectPipelineLogic(_stages[0].input[newLogic]!, newLogic);
+    final ffAssigns = <Conditional>[];
     for (var i = 1; i < _stages.length; i++) {
-      ffAssigns.add(_i(newLogic, i) < _o(newLogic, i - 1) as ConditionalAssign);
+      final assignment =
+          _pipelineAssignment(_i(newLogic, i), _o(newLogic, i - 1));
+      final stall = _stages[i - 1].stall;
+      ffAssigns.add(
+        stall == null ? assignment : If(~stall, then: [assignment]),
+      );
     }
 
-    final ffAssignsWithStall =
-        List<ConditionalAssign>.generate(stageCount - 1, (index) {
-      final stall = _stages[index].stall;
-      final ffAssign = ffAssigns[index];
-      final driver = stall != null
-          ? mux(stall, ffAssign.receiver, ffAssign.driver)
-          : ffAssign.driver;
-      return ffAssign.receiver < driver as ConditionalAssign;
-    });
-
-    final stageResetVal = _resetValues?[newLogic];
     final resetValuesForNewLogic = <Logic, dynamic>{};
-    if (stageResetVal != null) {
-      for (final ffAssign in ffAssignsWithStall) {
-        resetValuesForNewLogic[ffAssign.receiver] = stageResetVal;
+    if (_resetValues?.containsKey(newLogic) ?? false) {
+      final stageResetVal = _resetValues![newLogic];
+      for (var i = 1; i < _stages.length; i++) {
+        resetValuesForNewLogic[_i(newLogic, i)] = stageResetVal;
       }
     }
 
-    Sequential.multi(
+    if (ffAssigns.isNotEmpty) {
+      Sequential.multi(
         _clks,
+        ffAssigns,
         reset: reset,
         resetValues: resetValuesForNewLogic,
         asyncReset: asyncReset,
-        ffAssignsWithStall,
-        name: 'ff_${newLogic.name}');
+        name: 'ff_${newLogic.name}',
+      );
+    }
   }
 
   /// The stage input for a signal associated with [logic] to [stageIndex].
@@ -305,11 +381,12 @@ class Pipeline {
   ///
   /// Use [stageIndex] to select the value of [logic] at a specific stage of the
   /// pipeline. The [stageIndex] must be less than [stageCount].
-  Logic get(Logic logic, [int? stageIndex]) {
+  T get<T extends Logic>(T logic, [int? stageIndex]) {
     if (!_isRegistered(logic)) {
       if (_constructionComplete) {
         throw PortDoesNotExistException(
-            'Signal $logic was not piped through this Pipeline.');
+          'Signal $logic was not piped through this Pipeline.',
+        );
       } else {
         _add(logic);
       }
@@ -318,11 +395,16 @@ class Pipeline {
     stageIndex ??= _stages.length - 1;
 
     final stageLogic = _stages[stageIndex].main[logic]!;
+    if (stageLogic is! T) {
+      throw LogicConstructionException(
+        'Pipeline reconstruction did not preserve the requested $T type.',
+      );
+    }
     return stageLogic;
   }
 }
 
-/// A pipeline that implements Ready/Valid protocol at each stage.
+/// A multi-signal ready/valid [Pipeline].
 class ReadyValidPipeline extends Pipeline {
   /// Indicates that valid contents are ready to be received
   /// at the output of the pipeline.
@@ -338,7 +420,7 @@ class ReadyValidPipeline extends Pipeline {
   /// is ready to pull out of the pipeline.
   final Logic readyPipeOut;
 
-  /// Constructs a pipeline with Ready/Valid protocol at each stage.
+  /// Constructs a multi-signal ready/valid pipeline.
   ///
   /// The [validPipeIn] signal indicates that the input to the pipeline is
   /// valid.  The [readyPipeOut] signal indicates that the receiver of the
@@ -392,17 +474,20 @@ class ReadyValidPipeline extends Pipeline {
   }) : super.multi(
           stages: stages,
           signals: [validPipeIn, ...signals],
-          stalls: List.generate(stages.length,
-              (index) => Logic(name: 'stall_$index', naming: Naming.mergeable)),
+          stalls: List.generate(
+            stages.length,
+            (index) => Logic(name: 'stall_$index', naming: Naming.mergeable),
+          ),
         ) {
     final valid = validPipeIn;
 
     final stalls = _stages.map((stage) => stage.stall).toList()
       ..removeLast(); // garbage value at the end
 
-    final readys = List.generate(stages.length,
-        (index) => Logic(name: 'ready_$index', naming: Naming.mergeable))
-      ..add(readyPipeOut);
+    final readys = List.generate(
+      stages.length,
+      (index) => Logic(name: 'ready_$index', naming: Naming.mergeable),
+    )..add(readyPipeOut);
 
     for (var i = 0; i < stalls.length; i++) {
       readys[i] <= ~get(valid, i + 1) | readys[i + 1];

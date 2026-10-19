@@ -3132,7 +3132,12 @@ void main() {
         ];
         await SimCompare.checkFunctionalVector(module, vectors);
 
-        for (final generateEnums in [true, false]) {
+        // Array-layout coverage needs every packing mode. The packed case also
+        // covers disabling enum declarations, which is representation-only.
+        for (final generateEnums in [
+          true,
+          if (unpacked == 0) false,
+        ]) {
           final configuration = SystemVerilogSynthesizerConfiguration(
               generateEnums: generateEnums);
           final sv = module.dumpSystemVerilog(configuration: configuration);

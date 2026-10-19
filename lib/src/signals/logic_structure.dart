@@ -9,6 +9,69 @@
 
 part of 'signals.dart';
 
+LogicType _checkedTypedClone<LogicType extends Logic>(
+  LogicType source, {
+  String? name,
+}) {
+  final cloned = source.clone(name: name);
+  if (cloned is! LogicType) {
+    throw LogicConstructionException(
+      'Clone did not preserve the requested $LogicType type.',
+    );
+  }
+  return cloned;
+}
+
+void _validateTypedNamedClone(Logic source, String name) {
+  if (source is! LogicStructure) {
+    return;
+  }
+
+  final clone = source.clone(name: name);
+  if (clone is Const || clone.hasConsts) {
+    throw LogicConstructionException(
+      'A named typed alias requires driveable cloned fields.',
+    );
+  }
+}
+
+/// Type-preserving conveniences for concrete [Logic] values.
+///
+/// The static receiver type determines the static result type. If a value has
+/// already been widened to [Logic], this extension cannot recover its original
+/// subtype.
+extension TypedLogicUtilities<LogicType extends Logic> on LogicType {
+  /// Equivalent to [Logic.clone], preserving the receiver's static type.
+  ///
+  /// Literal cloning is legal: a concrete [Const] receiver returns another
+  /// [Const] rather than a driveable alias.
+  LogicType cloneTyped({String? name}) => _checkedTypedClone(this, name: name);
+
+  /// Creates a named driveable alias while preserving the static result type.
+  ///
+  /// A concrete [Const] receiver cannot satisfy this contract because
+  /// [Const.clone] is immutable while [Const.named] creates an ordinary
+  /// [Logic] alias. Use [Logic.named] when an ordinary [Logic] alias is
+  /// intended.
+  LogicType namedTyped(String name, {Naming? naming}) {
+    if (this is Const && LogicType == Const) {
+      throw LogicConstructionException(
+        'Const.namedTyped cannot preserve Const because a named alias must be '
+        'driveable. Use named() to create a Logic alias.',
+      );
+    }
+
+    _validateTypedNamedClone(this, name);
+    final named = this.named(name, naming: naming);
+    if (named is! LogicType) {
+      throw LogicConstructionException(
+        'Named alias did not preserve the requested $LogicType type.',
+      );
+    }
+    return named;
+  }
+}
+
 /// Collects a group of [Logic] signals into one entity which can be manipulated
 /// in a similar way as an individual [Logic].
 class LogicStructure implements Logic {
@@ -165,7 +228,9 @@ class LogicStructure implements Logic {
       index += element.width;
     }
 
-    return ConditionalGroup(conditionalAssigns);
+    return this is BaseLogicArray
+        ? ConditionalGroup(conditionalAssigns)
+        : StructureConditionalGroup(this, otherLogic, conditionalAssigns);
   }
 
   /// A list of all leaf-level elements at the deepest hierarchy of this
@@ -627,8 +692,18 @@ class LogicStructure implements Logic {
   }
 
   @override
-  Logic selectFrom(List<Logic> busList, {Logic? defaultValue}) =>
-      packed.selectFrom(busList, defaultValue: defaultValue);
+  LogicType selectFrom<LogicType extends Logic>(
+    List<LogicType> busList, {
+    dynamic defaultValue,
+    LogicType Function({String? name})? outputGenerator,
+    String name = 'selectFrom',
+  }) =>
+      packed.selectFrom(
+        busList,
+        defaultValue: defaultValue,
+        outputGenerator: outputGenerator,
+        name: name,
+      );
 
   @override
   bool get isNet => _isNet;

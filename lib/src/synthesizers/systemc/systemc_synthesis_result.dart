@@ -794,7 +794,7 @@ class SystemCSynthesisResult extends SynthesisResult {
     // ── Mux (ternary) ──
     if (m is Mux) {
       final vals = inputs.values.toList();
-      final w = m.out.width;
+      final w = m.outputs[m.resultSignalName]!.width;
       final utype = systemCType(w);
       // Cast both branches to avoid C++ ternary type mismatch
       // (e.g., when one branch is bool and the other is sc_uint<1>)

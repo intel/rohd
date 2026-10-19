@@ -90,12 +90,12 @@ class If extends Conditional {
       if (iff is Else) {
         if (iff != iffs.last) {
           throw InvalidConditionalException(
-              'Else must come last in an IfBlock.');
+              'Else must come last in an If.block.');
         }
 
         if (iff == iffs.first) {
           throw InvalidConditionalException(
-              'Else cannot be the first in an IfBlock.');
+              'Else cannot be the first in an If.block.');
         }
       }
     }
@@ -220,10 +220,10 @@ ${padding}end ''');
 
       for (final localMapping in localMappings.entries) {
         if (!phiMappings.containsKey(localMapping.key)) {
-          phiMappings[localMapping.key] = Logic(
+          phiMappings[localMapping.key] = SsaLogic.cloneLike(
+            localMapping.key,
+            localMapping.value,
             name: '${localMapping.key.name}_phi',
-            width: localMapping.key.width,
-            naming: Naming.mergeable,
           );
         }
 
@@ -241,18 +241,20 @@ ${padding}end ''');
         .flattened
         .map((e) => e.calculateReceivers())
         .flattened
-        .whereType<SsaLogic>()
+        .where((signal) => SsaLogic.isSsaProxy(signal, context: context))
         .toSet();
     for (final iff in iffs) {
       final alreadyDrivenSsaSignals = iff.then
           .map((e) => e.calculateReceivers())
           .flattened
-          .whereType<SsaLogic>()
+          .where((signal) => SsaLogic.isSsaProxy(signal, context: context))
           .toSet();
 
       for (final signalNeedingInit in signalsNeedingInit) {
         if (!alreadyDrivenSsaSignals.contains(signalNeedingInit)) {
-          iff.then.add(signalNeedingInit < 0);
+          iff.then.add(
+            signalNeedingInit < SsaLogic.branchDefaultValue(signalNeedingInit),
+          );
         }
       }
     }
