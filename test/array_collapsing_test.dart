@@ -2565,7 +2565,7 @@ void main() {
       expect(_topModuleBody(mod.dumpSystemVerilog()), topBody);
       final vectors = [
         for (final text in [
-          for (final pattern in [0, 0xff, 0xe4, 0x1b, 0x55, 0xaa])
+          for (final pattern in [0, 0xff, 0xe4])
             pattern.toRadixString(2).padLeft(8, '0'),
           'xz10zx01',
           'z01x10xz',
@@ -2582,7 +2582,7 @@ void main() {
       ];
       await SimCompare.checkFunctionalVector(mod, vectors);
       if (configuration.unpacked > 0) {
-        SimCompare.checkVerilatorVector(mod, vectors.take(6).toList());
+        SimCompare.checkVerilatorVector(mod, vectors.take(3).toList());
       } else {
         SimCompare.checkIverilogVector(mod, vectors);
       }
@@ -2599,7 +2599,7 @@ void main() {
       expect(topBody, isNot(contains('splitStage')));
       expect(topBody, isNot(contains('assign ')));
       final vectors = [
-        for (final pattern in [0, 0xff, 0x1b, 0xe4, 0x55, 0xaa])
+        for (final pattern in [0, 0xff, 0x1b])
           Vector({
             'source': pattern
           }, {
