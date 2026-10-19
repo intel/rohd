@@ -8,6 +8,8 @@ environment:
   sdk: ^3.6.0
   flutter: '>=3.44.0'
 
+resolution: workspace
+
 dependencies:
   cupertino_icons: '>=1.0.9 <3.0.0'
   dart_wellen: ^0.1.0
@@ -50,7 +52,7 @@ dev_dependencies:
   bloc_lint: ^0.3.5
   bloc_test: ^10.0.0
   build_runner: ^2.4.7
-  flutter_lints: ^3.0.1
+  flutter_lints: ^5.0.0
   flutter_test:
     sdk: flutter
   mocktail: ^1.0.2

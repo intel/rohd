@@ -48,8 +48,11 @@ jobs:
           use-quiet-mode: yes # output is too noisy, see https://github.com/gaurav-nelson/github-action-markdown-link-check/issues/121
           config-file: .github/configs/mlc_config.json
 
-      - name: Setup Dart
-        uses: dart-lang/setup-dart@v1
+      - name: Setup Flutter SDK
+        uses: flutter-actions/setup-flutter@v2
+        with:
+          channel: stable
+          version: 3.47.2
 
       - name: Setup Pana source analysis
         run: tool/gh_actions/install_pana.sh
@@ -85,8 +88,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Dart
-        uses: dart-lang/setup-dart@v1
+      - name: Setup Flutter SDK
+        uses: flutter-actions/setup-flutter@v2
+        with:
+          channel: stable
+          version: 3.47.2
 
       - name: Setup Node
         if: matrix.platform == 'node'
@@ -163,14 +169,10 @@ jobs:
           channel: stable
           version: 3.44.0
 
-      - name: Configure local package overrides
+      - name: Prepare workspace Pub overrides
         run: bash tool/gh_actions/write_local_package_overrides.sh
 
-      - name: Install root Dart dependencies
-        run: dart pub get
-
-      - name: Install DevTools application dependencies
-        working-directory: rohd_devtools_extension
+      - name: Install workspace dependencies
         run: flutter pub get
 
       - name: Run shell regression suites
@@ -212,22 +214,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Dart
-        if: matrix.sdk == 'dart'
-        uses: dart-lang/setup-dart@v1
-
       - name: Setup Flutter SDK
-        if: matrix.sdk == 'flutter'
         uses: flutter-actions/setup-flutter@v2
         with:
           channel: stable
-          version: 3.44.0
+          version: 3.47.2
 
-      - name: Configure local package overrides
+      - name: Prepare workspace Pub overrides
         run: bash ../../tool/gh_actions/write_local_package_overrides.sh
 
       - name: Install package dependencies
-        run: ${{ matrix.sdk }} pub get
+        run: flutter pub get
 
       - name: Setup Pana source analysis
         run: bash ../../tool/gh_actions/install_pana.sh
@@ -259,8 +256,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Setup Dart
-        uses: dart-lang/setup-dart@v1
+      - name: Setup Flutter SDK
+        uses: flutter-actions/setup-flutter@v2
+        with:
+          channel: stable
+          version: 3.47.2
 
       - name: Install project dependencies
         run: tool/gh_actions/install_dependencies.sh

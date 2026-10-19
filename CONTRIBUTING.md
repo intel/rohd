@@ -73,9 +73,13 @@ Once requirements are installed, you can clone and run the test suite:
 ```shell
 git clone https://github.com/intel/rohd.git
 cd rohd
-dart pub get
+flutter pub get
 dart test
 ```
+
+The repository is a Pub workspace and includes Flutter packages. Run
+`flutter pub get` from the repository root to resolve all in-repository
+packages together.
 
 ## How to Contribute
 

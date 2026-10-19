@@ -11,13 +11,13 @@ void main() {
   final extensionRoot = Directory.current.absolute;
   final repositoryRoot = Directory(extensionRoot.parent.path);
   final packageConfig = File(
-    '${extensionRoot.path}/.dart_tool/package_config.json',
+    '${repositoryRoot.path}/.dart_tool/package_config.json',
   );
 
   if (!packageConfig.existsSync()) {
     _fail(
-      'Missing ${packageConfig.path}. Run `flutter pub get` before verifying '
-      'local package resolution.',
+      'Missing ${packageConfig.path}. Run `flutter pub get` from the '
+      'workspace root before verifying local package resolution.',
     );
   }
 
@@ -59,9 +59,8 @@ void main() {
     if (_canonicalPath(Directory(resolvedRoot)) != expectedRoot) {
       _fail(
         'Package ${entry.key} resolved to $resolvedRoot; expected '
-        '${entry.value.path}. Ensure '
-        'tool/gh_actions/write_local_package_overrides.sh ran before '
-        '`flutter pub get`.',
+        '${entry.value.path}. Ensure the package is a workspace member and '
+        'run `flutter pub get` from the workspace root.',
       );
     }
     stdout.writeln('  ${entry.key}: $resolvedRoot');

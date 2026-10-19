@@ -20,7 +20,7 @@ export FLUTTER_ROOT="$FIXTURE/flutter sdk" PANA_ANALYSIS_INCLUDES=1
 
 mkdir -p "$SOURCE/lib" "$SOURCE/.dart_tool" "$SOURCE/example" \
   "$FIXTURE/bin" "$PUB_CACHE/bin" "$TMPDIR" "$FLUTTER_ROOT/bin"
-for executable in bash cat cmp dirname grep mkdir mktemp readlink rm tar; do
+for executable in awk bash cat cmp dirname grep mkdir mktemp mv readlink rm tar; do
   ln -s "$(command -v "$executable")" "$FIXTURE/bin/$executable"
 done
 printf 'name: fixture\n' > "$SOURCE/pubspec.yaml"

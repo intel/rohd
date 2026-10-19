@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-cd "$(dirname "$0")/.."
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+cd "$script_dir/.."
 
 run_mode="${1:-}"
 
@@ -9,7 +10,8 @@ usage() {
   cat <<'USAGE'
 Usage: scripts/devtools_run.sh <run-mode>
 
-Dependency sources are selected separately with scripts/devtools_dev_mode.sh.
+Dependency sources are selected separately with
+tool/devtools/devtools_dev_mode.sh.
 This command runs using the currently generated dependency configuration.
 
 Run modes:

@@ -74,6 +74,16 @@ copy_package() {
 }
 
 copy_package "$package_dir" "$temp_dir/package"
+awk -v strip_workspace="$([[ "$package" == rohd ]] && printf true || printf false)" '
+  $0 == "resolution: workspace" { next }
+  strip_workspace == "true" && $0 == "workspace:" {
+    skip = 1
+    next
+  }
+  skip && /^[^[:space:]]/ { skip = 0 }
+  !skip { print }
+' "$temp_dir/package/pubspec.yaml" >"$temp_dir/package/pubspec.yaml.tmp"
+mv "$temp_dir/package/pubspec.yaml.tmp" "$temp_dir/package/pubspec.yaml"
 hierarchy_dir=""
 if [[ -f "$package_dir/../rohd_hierarchy/pubspec.yaml" ]]; then
   hierarchy_dir="$package_dir/../rohd_hierarchy"

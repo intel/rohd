@@ -236,17 +236,28 @@ flows, including debug-mode variants. Those VS Code tasks are for extension
 development only and may change or be removed; the commands above are the
 release-mode forms to use directly.
 
-The dependency tasks configure four independent bundles: ROHD core, ROHD
-companion packages, the Wave Viewer, and the Schematic Viewer. Each bundle can
-use hosted, Git, or local packages without changing the other bundles. The
-selection is persisted in the ignored `.devtools_dependency_sources` file and
-rendered into `pubspec_overrides.yaml` by
-[`scripts/devtools_dev_mode.sh`](scripts/devtools_dev_mode.sh). Local viewer
-paths default below `~/true-release` when that directory exists and otherwise
-below `~/release`; the task prompts and script environment variables can
-override those defaults. The web application loads Schematic Viewer assets
-through Flutter's package asset namespace, so hosted Schematic Viewer builds
-do not require a local viewer checkout.
+The repository uses a Pub workspace for ROHD core, its in-repository packages,
+and this extension. Those packages resolve to this checkout automatically
+when their version constraints match; no local paths need to be configured.
+Run **Configure Dependency Bundle: Local ROHD Repository** (or `flutter pub
+get` from the repository root) to resolve the workspace.
+
+The dependency tasks configure four bundles: ROHD core, ROHD companion
+packages, the Wave Viewer, and the Schematic Viewer. Local is the normal source
+for workspace packages. Choosing hosted or Git for an in-repository package
+temporarily gives the extension an independent resolution and writes the
+necessary dependency overrides to the ignored `pubspec_overrides.yaml` via
+[`tool/devtools/devtools_dev_mode.sh`](../tool/devtools/devtools_dev_mode.sh). The selected
+sources are persisted in the ignored `.devtools_dependency_sources` file.
+Viewer packages are separate repositories; their local paths default below
+`~/true-release` when that directory exists and otherwise below `~/release`.
+The web application loads Schematic Viewer assets through Flutter's package
+asset namespace, so hosted Schematic Viewer builds do not require a local
+viewer checkout.
+
+Pub workspaces require Dart SDK `^3.6.0` or higher for every workspace package.
+The root workspace includes Flutter packages, so use Flutter's bundled Pub
+(`flutter pub get`) for workspace resolution.
 
 ### CI Local-Package Smoke Test
 

@@ -137,8 +137,8 @@ Preparation runs the following checks before invoking `tool/check_release.sh`:
 | Selected Package | Default Checks | Added With `--run-tests` |
 | --- | --- | --- |
 | `rohd` | `tool/run_checks.sh --skip-tests`: dependencies, formatting, analysis, API docs, and temporary-file checks; then `tool/package_vscode.sh` compiles and packages a temporary VSIX. | Simulator prerequisites and ROHD tests via `tool/run_checks.sh`. |
-| `rohd_hierarchy`, `rohd_waveform`, `rohd_source_navigator` | In each package directory: `dart pub get`, `dart format --output=none --set-exit-if-changed .`, then `dart analyze --fatal-infos`. | `dart test` with `--run-tests`; isolated hosted dependency checks and a blocking Pana score gate with `--run-pana`. |
-| `rohd_devtools_widgets` | In its package directory: `flutter pub get`, `dart format --output=none --set-exit-if-changed .`, then `flutter analyze --fatal-infos`. | `flutter test` with `--run-tests`; isolated hosted dependency checks and a blocking Pana score gate with `--run-pana`. |
+| `rohd_hierarchy`, `rohd_waveform`, `rohd_source_navigator` | Run `flutter pub get` from the repository root, then in each package directory run `dart format --output=none --set-exit-if-changed .` and `dart analyze --fatal-infos`. | `dart test` with `--run-tests`; isolated hosted dependency checks and a blocking Pana score gate with `--run-pana`. |
+| `rohd_devtools_widgets` | Run `flutter pub get` from the repository root, then in the package directory run `dart format --output=none --set-exit-if-changed .` and `flutter analyze --fatal-infos`. | `flutter test` with `--run-tests`; isolated hosted dependency checks and a blocking Pana score gate with `--run-pana`. |
 
 Artifact provenance verification and the DevTools installation smoke test always
 run when ROHD is selected, even when test suites are skipped. The VSIX packaging

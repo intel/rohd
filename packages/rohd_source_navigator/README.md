@@ -69,5 +69,6 @@ or its separate TypeScript implementation.
 
 ## Development
 
-The package lives in `packages/rohd_source_navigator` in the ROHD repository. Run
-`dart pub get`, `dart analyze`, and `dart test` from that directory.
+The package lives in `packages/rohd_source_navigator` in the ROHD repository.
+Run `flutter pub get` from the repository root to resolve the workspace, then
+run `dart analyze` and `dart test` from this package directory.
