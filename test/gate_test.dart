@@ -19,6 +19,16 @@ class ContentionModule extends Module {
   }
 }
 
+/// Selects between two [Const] values using a `mux<Logic>` output.
+class _ConstMuxModule extends Module {
+  Logic get out => output('out');
+
+  _ConstMuxModule(Logic sel) : super(name: 'const_mux') {
+    sel = addInput('sel', sel);
+    addOutput('out') <= mux<Logic>(sel, Const(1), Const(0));
+  }
+}
+
 class GateTestModule extends Module {
   Logic get aBar => output('a_bar');
   Logic get aAndB => output('a_and_b');
@@ -561,6 +571,30 @@ void main() {
           throwsA(isA<PortWidthMismatchException>()));
       expect(() => mux(Const(0), Logic(width: 2), d0),
           throwsA(isA<PortWidthMismatchException>()));
+    });
+
+    test('mux with all-Const data operands needs mux<Logic> for a dynamic '
+        'select', () async {
+      final sel = Logic(name: 'sel');
+
+      // Inferred Const output cannot be driven by a dynamic select.
+      expect(() => mux(sel, Const(1), Const(0)),
+          throwsA(isA<Exception>()),
+          reason: 'mux with inferred Const output must not be constructible');
+
+      final mod = _ConstMuxModule(sel);
+      await mod.build();
+      sel.put(0);
+      expect(mod.out.value, LogicValue.zero, reason: 'sel=0 selects Const(0)');
+      sel.put(1);
+      expect(mod.out.value, LogicValue.one, reason: 'sel=1 selects Const(1)');
+    });
+
+    test('mux<Logic> with a Const control bypasses to the selected Const', () {
+      final d1 = Const(1, width: 4);
+      final d0 = Const(0, width: 4);
+      expect(mux<Logic>(Const(1), d1, d0), same(d1));
+      expect(mux<Logic>(Const(0), d1, d0), same(d0));
     });
   });
 

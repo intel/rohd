@@ -3,6 +3,9 @@
 //
 // signal_value_source_binding.dart
 // Repo-specific binding for live signal value source creation.
+//
+// 2026 July 9
+// Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 import 'package:rohd_devtools_extension/rohd_devtools/services/signal_value_source.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/services/tree_service.dart';

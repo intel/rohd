@@ -3,13 +3,14 @@
 ### Breaking Changes
 
 - `FiniteStateMachine` and `State` now require Dart enum state identifiers. Replace integer, string, or custom-object identifiers with enum members; update reset and transition targets accordingly. `currentState` and `nextState` are now `LogicEnum` signals (<https://github.com/intel/rohd/pull/599>).
-- Removed long-deprecated APIs, including `StateMachine`, `FF`, `IfBlock`, `Port`, `LogicValues`, `CustomSystemVerilog`, `Dumper`, legacy signal/value helpers, and old synthesis accessors. These were already deprecated before 0.6.10. See the [0.7.0 migration guide](doc/releases.md#core-api-migration-for-070) for replacements.
+- Removed APIs deprecated in 0.5.x or earlier, and completed earlier breaking renames and merges: `StateMachine`, `FF`, `IfBlock`, `ExternalModule`, `LogicValues`, `Logic.bit`, `valueInt`, `valueBigInt`, `hasValidValue`, `isFloating`, `LogicValue.length`, `LogicValue.bit`, the `LogicValue.from...` constructors and `LogicValue.from(iterable)`, global `swizzle` and `rswizzle`, gate `y` output aliases including `Add.out`, `getReceivers`, `getDrivers`, `getConditionals`, `FiniteStateMachine.clk`, and `Pipeline.clk`. See the [0.7.0 migration guide](doc/releases.md#core-api-migration-for-070) for replacements. APIs deprecated in 0.6.x or with unrecorded deprecation history remain available as deprecated compatibility shims in 0.7.0.
 
 ### Deprecated APIs retained for a later release
 
 - `PairInterface.modify`, its constructor argument, and the `PairInterface.clone` constructor remain deprecated but available for downstream interface compatibility. Prefer `uniquify` when connecting or adding sub-interfaces, and `other.clone()`.
 - `WaveDumper`, `Module.generateSynth`, and `ModuleTree.hierarchyJSON` remain available with deprecation warnings. They were released APIs in 0.6.11, but their deprecations had not shipped in a tagged release. Use `Module.dumpWaves`, `Module.dumpSystemVerilog`, and `ModuleTree.hierarchyJson`, respectively.
 - `NetlistSynthesisResult.toFileContents()` remains deprecated but available because it first shipped in 0.6.11. Use `toSynthFileContents()` and read the returned artifacts' `contents`.
+- `Port`, `getFileContents()`, and `CustomSystemVerilog` remain available because they were deprecated in 0.6.4, 0.6.4, and 0.6.0, respectively. `LogicStructure.bit`, `Module.unpreferredName`, `Module.isUnpreferred`, `Dumper`, `SynthBuilder.top`, `SynthesisResult.toFileContents()` and its backend overrides, and `SystemVerilogSynthesizer.instantiationVerilogWithParameters` remain available because their deprecation release is not recorded. Use the replacement APIs in the migration guide.
 - These APIs are not removed in 0.7.0; migrate callers now in preparation for removal in a later release. Compatibility retention follows the same approach as a 0.6.12 release, despite the version change.
 - Unreleased compatibility APIs (`FlcService`, `SystemCExecutable`, `ModuleServices.hierarchyJSON`, FLC methods on `NetlistService`, and `SystemVerilogService.contentsByName`) remain removed. They were never part of a tagged core release.
 
@@ -28,7 +29,13 @@
 
 ### Improvements
 
+- Fixed `SimCompare.checkSystemCVector` to honor explicit clock vectors instead of silently replacing them with a free-running clock. Reusable SystemC executables accept `drivenClockNames`, and compiled cache keys distinguish clock modes. Automatic clocks remain available when vectors omit clock inputs.
+- Emit child-driven unpacked arrays as nets to avoid unknown values in Icarus 12.0, while retaining variable declarations for procedurally written arrays. Child-driven unpacked outputs use `output wire logic` by default; explicit object-type configuration remains honored.
+- Fixed procedural reads of enum leaves in typed arrays to convert packed array selections back into the destination enum type.
+- Added rank-zero `TypedLogicArray<T, V>` construction with shape `[]`, a checked `scalar` getter, and `fromScalar` connected views that preserve source ownership. Typed value arrays also support rank-zero snapshots, indexing, and reshaping. Typed ports and synthesis preserve the leaf width without introducing a phantom array index.
+- Added `Module.addInterface`, `Module.addInterfaceFrom`, `Module.addPairInterface`, and `Module.addPairInterfaceFrom` for registering interfaces on a module without calling `connectIO` or `pairConnectIO` directly. The `From` forms register a provided target instead of a clone. Existing `addInterfacePorts` and `addPairInterfacePorts` remain available.
 - Improved generated synthesis wiring across module boundaries and driver-name selection (<https://github.com/intel/rohd/pull/726>).
+- Retain whole child-output buses when their slices feed temporary consumer wires, and connect order-preserving packed destinations as a whole rather than as a concatenation of their elements. Explicit split-output names and structure-aware wiring remain preserved.
 - Same-width `Logic.zeroExtend` now returns the original signal instead of creating a redundant extension (<https://github.com/intel/rohd/pull/729>).
 - Migrated `rohd_source_navigator` into its package in preparation for independent publication (<https://github.com/intel/rohd/pull/718>).
 - Netlist JSON format is now `0.1.0`, preserving enum types and encodings on retained netnames using Yosys-style attributes, including constant-driven enum uses (<https://github.com/intel/rohd/pull/599>).
@@ -42,35 +49,22 @@
 - `Pipeline.get`, `PipelineStageInfo.get`, and `PipelineStageInfo.getAbs` now preserve each identifier's concrete type through stage reconstruction and SSA, allowing structures, typed arrays, enums, and scalar signals in one pipeline. `ReadyValidPipeline` retains its established multi-signal API and gains the same per-identifier typed access without separate payload pipeline classes.
 - Preserved aggregate structure assignment metadata through synthesis and netlist generation.
 - Fixed SystemVerilog synthesis of internally computed packed logic assigned to packed-array outputs, retaining required intermediate declarations.
-- Upgraded `Mux`, `FlipFlop`, `Passthrough`, `mux`, `flop`, `cases`,
-  `selectIndex`, and `selectFrom` to preserve compatible concrete `Logic`
-  subtypes, including nested `LogicArray` and `TypedLogicArray` boundaries.
-  Removed the parallel structure-only operation APIs.
-- **Migration:** plain `Const` and `LogicNet` sources no longer infer
-  driveable outputs for operations that construct hardware. Request
-  `<Logic>`, for example `flop<Logic>(clk, Const(1))`, to normalize them.
-  Use an operation `outputGenerator` when an explicit output representation is
-  required, including mixed packed and structured `cases` branches.
-- **Migration:** type-preserving operations on `TypedLogicArray` operands now
-  require the identical `valueCodec` instance. Reuse a shared codec or cross
-  an explicit `packed` boundary to reinterpret compatible bits.
-- **Breaking:** Removed compatibility APIs deprecated before `0.6.11`. Use the
-  canonical `ExternalSystemVerilogModule`, `FiniteStateMachine`, `Sequential`,
-  `If.block`, `Logic.port`, `LogicValue` `of...` constructors, `SystemVerilog`,
-  `SynthFileContents`, and instance `clone()` APIs. Apply interface port names
-  at connection time with `uniquify`; use canonical operation outputs such as
-  `out` and `sum`; and access signal values through `value`. Compatibility APIs
-  first deprecated in `0.6.11` remain available, including `generateSynth`,
-  `WaveDumper`, `hierarchyJSON`, and `contentsByName`.
-- Added public `cloneTyped()` and `namedTyped()` conveniences for retaining a
-  receiver's static type. `Const.cloneTyped()` remains a literal clone;
-  `Const.namedTyped()` is rejected because a named alias must be driveable.
+- Upgraded `Mux`, `FlipFlop`, `Passthrough`, `mux`, `flop`, `cases`, `selectIndex`, and `selectFrom` to preserve compatible concrete `Logic` subtypes, including nested `LogicArray` and `TypedLogicArray` boundaries. Removed the parallel structure-only operation APIs.
+- **Migration:** plain `Const` and `LogicNet` sources no longer infer driveable outputs for operations that construct hardware. Request `<Logic>`, for example `flop<Logic>(clk, Const(1))` or `mux<Logic>(sel, Const(1), Const(0))`, to normalize them. Use an operation `outputGenerator` when an explicit output representation is required, including mixed packed and structured `cases` branches.
+- **Migration:** type-preserving operations on `TypedLogicArray` operands now require the identical `valueCodec` instance. Reuse a shared codec or cross an explicit `packed` boundary to reinterpret compatible bits.
+- **Migration:** type-preserving operations reject structure operands with different `runtimeType`s, because the output takes the static type of the first operand. Clone the result with `clone(name: ...)` to keep a subclass type, for example in a `negate()` that returns the receiver's type, rather than returning a base class.
+- Added public `cloneTyped()` and `namedTyped()` conveniences for retaining a receiver's static type. `Const.cloneTyped()` remains a literal clone; `Const.namedTyped()` is rejected because a named alias must be driveable.
 - Added configurable waveform timescales, recording windows, and output overwrite policies (<https://github.com/intel/rohd/pull/671>).
 - Added opt-in `DebugSession` setup for source tracing, netlist and FLC services, and live waveform recording (<https://github.com/intel/rohd/pull/707>).
 - Expanded reusable `rohd_devtools_widgets` components for hierarchy browsing, signal formatting, bit expansion, overlays, help, capture, and cross-probing (<https://github.com/intel/rohd/pull/736>).
 - Added `rohd_waveform` 0.1.1 client APIs for hierarchy normalization, repository-backed waveform access, caching, readiness, streaming, computed signals, and sub-field/bit-slice waveforms (<https://github.com/intel/rohd/pull/736>).
 
 ### Bug Fixes
+
+- SystemC implementation matching now includes internal signal declarations and child-module types, preventing distinct hierarchical implementations from being incorrectly merged.
+
+- Structured `Mux` output generators now select leaf-by-leaf even when the operands have been widened to `Logic`, preserving typed layouts and avoiding raw-value writes through domain-specific `put` overrides.
+- SystemC generation now emits structured mux hierarchies instead of incorrectly treating them as inline scalar gates and omitting their drivers.
 
 - Fixed a netlist pass that could drop connections to module output ports (<https://github.com/intel/rohd/pull/731>).
 - Fixed `LogicValue.ofRadixString` round trips with empty separators and separators containing regular-expression metacharacters (<https://github.com/intel/rohd/issues/722>).

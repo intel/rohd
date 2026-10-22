@@ -5,17 +5,27 @@
 #   install        - Compile and install to remote VS Code Server (default)
 #   install-local  - Compile and install to local VS Code
 #   install-remote - Compile and install to remote VS Code Server
+#   package        - Build and verify a Marketplace-ready VSIX
+#   verify-vsix    - Verify the current Marketplace VSIX
 #   clean          - Remove compiled output and packaged .vsix files
 #   real-clean     - clean + remove node_modules, lock files, .dart_tool
 #   help           - Show this help
 
 ROOT := $(shell pwd)
+NODE ?= node
+NPM ?= npm
 TS_SOURCES := $(shell find $(ROOT)/src -name '*.ts' 2>/dev/null)
 
-# Read name/version from package.json
-PKG_NAME := $(shell node -p "require('./package.json').name")
-PKG_VERSION := $(shell node -p "require('./package.json').version")
-PKG_PUBLISHER := $(shell node -p "require('./package.json').publisher")
+# The extension Pub manifest is the authoritative release version.
+PUBSPEC_VERSION := $(shell awk '$$1 == "version:" { print $$2; exit }' "$(ROOT)/pubspec.yaml")
+
+# Read Marketplace identity from package.json.
+PKG_NAME := $(shell $(NODE) -p "require('./package.json').name")
+PKG_VERSION := $(PUBSPEC_VERSION)
+PKG_PUBLISHER := $(shell $(NODE) -p "require('./package.json').publisher")
+VSIX := $(ROOT)/build/$(PKG_PUBLISHER).$(PKG_NAME)-$(PKG_VERSION).vsix
+VERIFY_VSIX := $(ROOT)/tool/verify_marketplace_vsix.sh
+VERIFY_EXTENSION_PACK := $(ROOT)/tool/verify_extension_pack.sh
 
 # VS Code Server extension directory (remote dev container)
 REMOTE_EXT_DIR := $(HOME)/.vscode-server/extensions/$(PKG_PUBLISHER).$(PKG_NAME)-$(PKG_VERSION)
@@ -25,7 +35,7 @@ LOCAL_EXT_DIR := $(HOME)/.vscode/extensions/$(PKG_PUBLISHER).$(PKG_NAME)-$(PKG_V
 # Stamp file to track last successful compile
 COMPILE_STAMP := out/.compile-stamp
 
-.PHONY: all help compile install install-local install-remote clean real-clean
+.PHONY: all help compile package sync-version verify-vsix verify-extension-version verify-extension-pack install install-local install-remote clean real-clean
 
 all: install
 
@@ -33,6 +43,10 @@ help:
 	@echo "ROHD VS Code Extension - Build Targets"
 	@echo ""
 	@echo "  compile        - Compile TypeScript to out/"
+	@echo "  package        - Build and verify a Marketplace-ready VSIX"
+	@echo "  sync-version   - Synchronize package.json and package-lock.json from pubspec.yaml"
+	@echo "  verify-vsix    - Verify the current Marketplace VSIX"
+	@echo "  verify-extension-pack - Verify declared viewer extension-pack identity"
 	@echo "  install        - Compile and install to remote server (default)"
 	@echo "  install-local  - Compile and install to local VS Code"
 	@echo "  install-remote - Compile and install to remote VS Code Server"
@@ -40,6 +54,7 @@ help:
 	@echo "  real-clean     - clean + node_modules, lock files, .dart_tool"
 	@echo ""
 	@echo "Extension: $(PKG_PUBLISHER).$(PKG_NAME) v$(PKG_VERSION)"
+	@echo "VSIX:      $(VSIX)"
 	@echo "Remote:    $(REMOTE_EXT_DIR)"
 
 # ---------------------------------------------------------------------------
@@ -49,7 +64,7 @@ help:
 # Install npm dependencies (including TypeScript) if missing or out of date
 node_modules: package.json package-lock.json
 	@echo "Installing npm dependencies..."
-	@npm ci
+	@$(NPM) ci
 	@touch node_modules
 
 # ---------------------------------------------------------------------------
@@ -58,10 +73,63 @@ node_modules: package.json package-lock.json
 
 $(COMPILE_STAMP): $(TS_SOURCES) tsconfig.json package.json node_modules
 	@echo "Compiling TypeScript..."
-	@npx tsc -p ./
+	@$(NPM) run compile
 	@touch $(COMPILE_STAMP)
 
 compile: $(COMPILE_STAMP)
+
+# ---------------------------------------------------------------------------
+# Marketplace packaging
+# ---------------------------------------------------------------------------
+
+verify-extension-version:
+	@pubspec_version="$(PUBSPEC_VERSION)"; \
+	manifest_version="$$($(NODE) -p "require('./package.json').version")"; \
+	lock_version="$$($(NODE) -p "require('./package-lock.json').version")"; \
+	lock_root_version="$$($(NODE) -p "require('./package-lock.json').packages[''].version")"; \
+	lock_name="$$($(NODE) -p "require('./package-lock.json').packages[''].name")"; \
+	manifest_name="$$($(NODE) -p "require('./package.json').name")"; \
+	publisher="$$($(NODE) -p "require('./package.json').publisher")"; \
+	if [ -z "$$pubspec_version" ]; then \
+		echo "error: Unable to read version from pubspec.yaml."; \
+		exit 1; \
+	elif [ "$$pubspec_version" != "$$manifest_version" ] || \
+	   [ "$$pubspec_version" != "$$lock_version" ] || \
+	   [ "$$pubspec_version" != "$$lock_root_version" ] || \
+	   [ "$$manifest_name" != "$$lock_name" ]; then \
+		echo "error: Pub and VS Code extension versions do not match."; \
+		echo "  pubspec.yaml:      $$pubspec_version"; \
+		echo "  package.json:      $$manifest_name $$manifest_version"; \
+		echo "  package-lock.json: $$lock_name $$lock_version (root $$lock_root_version)"; \
+		exit 1; \
+	elif [ "$$publisher" != "intel-corporation" ]; then \
+		echo "error: Marketplace publisher must be intel-corporation, got $$publisher."; \
+		exit 1; \
+	fi; \
+	echo "Pub and VS Code extension version $$pubspec_version verified for $$publisher.$$manifest_name."
+
+sync-version:
+	@if [ -z "$(PUBSPEC_VERSION)" ]; then \
+		echo "error: Unable to read version from pubspec.yaml."; \
+		exit 1; \
+	fi
+	@cd "$(ROOT)" && $(NPM) version "$(PUBSPEC_VERSION)" --no-git-tag-version --allow-same-version
+	@echo "Synchronized VS Code extension version $(PUBSPEC_VERSION) from pubspec.yaml."
+
+verify-extension-pack:
+	@bash "$(VERIFY_EXTENSION_PACK)"
+
+$(VSIX): $(TS_SOURCES) pubspec.yaml package.json package-lock.json .vscodeignore README.md LICENSE CHANGELOG.md $(VERIFY_VSIX) $(VERIFY_EXTENSION_PACK) node_modules | verify-extension-version verify-extension-pack
+	@echo "Packaging Marketplace VSIX..."
+	@mkdir -p "$(dir $@)"
+	@rm -f "$@"
+	@$(NPM) run package -- --out "$@"
+	@bash "$(VERIFY_VSIX)" "$@"
+
+package: $(VSIX)
+	@bash "$(VERIFY_VSIX)" "$(VSIX)"
+
+verify-vsix: package
 
 # ---------------------------------------------------------------------------
 # Install
@@ -104,6 +172,7 @@ install: install-remote
 clean:
 	@echo "Cleaning compiled output and .vsix files..."
 	@rm -rf out/
+	@rm -rf build/
 	@rm -f *.vsix
 
 real-clean: clean

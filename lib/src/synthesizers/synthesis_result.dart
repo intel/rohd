@@ -49,6 +49,10 @@ abstract class SynthesisResult {
   @override
   int get hashCode => matchHashCode;
 
+  /// Generates what could go into a file.
+  @Deprecated('Use `toSynthFileContents()` instead.')
+  String toFileContents();
+
   /// Generates contents for a number of files.
   List<SynthFileContents> toSynthFileContents();
 

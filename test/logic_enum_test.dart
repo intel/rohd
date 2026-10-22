@@ -7,6 +7,7 @@
 // 2026 July 22
 // Author: Max Korbel <max.korbel@intel.com>
 
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:rohd/rohd.dart';
@@ -887,6 +888,25 @@ class EnumComparisonModule extends Module {
 }
 
 class EmptyModule extends Module {}
+
+/// A flop with an inferred output type and a constant or dynamic reset.
+class _EnumResetFlop extends Module {
+  /// The registered output.
+  Logic get q => output('q');
+
+  _EnumResetFlop(Logic clk, Logic reset, LogicEnum<TestEnum> d,
+      {required bool asyncReset, required Object resetValue})
+      : super(name: 'enumResetFlop') {
+    clk = addInput('clk', clk);
+    reset = addInput('reset', reset);
+    final din = addTypedInput<LogicEnum<TestEnum>>('d', d);
+    final q = addOutput('q', width: d.width);
+    q <= flop(clk, din,
+        reset: reset,
+        asyncReset: asyncReset,
+        resetValue: resetValue);
+  }
+}
 
 Future<void> checkEnumModeParity(Module module, List<Vector> vectors) async {
   await module.build();
@@ -1988,6 +2008,40 @@ void main() {
         definitionName: 'SecondEnum',
         reserveDefinitionName: true));
     expect(SynthLogic.tryMerge(reservedFirst, reservedSecond), isNull);
+  });
+
+  group('enum flop constant reset', () {
+    // A constant enum reset on a flop whose output type is inferred as
+    // plain Logic must still be mapped through the input LogicEnum.
+    for (final asyncReset in [false, true]) {
+      test('inferred flop maps constant enum reset (asyncReset=$asyncReset)',
+          () async {
+        final clkGen = SimpleClockGenerator(10);
+        final reset = Logic(name: 'reset');
+        final d = LogicEnum<TestEnum>(TestEnum.values, name: 'd');
+        final dut = _EnumResetFlop(clkGen.clk, reset, d,
+            asyncReset: asyncReset, resetValue: TestEnum.b);
+        await dut.build();
+
+        // TestEnum.b maps to 1 under the default mapping (a=0, b=1, c=2).
+        expect(dut.dumpSystemVerilog(), contains("2'h1"),
+            reason: 'constant enum reset should emit its mapped value');
+
+        d.inject(TestEnum.c);
+        reset.inject(0);
+        Simulator.setMaxSimTime(200);
+        unawaited(Simulator.run());
+
+        await clkGen.clk.nextPosedge;
+        reset.inject(1);
+        await clkGen.clk.nextPosedge;
+        await clkGen.clk.nextPosedge;
+        expect(dut.q.value.toInt(), equals(1),
+            reason: 'reset should load the mapped value of TestEnum.b');
+
+        await Simulator.endSimulation();
+      });
+    }
   });
 
   group('enum sv gen', () {

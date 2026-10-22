@@ -35,13 +35,13 @@
   <script src="assets/packages/rohd_schematic_viewer/js_bridge/elk_layout_only.js"></script>
 
   <!-- Wellen WASM bindings (flutter_rust_bridge) for VCD/FST/GHW waveform parsing -->
-  <script src="pkg/wellen_bridge.js"></script>
+  <script src="dart_wellen/wellen_bridge.js"></script>
 </head>
 
 <body>
   <script>
     // Initialize wellen_bridge WASM before Flutter starts.
-    // wasm_bindgen (from pkg/wellen_bridge.js) must be called to fetch+compile
+    // wasm_bindgen (from dart_wellen/wellen_bridge.js) must be called to fetch+compile
     // the .wasm binary and expose frb_* functions that Dart's @JS interop needs.
     (async function() {
       try {
@@ -49,7 +49,7 @@
         var baseHref = base ? base.getAttribute('href') : '/';
         if (!baseHref.endsWith('/')) baseHref += '/';
 
-        var wasmPath = baseHref + 'pkg/wellen_bridge_bg.wasm';
+        var wasmPath = baseHref + 'dart_wellen/wellen_bridge_bg.wasm';
         await wasm_bindgen({ module_or_path: wasmPath });
 
         // Dart's @JS("wasm_bindgen.frb_*") expects window.wasm_bindgen

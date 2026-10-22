@@ -4,6 +4,10 @@
 // ignore_for_file: deprecated_member_use, unnecessary_ignore
 
 /// Creates a regular-expression pattern with the requested matching options.
+//
+// 2026 October 16
+// Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
+
 Pattern regExpPattern(
   String source, {
   bool multiLine = false,

@@ -6,6 +6,10 @@
 // Verifies that `evaluateSignalOnDemand` correctly resolves inner-dimension
 // array element signals that do NOT have explicit $slice cells (only the
 // outermost dimension gets $slice cells from `_subsetReceiveArrayPort`).
+//
+// 2026 October 17
+// Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
+
 @TestOn('vm')
 library;
 

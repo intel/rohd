@@ -1,7 +1,7 @@
 ---
 title: "Logic Arrays"
 permalink: /docs/logic-arrays/
-last_modified_at: 2026-09-16
+last_modified_at: 2026-10-21
 toc: true
 ---
 
@@ -132,6 +132,53 @@ for the complete constructor and cloning contracts.
 
 Hardware shape changes should use ordinary construction and connection APIs rather than specialized typed-array adapters. Construct a new `TypedLogicArray` with the desired dimensions and builder, then connect it with `gets`/`<=` when row-major assignment is sufficient. For a transpose, connect corresponding coordinates explicitly with `indexedElements` and `at`; whole-array assignment does not infer a permutation. This keeps construction disconnected and leaves driver ownership with the caller.
 
+### Rank-zero arrays and scalar views
+
+`TypedLogicArray<TLogic, TValue>` accepts `dimensions: []` to represent exactly
+one typed leaf without any array axes. It has the same packed width and bits as
+that leaf and does not introduce a `[0]` index in generated SystemVerilog.
+This is different from shape `[0]`, which contains no elements, and shape
+`[1]`, which has one element but still has one array axis.
+
+```dart
+final scalar = TypedLogicArray<Sample, SampleValue>(
+  [],
+  Sample.new,
+  valueCodec: sampleCodec,
+);
+final Sample sample = scalar.scalar; // Also available as scalar.at([]).
+final SampleValue snapshot = scalar.value.scalar;
+```
+
+The checked `scalar` getter throws `StateError` for any nonzero rank.
+`at([])`, `arrayElements`, and `indexedElements` work at rank zero: there is
+one typed element, with an empty index list. Value arrays constructed with
+`TypedLogicValueArray.fromFlat` or `fromPacked` also accept shape `[]` and
+require exactly one value. Reshaping a single-element value array to `[]`
+preserves its codec and packed value.
+
+To view an existing scalar or structured signal as a rank-zero array, use
+`fromScalar`:
+
+```dart
+final source = samples.at([0, 0]);
+final view = TypedLogicArray<Sample, SampleValue>.fromScalar(
+  source,
+  valueCodec: sampleCodec,
+  name: 'sample_view',
+);
+```
+
+The view owns a type-preserving, driveable clone connected **from** `source`;
+it does not reparent `source`, even if the source is already an array or
+structure member. This is a directional hardware connection, not a mutable
+two-way alias. A subsequent `clone()` of the view is disconnected, as usual.
+
+A rank-zero wrapper remains a `TypedLogicArray` in Dart, not an instance of
+`TLogic`. Use `.scalar` or `.at([])` for statically typed access to leaf-specific
+fields and operations. Rank zero has no unpacked dimensions or dimension-name
+prefixes. `LogicArray` retains its existing nonzero-rank construction API.
+
 ### Traversal boundaries
 
 These APIs intentionally stop at different boundaries:
@@ -157,6 +204,12 @@ the textual shape of generated selections.
 
 Some simulators do not accept unpacked `inout` array ports. Prefer packed
 outer dimensions for portable bidirectional interfaces.
+
+Unpacked arrays driven by child-module outputs are emitted as nets.
+This preserves their array layout and avoids Icarus 12.0 leaving child-driven
+array variables unknown. Arrays written by procedural blocks remain variables.
+Child-driven unpacked output ports use `output wire logic` by default;
+explicit object-type configuration is still honored.
 
 Zero-sized arrays are supported for simulation and value operations.
 SystemVerilog generation rejects them because the language has no portable

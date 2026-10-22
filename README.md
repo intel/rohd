@@ -25,6 +25,29 @@ For documentation, guides, and more, [**visit the ROHD Website!**](https://intel
 - [Blog](https://intel.github.io/rohd-website/blog/)
 - [Contributing](https://github.com/intel/rohd/blob/main/CONTRIBUTING.md)
 
+### Start a component development area
+
+Create a small standalone package for experimenting with a ROHD module or
+starting a reusable component:
+
+```sh
+bash tool/create_rohd_development_area.sh ../my_rohd_component \
+  --module-name MyComponent \
+  --hcl-path ../rohd-hcl
+```
+
+The script defaults `--rohd-path` to this checkout and uses `~/rohd-hcl` when
+`--hcl-path` is omitted. It creates local path overrides for ROHD,
+`rohd_hierarchy`, and ROHD-HCL so the new package can use component-library
+types while developing against local sources.
+
+The generated parent/child starter demonstrates correct hierarchical ownership
+for a `LogicStructure`, `LogicArray`, `TypedLogicArray`, and `Interface`. Its
+test verifies field-wise inversion and generates temporary traced netlist,
+SystemVerilog, VCD waveform, and FLC source-navigation artifacts. See the
+generated `doc/Component.md` and `.github/skills/` directory for component and
+agent guidance.
+
 You can also open this repository in a GitHub Codespace to run the example in your browser with a full IDE.  This is also an easy way to get started with contributions!
 
   [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://github.com/codespaces/new?hide_repo_select=true&ref=main&repo=409325108)

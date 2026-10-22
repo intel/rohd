@@ -20,7 +20,7 @@ released, not a repository-wide version.
 | [rohd_devtools_widgets](../packages/rohd_devtools_widgets) | Reusable Flutter controls and utilities for debug viewers. | Independent pub.dev package; `flutter pub publish` from its directory. | Its own `pubspec.yaml`. | Tag `rohd_devtools_widgets-v<version>`; release **rohd_devtools_widgets v<version>**. |
 | [rohd_source_navigator](../packages/rohd_source_navigator) | Shared FLC data models and source-navigation utilities for debug viewers. | Independent pub.dev package; `dart pub publish` from its directory. | Its own `pubspec.yaml`. | Tag `rohd_source_navigator-v<version>`; release **rohd_source_navigator v<version>**. |
 | [ROHD DevTools application](../rohd_devtools_extension) | Interactive hardware debug UI embedded in Dart DevTools. | Flutter web build produced by CI and bundled under `extension/devtools` in the ROHD pub.dev package; the application itself is not published to pub.dev. | Tracked by the containing ROHD release and the build's source/artifact commits, not an independent application release version. | Included in ROHD's tag and release notes; no separate release tag. The `artifacts` branch holds CI output, not an immutable release. |
-| [ROHD VS Code extension](../rohd_extension) | Editor snippets, completions, and cross-probe source navigation. | GitHub Actions builds and attaches a VSIX when its GitHub release is published; a maintainer tests and publishes that VSIX to the VS Code Marketplace separately. | `rohd_extension/package.json`. | Tag `rohd-vscode-v<version>`; release `ROHD VS Code v<version>`, with `rohd-vscode-v<version>.vsix` attached automatically. |
+| [ROHD VS Code extension](../rohd_extension) | Editor snippets, completions, cross-probe source navigation, and the ROHD viewer extension pack. | GitHub Actions verifies the Marketplace availability of the Schematic and Wave Viewer extensions, then builds, verifies, checksums, and attaches a Marketplace-qualified VSIX for `intel-corporation.rohd` when its GitHub release is published; an authorized Marketplace administrator publishes that exact artifact separately. | `rohd_extension/pubspec.yaml`, synchronized to npm metadata. | Tag `rohd-vscode-v<version>`; release `ROHD VS Code v<version>`, with `rohd-vscode-v<version>.vsix` and its checksum attached automatically. |
 
 The source-navigation library lives in `packages/rohd_source_navigator`, alongside
 the other independently published libraries. Git dependencies following the move
@@ -66,6 +66,16 @@ extension, publishing the GitHub release triggers VSIX attachment; Marketplace
 publication follows testing of that asset. Tags and GitHub releases do not
 automatically publish to pub.dev or the Marketplace. Commits, tag creation,
 pushes, and publication are separate maintainer actions.
+
+## Optional Local Hosted-Package Rehearsal
+
+Before real publication, test unpublished package combinations with a disposable
+local Pub registry. Follow [Hosted Package Testing With unpub](local_pub_testing.md)
+for dependency-order publication, isolated package staging and caches, and
+consumer checks. Each experiment can reuse the intended release versions with
+fresh registry storage; no pub.dev upload or localhost changes to release source
+are required. This is an optional packaging gate, not a replacement for the
+release preparation and CI checks below.
 
 ## Pub.dev Preparation
 
@@ -156,16 +166,23 @@ prerequisite or enabled check; no publication dry runs start unless all enabled
 checks pass. An early failure such as a nonempty `tmp_test` directory
 means later stages have not run. Review leftover test files before retrying.
 The ordinary package checks use the current checkout's dependency overrides.
-CI always reuses the existing Pana runner, while local preparation runs it only
-with `--run-pana`:
-`bash tool/gh_actions/pana_source.sh packages/<package> <dart|flutter>`.
-Its package mode uses a disposable copy without checkout overrides, lockfiles,
-generated resolution/build state, or repository-relative analyzer configuration.
-Inline overrides are rejected; keep local overrides in `pubspec_overrides.yaml`.
-It runs `pub get` and `pub downgrade`, each followed by fatal-info analysis of
-`lib/`, using the selected SDK. Flutter analysis uses `--no-pub` to preserve the
-downgraded resolution. Required dependencies must already be available on pub.dev;
-there is no fallback to local packages. Command failures stop CI and preparation.
+Run `tool/run_pana.sh` from the repository root to run hosted dependency
+compatibility checks and Pana score gates for all five publishable packages
+without running release preparation. Pass package names to select a subset.
+The per-package checks and CI use the same
+`tool/gh_actions/pana_source.sh` runner; local release preparation also invokes
+that runner only when `--run-pana` is supplied.
+Its package mode uses a disposable copy without checkout lockfiles, generated
+resolution/build state, or repository-relative analyzer configuration. Inline
+overrides are rejected; keep local overrides in `pubspec_overrides.yaml`.
+When a package depends on `rohd_hierarchy`, the isolated sibling checkout is
+used for compatibility analysis. Pana separately verifies the package's hosted
+dependency constraints; if they require an unpublished sibling version, it
+fails and identifies the release-order blocker. Other dependencies resolve
+from their hosted sources. The runner performs `pub get` and `pub downgrade`,
+each followed by fatal-info analysis of `lib/`, using the selected SDK. Flutter
+analysis uses `--no-pub` to preserve the downgraded resolution. Command failures
+stop that package check.
 Pana's report is printed for review, and package scoring findings such as missing
 examples or newer dependency major versions count against the CI and preparation
 score gate. Pana's `--exit-code-threshold` is the number of
@@ -297,44 +314,55 @@ coordinated release.
 
 ### Core API migration for 0.7.0
 
-ROHD 0.7.0 removes long-deprecated core APIs, but retains released APIs whose
-deprecation has not had a sufficient release cycle. Migrate consumers before widening a `^0.6.11` core
-constraint to include 0.7.x. The independently versioned shared packages do not
-need breaking releases just because core removes these APIs.
+ROHD 0.7.0 removes APIs deprecated in 0.5.x or earlier and completes a few
+older breaking renames and merges. APIs deprecated in 0.6.x, and APIs whose
+deprecation release is not recorded, remain available as deprecated
+compatibility shims for this transitional release. Migrate consumers before
+widening a `^0.6.11` core constraint to include 0.7.x. The independently
+versioned shared packages do not need breaking releases just because core
+removes these APIs.
 
-| Removed API | Replacement |
-| --- | --- |
-| `StateMachine` | `FiniteStateMachine`, with enum state identifiers |
-| `FF`, `IfBlock` | `Sequential`, `If.block` |
-| `ExternalModule` | `ExternalSystemVerilogModule` |
-| `Port` | `Logic.port` |
-| `LogicValues` | `LogicValue` |
-| `Logic.bit`, `LogicStructure.bit` | `value`; explicitly check `width == 1` when required |
-| `valueInt`, `valueBigInt` | `value.toInt()`, `value.toBigInt()` |
-| `hasValidValue()`, `isFloating()` on signals | `value.isValid`, `value.isFloating` |
-| `LogicValue.length`, `LogicValue.bit` | `width`, or the value itself with an explicit single-bit width check |
-| `LogicValue.fromBool`, `fromInt`, `fromBigInt`, `fromString` | `ofBool`, `ofInt`, `ofBigInt`, `ofString` |
-| `LogicValue.from(iterable)` | `LogicValue.ofIterable(iterable)` |
-| Global `swizzle(signals)`, `rswizzle(signals)` | `signals.swizzle()`, `signals.rswizzle()` |
-| Gate `y` output aliases | `out`, `Add.sum`, or `Mux.mux`, as appropriate |
-| `Add.out` | `Add.sum` |
-| `getReceivers()`, `getDrivers()`, `getConditionals()` | `receivers`, `drivers`, `conditionals` |
-| `Module.unpreferredName`, `Module.isUnpreferred` | `Naming.unpreferredName`, `Naming.isUnpreferred`, or `Logic.naming` |
-| `FiniteStateMachine.clk`, `Pipeline.clk` | Retain the clock supplied at construction; do not retrieve it from the module |
-| `Dumper` | `module.dumpWaves(outputPath: ...)` or `WaveformService` |
-| `SynthBuilder.top`, `getFileContents()` | `tops`, `getSynthFileContents()` |
-| `SynthesisResult.toFileContents()` and older backend overrides | `toSynthFileContents()`; use each artifact's `contents` |
-| `CustomSystemVerilog` | `SystemVerilog`; combine input/output mappings into the `ports` map of `instantiationVerilog` |
-| `SystemVerilogSynthesizer.instantiationVerilogWithParameters` | `instantiationVerilogFor` with named arguments and a combined `ports` map |
+“Deprecated in” gives the first tagged release whose changelog explicitly
+records the deprecation. “Not recorded” means the changelog does not identify
+the first deprecation release; “N/A” marks an earlier breaking rename or merge
+rather than a deprecation.
 
-The following released APIs remain available, with `@Deprecated` warnings,
-in 0.7.0. They will be removed in a later release, not as part of this version
-change. Update callers now; do not add new uses outside compatibility tests.
-
-| Retained deprecated API | Replacement | Release history |
+| Removed API | Deprecated in | Replacement |
 | --- | --- | --- |
-| `PairInterface.modify` and its constructor argument | Pass `uniquify` when connecting or adding sub-interfaces | Retained for downstream interface compatibility |
-| `PairInterface.clone(other)` | `other.clone()` | Retained for downstream interface compatibility |
+| `StateMachine` | 0.5.0 | `FiniteStateMachine`, with enum state identifiers |
+| `FF` | 0.1.2 | `Sequential` |
+| `IfBlock` | 0.5.0 | `If.block` |
+| `ExternalModule` | N/A (renamed in 0.2.0) | `ExternalSystemVerilogModule` |
+| `LogicValues` | N/A (merged in 0.3.0) | `LogicValue` |
+| `Logic.bit` | 0.3.0 | `value`; explicitly check `width == 1` when required |
+| `valueInt`, `valueBigInt` | 0.3.0 | `value.toInt()`, `value.toBigInt()` |
+| `hasValidValue()`, `isFloating()` on signals | 0.4.2 | `value.isValid`, `value.isFloating` |
+| `LogicValue.length`, `LogicValue.bit` | 0.3.0 | `width`, or the value itself with an explicit single-bit width check |
+| `LogicValue.fromBool`, `fromInt`, `fromBigInt`, `fromString` | 0.2.0 | `ofBool`, `ofInt`, `ofBigInt`, `ofString` |
+| `LogicValue.from(iterable)` | 0.2.0 | `LogicValue.ofIterable(iterable)` |
+| Global `swizzle(signals)`, `rswizzle(signals)` | 0.2.0 | `signals.swizzle()`, `signals.rswizzle()` |
+| Gate `y` output aliases, including `Add.out` | 0.4.0 | `out`, `Add.sum`, or `Mux.mux`, as appropriate |
+| `getReceivers()`, `getDrivers()`, `getConditionals()` | 0.5.0 | `receivers`, `drivers`, `conditionals` |
+| `FiniteStateMachine.clk`, `Pipeline.clk` | 0.5.0 | Retain the clock supplied at construction; do not retrieve it from the module |
+
+The following deprecated APIs remain available in 0.7.0. APIs deprecated in
+0.6.x and those without a recorded deprecation release are retained for this
+transitional release; they will be removed in a later release. Update callers
+now; do not add new uses outside compatibility tests.
+
+| Retained deprecated API | Replacement | Deprecation / release history |
+| --- | --- | --- |
+| `Port` | `Logic.port` | Deprecated in 0.6.4 |
+| `PairInterface.modify` and its constructor argument | Pass `uniquify` when connecting or adding sub-interfaces | Deprecated in 0.6.7 |
+| `PairInterface.clone(other)` | `other.clone()` | Deprecated in 0.6.6 |
+| `LogicStructure.bit` | `value`; explicitly check `width == 1` when required | Deprecation release not recorded |
+| `Module.unpreferredName`, `Module.isUnpreferred` | `Naming.unpreferredName`, `Naming.isUnpreferred`, or `Logic.naming` | Deprecation release not recorded |
+| `Dumper` | `WaveDumper`, `module.dumpWaves(outputPath: ...)`, or `WaveformService` | Deprecation release not recorded |
+| `SynthBuilder.top` | `tops` | Deprecation release not recorded |
+| `getFileContents()` | `getSynthFileContents()` | Deprecated in 0.6.4 |
+| `SynthesisResult.toFileContents()` and older backend overrides | `toSynthFileContents()`; use each artifact's `contents` | Deprecation release not recorded |
+| `CustomSystemVerilog` | `SystemVerilog`; combine input/output mappings into the `ports` map of `instantiationVerilog` | Deprecated in 0.6.0 |
+| `SystemVerilogSynthesizer.instantiationVerilogWithParameters` | `instantiationVerilogFor` with named arguments and a combined `ports` map | Deprecation release not recorded |
 | `Module.generateSynth` | `Module.dumpSystemVerilog` or `SystemVerilogService` | Released without deprecation in 0.6.11 |
 | `WaveDumper` | `module.dumpWaves(outputPath: ...)` or `WaveformService` | Released without deprecation in 0.6.11 |
 | `ModuleTree.hierarchyJSON` | `ModuleTree.hierarchyJson` | Released without deprecation in 0.6.11 |
@@ -427,7 +455,10 @@ rewrite notes for already published versions.
 ## VS Code Publication
 
 Prepare the extension separately from pub.dev packages. Update its version in
-`rohd_extension/package.json` and prepare extension-specific release notes.
+`rohd_extension/pubspec.yaml`, run `make -C rohd_extension sync-version`, and
+prepare extension-specific release notes. `pubspec.yaml` is authoritative:
+`package.json` and `package-lock.json` must be generated from that version, not
+edited independently.
 Before merging the preparation PR, verify that the VSIX builds. The default
 `tool/prepare_release.sh` command (or an explicit selection including `rohd`)
 does this using `tool/package_vscode.sh`. For an extension-only check, or to keep
@@ -439,9 +470,10 @@ bash tool/package_vscode.sh /absolute/path/to/check.vsix
 
 Choose a new output path; the helper refuses to overwrite an existing archive.
 It runs `npm ci` with the checked-in lockfile and `npm run package -- --out ...`;
-the prepublish script compiles TypeScript before VSCE validates and packages the
-extension. It neither installs the extension nor uploads anything. Review the
-reported archive contents and any warnings. Packaging alone does not verify
+the prepublish script compiles TypeScript before VSCE packages the extension,
+then the Marketplace verifier checks its identity, required runtime files,
+license/changelog, icon, metadata, and excluded development files. It neither
+installs the extension nor uploads anything. Packaging alone does not verify
 activation, completions, or cross-probe behavior; smoke-test those in VS Code.
 
 Local VSIX files are for pre-release checks only. The distributable is the VSIX
@@ -449,27 +481,46 @@ built from the release tag and attached by the release workflow. Publish that
 exact downloaded asset to the Marketplace; do not substitute or rebuild a local
 VSIX for publication.
 
+The Marketplace identity is `intel-corporation.rohd`, a new listing that does
+not update the pre-existing `rohd.rohd` extension. Before the first release,
+confirm that the authorized Intel Corporation Marketplace publisher has a
+maintainer with Contributor access. After `intel-corporation.rohd` is public,
+deprecate the old `rohd.rohd` listing with a migration message; do not delete
+its already-installed user base before the new listing is available.
+
+`intel-corporation.rohd` is an extension pack for
+`intel-corporation.rohd-schematic-viewer` and
+`intel-corporation.rohd-wave-viewer`. Both viewer extensions must already have
+public Marketplace listings before publishing ROHD. The release workflow checks
+both listing URLs and stops before packaging if either is unavailable. This
+allows the ROHD extension source and VSIX validation to be prepared before the
+Wave Viewer release, but its GitHub release must wait for that publication.
+
 1. Tag the reviewed source commit as `rohd-vscode-v<version>`, where `<version>`
-   exactly matches `rohd_extension/package.json`. The tagged commit must include
+   exactly matches `rohd_extension/pubspec.yaml`. The tagged commit must include
    the [VS Code release workflow](../.github/workflows/release_vscode.yml).
 2. Publish a GitHub release for that tag, choosing the previous same-component
    tag for auto-generated notes. Do not mark it as GitHub's latest release.
 3. Wait for **Release ROHD VS Code Extension** to succeed. It checks out the
-   release tag, verifies the version, runs the same `tool/package_vscode.sh`
-   helper with Node.js 24, and
-   attaches `rohd-vscode-v<version>.vsix` to that release using `GITHUB_TOKEN`.
+   release tag, verifies the extension identity and version, runs the same
+   `tool/package_vscode.sh` helper with Node.js 24, verifies the actual VSIX
+   archive, and attaches `rohd-vscode-v<version>.vsix` plus
+   `rohd-vscode-v<version>.vsix.sha256` to that release using `GITHUB_TOKEN`.
    Other component releases are skipped. Saving a draft or pushing a tag alone
    does not trigger the workflow.
-4. Download and smoke-test the attached VSIX in VS Code, then have a maintainer
-   publish that same file through Marketplace tooling. Confirm the Marketplace
-   version and link it from the GitHub release notes.
+4. Download the attached VSIX and checksum, verify the checksum, and smoke-test
+   the exact VSIX in VS Code. An authorized administrator of the
+   `intel-corporation` Marketplace publisher then uploads that same file through
+   Marketplace tooling. Confirm the Marketplace version and link it from the
+   GitHub release notes.
 
 If the build or upload fails, resolve the cause and rerun the failed workflow
 job. An existing same-named asset is not overwritten; do not replace an already
-published binary with a different build. The workflow only attaches the VSIX:
-it does not publish to the Marketplace, create tags or releases, or change
-release notes or the latest-release designation. Local Makefile install targets
-update a developer's installation; they do not publish a release.
+published binary with a different build. The workflow only builds, verifies,
+checksums, and attaches the VSIX: it does not publish to the Marketplace,
+create tags or releases, or change release notes or the latest-release
+designation. Local Makefile install targets update a developer's installation;
+they do not publish a release.
 
 ## Local Review Notes
 

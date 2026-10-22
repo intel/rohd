@@ -84,4 +84,35 @@ void main() {
     expect(content, contains('# ROHD Debug Shell Help'));
     expect(content, contains('## Commands'));
   });
+
+  testWidgets('exposes paused controls and the tools menu', (tester) async {
+    final cubit = DevToolsThemeCubit();
+    addTearDown(cubit.close);
+    var resumeRequests = 0;
+
+    await tester.pumpWidget(
+      BlocProvider.value(
+        value: cubit,
+        child: MaterialApp(
+          home: Scaffold(
+            appBar: DevtoolAppBar(
+              hasColorEmoji: false,
+              isPaused: true,
+              onPauseResume: () => resumeRequests++,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byTooltip('Resume waveform updates'));
+    expect(resumeRequests, 1);
+
+    await tester.tap(find.byTooltip('Tools'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Wave Viewer'), findsOneWidget);
+    expect(find.text('Schematic Viewer'), findsOneWidget);
+    expect(find.text('Standalone Debugger'), findsOneWidget);
+  });
 }

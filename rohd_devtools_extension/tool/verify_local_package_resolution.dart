@@ -3,6 +3,9 @@
 //
 // Verifies that the DevTools application resolves ROHD packages from this
 // monorepo checkout rather than from hosted pub.dev packages.
+//
+// 2026 October 17
+// Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 import 'dart:convert';
 import 'dart:io';

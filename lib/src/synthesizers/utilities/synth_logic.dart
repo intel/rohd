@@ -1003,7 +1003,9 @@ class SynthLogicArrayElement extends SynthLogic {
     final parentArrayName = resolvedParent.nameOrNull;
     return parentArrayName == null
         ? null
-        : '$parentArrayName[${logic.arrayIndex!}]';
+        : (logic.parentStructure! as BaseLogicArray).dimensions.isEmpty
+            ? parentArrayName
+            : '$parentArrayName[${logic.arrayIndex!}]';
   }
 
   /// The element of the [parentArray].
@@ -1188,7 +1190,8 @@ String _synthRepresentedArrayReference(
   final indices = <int>[];
   var current = target;
   while (!identical(current, array)) {
-    if (current.isArrayMember) {
+    if (current.isArrayMember &&
+        (current.parentStructure! as BaseLogicArray).dimensions.isNotEmpty) {
       indices.add(current.arrayIndex!);
     }
     current = current.parentStructure!;

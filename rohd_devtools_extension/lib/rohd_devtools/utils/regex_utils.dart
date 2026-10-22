@@ -6,6 +6,10 @@
 
 /// Creates a regular-expression [Pattern] while keeping direct RegExp
 /// construction isolated from call sites.
+//
+// 2026 October 16
+// Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
+
 Pattern regExpPattern(
   String source, {
   bool multiLine = false,

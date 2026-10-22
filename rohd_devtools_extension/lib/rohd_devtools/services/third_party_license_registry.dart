@@ -1,5 +1,8 @@
 // Copyright (C) 2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
+//
+// 2026 October 17
+// Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';

@@ -117,19 +117,18 @@ else
     echo "Coverage generation failed"
 fi
 
-# Determine color
-if (( $(echo "$PERCENT >= 90" | bc -l) )); then
+# Determine color without requiring a separate arbitrary-precision calculator.
+if [ "$PERCENT" = "Generation Failed" ]; then
+    COLOR="#e05d44"   # red
+elif awk -v percent="$PERCENT" 'BEGIN { exit !(percent >= 90) }'; then
     COLOR="#4c1"      # bright green
-elif (( $(echo "$PERCENT >= 80" | bc -l) )); then
+elif awk -v percent="$PERCENT" 'BEGIN { exit !(percent >= 80) }'; then
     COLOR="#97ca00"   # green
-elif (( $(echo "$PERCENT >= 70" | bc -l) )); then
+elif awk -v percent="$PERCENT" 'BEGIN { exit !(percent >= 70) }'; then
     COLOR="#dfb317"   # yellow
-elif (( $(echo "$PERCENT >= 60" | bc -l) )); then
+elif awk -v percent="$PERCENT" 'BEGIN { exit !(percent >= 60) }'; then
     COLOR="#fe7d37"   # orange
 else
-    COLOR="#e05d44"   # red
-fi
-if [ "$PERCENT" = "Generation Failed" ]; then
     COLOR="#e05d44"   # red
 fi
 

@@ -124,7 +124,7 @@ bool _isSystemCSupportedInlineExpression(Module module) =>
     module is XorUnary ||
     module is BusSubset ||
     module is IndexGate ||
-    module is Mux ||
+    (module is Mux && module is InlineSystemVerilog) ||
     module is ReplicationOp ||
     module is Swizzle;
 
@@ -135,6 +135,12 @@ bool _isSystemCSupportedInlineExpression(Module module) =>
 /// while translating otherwise supported structure.
 @internal
 String? systemCUnsupportedReason(Module module) {
+  // Legacy custom SV implementations have no equivalent SystemC translation.
+  // ignore: deprecated_member_use_from_same_package
+  if (module is CustomSystemVerilog) {
+    return 'the module provides only a custom SystemVerilog instantiation';
+  }
+
   if (module is! SystemVerilog) {
     return null;
   }

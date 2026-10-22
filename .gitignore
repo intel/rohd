@@ -22,6 +22,9 @@ coverage/
 ./devtools_options.yaml
 pubspec_overrides.yaml
 
+# Staged from the selected dart_wellen package; never vendor compiled viewers.
+/rohd_devtools_extension/web/dart_wellen/
+
 # Exceptions
 !.vscode/extensions.json
 !.vscode/tasks.json

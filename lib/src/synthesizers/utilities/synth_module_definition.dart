@@ -346,8 +346,15 @@ class SynthModuleDefinition {
       } else {
         final parentModule = logic.parentModule;
         final disallowConstName = (logic.isInput || logic.isInOut) &&
-            parentModule is SystemVerilog &&
-            parentModule.expressionlessInputs.contains(logic.name);
+            (
+                // Preserve the legacy expressionless-input behavior.
+                // ignore: deprecated_member_use_from_same_package
+                (parentModule is CustomSystemVerilog &&
+                        parentModule.expressionlessInputs
+                            .contains(logic.name)) ||
+                    (parentModule is SystemVerilog &&
+                        parentModule.expressionlessInputs
+                            .contains(logic.name)));
 
         final Naming? namingOverride;
         if (logic.isPort) {
@@ -771,11 +778,13 @@ class SynthModuleDefinition {
   @protected
   bool get supportsPackedOutputPortConcatenation => true;
 
-  /// Replaces an exclusively produced packed bus with its complete split sinks.
+  /// Connects an exclusively produced packed bus to meaningful destinations.
   ///
   /// Every source use must be accounted for, source ranges must tile the bus,
   /// and destinations must be writable and non-overlapping. Collection and
   /// validation do not change the graph; unsupported candidates stay intact.
+  /// Whole packed destinations take precedence over concatenations. Temporary
+  /// scalar sinks and structure fields do not justify splitting a producer bus.
   /// This runs after pruning and naming, before backend-specific processing.
   void _inlinePackedRangesFromSubmoduleOutputs() {
     final uses = _indexOutputSplitUses();
@@ -795,7 +804,14 @@ class SynthModuleDefinition {
         continue;
       }
 
-      _applyOutputSplit(bus, producer, plan);
+      final wholeDestination = _wholeOutputSplitDestination(bus, plan);
+      if (wholeDestination == null &&
+          !plan.slices.every((slice) =>
+              _isMeaningfulOutputSplitDestination(slice.destination))) {
+        continue;
+      }
+
+      _applyOutputSplit(bus, producer, plan, wholeDestination);
       removedAssignments.addAll(plan.consumedAssignments);
     }
     assignments.removeWhere(removedAssignments.contains);
@@ -991,6 +1007,59 @@ class SynthModuleDefinition {
     return plan.slices.length >= 2 && nextBit == bus.width;
   }
 
+  /// Keeps field wiring on the structure-aware path, including merged aliases.
+  bool _hasOutputStructureIdentity(SynthLogic signal) =>
+      signal.resolved.logics.any((logic) {
+        Logic? ancestor = logic;
+        while (ancestor != null) {
+          if (ancestor is LogicStructure && ancestor is! BaseLogicArray) {
+            return true;
+          }
+          ancestor = ancestor.parentStructure;
+        }
+        return false;
+      });
+
+  /// Finds one whole packed destination reconstructed in its original order.
+  ///
+  /// Equal widths alone are insufficient: every selection must use the same
+  /// owning storage at the same offset, without unpacked dimensions.
+  SynthLogic? _wholeOutputSplitDestination(
+      SynthLogic bus, _OutputSplitPlan plan) {
+    bool hasUnpackedDimensions(Logic logic) =>
+        (logic is BaseLogicArray && logic.numUnpackedDimensions != 0) ||
+        (logic is LogicStructure && logic.elements.any(hasUnpackedDimensions));
+
+    final destination =
+        _outputDestinationSpan(plan.slices.first.destination).base;
+    if (destination.width != bus.width ||
+        _hasOutputStructureIdentity(destination) ||
+        destination.logics.any(hasUnpackedDimensions)) {
+      return null;
+    }
+    for (final slice in plan.slices) {
+      final span = _outputDestinationSpan(slice.destination);
+      if (span.base != destination ||
+          span.lower != slice.lower ||
+          span.upper != slice.upper ||
+          _hasOutputStructureIdentity(slice.destination)) {
+        return null;
+      }
+    }
+    return destination;
+  }
+
+  /// Splits only into destinations with an identity worth retaining.
+  bool _isMeaningfulOutputSplitDestination(SynthLogic destination) {
+    final base = _referenceBase(destination);
+    if (_hasOutputStructureIdentity(base)) {
+      return false;
+    }
+    return base.isPort(module) ||
+        base.hasPreservedName ||
+        destination is SynthLogicArrayElement;
+  }
+
   /// Applies a validated split, clearing only the uses recorded in its plan.
   ///
   /// Assignment removal is deferred by the caller until all candidates have
@@ -998,13 +1067,15 @@ class SynthModuleDefinition {
   void _applyOutputSplit(
       SynthLogic bus,
       ({SynthSubModuleInstantiation instantiation, String port}) producer,
-      _OutputSplitPlan plan) {
+      _OutputSplitPlan plan,
+      SynthLogic? wholeDestination) {
     producer.instantiation.setOutputMapping(
       producer.port,
-      SynthLogicConcat(
-        plan.slices.reversed.map((slice) => slice.destination).toList(),
-        parentSynthModuleDefinition: this,
-      ),
+      wholeDestination ??
+          SynthLogicConcat(
+            plan.slices.reversed.map((slice) => slice.destination).toList(),
+            parentSynthModuleDefinition: this,
+          ),
       replace: true,
     );
     chainableModulesToCollapse.removeAll(plan.consumedSubsets);
@@ -1197,6 +1268,16 @@ class SynthModuleDefinition {
 
     for (final instantiation in subModuleInstantiations) {
       final subModule = instantiation.module;
+      // Keep legacy expressionless inputs from becoming inline candidates.
+      // ignore: deprecated_member_use_from_same_package
+      if (subModule is CustomSystemVerilog) {
+        singleUseSignals.removeAll(
+          subModule.expressionlessInputs.map(
+            (e) =>
+                instantiation.inputMapping[e] ?? instantiation.inOutMapping[e],
+          ),
+        );
+      }
       if (subModule is SystemVerilog) {
         singleUseSignals.removeAll(
           subModule.expressionlessInputs.map(
@@ -1501,9 +1582,12 @@ class SynthModuleDefinition {
             return false;
           }
 
-          return logic.parentModule! is SystemVerilog &&
-              !(logic.parentModule! as SystemVerilog)
-                  .acceptsEmptyPortConnections;
+          // Legacy custom instantiations require explicit port connections.
+          // ignore: deprecated_member_use_from_same_package
+          return logic.parentModule! is CustomSystemVerilog ||
+              (logic.parentModule! is SystemVerilog &&
+                  !(logic.parentModule! as SystemVerilog)
+                      .acceptsEmptyPortConnections);
         });
 
         if (!isCustomSvModPort) {

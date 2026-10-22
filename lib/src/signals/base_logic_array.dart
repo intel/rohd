@@ -85,10 +85,6 @@ abstract class BaseLogicArray extends LogicStructure {
         naming = Naming.chooseNaming(name, naming),
         super(elements,
             name: Naming.chooseName(name, naming, nullStarter: 'a')) {
-    if (dimensions.isEmpty) {
-      throw LogicConstructionException(
-          'Arrays must have at least 1 dimension.');
-    }
     if (dimensions.any((dimension) => dimension < 0)) {
       throw LogicConstructionException(
           'Array dimensions must be non-negative.');
@@ -103,12 +99,12 @@ abstract class BaseLogicArray extends LogicStructure {
           'The number of unpacked dimensions must be between 0 and the array '
           'rank.');
     }
-    if (elements.length != dimensions.first) {
+    if (elements.length != (dimensions.isEmpty ? 1 : dimensions.first)) {
       throw LogicConstructionException(
           'Array elements must match the first dimension.');
     }
 
-    if (dimensions.length == 1) {
+    if (dimensions.length <= 1) {
       if (elements.any((element) => element.width != elementWidth)) {
         throw LogicConstructionException(
             'Array leaves must match elementWidth.');
@@ -224,7 +220,7 @@ abstract class BaseLogicArray extends LogicStructure {
         isNet: isNet);
   }
 
-  List<Logic> _calculateArrayElements() => dimensions.length == 1
+  List<Logic> _calculateArrayElements() => dimensions.length <= 1
       ? elements
       : elements
           .cast<BaseLogicArray>()

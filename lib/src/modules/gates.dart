@@ -814,7 +814,14 @@ class LShift extends _ShiftGate {
 /// control ? d1 : d0
 /// ```
 ///
-/// If [control] is a valid [Const], returns the selected input directly.
+/// If [control] is a valid [Const] and no [outputGenerator] is given, returns
+/// the selected input directly without creating a [Mux] module. The generator
+/// is only used when a [Mux] module is built.
+///
+/// When [d1] and [d0] are both [Const]s, the output type is inferred as
+/// [Const], which cannot be driven by a non-constant [control]. Request
+/// `mux<Logic>` to produce a driveable [Logic] output, for example
+/// `mux<Logic>(sel, Const(1), Const(0))`.
 LogicType mux<LogicType extends Logic>(
   Logic control,
   LogicType d1,
@@ -861,6 +868,9 @@ abstract class Mux<LogicType extends Logic> extends Module {
   LogicType get out;
 
   /// Constructs a mux preserving [LogicType].
+  ///
+  /// Structured output schemas use leaf-level selection, including when an
+  /// explicit [outputGenerator] preserves a structure widened to [Logic].
   factory Mux(
     Logic control,
     LogicType d1,
@@ -888,7 +898,7 @@ abstract class Mux<LogicType extends Logic> extends Module {
     validateOperationSource(d0, outputSchema, operation: 'Mux d0');
     validateOperationSource(d1, outputSchema, operation: 'Mux d1');
 
-    if (LogicType == Logic || d0 is! LogicStructure) {
+    if (outputSchema is! LogicStructure) {
       return _ScalarMux<LogicType>(
         control,
         d1,

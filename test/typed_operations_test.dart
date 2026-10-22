@@ -39,6 +39,37 @@ class _ScalarDomainLogic extends Logic {
 
 enum _OperationEnum { idle, active, done }
 
+class _DomainPacket extends LogicStructure {
+  _DomainPacket({String? name})
+      : super([Logic(name: 'data', width: 8), Logic(name: 'valid')],
+            name: name ?? 'domain_packet');
+
+  @override
+  _DomainPacket clone({String? name}) => _DomainPacket(name: name ?? this.name);
+
+  @override
+  void put(dynamic value, {bool fill = false}) =>
+      throw UnsupportedError('Drive domain values through their fields.');
+}
+
+class _DomainMuxHarness<T extends Logic> extends Module {
+  late final Mux<Logic> selection;
+
+  _DomainMuxHarness(T schema, {required bool widened}) {
+    final d0 = schema.cloneTyped(name: 'd0')
+      ..gets(
+          addInput('first', Logic(width: schema.width), width: schema.width));
+    final d1 = schema.cloneTyped(name: 'd1')
+      ..gets(
+          addInput('second', Logic(width: schema.width), width: schema.width));
+    final control = addInput('control', Logic());
+    selection = widened
+        ? Mux<Logic>(control, d1, d0, outputGenerator: d0.cloneTyped)
+        : Mux<T>(control, d1, d0);
+    addTypedOutput('result', schema.cloneTyped) <= selection.out;
+  }
+}
+
 LogicEnum<_OperationEnum> _operationEnum({String? name}) =>
     LogicEnum<_OperationEnum>.withMapping(
       {
@@ -379,6 +410,30 @@ void _expectLogic(Logic value) {
 
 void main() {
   tearDown(Simulator.reset);
+
+  for (final widened in [false, true]) {
+    for (final schema in <LogicStructure>[
+      _DomainPacket(),
+      LogicStructure([_DomainPacket(), Logic(name: 'tag', width: 2)],
+          name: 'nested_domain'),
+      TypedLogicArray<_DomainPacket, LogicValue>([], _DomainPacket.new),
+      TypedLogicArray<_DomainPacket, LogicValue>([2, 2], _DomainPacket.new),
+    ]) {
+      test('Mux preserves ${schema.name} with widened=$widened', () async {
+        final dut = _DomainMuxHarness(schema, widened: widened);
+        await dut.build();
+        expect(dut.selection.out.runtimeType, schema.runtimeType);
+        final vectors = [
+          Vector({'control': 0, 'first': 5, 'second': 9}, {'result': 5}),
+          Vector({'control': 1}, {'result': 9}),
+          Vector({'control': 0, 'first': 17}, {'result': 17}),
+        ];
+        await SimCompare.checkFunctionalVector(dut, vectors);
+        SimCompare.checkIverilogVector(dut, vectors);
+        SimCompare.checkSystemCVector(dut, vectors);
+      });
+    }
+  }
 
   test('Mux exposes a scalar Logic output', () {
     final muxModule = Mux(Logic(), Logic(width: 4), Logic(width: 4));

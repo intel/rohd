@@ -45,11 +45,17 @@ extension _ModuleDevToolUtils on Module {
       'outputs': outputs.map((key, value) => MapEntry(key, value.toMap())),
     };
 
-    final isCustomModule = this is SystemVerilog;
+    // Continue treating legacy custom SV modules as opaque in the inspector.
+    // ignore: deprecated_member_use_from_same_package
+    final isCustomModule = this is CustomSystemVerilog || this is SystemVerilog;
 
     if (!isCustomModule || !skipCustomModules) {
       json['subModules'] = subModules
-          .where((module) => !(module is SystemVerilog && skipCustomModules))
+          .where((module) =>
+              // Preserve filtering for the deprecated custom SV mixin.
+              // ignore: deprecated_member_use_from_same_package
+              !((module is CustomSystemVerilog || module is SystemVerilog) &&
+                  skipCustomModules))
           .map((module) => module.toJson(skipCustomModules: skipCustomModules))
           .toList();
     }

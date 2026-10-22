@@ -87,6 +87,17 @@ class TypedLogicArray<T extends Logic, V> extends BaseLogicArray {
   @override
   List<T> get arrayElements => _typedArrayElements;
 
+  /// The typed leaf of a rank-zero array.
+  ///
+  /// Throws a [StateError] when [dimensions] is not empty. A shape of `[1]`
+  /// is still rank one and must be indexed with [at].
+  T get scalar {
+    if (dimensions.isNotEmpty) {
+      throw StateError('scalar requires a rank-zero array.');
+    }
+    return arrayElements.single;
+  }
+
   /// Creates an array with [dimensions] and typed leaves from [elementBuilder].
   ///
   /// [valueCodec] may be omitted only when [V] is [LogicValue], in which case
@@ -97,6 +108,10 @@ class TypedLogicArray<T extends Logic, V> extends BaseLogicArray {
   ///
   /// [numUnpackedDimensions] controls how many outer dimensions are emitted as
   /// unpacked dimensions by synthesis.
+  ///
+  /// Empty [dimensions] creates a rank-zero array with exactly one [scalar]
+  /// leaf and no array dimensions in synthesis. This differs from `[0]`,
+  /// which has no array elements.
   TypedLogicArray(
     List<int> dimensions,
     TypedLogicArrayElementBuilder<T> elementBuilder, {
@@ -117,6 +132,23 @@ class TypedLogicArray<T extends Logic, V> extends BaseLogicArray {
             name: name,
             naming: naming,
             numUnpackedDimensions: numUnpackedDimensions);
+
+  /// Creates a connected rank-zero view of [source].
+  ///
+  /// The view owns a driveable clone, not [source] itself, so [source] may
+  /// already belong to another structure. Driving [source] updates this view;
+  /// driving the view does not drive [source]. The clone must preserve [T].
+  factory TypedLogicArray.fromScalar(
+    T source, {
+    required LogicValueCodec<V> valueCodec,
+    String? name,
+  }) =>
+      TypedLogicArray<T, V>(
+        const [],
+        source.cloneTyped,
+        valueCodec: valueCodec,
+        name: name,
+      )..scalar.gets(source);
 
   /// Initializes an array from validated construction data.
   ///
@@ -171,6 +203,9 @@ class TypedLogicArray<T extends Logic, V> extends BaseLogicArray {
     if (indices.length != dimensions.length) {
       throw RangeError.range(indices.length, dimensions.length,
           dimensions.length, 'indices.length');
+    }
+    if (dimensions.isEmpty) {
+      return scalar;
     }
 
     Logic current = this;
@@ -297,10 +332,6 @@ class _TypedLogicArrayBuild<T extends Logic, V> {
       T? emptyPrototype,
       bool validateValueCodec = true}) {
     final normalizedDimensions = List<int>.unmodifiable(dimensions);
-    if (normalizedDimensions.isEmpty) {
-      throw LogicConstructionException(
-          'TypedLogicArray must have at least 1 dimension.');
-    }
     if (normalizedDimensions.any((dimension) => dimension < 0)) {
       throw LogicConstructionException(
           'TypedLogicArray dimensions must be non-negative.');
@@ -318,9 +349,11 @@ class _TypedLogicArrayBuild<T extends Logic, V> {
         ? elementBuilder(name: '${normalizedNames.last}prototype')
         : null;
 
-    final elements = List<Logic>.generate(normalizedDimensions.first, (index) {
-      final elementName = '${normalizedNames.first}$index';
-      return normalizedDimensions.length == 1
+    final elements = List<Logic>.generate(
+        normalizedDimensions.isEmpty ? 1 : normalizedDimensions.first, (index) {
+      final elementName =
+          normalizedNames.isEmpty ? 'scalar' : '${normalizedNames.first}$index';
+      return normalizedDimensions.length <= 1
           ? elementBuilder(name: elementName)
           : TypedLogicArray<T, V>._(
               _TypedLogicArrayBuild<T, V>.build(
@@ -340,7 +373,7 @@ class _TypedLogicArrayBuild<T extends Logic, V> {
               numUnpackedDimensions: max(0, numUnpackedDimensions - 1),
             );
     }, growable: false);
-    final typedLeaves = normalizedDimensions.length == 1
+    final typedLeaves = normalizedDimensions.length <= 1
         ? elements.cast<T>().toList(growable: false)
         : elements
             .cast<TypedLogicArray<T, V>>()

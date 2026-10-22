@@ -53,7 +53,8 @@ class TreeService {
   /// disposable.
   ///
   /// Optionally accepts a [vmService] + [isolateId] pair, which enables
-  /// [fetchSourceLine] for cross-probe source-line enrichment.
+  /// [fetchSourceLine] for cross-probe source-line enrichment. [evalInstance]
+  /// overrides every target evaluation for test or alternate transport use.
   TreeService(
     this.rohdControllerEval,
     this.evalDisposable, {
@@ -133,7 +134,7 @@ class TreeService {
       // Sanitize to prevent injection in the eval expression.
       final safeName = definitionName.replaceAll("'", r"\'");
       final expr = "NetlistService.current?.moduleJson('$safeName')";
-      final instance = await rohdControllerEval.evalInstance(
+      final instance = await _evalInstance(
         expr,
         isAlive: evalDisposable,
       );
@@ -184,7 +185,7 @@ class TreeService {
       final safeName = definitionName.replaceAll("'", r"\'");
       final expr = "TraceService.current?.flcModuleJson('$safeName') ?? "
           "'{\"status\":\"unavailable\"}'";
-      final instance = await rohdControllerEval.evalInstance(
+      final instance = await _evalInstance(
         expr,
         isAlive: evalDisposable,
       );
@@ -227,7 +228,7 @@ class TreeService {
     try {
       const expr = 'TraceService.current?.flcJson ?? '
           "'{\"status\":\"unavailable\"}'";
-      final instance = await rohdControllerEval.evalInstance(
+      final instance = await _evalInstance(
         expr,
         isAlive: evalDisposable,
       );
@@ -366,7 +367,7 @@ class TreeService {
   Future<String?> fetchFlcFilePath() async {
     try {
       const expr = 'TraceService.current?.writtenPath';
-      final instance = await rohdControllerEval.evalInstance(
+      final instance = await _evalInstance(
         expr,
         isAlive: evalDisposable,
       );

@@ -1,3 +1,11 @@
+// Copyright (C) 2023-2026 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// exercise_2_n_bit_subtractor.dart
+//
+// 2023 June 7
+// Author: Yao Jing Quek <yao.jing.quek@intel.com>
+
 import 'dart:math';
 
 import 'package:rohd/rohd.dart';

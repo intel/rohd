@@ -27,6 +27,7 @@ class VmServiceSignalValueSource implements SignalValueSource {
 
   static const _currentTimeExtension = 'ext.rohd.currentTime';
   static const _snapshotExtension = 'ext.rohd.snapshotCompact';
+  static const _extensionTimeout = Duration(seconds: 2);
 
   /// Eval wrapper for ROHD-side expressions.
   final EvalOnDartLibrary rohdControllerEval;
@@ -222,7 +223,9 @@ class VmServiceSignalValueSource implements SignalValueSource {
     Map<String, String>? args,
   }) async {
     try {
-      final response = await vmService.callServiceExtension(method, args: args);
+      final response = await vmService
+          .callServiceExtension(method, args: args)
+          .timeout(_extensionTimeout);
       return response.json;
     } on Exception {
       return null;

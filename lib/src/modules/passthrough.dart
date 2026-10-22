@@ -3,6 +3,9 @@
 //
 // passthrough.dart
 // A module that does nothing but pass a signal through.
+//
+// 2021 September 22
+// Author: Max Korbel <max.korbel@intel.com>
 
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/modules/operation_utils.dart';

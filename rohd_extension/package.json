@@ -3,13 +3,20 @@
   "displayName": "ROHD",
   "description": "ROHD extension for VS Code — snippets, cross-probe source navigation, and language support for the ROHD hardware design framework.",
   "version": "0.2.0",
-  "publisher": "rohd",
-  "license": "BSD-3-Clause",
+  "publisher": "intel-corporation",
+  "license": "SEE LICENSE IN LICENSE",
   "repository": {
     "type": "git",
     "url": "https://github.com/intel/rohd"
   },
+  "bugs": {
+    "url": "https://github.com/intel/rohd/issues"
+  },
+  "homepage": "https://github.com/intel/rohd/tree/main/rohd_extension",
   "icon": "resources/rohd_icon.png",
+  "extensionKind": [
+    "workspace"
+  ],
   "engines": {
     "vscode": "^1.80.0"
   },
@@ -23,6 +30,10 @@
   "categories": [
     "Snippets",
     "Other"
+  ],
+  "extensionPack": [
+    "intel-corporation.rohd-schematic-viewer",
+    "intel-corporation.rohd-wave-viewer"
   ],
   "activationEvents": [
     "onCommand:rohd.openSourceLocation",
@@ -89,7 +100,8 @@
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "package": "vsce package --allow-missing-repository"
+    "package": "vsce package",
+    "verify:marketplace": "bash tool/verify_marketplace_vsix.sh"
   },
   "dependencies": {
     "ws": "^8.14.0"
@@ -98,7 +110,7 @@
     "@types/node": "^20.2.5",
     "@types/vscode": "^1.80.0",
     "@types/ws": "^8.5.5",
-    "@vscode/vsce": "3.9.2",
+    "@vscode/vsce": "4.0.0",
     "typescript": "^5.9.3"
   }
 }

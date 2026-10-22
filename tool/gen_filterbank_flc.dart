@@ -5,6 +5,9 @@
 //
 // Usage:
 //   dart run tool/gen_filterbank_flc.dart
+//
+// 2026 October 16
+// Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 import 'dart:convert';
 import 'dart:io';

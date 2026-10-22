@@ -148,6 +148,9 @@ class Logic {
   /// [LogicArray] or [LogicStructure].
   String get structureName {
     if (parentStructure != null) {
+      if (parentStructure case BaseLogicArray(dimensions: [])) {
+        return parentStructure!.structureName;
+      }
       if (parentStructure is BaseLogicArray) {
         return '${parentStructure!.structureName}[${arrayIndex!}]';
       } else {

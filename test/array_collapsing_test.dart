@@ -2541,6 +2541,7 @@ void main() {
 
   for (final configuration in [
     (unpacked: 0, permuted: false, internal: false),
+    (unpacked: 0, permuted: false, internal: true),
     (unpacked: 0, permuted: true, internal: false),
     (unpacked: 1, permuted: true, internal: false),
     (unpacked: 2, permuted: false, internal: false),
@@ -2558,7 +2559,9 @@ void main() {
       final concat = configuration.permuted
           ? '{parts[0][1],parts[1][1],parts[0][0],parts[1][0]}'
           : '{parts[1][1],parts[1][0],parts[0][1],parts[0][0]}';
-      expect(topBody, contains('.result($concat)'));
+      final wholePacked =
+          !configuration.permuted && configuration.unpacked == 0;
+      expect(topBody, contains('.result(${wholePacked ? 'parts' : concat})'));
       expect(topBody, isNot(contains('splitStage')));
       expect(topBody, isNot(contains('assign parts')));
       NetlistSynthesizer().synthesizeToJson(mod);

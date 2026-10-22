@@ -396,6 +396,22 @@ abstract class Module {
     await module.build();
   }
 
+  /// Makes a signal name "unpreferred" when considering between multiple
+  /// possible signal names.
+  ///
+  /// When logic is synthesized out (e.g. to SystemVerilog), equivalent
+  /// connected signals may be collapsed into one signal. Marking one name as
+  /// unpreferred allows the other name to be chosen in the generated output.
+  @Deprecated('Use `Naming.unpreferredName` or `Logic.naming` instead.')
+  @protected
+  static String unpreferredName(String name) => Naming.unpreferredName(name);
+
+  /// Returns true iff the signal name is "unpreferred".
+  ///
+  /// See documentation for [unpreferredName] for more details.
+  @Deprecated('Use `Naming.isUnpreferred` or `Logic.naming` instead.')
+  static bool isUnpreferred(String name) => Naming.isUnpreferred(name);
+
   /// Searches for [Logic]s and [Module]s within this [Module] from its inputs.
   Future<void> _traceInputForModuleContents(Logic signal,
       {bool dontAddSignal = false}) async {
@@ -1109,6 +1125,88 @@ abstract class Module {
           {String Function(String original)? uniquify}) =>
       (source.clone() as InterfaceType)
         ..pairConnectIO(this, source, role, uniquify: uniquify);
+
+  /// Registers [source] on this [Module] and returns its internal clone.
+  ///
+  /// Module logic must use the returned clone rather than [source]. Ports
+  /// with [inputTags], [outputTags], and [inOutTags] become inputs, outputs,
+  /// and inOuts of this [Module], respectively.
+  ///
+  /// Prefer this over calling [Interface.connectIO] directly so that the
+  /// module does not depend on how interface ports are laid out.
+  InterfaceType addInterface<InterfaceType extends Interface<TagType>,
+          TagType extends Enum>(
+    InterfaceType source, {
+    Iterable<TagType>? inputTags,
+    Iterable<TagType>? outputTags,
+    Iterable<TagType>? inOutTags,
+    String Function(String original)? uniquify,
+  }) =>
+      addInterfaceFrom(
+        source.clone() as InterfaceType,
+        source,
+        inputTags: inputTags,
+        outputTags: outputTags,
+        inOutTags: inOutTags,
+        uniquify: uniquify,
+      );
+
+  /// Registers a deliberately constructed local [target] against [source]
+  /// and returns [target].
+  ///
+  /// Prefer [addInterface] when [target] would be a plain clone of [source].
+  /// This form supports intentional type adaptation and does not clone
+  /// [target].
+  InterfaceType addInterfaceFrom<InterfaceType extends Interface<TagType>,
+      TagType extends Enum>(
+    InterfaceType target,
+    Interface<TagType> source, {
+    Iterable<TagType>? inputTags,
+    Iterable<TagType>? outputTags,
+    Iterable<TagType>? inOutTags,
+    String Function(String original)? uniquify,
+  }) =>
+      target
+        ..connectIO(
+          this,
+          source,
+          inputTags: inputTags,
+          outputTags: outputTags,
+          inOutTags: inOutTags,
+          uniquify: uniquify,
+        );
+
+  /// Registers [source] for [role] and returns its internal clone.
+  ///
+  /// This is the [PairInterface] form of [addInterface]. The [role]
+  /// determines which directions are inputs and outputs of this [Module],
+  /// including those of nested sub-interfaces.
+  InterfaceType addPairInterface<InterfaceType extends PairInterface>(
+    InterfaceType source,
+    PairRole role, {
+    String Function(String original)? uniquify,
+  }) =>
+      addPairInterfaceFrom(
+        source.clone() as InterfaceType,
+        source,
+        role,
+        uniquify: uniquify,
+      );
+
+  /// Registers a deliberately retyped pair [target] against [source] for
+  /// [role] and returns [target].
+  ///
+  /// Prefer [addPairInterface] when [target] would be a plain clone of
+  /// [source]. This form does not clone [target] and retains the
+  /// role-specific, recursive registration behavior of
+  /// [PairInterface.pairConnectIO].
+  InterfaceType addPairInterfaceFrom<InterfaceType extends PairInterface>(
+    InterfaceType target,
+    PairInterface source,
+    PairRole role, {
+    String Function(String original)? uniquify,
+  }) =>
+      target..pairConnectIO(this, source, role, uniquify: uniquify);
 
   @override
   String toString() => [

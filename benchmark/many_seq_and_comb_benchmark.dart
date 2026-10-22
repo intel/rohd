@@ -6,6 +6,7 @@
 // to each other.  Tests performance sensitivity to complex searches.
 //
 // 2023 April 17
+// Author: Max Korbel <max.korbel@intel.com>
 // Based on bug report at https://github.com/intel/rohd/issues/312
 
 import 'dart:math';

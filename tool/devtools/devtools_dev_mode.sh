@@ -74,6 +74,10 @@ Configure individual package sources:
 Configure a package bundle:
   tool/devtools/devtools_dev_mode.sh configure-group <group> <source>
 
+Configure an external viewer for a VS Code task:
+  tool/devtools/devtools_dev_mode.sh configure-interactive \
+    <wave-viewer|schematic-viewer> <source>
+
 Dependency groups:
   rohd               The fundamental rohd package
   rohd-packages      rohd_hierarchy, rohd_waveform,
@@ -101,7 +105,14 @@ below ~/release. RELEASE_DIR changes both viewer defaults.
 Git sources use the package's public repository and main branch by default.
 Override them with ROHD_GIT_URL / ROHD_GIT_REF,
 WAVE_VIEWER_GIT_URL / WAVE_VIEWER_GIT_REF, and
-SCHEMATIC_VIEWER_GIT_URL / SCHEMATIC_VIEWER_GIT_REF.
+SCHEMATIC_VIEWER_GIT_URL / SCHEMATIC_VIEWER_GIT_REF. VS Code tasks can
+instead provide ROHD_GIT_SOURCE, WAVE_VIEWER_GIT_SOURCE, or
+SCHEMATIC_VIEWER_GIT_SOURCE as `repository:ref`.
+
+configure-interactive prompts only for the selected external viewer source:
+local asks for a checkout path, git asks once for `repository:ref` (for
+example `github.com/intel/rohd-wave-viewer:main`), and hosted needs no
+additional input. GitHub repository inputs do not need an `https://` prefix.
 USAGE
 }
 
@@ -161,9 +172,21 @@ resolve_directory() {
 }
 
 resolve_saved_paths() {
-  rohd_path="$(resolve_directory "$rohd_path")"
-  wave_viewer_path="$(resolve_directory "$wave_viewer_path")"
-  schematic_viewer_path="$(resolve_directory "$schematic_viewer_path")"
+  local package
+  for package in "${packages[@]}"; do
+    [[ "${sources[$package]}" == local ]] || continue
+    case "$package" in
+      rohd|rohd_hierarchy|rohd_waveform|rohd_devtools_widgets|rohd_source_navigator)
+        rohd_path="$(resolve_directory "$rohd_path")"
+        ;;
+      dart_wellen|rohd_wave_viewer)
+        wave_viewer_path="$(resolve_directory "$wave_viewer_path")"
+        ;;
+      rohd_schematic_viewer)
+        schematic_viewer_path="$(resolve_directory "$schematic_viewer_path")"
+        ;;
+    esac
+  done
 }
 
 widgets_local_path() {
@@ -341,10 +364,13 @@ load_source_state() {
         sources["$key"]="$value"
         ;;
       rohd_git_ref) rohd_git_ref="$value" ;;
+      rohd_git_url) rohd_git_url="$value" ;;
       rohd_local_path) rohd_path="$value" ;;
       wave_viewer_git_ref) wave_viewer_git_ref="$value" ;;
+      wave_viewer_git_url) wave_viewer_git_url="$value" ;;
       wave_viewer_local_path) wave_viewer_path="$value" ;;
       schematic_viewer_git_ref) schematic_viewer_git_ref="$value" ;;
+      schematic_viewer_git_url) schematic_viewer_git_url="$value" ;;
       schematic_viewer_local_path) schematic_viewer_path="$value" ;;
     esac
   done <"$source_state"
@@ -359,10 +385,13 @@ write_source_state() {
   done
   cat >>"$source_state" <<STATE
 rohd_git_ref=$rohd_git_ref
+rohd_git_url=$rohd_git_url
 rohd_local_path=$rohd_path
 wave_viewer_git_ref=$wave_viewer_git_ref
+wave_viewer_git_url=$wave_viewer_git_url
 wave_viewer_local_path=$wave_viewer_path
 schematic_viewer_git_ref=$schematic_viewer_git_ref
+schematic_viewer_git_url=$schematic_viewer_git_url
 schematic_viewer_local_path=$schematic_viewer_path
 STATE
 }
@@ -372,6 +401,7 @@ write_overrides() {
   local has_external_workspace_source=false
 
   ensure_managed_or_absent "$overrides"
+  resolve_saved_paths
   for package in "${packages[@]}"; do
     validate_source "${sources[$package]}"
     if [[ "${sources[$package]}" == "local" ]]; then
@@ -456,30 +486,60 @@ apply_environment_for_group() {
   case "$group" in
     rohd|rohd-packages)
       if [[ "$source" == "git" ]]; then
-        rohd_git_ref="${ROHD_GIT_REF:-$rohd_git_ref}"
+        if [[ -n "${ROHD_GIT_SOURCE:-}" ]]; then
+          configure_git_source rohd "$ROHD_GIT_SOURCE"
+        else
+          rohd_git_url="${ROHD_GIT_URL:-$rohd_git_url}"
+          rohd_git_ref="${ROHD_GIT_REF:-$rohd_git_ref}"
+        fi
       elif [[ "$source" == "local" ]]; then
         rohd_path="${ROHD_LOCAL_PATH:-$rohd_path}"
       fi
       ;;
     wave-viewer)
       if [[ "$source" == "git" ]]; then
-        wave_viewer_git_ref="${WAVE_VIEWER_GIT_REF:-$wave_viewer_git_ref}"
+        if [[ -n "${WAVE_VIEWER_GIT_SOURCE:-}" ]]; then
+          configure_git_source wave-viewer "$WAVE_VIEWER_GIT_SOURCE"
+        else
+          wave_viewer_git_url="${WAVE_VIEWER_GIT_URL:-$wave_viewer_git_url}"
+          wave_viewer_git_ref="${WAVE_VIEWER_GIT_REF:-$wave_viewer_git_ref}"
+        fi
       elif [[ "$source" == "local" ]]; then
         wave_viewer_path="${WAVE_VIEWER_LOCAL_PATH:-$wave_viewer_path}"
       fi
       ;;
     schematic-viewer)
       if [[ "$source" == "git" ]]; then
-        schematic_viewer_git_ref="${SCHEMATIC_VIEWER_GIT_REF:-$schematic_viewer_git_ref}"
+        if [[ -n "${SCHEMATIC_VIEWER_GIT_SOURCE:-}" ]]; then
+          configure_git_source schematic-viewer "$SCHEMATIC_VIEWER_GIT_SOURCE"
+        else
+          schematic_viewer_git_url="${SCHEMATIC_VIEWER_GIT_URL:-$schematic_viewer_git_url}"
+          schematic_viewer_git_ref="${SCHEMATIC_VIEWER_GIT_REF:-$schematic_viewer_git_ref}"
+        fi
       elif [[ "$source" == "local" ]]; then
         schematic_viewer_path="${SCHEMATIC_VIEWER_LOCAL_PATH:-$schematic_viewer_path}"
       fi
       ;;
     all)
       if [[ "$source" == "git" ]]; then
-        rohd_git_ref="${ROHD_GIT_REF:-$rohd_git_ref}"
-        wave_viewer_git_ref="${WAVE_VIEWER_GIT_REF:-$wave_viewer_git_ref}"
-        schematic_viewer_git_ref="${SCHEMATIC_VIEWER_GIT_REF:-$schematic_viewer_git_ref}"
+        if [[ -n "${ROHD_GIT_SOURCE:-}" ]]; then
+          configure_git_source rohd "$ROHD_GIT_SOURCE"
+        else
+          rohd_git_url="${ROHD_GIT_URL:-$rohd_git_url}"
+          rohd_git_ref="${ROHD_GIT_REF:-$rohd_git_ref}"
+        fi
+        if [[ -n "${WAVE_VIEWER_GIT_SOURCE:-}" ]]; then
+          configure_git_source wave-viewer "$WAVE_VIEWER_GIT_SOURCE"
+        else
+          wave_viewer_git_url="${WAVE_VIEWER_GIT_URL:-$wave_viewer_git_url}"
+          wave_viewer_git_ref="${WAVE_VIEWER_GIT_REF:-$wave_viewer_git_ref}"
+        fi
+        if [[ -n "${SCHEMATIC_VIEWER_GIT_SOURCE:-}" ]]; then
+          configure_git_source schematic-viewer "$SCHEMATIC_VIEWER_GIT_SOURCE"
+        else
+          schematic_viewer_git_url="${SCHEMATIC_VIEWER_GIT_URL:-$schematic_viewer_git_url}"
+          schematic_viewer_git_ref="${SCHEMATIC_VIEWER_GIT_REF:-$schematic_viewer_git_ref}"
+        fi
       elif [[ "$source" == "local" ]]; then
         rohd_path="${ROHD_LOCAL_PATH:-$rohd_path}"
         wave_viewer_path="${WAVE_VIEWER_LOCAL_PATH:-$wave_viewer_path}"
@@ -498,6 +558,123 @@ configure_group() {
     exit 2
   fi
   load_source_state
+  set_group_source "$group" "$source"
+  apply_environment_for_group "$group" "$source"
+  write_overrides
+  write_source_state
+}
+
+prompt_value() {
+  local label="$1"
+  local default_value="$2"
+  local value
+
+  printf '%s [%s]: ' "$label" "$default_value" >&2
+  if ! IFS= read -r value; then
+    echo "error: Could not read $label." >&2
+    return 1
+  fi
+  value="${value:-$default_value}"
+  if [[ -z "$value" ]]; then
+    echo "error: $label cannot be empty." >&2
+    return 1
+  fi
+  printf '%s' "$value"
+}
+
+display_git_source() {
+  local url="$1"
+  local ref="$2"
+
+  case "$url" in
+    https://github.com/*)
+      url="${url#https://}"
+      url="${url%.git}"
+      ;;
+  esac
+  printf '%s:%s' "$url" "$ref"
+}
+
+configure_git_source() {
+  local target="$1"
+  local spec="$2"
+  local url
+  local ref
+
+  if [[ "$spec" != *:* ]]; then
+    echo "Git source '$spec' must use the format repository:ref." >&2
+    exit 2
+  fi
+  url="${spec%:*}"
+  ref="${spec##*:}"
+  if [[ -z "$url" || -z "$ref" || "$ref" == //* ]]; then
+    echo "Git source '$spec' must use the format repository:ref." >&2
+    exit 2
+  fi
+  case "$url" in
+    github.com/*) url="https://$url" ;;
+  esac
+
+  case "$target" in
+    rohd)
+      rohd_git_url="$url"
+      rohd_git_ref="$ref"
+      ;;
+    wave-viewer)
+      wave_viewer_git_url="$url"
+      wave_viewer_git_ref="$ref"
+      ;;
+    schematic-viewer)
+      schematic_viewer_git_url="$url"
+      schematic_viewer_git_ref="$ref"
+      ;;
+    *)
+      echo "Unsupported Git source target '$target'." >&2
+      exit 2
+      ;;
+  esac
+}
+
+configure_interactive_viewer_group() {
+  local group="${1:-}"
+  local source="${2:-}"
+
+  if [[ "$#" -ne 2 ]]; then
+    echo "Usage: $0 configure-interactive <wave-viewer|schematic-viewer> <hosted|git|local>" >&2
+    exit 2
+  fi
+  case "$group" in
+    wave-viewer|schematic-viewer) ;;
+    *)
+      echo "configure-interactive supports wave-viewer or schematic-viewer." >&2
+      exit 2
+      ;;
+  esac
+
+  load_source_state
+  validate_source "$source"
+  case "$group:$source" in
+    wave-viewer:local)
+      wave_viewer_path="$(prompt_value \
+        "Wave Viewer checkout/worktree path" "$wave_viewer_path")"
+      ;;
+    wave-viewer:git)
+      configure_git_source wave-viewer "$(prompt_value \
+        "Wave Viewer Git repository:ref" \
+        "$(display_git_source "$wave_viewer_git_url" "$wave_viewer_git_ref")")"
+      ;;
+    schematic-viewer:local)
+      schematic_viewer_path="$(prompt_value \
+        "Schematic Viewer checkout/worktree path" "$schematic_viewer_path")"
+      ;;
+    schematic-viewer:git)
+      configure_git_source schematic-viewer "$(prompt_value \
+        "Schematic Viewer Git repository:ref" \
+        "$(display_git_source \
+          "$schematic_viewer_git_url" "$schematic_viewer_git_ref")")"
+      ;;
+  esac
+
   set_group_source "$group" "$source"
   apply_environment_for_group "$group" "$source"
   write_overrides
@@ -560,6 +737,9 @@ case "$mode" in
     ;;
   configure-group)
     configure_group "${2:-}" "${3:-}"
+    ;;
+  configure-interactive)
+    configure_interactive_viewer_group "${2:-}" "${3:-}"
     ;;
   manifest)
     rm -f -- "$source_state"

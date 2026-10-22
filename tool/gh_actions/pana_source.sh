@@ -114,8 +114,7 @@ echo "=== $package: dependency compatibility ==="
 "$sdk" "${analyze_arguments[@]}" lib
 
 if "$uses_local_hierarchy"; then
-  echo "=== $package: Pana score gate skipped for local rohd_hierarchy ==="
-  exit 0
+  echo "=== $package: Pana checks hosted rohd_hierarchy availability ==="
 fi
 
 echo "=== $package: Pana score gate (threshold $pana_score_threshold) ==="

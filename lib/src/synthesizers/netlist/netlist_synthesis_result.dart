@@ -64,6 +64,7 @@ class NetlistSynthesisResult extends SynthesisResult {
 
   /// Returns the single netlist artifact's contents for legacy callers.
   @Deprecated('Use `toSynthFileContents()` instead.')
+  @override
   String toFileContents() => toSynthFileContents().first.contents;
 
   @override

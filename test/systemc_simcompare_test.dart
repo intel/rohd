@@ -16,6 +16,35 @@ import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
 
+class _ChoiceLeaf extends Module {
+  Logic get result => output('result');
+
+  _ChoiceLeaf(Logic data, {required bool invert})
+      : super(name: 'child', definitionName: 'ChoiceLeaf') {
+    data = addInput('data', data);
+    addOutput('result') <= (invert ? ~data : data);
+  }
+}
+
+class _ChoiceWrapper extends Module {
+  Logic get result => output('result');
+
+  _ChoiceWrapper(Logic data, {required bool invert})
+      : super(definitionName: 'ChoiceWrapper') {
+    data = addInput('data', data);
+    final child = _ChoiceLeaf(data, invert: invert);
+    addOutput('result') <= child.result;
+  }
+}
+
+class _DistinctHierarchies extends Module {
+  _DistinctHierarchies() {
+    final data = addInput('data', Logic());
+    addOutput('straight') <= _ChoiceWrapper(data, invert: false).result;
+    addOutput('inverted') <= _ChoiceWrapper(data, invert: true).result;
+  }
+}
+
 /// A simple module with basic gates for testing SystemC synthesis.
 class GateModule extends Module {
   GateModule(Logic a, Logic b) : super(name: 'GateModule') {
@@ -191,6 +220,19 @@ void main() {
   tearDownAll(SimCompare.cleanupSystemCCache);
 
   group('SimCompare SystemC', () {
+    test('hierarchy matching retains distinct child implementations', () async {
+      final mod = _DistinctHierarchies();
+      await mod.build();
+      final vectors = [
+        Vector({'data': 0}, {'straight': 0, 'inverted': 1}),
+        Vector({'data': 1}, {'straight': 1, 'inverted': 0}),
+        Vector({'data': 0}, {'straight': 0, 'inverted': 1}),
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+      SimCompare.checkSystemCVector(mod, vectors);
+    });
+
     test('gate module passes vectors', () async {
       final a = Logic(name: 'a');
       final b = Logic(name: 'b');
@@ -283,6 +325,60 @@ void main() {
           {'auto': 0x12, 'auto_': 0x34},
           {'concept': 0x12, 'result': 0x34},
         ),
+      ]);
+    });
+
+    test('explicit clock vectors retain edges and held clock levels', () async {
+      final mod = FlopModule(Logic(), Logic(), Logic(width: 8));
+      await mod.build();
+      final vectors = [
+        Vector({'clk': 0, 'reset': 1, 'd': 0}, {}),
+        Vector({'clk': 1}, {'q': 0}),
+        Vector({'clk': 0, 'reset': 0, 'd': 0x12}, {'q': 0}),
+        Vector({'d': 0x34}, {'q': 0}),
+        Vector({'clk': 1}, {'q': 0x34}),
+        Vector({'d': 0x56}, {'q': 0x34}),
+        Vector({'clk': 0}, {'q': 0x34}),
+        Vector({'clk': 1}, {'q': 0x56}),
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+      SimCompare.checkSystemCVector(mod, vectors);
+    });
+
+    test('reusable executables distinguish automatic and vector clocks',
+        () async {
+      final mod = FlopModule(Logic(), Logic(), Logic(width: 8));
+      await mod.build();
+      final automatic = SimCompare.buildSystemCVectorExecutable(mod);
+      final driven = SimCompare.buildSystemCVectorExecutable(mod,
+          drivenClockNames: {'clk'});
+      if (automatic == null || driven == null) {
+        return;
+      }
+      expect(driven.binaryPath, isNot(automatic.binaryPath));
+      expect(automatic.clockSignals, contains('clk'));
+      expect(driven.clockSignals, isNot(contains('clk')));
+      expect(
+          () => SimCompare.checkSystemCVectors(automatic, [
+                Vector({'clk': 0}, {})
+              ]),
+          throwsArgumentError);
+      expect(
+          () => SimCompare.buildSystemCVectorExecutable(mod,
+              drivenClockNames: {'d'}),
+          throwsArgumentError);
+      SimCompare.checkSystemCVectors(driven, [
+        Vector({'clk': 0, 'reset': 1, 'd': 0}, {}),
+        Vector({'clk': 1}, {'q': 0}),
+        Vector({'clk': 0, 'reset': 0, 'd': 7}, {'q': 0}),
+        Vector({'clk': 1}, {'q': 7}),
+        Vector({'d': 8}, {'q': 7}),
+      ]);
+      SimCompare.checkSystemCVectors(automatic, [
+        Vector({'reset': 1, 'd': 0}, {'q': 0}),
+        Vector({'reset': 0, 'd': 7}, {'q': 0}),
+        Vector({'d': 8}, {'q': 7}),
       ]);
     });
 

@@ -82,6 +82,9 @@ if [[ "$PWD" == "$SOURCE" ]]; then
   [[ "$*" == '--exit-code-threshold 10 .' ]]
 else
   [[ "$PWD" == "$TMPDIR"/rohd-pana.*/package && "$PANA_ANALYSIS_INCLUDES" == 0 ]]
+  if grep -q '^[[:space:]]*rohd_hierarchy:' pubspec.yaml; then
+    [[ -f pubspec_overrides.yaml && -f ../rohd_hierarchy/pubspec.yaml ]]
+  fi
   if [[ "$EXPECTED_SDK" == flutter ]]; then
     [[ $# -eq 5 && "$1" == --exit-code-threshold && "$2" == "$EXPECTED_THRESHOLD" &&
       "$3" == --flutter-sdk && "$4" == "$EXPECTED_FLUTTER_ROOT" && "$5" == . ]]
@@ -164,12 +167,12 @@ PANA_STATUS=73 run_case 73 "$WAVEFORM" dart
 mkdir -p "$FIXTURE/rohd_hierarchy/lib"
 printf 'name: rohd_hierarchy\n' > "$FIXTURE/rohd_hierarchy/pubspec.yaml"
 printf 'library rohd_hierarchy;\n' > "$FIXTURE/rohd_hierarchy/lib/rohd_hierarchy.dart"
-printf 'dependencies:\n  rohd_hierarchy:\n    path: ../rohd_hierarchy\n' >> \
+printf 'dependencies:\n  rohd_hierarchy: ^0.1.0\n' >> \
   "$SOURCE/pubspec.yaml"
 cp "$SOURCE/pubspec.yaml" "$FIXTURE/original/pubspec.yaml"
 export EXPECTED_THRESHOLD=0
 run_case 0 "$SOURCE" dart
-[[ "$(cat "$SDK_LOG")" == $'dart|pub get\ndart|analyze --fatal-infos lib\ndart|pub downgrade\ndart|analyze --fatal-infos lib' ]]
+[[ "$(cat "$SDK_LOG")" == $'dart|pub get\ndart|analyze --fatal-infos lib\ndart|pub downgrade\ndart|analyze --fatal-infos lib\npana' ]]
 
 mkdir -p "$FIXTURE/root-package/packages"
 cp -R "$SOURCE" "$FIXTURE/root-package/package"
@@ -183,7 +186,7 @@ cp -R "$FIXTURE/root-package" "$FIXTURE/original-root-package"
 export EXPECTED_PACKAGE_SOURCE="$FIXTURE/root-package"
 run_case 0 "$FIXTURE/root-package" dart
 diff -ru "$FIXTURE/original-root-package" "$FIXTURE/root-package"
-[[ "$(cat "$SDK_LOG")" == $'dart|pub get\ndart|analyze --fatal-infos lib\ndart|pub downgrade\ndart|analyze --fatal-infos lib' ]]
+[[ "$(cat "$SDK_LOG")" == $'dart|pub get\ndart|analyze --fatal-infos lib\ndart|pub downgrade\ndart|analyze --fatal-infos lib\npana' ]]
 unset EXPECTED_PACKAGE_SOURCE
 
 mv "$PUB_CACHE/bin/pana" "$FIXTURE/pana"

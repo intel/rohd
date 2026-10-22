@@ -4,6 +4,7 @@
 // operation_utils.dart
 // Shared construction and validation for type-preserving operations.
 //
+// 2026 October 18
 // Author: Desmond A. Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 import 'package:meta/meta.dart';

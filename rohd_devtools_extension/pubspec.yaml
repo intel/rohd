@@ -12,7 +12,7 @@ resolution: workspace
 
 dependencies:
   cupertino_icons: '>=1.0.9 <3.0.0'
-  dart_wellen: ^0.1.0
+  dart_wellen: ^0.1.1
   devtools_app_shared: ^0.5.0
   devtools_extensions: ^0.5.0
   devtools_shared: ^13.0.1
@@ -38,7 +38,7 @@ dependencies:
   rohd_hierarchy: ^0.1.1
   rohd_schematic_viewer: ^0.2.4
   rohd_source_navigator: ^0.1.0
-  rohd_wave_viewer: ^0.1.0
+  rohd_wave_viewer: ^0.1.1
   # Shares the viewer's extended monitored-waveform model.
   rohd_waveform: ^0.1.1
   vm_service: ^14.0.0

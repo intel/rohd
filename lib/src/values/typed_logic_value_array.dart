@@ -212,6 +212,16 @@ class TypedLogicValueArray<T> extends LogicValue {
   /// Semantic array elements in row-major order.
   List<T> get arrayValues => _arrayValues;
 
+  /// The semantic leaf value of a rank-zero array.
+  ///
+  /// Throws a [StateError] for nonzero rank, including a shape of `[1]`.
+  T get scalar {
+    if (dimensions.isNotEmpty) {
+      throw StateError('scalar requires a rank-zero value array.');
+    }
+    return _arrayValues.single;
+  }
+
   /// Values paired with their row-major multidimensional indices.
   Iterable<(List<int>, T)> get indexedValues => Iterable.generate(
         arrayValues.length,
@@ -451,9 +461,6 @@ _NestedValueArray<T> _parseNestedArray<T>(
 /// Validates dimension sizes and returns an immutable shape.
 List<int> _validateValueArrayDimensions(List<int> dimensions) {
   final normalized = List<int>.unmodifiable(dimensions);
-  if (normalized.isEmpty) {
-    throw ArgumentError.value(dimensions, 'dimensions', 'Must not be empty.');
-  }
   if (normalized.any((dimension) => dimension < 0)) {
     throw ArgumentError.value(
         dimensions, 'dimensions', 'Dimensions must be non-negative.');

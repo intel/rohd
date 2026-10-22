@@ -7,6 +7,9 @@
 // from wire_search_overlay pattern, using rohd_hierarchy.searchOccurrences.
 //
 // 2026 February Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
+//
+// 2026 October 17
+// Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';

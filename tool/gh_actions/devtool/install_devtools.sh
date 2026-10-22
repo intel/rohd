@@ -23,10 +23,12 @@ bash tool/gh_actions/write_local_package_overrides.sh
 #  Build starts here
 # ═══════════════════════════════════════════════════════════════════════
 
+flutter pub get
+
 cd rohd_devtools_extension
 
-flutter pub get
 dart run tool/verify_local_package_resolution.dart
+make web/dart_wellen
 
 echo ""
 echo "════════════════════════════════════════════════════════════"
@@ -35,14 +37,14 @@ echo "════════════════════════�
 
 flutter build web --pwa-strategy=none --release --no-tree-shake-icons
 
-rm -rf build/web/pkg
-cp -R web/pkg build/web/
+rm -rf build/web/dart_wellen
+cp -R web/dart_wellen build/web/
 
 required_web_artifacts=(
   build/web/canvaskit/canvaskit.js
   build/web/canvaskit/canvaskit.wasm
-  build/web/pkg/wellen_bridge.js
-  build/web/pkg/wellen_bridge_bg.wasm
+  build/web/dart_wellen/wellen_bridge.js
+  build/web/dart_wellen/wellen_bridge_bg.wasm
 )
 for required_web_artifact in "${required_web_artifacts[@]}"; do
   if [[ ! -f "$required_web_artifact" ]]; then

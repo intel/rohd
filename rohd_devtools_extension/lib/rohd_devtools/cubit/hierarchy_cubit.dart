@@ -6,6 +6,9 @@
 // HierarchyOccurrence tree and provides it to embedded viewers.
 //
 // 2026 January Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
+//
+// 2026 October 17
+// Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';

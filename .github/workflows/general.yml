@@ -14,7 +14,7 @@ permissions: {}
 jobs:
   run-checks:
     name: Run Checks
-    needs: [source-checks, project-tests, devcontainer-tests]
+    needs: [source-checks, project-tests, devcontainer-tests, vscode-extension]
     if: ${{ always() }}
     permissions: {}
     timeout-minutes: 5
@@ -25,8 +25,9 @@ jobs:
           SOURCE_RESULT: ${{ needs.source-checks.result }}
           TEST_RESULT: ${{ needs.project-tests.result }}
           CONTAINER_RESULT: ${{ needs.devcontainer-tests.result }}
+          VSCODE_EXTENSION_RESULT: ${{ needs.vscode-extension.result }}
         run: |
-          [[ "$SOURCE_RESULT" == success && "$TEST_RESULT" == success && "$CONTAINER_RESULT" == success ]]
+          [[ "$SOURCE_RESULT" == success && "$TEST_RESULT" == success && "$CONTAINER_RESULT" == success && "$VSCODE_EXTENSION_RESULT" == success ]]
 
   source-checks:
     name: Source Checks
@@ -71,6 +72,37 @@ jobs:
 
       - name: Check project documentation
         run: tool/gh_actions/generate_documentation.sh
+
+  vscode-extension:
+    name: Verify VS Code Marketplace package
+    permissions: {}
+    timeout-minutes: 15
+    runs-on: ${{ github.repository_owner == 'intel' && 'intel-ubuntu-latest' || 'ubuntu-latest' }}
+    defaults:
+      run:
+        working-directory: rohd_extension
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: rohd_extension/.nvmrc
+          cache: npm
+          cache-dependency-path: rohd_extension/package-lock.json
+
+      - name: Install extension dependencies
+        run: npm ci
+
+      - name: Verify Marketplace extension identity
+        run: make verify-extension-version
+
+      - name: Verify Marketplace extension pack
+        run: make verify-extension-pack
+
+      - name: Build and verify Marketplace VSIX
+        run: make verify-vsix
 
   project-tests:
     name: Project Tests (${{ matrix.platform }})
