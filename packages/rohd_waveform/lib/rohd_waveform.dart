@@ -6,6 +6,7 @@
 //
 // 2026 July 15
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
+
 /// Waveform data models and APIs for wave viewers.
 ///
 /// This library provides waveform-specific data models:

@@ -6,6 +6,7 @@
 //
 // 2024 January 29
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
+
 /// A class that represents the data of a signal.
 ///
 /// It contains a time and a value.

@@ -7,6 +7,7 @@
 //
 // 2026 April
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
+
 // The test verifies that search works correctly with local signal IDs
 // (as opposed to VCD-style full-path IDs), catching any assumption
 // mismatches in the search engine.

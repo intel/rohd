@@ -6,6 +6,7 @@
 //
 // 2026 August 7
 // Author: Desmond A. Kirkpatrick <desmond.a.kirkpatrick@intel.com>
+
 // RegExp's implementation-only deprecation is incorrectly reported at use
 // sites by some Dart analysis-server versions.
 // ignore_for_file: deprecated_member_use, unnecessary_ignore

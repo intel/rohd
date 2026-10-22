@@ -7,6 +7,7 @@
 //
 // 2026 July 20
 // Author: Desmond A. Kirkpatrick <desmond.a.kirkpatrick@intel.com>
+
 // Legacy Icarus helpers remain available to tests but are not referenced by
 // the current SimCompare implementation.
 // ignore_for_file: unused_element

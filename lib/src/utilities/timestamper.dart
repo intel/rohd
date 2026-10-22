@@ -6,6 +6,7 @@
 //
 // 2023 February 18
 // Author: Chykon
+
 /// Utility for creating timestamps.
 
 abstract class Timestamper {

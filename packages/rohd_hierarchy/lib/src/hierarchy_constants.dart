@@ -6,6 +6,7 @@
 //
 // 2026 July
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
+
 /// Canonical separator used in hierarchy paths returned by this package.
 
 const String hierarchyPathSeparator = '/';

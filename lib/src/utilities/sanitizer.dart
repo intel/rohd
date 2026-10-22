@@ -7,6 +7,7 @@
 //
 // 2021 May 7
 // Author: Max Korbel <max.korbel@intel.com>
+
 /// A utility for ensuring generated code is "sanitary".
 ///
 /// "Sanitary" means it doesn't have any characters illegal in generated

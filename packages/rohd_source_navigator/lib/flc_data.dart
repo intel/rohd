@@ -10,6 +10,7 @@
 //
 // 2026 April
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
+
 /// A single source location frame from an FLC trace.
 
 class FlcFrame {

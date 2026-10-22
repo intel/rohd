@@ -6,6 +6,7 @@
 //
 // 2026 July 20
 // Author: Desmond A. Kirkpatrick <desmond.a.kirkpatrick@intel.com>
+
 // SystemC vector execution logs compilation and simulator output for debugging.
 // ignore_for_file: avoid_print
 

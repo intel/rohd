@@ -7,6 +7,7 @@
 //
 // 2025 March 04
 // Author: Ramli, Nurul Izziany <nurul.izziany.ramli@intel.com>
+
 // Though we usually avoid them, for this example,
 // allow `print` messages (disable lint):
 // ignore_for_file: avoid_print - example

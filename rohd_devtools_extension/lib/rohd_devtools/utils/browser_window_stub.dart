@@ -6,6 +6,7 @@
 //
 // 2026 June
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
+
 /// Returns the current browser location when available.
 
 String browserCurrentHref() => Uri.base.toString();

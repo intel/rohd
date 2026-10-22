@@ -6,6 +6,7 @@
 //
 // 2026 July 10
 // Author: Max Korbel <max.korbel@intel.com>
+
 /// Controls whether a type is included in a SystemVerilog port declaration.
 
 enum SystemVerilogPortType {

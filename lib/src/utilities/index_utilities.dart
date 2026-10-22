@@ -6,6 +6,7 @@
 //
 // 2023 June 1
 // Author: Max Korbel <max.korbel@intel.com>
+
 /// A utility class for modifying and validating indices.
 
 abstract class IndexUtilities {

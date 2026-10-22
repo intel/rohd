@@ -7,6 +7,7 @@
 //
 // 2026 April
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
+
 // This is the key contract: once a HierarchyService is built, callers
 // cannot tell whether the data came from VCD (BaseHierarchyAdapter.fromTree),
 // netlist JSON (NetlistHierarchyAdapter), or any other source.

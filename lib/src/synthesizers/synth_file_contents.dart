@@ -6,6 +6,7 @@
 //
 // 2025 June 24
 // Author: Max Korbel <max.korbel@intel.com>
+
 /// Represents contents of a file.
 
 class SynthFileContents {

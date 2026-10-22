@@ -6,6 +6,7 @@
 //
 // 2026 May 3
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
+
 //
 // Produces all artifacts needed for debug and devtools validation:
 //   - SystemVerilog files (.sv)

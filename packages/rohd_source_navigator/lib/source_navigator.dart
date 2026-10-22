@@ -11,6 +11,7 @@
 //
 // 2026 April 27
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
+
 /// A single source location frame.
 
 class SourceFrame {

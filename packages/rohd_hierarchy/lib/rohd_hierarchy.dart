@@ -6,6 +6,7 @@
 //
 // 2026 January
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
+
 /// Generic hierarchy data models for hardware module navigation.
 ///
 /// This library provides source-agnostic data models for representing
