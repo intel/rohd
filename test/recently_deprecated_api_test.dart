@@ -1,10 +1,14 @@
 // Copyright (C) 2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
-// Compatibility tests intentionally exercise the retained deprecated APIs.
-// ignore_for_file: deprecated_member_use_from_same_package
+//
+// recently_deprecated_api_test.dart
+// Verifies retained deprecated ROHD APIs.
 //
 // 2026 October 17
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
+
+// Compatibility tests intentionally exercise the retained deprecated APIs.
+// ignore_for_file: deprecated_member_use_from_same_package
 
 @TestOn('vm')
 library;

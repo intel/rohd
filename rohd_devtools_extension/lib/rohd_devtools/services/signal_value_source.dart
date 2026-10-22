@@ -8,7 +8,6 @@
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 /// Raw snapshot payload keyed by signal ID or full signal path.
-
 typedef SignalSnapshotData = Map<String, Map<String, dynamic>>;
 
 /// Minimal update event used by the shared snapshot overlay flow.

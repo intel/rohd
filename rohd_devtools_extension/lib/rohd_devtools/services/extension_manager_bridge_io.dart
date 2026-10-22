@@ -10,5 +10,4 @@
 ///
 /// No-op stub for non-web platforms where the extension manager is
 /// unavailable.
-
 void setExtensionDarkThemeEnabled({required bool enabled}) {}

@@ -8,7 +8,6 @@
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 /// FST block types (from fstapi.h).
-
 enum FstBlockType {
   /// File header.
   header(0),

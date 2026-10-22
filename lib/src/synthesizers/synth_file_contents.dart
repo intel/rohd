@@ -8,7 +8,6 @@
 // Author: Max Korbel <max.korbel@intel.com>
 
 /// Represents contents of a file.
-
 class SynthFileContents {
   /// The name of the content or file.
   final String name;

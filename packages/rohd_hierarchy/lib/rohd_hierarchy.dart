@@ -40,7 +40,6 @@
 /// final service = BaseHierarchyAdapter.fromTree(root);
 /// final results = service.searchSignals('clk');
 /// ```
-
 library;
 
 export 'src/base_hierarchy_adapter.dart';

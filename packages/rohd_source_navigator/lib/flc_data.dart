@@ -12,7 +12,6 @@
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 /// A single source location frame from an FLC trace.
-
 class FlcFrame {
   /// File path (package-relative, e.g. `lib/src/foo.dart`).
   final String file;

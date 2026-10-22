@@ -8,7 +8,6 @@
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 /// Supported waveform file formats.
-
 enum WaveFormat {
   /// Value Change Dump format (IEEE 1364).
   ///

@@ -8,7 +8,6 @@
 // Author: Max Korbel <max.korbel@intel.com>
 
 /// Controls whether a type is included in a SystemVerilog port declaration.
-
 enum SystemVerilogPortType {
   /// The type is included in the port declaration.
   explicit,

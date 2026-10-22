@@ -13,7 +13,6 @@
 /// "Sanitary" means it doesn't have any characters illegal in generated
 /// languages, doesn't collide with keywords in generated languages, and has a
 /// valid variable name in generated languages.
-
 abstract class Sanitizer {
   /// Returns true iff [name] needs no renaming to be "sanitary".
   static bool isSanitary(String name) => name == sanitizeSV(name);

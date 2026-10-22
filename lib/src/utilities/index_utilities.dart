@@ -8,7 +8,6 @@
 // Author: Max Korbel <max.korbel@intel.com>
 
 /// A utility class for modifying and validating indices.
-
 abstract class IndexUtilities {
   /// Computes a modified version of an index into an array that allows for
   /// negative values to wrap around from the end.

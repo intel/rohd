@@ -16,7 +16,6 @@
 ///
 /// For hierarchy types such as `HierarchyOccurrence` and `SignalOccurrence`,
 /// import 'package:rohd_hierarchy/rohd_hierarchy.dart' directly.
-
 library;
 
 export 'src/models/models.dart';
