@@ -6,7 +6,6 @@
 //
 // 2026 January
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
-
 /// Generic hierarchy data models for hardware module navigation.
 ///
 /// This library provides source-agnostic data models for representing
@@ -40,6 +39,7 @@
 /// final service = BaseHierarchyAdapter.fromTree(root);
 /// final results = service.searchSignals('clk');
 /// ```
+
 library;
 
 export 'src/base_hierarchy_adapter.dart';

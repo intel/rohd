@@ -11,8 +11,8 @@
 //
 // 2026 April 27
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
-
 /// A single source location frame.
+
 class SourceFrame {
   /// File path (package-relative, e.g. `lib/src/foo.dart`).
   final String file;

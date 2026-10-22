@@ -10,8 +10,8 @@
 //
 // 2026 May
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
-
 /// Identifies a source/output format the ROHD extension can navigate to.
+
 enum RohdSourceFormat {
   /// ROHD Dart source (the design description language).
   rohd,

@@ -7,8 +7,8 @@
 //
 // 2026 April
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
-
 // Overlay
+
 export 'src/app_bar_overlay.dart';
 // Shared "Expand Bits" / "Define Bit Fields" popup-menu helpers
 export 'src/bit_expansion_menu.dart';

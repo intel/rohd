@@ -6,7 +6,6 @@
 //
 // 2026 July 15
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
-
 /// Waveform data models and APIs for wave viewers.
 ///
 /// This library provides waveform-specific data models:
@@ -16,6 +15,7 @@
 ///
 /// For hierarchy types such as `HierarchyOccurrence` and `SignalOccurrence`,
 /// import 'package:rohd_hierarchy/rohd_hierarchy.dart' directly.
+
 library;
 
 export 'src/models/models.dart';

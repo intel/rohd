@@ -6,8 +6,8 @@
 //
 // 2022 December 30
 // Author: Max Korbel <max.korbel@intel.com>
-
 /// A base type of exception that ROHD-specific exceptions inherit from.
+
 abstract class RohdException implements Exception {
   /// A description of what this exception means.
   final String message;

@@ -1,8 +1,6 @@
 // Copyright (C) 2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
-
 // ignore_for_file: deprecated_member_use, unnecessary_ignore
-
 /// Creates a regular-expression pattern with the requested matching options.
 //
 // 2026 October 16

@@ -6,8 +6,8 @@
 //
 // 2026 July
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
-
 /// Display settings for simulation time values.
+
 class SimulationTimeDisplay {
   /// Default display settings when no unit is known.
   static const none = SimulationTimeDisplay();

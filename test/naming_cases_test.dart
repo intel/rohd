@@ -6,7 +6,6 @@
 //
 // 2026 April 10
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
-
 // ════════════════════════════════════════════════════════
 // NAMING CROSS-PRODUCT TABLE
 // ════════════════════════════════════════════════════════

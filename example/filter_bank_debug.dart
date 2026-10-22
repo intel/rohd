@@ -16,9 +16,6 @@
 //
 // Usage:
 //   dart run example/filter_bank_debug.dart
-//
-// 2026 May 3
-// Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 import 'dart:async';
 import 'dart:convert';

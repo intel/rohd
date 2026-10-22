@@ -6,8 +6,8 @@
 //
 // 2022 December 1
 // Author: Yao Jing Quek <yao.jing.quek@intel.com>
-
 /// A utility for ROHD configuration file.
+
 class Config {
   /// The version of the ROHD framework.
   static const String version = '0.6.11';

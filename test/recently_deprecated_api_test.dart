@@ -1,6 +1,5 @@
 // Copyright (C) 2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
-
 // Compatibility tests intentionally exercise the retained deprecated APIs.
 // ignore_for_file: deprecated_member_use_from_same_package
 //

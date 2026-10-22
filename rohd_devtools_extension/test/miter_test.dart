@@ -6,7 +6,6 @@
 //
 // 2026 March
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
-
 // Mirrors the devtools architecture:
 // 1. Loads Yosys JSON → rohd_hierarchy (via DesignDataAdapter
 //    + rootNameOverride)

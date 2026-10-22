@@ -1,9 +1,7 @@
 // Copyright (C) 2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
-
 // RegExp remains the compatibility implementation until Pattern gains parity.
 // ignore_for_file: deprecated_member_use, unnecessary_ignore
-
 /// Creates a regular-expression [Pattern] while keeping direct RegExp
 /// construction isolated from call sites.
 //
