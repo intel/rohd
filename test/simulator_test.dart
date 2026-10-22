@@ -7,7 +7,6 @@
 //
 // 2021 May 7
 // Author: Max Korbel <max.korbel@intel.com>
-
 //
 // 2024 Feb 28th
 // Amended by Adam Rose <adam.david.rose@gmail.com> for Rohme compatibility

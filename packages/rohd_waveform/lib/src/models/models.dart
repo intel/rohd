@@ -10,7 +10,6 @@
 // Note: For hierarchy types (HierarchyOccurrence, SignalOccurrence, Port),
 // import 'package:rohd_hierarchy/rohd_hierarchy.dart' directly.
 // Waveform-specific models
-
 export 'data.dart';
 export 'metadata.dart';
 export 'module_structure.dart';
