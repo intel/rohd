@@ -7,8 +7,6 @@
 // 2021 August 3
 // Author: Max Korbel <max.korbel@intel.com>
 
-//
-
 import 'dart:collection';
 
 /// A controller for a [SynchronousEmitter] that allows for

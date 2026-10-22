@@ -7,8 +7,6 @@
 // 2021 October 11
 // Author: Max Korbel <max.korbel@intel.com>
 
-//
-
 import 'package:rohd/rohd.dart';
 
 /// Information and accessors associated with a [Pipeline] stage.
