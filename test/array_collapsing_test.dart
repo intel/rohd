@@ -2408,6 +2408,19 @@ class SplitPackedArrayOutputTop extends Module {
   }
 }
 
+class SplitPackedStructureOutputTop extends Module {
+  SplitPackedStructureOutputTop() {
+    final source = addInput('source', Logic(width: 8), width: 8);
+    final fields = LogicStructure([
+      Logic(name: 'low', width: 2),
+      Logic(name: 'flag'),
+      Logic(name: 'high', width: 5),
+    ], name: 'fields');
+    fields <= SplitPackedOutputChild(source).result;
+    addOutput('observed', width: 8) <= fields;
+  }
+}
+
 class SplitPackedMixedOutputTop extends Module {
   SplitPackedMixedOutputTop({required bool unpacked}) {
     final source = addInput('source', Logic(width: 8), width: 8);
@@ -2534,6 +2547,32 @@ void main() {
           'high': LogicValue.ofString(text.substring(0, 7)),
           'low': LogicValue.ofString(text.substring(7)),
         }),
+    ];
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
+  });
+
+  test('packed child output split maps independently declared structure fields',
+      () async {
+    final mod = SplitPackedStructureOutputTop();
+    await mod.build();
+    final topBody = _topModuleBody(mod.dumpSystemVerilog());
+    expect(topBody, contains('.result({fields_high,fields_flag,fields_low})'));
+    expect(topBody, isNot(contains('logic [7:0] result;')));
+    expect(topBody, isNot(contains('assign fields_')));
+    NetlistSynthesizer().synthesizeToJson(mod);
+    expect(_topModuleBody(mod.dumpSystemVerilog()), topBody);
+    final vectors = [
+      for (final text in [
+        '00000000',
+        '11111111',
+        '10100101',
+        '01011010',
+        'xz10zx01',
+        'z01x10xz',
+      ])
+        Vector({'source': LogicValue.ofString(text)},
+            {'observed': LogicValue.ofString(text)}),
     ];
     await SimCompare.checkFunctionalVector(mod, vectors);
     SimCompare.checkIverilogVector(mod, vectors);

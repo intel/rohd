@@ -784,7 +784,7 @@ class SynthModuleDefinition {
   /// and destinations must be writable and non-overlapping. Collection and
   /// validation do not change the graph; unsupported candidates stay intact.
   /// Whole packed destinations take precedence over concatenations. Temporary
-  /// scalar sinks and structure fields do not justify splitting a producer bus.
+  /// scalar sinks and aggregate-backed fields do not justify splitting a bus.
   /// This runs after pruning and naming, before backend-specific processing.
   void _inlinePackedRangesFromSubmoduleOutputs() {
     final uses = _indexOutputSplitUses();
@@ -1050,9 +1050,15 @@ class SynthModuleDefinition {
   }
 
   /// Splits only into destinations with an identity worth retaining.
+  ///
+  /// Flattened structure fields have independent declarations; fields backed
+  /// by aggregate storage must stay on the structure-aware path.
   bool _isMeaningfulOutputSplitDestination(SynthLogic destination) {
     final base = _referenceBase(destination);
-    if (_hasOutputStructureIdentity(base)) {
+    if (_hasOutputStructureIdentity(base) &&
+        (!internalSignals.contains(base) ||
+            !base.needsDeclaration ||
+            base.isStructPortElement(module))) {
       return false;
     }
     return base.isPort(module) ||
