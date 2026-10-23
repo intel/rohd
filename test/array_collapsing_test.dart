@@ -3027,7 +3027,7 @@ void main() {
     final sv = mod.dumpSystemVerilog();
     final topBody = _topModuleBody(sv);
 
-    expect(topBody, contains('assign dst[3:0] = src[5:2];'));
+    expect(topBody, contains('assign dst = src[5:2];'));
     expect(topBody, contains(RegExp(r'\.i\([^)]*src')));
 
     final vectors = [
