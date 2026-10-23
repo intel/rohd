@@ -20,7 +20,6 @@ The `connectIO` function under the hood calls `addInput` and `addOutput` directl
 
 When the internal interface should intentionally be a different object or type than a clone of the external one, use `addInterfaceFrom` or `addPairInterfaceFrom`, which register a provided target against the source and return that target.
 
-
 ```dart
 // Define a set of legal directions for this interface, and pass as parameter to Interface
 enum CounterDirection { inward, outward, misc }

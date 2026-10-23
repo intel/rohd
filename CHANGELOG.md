@@ -29,6 +29,7 @@
 
 ### Improvements
 
+- Fixed zero-width SystemC ports and constant bindings to use bindable placeholder types while preserving empty-value reads as zero, including address ports in single-register CSR blocks.
 - Fixed `SimCompare.checkSystemCVector` to honor explicit clock vectors instead of silently replacing them with a free-running clock. Reusable SystemC executables accept `drivenClockNames`, and compiled cache keys distinguish clock modes. Automatic clocks remain available when vectors omit clock inputs.
 - Emit child-driven unpacked arrays as nets to avoid unknown values in Icarus 12.0, while retaining variable declarations for procedurally written arrays. Child-driven unpacked outputs use `output wire logic` by default; explicit object-type configuration remains honored.
 - Fixed procedural reads of enum leaves in typed arrays to convert packed array selections back into the destination enum type.

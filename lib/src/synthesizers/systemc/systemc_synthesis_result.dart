@@ -225,7 +225,8 @@ class SystemCSynthesisResult extends SynthesisResult {
 
   /// Maps a signal width to the appropriate SystemC data type.
   static String systemCType(int width) {
-    if (width == 1) {
+    // Empty signals need a bindable placeholder; their read expressions are 0.
+    if (width == 0 || width == 1) {
       return 'bool';
     } else if (width <= 64) {
       return 'sc_uint<$width>';
@@ -461,6 +462,9 @@ class SystemCSynthesisResult extends SynthesisResult {
   /// Constants become typed literals; signals get `.read()`.
   /// Array elements become range expressions on their parent.
   static String _synthLogicReadExpr(SynthLogic sl) {
+    if (sl.width == 0) {
+      return '0';
+    }
     if (sl.isConstant) {
       final c = sl.logics.whereType<Const>().first;
       return _typedConstExpr(c.value, c.width);
@@ -1689,6 +1693,9 @@ class SystemCSynthesisResult extends SynthesisResult {
   /// Resolves a driver Logic to a SystemC read expression using the
   /// SynthModuleDefinition's logicToSynthMap to find the canonical name.
   String _resolveDriver(Logic driver, Map<String, String> inputsMap) {
+    if (driver.width == 0) {
+      return '0';
+    }
     if (driver is Const) {
       return _typedConstExpr(driver.value, driver.width);
     }
