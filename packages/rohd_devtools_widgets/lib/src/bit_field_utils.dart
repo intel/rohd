@@ -20,6 +20,7 @@ class BitFieldDef {
   /// Low bit (inclusive, LSB of the field).
   final int low;
 
+  /// Creates a named bit-field definition.
   const BitFieldDef({
     required this.name,
     required this.high,

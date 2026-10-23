@@ -12,7 +12,7 @@ import 'package:rohd/rohd.dart';
 
 /// A node in the expanded type tree, used for structured display.
 class TypeFieldNode {
-  /// Field name (e.g. "mantissa", "[0]").
+  /// Field name (for example, `mantissa` or `[0]`).
   final String name;
 
   /// Bit width of this field.

@@ -20,6 +20,7 @@ class ExportPngButton extends StatelessWidget {
   /// Tooltip text shown on hover.
   final String tooltip;
 
+  /// Creates a PNG export button.
   const ExportPngButton({
     super.key,
     required this.onPressed,
