@@ -68,6 +68,9 @@ jobs:
         run: tool/gh_actions/analyze_source.sh
 
       - name: Run Pana on project source
+        env:
+          # Remove after rohd_hierarchy 0.1.1 is published to pub.dev.
+          ROHD_ALLOW_UNPUBLISHED_HIERARCHY: '1'
         run: tool/gh_actions/pana_source.sh . dart
 
       - name: Check project documentation

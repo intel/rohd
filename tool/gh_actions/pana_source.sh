@@ -30,6 +30,14 @@ fi
 package_dir="$(cd "$1" && pwd)"
 package="${package_dir##*/}"
 sdk="$2"
+allow_unpublished_hierarchy="${ROHD_ALLOW_UNPUBLISHED_HIERARCHY:-0}"
+case "$allow_unpublished_hierarchy" in
+  0|1) ;;
+  *)
+    echo "ROHD_ALLOW_UNPUBLISHED_HIERARCHY must be 0 or 1." >&2
+    exit 2
+    ;;
+esac
 analyze_arguments=(analyze --fatal-infos)
 pana_arguments=()
 pana_score_threshold=0
@@ -114,6 +122,10 @@ echo "=== $package: dependency compatibility ==="
 "$sdk" "${analyze_arguments[@]}" lib
 
 if "$uses_local_hierarchy"; then
+  if [[ "$allow_unpublished_hierarchy" == 1 ]]; then
+    echo "=== $package: Pana score gate deferred for unpublished rohd_hierarchy ==="
+    exit 0
+  fi
   echo "=== $package: Pana checks hosted rohd_hierarchy availability ==="
 fi
 

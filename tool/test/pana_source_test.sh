@@ -108,9 +108,12 @@ cd "$SOURCE"
 passed=0
 run_case() {
   local expected="$1" status=0
+  local allow_unpublished_hierarchy="${TEST_ALLOW_UNPUBLISHED_HIERARCHY:-0}"
   shift
   : > "$SDK_LOG"
-  PATH="$FIXTURE/bin" /bin/bash "$REPO_ROOT/tool/gh_actions/pana_source.sh" \
+  PATH="$FIXTURE/bin" \
+    ROHD_ALLOW_UNPUBLISHED_HIERARCHY="$allow_unpublished_hierarchy" \
+    /bin/bash "$REPO_ROOT/tool/gh_actions/pana_source.sh" \
     "$@" > "$FIXTURE/output" 2>&1 || status=$?
   if [[ "$status" -ne "$expected" ]]; then
     cat "$FIXTURE/output"
@@ -173,6 +176,13 @@ cp "$SOURCE/pubspec.yaml" "$FIXTURE/original/pubspec.yaml"
 export EXPECTED_THRESHOLD=0
 run_case 0 "$SOURCE" dart
 [[ "$(cat "$SDK_LOG")" == $'dart|pub get\ndart|analyze --fatal-infos lib\ndart|pub downgrade\ndart|analyze --fatal-infos lib\npana' ]]
+TEST_ALLOW_UNPUBLISHED_HIERARCHY=1 run_case 0 "$SOURCE" dart
+[[ "$(cat "$SDK_LOG")" == $'dart|pub get\ndart|analyze --fatal-infos lib\ndart|pub downgrade\ndart|analyze --fatal-infos lib' ]]
+grep -F 'Pana score gate deferred for unpublished rohd_hierarchy' \
+  "$FIXTURE/output" > /dev/null
+TEST_ALLOW_UNPUBLISHED_HIERARCHY=invalid run_case 2 "$SOURCE" dart
+grep -F 'ROHD_ALLOW_UNPUBLISHED_HIERARCHY must be 0 or 1.' \
+  "$FIXTURE/output" > /dev/null
 
 mkdir -p "$FIXTURE/root-package/packages"
 cp -R "$SOURCE" "$FIXTURE/root-package/package"
