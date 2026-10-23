@@ -1134,7 +1134,7 @@ abstract class Module {
   ///
   /// Prefer this over calling [Interface.connectIO] directly so that the
   /// module does not depend on how interface ports are laid out.
-  InterfaceType addInterface<InterfaceType extends Interface<TagType>,
+  InterfaceType addStructuredInterface<InterfaceType extends Interface<TagType>,
           TagType extends Enum>(
     InterfaceType source, {
     Iterable<TagType>? inputTags,
@@ -1154,7 +1154,8 @@ abstract class Module {
   /// Registers a deliberately constructed local [target] against [source]
   /// and returns [target].
   ///
-  /// Prefer [addInterface] when [target] would be a plain clone of [source].
+  /// Prefer [addStructuredInterface] when [target] would be a plain clone of
+  /// [source].
   /// This form supports intentional type adaptation and does not clone
   /// [target].
   InterfaceType addInterfaceFrom<InterfaceType extends Interface<TagType>,
@@ -1178,10 +1179,10 @@ abstract class Module {
 
   /// Registers [source] for [role] and returns its internal clone.
   ///
-  /// This is the [PairInterface] form of [addInterface]. The [role]
+  /// This is the [PairInterface] form of [addStructuredInterface]. The [role]
   /// determines which directions are inputs and outputs of this [Module],
   /// including those of nested sub-interfaces.
-  InterfaceType addPairInterface<InterfaceType extends PairInterface>(
+  InterfaceType addStructuredPairInterface<InterfaceType extends PairInterface>(
     InterfaceType source,
     PairRole role, {
     String Function(String original)? uniquify,
@@ -1196,8 +1197,8 @@ abstract class Module {
   /// Registers a deliberately retyped pair [target] against [source] for
   /// [role] and returns [target].
   ///
-  /// Prefer [addPairInterface] when [target] would be a plain clone of
-  /// [source]. This form does not clone [target] and retains the
+  /// Prefer [addStructuredPairInterface] when [target] would be a plain clone
+  /// of [source]. This form does not clone [target] and retains the
   /// role-specific, recursive registration behavior of
   /// [PairInterface.pairConnectIO].
   InterfaceType addPairInterfaceFrom<InterfaceType extends PairInterface>(

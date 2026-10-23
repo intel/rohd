@@ -1,6 +1,6 @@
 ---
 name: rohd-hardware
-description: Use when writing, editing, reviewing, or debugging ROHD hardware modules in Dart. Covers module construction and hierarchy ownership (addInput/addOutput/addInterface), definitionName, port types, logic constructs, LogicStructure/Interface patterns, nested composition tests, SimCompare multi-backend vectors, event-driven simulation, and common mistakes from PR reviews.
+description: Use when writing, editing, reviewing, or debugging ROHD hardware modules in Dart. Covers module construction and hierarchy ownership (addInput/addOutput/addStructuredInterface), definitionName, port types, logic constructs, LogicStructure/Interface patterns, nested composition tests, SimCompare multi-backend vectors, event-driven simulation, and common mistakes from PR reviews.
 argument-hint: Describe the ROHD module, test, or simulation task and the files involved
 ---
 
@@ -163,14 +163,14 @@ Define `clone()` on every concrete `LogicStructure` used as a typed port or
 typed-array element. The clone must preserve the concrete type, layout, and
 semantic metadata while honoring the requested `name`.
 
-### 2.6 Interfaces with `addInterface`
+### 2.6 Interfaces with `addStructuredInterface`
 
-Use `addInterface` to register an interface at a module boundary. It returns
+Use `addStructuredInterface` to register an interface at a module boundary. It returns
 an internal clone; module logic must use that clone, while callers retain the
 external interface instance.
 
 ```dart
-control = addInterface(
+control = addStructuredInterface(
   control,
   inputTags: {ControlPort.toModule},
   outputTags: {ControlPort.fromModule},
@@ -180,7 +180,8 @@ control.signalOut <= ~control.signalIn;
 ```
 
 Use `addInterfaceFrom` only when deliberately adapting the interface type.
-For `PairInterface`, use `addPairInterface` or `addPairInterfaceFrom`.
+For `PairInterface`, use `addStructuredPairInterface` or
+`addPairInterfaceFrom`.
 
 ### 2.7 Mandatory module-boundary ownership
 
@@ -192,7 +193,7 @@ must be audited explicitly.
 #### Constructor inputs
 
 - Rebind every constructor signal with `addInput`, `addTypedInput`,
-  `addInputArray`, `addInterface`, `addPairInterface`, or
+  `addInputArray`, `addStructuredInterface`, `addStructuredPairInterface`, or
   `addPairInterfaceFrom`.
 - Use only the returned internal signal or interface after registration.
 - Never use the original external constructor argument in module logic.
@@ -226,14 +227,15 @@ parentAvailable <= child.available; // child output: valid boundary crossing
 
 #### Interfaces and composition
 
-`addInterface`, `addPairInterface`, and `addPairInterfaceFrom` create or return
-an **internal connected clone**. That clone is for the module implementation
+`addStructuredInterface`, `addStructuredPairInterface`, and
+`addPairInterfaceFrom` create or return an **internal connected clone**. That
+clone is for the module implementation
 only. Keep it private:
 
 ```dart
 late final ReadyValidInterface<Payload> _upstream;
 
-_upstream = addPairInterface(
+_upstream = addStructuredPairInterface(
   upstream,
   PairRole.consumer,
   uniquify: (original) => 'upstream_$original',
@@ -243,7 +245,8 @@ _upstream = addPairInterface(
 Do not publish the clone as a public hardware field. Callers already own the
 external interface passed to the constructor.
 
-Prefer the repository's `addInterface`/`addPairInterface` helper seam over
+Prefer the repository's `addStructuredInterface`/
+`addStructuredPairInterface` helper seam over
 calling `connectIO` or `pairConnectIO` directly. Direct calls are appropriate
 only inside the helper implementation or when a documented exceptional
 retyping pattern cannot use `addPairInterfaceFrom`.

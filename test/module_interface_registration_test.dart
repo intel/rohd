@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // module_interface_registration_test.dart
-// Tests for Module.addInterface, addInterfaceFrom, addPairInterface, and
-// addPairInterfaceFrom.
+// Tests for Module.addStructuredInterface, addInterfaceFrom,
+// addStructuredPairInterface, and addPairInterfaceFrom.
 //
 // 2026 October 21
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
@@ -65,7 +65,7 @@ class _TagModule extends Module {
           inputTags: {_Dir.toModule},
           outputTags: {_Dir.fromModule},
           uniquify: (orig) => 'p_$orig'),
-      _Api.add => addInterface(source,
+      _Api.add => addStructuredInterface(source,
           inputTags: {_Dir.toModule},
           outputTags: {_Dir.fromModule},
           uniquify: (orig) => 'p_$orig'),
@@ -86,7 +86,7 @@ class _PairModule extends Module {
     intf = switch (api) {
       _Api.legacy => addPairInterfacePorts(source, PairRole.consumer,
           uniquify: (orig) => 'c_$orig'),
-      _Api.add => addPairInterface(source, PairRole.consumer,
+      _Api.add => addStructuredPairInterface(source, PairRole.consumer,
           uniquify: (orig) => 'c_$orig'),
       _Api.addFrom => addPairInterfaceFrom(_Pair(), source, PairRole.consumer,
           uniquify: (orig) => 'c_$orig'),
@@ -107,7 +107,7 @@ void main() {
     await Simulator.reset();
   });
 
-  group('addInterface', () {
+  group('addStructuredInterface', () {
     test('returns a clone with ports matching addInterfacePorts', () async {
       final legacy = _TagModule(_TagIntf(), _Api.legacy);
       await legacy.build();
@@ -145,7 +145,7 @@ void main() {
       expect(mod.outputs.keys, contains('p_y'));
     });
 
-    test('matches addInterface output', () async {
+    test('matches addStructuredInterface output', () async {
       final added = _TagModule(_TagIntf(), _Api.add);
       await added.build();
       final from = _TagModule(_TagIntf(), _Api.addFrom);
@@ -155,7 +155,7 @@ void main() {
     });
   });
 
-  group('addPairInterface', () {
+  group('addStructuredPairInterface', () {
     test('matches addPairInterfacePorts including sub-interfaces', () async {
       final legacy = _PairModule(_Pair(), _Api.legacy);
       await legacy.build();
@@ -186,7 +186,8 @@ void main() {
   });
 
   group('addPairInterfaceFrom', () {
-    test('returns the provided target and matches addPairInterface', () async {
+    test('returns the provided target and matches addStructuredPairInterface',
+        () async {
       final added = _PairModule(_Pair(), _Api.add);
       await added.build();
       final from = _PairModule(_Pair(), _Api.addFrom);
