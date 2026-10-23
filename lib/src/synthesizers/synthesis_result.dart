@@ -49,10 +49,6 @@ abstract class SynthesisResult {
   @override
   int get hashCode => matchHashCode;
 
-  /// Generates what could go into a file.
-  @Deprecated('Use `toSynthFileContents()` instead.')
-  String toFileContents();
-
   /// Generates contents for a number of files.
   List<SynthFileContents> toSynthFileContents();
 
@@ -62,4 +58,16 @@ abstract class SynthesisResult {
   /// This is intended for cases where a supporting additional module
   /// declaration is required for functionality of the generated output.
   List<Module>? get supportingModules => null;
+
+  /// A map from signal/instance name to a list of `'line:col'` positions
+  /// in the generated output where that symbol appears (both 1-based).
+  ///
+  /// Multiple entries record every occurrence (declaration plus each
+  /// assignment LHS) so downstream tooling can offer all cross-probe
+  /// destinations. Order is textual.
+  ///
+  /// Subclasses that support line tracking (e.g. SystemVerilog synthesis)
+  /// populate this after [toSynthFileContents] is called.
+  /// Returns an empty map by default.
+  Map<String, List<String>> get svLineMap => const {};
 }

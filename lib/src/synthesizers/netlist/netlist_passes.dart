@@ -24,11 +24,20 @@ class NetlistPasses {
 
   /// Collects a combined modules map from [SynthesisResult]s suitable for
   /// JSON emission.
+  ///
+  /// When [fileTable] is supplied, every module's injected
+  /// `rohd.src_trace` attribute (see `doc/netlist_json_format.md`)
+  /// allocates file indices from that single shared table instead of its
+  /// own private one, so the caller can embed one netlist-wide `files`
+  /// array instead of duplicating a file list per module.
   static Map<String, Map<String, Object?>> collectModuleEntries(
     Iterable<SynthesisResult> results, {
     Module? topModule,
+    String? packageRoot,
     bool includeCellConnections = true,
+    SourceTraceFileTable? fileTable,
   }) {
+    final injectTraces = packageRoot != null && SourceTracer.hasTraces;
     final allModules = <String, Map<String, Object?>>{};
     for (final result in results) {
       if (result is NetlistSynthesisResult) {
@@ -36,6 +45,16 @@ class NetlistPasses {
         final attrs = _copyObjectMap(result.attributes);
         if (topModule != null && result.module == topModule) {
           attrs['top'] = 1;
+        }
+        if (injectTraces) {
+          final traceAttributes = SourceTracer.traceAttributesForModule(
+            result.module,
+            packageRoot: packageRoot,
+            fileTable: fileTable,
+          );
+          if (traceAttributes != null) {
+            attrs['rohd.src_trace'] = traceAttributes;
+          }
         }
         allModules[typeName] = {
           'attributes': attrs,
@@ -109,10 +128,7 @@ class NetlistPasses {
   };
 
   /// Transparent cell types whose bit mappings can be safely clustered.
-  static const _clusterableTransparentTypes = {
-    r'$buf',
-    r'$slice',
-  };
+  static const _clusterableTransparentTypes = {r'$buf', r'$slice'};
 
   /// Unified transparent-cell clustering pass.
   ///
@@ -143,9 +159,7 @@ class NetlistPasses {
 
       final tCells = <String>{
         for (final e in cells.entries)
-          if (_clusterableTransparentTypes.contains(
-            e.value['type'] as String?,
-          ))
+          if (_clusterableTransparentTypes.contains(e.value['type'] as String?))
             e.key,
       };
       if (tCells.isEmpty) {
@@ -603,10 +617,7 @@ class NetlistPasses {
             'A': NetlistPortDirection.input,
             'Y': NetlistPortDirection.output,
           },
-          connections: <String, List<Object>>{
-            'A': sourceBits,
-            'Y': outputBits,
-          },
+          connections: <String, List<Object>>{'A': sourceBits, 'Y': outputBits},
         ).toJson();
 
         for (final sliceRef in inputSliceRefs) {

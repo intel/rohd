@@ -78,7 +78,7 @@ Below are the ROHD tutorial content page, you can also find ROHD tutorial in our
 - [Shift Register](./chapter_7/00_sequential_logic.md#shift-register)
 - [ROHD Simulator](./chapter_7/00_sequential_logic.md#rohd-simulator)
 - [Unit Test in Sequential Logic](./chapter_7/00_sequential_logic.md#unit-test-in-sequential-logic)
-- [Wave Dumper](./chapter_7/00_sequential_logic.md#wave-dumper)
+- [Waveform Dumper](./chapter_7/00_sequential_logic.md#waveform-dumping)
 - [Exercise](./chapter_7/00_sequential_logic.md#exercise)
 
 ## Chapter 8: Abstractions

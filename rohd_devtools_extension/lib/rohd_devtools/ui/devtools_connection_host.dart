@@ -195,51 +195,6 @@ String? preferredVmServiceUriFromDtdEvent(DTDEvent event) {
   return null;
 }
 
-// ---------------------------------------------------------------------------
-// VM Connection Strategy
-// ---------------------------------------------------------------------------
-
-/// Abstract base for VM connection strategies.
-/// Linux uses vm_service_io, Web uses package:web WebSocket.
-abstract class VmConnectionStrategy {
-  /// Connect to VM service at the given URI.
-  /// Returns the VmService and isolateId for the main isolate.
-  Future<VmConnectionResult> connect(String uri);
-
-  /// Normalize URI to websocket format.
-  Uri? normalizeUri(String value) {
-    try {
-      var uri = Uri.parse(value.trim());
-
-      if (uri.scheme == 'http') {
-        uri = uri.replace(scheme: 'ws');
-      } else if (uri.scheme == 'https') {
-        uri = uri.replace(scheme: 'wss');
-      }
-
-      if (!uri.path.endsWith('/ws')) {
-        uri = uri.replace(path: '${uri.path}ws');
-      }
-
-      return uri;
-    } on Exception {
-      return null;
-    }
-  }
-}
-
-/// Result of a VM connection attempt.
-class VmConnectionResult {
-  /// The connected VM service.
-  final VmService vmService;
-
-  /// The isolate ID of the main isolate.
-  final String isolateId;
-
-  /// Constructor for [VmConnectionResult].
-  VmConnectionResult({required this.vmService, required this.isolateId});
-}
-
 /// Describes whether an attach is brand-new, a same-VM restart, or a
 /// teardown for disconnect.
 enum VmConnectionTransitionKind {
@@ -1084,7 +1039,7 @@ abstract class DevToolsConnectionHostState<T extends StatefulWidget>
   ///
   /// Connects to DTD, calls getVmServices(), returns the list.
   /// Also probes for registered services (new DTD 4.0 API).
-  Future<List<DiscoveredVmService>> discoverVmServices(String dtdUri) async =>
+  Future<List<DiscoveredVmService>> discoverVmServices(String dtdUri) =>
       discoverVmServicesViaDtd(
         dtdUri,
         onRegisteredServices: (serviceNames) {

@@ -14,9 +14,14 @@ import 'dart:io';
 
 import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/signals/signals.dart';
+import 'package:rohd/src/synthesizers/systemc/systemc_synthesis_result.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
 import 'package:rohd/src/utilities/web.dart';
 import 'package:test/test.dart';
+
+part 'systemverilog_simcompare.dart';
+part 'systemc_simcompare.dart';
 
 /// Represents a single test case to check in a single clock cycle.
 ///
@@ -87,15 +92,15 @@ class Vector {
         final value =
             LogicValue.of(inputValues[signalName], width: signal.width);
         return '${packedInputDrivers[signalName]} = $value;';
-      } else if (signal is LogicArray) {
+      } else if (signal is BaseLogicArray) {
         final arrAssigns = StringBuffer();
         var index = 0;
         final fullVal =
             LogicValue.of(inputValues[signalName], width: signal.width);
-        for (final leaf in signal.leafElements) {
-          final subVal = fullVal.getRange(index, index + leaf.width);
-          arrAssigns.writeln('${leaf.structureName} = $subVal;');
-          index += leaf.width;
+        for (final element in signal.arrayElements) {
+          final subVal = fullVal.getRange(index, index + element.width);
+          arrAssigns.writeln('${element.structureName} = $subVal;');
+          index += element.width;
         }
         return arrAssigns.toString();
       } else {
@@ -117,13 +122,13 @@ class Vector {
       );
       final inputStimulus = inputValues.toString();
 
-      if (outputPort is LogicArray) {
+      if (outputPort is BaseLogicArray) {
         var index = 0;
-        for (final leaf in outputPort.leafElements) {
-          final subVal = expectedValue.getRange(index, index + leaf.width);
+        for (final element in outputPort.arrayElements) {
+          final subVal = expectedValue.getRange(index, index + element.width);
           checksList.add(_errorCheckString(
-              leaf.structureName, subVal, subVal, inputStimulus));
-          index += leaf.width;
+              element.structureName, subVal, subVal, inputStimulus));
+          index += element.width;
         }
       } else {
         checksList.add(_errorCheckString(
@@ -142,9 +147,243 @@ class Vector {
   }
 }
 
+/// A simulation backend available to [SimCompare.checkVectors].
+enum SimCompareBackend {
+  /// ROHD's native simulator.
+  rohd,
+
+  /// Icarus Verilog.
+  iverilog,
+
+  /// Verilator.
+  verilator,
+
+  /// Native SystemC.
+  systemc,
+}
+
+/// The outcome of one backend in a shared vector comparison.
+enum SimCompareBackendStatus {
+  /// The backend executed and all checks passed.
+  passed,
+
+  /// The backend tool was unavailable in an optional environment.
+  skipped,
+
+  /// The caller explicitly excluded the backend with a reason.
+  excluded,
+
+  /// The backend failed to compile, execute, or compare the vectors.
+  failed,
+}
+
+/// The result for one backend in a shared vector comparison.
+class SimCompareBackendResult {
+  /// The backend that produced this result.
+  final SimCompareBackend backend;
+
+  /// The outcome of the backend check.
+  final SimCompareBackendStatus status;
+
+  /// Why the backend was skipped, excluded, or failed.
+  final String? reason;
+
+  const SimCompareBackendResult._(this.backend, this.status, [this.reason]);
+}
+
+/// Results from a shared vector comparison.
+class SimCompareReport {
+  /// Results keyed by every selected backend.
+  final Map<SimCompareBackend, SimCompareBackendResult> results;
+
+  SimCompareReport._(Map<SimCompareBackend, SimCompareBackendResult> results)
+      : results = Map.unmodifiable(results);
+
+  /// The result for [backend], or `null` if it was not selected.
+  SimCompareBackendResult? operator [](SimCompareBackend backend) =>
+      results[backend];
+}
+
 /// A utility class for checking a collection of [Vector]s against
 /// different simulators.
 abstract class SimCompare {
+  /// Backends exercised by ordinary shared vector checks.
+  ///
+  /// Verilator remains available for focused checks through [checkVectors] or
+  /// [checkVerilatorVector], but is not duplicated in the default matrix
+  /// because Icarus already exercises generated SystemVerilog behavior.
+  static const defaultVectorBackends = {
+    SimCompareBackend.rohd,
+    SimCompareBackend.iverilog,
+    SimCompareBackend.systemc,
+  };
+
+  /// Checks [vectors] against the selected simulation backends.
+  ///
+  /// When [backends] is omitted, [defaultVectorBackends] is used. Ordinary
+  /// functional tests should use that default rather than list backends.
+  /// Focused backend tests may pass an explicit set.
+  ///
+  /// [excludedBackends] must provide a non-empty reason for every explicit
+  /// exclusion. An exclusion is reported separately from an unavailable-tool
+  /// skip and from a pass. Backend failures are collected and reported
+  /// together with the backend that failed. [allowIverilogWarnings] and
+  /// [dontDeleteSystemCTmpFiles] support existing specialized test fixtures
+  /// without requiring separate ordinary backend calls.
+  static Future<SimCompareReport> checkVectors(
+    Module module,
+    List<Vector> vectors, {
+    Set<SimCompareBackend>? backends,
+    Map<SimCompareBackend, String> excludedBackends = const {},
+    bool? requireSystemC,
+    String? systemcHome,
+    String? systemcLib,
+    bool? requireVerilator,
+    String verilatorExecutable = 'verilator',
+    bool allowIverilogWarnings = false,
+    bool dontDeleteSystemCTmpFiles = false,
+  }) async {
+    final selected = backends ?? defaultVectorBackends;
+    if (selected.isEmpty) {
+      throw ArgumentError.value(backends, 'backends', 'Must not be empty.');
+    }
+    for (final entry in excludedBackends.entries) {
+      if (!selected.contains(entry.key)) {
+        throw ArgumentError.value(
+          entry.key,
+          'excludedBackends',
+          'Excluded backends must also be selected.',
+        );
+      }
+      if (entry.value.trim().isEmpty) {
+        throw ArgumentError.value(
+          entry.value,
+          'excludedBackends',
+          'Every backend exclusion must include a reason.',
+        );
+      }
+    }
+
+    final results = <SimCompareBackend, SimCompareBackendResult>{};
+    for (final backend in SimCompareBackend.values) {
+      if (!selected.contains(backend)) {
+        continue;
+      }
+
+      final exclusionReason = excludedBackends[backend];
+      if (exclusionReason != null) {
+        results[backend] = SimCompareBackendResult._(
+          backend,
+          SimCompareBackendStatus.excluded,
+          exclusionReason,
+        );
+        continue;
+      }
+
+      try {
+        switch (backend) {
+          case SimCompareBackend.rohd:
+            await checkFunctionalVector(module, vectors);
+          case SimCompareBackend.iverilog:
+            if (kIsWeb) {
+              results[backend] = SimCompareBackendResult._(
+                backend,
+                SimCompareBackendStatus.skipped,
+                'Icarus checks require the Dart VM.',
+              );
+              continue;
+            }
+            checkIverilogVector(
+              module,
+              vectors,
+              allowWarnings: allowIverilogWarnings,
+            );
+          case SimCompareBackend.verilator:
+            String? skipReason;
+            final passed = checkVerilatorVector(
+              module,
+              vectors,
+              requireTool: requireVerilator,
+              verilatorExecutable: verilatorExecutable,
+              onSkip: (reason) => skipReason = reason,
+            );
+            if (!passed) {
+              if (skipReason == null) {
+                throw StateError(
+                  'Verilator returned without passing or reporting a skip.',
+                );
+              }
+              results[backend] = SimCompareBackendResult._(
+                backend,
+                SimCompareBackendStatus.skipped,
+                skipReason,
+              );
+              continue;
+            }
+          case SimCompareBackend.systemc:
+            String? skipReason;
+            final passed = checkSystemCVector(
+              module,
+              vectors,
+              systemcHome: systemcHome,
+              systemcLib: systemcLib,
+              requireTool: requireSystemC,
+              dontDeleteTmpFiles: dontDeleteSystemCTmpFiles,
+              onSkip: (reason) => skipReason = reason,
+            );
+            if (!passed) {
+              if (skipReason == null) {
+                throw StateError(
+                  'SystemC returned without passing or reporting a skip.',
+                );
+              }
+              results[backend] = SimCompareBackendResult._(
+                backend,
+                SimCompareBackendStatus.skipped,
+                skipReason,
+              );
+              continue;
+            }
+        }
+        results[backend] = SimCompareBackendResult._(
+          backend,
+          SimCompareBackendStatus.passed,
+        );
+      } on Object catch (error) {
+        results[backend] = SimCompareBackendResult._(
+          backend,
+          SimCompareBackendStatus.failed,
+          error.toString(),
+        );
+      }
+    }
+
+    for (final result in results.values.where(
+      (result) =>
+          result.status == SimCompareBackendStatus.skipped ||
+          result.status == SimCompareBackendStatus.excluded,
+    )) {
+      print(
+        'SimCompare ${result.backend.name} ${result.status.name}: '
+        '${result.reason}',
+      );
+    }
+
+    final failures = results.values
+        .where((result) => result.status == SimCompareBackendStatus.failed)
+        .toList();
+    if (failures.isNotEmpty) {
+      fail(
+        'Vector comparison failed for ${module.definitionName}:\n'
+        '${failures.map(
+              (result) => '[${result.backend.name}] ${result.reason}',
+            ).join('\n')}',
+      );
+    }
+
+    return SimCompareReport._(results);
+  }
+
   static bool _verilatorExecutableExists(String executable) {
     final names = [
       executable,
@@ -185,6 +424,7 @@ abstract class SimCompare {
   /// Returns true on success, or false when the test is explicitly skipped.
   /// Web tests always skip. If [verilatorExecutable] is absent, skips unless
   /// [requireTool] is true (defaulting to `ROHD_REQUIRE_VERILATOR=1`).
+  /// [onSkip] reports the reason, marking the current test skipped by default.
   /// Execution, compilation, and simulation failures always fail the test.
   /// Warnings are visible but nonfatal by default.
   static bool checkVerilatorVector(
@@ -192,6 +432,7 @@ abstract class SimCompare {
     List<Vector> vectors, {
     String? moduleName,
     bool? requireTool,
+    void Function(String) onSkip = markTestSkipped,
     String verilatorExecutable = 'verilator',
     List<String> verilatorExtraArgs = const [],
     bool dontDeleteTmpFiles = false,
@@ -201,7 +442,7 @@ abstract class SimCompare {
         const SystemVerilogSynthesizerConfiguration(),
   }) {
     if (kIsWeb) {
-      markTestSkipped('Verilator checks require the Dart VM.');
+      onSkip('Verilator checks require the Dart VM.');
       return false;
     }
 
@@ -242,14 +483,14 @@ abstract class SimCompare {
       if (required) {
         fail(message);
       }
-      markTestSkipped(message);
+      onSkip(message);
       return false;
     }
     expect(version.exitCode, 0,
         reason: 'Could not run $verilatorExecutable --version:\n'
             '${version.stdout}\n${version.stderr}');
 
-    final generatedVerilog = module.generateSynth(
+    final generatedVerilog = module.dumpSystemVerilog(
       configuration: synthesizerConfiguration,
     );
     final withTestbench = !buildOnly || vectors.isNotEmpty;
@@ -467,9 +708,12 @@ abstract class SimCompare {
         {String Function(String original)? adjust,
         String? signalTypeOverride}) {
       final signal = module.signals.firstWhere((e) => e.name == signalName);
+      final isOutput = module.tryOutput(signalName) != null;
 
       final signalType = signalTypeOverride ??
-          ((signal is LogicNet || (signal is LogicArray && signal.isNet))
+          ((isOutput ||
+                  signal is LogicNet ||
+                  (signal is BaseLogicArray && signal.isNet))
               ? 'wire'
               : 'logic');
 
@@ -477,7 +721,7 @@ abstract class SimCompare {
         signalName = adjust(signalName);
       }
 
-      if (signal is LogicArray) {
+      if (signal is BaseLogicArray) {
         final unpackedDims =
             signal.dimensions.getRange(0, signal.numUnpackedDimensions);
         final packedDims = signal.dimensions
@@ -519,7 +763,7 @@ abstract class SimCompare {
     if (usePackedInputDrivers) {
       for (final signalName in allSignals) {
         final signal = module.tryInput(signalName);
-        if (signal is! LogicArray || signal.numUnpackedDimensions == 0) {
+        if (signal is! BaseLogicArray) {
           continue;
         }
         final driver =
@@ -527,10 +771,10 @@ abstract class SimCompare {
         packedInputDrivers[signalName] = driver;
         packedInputDeclarations.add('logic [${signal.width - 1}:0] $driver;');
         var offset = 0;
-        for (final leaf in signal.leafElements) {
-          packedInputDeclarations.add('assign ${leaf.structureName} = '
-              '$driver[${offset + leaf.width - 1}:$offset];');
-          offset += leaf.width;
+        for (final element in signal.arrayElements) {
+          packedInputDeclarations.add('assign ${element.structureName} = '
+              '$driver[${offset + element.width - 1}:$offset];');
+          offset += element.width;
         }
       }
     }
@@ -591,7 +835,7 @@ abstract class SimCompare {
       instance: moduleInstance,
       :stimulus,
     ) = _vectorTestbenchContents(module, vectors, moduleName: moduleName);
-    final generatedVerilog = module.generateSynth(
+    final generatedVerilog = module.dumpSystemVerilog(
       configuration: synthesizerConfiguration,
     );
 
@@ -687,4 +931,103 @@ abstract class SimCompare {
     }
     return true;
   }
+
+  /// Removes cached SystemC build artifacts, optionally preserving PCH files.
+  static void cleanupSystemCCache({bool keepPch = true}) =>
+      _SystemCSimCompare.cleanupSystemCCache(keepPch: keepPch);
+
+  /// Builds a SystemC executable for [module] using the supplied options.
+  static SystemCVectorExecutable? buildSystemCVectorExecutable(Module module,
+          {String? moduleName,
+          String? clockName,
+          String? resetName,
+          String? systemcHome,
+          String? systemcLib,
+          bool? requireTool,
+          void Function(String) onSkip = markTestSkipped,
+          String cxxExecutable = 'g++',
+          bool usePrecompiledHeader = true,
+          SystemCSynthesizerConfiguration synthesizerConfiguration =
+              const SystemCSynthesizerConfiguration()}) =>
+      _SystemCSimCompare.buildSystemCVectorExecutable(module,
+          moduleName: moduleName,
+          clockName: clockName,
+          resetName: resetName,
+          systemcHome: systemcHome,
+          systemcLib: systemcLib,
+          requireTool: requireTool,
+          onSkip: onSkip,
+          cxxExecutable: cxxExecutable,
+          usePrecompiledHeader: usePrecompiledHeader,
+          synthesizerConfiguration: synthesizerConfiguration);
+
+  /// Runs [vectors] against a built SystemC [executable].
+  static bool runSystemCVectors(
+          SystemCVectorExecutable executable, List<Vector> vectors) =>
+      _SystemCSimCompare.runSystemCVectors(executable, vectors);
+
+  /// Checks [vectors] against a built SystemC [executable].
+  static void checkSystemCVectors(
+          SystemCVectorExecutable executable, List<Vector> vectors) =>
+      _SystemCSimCompare.checkSystemCVectors(executable, vectors);
+
+  /// Checks SystemC vectors generated from [module].
+  static bool checkSystemCVector(Module module, List<Vector> vectors,
+          {String? moduleName,
+          bool dontDeleteTmpFiles = false,
+          String? clockName,
+          String? resetName,
+          String? systemcHome,
+          String? systemcLib,
+          bool buildOnly = false,
+          bool? requireTool,
+          void Function(String) onSkip = markTestSkipped,
+          String cxxExecutable = 'g++',
+          bool usePrecompiledHeader = true,
+          SystemCSynthesizerConfiguration synthesizerConfiguration =
+              const SystemCSynthesizerConfiguration()}) =>
+      _SystemCSimCompare.checkSystemCVector(module, vectors,
+          moduleName: moduleName,
+          dontDeleteTmpFiles: dontDeleteTmpFiles,
+          clockName: clockName,
+          resetName: resetName,
+          systemcHome: systemcHome,
+          systemcLib: systemcLib,
+          buildOnly: buildOnly,
+          requireTool: requireTool,
+          onSkip: onSkip,
+          cxxExecutable: cxxExecutable,
+          usePrecompiledHeader: usePrecompiledHeader,
+          synthesizerConfiguration: synthesizerConfiguration);
+
+  /// Compares [module] behavior with SystemC using [stimulus].
+  static Future<bool> systemcSimCompare(Module module, Logic clk,
+          {required Future<void> Function() stimulus,
+          List<String>? inputNames,
+          List<String>? outputNames,
+          String? clockName,
+          String? resetName,
+          bool dontDeleteTmpFiles = false,
+          String? systemcHome,
+          String? systemcLib,
+          bool? requireTool,
+          void Function(String) onSkip = markTestSkipped,
+          String cxxExecutable = 'g++',
+          bool usePrecompiledHeader = true,
+          SystemCSynthesizerConfiguration synthesizerConfiguration =
+              const SystemCSynthesizerConfiguration()}) =>
+      _SystemCSimCompare.systemcSimCompare(module, clk,
+          stimulus: stimulus,
+          inputNames: inputNames,
+          outputNames: outputNames,
+          clockName: clockName,
+          resetName: resetName,
+          dontDeleteTmpFiles: dontDeleteTmpFiles,
+          systemcHome: systemcHome,
+          systemcLib: systemcLib,
+          requireTool: requireTool,
+          onSkip: onSkip,
+          cxxExecutable: cxxExecutable,
+          usePrecompiledHeader: usePrecompiledHeader,
+          synthesizerConfiguration: synthesizerConfiguration);
 }

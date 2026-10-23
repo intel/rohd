@@ -11,6 +11,7 @@ import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/modules/conditionals/ssa.dart';
+import 'package:rohd/src/modules/operation_utils.dart';
 
 /// Represents a single case within a [Case] block.
 class CaseItem {
@@ -32,18 +33,38 @@ class CaseItem {
 /// It is used to assign a signal based on a condition with multiple cases to
 /// consider. For e.g., this can be used instead of a nested [mux].
 ///
-/// The result is of type [Logic] and it is determined by conditionaly matching
-/// the expression with the values of each item in conditions. If width of the
-/// input is not provided, then the width of  the result is inferred from the
-/// width of the entries.
-Logic cases(Logic expression, Map<dynamic, dynamic> conditions,
-    {int? width,
-    ConditionalType conditionalType = ConditionalType.none,
-    dynamic defaultValue}) {
-  for (final conditionValue in [
+/// The result is of type [LogicType] and is determined by conditionally
+/// matching [expression] with values in [conditions].
+///
+/// When [outputGenerator] is omitted, a requested [Logic] result is
+/// normalized to ordinary [Logic]. For a more specific [LogicType], the first
+/// matching typed branch supplies the output prototype. Supply
+/// [outputGenerator] to establish an explicit result representation when
+/// sources are mixed or no typed branch is available.
+LogicType cases<LogicType extends Logic>(
+  Logic expression,
+  Map<dynamic, dynamic> conditions, {
+  int? width,
+  ConditionalType conditionalType = ConditionalType.none,
+  dynamic defaultValue,
+  LogicType Function({String? name})? outputGenerator,
+  String name = 'result',
+}) {
+  final resultValues = [
     ...conditions.values,
-    if (defaultValue != null) defaultValue
-  ]) {
+    if (defaultValue != null) defaultValue,
+  ];
+
+  if (resultValues.any((value) => value is Enum)) {
+    throw ArgumentError.value(
+      resultValues,
+      'conditions',
+      'Bare enum result values have no hardware encoding. Convert each result '
+          'to a LogicEnum signal with an explicit mapping.',
+    );
+  }
+
+  for (final conditionValue in resultValues) {
     int? inferredWidth;
 
     if (conditionValue is Logic) {
@@ -54,47 +75,99 @@ Logic cases(Logic expression, Map<dynamic, dynamic> conditions,
 
     if (width != inferredWidth && width != null && inferredWidth != null) {
       throw SignalWidthMismatchException.forDynamic(
-          conditionValue, width, inferredWidth);
+        conditionValue,
+        width,
+        inferredWidth,
+      );
     }
 
     width ??= inferredWidth;
   }
 
-  if (width == null) {
+  final prototype = resultValues.whereType<LogicType>().firstOrNull;
+  if (width == null && prototype == null && outputGenerator == null) {
     throw SignalWidthMismatchException.forNull(conditions);
   }
+
+  Logic conditionLogic(dynamic condition) {
+    if (expression is LogicEnum && condition is Enum) {
+      if (!expression.mapping.containsKey(condition)) {
+        throw ArgumentError.value(
+          condition,
+          'conditions',
+          'Not present in the mapping for ${expression.runtimeType}.',
+        );
+      }
+
+      return expression.clone()..gets(Const(expression.mapping[condition]));
+    } else if (condition is Logic) {
+      return condition;
+    } else {
+      return Const(condition, width: expression.width);
+    }
+  }
+
+  final result = createOperationOutput<LogicType>(
+    width: width ?? prototype?.width,
+    name: name,
+    operation: 'cases<$LogicType>',
+    naming: Naming.mergeable,
+    prototype: prototype,
+    outputGenerator: outputGenerator,
+  );
 
   for (final condition in conditions.entries) {
     if (condition.key is Logic) {
       if (expression.width != (condition.key as Logic).width) {
         throw SignalWidthMismatchException.forDynamic(
-            condition.key, expression.width, (condition.key as Logic).width);
+          condition.key,
+          expression.width,
+          (condition.key as Logic).width,
+        );
       }
     }
 
     if (condition.key is LogicValue) {
       if (expression.width != (condition.key as LogicValue).width) {
-        throw SignalWidthMismatchException.forDynamic(condition.key,
-            expression.width, (condition.key as LogicValue).width);
+        throw SignalWidthMismatchException.forDynamic(
+          condition.key,
+          expression.width,
+          (condition.key as LogicValue).width,
+        );
       }
     }
   }
 
-  final result = Logic(name: 'result', width: width, naming: Naming.mergeable);
+  for (final conditionValue in resultValues) {
+    if (conditionValue is Logic) {
+      validateOperationSource(
+        conditionValue,
+        result,
+        operation: 'cases branch',
+      );
+    } else if (conditionValue is LogicValue &&
+        conditionValue.width != result.width) {
+      throw SignalWidthMismatchException.forDynamic(
+        conditionValue,
+        result.width,
+        conditionValue.width,
+      );
+    }
+  }
 
   Combinational([
     Case(
-        expression,
-        [
-          for (final condition in conditions.entries)
-            CaseItem(
-                condition.key is Logic
-                    ? condition.key as Logic
-                    : Const(condition.key, width: expression.width),
-                [result < condition.value])
-        ],
-        conditionalType: conditionalType,
-        defaultItem: defaultValue != null ? [result < defaultValue] : null)
+      expression,
+      [
+        for (final condition in conditions.entries)
+          CaseItem(
+            conditionLogic(condition.key),
+            [result < condition.value],
+          ),
+      ],
+      conditionalType: conditionalType,
+      defaultItem: defaultValue != null ? [result < defaultValue] : null,
+    ),
   ]);
 
   return result;
@@ -125,17 +198,41 @@ class Case extends Conditional {
   /// See [ConditionalType] for more details.
   final ConditionalType conditionalType;
 
+  @override
+  Map<Logic, Logic> get portTypePairs => {
+        ...super.portTypePairs,
+        ..._itemTypePortPairs,
+      };
+
+  /// Case-item values whose generated ports must match [expression]'s type.
+  final Map<Logic, Logic> _itemTypePortPairs = {};
+
+  @override
+  bool shouldPropagateType(Logic reference, LogicValue? constantValue) {
+    if (reference is LogicEnum &&
+        constantValue != null &&
+        !reference.mapping.containsValue(constantValue)) {
+      throw StateError(
+          'Constant is not representable by the enum case expression.');
+    }
+    return true;
+  }
+
   /// Whenever an item in [items] matches [expression], it will be executed.
   ///
   /// If none of [items] match, then [defaultItem] is executed.
-  Case(this.expression, this.items,
-      {List<Conditional>? defaultItem,
-      this.conditionalType = ConditionalType.none})
-      : _defaultItem = defaultItem {
+  Case(
+    this.expression,
+    this.items, {
+    List<Conditional>? defaultItem,
+    this.conditionalType = ConditionalType.none,
+  }) : _defaultItem = defaultItem {
     for (final item in items) {
       if (item.value.width != expression.width) {
         throw PortWidthMismatchException.equalWidth(expression, item.value);
       }
+
+      _itemTypePortPairs[item.value] = expression;
     }
   }
 
@@ -166,7 +263,7 @@ class Case extends Conditional {
     CaseItem? foundMatch;
 
     for (final item in items) {
-      // match on the first matchinig item
+      // match on the first matching item
       if (isMatch(driverValue(item.value), driverValue(expression))) {
         for (final conditional in item.then) {
           conditional.execute(drivenSignals, guard);
@@ -199,13 +296,14 @@ class Case extends Conditional {
   }
 
   @override
-  late final List<Conditional> conditionals =
-      UnmodifiableListView(_getConditionals());
+  late final List<Conditional> conditionals = UnmodifiableListView(
+    _getConditionals(),
+  );
 
   /// Calculates the set of conditionals directly within this.
   List<Conditional> _getConditionals() => [
         ...items.map((item) => item.then).expand((conditional) => conditional),
-        if (defaultItem != null) ...defaultItem!
+        if (defaultItem != null) ...defaultItem!,
       ];
 
   @override
@@ -217,16 +315,20 @@ class Case extends Conditional {
     for (final item in items) {
       drivers
         ..add(item.value)
-        ..addAll(item.then
-            .map((conditional) => conditional.drivers)
-            .expand((driver) => driver)
-            .toList(growable: false));
+        ..addAll(
+          item.then
+              .map((conditional) => conditional.drivers)
+              .expand((driver) => driver)
+              .toList(growable: false),
+        );
     }
     if (defaultItem != null) {
-      drivers.addAll(defaultItem!
-          .map((conditional) => conditional.drivers)
-          .expand((driver) => driver)
-          .toList(growable: false));
+      drivers.addAll(
+        defaultItem!
+            .map((conditional) => conditional.drivers)
+            .expand((driver) => driver)
+            .toList(growable: false),
+      );
     }
     return drivers;
   }
@@ -238,23 +340,31 @@ class Case extends Conditional {
   List<Logic> calculateReceivers() {
     final receivers = <Logic>[];
     for (final item in items) {
-      receivers.addAll(item.then
-          .map((conditional) => conditional.receivers)
-          .flattened
-          .toList(growable: false));
+      receivers.addAll(
+        item.then
+            .map((conditional) => conditional.receivers)
+            .flattened
+            .toList(growable: false),
+      );
     }
     if (defaultItem != null) {
-      receivers.addAll(defaultItem!
-          .map((conditional) => conditional.receivers)
-          .flattened
-          .toList(growable: false));
+      receivers.addAll(
+        defaultItem!
+            .map((conditional) => conditional.receivers)
+            .flattened
+            .toList(growable: false),
+      );
     }
     return receivers;
   }
 
   @override
-  String verilogContents(int indent, Map<String, String> inputsNameMap,
-      Map<String, String> outputsNameMap, String assignOperator) {
+  String verilogContents(
+    int indent,
+    Map<String, String> inputsNameMap,
+    Map<String, String> outputsNameMap,
+    String assignOperator,
+  ) {
     final padding = Conditional.calcPadding(indent);
     final expressionName = inputsNameMap[driverInput(expression).name];
     var caseHeader = caseType;
@@ -268,8 +378,14 @@ class Case extends Conditional {
     for (final item in items) {
       final conditionName = inputsNameMap[driverInput(item.value).name];
       final caseContents = item.then
-          .map((conditional) => conditional.verilogContents(
-              indent + 4, inputsNameMap, outputsNameMap, assignOperator))
+          .map(
+            (conditional) => conditional.verilogContents(
+              indent + 4,
+              inputsNameMap,
+              outputsNameMap,
+              assignOperator,
+            ),
+          )
           .join('\n');
       verilog.write('''
 $subPadding$conditionName : begin
@@ -279,8 +395,14 @@ ${subPadding}end
     }
     if (defaultItem != null) {
       final defaultCaseContents = defaultItem!
-          .map((conditional) => conditional.verilogContents(
-              indent + 4, inputsNameMap, outputsNameMap, assignOperator))
+          .map(
+            (conditional) => conditional.verilogContents(
+              indent + 4,
+              inputsNameMap,
+              outputsNameMap,
+              assignOperator,
+            ),
+          )
           .join('\n');
       verilog.write('''
 ${subPadding}default : begin
@@ -294,25 +416,30 @@ ${subPadding}end
   }
 
   @override
-  Map<Logic, Logic> processSsa(Map<Logic, Logic> currentMappings,
-      {required int context}) {
+  Map<Logic, Logic> processSsa(
+    Map<Logic, Logic> currentMappings, {
+    required int context,
+  }) {
     // add an empty default if there isn't already one, since we need it for phi
     _defaultItem ??= [];
 
     // first connect direct drivers into the case statement
-    Conditional.connectSsaDriverFromMappings(expression, currentMappings,
-        context: context);
+    Conditional.connectSsaDriverFromMappings(
+      expression,
+      currentMappings,
+      context: context,
+    );
     for (final itemDriver in items.map((e) => e.value)) {
-      Conditional.connectSsaDriverFromMappings(itemDriver, currentMappings,
-          context: context);
+      Conditional.connectSsaDriverFromMappings(
+        itemDriver,
+        currentMappings,
+        context: context,
+      );
     }
 
     // calculate mappings locally within each item
     final phiMappings = <Logic, Logic>{};
-    for (final conditionals in [
-      ...items.map((e) => e.then),
-      defaultItem!,
-    ]) {
+    for (final conditionals in [...items.map((e) => e.then), defaultItem!]) {
       var localMappings = {...currentMappings};
 
       for (final conditional in conditionals) {
@@ -321,10 +448,10 @@ ${subPadding}end
 
       for (final localMapping in localMappings.entries) {
         if (!phiMappings.containsKey(localMapping.key)) {
-          phiMappings[localMapping.key] = Logic(
+          phiMappings[localMapping.key] = SsaLogic.cloneLike(
+            localMapping.key,
+            localMapping.value,
             name: '${localMapping.key.name}_phi',
-            width: localMapping.key.width,
-            naming: Naming.mergeable,
           );
         }
 
@@ -339,25 +466,24 @@ ${subPadding}end
     // an inferred latch
     final signalsNeedingInit = [
       ...items.map((e) => e.then).flattened,
-      ...defaultItem!,
+      ...defaultItem!
     ]
         .map((e) => e.calculateReceivers())
         .flattened
-        .whereType<SsaLogic>()
+        .where((signal) => SsaLogic.isSsaProxy(signal, context: context))
         .toSet();
-    for (final conditionals in [
-      ...items.map((e) => e.then),
-      defaultItem!,
-    ]) {
+    for (final conditionals in [...items.map((e) => e.then), defaultItem!]) {
       final alreadyDrivenSsaSignals = conditionals
           .map((e) => e.calculateReceivers())
           .flattened
-          .whereType<SsaLogic>()
+          .where((signal) => SsaLogic.isSsaProxy(signal, context: context))
           .toSet();
 
       for (final signalNeedingInit in signalsNeedingInit) {
         if (!alreadyDrivenSsaSignals.contains(signalNeedingInit)) {
-          conditionals.add(signalNeedingInit < 0);
+          conditionals.add(
+            signalNeedingInit < SsaLogic.branchDefaultValue(signalNeedingInit),
+          );
         }
       }
     }
@@ -384,12 +510,27 @@ ${subPadding}end
 /// Does not support SystemVerilog's `?` syntax, which is exactly functionally
 /// equivalent to `z` syntax.
 class CaseZ extends Case {
+  @override
+  bool shouldPropagateType(Logic reference, LogicValue? constantValue) {
+    if (constantValue != null &&
+        Iterable.generate(
+                constantValue.width, (bitIndex) => constantValue[bitIndex])
+            .contains(LogicValue.z)) {
+      return false;
+    }
+    return super.shouldPropagateType(reference, constantValue);
+  }
+
   /// Whenever an item in [items] matches [expression], it will be executed, but
   /// the definition of matches allows for `z` to be a wildcard.
   ///
   /// If none of [items] match, then [defaultItem] is executed.
-  CaseZ(super.expression, super.items,
-      {super.defaultItem, super.conditionalType});
+  CaseZ(
+    super.expression,
+    super.items, {
+    super.defaultItem,
+    super.conditionalType,
+  });
 
   @override
   String get caseType => 'casez';

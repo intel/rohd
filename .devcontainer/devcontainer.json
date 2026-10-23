@@ -4,6 +4,12 @@
 {
   "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
 
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "24"
+    }
+  },
+
   "updateContentCommand": "tool/gh_codespaces/run_setup.sh",
 
   "customizations": {

@@ -24,6 +24,7 @@ const _packagePaths = {
   'rohd_hierarchy': 'packages/rohd_hierarchy',
   'rohd_waveform': 'packages/rohd_waveform',
   'rohd_devtools_widgets': 'packages/rohd_devtools_widgets',
+  'rohd_source_navigator': 'packages/rohd_source_navigator',
 };
 
 void main(List<String> arguments) {

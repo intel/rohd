@@ -9,9 +9,8 @@
 [![Chat](https://img.shields.io/discord/1001179329411166267?label=Chat)](https://discord.gg/jubxF84yGw)
 [![License](https://img.shields.io/badge/License-BSD--3-blue)](https://github.com/intel/rohd/blob/main/LICENSE)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](https://github.com/intel/rohd/blob/main/CODE_OF_CONDUCT.md)
-[![Coverage](https://raw.githubusercontent.com/intel/rohd/refs/heads/badges/coverage/main.svg)](https://github.com/intel/rohd/blob/main/.github/workflows/coverage.yml)
 
-ROHD (pronounced like "road") is a framework for describing and verifying hardware in the Dart programming language.
+ROHD (pronounced like "road") is a silicon-proven framework for describing and verifying hardware in the Dart programming language.
 
 ## Documentation
 
@@ -39,28 +38,32 @@ You can also open this repository in a GitHub Codespace to run the example in yo
 ## About ROHD
 
 - Full power of the modern **Dart language** for hardware design and verification
-- Makes **validation collateral** simpler to develop and debug.  The [ROHD Verification Framework](https://github.com/intel/rohd-vf) helps build well-structured testbenches.
-- Develop **layers of abstraction** within a hardware design, making it more flexible and powerful
-- Easy **IP integration** and **interfaces**; using an IP is as easy as an import.  Reduces tedious, redundant, and error prone aspects of integration
-- **Simple and fast build**, free of complex build systems and EDA vendor tools
 - Can use the excellent pub.dev **package manager** and all the packages it has to offer
-- Built-in event-based **fast simulator** with **4-value** (0, 1, X, and Z) support and a **waveform dumper** to .vcd file format
-- Conversion of modules to equivalent, human-readable, structurally similar **SystemVerilog** for integration or downstream tool consumption
-- **Run-time dynamic** module port definitions (numbers, names, widths, etc.) and internal module logic, including recursive module contents
-- Leverage the [ROHD Hardware Component Library (ROHD-HCL)](https://github.com/intel/rohd-hcl) with reusable and configurable design and verification components.
-- Simple, free, **open source tool stack** without any headaches from library dependencies, file ordering, elaboration/analysis options, +defines, etc.
-- Excellent, simple, fast **unit-testing** framework
+- Develop **layers of abstraction** within a hardware design, making it more flexible and powerful
 - **Less verbose** than alternatives (fewer lines of code)
-- Enables **higher quality** development
-- Replaces hacky perl/python scripting for automation with powerful **native control of design generation**
 - Fewer bugs and lines of code means **shorter development schedule**
-- Support for **cosimulation with verilog modules** (via [ROHD Cosim](https://github.com/intel/rohd-cosim)) and **instantiation of verilog modules** in generated SystemVerilog code
+- Enables **higher quality** development
+- **Simple and fast build**, free of complex build systems and EDA vendor tools
+- Excellent, simple, fast **unit-testing** framework
+- Simulate with **various abstraction levels of models** from architectural, to functional, to cycle-accurate, to RTL levels in the same language and environment
+- Simple, free, **open source tool stack** without any headaches from library dependencies, file ordering, elaboration/analysis options, +defines, etc.
 - Use **modern IDEs** like Visual Studio Code, with excellent static analysis, fast autocomplete, built-in debugger, linting, git integration, extensions, and much more
-- Simulate with **various abstraction levels of models** from architectural, to functional, to cycle-accurate, to RTL levels in the same language and environment.
+- Easy **IP integration** and **interfaces**; using an IP is as easy as an import.  Reduces tedious, redundant, and error prone aspects of integration
+- Conversion of modules to human-readable, structurally similar **SystemVerilog** and **SystemC** for integration or downstream tool consumption
+- **Run-time dynamic** module port definitions (numbers, names, widths, etc.) and internal module logic, including recursive module contents
+- Replaces hacky perl/python scripting for automation with powerful **native control of design generation**
 
-ROHD is *not* a new language, it is *not* a hardware description language (HDL), and it is *not* a version of High-Level Synthesis (HLS).  ROHD can be classified as a generator framework.
+- The **ROHD Framework** is a complete design and verification framework:
+  - Built-in event-based **fast simulator** with **4-value** (0, 1, X, and Z) support and a **waveform capture service** to .vcd or .fst file format
+  - Leverage the [ROHD Hardware Component Library (ROHD-HCL)](https://github.com/intel/rohd-hcl) with reusable and configurable design and verification components
+  - Makes **validation collateral** simpler to develop and debug.  The [ROHD Verification Framework](https://github.com/intel/rohd-vf) helps build well-structured testbenches
+  - Powerful capabilities like the [ROHD Schematic Viewer](https://github.com/rohd-schematic-viewer) for high-fidelity rendering of ROHD designs as well as [ROHD Wave Viewer](https://github.com/rohd-wave-viewer) for viewing simulation waveforms even for complex ROHD structures
+  - Debug your design with [ROHD Live Debugger](https://github.com/intel/rohd/rohd_devtools_extension), an integrated debugger with cross-probing into ROHD source and synthesized RTL output from schematics rendering and waveform display all connected to live RTL simulation
+  - Support for **cosimulation with Verilog modules** (via [ROHD Cosim](https://github.com/intel/rohd-cosim)) and **instantiation of Verilog modules** in generated SystemVerilog code
 
-You can think of this project as an attempt to *replace* SystemVerilog and related build systems as the front-end methodology of choice in the industry.
+ROHD is *not* a new language, it is *not* a hardware description language (HDL), and it is *not* a version of High-Level Synthesis (HLS).  ROHD can be classified as a generator framework, extending a powerful software language into the hardware domain and providing a full suite of tools and capabilities to accelerate hardware design and validation.
+
+You can think of this project as an attempt to *replace* SystemVerilog and related design systems as the front-end methodology of choice in the industry.
 
 One of ROHD's goals is to help grow an open-source community around reusable hardware designs and verification components.
 
@@ -69,5 +72,6 @@ One of ROHD's goals is to help grow an open-source community around reusable har
 ROHD is under active development.  If you're interested in contributing, have feedback or a question, or found a bug, please see [CONTRIBUTING.md](https://github.com/intel/rohd/blob/main/CONTRIBUTING.md).
 
 ----------------
+
 Copyright (C) 2021-2026 Intel Corporation  
 SPDX-License-Identifier: BSD-3-Clause

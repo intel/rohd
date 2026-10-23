@@ -41,7 +41,7 @@ class ParameterizedMod extends Module with SystemVerilog {
 
 Future<String> synthOf(ParameterizedMod mod) async {
   await mod.build();
-  return mod.generateSynth();
+  return mod.dumpSystemVerilog();
 }
 
 void main() {

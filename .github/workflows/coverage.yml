@@ -37,6 +37,22 @@ jobs:
       - name: Generate coverage and badge
         run: tool/generate_coverage.sh --generate-svg
 
+      - name: Save ROHD coverage badge
+        run: cp /tmp/coverage-badge.svg /tmp/rohd-coverage-badge.svg
+
+      - name: Setup Flutter
+        uses: flutter-actions/setup-flutter@v2
+        with:
+          channel: stable
+          version: 3.47.2
+
+      - name: Install DevTools dependencies
+        run: flutter pub get --directory=rohd_devtools_extension
+
+      - name: Generate DevTools coverage and badge
+        working-directory: rohd_devtools_extension
+        run: ../tool/generate_coverage.sh --generate-svg
+
       - name: Commit coverage badge
         run: |
           BRANCH_NAME="${{ github.ref_name }}"
@@ -49,10 +65,11 @@ jobs:
           
           # Clean and copy badge
           git rm -rf . 2>/dev/null || true
-          mkdir -p coverage
-          cp /tmp/coverage-badge.svg "coverage/${BRANCH_NAME}.svg"
+          mkdir -p coverage/rohd_devtools_extension
+          cp /tmp/rohd-coverage-badge.svg "coverage/${BRANCH_NAME}.svg"
+          cp /tmp/coverage-badge.svg "coverage/rohd_devtools_extension/${BRANCH_NAME}.svg"
           
-          git add "coverage/${BRANCH_NAME}.svg"
+          git add "coverage/${BRANCH_NAME}.svg" "coverage/rohd_devtools_extension/${BRANCH_NAME}.svg"
           git diff --staged --quiet || git commit -m "Update coverage badge for ${BRANCH_NAME} [skip ci]"
           
           git push origin badges --force

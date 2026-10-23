@@ -11,6 +11,7 @@ import 'dart:math' show max;
 
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/signals/signals.dart';
 
 /// A [Module] which gives access to a subset range of signals of the input.
 ///
@@ -58,33 +59,42 @@ class BusSubset extends Module with InlineSystemVerilog {
   ///
   /// When, [bus] has a width of '1', [startIndex] and [endIndex] are ignored
   /// in the generated SystemVerilog.
-  BusSubset(Logic bus, this.startIndex, this.endIndex,
-      {super.name = 'bussubset'})
-      : _isNet = bus.isNet {
+  BusSubset(
+    Logic bus,
+    this.startIndex,
+    this.endIndex, {
+    super.name = 'bussubset',
+  }) : _isNet = bus.isNet {
     // If a converted index value is still -ve then it's an Index out of bounds
     // on a Logic Bus
     if (startIndex < 0 || endIndex < 0) {
       throw Exception(
-          'Start ($startIndex) and End ($endIndex) must be greater than or '
-          'equal to 0.');
+        'Start ($startIndex) and End ($endIndex) must be greater than or '
+        'equal to 0.',
+      );
     }
     // If the +ve indices are more than Logic bus width, Index out of bounds
     if (endIndex > bus.width - 1 || startIndex > bus.width - 1) {
       throw Exception(
-          'Index out of bounds, indices $startIndex and $endIndex must be less'
-          ' than ${bus.width}');
+        'Index out of bounds, indices $startIndex and $endIndex must be less'
+        ' than ${bus.width}',
+      );
     }
 
     _originalName = Naming.unpreferredName('original_${bus.name}');
-    _subsetName =
-        Naming.unpreferredName('subset_${endIndex}_${startIndex}_${bus.name}');
+    _subsetName = Naming.unpreferredName(
+      'subset_${endIndex}_${startIndex}_${bus.name}',
+    );
 
     final newWidth = (endIndex - startIndex).abs() + 1;
 
     if (_isNet) {
       original = addInOut(_originalName, bus, width: bus.width);
-      subset =
-          LogicNet(width: newWidth, name: _subsetName, naming: Naming.unnamed);
+      subset = LogicNet(
+        width: newWidth,
+        name: _subsetName,
+        naming: Naming.unnamed,
+      );
       final internalSubset = addInOut(_subsetName, subset, width: newWidth);
 
       if (startIndex > endIndex) {
@@ -108,8 +118,9 @@ class BusSubset extends Module with InlineSystemVerilog {
 
       // so that people can't do a slice assign, not (yet?) implemented
       subset.makeUnassignable(
-          reason:
-              'The output of a (non-LogicNet) BusSubset ($this) is read-only.');
+        reason: 'The output of a (non-LogicNet) '
+            'BusSubset ("$name") is read-only.',
+      );
 
       _setup();
     }
@@ -142,13 +153,17 @@ class BusSubset extends Module with InlineSystemVerilog {
 
   @override
   String inlineVerilog(Map<String, String> inputs) {
-    assert(inputs.length == 1 || (inputs.length == 2 && _isNet),
-        'BusSubset has exactly one input, but saw $inputs.');
+    assert(
+      inputs.length == 1 || (inputs.length == 2 && _isNet),
+      'BusSubset has exactly one input, but saw $inputs.',
+    );
 
     final a = inputs[_originalName]!;
 
-    assert(!a.contains(_expressionRegex),
-        'Inputs to bus swizzle cannot contain any expressions.');
+    assert(
+      !a.contains(_expressionRegex),
+      'Inputs to bus swizzle cannot contain any expressions.',
+    );
 
     // When, input width is 1, ignore startIndex and endIndex
     if (original.width == 1) {
@@ -158,9 +173,10 @@ class BusSubset extends Module with InlineSystemVerilog {
     // SystemVerilog doesn't allow reverse-order select to reverse a bus,
     // so do it manually
     if (startIndex > endIndex) {
-      final swizzleContents =
-          List.generate(startIndex - endIndex + 1, (i) => '$a[${endIndex + i}]')
-              .join(',');
+      final swizzleContents = List.generate(
+        startIndex - endIndex + 1,
+        (i) => '$a[${endIndex + i}]',
+      ).join(',');
       return '{$swizzleContents}';
     }
 
@@ -185,8 +201,9 @@ class Swizzle extends Module with InlineSystemVerilog {
 
   /// A regular expression that will have matches if an expression is a single
   /// bit select of a signal or packed array element.
-  static final RegExp _singleBitSelectRegex =
-      RegExp(r'^\(?([A-Za-z_][A-Za-z0-9_$]*(?:\[\d+\])*)\[(\d+)\]\)?$');
+  static final RegExp _singleBitSelectRegex = RegExp(
+    r'^\(?([A-Za-z_][A-Za-z0-9_$]*(?:\[\d+\])*)\[(\d+)\]\)?$',
+  );
 
   /// The output port containing concatenated signals.
   late final Logic out;
@@ -213,9 +230,7 @@ class Swizzle extends Module with InlineSystemVerilog {
     for (final signal in signals.reversed) {
       //reverse so bit 0 is the last thing in the input list
       final inputName = Naming.unpreferredName('in${idx++}');
-      _swizzleInputs.add(
-        inputCreator(inputName, signal, width: signal.width),
-      );
+      _swizzleInputs.add(inputCreator(inputName, signal, width: signal.width));
       outputWidth += signal.width;
     }
 
@@ -233,8 +248,9 @@ class Swizzle extends Module with InlineSystemVerilog {
 
       // so that you can't assign the output of a (Logic) swizzle
       out.makeUnassignable(
-          reason:
-              'The output of a (non-LogicNet) Swizzle ($this) is read-only.');
+        reason:
+            'The output of a (non-LogicNet) Swizzle ("$name") is read-only.',
+      );
 
       _execute(); // for initial values
       for (final swizzleInput in _swizzleInputs) {
@@ -247,8 +263,9 @@ class Swizzle extends Module with InlineSystemVerilog {
 
   /// Executes the functional behavior of this gate.
   void _execute() {
-    final updatedVal =
-        LogicValue.ofIterable(_swizzleInputs.map((e) => e.value));
+    final updatedVal = LogicValue.ofIterable(
+      _swizzleInputs.map((e) => e.value),
+    );
     out.put(updatedVal);
   }
 
@@ -256,12 +273,32 @@ class Swizzle extends Module with InlineSystemVerilog {
   String get resultSignalName => _out;
 
   @override
+  String instantiationVerilog(
+    String instanceType,
+    String instanceName,
+    Map<String, String> ports,
+  ) {
+    final result = ports[resultSignalName];
+    final inputPorts = Map<String, String>.of(ports)..remove(resultSignalName);
+    final packedArrayAlias = _packedArrayAlias(inputPorts);
+    return packedArrayAlias == null
+        ? super.instantiationVerilog(instanceType, instanceName, ports)
+        : 'assign $result = $packedArrayAlias;';
+  }
+
+  @override
   String inlineVerilog(Map<String, String> inputs) {
     assert(
-        inputs.length == _swizzleInputs.length ||
-            (inputs.length == _swizzleInputs.length + 1 && isNet),
-        'This swizzle has ${_swizzleInputs.length} inputs,'
-        ' but saw $inputs with ${inputs.length} values.');
+      inputs.length == _swizzleInputs.length ||
+          (inputs.length == _swizzleInputs.length + 1 && isNet),
+      'This swizzle has ${_swizzleInputs.length} inputs,'
+      ' but saw $inputs with ${inputs.length} values.',
+    );
+
+    final packedArrayAlias = _packedArrayAlias(inputs);
+    if (packedArrayAlias != null) {
+      return packedArrayAlias;
+    }
 
     // Calculate all width descriptions upfront to determine alignment
     final validInputs =
@@ -331,6 +368,41 @@ class Swizzle extends Module with InlineSystemVerilog {
 {
 ${inputLines.join('\n')}
 }''';
+  }
+
+  /// Returns the source array for a natural-order packing of a packed 1D array.
+  String? _packedArrayAlias(Map<String, String> inputs) {
+    if (isNet || _swizzleInputs.isEmpty) {
+      return null;
+    }
+
+    final firstSource = _swizzleInputs.first.srcConnection;
+    final array = firstSource?.parentStructure;
+    if (array is! BaseLogicArray ||
+        array.dimensions.length != 1 ||
+        array.numUnpackedDimensions != 0 ||
+        array.elements.length != _swizzleInputs.length) {
+      return null;
+    }
+
+    String? arrayExpression;
+    for (var index = 0; index < _swizzleInputs.length; index++) {
+      final input = _swizzleInputs[index];
+      final source = input.srcConnection;
+      if (source?.parentStructure != array || source?.arrayIndex != index) {
+        return null;
+      }
+
+      final match = _singleBitSelectRegex.firstMatch(inputs[input.name]!);
+      if (match == null ||
+          int.parse(match.group(2)!) != index ||
+          (arrayExpression != null && match.group(1) != arrayExpression)) {
+        return null;
+      }
+      arrayExpression ??= match.group(1);
+    }
+
+    return arrayExpression;
   }
 
   /// Rewrites runs of adjacent descending single-bit selects from the same
@@ -416,7 +488,7 @@ ${inputLines.join('\n')}
     var current = logic;
     while (current?.parentStructure != null) {
       final parentStructure = current!.parentStructure!;
-      if (parentStructure is LogicArray &&
+      if (parentStructure is BaseLogicArray &&
           parentStructure.numUnpackedDimensions > 0) {
         return true;
       }

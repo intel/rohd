@@ -43,18 +43,28 @@ void main() {
       expect(const OccurrenceAddress([0]).toDotString(), equals('0'));
       expect(const OccurrenceAddress([0, 2, 4]).toDotString(), equals('0.2.4'));
       expect(
-          const OccurrenceAddress([10, 200]).toDotString(), equals('10.200'));
+        const OccurrenceAddress([10, 200]).toDotString(),
+        equals('10.200'),
+      );
     });
 
     test('fromDotString() parses dot-separated path', () {
       expect(
-          OccurrenceAddress.fromDotString(''), equals(OccurrenceAddress.root));
-      expect(OccurrenceAddress.fromDotString('0'),
-          equals(const OccurrenceAddress([0])));
-      expect(OccurrenceAddress.fromDotString('0.2.4'),
-          equals(const OccurrenceAddress([0, 2, 4])));
-      expect(OccurrenceAddress.fromDotString('10.200'),
-          equals(const OccurrenceAddress([10, 200])));
+        OccurrenceAddress.fromDotString(''),
+        equals(OccurrenceAddress.root),
+      );
+      expect(
+        OccurrenceAddress.fromDotString('0'),
+        equals(const OccurrenceAddress([0])),
+      );
+      expect(
+        OccurrenceAddress.fromDotString('0.2.4'),
+        equals(const OccurrenceAddress([0, 2, 4])),
+      );
+      expect(
+        OccurrenceAddress.fromDotString('10.200'),
+        equals(const OccurrenceAddress([10, 200])),
+      );
     });
 
     test('toDotString/fromDotString round-trip', () {
@@ -82,47 +92,26 @@ void main() {
       final child0 = HierarchyOccurrence(
         name: 'child_0',
         signals: [
-          SignalOccurrence(
-            name: 'sig0',
-            width: 1,
-          ),
-          SignalOccurrence(
-            name: 'sig1',
-            width: 8,
-          ),
+          SignalOccurrence(name: 'sig0', width: 1),
+          SignalOccurrence(name: 'sig1', width: 8),
         ],
       );
 
       final grandchild = HierarchyOccurrence(
         name: 'grandchild_0',
-        signals: [
-          SignalOccurrence(
-            name: 'sig0',
-            width: 1,
-          ),
-        ],
+        signals: [SignalOccurrence(name: 'sig0', width: 1)],
       );
 
       final child1 = HierarchyOccurrence(
         name: 'child_1',
-        signals: [
-          SignalOccurrence(
-            name: 'sig0',
-            width: 4,
-          ),
-        ],
+        signals: [SignalOccurrence(name: 'sig0', width: 4)],
       );
 
       child0.children.add(grandchild);
 
       root = HierarchyOccurrence(
         name: 'root',
-        signals: [
-          SignalOccurrence(
-            name: 'clk',
-            width: 1,
-          ),
-        ],
+        signals: [SignalOccurrence(name: 'clk', width: 1)],
         children: [child0, child1],
       )
         // Build addresses for all nodes
@@ -136,8 +125,10 @@ void main() {
     test('buildAddresses assigns addresses to all nodes', () {
       expect(root.children[0].address, equals(const OccurrenceAddress([0])));
       expect(root.children[1].address, equals(const OccurrenceAddress([1])));
-      expect(root.children[0].children[0].address,
-          equals(const OccurrenceAddress([0, 0])));
+      expect(
+        root.children[0].children[0].address,
+        equals(const OccurrenceAddress([0, 0])),
+      );
     });
 
     test('buildAddresses assigns addresses to all signals', () {
@@ -145,14 +136,20 @@ void main() {
       expect(root.signals[0].address, equals(const OccurrenceAddress([0])));
 
       // Child signals
-      expect(root.children[0].signals[0].address,
-          equals(const OccurrenceAddress([0, 0])));
-      expect(root.children[0].signals[1].address,
-          equals(const OccurrenceAddress([0, 1])));
+      expect(
+        root.children[0].signals[0].address,
+        equals(const OccurrenceAddress([0, 0])),
+      );
+      expect(
+        root.children[0].signals[1].address,
+        equals(const OccurrenceAddress([0, 1])),
+      );
 
       // Grandchild signals
-      expect(root.children[0].children[0].signals[0].address,
-          equals(const OccurrenceAddress([0, 0, 0])));
+      expect(
+        root.children[0].children[0].signals[0].address,
+        equals(const OccurrenceAddress([0, 0, 0])),
+      );
     });
   });
 
@@ -197,10 +194,18 @@ void main() {
         signals: [
           SignalOccurrence(name: 'internal_a', width: 8),
           SignalOccurrence(
-              name: 'clk', width: 1, direction: 'input', portIndex: 0),
+            name: 'clk',
+            width: 1,
+            direction: 'input',
+            portIndex: 0,
+          ),
           SignalOccurrence(name: 'internal_b', width: 4),
           SignalOccurrence(
-              name: 'out', width: 8, direction: 'output', portIndex: 1),
+            name: 'out',
+            width: 8,
+            direction: 'output',
+            portIndex: 1,
+          ),
         ],
       )..buildAddresses();
 
@@ -212,9 +217,13 @@ void main() {
 
       // Internal signals get indices 2 and 3
       expect(
-          byName['internal_a']!.address, equals(const OccurrenceAddress([2])));
+        byName['internal_a']!.address,
+        equals(const OccurrenceAddress([2])),
+      );
       expect(
-          byName['internal_b']!.address, equals(const OccurrenceAddress([3])));
+        byName['internal_b']!.address,
+        equals(const OccurrenceAddress([3])),
+      );
     });
 
     test('portIndex matches signal address index', () {
@@ -222,11 +231,23 @@ void main() {
         name: 'Mod',
         signals: [
           SignalOccurrence(
-              name: 'a', width: 1, direction: 'input', portIndex: 0),
+            name: 'a',
+            width: 1,
+            direction: 'input',
+            portIndex: 0,
+          ),
           SignalOccurrence(
-              name: 'b', width: 1, direction: 'input', portIndex: 1),
+            name: 'b',
+            width: 1,
+            direction: 'input',
+            portIndex: 1,
+          ),
           SignalOccurrence(
-              name: 'y', width: 1, direction: 'output', portIndex: 2),
+            name: 'y',
+            width: 1,
+            direction: 'output',
+            portIndex: 2,
+          ),
           SignalOccurrence(name: 'net0', width: 1),
         ],
       )..buildAddresses();
@@ -234,9 +255,12 @@ void main() {
       for (final s in root.signals) {
         if (s.isPort) {
           // portIndex should equal the last element of the address path
-          expect(s.address!.path.last, equals(s.portIndex),
-              reason: '${s.name}: portIndex=${s.portIndex} '
-                  'but address index=${s.address!.path.last}');
+          expect(
+            s.address!.path.last,
+            equals(s.portIndex),
+            reason: '${s.name}: portIndex=${s.portIndex} '
+                'but address index=${s.address!.path.last}',
+          );
         }
       }
     });
@@ -246,13 +270,48 @@ void main() {
         name: 'X',
         signals: [
           SignalOccurrence(
-              name: 'a', width: 1, direction: 'input', portIndex: 0),
-          SignalOccurrence(name: 'b', width: 1),
+            name: 'a',
+            width: 1,
+            direction: 'input',
+            portIndex: 0,
+          ),
           SignalOccurrence(
-              name: 'c', width: 1, direction: 'output', portIndex: 1),
+            name: 'c',
+            width: 1,
+            direction: 'output',
+            portIndex: 1,
+          ),
+          SignalOccurrence(name: 'b', width: 1),
         ],
+        portCount: 2,
       );
       expect(occ.portCount, equals(2));
+    });
+
+    test('port lookup excludes internal signals', () {
+      final input = SignalOccurrence(name: 'a', width: 1, direction: 'input');
+      final occ = HierarchyOccurrence(
+        name: 'X',
+        signals: [
+          input,
+          SignalOccurrence(name: 'internal', width: 1),
+        ],
+      );
+
+      expect(occ.portByName('a'), same(input));
+      expect(occ.portByName('internal'), isNull);
+    });
+
+    test('ports use the producer-provided signal prefix', () {
+      final port = SignalOccurrence(name: 'a', width: 1, direction: 'input');
+      final internal = SignalOccurrence(name: 'internal', width: 1);
+      final occ = HierarchyOccurrence(
+        name: 'X',
+        signals: [port, internal],
+        portCount: 1,
+      );
+
+      expect(occ.ports, [port]);
     });
 
     test('all-ports occurrence: indices match list order', () {
@@ -260,9 +319,17 @@ void main() {
         name: 'Buf',
         signals: [
           SignalOccurrence(
-              name: 'in', width: 8, direction: 'input', portIndex: 0),
+            name: 'in',
+            width: 8,
+            direction: 'input',
+            portIndex: 0,
+          ),
           SignalOccurrence(
-              name: 'out', width: 8, direction: 'output', portIndex: 1),
+            name: 'out',
+            width: 8,
+            direction: 'output',
+            portIndex: 1,
+          ),
         ],
       )..buildAddresses();
 
@@ -289,7 +356,11 @@ void main() {
         signals: [
           SignalOccurrence(name: 'net', width: 1),
           SignalOccurrence(
-              name: 'p', width: 1, direction: 'input', portIndex: 0),
+            name: 'p',
+            width: 1,
+            direction: 'input',
+            portIndex: 0,
+          ),
         ],
       );
       final root = HierarchyOccurrence(
@@ -298,7 +369,11 @@ void main() {
         signals: [
           SignalOccurrence(name: 'net_top', width: 1),
           SignalOccurrence(
-              name: 'clk', width: 1, direction: 'input', portIndex: 0),
+            name: 'clk',
+            width: 1,
+            direction: 'input',
+            portIndex: 0,
+          ),
         ],
       )..buildAddresses();
 

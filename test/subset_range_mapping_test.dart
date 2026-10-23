@@ -250,7 +250,7 @@ class GuardedTop extends Module {
 }
 
 String _topBody(Module module) {
-  final sv = module.generateSynth();
+  final sv = module.dumpSystemVerilog();
   final matches = RegExp(r'(?:^|\n)module ').allMatches(sv);
   return sv.substring(matches.last.start);
 }
@@ -268,6 +268,63 @@ List<LogicValue> _patterns(int width) => [
 
 void main() {
   tearDown(Simulator.reset);
+
+  for (final sourceWidth in [1, 2]) {
+    test('full-width scalar rendering at width $sourceWidth', () async {
+      for (final useRange in [false, true]) {
+        final module = Top(
+          useRange: useRange,
+          sourceWidth: sourceWidth,
+          lower: 0,
+          width: sourceWidth,
+          sourceKind: SourceKind.input,
+        );
+        await module.build();
+        final body = _topBody(module);
+        expect(body, isNot(contains('seed[')));
+        if (!useRange && sourceWidth > 1) {
+          expect(body, contains('assign data_in[1:0] = seed;'));
+        }
+        final vectors = [
+          for (final seed in _patterns(sourceWidth))
+            Vector({'seed': seed}, {'observed': seed}),
+        ];
+        await SimCompare.checkFunctionalVector(module, vectors);
+        SimCompare.checkIverilogVector(module, vectors);
+        await Simulator.reset();
+      }
+    });
+  }
+
+  test('reversed full-width scalar selection retains bit order', () async {
+    for (final useRange in [false, true]) {
+      final module = Top(
+        useRange: useRange,
+        sourceWidth: 4,
+        width: 4,
+        sourceKind: SourceKind.input,
+        sourceIndices: [3, 2, 1, 0],
+      );
+      await module.build();
+      expect(
+          _topBody(module),
+          contains(RegExp(r'seed\[0\].*seed\[1\].*seed\[2\].*seed\[3\]',
+              dotAll: true)));
+      final vectors = [
+        for (final seed in _patterns(4))
+          Vector({
+            'seed': seed
+          }, {
+            'observed': [
+              for (final index in [3, 2, 1, 0]) seed[index]
+            ].rswizzle(),
+          }),
+      ];
+      await SimCompare.checkFunctionalVector(module, vectors);
+      SimCompare.checkIverilogVector(module, vectors);
+      await Simulator.reset();
+    }
+  });
 
   test('full-width four-state sibling mapping matches both representations',
       () async {
@@ -347,6 +404,10 @@ void main() {
             expect(body, contains('.data_in(('));
           } else {
             expect(body, isNot(contains('.data_in()')));
+            expect(
+                body,
+                isNot(contains(
+                    RegExp('=\\s+\\w+\\[${selectedSourceWidth - 1}:0\\];'))));
           }
           expect(_topBody(module), body);
           await SimCompare.checkFunctionalVector(module, vectors);
@@ -569,7 +630,7 @@ void main() {
     final consumer = definition.subModuleInstantiations.singleWhere(
       (instantiation) => instantiation.module is Consumer,
     ) as SystemVerilogSynthSubModuleInstantiation;
-    final sv = consumer.instantiationVerilog('Consumer')!;
+    final sv = consumer.instantiationVerilog('Consumer', generateEnums: true)!;
     expect(sv, contains('.data_in((data_out[41:40]))'));
     expect(definition.assignments, isEmpty);
     expect(
@@ -618,7 +679,7 @@ void main() {
     expect(reference.name, '${replacement.name}[11:3]');
   });
 
-  test('packed range reference rejects invalid bounds and unsupported bases',
+  test('packed range reference rejects invalid bounds, arrays, and constants',
       () async {
     final module = Producer(Logic(width: 16));
     await module.build();
@@ -641,7 +702,6 @@ void main() {
     }
     for (final unsupported in [
       LogicArray([16], 1),
-      LogicNet(width: 16),
       Const(0, width: 16),
     ]) {
       expect(
@@ -654,6 +714,32 @@ void main() {
         throwsA(isA<AssertionError>()),
       );
     }
+  });
+
+  test('packed references support net bases', () async {
+    final module = Producer(Logic(width: 16));
+    await module.build();
+    final definition = SynthModuleDefinition(module);
+    final base = SynthLogic(
+      LogicNet(name: 'netBase', width: 16),
+      parentSynthModuleDefinition: definition,
+    )..pickName();
+    final bit = SynthLogicPackedBitReference(
+      base,
+      5,
+      parentSynthModuleDefinition: definition,
+    );
+    final range = SynthLogicPackedRangeReference(
+      base,
+      3,
+      11,
+      parentSynthModuleDefinition: definition,
+    );
+
+    expect(bit.isNet, isTrue);
+    expect(bit.name, '${base.name}[5]');
+    expect(range.isNet, isTrue);
+    expect(range.name, '${base.name}[11:3]');
   });
 
   test('isolated source bit survives beside collapsed ranges', () async {

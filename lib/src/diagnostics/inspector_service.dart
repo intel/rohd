@@ -8,7 +8,14 @@
 // Author: Yao Jing Quek <yao.jing.quek@intel.com>
 
 import 'dart:convert';
+import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
+// Imported for terminal shell VM evaluation expressions.
+// ignore: unused_import
+import 'package:rohd/src/diagnostics/shell_service.dart';
+// Imported for DevTools VM eval fallback expressions.
+// ignore: unused_import
+import 'package:rohd/src/diagnostics/waveform_data_service.dart';
 
 extension _LogicDevToolUtils on Logic {
   /// Converts the current object instance into a JSON string.
@@ -38,15 +45,11 @@ extension _ModuleDevToolUtils on Module {
       'outputs': outputs.map((key, value) => MapEntry(key, value.toMap())),
     };
 
-    // ignore: deprecated_member_use_from_same_package - backwards compatibility with CustomSystemVerilog
-    final isCustomModule = this is CustomSystemVerilog || this is SystemVerilog;
+    final isCustomModule = this is SystemVerilog;
 
     if (!isCustomModule || !skipCustomModules) {
       json['subModules'] = subModules
-          .where((module) =>
-              // ignore: deprecated_member_use_from_same_package - backwards compatibility with CustomSystemVerilog
-              !((module is CustomSystemVerilog || module is SystemVerilog) &&
-                  skipCustomModules))
+          .where((module) => !(module is SystemVerilog && skipCustomModules))
           .map((module) => module.toJson(skipCustomModules: skipCustomModules))
           .toList();
     }
@@ -74,8 +77,8 @@ extension _ModuleDevToolUtils on Module {
 /// `ModuleTree` implements the Singleton design pattern
 /// to ensure there is only one instance of it during runtime.
 ///
-/// This class is used to maintain a tree-like structure
-/// for managing modules in an application.
+/// This class preserves the legacy DevTools inspector entry point for the
+/// built module hierarchy.
 class ModuleTree {
   /// Private constructor used to initialize the Singleton instance.
   ModuleTree._();
@@ -86,8 +89,22 @@ class ModuleTree {
   static ModuleTree get instance => _instance;
   static final _instance = ModuleTree._();
 
-  /// Stores the root Module instance.
-  static Module? rootModuleInstance;
+  Module? _rootModule;
+
+  /// The root [Module] registered for hierarchy inspection.
+  @internal
+  Module? get rootModule => _rootModule;
+
+  /// Sets the root [Module] used to produce downstream hierarchy JSON.
+  ///
+  /// This is kept as an internal setter instead of a writable field so callers
+  /// make the bridge explicit: [ModuleServices] is the public service registry,
+  /// while [ModuleTree] owns the legacy DevTools hierarchy JSON surface
+  /// consumed by downstream hierarchy adapters.
+  @internal
+  set rootModule(Module? module) {
+    _rootModule = module;
+  }
 
   /// Returns the `hierarchyString` as JSON.
   ///
@@ -95,10 +112,13 @@ class ModuleTree {
   ///
   /// Returns: string representing hierarchical structure of modules in JSON
   /// format.
-  String get hierarchyJSON =>
-      rootModuleInstance?.buildModuleTreeJsonSchema(rootModuleInstance!) ??
-      json.encode({
-        'status': 'fail',
-        'reason': 'module not yet build',
-      });
+  String get hierarchyJson {
+    final rootModule = _rootModule;
+    return rootModule?.buildModuleTreeJsonSchema(rootModule) ??
+        json.encode({'status': 'fail', 'reason': 'module not yet build'});
+  }
+
+  /// Returns the built module hierarchy as JSON.
+  @Deprecated('Use hierarchyJson instead.')
+  String get hierarchyJSON => hierarchyJson;
 }

@@ -1,3 +1,12 @@
+// Copyright (C) 2023-2026 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// exercise_2_toycapsule_fsm.dart
+// Chapter 8 Toy Capsule FSM exercise answer.
+//
+// 2023 September 7
+// Author: Yao Jing Quek <yao.jing.quek@intel.com>
+
 // ignore_for_file: avoid_print - tutorial
 
 import 'package:rohd/rohd.dart';
@@ -49,13 +58,13 @@ Future<void> main(List<String> args) async {
   final toyCap = ToyCapsuleFSM(clk, reset, dispenseBtn, coin);
   await toyCap.build();
 
-  print(toyCap.generateSynth());
+  print(toyCap.dumpSystemVerilog());
 
   toyCap.toyCapsuleStateMachine.generateDiagram();
 
   reset.inject(1);
 
-  WaveDumper(toyCap, outputPath: 'toyCapsuleFSM.vcd');
+  toyCap.dumpWaves(outputPath: 'toyCapsuleFSM.vcd');
 
   Simulator.setMaxSimTime(100);
   Simulator.registerAction(25, () {

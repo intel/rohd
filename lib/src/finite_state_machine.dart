@@ -13,15 +13,15 @@ import 'dart:math';
 import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
 
-/// Deprecated: use [FiniteStateMachine] instead.
-@Deprecated('Use FiniteStateMachine instead')
-typedef StateMachine<T> = FiniteStateMachine<T>;
-
 /// Simple class for FSM [FiniteStateMachine].
 ///
 /// Abstraction for representing Finite state machines (FSM).
 /// Contains the logic for performing the state transitions.
-class FiniteStateMachine<StateIdentifier> {
+///
+/// State identifiers must be Dart enum members. Encodings follow the order
+/// of [states], not necessarily [Enum.index]; use [getStateIndex] to obtain
+/// an encoding and [LogicEnum.valueEnum] to read the current enum member.
+class FiniteStateMachine<StateIdentifier extends Enum> {
   /// List of all the [State]s in this machine.
   List<State<StateIdentifier>> get states => UnmodifiableListView(_states);
   final List<State<StateIdentifier>> _states;
@@ -51,13 +51,6 @@ class FiniteStateMachine<StateIdentifier> {
   late final Map<StateIdentifier, int> stateIndexLookup = UnmodifiableMapView(
       _stateValueLookup.map((key, value) => MapEntry(key.identifier, value)));
 
-  /// The clock signal to the FSM (when only single-triggered). Otherwise, the
-  /// first clock.
-  ///
-  /// Deprecated: do not reference the clock from [FiniteStateMachine].
-  @Deprecated('Do not reference the clock from the `FiniteStateMachine`.')
-  Logic get clk => _clks.first;
-
   /// The clock signals to the FSM.
   final List<Logic> _clks;
 
@@ -71,7 +64,8 @@ class FiniteStateMachine<StateIdentifier> {
   ///
   /// Use [getStateIndex] to map from a [StateIdentifier] to the value on this
   /// bus.
-  final Logic currentState;
+  late final LogicEnum<StateIdentifier> currentState =
+      stateEnum(name: 'currentState');
 
   /// A [List] of [Conditional] actions to perform at the beginning of the
   /// evaluation of actions for the [FiniteStateMachine].  This is useful for
@@ -82,7 +76,8 @@ class FiniteStateMachine<StateIdentifier> {
   ///
   /// Use [getStateIndex] to map from a [StateIdentifier] to the value on this
   /// bus.
-  final Logic nextState;
+  late final LogicEnum<StateIdentifier> nextState =
+      stateEnum(name: 'nextState');
 
   /// Returns a ceiling on the log of [x] base [base].
   static int _logBase(num x, num base) => (log(x) / log(base)).ceil();
@@ -92,6 +87,10 @@ class FiniteStateMachine<StateIdentifier> {
 
   /// If `true`, the [reset] signal is asynchronous.
   final bool asyncReset;
+
+  /// Creates a state signal using this machine's state-to-index encoding.
+  LogicEnum<StateIdentifier> stateEnum({String? name}) =>
+      LogicEnum<StateIdentifier>.withMapping(stateIndexLookup, name: name);
 
   /// Creates an finite state machine for the specified list of [_states], with
   /// an initial state of [resetState] (when synchronous [reset] is high) and
@@ -119,11 +118,7 @@ class FiniteStateMachine<StateIdentifier> {
     this.asyncReset = false,
     List<Conditional> setupActions = const [],
   })  : setupActions = List.unmodifiable(setupActions),
-        stateWidth = _logBase(_states.length, 2),
-        currentState =
-            Logic(name: 'currentState', width: _logBase(_states.length, 2)),
-        nextState =
-            Logic(name: 'nextState', width: _logBase(_states.length, 2)) {
+        stateWidth = max(1, _logBase(_states.length, 2)) {
     _validate();
 
     var stateCounter = 0;
@@ -137,10 +132,8 @@ class FiniteStateMachine<StateIdentifier> {
       Case(
           currentState,
           _states
-              .map((state) => CaseItem(
-                      Const(_stateValueLookup[state], width: stateWidth)
-                          .named(state.identifier.toString()),
-                      [
+              .map(
+                  (state) => CaseItem(stateEnum()..getsEnum(state.identifier), [
                         ...state.actions,
                         Case(
                             Const(1),
@@ -161,16 +154,16 @@ class FiniteStateMachine<StateIdentifier> {
           defaultItem: [
             nextState < currentState,
 
-            // zero out all other receivers from state actions...
-            // even though out-of-state is unreachable,
-            // we don't want any inferred latches
+            // Satisfy lint and synthesis checks for the unreachable default.
             ..._states
                 .map((state) => state.actions)
                 .flattened
                 .map((conditional) => conditional.receivers)
                 .flattened
                 .toSet()
-                .map((receiver) => receiver < 0)
+                .map((receiver) => receiver is LogicEnum
+                    ? receiver < receiver.mapping.keys.first
+                    : receiver < 0)
           ])
     ]);
 
@@ -199,24 +192,33 @@ class FiniteStateMachine<StateIdentifier> {
   /// Check on https://mermaid.js.org/intro/ to view the diagram generated.
   /// If you are using vscode, you can download the mermaid extension.
   ///
+  /// State labels use enum member names. Event labels use [Logic.name].
+  ///
   /// Output to mermaid diagram at [outputPath].
   void generateDiagram({String outputPath = 'diagram_fsm.md'}) {
-    final figure = _MermaidStateDiagram(outputPath: outputPath)
-      ..addStartState(resetState.toString());
+    final figure = _MermaidStateDiagram(outputPath: outputPath);
+    final stateIds = {
+      for (final (index, state) in _states.indexed)
+        state.identifier: 'state$index',
+    };
+    for (final state in _states) {
+      figure.addState(stateIds[state.identifier]!, state.identifier.name);
+    }
+    figure.addStartState(stateIds[resetState]!);
 
     for (final state in _states) {
       for (final entry in state.events.entries) {
         figure.addTransitions(
-          state.identifier.toString(),
-          entry.value.toString(),
+          stateIds[state.identifier]!,
+          stateIds[entry.value]!,
           entry.key.name,
         );
       }
 
       if (state.defaultNextState != state.identifier) {
         figure.addTransitions(
-          state.identifier.toString(),
-          state.defaultNextState.toString(),
+          stateIds[state.identifier]!,
+          stateIds[state.defaultNextState]!,
           '(default)',
         );
       }
@@ -226,7 +228,7 @@ class FiniteStateMachine<StateIdentifier> {
 }
 
 /// Simple class to initialize each state of the FSM.
-class State<StateIdentifier> {
+class State<StateIdentifier extends Enum> {
   /// Identifier or name of the state.
   final StateIdentifier identifier;
 
@@ -291,6 +293,10 @@ class _MermaidStateDiagram {
       : _outputFile = File(outputPath) {
     _diagram = StringBuffer('stateDiagram-v2');
   }
+
+  /// Declares a state with a separate [identifier] and visible [label].
+  void addState(String identifier, String label) =>
+      _diagram.write('\n${_indentation}state "$label" as $identifier');
 
   /// Register a new transition [event] that point the
   /// current state [currentState] to next state [nextState].

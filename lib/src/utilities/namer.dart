@@ -24,6 +24,32 @@ import 'package:rohd/src/utilities/uniquifier.dart';
 /// are assigned lazily on the first [instanceNameOf] call.
 @internal
 class Namer {
+  /// Canonical base name for synthesis-created array slice operations.
+  static const String synthArraySliceOperationName = 'array_slice';
+
+  /// Canonical base name for synthesis-created array concat operations.
+  static const String synthArrayConcatOperationName = 'array_concat';
+
+  /// Canonical base name for synthesis-created structure slice operations.
+  static const String synthStructureSliceOperationName = 'struct_slice';
+
+  /// Canonical base name for synthesis-created structure concat operations.
+  static const String synthStructureConcatOperationName = 'struct_concat';
+
+  /// Returns the canonical base instance name for a synthesis-created
+  /// structural operation that targets [destination].
+  ///
+  /// The numeric suffix is derived from [destination]'s structural position,
+  /// not from the order in which a backend asks for names. This keeps helper
+  /// operation names stable across output formats that traverse a module in
+  /// different orders.
+  static String synthOperationInstanceName({
+    required String operationName,
+    required Logic destination,
+  }) =>
+      '${Sanitizer.sanitizeSV(operationName)}_'
+      '${_synthOperationDestinationSuffix(destination)}';
+
   /// The [Uniquifier] that manages the shared namespace for this module.
   final Uniquifier _uniquifier;
 
@@ -37,6 +63,9 @@ class Namer {
   /// repeated synthesis passes over the same module hierarchy would allocate
   /// fresh suffixes for the same submodule instances.
   final Map<Object, String> _instanceNames = {};
+
+  /// Cache of other generated identifiers, such as type and member names.
+  final Map<Object, String> _identifierNames = {};
 
   /// The set of port [Logic] objects, for O(1) port membership tests.
   final Set<Logic> _portLogics;
@@ -87,6 +116,107 @@ class Namer {
   /// Returns `true` if [name] has not yet been claimed in the namespace.
   @visibleForTesting
   bool isAvailable(String name) => _uniquifier.isAvailable(name);
+
+  /// Returns a stable, collision-free name for a generated identifier.
+  String identifierNameOf(
+    Object key, {
+    required String initialName,
+    bool reserved = false,
+  }) {
+    final cached = _identifierNames[key];
+    if (cached != null) {
+      return cached;
+    }
+
+    final name = _uniquifier.getUniqueName(
+      initialName: Sanitizer.sanitizeSV(initialName),
+      reserved: reserved,
+    );
+    _identifierNames[key] = name;
+    return name;
+  }
+
+  static String _synthOperationDestinationSuffix(Logic destination) {
+    final parts = <int>[
+      ..._modulePathIndices(destination.parentModule),
+      ..._logicLocationIndices(destination),
+    ];
+
+    return parts.isEmpty ? '0' : parts.join('_');
+  }
+
+  static List<int> _modulePathIndices(Module? module) {
+    if (module == null) {
+      return const [0];
+    }
+
+    final parent = module.parent;
+    if (parent == null) {
+      return const [0];
+    }
+
+    final siblings = parent.subModules.toList();
+    final index = siblings.indexWhere(
+      (submodule) => identical(submodule, module),
+    );
+    return [..._modulePathIndices(parent), if (index < 0) 0 else index];
+  }
+
+  static List<int> _logicLocationIndices(Logic destination) {
+    final elementPath = <int>[];
+    var root = destination;
+    while (root.parentStructure != null) {
+      final parent = root.parentStructure!;
+      final index = parent.elements.indexWhere(
+        (element) => identical(element, root),
+      );
+      elementPath.insert(0, index < 0 ? root.arrayIndex ?? 0 : index);
+      root = parent;
+    }
+
+    final module = root.parentModule;
+    if (module == null) {
+      return [0, ...elementPath];
+    }
+
+    final location = _logicLocationInModule(module, root);
+    return [...location, ...elementPath];
+  }
+
+  static List<int> _logicLocationInModule(Module module, Logic root) {
+    final inputIndex = _identityIndex(module.inputs.values, root);
+    if (inputIndex >= 0) {
+      return [0, inputIndex];
+    }
+
+    final outputIndex = _identityIndex(module.outputs.values, root);
+    if (outputIndex >= 0) {
+      return [1, outputIndex];
+    }
+
+    final inOutIndex = _identityIndex(module.inOuts.values, root);
+    if (inOutIndex >= 0) {
+      return [2, inOutIndex];
+    }
+
+    final internalIndex = _identityIndex(module.internalSignals, root);
+    if (internalIndex >= 0) {
+      return [3, internalIndex];
+    }
+
+    return const [4, 0];
+  }
+
+  static int _identityIndex(Iterable<Logic> logics, Logic target) {
+    var index = 0;
+    for (final logic in logics) {
+      if (identical(logic, target)) {
+        return index;
+      }
+      index++;
+    }
+    return -1;
+  }
 
   // ─── Instance naming (Module → String) ──────────────────────────
 
@@ -169,8 +299,11 @@ class Namer {
   ///   4. Preferred-available mergeable (base name not yet taken).
   ///   5. Preferred-uniquifiable mergeable.
   ///   6. Available-unpreferred mergeable.
-  ///   7. First unpreferred mergeable.
+  ///   7. Unpreferred-uniquifiable mergeable.
   ///   8. Unnamed (prefer non-unpreferred base name).
+  ///
+  /// Within each mergeable tier, output ports are preferred over other
+  /// candidates. Remaining ties retain candidate order.
   ///
   /// The winning name is allocated once and cached for the chosen [Logic].
   /// All other non-port [Logic]s in [candidates] are also cached to the
@@ -183,8 +316,10 @@ class Namer {
     if (constValue != null && !constNameDisallowed) {
       final preferredRadix = constValue.preferredRadix;
       if (preferredRadix != null && constValue.value.isValid) {
-        return constValue.value
-            .toRadixString(radix: preferredRadix, sepChar: '');
+        return constValue.value.toRadixString(
+          radix: preferredRadix,
+          sepChar: '',
+        );
       }
 
       return constValue.value.toString();
@@ -234,18 +369,18 @@ class Namer {
     }
 
     if (preferredMergeable.isNotEmpty) {
-      final best = preferredMergeable.firstWhereOrNull(
-            (e) => isAvailable(baseName(e)),
-          ) ??
-          preferredMergeable.first;
+      final available =
+          preferredMergeable.where((logic) => isAvailable(baseName(logic)));
+      final best =
+          _preferDriver(available.isNotEmpty ? available : preferredMergeable);
       return _nameAndCacheAll(best, candidates);
     }
 
     if (unpreferredMergeable.isNotEmpty) {
-      final best = unpreferredMergeable.firstWhereOrNull(
-            (e) => isAvailable(baseName(e)),
-          ) ??
-          unpreferredMergeable.first;
+      final available =
+          unpreferredMergeable.where((logic) => isAvailable(baseName(logic)));
+      final best = _preferDriver(
+          available.isNotEmpty ? available : unpreferredMergeable);
       return _nameAndCacheAll(best, candidates);
     }
 
@@ -258,6 +393,10 @@ class Namer {
 
     throw StateError('No Logic candidates to name.');
   }
+
+  static Logic _preferDriver(Iterable<Logic> candidates) =>
+      candidates.firstWhereOrNull((logic) => logic.isOutput) ??
+      candidates.first;
 
   /// Names [chosen] with the single-signal allocator, then caches the
   /// same name for all other non-port [Logic]s in [all].

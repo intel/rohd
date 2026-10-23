@@ -30,6 +30,13 @@ migrate_working_dir/
 .pub-cache/
 .pub/
 /build/
+.devtools_dependency_sources
+pubspec_overrides.yaml
+
+# Generated gate catalog
+/assets/gate_catalog.rohd.json
+/assets/rohd_schematic.json
+/assets/.staged
 
 # Symbolication related
 app.*.symbols

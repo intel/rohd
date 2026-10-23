@@ -1,4 +1,4 @@
-// Copyright (C) 2023 Intel Corporation
+// Copyright (C) 2023-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // logic_name_config_test.dart
@@ -91,6 +91,37 @@ class _PreservedArrayChain extends Module {
         elementWidth: 2,
         numUnpackedDimensions: unpackedDimensions);
     shared <= previous;
+    addOutput('result', width: 8) <= shared.packed;
+    addOutput('early', width: 8) <= aliases.first.packed;
+  }
+}
+
+class _PreservedTypedArrayChain extends Module {
+  final aliases = <TypedLogicArray<Logic, LogicValue>>[];
+
+  _PreservedTypedArrayChain() {
+    var previous = addTypedInput(
+      'source',
+      TypedLogicArray<Logic, LogicValue>(
+        [2, 2],
+        ({name}) => Logic(name: name, width: 2),
+      ),
+    );
+    for (final naming in [
+      Naming.reserved,
+      Naming.renameable,
+      Naming.reserved
+    ]) {
+      final alias = TypedLogicArray<Logic, LogicValue>(
+        [2, 2],
+        ({name}) => Logic(name: name, width: 2),
+        name: 'shared',
+        naming: naming,
+      )..gets(previous);
+      aliases.add(alias);
+      previous = alias;
+    }
+    final shared = addTypedOutput('shared', previous.clone)..gets(previous);
     addOutput('result', width: 8) <= shared.packed;
     addOutput('early', width: 8) <= aliases.first.packed;
   }
@@ -201,8 +232,8 @@ void main() {
             expect(definition.getSynthLogic(signal), same(shared));
             expect(dut.namer.signalNameOf(signal), 'shared');
           }
-          expect(dut.generateSynth(), isNot(contains('shared_')));
-          expect(dut.generateSynth(), isNot(contains('bridge')));
+          expect(dut.dumpSystemVerilog(), isNot(contains('shared_')));
+          expect(dut.dumpSystemVerilog(), isNot(contains('bridge')));
 
           final vectors = [
             for (final value in [0, 1, 'x', 'z'])
@@ -235,7 +266,7 @@ void main() {
         for (final signal in signals) {
           expect(definition.getSynthLogic(signal), same(shared));
         }
-        expect(dut.generateSynth(), isNot(contains('shared_')));
+        expect(dut.dumpSystemVerilog(), isNot(contains('shared_')));
         final vectors = [
           Vector({'in1': 0}, {'out1': 0}),
           Vector({'in1': 1}, {'out1': 1}),
@@ -284,7 +315,7 @@ void main() {
           out1 <= second;
         });
         await dut.build();
-        final sv = dut.generateSynth();
+        final sv = dut.dumpSystemVerilog();
         expect(sv, contains('assign second = first;'));
         expect('logic'.allMatches(sv).length, 5);
       });
@@ -300,7 +331,7 @@ void main() {
         await dut.build();
         final names = collectSynthNames(SynthModuleDefinition(dut));
         expect(aliases.map((alias) => names[alias]), everyElement('shared'));
-        expect(dut.generateSynth(), contains("assign shared = 1'h1;"));
+        expect(dut.dumpSystemVerilog(), contains("assign shared = 1'h1;"));
       });
 
       test('${naming.name} unrelated same-name port is still a collision',
@@ -311,10 +342,10 @@ void main() {
         });
         await dut.build();
         if (naming == Naming.reserved) {
-          expect(dut.generateSynth,
+          expect(dut.dumpSystemVerilog,
               throwsA(isA<UnavailableReservedNameException>()));
         } else {
-          expect(dut.generateSynth(), contains('assign in1_0 = in2;'));
+          expect(dut.dumpSystemVerilog(), contains('assign in1_0 = in2;'));
         }
       });
     }
@@ -376,7 +407,7 @@ void main() {
                 same(definition.getSynthLogic(port.leafElements[index])));
           }
         }
-        expect(dut.generateSynth(), isNot(contains('shared_')));
+        expect(dut.dumpSystemVerilog(), isNot(contains('shared_')));
         final vectors = [
           for (final value in [0, 0xa5, 0x5a, '10xz01zx'])
             Vector({'source': value},
@@ -395,6 +426,39 @@ void main() {
       });
     }
 
+    test('base typed array chain preserves same-name aliases', () async {
+      final dut = _PreservedTypedArrayChain();
+      await dut.build();
+      final definition = SystemVerilogSynthModuleDefinition(dut);
+      final port = dut.output('shared') as TypedLogicArray<Logic, LogicValue>;
+      final shared = definition.getSynthLogic(port)!;
+
+      expect(shared.name, 'shared');
+      expect(shared.isPort(dut), isTrue);
+      expect(shared.logics, containsAll(dut.aliases));
+      for (final alias in dut.aliases) {
+        expect(definition.getSynthLogic(alias), same(shared));
+        for (var index = 0; index < alias.leafElements.length; index++) {
+          expect(
+            definition.getSynthLogic(alias.leafElements[index]),
+            same(definition.getSynthLogic(port.leafElements[index])),
+          );
+        }
+      }
+
+      final sv = dut.dumpSystemVerilog();
+      expect(sv, isNot(contains('shared_')));
+      final vectors = [
+        for (final value in [0, 0xa5, 0x5a, '10xz01zx'])
+          Vector(
+            {'source': value},
+            {'shared': value, 'result': value, 'early': value},
+          ),
+      ];
+      await SimCompare.checkFunctionalVector(dut, vectors);
+      SimCompare.checkIverilogVector(dut, vectors);
+    });
+
     for (final reversed in [false, true]) {
       test('net chain merges with reversed=$reversed', () async {
         final dut = _PreservedNetChain(reversed: reversed);
@@ -407,7 +471,7 @@ void main() {
         for (final alias in dut.aliases) {
           expect(definition.getSynthLogic(alias), same(shared));
         }
-        expect(dut.generateSynth(), isNot(contains('net_connect')));
+        expect(dut.dumpSystemVerilog(), isNot(contains('net_connect')));
         final vectors = [
           for (final value in [0, 1, 'x', 'z'])
             Vector({'shared': value}, {'result': value, 'early': value}),
@@ -453,6 +517,168 @@ void main() {
       final secondElement =
           definition.getSynthLogic(secondArray.elements.first)!;
       expect(SynthLogic.tryMerge(firstElement, secondElement), isNull);
+
+      final mergeableScalar = synth(Logic(width: 4, naming: Naming.unnamed));
+      final mergeableTypedArray = synth(
+        TypedLogicArray<Logic, LogicValue>(
+          [2],
+          ({name}) => Logic(name: name, width: 2),
+          naming: Naming.unnamed,
+        ),
+      );
+      expect(mergeableScalar.mergeable, isTrue);
+      expect(mergeableTypedArray.mergeable, isTrue);
+      expect(
+        SynthLogic.tryMerge(mergeableScalar, mergeableTypedArray),
+        isNull,
+      );
+      expect(
+        SynthLogic.tryMerge(mergeableTypedArray, mergeableScalar),
+        isNull,
+      );
+    });
+
+    test('base typed arrays merge only with matching declaration shapes',
+        () async {
+      final dut = FunctionGeneratedModule((in1, in2, out1) {
+        out1 <= in1 | in2;
+      });
+      await dut.build();
+      final definition = SynthModuleDefinition(dut);
+
+      SynthLogic synth({
+        required List<int> dimensions,
+        required int elementWidth,
+        int numUnpackedDimensions = 0,
+        Naming naming = Naming.reserved,
+      }) =>
+          SynthLogic(
+            TypedLogicArray<Logic, LogicValue>(
+              dimensions,
+              ({name}) => Logic(name: name, width: elementWidth),
+              name: 'shared',
+              naming: naming,
+              numUnpackedDimensions: numUnpackedDimensions,
+            ),
+            parentSynthModuleDefinition: definition,
+          );
+
+      final compatibleFirst = synth(dimensions: [2, 2], elementWidth: 2);
+      final compatibleSecond = synth(dimensions: [2, 2], elementWidth: 2);
+      final merged = SynthLogic.tryMerge(compatibleFirst, compatibleSecond);
+      expect(merged, isNotNull);
+      expect(merged!.kept.logics, hasLength(2));
+
+      for (final incompatible in [
+        synth(dimensions: [4, 1], elementWidth: 2),
+        synth(dimensions: [0], elementWidth: 3),
+        synth(
+          dimensions: [2, 2],
+          elementWidth: 2,
+          numUnpackedDimensions: 1,
+        ),
+      ]) {
+        final reference = incompatible.width == 0
+            ? synth(dimensions: [0], elementWidth: 2)
+            : synth(dimensions: [2, 2], elementWidth: 2);
+        expect(SynthLogic.tryMerge(reference, incompatible), isNull);
+
+        final reverseReference = incompatible.width == 0
+            ? synth(dimensions: [0], elementWidth: 2)
+            : synth(dimensions: [2, 2], elementWidth: 2);
+        expect(SynthLogic.tryMerge(incompatible, reverseReference), isNull);
+      }
+
+      final mergeableFirst = synth(
+        dimensions: [2, 2],
+        elementWidth: 2,
+        naming: Naming.unnamed,
+      );
+      final mergeableDifferentShape = synth(
+        dimensions: [4, 1],
+        elementWidth: 2,
+        naming: Naming.unnamed,
+      );
+      expect(mergeableFirst.mergeable, isTrue);
+      expect(mergeableDifferentShape.mergeable, isTrue);
+      expect(
+        SynthLogic.tryMerge(mergeableFirst, mergeableDifferentShape),
+        isNull,
+      );
+    });
+
+    test('typed arrays require compatible configured element layouts',
+        () async {
+      final dut = FunctionGeneratedModule((in1, in2, out1) {
+        out1 <= in1 | in2;
+      });
+      await dut.build();
+      final definition = SynthModuleDefinition(dut);
+      SynthLogic synth(Logic logic) =>
+          SynthLogic(logic, parentSynthModuleDefinition: definition);
+
+      TypedLogicArray<LogicStructure, LogicValue> structured(
+        int firstWidth,
+        int secondWidth,
+      ) =>
+          TypedLogicArray<LogicStructure, LogicValue>(
+            [2],
+            ({name}) => LogicStructure(
+              [
+                Logic(name: 'first', width: firstWidth),
+                Logic(name: 'second', width: secondWidth),
+              ],
+              name: name,
+            ),
+            name: 'shared',
+            naming: Naming.reserved,
+          );
+
+      final compatibleFirst = synth(structured(1, 2));
+      final compatibleSecond = synth(structured(1, 2));
+      expect(
+        SynthLogic.tryMerge(compatibleFirst, compatibleSecond),
+        isNotNull,
+      );
+
+      final scalarElements = synth(
+        TypedLogicArray<Logic, LogicValue>(
+          [2],
+          ({name}) => Logic(name: name, width: 3),
+          name: 'shared',
+          naming: Naming.reserved,
+        ),
+      );
+      final structuredElements = synth(structured(1, 2));
+      expect(
+        SynthLogic.tryMerge(scalarElements, structuredElements),
+        isNull,
+      );
+      expect(
+        SynthLogic.tryMerge(structuredElements, scalarElements),
+        isNull,
+      );
+
+      final differentFieldLayout = synth(structured(2, 1));
+      expect(
+        SynthLogic.tryMerge(synth(structured(1, 2)), differentFieldLayout),
+        isNull,
+      );
+
+      SynthLogic nested(int innerUnpackedDimensions) => synth(
+            TypedLogicArray<TypedLogicArray<Logic, LogicValue>, LogicValue>(
+              [2],
+              ({name}) => TypedLogicArray<Logic, LogicValue>(
+                [3],
+                ({name}) => Logic(name: name, width: 2),
+                name: name,
+                numUnpackedDimensions: innerUnpackedDimensions,
+              ),
+              name: 'shared',
+              naming: Naming.reserved,
+            ),
+          );
+      expect(SynthLogic.tryMerge(nested(0), nested(1)), isNull);
     });
   });
 
@@ -463,7 +689,7 @@ void main() {
       out1 <= intermediate;
     });
     await dut.build();
-    final sv = dut.generateSynth();
+    final sv = dut.dumpSystemVerilog();
 
     expect(sv, contains('intermediate'));
   });
@@ -478,7 +704,7 @@ void main() {
       out1 <= intermediate;
     });
     await dut.build();
-    final sv = dut.generateSynth();
+    final sv = dut.dumpSystemVerilog();
 
     // no intermediate
     expect(sv.contains('intermediate'), isFalse);
@@ -491,7 +717,7 @@ void main() {
       out1 <= intermediate;
     });
     await dut.build();
-    final sv = dut.generateSynth();
+    final sv = dut.dumpSystemVerilog();
 
     // just the ports
     expect('logic'.allMatches(sv).length, 3);
@@ -504,7 +730,7 @@ void main() {
       out1 <= intermediate;
     });
     await dut.build();
-    final sv = dut.generateSynth();
+    final sv = dut.dumpSystemVerilog();
 
     // just the ports
     expect('logic'.allMatches(sv).length, 3);
@@ -523,7 +749,7 @@ void main() {
       out1 <= intermediate;
     });
     await dut.build();
-    final sv = dut.generateSynth();
+    final sv = dut.dumpSystemVerilog();
 
     // held one sticks
     expect(sv, contains('intermediate_1 = in1'));
@@ -541,7 +767,7 @@ void main() {
         out1 <= intermediate;
       });
       await dut.build();
-      final sv = dut.generateSynth();
+      final sv = dut.dumpSystemVerilog();
 
       expect('logic'.allMatches(sv).length, 3);
       expect(sv, contains('assign out1 = in1;'));
@@ -555,7 +781,7 @@ void main() {
         out1 <= intermediate;
       });
       await dut.build();
-      final sv = dut.generateSynth();
+      final sv = dut.dumpSystemVerilog();
 
       expect('logic'.allMatches(sv).length, 3);
       expect(sv, contains('assign out1 = in1;'));
@@ -576,7 +802,7 @@ void main() {
         out1 <= intermediate | intermediate2;
       });
       await dut.build();
-      dut.generateSynth();
+      dut.dumpSystemVerilog();
       fail('expected an exception!');
     } on Exception catch (e) {
       expect(e, isA<UnavailableReservedNameException>());
@@ -598,7 +824,7 @@ void main() {
       out1 <= ~intermediatePost;
     });
     await dut.build();
-    final sv = dut.generateSynth();
+    final sv = dut.dumpSystemVerilog();
 
     expect(sv, contains('goodname'));
   });
@@ -635,15 +861,15 @@ void main() {
     for (final indexPermutation in indexPermutations) {
       var l = priorityList();
 
-      final expectedName = l
-          .lastWhereIndexedOrNull(
-              (index, element) => indexPermutation.contains(index))!
-          .name;
+      final expectedSignal = l.lastWhereIndexedOrNull(
+          (index, element) => indexPermutation.contains(index))!;
 
       l = indexPermutation.map((i) => l[i]).toList();
 
+      late final Logic driver;
       final dut = FunctionGeneratedModule((in1, in2, out1) {
-        var prev = flop(in2, ~in1);
+        driver = flop(in2, ~in1);
+        var prev = driver;
         for (final s in l) {
           s <= prev;
           prev = s;
@@ -651,8 +877,11 @@ void main() {
         out1 <= ~prev;
       });
       await dut.build();
-      final sv = dut.generateSynth();
+      final sv = dut.dumpSystemVerilog();
 
+      final expectedName = expectedSignal.naming == Naming.unnamed
+          ? driver.name
+          : expectedSignal.name;
       expect(sv, contains(expectedName),
           reason: 'Amongst ${l.map((e) => e.name).toList()},'
               ' should have had present $expectedName');
@@ -666,7 +895,7 @@ void main() {
       intermediate <= in1;
     });
     await dut.build();
-    final sv = dut.generateSynth();
+    final sv = dut.dumpSystemVerilog();
 
     expect(sv, contains('intermediate'));
   });

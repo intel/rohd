@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2023 Intel Corporation
+// Copyright (C) 2022-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // multimodule5_test.dart
@@ -9,7 +9,6 @@
 // Author: Max Korbel <max.korbel@intel.com>
 
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/modules/passthrough.dart';
 import 'package:test/test.dart';
 
 class TopModule extends Module {
@@ -22,7 +21,7 @@ class TopModule extends Module {
     Combinational([internalNet < inPort]);
     Combinational([outPort < internalNet]);
 
-    Passthrough(internalNet);
+    Passthrough<Logic>(internalNet);
   }
 }
 
@@ -35,7 +34,7 @@ void main() {
     final mod = TopModule(Logic());
     await mod.build();
 
-    final sv = mod.generateSynth();
+    final sv = mod.dumpSystemVerilog();
 
     expect(sv, contains('Passthrough'));
   });

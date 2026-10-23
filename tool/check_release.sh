@@ -9,8 +9,8 @@
 # Usage (from repo root):
 #   tool/check_release.sh [--validate-only] [package ...]
 #
-# With no package names, check rohd, rohd_hierarchy, rohd_waveform, and
-# rohd_devtools_widgets. Explicit names select only those packages. Each package
+# With no package names, check rohd, rohd_hierarchy, rohd_waveform,
+# rohd_devtools_widgets, and rohd_source_navigator. Each selected package
 # uses its existing pubspec.yaml version; manifests and changelogs are not edited.
 # Dart is required for Dart packages; Flutter is required for widgets.
 #
@@ -19,6 +19,7 @@
 #   tool/check_release.sh rohd
 #   tool/check_release.sh rohd_hierarchy rohd_waveform
 #   tool/check_release.sh rohd_devtools_widgets
+#   tool/check_release.sh rohd_source_navigator
 #   tool/check_release.sh --validate-only
 #
 # --validate-only checks names, manifests, and SDK availability without invoking
@@ -42,8 +43,8 @@ export FLUTTER_SUPPRESS_ANALYTICS=true
 
 usage() {
   echo "Usage: $0 [--validate-only] [package ...]"
-  echo "Packages: rohd rohd_hierarchy rohd_waveform rohd_devtools_widgets"
-  echo "Defaults to all four packages, using each package's pubspec.yaml version."
+  echo "Packages: rohd rohd_hierarchy rohd_waveform rohd_devtools_widgets rohd_source_navigator"
+  echo "Defaults to all five packages, using each package's pubspec.yaml version."
   echo "Runs publication dry runs only; never uploads packages."
 }
 
@@ -58,7 +59,7 @@ if [[ "${1:-}" == '--validate-only' ]]; then
   shift
 fi
 if [[ $# -eq 0 ]]; then
-  set -- rohd rohd_hierarchy rohd_waveform rohd_devtools_widgets
+  set -- rohd rohd_hierarchy rohd_waveform rohd_devtools_widgets rohd_source_navigator
 fi
 
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -73,7 +74,7 @@ for package in "$@"; do
       directory="$REPO_ROOT"
       sdk=dart
       ;;
-    rohd_hierarchy|rohd_waveform)
+    rohd_hierarchy|rohd_waveform|rohd_source_navigator)
       directory="$REPO_ROOT/packages/$package"
       sdk=dart
       ;;

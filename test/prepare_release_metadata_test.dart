@@ -53,6 +53,8 @@ void main() {
     write('packages/rohd_waveform/CHANGELOG.md', '## 2.3.4\n');
     write('packages/rohd_devtools_widgets/pubspec.yaml', 'version: 3.4.5\n');
     write('packages/rohd_devtools_widgets/CHANGELOG.md', '## Next Release\n');
+    write('packages/rohd_source_navigator/pubspec.yaml', 'version: 4.5.6\n');
+    write('packages/rohd_source_navigator/CHANGELOG.md', '## Next Release\n');
   });
 
   tearDown(() => fixture.deleteSync(recursive: true));
@@ -64,12 +66,14 @@ void main() {
       'rohd_hierarchy',
       'rohd_waveform',
       'rohd_devtools_widgets',
+      'rohd_source_navigator',
     ]);
     expect(result.exitCode, 0, reason: '${result.stderr}');
     expect(result.stdout, contains('rohd: 0.6.11 (prepared'));
     expect(result.stdout, contains('rohd_hierarchy: 1.2.3 (prepared'));
     expect(result.stdout, contains('rohd_waveform: 2.3.4 (prepared'));
     expect(result.stdout, contains('rohd_devtools_widgets: 3.4.5 (prepared'));
+    expect(result.stdout, contains('rohd_source_navigator: 4.5.6 (prepared'));
     expect(read('pubspec.yaml'), manifest);
     expect(read('CHANGELOG.md'), '## 0.6.11\n\n- Update.\n');
     expect(read('lib/src/utilities/config.dart'),
@@ -77,6 +81,9 @@ void main() {
     expect(read('packages/rohd_hierarchy/CHANGELOG.md'), '## 1.2.3\n');
     expect(read('packages/rohd_waveform/CHANGELOG.md'), '## 2.3.4\n');
     expect(read('packages/rohd_devtools_widgets/CHANGELOG.md'), '## 3.4.5\n');
+    expect(read('packages/rohd_source_navigator/CHANGELOG.md'), '## 4.5.6\n');
+    expect(read('packages/rohd_source_navigator/pubspec.yaml'),
+        'version: 4.5.6\n');
   });
 
   test('validation does not change metadata', () {
@@ -96,6 +103,21 @@ void main() {
     expect(read('lib/src/utilities/config.dart'), contains('0.6.10'));
     expect(read('packages/rohd_devtools_widgets/CHANGELOG.md'),
         '## Next Release\n');
+  });
+
+  test('source navigator selection uses its package directory', () {
+    final validation = run(['--check', 'rohd_source_navigator']);
+    expect(validation.exitCode, 0, reason: '${validation.stderr}');
+    expect(read('packages/rohd_source_navigator/CHANGELOG.md'),
+        '## Next Release\n');
+
+    final result = run(['rohd_source_navigator']);
+    expect(result.exitCode, 0, reason: '${result.stderr}');
+    expect(read('packages/rohd_source_navigator/CHANGELOG.md'), '## 4.5.6\n');
+    expect(read('packages/rohd_source_navigator/pubspec.yaml'),
+        'version: 4.5.6\n');
+    expect(read('CHANGELOG.md'), startsWith('## Next Release'));
+    expect(read('lib/src/utilities/config.dart'), contains('0.6.10'));
   });
 
   for (final manifest in [

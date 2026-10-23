@@ -1,0 +1,537 @@
+// Copyright (C) 2026 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// waveform_service.dart
+// Base waveform service: capture module signal changes to waveform writers.
+//
+// 2026 June
+// Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
+
+import 'dart:collection';
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:meta/meta.dart';
+import 'package:rohd/rohd.dart';
+import 'package:rohd/src/utilities/sanitizer.dart';
+import 'package:rohd/src/utilities/uniquifier.dart';
+
+/// A waveform capture service that writes signal changes to a file.
+///
+/// Selects the output backend via [format]. FST-specific writer tuning is
+/// available through [WaveformService.fst].
+class WaveformService extends ArtifactProducingService {
+  /// The most recently registered [WaveformService], or `null`.
+  ///
+  /// This is backed by [ModuleServices], so it is cleared by unregistering
+  /// this service type or resetting the registry.
+  static WaveformService? get current =>
+      ModuleServices.instance.lookup<WaveformService>();
+
+  /// Exact output filename override.
+  ///
+  /// Prefer [outputBaseName] for new service code. This override exists for
+  /// compatibility with legacy APIs that accepted an arbitrary output path.
+  final String? outputFileName;
+
+  /// Path of the output waveform file.
+  ///
+  /// Derived from [outputDirectory], [outputBaseName], [outputFileName],
+  /// and [format].
+  String get outputPath => '$outputDirectory${Platform.pathSeparator}'
+      '${outputFileName ?? '$outputBaseName.${format.fileExtension}'}';
+
+  /// Path of the output waveform file.
+  ///
+  /// This compatibility alias matches the legacy waveform service API.
+  String get outputFilePath => outputPath;
+
+  /// Output format.
+  final WaveOutputFormat format;
+
+  /// Optional predicate that determines whether a given [Logic] signal is
+  /// captured.
+  final bool Function(Logic signal)? signalFilter;
+
+  /// The physical duration represented by one unit of [Simulator.time].
+  ///
+  /// This controls waveform-file metadata only; it does not rescale timestamp
+  /// numbers or affect simulator scheduling.
+  final WaveformTimeScale timescale;
+
+  /// Simulation time at which recording begins.
+  final int? startTime;
+
+  /// Simulation time at which recording ends.
+  final int? stopTime;
+
+  /// Number of characters accumulated in the VCD write buffer before it is
+  /// flushed to disk.
+  final int flushBufferSize;
+
+  /// What to do when the output file already exists.
+  final OverwritePolicy overwritePolicy;
+
+  /// Whether to register this service with [ModuleServices] for inspection.
+  final bool register;
+
+  /// Whether waveform bytes are written to [outputPath].
+  final bool writeToFile;
+
+  /// Whether to retain a complete in-memory copy for debugging consumers.
+  final bool retainInMemory;
+
+  /// Whether this service can provide waveform data to debugging consumers.
+  ///
+  /// This describes whether waveform data is available, not whether the
+  /// backend supports indexed value queries. VCD requires [retainInMemory];
+  /// FST can query a written file.
+  bool canSendWaveforms() =>
+      retainInMemory || (writeToFile && _writer.supportsQueries);
+
+  /// The retained VCD waveform, or `null` when retention is disabled.
+  String? get inMemoryOutput => _writer.inMemoryOutput;
+
+  /// Whether to expose captured values to DevTools.
+  final bool enableDevToolsStreaming;
+
+  late final WaveformWriter _writer;
+  final FstWriterConfig? _fstWriterConfig;
+
+  /// Creates a format-independent query provider for this capture.
+  ///
+  /// Throws [UnsupportedError] when the selected backend does not support
+  /// waveform queries.
+  WaveformQuery createWaveformQuery() {
+    final query = _writer.createWaveformQuery();
+    if (query == null) {
+      throw UnsupportedError(
+        '${format.name.toUpperCase()} waveform queries are not supported.',
+      );
+    }
+    return query;
+  }
+
+  WaveformDataService? _dataService;
+
+  /// Maps each captured [Logic] to its writer-specific signal handle.
+  final Map<Logic, Object> _signalHandles = <Logic, Object>{};
+
+  /// Signals that changed during the current simulation timestamp.
+  final Set<Logic> _changedThisTimestamp = HashSet<Logic>();
+
+  /// The timestamp currently being accumulated.
+  int _currentDumpingTimestamp = Simulator.time;
+
+  /// Whether the recording window's initial signal snapshot was emitted.
+  bool _hasWrittenWindowSnapshot = false;
+
+  /// Creates a [WaveformService] for [module].
+  ///
+  /// [module] must be built before construction. [outputDirectory] defaults to
+  /// the current directory and [outputBaseName] defaults to
+  /// [Module.definitionName]; the on-disk file is
+  /// `<outputDirectory>/<outputBaseName>.<format.fileExtension>`. Pass
+  /// [outputFileName] to override the filename explicitly.
+  WaveformService(
+    Module module, {
+    String? outputDirectory,
+    String? outputBaseName,
+    String? outputFileName,
+    WaveOutputFormat format = WaveOutputFormat.vcd,
+    bool Function(Logic signal)? signalFilter,
+    WaveformTimeScale timescale = WaveformTimeScale.onePicosecond,
+    int? startTime,
+    int? stopTime,
+    int flushBufferSize = 100000,
+    OverwritePolicy overwritePolicy = OverwritePolicy.overwrite,
+    bool register = true,
+    bool writeToFile = false,
+    bool? retainInMemory,
+    bool enableDevToolsStreaming = false,
+  }) : this._(
+          module,
+          outputDirectory: outputDirectory ?? '.',
+          outputBaseName: outputBaseName,
+          outputFileName: outputFileName,
+          format: format,
+          signalFilter: signalFilter,
+          timescale: timescale,
+          startTime: startTime,
+          stopTime: stopTime,
+          flushBufferSize: flushBufferSize,
+          overwritePolicy: overwritePolicy,
+          register: register,
+          writeToFile: writeToFile,
+          retainInMemory: retainInMemory,
+          enableDevToolsStreaming: enableDevToolsStreaming,
+        );
+
+  /// Creates an FST capture with backend-specific [config] tuning.
+  ///
+  /// Use this constructor when advanced FST writer settings are needed;
+  /// ordinary format selection remains available through [WaveformService].
+  WaveformService.fst(
+    Module module, {
+    String? outputDirectory,
+    String? outputBaseName,
+    String? outputFileName,
+    bool Function(Logic signal)? signalFilter,
+    WaveformTimeScale timescale = WaveformTimeScale.onePicosecond,
+    int? startTime,
+    int? stopTime,
+    OverwritePolicy overwritePolicy = OverwritePolicy.overwrite,
+    bool register = true,
+    bool writeToFile = true,
+    FstWriterConfig config = const FstWriterConfig(),
+    bool enableDevToolsStreaming = false,
+  }) : this._(
+          module,
+          outputDirectory: outputDirectory ?? '.',
+          outputBaseName: outputBaseName,
+          outputFileName: outputFileName,
+          format: WaveOutputFormat.fst,
+          signalFilter: signalFilter,
+          timescale: timescale,
+          startTime: startTime,
+          stopTime: stopTime,
+          overwritePolicy: overwritePolicy,
+          register: register,
+          writeToFile: writeToFile,
+          retainInMemory: false,
+          fstWriterConfig: config,
+          enableDevToolsStreaming: enableDevToolsStreaming,
+        );
+
+  WaveformService._(
+    Module module, {
+    super.outputDirectory,
+    super.outputBaseName,
+    this.outputFileName,
+    this.format = WaveOutputFormat.vcd,
+    this.signalFilter,
+    this.timescale = WaveformTimeScale.onePicosecond,
+    this.startTime,
+    this.stopTime,
+    this.flushBufferSize = 100000,
+    this.overwritePolicy = OverwritePolicy.overwrite,
+    this.register = true,
+    this.writeToFile = false,
+    bool? retainInMemory,
+    this.enableDevToolsStreaming = false,
+    FstWriterConfig? fstWriterConfig,
+  })  : retainInMemory = retainInMemory ?? !writeToFile,
+        _fstWriterConfig = fstWriterConfig,
+        super(module) {
+    if (!module.hasBuilt) {
+      throw ModuleNotBuiltException(module);
+    }
+    if (format == WaveOutputFormat.fst && !writeToFile) {
+      throw UnsupportedError('FST capture requires writeToFile: true.');
+    }
+    if (format == WaveOutputFormat.fst && this.retainInMemory) {
+      throw UnsupportedError('FST capture does not support retainInMemory.');
+    }
+    if (writeToFile && overwritePolicy == OverwritePolicy.failIfExists) {
+      final existingFile = File(outputPath);
+      if (existingFile.existsSync()) {
+        throw FileSystemException(
+          'Waveform output file already exists and overwritePolicy is '
+          'failIfExists.',
+          outputPath,
+        );
+      }
+    }
+
+    _writer = _createWriter();
+    _collectSignals(module);
+    _writer.finishDeclarations(
+      _signalHandles.entries.map(
+        (entry) => WaveformInitialValue(entry.value, _binaryValue(entry.key)),
+      ),
+      timestamp: Simulator.time,
+    );
+    _hasWrittenWindowSnapshot = startTime == null || startTime == 0;
+    if (enableDevToolsStreaming) {
+      WaveformDataService.init(module);
+      _dataService = WaveformDataService.instance;
+      if (_writer case final FstWaveformWriter fstWriter) {
+        _dataService!.attachFstQuery(
+          fstWriter.createQuery(),
+          <Logic, FstSignalHandle>{
+            for (final entry in _signalHandles.entries)
+              entry.key: entry.value as FstSignalHandle,
+          },
+        );
+      }
+      for (final signal in _signalHandles.keys) {
+        _dataService!.recordLogicChange(signal, Simulator.time);
+      }
+    }
+
+    Simulator.preTick.listen((_) {
+      if (Simulator.time != _currentDumpingTimestamp) {
+        if (_changedThisTimestamp.isNotEmpty) {
+          _captureTimestamp(_currentDumpingTimestamp);
+        }
+        _currentDumpingTimestamp = Simulator.time;
+        _writeWindowSnapshotIfNeeded(Simulator.time);
+      }
+    });
+
+    Simulator.registerEndOfSimulationAction(() async {
+      _captureTimestamp(Simulator.time);
+      await _terminate();
+      onSimulationEnd();
+    });
+    if (register) {
+      ModuleServices.instance.register<WaveformService>(this);
+    }
+  }
+
+  /// Legacy factory that accepts a single `outputPath` argument.
+  ///
+  /// Splits [outputPath] into an [outputDirectory] and [outputFileName] and
+  /// delegates to the main constructor. Provided so that pre-services-API
+  /// callers of the form `WaveformService(module, outputPath: '/tmp/foo.vcd')`
+  /// still compile.
+  factory WaveformService.fromOutputPath(
+    Module module, {
+    required String outputPath,
+    WaveOutputFormat format = WaveOutputFormat.vcd,
+    bool Function(Logic signal)? signalFilter,
+    WaveformTimeScale timescale = WaveformTimeScale.onePicosecond,
+    int? startTime,
+    int? stopTime,
+    int flushBufferSize = 100000,
+    OverwritePolicy overwritePolicy = OverwritePolicy.overwrite,
+    bool register = true,
+    bool? retainInMemory,
+    bool enableDevToolsStreaming = false,
+  }) {
+    final normalized = outputPath.replaceAll(r'\', '/');
+    final sep = normalized.lastIndexOf('/');
+    final directory =
+        switch (sep) { -1 => '.', 0 => '/', _ => normalized.substring(0, sep) };
+    final filename = normalized.substring(sep + 1);
+    return WaveformService(
+      module,
+      outputDirectory: directory,
+      outputFileName: filename,
+      format: format,
+      signalFilter: signalFilter,
+      timescale: timescale,
+      startTime: startTime,
+      stopTime: stopTime,
+      flushBufferSize: flushBufferSize,
+      overwritePolicy: overwritePolicy,
+      register: register,
+      writeToFile: true,
+      retainInMemory: retainInMemory,
+      enableDevToolsStreaming: enableDevToolsStreaming,
+    );
+  }
+
+  /// The concrete output writer used by this service.
+  @protected
+  WaveformWriter get writer => _writer;
+
+  /// Called once for each [Logic] signal that passes [signalFilter].
+  @protected
+  void onSignalCollected(Logic signal) {}
+
+  /// Called once for each signal's final value in a callback batch at
+  /// [timestamp].
+  ///
+  /// Multiple changes to the same signal within a simulation timestamp are
+  /// coalesced within a value-change batch, so this hook receives that signal
+  /// once with its final value for that batch.
+  ///
+  /// When [startTime] is set, this includes one window-entry value for every
+  /// tracked signal at [startTime]. Those calls describe the state entering
+  /// the recording window, rather than physical transitions, and form a
+  /// separate callback batch. A signal that then changes at [startTime] is
+  /// delivered again in the following value-change batch with the same
+  /// timestamp.
+  @protected
+  void onValueChange(Logic signal, int timestamp) {}
+
+  /// Called once after each captured timestamp batch.
+  ///
+  /// When [startTime] is set, the complete window-entry signal snapshot is
+  /// delivered as a batch at [startTime] before the value-change batch, which
+  /// may have the same timestamp. Finalization invokes this hook even when its
+  /// [changed] set is empty.
+  @protected
+  void onTimestampCapture(int timestamp, Set<Logic> changed) {}
+
+  /// Called after the final timestamp has been written and the file is closed.
+  @protected
+  void onSimulationEnd() {}
+
+  WaveformWriter _createWriter() {
+    switch (format) {
+      case WaveOutputFormat.vcd:
+        return VcdWaveformWriter(outputPath,
+            timescale: timescale,
+            flushBufferSize: flushBufferSize,
+            memoryBuffer: retainInMemory ? StringBuffer() : null,
+            writeToFile: writeToFile);
+      case WaveOutputFormat.fst:
+        return FstWaveformWriter(outputPath,
+            timescale: timescale,
+            config: _fstWriterConfig ?? const FstWriterConfig());
+    }
+  }
+
+  bool _collectSignals(Module module) {
+    final moduleSignalUniquifier = Uniquifier();
+    var hasContents = false;
+
+    _writer.pushScope(module.uniqueInstanceName);
+
+    for (final sig in module.signals) {
+      if (sig is Const) {
+        continue;
+      }
+      if (signalFilter != null && !signalFilter!(sig)) {
+        continue;
+      }
+
+      hasContents = true;
+      final baseName = Sanitizer.sanitizeSV(sig.name);
+      final signalName = moduleSignalUniquifier.getUniqueName(
+        initialName: baseName,
+        reserved: sig.isPort,
+      );
+      final handle = _writer.declareSignal(signalName, sig.width,
+          direction: _directionOf(sig));
+      _signalHandles[sig] = handle;
+      onSignalCollected(sig);
+
+      sig.changed.listen((_) {
+        _changedThisTimestamp.add(sig);
+      });
+    }
+
+    for (final subModule in module.subModules) {
+      if (subModule is InlineSystemVerilog) {
+        continue;
+      }
+      hasContents = _collectSignals(subModule) || hasContents;
+    }
+
+    _writer.popScope();
+    return hasContents;
+  }
+
+  WaveformSignalDirection _directionOf(Logic signal) {
+    if (!signal.isPort) {
+      return WaveformSignalDirection.implicit;
+    }
+    return signal.isInput
+        ? WaveformSignalDirection.input
+        : WaveformSignalDirection.output;
+  }
+
+  bool _isInRecordingWindow(int timestamp) {
+    if (startTime != null && timestamp < startTime!) {
+      return false;
+    }
+    if (stopTime != null && timestamp > stopTime!) {
+      return false;
+    }
+    return true;
+  }
+
+  void _captureTimestamp(int timestamp) {
+    if (!_isInRecordingWindow(timestamp)) {
+      _changedThisTimestamp.clear();
+      return;
+    }
+
+    _writeWindowSnapshotIfNeeded(timestamp);
+    final snapshot = Set<Logic>.of(_changedThisTimestamp);
+    final changes = <WaveformValueChange>[
+      for (final sig in snapshot)
+        WaveformValueChange(_signalHandles[sig]!, _binaryValue(sig)),
+    ];
+
+    if (changes.isNotEmpty) {
+      _writer.emitValueChanges(timestamp, changes);
+    }
+
+    for (final sig in snapshot) {
+      _dataService?.recordLogicChange(sig, timestamp);
+      onValueChange(sig, timestamp);
+    }
+    _changedThisTimestamp.clear();
+
+    onTimestampCapture(timestamp, snapshot);
+  }
+
+  void _writeWindowSnapshotIfNeeded(int timestamp) {
+    if (_hasWrittenWindowSnapshot ||
+        startTime == null ||
+        timestamp < startTime! ||
+        !_isInRecordingWindow(startTime!)) {
+      return;
+    }
+
+    final snapshot = Set<Logic>.of(_signalHandles.keys);
+    _writer.emitValueChanges(startTime!, [
+      for (final signal in snapshot)
+        WaveformValueChange(_signalHandles[signal]!, _binaryValue(signal))
+    ]);
+    _hasWrittenWindowSnapshot = true;
+
+    for (final signal in snapshot) {
+      _dataService?.recordLogicChange(signal, startTime!);
+      onValueChange(signal, startTime!);
+    }
+    onTimestampCapture(startTime!, snapshot);
+  }
+
+  String _binaryValue(Logic signal) => signal.value.reversed
+      .toList()
+      .map((e) => e.toString(includeWidth: false))
+      .join();
+
+  Future<void> _terminate() => _writer.close();
+
+  /// The waveform artifact produced by this service.
+  ///
+  /// It is complete after simulation finalization. During capture,
+  /// file-backed reads expose only data already flushed, and each file-backed
+  /// [ModuleServiceArtifact.openRead] opens the current file rather than a
+  /// snapshot or live tail.
+  @override
+  Iterable<ModuleServiceArtifact> get artifacts sync* {
+    if (!writeToFile && !retainInMemory) {
+      return;
+    }
+
+    yield ModuleServiceArtifact(
+      fileName: outputFileName ?? '$outputBaseName.${format.fileExtension}',
+      mediaType: format.mediaType,
+      openRead: writeToFile
+          ? () => File(outputPath).openRead()
+          : () => Stream.value(utf8.encode(inMemoryOutput!)),
+    );
+  }
+
+  /// Returns a JSON-serialisable summary of this service.
+  @override
+  Map<String, Object?> toJson() => <String, Object?>{
+        'outputPath': outputPath,
+        'writeToFile': writeToFile,
+        'retainInMemory': retainInMemory,
+        'format': format.name,
+        'signalCount': _signalHandles.length,
+        'timescale': timescale.vcdValue,
+        if (startTime != null) 'startTime': startTime,
+        if (stopTime != null) 'stopTime': stopTime,
+        'enableDevToolsStreaming': enableDevToolsStreaming,
+        'writer': _writer.toJson(),
+      };
+}

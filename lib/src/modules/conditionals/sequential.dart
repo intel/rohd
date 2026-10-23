@@ -16,10 +16,6 @@ import 'package:rohd/src/collections/traverseable_collection.dart';
 import 'package:rohd/src/modules/conditionals/always.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 
-/// Deprecated: use [Sequential] instead.
-@Deprecated('Use Sequential instead')
-typedef FF = Sequential;
-
 /// A tracking construct for triggers of [Sequential]s.
 class _SequentialTrigger {
   /// The signal for this trigger.
@@ -135,6 +131,14 @@ class Sequential extends Always {
   /// The input edge triggers used in this block.
   final List<_SequentialTrigger> _triggers = [];
 
+  /// Returns the edge polarity for each trigger input port.
+  ///
+  /// Each entry pairs the trigger input port name with whether the trigger
+  /// fires on a positive edge (`true`) or negative edge (`false`).
+  List<({String portName, bool isPosedge})> get triggerEdges => _triggers
+      .map((t) => (portName: t.signal.name, isPosedge: t.isPosedge))
+      .toList();
+
   /// When `false`, an [SignalRedrivenException] will be thrown during
   /// simulation if the same signal is driven multiple times within this
   /// [Sequential].
@@ -234,9 +238,7 @@ class Sequential extends Always {
         throw Exception('Each clk or trigger must be 1 bit, but saw $trigger.');
       }
 
-      if (assignedDriverToInputMap.containsKey(trigger)) {
-        _driverInputsThatAreTriggers.add(assignedDriverToInputMap[trigger]!);
-      }
+      _driverInputsThatAreTriggers.addAll(driverInputs(trigger));
 
       _triggers.add(_SequentialTrigger(
           addInput(
@@ -296,7 +298,7 @@ class Sequential extends Always {
     }
 
     // listen to every input of this `Sequential` for changes
-    for (final driverInput in assignedDriverToInputMap.values) {
+    for (final driverInput in registeredDriverInputs) {
       // pre-fill the _inputToPreTickInputValuesMap so that nothing ever
       // uses values directly
       _updateInputToPreTickInputValue(driverInput);
@@ -315,23 +317,17 @@ class Sequential extends Always {
           // driving it, so hold onto it for later
           _driverInputsPendingPostUpdate.add(driverInput);
           if (!_pendingPostUpdate) {
-            unawaited(
-              Simulator.postTick.first.then(
-                (value) {
-                  // once the tick has completed,
-                  // we can update the override maps
-                  _driverInputsPendingPostUpdate
-                    ..forEach(_updateInputToPreTickInputValue)
-                    ..clear();
-                  _pendingPostUpdate = false;
-                },
-              ).catchError(
-                test: (error) => error is Exception,
+            unawaited(Simulator.postTick.first.then((value) {
+              // once the tick has completed,
+              // we can update the override maps
+              _driverInputsPendingPostUpdate
+                ..forEach(_updateInputToPreTickInputValue)
+                ..clear();
+              _pendingPostUpdate = false;
+            }).catchError(test: (error) => error is Exception,
                 (Object err, StackTrace stackTrace) {
-                  Simulator.throwException(err as Exception, stackTrace);
-                },
-              ),
-            );
+              Simulator.throwException(err as Exception, stackTrace);
+            }));
           }
           _pendingPostUpdate = true;
         }
@@ -386,7 +382,6 @@ class Sequential extends Always {
           // update affected inputs to have an overridden value of X
           ..applyToNonTriggeredInputs((nti) =>
               _updateInputToPreTickInputValue(nti, overrideValue: LogicValue.x))
-
           // now, remember to change the values back to safe values after exec
           ..registerPreNonTriggerClearAction(() => _raceTracker
               .applyToNonTriggeredInputs(_updateInputToPreTickInputValue));

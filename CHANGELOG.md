@@ -1,3 +1,79 @@
+## Next Release
+
+### Breaking Changes
+
+- `FiniteStateMachine` and `State` now require Dart enum state identifiers. Replace integer, string, or custom-object identifiers with enum members; update reset and transition targets accordingly. `currentState` and `nextState` are now `LogicEnum` signals (<https://github.com/intel/rohd/pull/599>).
+- Removed long-deprecated APIs, including `StateMachine`, `FF`, `IfBlock`, `Port`, `LogicValues`, `CustomSystemVerilog`, `Dumper`, legacy signal/value helpers, and old synthesis accessors. These were already deprecated before 0.6.10. See the [0.7.0 migration guide](doc/releases.md#core-api-migration-for-070) for replacements.
+
+### Deprecated APIs retained for a later release
+
+- `PairInterface.modify`, its constructor argument, and the `PairInterface.clone` constructor remain deprecated but available for downstream interface compatibility. Prefer `uniquify` when connecting or adding sub-interfaces, and `other.clone()`.
+- `WaveDumper`, `Module.generateSynth`, and `ModuleTree.hierarchyJSON` remain available with deprecation warnings. They were released APIs in 0.6.11, but their deprecations had not shipped in a tagged release. Use `Module.dumpWaves`, `Module.dumpSystemVerilog`, and `ModuleTree.hierarchyJson`, respectively.
+- `NetlistSynthesisResult.toFileContents()` remains deprecated but available because it first shipped in 0.6.11. Use `toSynthFileContents()` and read the returned artifacts' `contents`.
+- These APIs are not removed in 0.7.0; migrate callers now in preparation for removal in a later release. Compatibility retention follows the same approach as a 0.6.12 release, despite the version change.
+- Unreleased compatibility APIs (`FlcService`, `SystemCExecutable`, `ModuleServices.hierarchyJSON`, FLC methods on `NetlistService`, and `SystemVerilogService.contentsByName`) remain removed. They were never part of a tagged core release.
+
+### Major Features
+
+- Added `TypedLogicArray<TLogic, TValue>` for multidimensional arrays with fixed typed hardware elements and associated semantic values, including typed snapshots and ports, traversal, cloning, net support, and synthesis. Added shaped `LogicValueArray` and codec-backed `TypedLogicValueArray<TValue>` values with nested construction, packed `LogicValue` interoperability, and hardware-array assignment. Existing `LogicArray`, `LogicValueArray`, and concrete array port APIs remain available as specializations (<https://github.com/intel/rohd/pull/686>).
+- Added `LogicEnum<T>` hardware signals with explicit enum encodings, mapped member assignments, driveable cloning, and SystemVerilog enum generation (<https://github.com/intel/rohd/pull/599>).
+- Added compact FST waveform capture alongside VCD, with block-based reading and waveform query APIs for incremental access (<https://github.com/intel/rohd/pull/671>).
+- Added SystemC generation, runtime support, and `SystemCService` for generating and writing module artifacts. Generated SystemC uses a two-state representation and does not preserve X/Z semantics (<https://github.com/intel/rohd/pull/662>).
+- Added source tracing and FLC (File-Line-Column) sidecars for cross-probing signals and module instances between Dart source and generated SystemVerilog or SystemC, with an optional standalone HTML report (<https://github.com/intel/rohd/pull/707>).
+- Added `rohd_hierarchy` 0.1.1 hierarchy query and netlist adapter APIs, and design-shell APIs using `SignalOccurrence` and `HierarchyOccurrence` handles for hierarchy search and connectivity traversal (<https://github.com/intel/rohd/pull/707>, <https://github.com/intel/rohd/pull/716>).
+- Added the standalone ROHD Live Debugger with hierarchy browsing, signal inspection, connectivity traversal, source navigation, waveform access, and cross-probing over DTD and VM-service transports (<https://github.com/intel/rohd/pull/736>).
+- Added `rohd-shell`, a DTD-attached terminal client for hierarchy, port, signal, and fan-in/fan-out queries, JSON output, and cross-probe selections (<https://github.com/intel/rohd/pull/736>).
+- Added the `ModuleService` API, the `ModuleServices` registry, `ArtifactProducingService`, `ModuleServiceArtifact`, `SystemVerilogService`, and `WaveformService` for module-scoped generation, capture, and inspection.
+- Added `Module.dumpSystemVerilog` and `Module.dumpWaves` convenience methods. `dumpSystemVerilog()` returns in-memory SystemVerilog; `dumpWaves()` provides standard VCD capture. The released `generateSynth` and `WaveDumper` APIs now delegate to these methods and remain available as deprecated wrappers.
+
+### Improvements
+
+- Improved generated synthesis wiring across module boundaries and driver-name selection (<https://github.com/intel/rohd/pull/726>).
+- Same-width `Logic.zeroExtend` now returns the original signal instead of creating a redundant extension (<https://github.com/intel/rohd/pull/729>).
+- Migrated `rohd_source_navigator` into its package in preparation for independent publication (<https://github.com/intel/rohd/pull/718>).
+- Netlist JSON format is now `0.1.0`, preserving enum types and encodings on retained netnames using Yosys-style attributes, including constant-driven enum uses (<https://github.com/intel/rohd/pull/599>).
+- Refined the typed-array hierarchy so `LogicArray` directly specializes `TypedLogicArray<Logic, LogicValue>`, and strengthened custom `TypedLogicArray` cloning to preserve runtime types, codecs, unpacked dimensions, and constructor-only naming prefixes without exposing them as public axis metadata (<https://github.com/intel/rohd/pull/686>).
+- Expanded `TypedLogicArray` support for recursively nested typed and ordinary arrays, structures containing array fields, mixed packed/unpacked dimensions, structured net and inout ports, and recursive netlist type metadata. Fixed generated SystemVerilog for array-valued elements to use packed offsets consistent with declarations and module-port connections, avoiding invalid chained selections in Icarus and Verilator (<https://github.com/intel/rohd/pull/686>).
+- Preserved configured SystemVerilog output object types for nested arrays and added the opt-in `iverilogWorkaroundForUnpackedArrayVariables` setting for child-driven unpacked array variables that remain unknown in Icarus Verilog 12.0 (<https://github.com/intel/rohd/pull/686>).
+- `LogicArray` remains source-compatible for construction and operations. Its `value` and `previousValue` now return shape-carrying `LogicValueArray` instances, which remain `LogicValue` subtypes; code relying on their exact concrete runtime types may observe this behavior change (<https://github.com/intel/rohd/pull/686>).
+- Added support for structures with constant leaves when their `clone()` implementation produces driveable fields, preserving domain-specific constant structures through generic operations.
+- Integrated `LogicEnum` with generic operations. Enum mappings are preserved through typed operation results, enum members can be used as `cases` keys, and incompatible enum mappings are rejected.
+- Fixed generic operations to reject incompatible `LogicEnum` mappings inside structures and typed arrays, and to preserve mapped enum constant reset values in netlist register cells.
+- `Pipeline.get`, `PipelineStageInfo.get`, and `PipelineStageInfo.getAbs` now preserve each identifier's concrete type through stage reconstruction and SSA, allowing structures, typed arrays, enums, and scalar signals in one pipeline. `ReadyValidPipeline` retains its established multi-signal API and gains the same per-identifier typed access without separate payload pipeline classes.
+- Preserved aggregate structure assignment metadata through synthesis and netlist generation.
+- Fixed SystemVerilog synthesis of internally computed packed logic assigned to packed-array outputs, retaining required intermediate declarations.
+- Upgraded `Mux`, `FlipFlop`, `Passthrough`, `mux`, `flop`, `cases`,
+  `selectIndex`, and `selectFrom` to preserve compatible concrete `Logic`
+  subtypes, including nested `LogicArray` and `TypedLogicArray` boundaries.
+  Removed the parallel structure-only operation APIs.
+- **Migration:** plain `Const` and `LogicNet` sources no longer infer
+  driveable outputs for operations that construct hardware. Request
+  `<Logic>`, for example `flop<Logic>(clk, Const(1))`, to normalize them.
+  Use an operation `outputGenerator` when an explicit output representation is
+  required, including mixed packed and structured `cases` branches.
+- **Migration:** type-preserving operations on `TypedLogicArray` operands now
+  require the identical `valueCodec` instance. Reuse a shared codec or cross
+  an explicit `packed` boundary to reinterpret compatible bits.
+- **Breaking:** Removed compatibility APIs deprecated before `0.6.11`. Use the
+  canonical `ExternalSystemVerilogModule`, `FiniteStateMachine`, `Sequential`,
+  `If.block`, `Logic.port`, `LogicValue` `of...` constructors, `SystemVerilog`,
+  `SynthFileContents`, and instance `clone()` APIs. Apply interface port names
+  at connection time with `uniquify`; use canonical operation outputs such as
+  `out` and `sum`; and access signal values through `value`. Compatibility APIs
+  first deprecated in `0.6.11` remain available, including `generateSynth`,
+  `WaveDumper`, `hierarchyJSON`, and `contentsByName`.
+- Added public `cloneTyped()` and `namedTyped()` conveniences for retaining a
+  receiver's static type. `Const.cloneTyped()` remains a literal clone;
+  `Const.namedTyped()` is rejected because a named alias must be driveable.
+- Added configurable waveform timescales, recording windows, and output overwrite policies (<https://github.com/intel/rohd/pull/671>).
+- Added opt-in `DebugSession` setup for source tracing, netlist and FLC services, and live waveform recording (<https://github.com/intel/rohd/pull/707>).
+- Expanded reusable `rohd_devtools_widgets` components for hierarchy browsing, signal formatting, bit expansion, overlays, help, capture, and cross-probing (<https://github.com/intel/rohd/pull/736>).
+- Added `rohd_waveform` 0.1.1 client APIs for hierarchy normalization, repository-backed waveform access, caching, readiness, streaming, computed signals, and sub-field/bit-slice waveforms (<https://github.com/intel/rohd/pull/736>).
+
+### Bug Fixes
+
+- Fixed a netlist pass that could drop connections to module output ports (<https://github.com/intel/rohd/pull/731>).
+- Fixed `LogicValue.ofRadixString` round trips with empty separators and separators containing regular-expression metacharacters (<https://github.com/intel/rohd/issues/722>).
 
 ## 0.6.11
 

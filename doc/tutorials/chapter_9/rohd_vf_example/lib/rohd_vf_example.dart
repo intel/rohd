@@ -1,3 +1,12 @@
+// Copyright (C) 2023-2026 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// rohd_vf_example.dart
+// Chapter 9 ROHD Visualizer example.
+//
+// 2023 September 22
+// Author: Yao Jing Quek <yao.jing.quek@intel.com>
+
 import 'dart:async';
 import 'dart:collection';
 import 'package:logging/logging.dart';
@@ -315,7 +324,7 @@ Future<void> main({Level loggerLevel = Level.FINER}) async {
   await tb.counter.build();
 
   // dump wave here
-  WaveDumper(tb.counter);
+  tb.counter.dumpWaves();
 
   // Set a maximum simulation time so it doesn't run forever
   Simulator.setMaxSimTime(300);

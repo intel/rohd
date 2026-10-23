@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2023 Intel Corporation
+// Copyright (C) 2022-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // swizzle_test.dart
@@ -20,7 +20,13 @@ extension LogicSwizzle on List<Logic> {
   /// significant (highest) bits.
   ///
   /// If you want the opposite, check out [rswizzle].
-  Logic swizzle() => length == 1 ? first : Swizzle(this).out;
+  Logic swizzle() {
+    final onlyNonZero = _onlyNonZeroWidthSignal();
+    if (onlyNonZero != null) {
+      return onlyNonZero;
+    }
+    return length == 1 ? first : Swizzle(this).out;
+  }
 
   /// Performs a concatenation operation on the list of signals, where index 0
   /// of this list is the *least* significant bit(s).
@@ -31,8 +37,29 @@ extension LogicSwizzle on List<Logic> {
   /// significant (lowest) bits.
   ///
   /// If you want the opposite, check out [swizzle].
-  Logic rswizzle() =>
-      length == 1 ? first : Swizzle(reversed.toList(growable: false)).out;
+  Logic rswizzle() {
+    final onlyNonZero = _onlyNonZeroWidthSignal();
+    if (onlyNonZero != null) {
+      return onlyNonZero;
+    }
+    return length == 1 ? first : Swizzle(reversed.toList(growable: false)).out;
+  }
+
+  /// Returns the sole non-zero-width signal when this list has exactly one,
+  /// otherwise `null`. Avoids creating a [Swizzle] for `{a}`-style cases that
+  /// include zero-width companions.
+  Logic? _onlyNonZeroWidthSignal() {
+    Logic? only;
+    for (final signal in this) {
+      if (signal.width > 0) {
+        if (only != null) {
+          return null;
+        }
+        only = signal;
+      }
+    }
+    return only;
+  }
 }
 
 /// Allows lists of [LogicValue]s to be swizzled.
@@ -59,27 +86,3 @@ extension LogicValueSwizzle on List<LogicValue> {
   /// If you want the opposite, check out [swizzle].
   LogicValue rswizzle() => length == 1 ? first : LogicValue.ofIterable(this);
 }
-
-/// Performs a concatenation operation on the list of signals, where index 0 of
-/// [signals] is the *most* significant bit(s).
-///
-/// This is the one you should use if you're writing something like
-/// SystemVerilog's `{}` notation. If you write `swizzle([a, b, c])` you would
-/// get a single output [Logic] where the bits in `a` are the most significant
-/// (highest) bits.
-///
-/// If you want the opposite, check out [rswizzle()].
-@Deprecated('Use `List<Logic>.swizzle()` instead')
-Logic swizzle(List<Logic> signals) => signals.swizzle();
-
-/// Performs a concatenation operation on the list of signals, where index 0 of
-/// [signals] is the *least* significant bit(s).
-///
-/// This is the one you should probably use if you're trying to concatenate a
-/// generated [List] of signals. If you write `rswizzle([a, b, c])` you would
-/// get a single output [Logic] where the bits in `a` are the least significant
-/// (lowest) bits.
-///
-/// If you want the opposite, check out [swizzle()].
-@Deprecated('Use `List<Logic>.rswizzle()` instead')
-Logic rswizzle(List<Logic> signals) => signals.rswizzle();

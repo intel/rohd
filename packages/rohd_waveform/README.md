@@ -10,6 +10,9 @@ that needs signal values over time.
 
 ## Service
 
+For a complete runnable example, see
+[`example/main.dart`](example/main.dart).
+
 `rohd_waveform` provides a small service layer for requesting, caching, and
 streaming waveform values:
 
@@ -18,11 +21,13 @@ streaming waveform values:
   retrieving value snapshots.
 - `SignalWaveformRepository` wraps a `SignalWaveformApi`, waits for asynchronous
   sources to become ready, caches signal metadata and waveform values, and can
-  synthesize computed sub-field waveforms from parent signal data.
+  synthesize nested, four-state sub-field waveforms from parent signal data.
 - `SignalDataService` exposes a signal-centric interface for clients that work
   with `SignalOccurrence` objects from `rohd_hierarchy`.
 - `RepositorySignalDataService` adapts the repository cache into `WaveData`
   objects for wave viewers and other clients.
+- `resolveModuleStructure` normalizes one or more waveform hierarchy roots into
+  a structure paired with its owning `HierarchyService`.
 
 The package does not include a waveform backend. Applications provide a
 concrete `SignalWaveformApi` implementation for their data source, while this
@@ -39,8 +44,9 @@ boundary:
   computed, but it does not provide hierarchy metadata or lookup behavior.
 - `SignalWaveform` — repository/client-side waveform state for one signal. It
   can be built from `WaveformData`, appended to over time, queried by time or
-  range, and linked back to `SignalOccurrence` metadata through a lookup
-  function.
+  transition criterion, linked back to `SignalOccurrence` metadata through a
+  lookup function, and matched canonically when a backend uses a different
+  textual signal ID.
 - `WaveformUpdateEvent` — event payload for waveform update notifications.
 - `WaveData` — combined `SignalOccurrence` metadata and waveform data returned
   by `SignalDataService`.
@@ -49,6 +55,9 @@ boundary:
 In short, use `WaveformData` at the service/API boundary and `SignalWaveform`
 inside clients or repositories that need cached state, incremental appends,
 metadata access, or waveform queries.
+
+Monitor-list identity, grouping, undo/redo, and display-format preferences are
+viewer policy and are intentionally not part of this package.
 
 For hierarchy types such as `HierarchyOccurrence` and `SignalOccurrence`,
 import `package:rohd_hierarchy/rohd_hierarchy.dart` directly.

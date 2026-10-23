@@ -2,7 +2,7 @@
   "name": "rohd",
   "displayName": "ROHD",
   "description": "ROHD extension for VS Code — snippets, cross-probe source navigation, and language support for the ROHD hardware design framework.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "publisher": "rohd",
   "license": "BSD-3-Clause",
   "repository": {
@@ -25,6 +25,8 @@
     "Other"
   ],
   "activationEvents": [
+    "onCommand:rohd.openSourceLocation",
+    "onCommand:rohd.openSourceLocations",
     "onCommand:rohd.registerSignalViewer",
     "onCommand:rohd.unregisterSignalViewer",
     "onCommand:rohd.getSignalViewers",

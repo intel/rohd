@@ -1,3 +1,12 @@
+// Copyright (C) 2023-2026 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// full_adder.dart
+// Chapter 5 full-adder exercise answer.
+//
+// 2023 May 26
+// Author: Yao Jing Quek <yao.jing.quek@intel.com>
+
 // ignore_for_file: avoid_print - tutorial
 
 import 'package:rohd/rohd.dart';
@@ -49,7 +58,7 @@ void main() async {
   final mod = FullAdder(a: a, b: b, carryIn: cIn);
   await mod.build();
 
-  print(mod.generateSynth());
+  print(mod.dumpSystemVerilog());
 
   test('should return true if result sum similar to truth table.', () {
     for (var i = 0; i <= 1; i++) {

@@ -59,14 +59,13 @@ void main() {
       Vector({'a': 1, 'b': 1}, {'c': 1, 'd': 1, 'e': 1, 'f': 1}),
       Vector({'a': 0, 'b': 0}, {'c': 0, 'd': 0, 'e': 0, 'f': 0}),
     ];
-    await SimCompare.checkFunctionalVector(mod, vectors);
-    SimCompare.checkIverilogVector(mod, vectors);
+    await SimCompare.checkVectors(mod, vectors);
   });
 
   test('collapse pretty', () async {
     final mod = CollapseTestModule(Logic(), Logic());
     await mod.build();
-    final sv = mod.generateSynth();
+    final sv = mod.dumpSystemVerilog();
 
     // make sure e=a&b&c is in there, to prove there was some inlining
     expect(sv, contains(RegExp('e.*=.*a.*&.*b.*&.*c')));
@@ -78,7 +77,7 @@ void main() {
     final mod = CombinationalLoopCollapseModule(Logic());
     await mod.build();
 
-    final sv = mod.generateSynth();
+    final sv = mod.dumpSystemVerilog();
     expect(sv, contains(' | a'));
     expect(sv, contains(' == a'));
   });

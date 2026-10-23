@@ -5,7 +5,8 @@
 // Domain layer that manages the retrieval of signal waveforms.
 //
 // 2024 January 29
-// Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
+// Author(s): Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
+//            Yao Jing Quek <yao.jing.quek@intel.com>
 
 import 'dart:async';
 
@@ -138,30 +139,37 @@ class SignalWaveformRepository {
   /// Call this after receiving the hierarchy from the external
   /// tree-data-source path, via `setExternalHierarchy` in the bloc.
   void buildSignalCacheFromHierarchy(List<HierarchyOccurrence> modules) {
+    final roots = modules.length <= 1
+        ? modules
+        : [
+            HierarchyOccurrence(
+              name: 'root',
+              definition: 'waveform',
+              children: modules,
+            ),
+          ];
     // Ensure every node and signal has an address.
-    for (final m in modules) {
+    for (final m in roots) {
       if (m.address == null) {
         m.buildAddresses();
       }
     }
     // Auto-create a HierarchyService if the caller hasn't set one.
-    if (hierarchyService == null && modules.isNotEmpty) {
-      hierarchyService = BaseHierarchyAdapter.fromTree(modules.first);
+    if (hierarchyService == null && roots.isNotEmpty) {
+      hierarchyService = BaseHierarchyAdapter.fromTree(roots.first);
     }
-    _buildSignalCache(modules);
+    _buildSignalCache(roots);
   }
 
   /// Get the current simulation time from the waveform API.
-  Future<int?> getCurrentTime() async {
-    await _ensureReady();
-    final currentTime = await _signalWaveformApi.getCurrentTime();
-    return currentTime;
-  }
+  Future<int?> getCurrentTime() =>
+      _ensureReady().then((_) => _signalWaveformApi.getCurrentTime());
 
   /// Retrieves waveform data for specific signals.
   ///
   /// [signalIds] is a list of signal IDs for which to retrieve data.
-  /// [startTime] and [endTime] optionally specify a time range for the data.
+  /// [startTime] and [endTime] optionally specify an inclusive time range in
+  /// the same units as [Data.time].
   ///
   /// Sub-field IDs (containing `#`) are intercepted and synthesized via
   /// bit-slicing the parent signal's waveform data. This enables sub-field
@@ -190,11 +198,13 @@ class SignalWaveformRepository {
         // Fetch plain signals from the API.
         final results = <WaveformData>[];
         if (plainIds.isNotEmpty) {
-          results.addAll(await _signalWaveformApi.getWaveformData(
-            signalIds: plainIds,
-            startTime: startTime,
-            endTime: endTime,
-          ));
+          results.addAll(
+            await _signalWaveformApi.getWaveformData(
+              signalIds: plainIds,
+              startTime: startTime,
+              endTime: endTime,
+            ),
+          );
         }
 
         // Synthesize sub-field bit-slices at the repository level.
@@ -247,20 +257,31 @@ class SignalWaveformRepository {
         // Cache by raw string ID.
         final id = waveformData.signalId;
         if (isFullFetch || !_subFieldWaveformCache.containsKey(id)) {
-          _subFieldWaveformCache[id] =
-              SignalWaveform.fromWaveformData(waveformData);
+          _subFieldWaveformCache[id] = SignalWaveform.fromWaveformData(
+            waveformData,
+          );
         } else {
-          _subFieldWaveformCache[id]!
-              .appendWaveformData(waveformData, sortByTime: sortByTime);
+          _subFieldWaveformCache[id]!.appendWaveformData(
+            waveformData,
+            sortByTime: sortByTime,
+          );
         }
         continue;
       }
 
+      final canonicalSignalId =
+          hierarchyService!.addressToPathname(addr, asSignal: true) ??
+              waveformData.signalId;
       if (isFullFetch || !_waveformCache.containsKey(addr)) {
-        _waveformCache[addr] = SignalWaveform.fromWaveformData(waveformData);
+        _waveformCache[addr] = SignalWaveform.fromWaveformData(
+          waveformData,
+          signalId: canonicalSignalId,
+        );
       } else {
-        _waveformCache[addr]!
-            .appendWaveformData(waveformData, sortByTime: sortByTime);
+        _waveformCache[addr]!.appendWaveformData(
+          waveformData,
+          sortByTime: sortByTime,
+        );
       }
     }
     return waveformDataList;
@@ -296,8 +317,12 @@ class SignalWaveformRepository {
           if (waveform != null) {
             waveform.appendWaveformData(waveformData);
           } else {
+            final canonicalSignalId =
+                hierarchyService!.addressToPathname(addr, asSignal: true) ??
+                    waveformData.signalId;
             _waveformCache[addr] = SignalWaveform.fromWaveformData(
               waveformData,
+              signalId: canonicalSignalId,
             );
           }
         } else {
@@ -307,8 +332,9 @@ class SignalWaveformRepository {
           if (waveform != null) {
             waveform.appendWaveformData(waveformData);
           } else {
-            _subFieldWaveformCache[id] =
-                SignalWaveform.fromWaveformData(waveformData);
+            _subFieldWaveformCache[id] = SignalWaveform.fromWaveformData(
+              waveformData,
+            );
           }
         }
       }
@@ -435,7 +461,8 @@ class SignalWaveformRepository {
   ///
   /// Use [getWaveformsBySelectedModule] to get waveform data.
   List<SignalOccurrence> getSignalsBySelectedModule(
-      HierarchyOccurrence module) {
+    HierarchyOccurrence module,
+  ) {
     final signals = <SignalOccurrence>[];
     for (final signal in module.signals) {
       final addr = signal.address;
@@ -490,13 +517,13 @@ class SignalWaveformRepository {
     int? startTime,
     int? endTime,
   }) async {
-    final idx = signalId.indexOf(_subFieldSeparator);
-    if (idx < 0) {
+    final pathParts = signalId.split(_subFieldSeparator);
+    if (pathParts.length < 2 || pathParts.any((part) => part.isEmpty)) {
       return null;
     }
 
-    final parentPath = signalId.substring(0, idx);
-    final fieldPath = signalId.substring(idx + 1);
+    final parentPath = pathParts.first;
+    final slicePaths = pathParts.skip(1);
 
     // Resolve parent signal metadata for logicType and width.
     final parentSig = _lookupSignalByPath(parentPath);
@@ -505,29 +532,36 @@ class SignalWaveformRepository {
     }
     final parentWidth = parentSig.width;
 
-    // Handle flat bit-slice patterns: b[N] or b[high:low].
-    // These don't require logicType — they are pure bitvector access.
-    final bitSliceMatch =
-        RegExp(r'^b\[(\d+)(?::(\d+))?\]$').firstMatch(fieldPath);
-    int? bitSliceLo;
-    int? bitSliceWidth;
-    if (bitSliceMatch != null) {
-      final hi = int.parse(bitSliceMatch.group(1)!);
-      final lo = bitSliceMatch.group(2) != null
-          ? int.parse(bitSliceMatch.group(2)!)
-          : hi;
-      bitSliceLo = lo < hi ? lo : hi;
-      bitSliceWidth = (hi - lo).abs() + 1;
-    } else if (parentSig.logicType == null) {
-      return null;
-    }
+    var lo = 0;
+    var fieldWidth = parentWidth;
+    String? fieldPath;
+    var hasBitSlice = false;
 
-    int lo;
-    int fieldWidth;
-    if (bitSliceLo != null) {
-      lo = bitSliceLo;
-      fieldWidth = bitSliceWidth!;
-    } else {
+    for (final slicePath in slicePaths) {
+      final bitSliceMatch =
+          RegExp(r'^b\[(\d+)(?::(\d+))?\]$').firstMatch(slicePath);
+      if (bitSliceMatch != null) {
+        final firstBit = int.parse(bitSliceMatch.group(1)!);
+        final secondBit = bitSliceMatch.group(2) != null
+            ? int.parse(bitSliceMatch.group(2)!)
+            : firstBit;
+        final relativeLo = firstBit < secondBit ? firstBit : secondBit;
+        final sliceWidth = (firstBit - secondBit).abs() + 1;
+        if (hasBitSlice ||
+            relativeLo < 0 ||
+            relativeLo + sliceWidth > fieldWidth) {
+          return null;
+        }
+        lo += relativeLo;
+        fieldWidth = sliceWidth;
+        hasBitSlice = true;
+        continue;
+      }
+
+      if (hasBitSlice || parentSig.logicType == null) {
+        return null;
+      }
+      fieldPath = fieldPath == null ? slicePath : '$fieldPath.$slicePath';
       final resolved = _resolveFieldBits(parentSig.logicType!, fieldPath);
       if (resolved == null) {
         return null;
@@ -561,11 +595,7 @@ class SignalWaveformRepository {
       }
     }
 
-    return WaveformData(
-      signalId: signalId,
-      data: outputData,
-      isComputed: true,
-    );
+    return WaveformData(signalId: signalId, data: outputData, isComputed: true);
   }
 
   /// Recursively resolve a dot-separated field path within a [logicType] map
@@ -667,57 +697,97 @@ class SignalWaveformRepository {
   /// - Raw binary: `10101010`
   /// - x/z states
   ///
-  /// Returns a hex-formatted string for the extracted slice.
+  /// Returns a sized radix string, using binary when needed to preserve X/Z.
   static String _extractBits(
     String value,
     int parentWidth,
     int startBit,
     int width,
   ) {
-    final lower = value.toLowerCase().trim();
+    final parentBits = _normalizeFourStateBits(value, parentWidth);
+    final sliceStart = parentWidth - startBit - width;
+    final sliceEnd = parentWidth - startBit;
+    final sliced = parentBits.sublist(sliceStart, sliceEnd);
 
-    // Handle pure x/z values.
-    if (lower.replaceAll('x', '').replaceAll('z', '').isEmpty &&
-        lower.isNotEmpty) {
-      return width == 1 ? 'x' : 'x' * ((width + 3) ~/ 4);
-    }
-
-    BigInt? bi;
-
-    // Try ROHD radix format: <width>'h<hex> or <width>'b<binary>
-    final rohdMatch = RegExp(r"^(\d+)'([hb])(.+)$").firstMatch(lower);
-    if (rohdMatch != null) {
-      final radixChar = rohdMatch.group(2)!;
-      final digits = rohdMatch.group(3)!;
-      // Check for x/z in the value portion.
-      if (digits.contains('x') || digits.contains('z')) {
-        return width == 1 ? 'x' : 'x' * ((width + 3) ~/ 4);
-      }
-      final radix = radixChar == 'h' ? 16 : 2;
-      bi = BigInt.tryParse(digits, radix: radix);
-    } else if (lower.startsWith('0x')) {
-      bi = BigInt.tryParse(value.substring(2), radix: 16);
-    } else if (RegExp(r'^[01]+$').hasMatch(lower)) {
-      bi = BigInt.tryParse(value, radix: 2);
-    } else {
-      // Default: try hex parse.
-      bi = BigInt.tryParse(value, radix: 16);
-    }
-
-    if (bi == null) {
-      return width == 1 ? 'x' : 'x' * ((width + 3) ~/ 4);
-    }
-
-    // Extract the bit range.
-    final mask = (BigInt.one << width) - BigInt.one;
-    final sliced = (bi >> startBit) & mask;
-
-    // Format output using ROHD radixString style: width'hHEX
     if (width == 1) {
-      return sliced == BigInt.one ? '1' : '0';
+      return sliced.single;
     }
+    if (sliced.any((bit) => bit == 'x' || bit == 'z')) {
+      return "$width'b${sliced.join()}";
+    }
+
+    final numeric = BigInt.parse(sliced.join(), radix: 2);
     final hexDigits = (width + 3) ~/ 4;
-    final hex = sliced.toRadixString(16).padLeft(hexDigits, '0');
+    final hex = numeric.toRadixString(16).padLeft(hexDigits, '0');
     return "$width'h$hex";
+  }
+
+  static List<String> _normalizeFourStateBits(String value, int parentWidth) {
+    final lower = value.toLowerCase().trim();
+    final rohdMatch = RegExp(r"^(\d+)'([hb])(.+)$").firstMatch(lower);
+
+    List<String>? bits;
+    int? literalWidth;
+    if (rohdMatch != null) {
+      literalWidth = int.tryParse(rohdMatch.group(1)!);
+      bits = _decodeFourStateDigits(rohdMatch.group(3)!, rohdMatch.group(2)!);
+    } else if (lower.startsWith('0x')) {
+      bits = _decodeFourStateDigits(lower.substring(2), 'h');
+    } else if (lower.startsWith('0b')) {
+      bits = _decodeFourStateDigits(lower.substring(2), 'b');
+    } else if (RegExp(r'^[01xz]+$').hasMatch(lower)) {
+      bits = _decodeFourStateDigits(lower, 'b');
+    } else {
+      bits = _decodeFourStateDigits(lower, 'h');
+    }
+
+    if (bits == null || literalWidth == 0) {
+      return List<String>.filled(parentWidth, 'x');
+    }
+
+    if (literalWidth != null) {
+      bits = _resizeFourStateBits(bits, literalWidth, extendUnknown: true);
+    }
+    return _resizeFourStateBits(
+      bits,
+      parentWidth,
+      extendUnknown: literalWidth == null,
+    );
+  }
+
+  static List<String>? _decodeFourStateDigits(String digits, String radix) {
+    if (radix == 'b') {
+      return RegExp(r'^[01xz]+$').hasMatch(digits) ? digits.split('') : null;
+    }
+    if (!RegExp(r'^[0-9a-fxz]+$').hasMatch(digits)) {
+      return null;
+    }
+
+    return [
+      for (final digit in digits.split(''))
+        if (digit == 'x' || digit == 'z')
+          ...List<String>.filled(4, digit)
+        else
+          ...int.parse(
+            digit,
+            radix: 16,
+          ).toRadixString(2).padLeft(4, '0').split(''),
+    ];
+  }
+
+  static List<String> _resizeFourStateBits(
+    List<String> bits,
+    int width, {
+    required bool extendUnknown,
+  }) {
+    if (bits.length >= width) {
+      return bits.sublist(bits.length - width);
+    }
+
+    final leadingBit = bits.isEmpty ? 'x' : bits.first;
+    final extension = extendUnknown && (leadingBit == 'x' || leadingBit == 'z')
+        ? leadingBit
+        : '0';
+    return [...List<String>.filled(width - bits.length, extension), ...bits];
   }
 }

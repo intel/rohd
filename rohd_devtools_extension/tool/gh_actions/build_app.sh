@@ -27,12 +27,14 @@ if [[ -z "$base_href" ]]; then
   fi
 fi
 
-if [[ ! "$base_href" =~ ^/([A-Za-z0-9._-]+/)*$ ]]; then
+if [[ "$base_href" != "/" && ! "$base_href" =~ ^/[A-Za-z0-9._/-]*/$ ]]; then
   echo "error: base href must start and end with '/': $base_href" >&2
   exit 64
 fi
 
 cd "$repo_root"
+
+bash ../tool/gh_actions/write_local_package_overrides.sh
 
 make web-release \
   FLUTTER_WEB_BUILD_ARGS="--pwa-strategy=none --base-href=$base_href"
@@ -43,7 +45,11 @@ required_files=(
   build/web/index.html
   build/web/flutter_bootstrap.js
   build/web/main.dart.js
-  build/web/assets/AssetManifest.bin.json
+  build/web/assets/AssetManifest.bin
+  build/web/assets/packages/rohd_schematic_viewer/assets/js/elk.bundled.js
+  build/web/assets/packages/rohd_schematic_viewer/js_bridge/elk_layout_only.js
+  build/web/pkg/wellen_bridge.js
+  build/web/pkg/wellen_bridge_bg.wasm
 )
 
 for required_file in "${required_files[@]}"; do
@@ -52,6 +58,11 @@ for required_file in "${required_files[@]}"; do
     exit 1
   fi
 done
+
+if [[ "$(od -An -t x1 -N4 build/web/pkg/wellen_bridge_bg.wasm | tr -d ' \n')" != "0061736d" ]]; then
+  echo "error: Wellen artifact does not have the WebAssembly magic bytes." >&2
+  exit 1
+fi
 
 if grep -Fq 'serviceWorkerSettings: {' build/web/flutter_bootstrap.js; then
   echo "error: Flutter bootstrap unexpectedly registers a service worker." >&2

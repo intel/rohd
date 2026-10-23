@@ -57,10 +57,27 @@ printf '%s\n' \
   'esac' > "$FIXTURE/bin/dart"
 chmod +x "$FIXTURE/bin/dart"
 ln -s dart "$FIXTURE/bin/flutter"
+ln -s /bin/true "$FIXTURE/bin/pana"
 
 cp "$REPO_ROOT/tool/prepare_release.sh" "$REPO_ROOT/tool/check_release.sh" \
   "$REPO_ROOT/tool/prepare_release_metadata.dart" "$UPSTREAM/tool/"
 cp "$REPO_ROOT/tool/gh_actions/check_tmp_test.sh" "$UPSTREAM/tool/gh_actions/"
+cat > "$UPSTREAM/tool/gh_actions/pana_source.sh" <<'EOF'
+#!/bin/bash
+set -euo pipefail
+[[ $# -eq 2 && -f "$1/pubspec.yaml" ]] || exit 99
+cd "$1"
+if [[ "${PWD##*/}" == rohd_devtools_widgets ]]; then
+  [[ "$2" == flutter ]] || exit 99
+else
+  [[ "$2" == dart ]] || exit 99
+fi
+printf 'pana|%s|pana\n' "$PWD" >> "$SDK_LOG"
+if [[ "${FAIL_PACKAGE:-}" == "${PWD##*/}" && "${FAIL_COMMAND:-}" == pana ]]; then
+  echo 'Simulated check failure: pana' >&2
+  exit 71
+fi
+EOF
 printf '%s\n' '#!/bin/bash' \
   '[[ -f "$1/build/index.html" && -f "$1/config.yaml" ]] || exit 1' \
   'printf "smoke\n" >> "$STAGE_LOG"' \
@@ -86,13 +103,14 @@ printf "static const String version = '0.0.0';\n" > "$UPSTREAM/lib/src/utilities
 printf '## Next Release\n' > "$UPSTREAM/CHANGELOG.md"
 printf 'fixture configuration\n' > "$UPSTREAM/extension/devtools/config.yaml"
 printf 'extension/devtools/build/\n' > "$UPSTREAM/.gitignore"
-for package in rohd_hierarchy rohd_waveform rohd_devtools_widgets; do
+for package in rohd_hierarchy rohd_waveform rohd_devtools_widgets rohd_source_navigator; do
   mkdir -p "$UPSTREAM/packages/$package"
   printf '## Next Release\n' > "$UPSTREAM/packages/$package/CHANGELOG.md"
 done
 printf 'version: 1.2.3\n' > "$UPSTREAM/packages/rohd_hierarchy/pubspec.yaml"
 printf 'version: 2.3.4\n' > "$UPSTREAM/packages/rohd_waveform/pubspec.yaml"
 printf 'version: 3.4.5\n' > "$UPSTREAM/packages/rohd_devtools_widgets/pubspec.yaml"
+printf 'version: 4.5.6\n' > "$UPSTREAM/packages/rohd_source_navigator/pubspec.yaml"
 
 git init --quiet --initial-branch=main "$UPSTREAM"
 git -C "$UPSTREAM" add .
@@ -123,7 +141,8 @@ run_case() {
   local status=0
   : > "$SDK_LOG"
   : > "$STAGE_LOG"
-  PATH="$FIXTURE/bin" ROHD_ARTIFACT_REPOSITORY="$UPSTREAM" ROHD_ARTIFACT_BRANCH=artifacts \
+  PATH="$FIXTURE/bin" PUB_CACHE="$FIXTURE/pub-cache" \
+    ROHD_ARTIFACT_REPOSITORY="$UPSTREAM" ROHD_ARTIFACT_BRANCH=artifacts \
     /bin/bash "$RELEASE/tool/prepare_release.sh" "$@" > "$FIXTURE/output" 2>&1 || status=$?
   if [[ "$status" -ne "$expected" ]] || ! grep -Fq "$message" "$FIXTURE/output"; then
     cat "$FIXTURE/output"
@@ -140,7 +159,7 @@ assert_unchanged() {
   [[ "$(cat "$RELEASE/CHANGELOG.md")" == '## Next Release' ]]
   [[ "$(cat "$RELEASE/extension/devtools/build/index.html")" == 'original payload' ]]
   [[ "$(cat "$RELEASE/extension/devtools/config.yaml")" == 'fixture configuration' ]]
-  for package in rohd_hierarchy rohd_waveform rohd_devtools_widgets; do
+  for package in rohd_hierarchy rohd_waveform rohd_devtools_widgets rohd_source_navigator; do
     [[ "$(cat "$RELEASE/packages/$package/CHANGELOG.md")" == '## Next Release' ]]
   done
 }
@@ -148,17 +167,28 @@ assert_unchanged() {
 expected_checks() {
   local package="$1"
   local include_tests="${2:-false}"
+  local include_pana="${3:-false}"
   local sdk=dart
   if [[ "$package" == rohd_devtools_widgets ]]; then
     sdk=flutter
   fi
-  printf '%s|%s|%s\n' "$sdk" "$RELEASE/packages/$package" 'pub get'
-  printf '%s|%s|%s\n' dart "$RELEASE/packages/$package" 'format --output=none --set-exit-if-changed .'
-  printf '%s|%s|%s\n' "$sdk" "$RELEASE/packages/$package" 'analyze --fatal-infos'
+  local directory="$RELEASE/packages/$package"
+  printf '%s|%s|%s\n' "$sdk" "$directory" 'pub get'
+  printf '%s|%s|%s\n' dart "$directory" 'format --output=none --set-exit-if-changed .'
+  printf '%s|%s|%s\n' "$sdk" "$directory" 'analyze --fatal-infos'
   if [[ "$include_tests" == true ]]; then
-    printf '%s|%s|%s\n' "$sdk" "$RELEASE/packages/$package" test
+    printf '%s|%s|%s\n' "$sdk" "$directory" test
+  fi
+  if [[ "$include_pana" == true ]]; then
+    printf 'pana|%s|pana\n' "$directory"
   fi
 }
+
+rm "$FIXTURE/bin/pana"
+run_case 2 'Pana is required' --run-pana rohd_source_navigator
+assert_unchanged
+[[ ! -s "$STAGE_LOG" ]]
+ln -s /bin/true "$FIXTURE/bin/pana"
 
 git -C "$UPSTREAM" commit --quiet --allow-empty -m 'Fixture main advances'
 readonly MAIN_COMMIT="$(git -C "$UPSTREAM" rev-parse main)"
@@ -179,17 +209,19 @@ assert_unchanged
 unset SMOKE_STATUS
 
 run_case 0 "DevTools source commit (upstream main): $MAIN_COMMIT"
-[[ "$(cat "$STAGE_LOG")" == $'smoke\nchecks-skip-tests\nvsix\ndry-run\ndry-run\ndry-run\ndry-run' ]]
+[[ "$(cat "$STAGE_LOG")" == $'smoke\nchecks-skip-tests\nvsix\ndry-run\ndry-run\ndry-run\ndry-run\ndry-run' ]]
 [[ ! -e "$(cat "$VSIX_PATH_LOG")" ]]
 grep -Fq 'Test suites were not run.' "$FIXTURE/output"
+grep -Fq 'Pana score gates were not run.' "$FIXTURE/output"
 expected_log="$(
-  for package in rohd_hierarchy rohd_waveform rohd_devtools_widgets; do
+  for package in rohd_hierarchy rohd_waveform rohd_devtools_widgets rohd_source_navigator; do
     expected_checks "$package"
   done
   printf 'dart|%s|pub publish --dry-run\n' "$RELEASE"
   printf 'dart|%s|pub publish --dry-run\n' "$RELEASE/packages/rohd_hierarchy"
   printf 'dart|%s|pub publish --dry-run\n' "$RELEASE/packages/rohd_waveform"
   printf 'flutter|%s|pub publish --dry-run\n' "$RELEASE/packages/rohd_devtools_widgets"
+  printf 'dart|%s|pub publish --dry-run\n' "$RELEASE/packages/rohd_source_navigator"
 )"
 [[ "$(cat "$SDK_LOG")" == "$expected_log" ]]
 [[ "$(cat "$RELEASE/pubspec.yaml")" == "version: '0.6.11' # release" ]]
@@ -200,21 +232,24 @@ expected_log="$(
 [[ "$(cat "$RELEASE/packages/rohd_hierarchy/CHANGELOG.md")" == '## 1.2.3' ]]
 [[ "$(cat "$RELEASE/packages/rohd_waveform/CHANGELOG.md")" == '## 2.3.4' ]]
 [[ "$(cat "$RELEASE/packages/rohd_devtools_widgets/CHANGELOG.md")" == '## 3.4.5' ]]
+[[ "$(cat "$RELEASE/packages/rohd_source_navigator/CHANGELOG.md")" == '## 4.5.6' ]]
 git -C "$RELEASE" diff --exit-code -- pubspec.yaml 'packages/*/pubspec.yaml'
 
 run_case 0 "DevTools source commit (upstream main): $MAIN_COMMIT" --run-tests
-[[ "$(cat "$STAGE_LOG")" == $'smoke\nchecks\nvsix\ndry-run\ndry-run\ndry-run\ndry-run' ]]
+[[ "$(cat "$STAGE_LOG")" == $'smoke\nchecks\nvsix\ndry-run\ndry-run\ndry-run\ndry-run\ndry-run' ]]
 expected_log="$(
-  for package in rohd_hierarchy rohd_waveform rohd_devtools_widgets; do
+  for package in rohd_hierarchy rohd_waveform rohd_devtools_widgets rohd_source_navigator; do
     expected_checks "$package" true
   done
   printf 'dart|%s|pub publish --dry-run\n' "$RELEASE"
   printf 'dart|%s|pub publish --dry-run\n' "$RELEASE/packages/rohd_hierarchy"
   printf 'dart|%s|pub publish --dry-run\n' "$RELEASE/packages/rohd_waveform"
   printf 'flutter|%s|pub publish --dry-run\n' "$RELEASE/packages/rohd_devtools_widgets"
+  printf 'dart|%s|pub publish --dry-run\n' "$RELEASE/packages/rohd_source_navigator"
 )"
 [[ "$(cat "$SDK_LOG")" == "$expected_log" ]]
 ! grep -Fq 'Test suites were not run.' "$FIXTURE/output"
+grep -Fq 'Pana score gates were not run.' "$FIXTURE/output"
 
 run_case 0 "DevTools source commit (upstream main): $MAIN_COMMIT" rohd
 [[ "$(cat "$SDK_LOG")" == "dart|$RELEASE|pub publish --dry-run" ]]
@@ -267,17 +302,39 @@ expected_log="$(
 [[ "$(cat "$SDK_LOG")" == "$expected_log" ]]
 [[ "$(cat "$STAGE_LOG")" == 'dry-run' ]]
 
-for package in rohd_hierarchy rohd_waveform rohd_devtools_widgets; do
+run_case 0 'rohd_source_navigator: PASSED' --run-tests rohd_source_navigator
+expected_log="$(
+  expected_checks rohd_source_navigator true
+  printf 'dart|%s|pub publish --dry-run\n' "$RELEASE/packages/rohd_source_navigator"
+)"
+[[ "$(cat "$SDK_LOG")" == "$expected_log" ]]
+[[ "$(cat "$STAGE_LOG")" == 'dry-run' ]]
+[[ "$(cat "$RELEASE/lib/src/utilities/config.dart")" == "static const String version = '0.0.0';" ]]
+[[ "$(cat "$RELEASE/CHANGELOG.md")" == '## Next Release' ]]
+
+run_case 0 'rohd_source_navigator: PASSED' --run-pana rohd_source_navigator
+expected_log="$(
+  expected_checks rohd_source_navigator false true
+  printf 'dart|%s|pub publish --dry-run\n' "$RELEASE/packages/rohd_source_navigator"
+)"
+[[ "$(cat "$SDK_LOG")" == "$expected_log" ]]
+[[ "$(cat "$STAGE_LOG")" == 'dry-run' ]]
+grep -Fq 'Test suites were not run.' "$FIXTURE/output"
+! grep -Fq 'Pana score gates were not run.' "$FIXTURE/output"
+
+for package in rohd_hierarchy rohd_waveform rohd_devtools_widgets rohd_source_navigator; do
   export FAIL_PACKAGE="$package" FAIL_COMMAND=test
   run_case 0 "$package: PASSED" "$package"
   ! grep -Fq '|test' "$SDK_LOG"
-  for check_command in 'pub get' 'format --output=none --set-exit-if-changed .' 'analyze --fatal-infos' test; do
-    export FAIL_PACKAGE="$package" FAIL_COMMAND="$check_command"
+  for check_command in 'pub get' 'format --output=none --set-exit-if-changed .' 'analyze --fatal-infos' test pana; do
+    export FAIL_COMMAND="$check_command"
     check_arguments=()
     include_tests=false
     if [[ "$check_command" == test ]]; then
       check_arguments+=(--run-tests)
       include_tests=true
+    elif [[ "$check_command" == pana ]]; then
+      check_arguments+=(--run-pana)
     fi
     run_case 71 "Simulated check failure: $check_command" "${check_arguments[@]}" "$package" rohd_hierarchy rohd_waveform
     [[ ! -s "$STAGE_LOG" ]]
@@ -287,7 +344,8 @@ for package in rohd_hierarchy rohd_waveform rohd_devtools_widgets; do
         if [[ "$expected_line" == *"|$check_command" ]]; then
           break
         fi
-      done < <(expected_checks "$package" "$include_tests")
+      done < <(expected_checks "$package" "$include_tests" \
+        "$([[ "$check_command" == pana ]] && echo true || echo false)")
     )"
     [[ "$(cat "$SDK_LOG")" == "$expected_log" ]]
   done

@@ -13,9 +13,10 @@ dependencies:
   collection: ^1.15.0
   logging: ^1.0.1
   meta: ^1.9.0
+  rohd_hierarchy: ^0.1.1
   test: ^1.17.3
+  yaml: ^3.1.1
 
 dev_dependencies:
   benchmark_harness: ^2.2.0
   coverage: ^1.10.0
-  yaml: ^3.1.1

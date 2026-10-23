@@ -8,13 +8,20 @@
 // Author: Max Korbel <max.korbel@intel.com>
 
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/signals/signals.dart';
 import 'package:rohd/src/synthesizers/systemverilog/systemverilog_synth_sub_module_instantiation.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
 
 /// A special [SynthModuleDefinition] for SystemVerilog modules.
 class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
   /// Creates a new [SystemVerilogSynthModuleDefinition] for the given [module].
-  SystemVerilogSynthModuleDefinition(super.module);
+  SystemVerilogSynthModuleDefinition(super.module, {super.generateEnums})
+      : assert(
+            !(module is SystemVerilog &&
+                module.generatedDefinitionType ==
+                    DefinitionGenerationType.none),
+            'Do not build a definition for a module'
+            ' which generates no definition!');
 
   /// A shared mapping from [SynthLogic]s which are the result of an inlineable
   /// submodule to the instantiation that produces them.
@@ -27,14 +34,167 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
 
   @override
   void process() {
+    _expandNestedUnpackedArrayAssignments();
     _inlinePackedRangesIntoSubmoduleInputs();
     _collapseAggregateConnections();
+    super.process();
     _collapseWholeNetBuses();
     _forwardPassthroughElementsIntoInlineables();
     _replaceNetConnections();
     _collapseMarkedChainableModules();
     _replaceInOutConnectionInlineableModules();
+    _lowerEnumPorts();
   }
+
+  /// Lowers enum ports to packed boundaries backed by internal enum signals.
+  ///
+  /// Includes raw ports that acquire an enum type through merged aliases.
+  void _lowerEnumPorts() {
+    if (!generateEnums) {
+      return;
+    }
+
+    final backingSignals = Map<SynthLogic, SynthLogic>.identity();
+    for (final signal in [...inputs, ...outputs]) {
+      final port =
+          module.tryInput(signal.name) ?? module.tryOutput(signal.name);
+      if (!signal.isEnum) {
+        continue;
+      }
+
+      final initialName = '${signal.name}_enum';
+      final backingSignal = SynthLogic(
+        signal.characteristicEnum!.clone(name: initialName),
+        parentSynthModuleDefinition: this,
+        namingOverride: Naming.renameable,
+      )
+        ..enumDefinition = signal.enumDefinition
+        ..pickGeneratedName(
+          ('systemVerilogEnumPortBacking', port),
+          initialName: initialName,
+        );
+      internalSignals.add(backingSignal);
+      backingSignals[signal.resolved] = backingSignal;
+    }
+
+    if (backingSignals.isEmpty) {
+      return;
+    }
+
+    final rewrittenAssignments = assignments
+        .map((assignment) =>
+            _replaceAssignmentSignals(assignment, backingSignals))
+        .toList(growable: false);
+    assignments
+      ..clear()
+      ..addAll([
+        for (final input in inputs)
+          if (backingSignals[input.resolved] case final backing?)
+            SynthAssignment(input, backing),
+        for (final output in outputs)
+          if (backingSignals[output.resolved] case final backing?)
+            SynthAssignment(backing, output),
+        ...rewrittenAssignments,
+      ]);
+
+    for (final instantiation in subModuleInstantiations) {
+      (instantiation as SystemVerilogSynthSubModuleInstantiation)
+          .replaceMappedSignals(backingSignals);
+    }
+  }
+
+  /// Rewrites assignment references while preserving range and slice bounds.
+  ///
+  /// Returns the original assignment when neither endpoint changes.
+  SynthAssignment _replaceAssignmentSignals(
+    SynthAssignment assignment,
+    Map<SynthLogic, SynthLogic> replacements,
+  ) {
+    final source = assignment.src.replaceReferences(replacements);
+    final destination = assignment.dst.replaceReferences(replacements);
+    if (identical(source, assignment.src) &&
+        identical(destination, assignment.dst)) {
+      return assignment;
+    }
+
+    if (assignment is RangeSynthAssignment) {
+      return RangeSynthAssignment(
+        source,
+        destination,
+        srcUpperIndex: assignment.srcUpperIndex,
+        srcLowerIndex: assignment.srcLowerIndex,
+        dstUpperIndex: assignment.dstUpperIndex,
+        dstLowerIndex: assignment.dstLowerIndex,
+      );
+    }
+    if (assignment is PartialSynthAssignment) {
+      return PartialSynthAssignment(
+        source,
+        destination,
+        dstUpperIndex: assignment.dstUpperIndex,
+        dstLowerIndex: assignment.dstLowerIndex,
+      );
+    }
+    return SynthAssignment(source, destination);
+  }
+
+  /// Expands whole assignments involving nested payloads across unpacked
+  /// dimensions into assignments of their packed children.
+  ///
+  /// Some simulators do not support whole unpacked-array assignments. Existing
+  /// ordinary array output is left unchanged; this lowering only applies when
+  /// the configured array element itself contains another array.
+  void _expandNestedUnpackedArrayAssignments() {
+    final expanded = <SynthAssignment>[];
+
+    void addAssignment(
+      SynthLogic source,
+      SynthLogic destination, {
+      bool expandArray = false,
+    }) {
+      final sourceArray = source.logics.firstOrNull;
+      final destinationArray = destination.logics.firstOrNull;
+      final startsNestedUnpackedExpansion = sourceArray is BaseLogicArray &&
+          destinationArray is BaseLogicArray &&
+          (sourceArray.numUnpackedDimensions > 0 ||
+              destinationArray.numUnpackedDimensions > 0) &&
+          (_hasNestedArrayPayload(sourceArray) ||
+              _hasNestedArrayPayload(destinationArray));
+      if (sourceArray is BaseLogicArray &&
+          destinationArray is BaseLogicArray &&
+          (expandArray || startsNestedUnpackedExpansion) &&
+          sourceArray.elements.length == destinationArray.elements.length) {
+        for (var index = 0; index < sourceArray.elements.length; index++) {
+          addAssignment(
+            getSynthLogic(sourceArray.elements[index])!.resolved,
+            getSynthLogic(destinationArray.elements[index])!.resolved,
+            expandArray: true,
+          );
+        }
+      } else {
+        expanded.add(SynthAssignment(source, destination));
+      }
+    }
+
+    for (final assignment in assignments) {
+      if (assignment is PartialSynthAssignment) {
+        expanded.add(assignment);
+      } else {
+        addAssignment(assignment.src, assignment.dst);
+      }
+    }
+
+    assignments
+      ..clear()
+      ..addAll(expanded);
+  }
+
+  static bool _hasNestedArrayPayload(BaseLogicArray array) =>
+      array.arrayElements.any(_containsArray);
+
+  static bool _containsArray(Logic logic) =>
+      logic is BaseLogicArray ||
+      (logic is LogicStructure && logic.elements.any(_containsArray));
 
   /// Inlines a fully covered packed bus into its sole submodule input.
   ///
@@ -306,7 +466,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
       // sources that are tied through a pass-through net bus rather than via a
       // direct assignment (see [_traceNetSubsetSource]).
       final netSubsets = _netSubsetLookups();
-      final logicSubsets = _logicSubsetLookups();
+      final logicSubsets = logicSubsetLookups();
 
       // Count how many times each array [SynthLogic] is used "as a whole",
       // along with where (a submodule port mapping is the only use we can
@@ -420,7 +580,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
         // Gather each element's single source (the other end of its single
         // connecting assignment), in element order (index 0 = LSB).
         final elementLogics = agg.logics
-            .whereType<LogicArray>()
+            .whereType<BaseLogicArray>()
             .first
             .elements
             .map(getSynthLogic)
@@ -428,12 +588,12 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
             .toList();
 
         final aggregateLogic = agg.logics.singleOrNull;
-        final isPackedBitArray = aggregateLogic is LogicArray &&
+        final isPackedBitArray = aggregateLogic is BaseLogicArray &&
             aggregateLogic.dimensions.length == 1 &&
             aggregateLogic.elementWidth == 1 &&
             aggregateLogic.numUnpackedDimensions == 0;
         final packedSubsetSource = isPackedBitArray
-            ? _packedLogicSubsetSource(
+            ? packedLogicSubsetSource(
                 elementLogics,
                 logicSubsets,
                 expectedWidth: agg.width,
@@ -575,70 +735,6 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
       }
       assignments.removeWhere(removedAssignments.contains);
     }
-  }
-
-  /// Indexes non-net [BusSubset] views by their resolved subset output.
-  Map<SynthLogic, List<_LogicSubsetView>> _logicSubsetLookups() {
-    final bySubset = <SynthLogic, List<_LogicSubsetView>>{};
-    for (final instantiation in subModuleInstantiations) {
-      instantiation as SystemVerilogSynthSubModuleInstantiation;
-      final subsetModule = instantiation.module;
-      if (subsetModule is! BusSubset || subsetModule.original.isNet) {
-        continue;
-      }
-      final original =
-          instantiation.inputMapping[subsetModule.original.name]?.resolved;
-      final subset =
-          instantiation.outputMapping[subsetModule.subset.name]?.resolved;
-      if (original == null || subset == null) {
-        continue;
-      }
-      final view = (
-        inst: instantiation,
-        original: original,
-        subset: subset,
-        start: subsetModule.startIndex,
-        end: subsetModule.endIndex,
-      );
-      bySubset.putIfAbsent(subset, () => []).add(view);
-    }
-    return bySubset;
-  }
-
-  /// Reconstructs one fully covered packed source from ordered element subset
-  /// mappings, returning the source and helper instantiations to clear.
-  ({
-    SynthLogic source,
-    Set<SystemVerilogSynthSubModuleInstantiation> subsets,
-  })? _packedLogicSubsetSource(
-    List<SynthLogic?> elements,
-    Map<SynthLogic, List<_LogicSubsetView>> subsetsByOutput, {
-    required int expectedWidth,
-  }) {
-    SynthLogic? source;
-    var nextBit = 0;
-    final subsets = <SystemVerilogSynthSubModuleInstantiation>{};
-    for (final element in elements) {
-      if (element == null) {
-        return null;
-      }
-      final view = subsetsByOutput[element]?.singleOrNull;
-      if (view == null ||
-          view.start != nextBit ||
-          view.end != nextBit + element.width - 1 ||
-          (source != null && source != view.original)) {
-        return null;
-      }
-      source ??= view.original;
-      subsets.add(view.inst);
-      nextBit += element.width;
-    }
-    if (source == null ||
-        source.width != expectedWidth ||
-        nextBit != expectedWidth) {
-      return null;
-    }
-    return (source: source, subsets: subsets);
   }
 
   /// Builds resolved lookups over every net [BusSubset] instantiation: a list
@@ -1223,7 +1319,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
         }
 
         final allElements = parentArray.logics
-            .whereType<LogicArray>()
+            .whereType<BaseLogicArray>()
             .expand((logicArray) => logicArray.elements)
             .map(getSynthLogic)
             .nonNulls
@@ -1287,7 +1383,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
 
     final swizzle = _SwizzleConnect(dummySignals,
         unpacked: agg.logics
-            .whereType<LogicArray>()
+            .whereType<BaseLogicArray>()
             .any((array) => array.numUnpackedDimensions > 0));
 
     final swizzleInst = getSynthSubModuleInstantiation(swizzle)
@@ -1389,7 +1485,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
 
     bool elementsAllAbsent(SynthLogic parentArray) =>
         parentArray.logics.every((logic) =>
-            !(logic as LogicArray).elements.any(logicHasPresentSynthLogic));
+            !(logic as BaseLogicArray).elements.any(logicHasPresentSynthLogic));
 
     var droppedAny = true;
     while (droppedAny) {
@@ -1458,16 +1554,6 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
 /// and `subset` signals and the (non-reversed) `[start, end]` inclusive bit
 /// range of the slice on the original bus.
 typedef _NetSubsetView = ({
-  SystemVerilogSynthSubModuleInstantiation inst,
-  SynthLogic original,
-  SynthLogic subset,
-  int start,
-  int end,
-});
-
-/// A resolved view of a non-net [BusSubset] used to reconstruct a packed bus
-/// from an array input's element mappings.
-typedef _LogicSubsetView = ({
   SystemVerilogSynthSubModuleInstantiation inst,
   SynthLogic original,
   SynthLogic subset,

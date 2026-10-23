@@ -74,7 +74,8 @@ class DiscoveredVmService with Diagnosticable {
 ///
 /// Returns the list of services found, or throws on error.
 typedef DiscoverVmServicesCallback = Future<List<DiscoveredVmService>> Function(
-    String dtdUri);
+  String dtdUri,
+);
 
 /// Reusable VM connection form that can be embedded in different contexts.
 ///
@@ -240,8 +241,9 @@ class _VmConnectionFormState extends State<VmConnectionForm> {
     final cleaned = widget.cleanVmServiceUri(raw);
     if (cleaned.isNotEmpty && cleaned != raw) {
       widget.vmServiceUriController.text = cleaned;
-      widget.vmServiceUriController.selection =
-          TextSelection.collapsed(offset: cleaned.length);
+      widget.vmServiceUriController.selection = TextSelection.collapsed(
+        offset: cleaned.length,
+      );
     }
     widget.onConnect();
   }

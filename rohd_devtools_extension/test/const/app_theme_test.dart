@@ -21,15 +21,18 @@ void main() {
       expect(theme.cardColor, DarkThemeColors.cardBackground);
       expect(theme.dividerColor, DarkThemeColors.divider);
       expect(
-          theme.appBarTheme.backgroundColor, DarkThemeColors.appBarBackground);
+        theme.appBarTheme.backgroundColor,
+        DarkThemeColors.appBarBackground,
+      );
       expect(theme.appBarTheme.foregroundColor, DarkThemeColors.text);
       expect(theme.appBarTheme.elevation, 0);
       expect(theme.appBarTheme.shadowColor, Colors.transparent);
       expect(theme.hoverColor, Colors.transparent);
       expect(theme.splashColor, Colors.transparent);
       expect(theme.splashFactory, NoSplash.splashFactory);
-      expect(
-          theme.textTheme.bodyMedium!.fontFamilyFallback, ['Noto Color Emoji']);
+      expect(theme.textTheme.bodyMedium!.fontFamilyFallback, [
+        'Noto Color Emoji',
+      ]);
     });
   });
 
@@ -39,19 +42,24 @@ void main() {
 
       expect(theme.brightness, Brightness.light);
       expect(
-          theme.scaffoldBackgroundColor, LightThemeColors.scaffoldBackground);
+        theme.scaffoldBackgroundColor,
+        LightThemeColors.scaffoldBackground,
+      );
       expect(theme.cardColor, LightThemeColors.cardBackground);
       expect(theme.dividerColor, LightThemeColors.divider);
       expect(
-          theme.appBarTheme.backgroundColor, LightThemeColors.appBarBackground);
+        theme.appBarTheme.backgroundColor,
+        LightThemeColors.appBarBackground,
+      );
       expect(theme.appBarTheme.foregroundColor, LightThemeColors.text);
       expect(theme.appBarTheme.elevation, 0);
       expect(theme.appBarTheme.shadowColor, Colors.transparent);
       expect(theme.hoverColor, Colors.transparent);
       expect(theme.splashColor, Colors.transparent);
       expect(theme.splashFactory, NoSplash.splashFactory);
-      expect(
-          theme.textTheme.bodyMedium!.fontFamilyFallback, ['Noto Color Emoji']);
+      expect(theme.textTheme.bodyMedium!.fontFamilyFallback, [
+        'Noto Color Emoji',
+      ]);
     });
   });
 }

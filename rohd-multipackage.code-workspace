@@ -16,6 +16,10 @@
       "path": "packages/rohd_waveform"
     },
     {
+      "name": "rohd_source_navigator",
+      "path": "packages/rohd_source_navigator"
+    },
+    {
       "name": "rohd_devtools_extension",
       "path": "rohd_devtools_extension"
     },

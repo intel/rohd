@@ -1,3 +1,12 @@
+// Copyright (C) 2023-2026 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// n_bit_subtractor.dart
+// Chapter 5 N-bit subtractor exercise answer.
+//
+// 2023 May 26
+// Author: Yao Jing Quek <yao.jing.quek@intel.com>
+
 // ignore_for_file: avoid_print - tutorial
 
 import 'package:rohd/rohd.dart';
@@ -36,7 +45,7 @@ Future<void> main() async {
   final mod = NBitFullSubtractor(a, b);
   await mod.build();
 
-  print(mod.generateSynth());
+  print(mod.dumpSystemVerilog());
 
   test('should return 1 when a is 8 and b is 7.', () {
     a.put(8);

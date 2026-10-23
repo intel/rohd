@@ -1,3 +1,12 @@
+// Copyright (C) 2023-2026 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// full_subtractor.dart
+// Chapter 5 full-subtractor exercise answer.
+//
+// 2023 May 26
+// Author: Yao Jing Quek <yao.jing.quek@intel.com>
+
 // ignore_for_file: avoid_print - tutorial
 
 import 'package:rohd/rohd.dart';
@@ -44,7 +53,7 @@ Future<void> main() async {
 
   await diff.build();
 
-  print(diff.generateSynth());
+  print(diff.dumpSystemVerilog());
 
   test('should return true if results matched truth table', () {
     for (var i = 0; i <= 1; i++) {
