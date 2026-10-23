@@ -1128,8 +1128,7 @@ class ArrayPortToIndividualNets extends Module {
 
 /// An intermediate mergeable array whose elements are all driven by elements of
 /// one common parent array (here, reversed), then passed to a child array port.
-/// The common-parent guard must leave this to the other collapsing mechanisms
-/// rather than fabricating a redundant concatenation.
+/// The connection is inlined as an order-preserving concatenation.
 class RearrangeOneArray extends Module {
   Logic get y => output('y');
   RearrangeOneArray(LogicArray src, {int n = 4}) {
@@ -4210,17 +4209,23 @@ void main() {
       SimCompare.checkIverilogVector(mod, vectors);
     });
 
-    test('re-arrangement of one array is left to other mechanisms', () async {
-      // every element source shares one common parent array, so the
-      // common-parent guard skips this (no fabricated concatenation); the
-      // result must still be correct.
+    test('re-arrangement of one array inlines an ordered connection', () async {
       final mod = RearrangeOneArray(LogicArray([4], 1));
       await mod.build();
       final sv = mod.dumpSystemVerilog();
       final topBody = _topModuleBody(sv);
 
-      // this pass did not fabricate a consolidating concatenation on the port
-      expect(topBody, isNot(contains('.a(({')));
+      expect(topBody, contains('.a(({'));
+      expect(topBody, isNot(contains('logic [3:0] arr;')));
+      expect(
+        topBody,
+        contains(
+          RegExp(
+            r'\.a\(\(\{\s*src\[0\].*src\[1\].*src\[2\].*src\[3\]',
+            dotAll: true,
+          ),
+        ),
+      );
 
       final vectors = [
         for (final src in [0x0, 0xA, 0x5, 0xF])

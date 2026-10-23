@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // module_interface_registration_test.dart
-// Tests for Module.addInterfacePorts, addStructuredInterface,
-// addPairInterfacePorts, and addStructuredPairInterface.
+// Tests for Module.addInterfacePorts, addInterfaceFrom,
+// addPairInterfacePorts, and addPairInterfaceFrom.
 //
 // 2026 October 21
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
@@ -53,7 +53,7 @@ class _Pair extends PairInterface {
   _Pair clone() => _Pair();
 }
 
-enum _Api { ports, structured, addFrom }
+enum _Api { ports, addFrom }
 
 class _TagModule extends Module {
   late final _TagIntf intf;
@@ -62,10 +62,6 @@ class _TagModule extends Module {
   _TagModule(this.source, _Api api) : super(definitionName: 'TagModule') {
     intf = switch (api) {
       _Api.ports => addInterfacePorts(source,
-          inputTags: {_Dir.toModule},
-          outputTags: {_Dir.fromModule},
-          uniquify: (orig) => 'p_$orig'),
-      _Api.structured => addStructuredInterface(source,
           inputTags: {_Dir.toModule},
           outputTags: {_Dir.fromModule},
           uniquify: (orig) => 'p_$orig'),
@@ -85,8 +81,6 @@ class _PairModule extends Module {
   _PairModule(this.source, _Api api) : super(definitionName: 'PairModule') {
     intf = switch (api) {
       _Api.ports => addPairInterfacePorts(source, PairRole.consumer,
-          uniquify: (orig) => 'c_$orig'),
-      _Api.structured => addStructuredPairInterface(source, PairRole.consumer,
           uniquify: (orig) => 'c_$orig'),
       _Api.addFrom => addPairInterfaceFrom(_Pair(), source, PairRole.consumer,
           uniquify: (orig) => 'c_$orig'),
@@ -108,18 +102,13 @@ void main() {
   });
 
   group('addInterfacePorts', () {
-    test('has the same behavior as addStructuredInterface', () async {
+    test('returns a clone and registers individual ports', () async {
       final ports = _TagModule(_TagIntf(), _Api.ports);
       await ports.build();
-      final structured = _TagModule(_TagIntf(), _Api.structured);
-      await structured.build();
 
       expect(ports.intf, isNot(same(ports.source)));
-      expect(ports.inputs.keys, equals(structured.inputs.keys));
-      expect(ports.outputs.keys, equals(structured.outputs.keys));
       expect(ports.inputs.keys, contains('p_a'));
       expect(ports.outputs.keys, contains('p_y'));
-      expect(_body(ports), equals(_body(structured)));
     });
 
     test('drives external interface through registered ports', () async {
@@ -156,18 +145,13 @@ void main() {
   });
 
   group('addPairInterfacePorts', () {
-    test('has the same behavior as addStructuredPairInterface', () async {
+    test('returns a clone and registers individual ports', () async {
       final ports = _PairModule(_Pair(), _Api.ports);
       await ports.build();
-      final structured = _PairModule(_Pair(), _Api.structured);
-      await structured.build();
 
       expect(ports.intf, isNot(same(ports.source)));
-      expect(ports.inputs.keys, equals(structured.inputs.keys));
-      expect(ports.outputs.keys, equals(structured.outputs.keys));
       expect(ports.inputs.keys, containsAll(['c_req', 'c_s_sub_req']));
       expect(ports.outputs.keys, containsAll(['c_rsp', 'c_s_sub_rsp']));
-      expect(_body(ports), equals(_body(structured)));
     });
 
     test('drives external pair interface through registered ports', () async {

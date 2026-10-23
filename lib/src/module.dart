@@ -18,6 +18,33 @@ import 'package:rohd/src/utilities/namer.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
 
+/// Connects an external interface to its internal clone and directional ports.
+///
+/// A directional port is either a typed [LogicStructure] for multiple fields
+/// or a direct field port when only one field is selected.
+@experimental
+class StructuredInterfacePortBinding {
+  /// The interface supplied by the containing module.
+  final Interface<dynamic> sourceInterface;
+
+  /// The clone used by this module's implementation.
+  final Interface<dynamic> internalInterface;
+
+  /// The grouped or singleton input port, if inputs were selected.
+  final Logic? inputPort;
+
+  /// The grouped or singleton output port, if outputs were selected.
+  final Logic? outputPort;
+
+  /// Creates a structured interface port binding.
+  const StructuredInterfacePortBinding({
+    required this.sourceInterface,
+    required this.internalInterface,
+    required this.inputPort,
+    required this.outputPort,
+  });
+}
+
 /// Represents a synthesizable hardware entity with clearly defined interface
 /// boundaries.
 ///
@@ -49,6 +76,15 @@ abstract class Module {
 
   /// An internal mapping of input names to their sources to this [Module].
   late final Map<String, Logic> _inputSources = {};
+
+  /// Structured interface ports registered on this module.
+  final List<StructuredInterfacePortBinding> _structuredInterfacePortBindings =
+      [];
+
+  /// The experimental structured-interface bindings registered on this module.
+  @experimental
+  List<StructuredInterfacePortBinding> get structuredInterfacePortBindings =>
+      UnmodifiableListView(_structuredInterfacePortBindings);
 
   // ─── Central naming (Namer) ─────────────────────────────────────
 
@@ -1133,30 +1169,44 @@ abstract class Module {
   /// Registers [source] on this [Module] and returns its internal clone.
   ///
   /// Module logic must use the returned clone rather than [source]. Ports
-  /// with [inputTags], [outputTags], and [inOutTags] become inputs, outputs,
-  /// and inOuts of this [Module], respectively.
+  /// selected by [inputTags] and [outputTags] become grouped typed
+  /// [LogicStructure] ports, except that a single field remains a direct port.
+  /// Ports selected by [inOutTags] remain individual inOut ports.
   ///
-  /// Prefer this over calling [Interface.connectIO] directly so that the
-  /// module does not depend on how interface ports are laid out.
-  ///
-  // TODO(desmonddak): Create I/O LogicStructure ports that map the full
-  // bidirectional Interface.
+  /// [name] prefixes the generated directional port names. When omitted, the
+  /// prefix is derived from [uniquify] or the interface's runtime type.
+  @experimental
   InterfaceType addStructuredInterface<InterfaceType extends Interface<TagType>,
-          TagType extends Enum>(
+      TagType extends Enum>(
     InterfaceType source, {
     Iterable<TagType>? inputTags,
     Iterable<TagType>? outputTags,
     Iterable<TagType>? inOutTags,
     String Function(String original)? uniquify,
-  }) =>
-      addInterfaceFrom(
-        source.clone() as InterfaceType,
-        source,
-        inputTags: inputTags,
-        outputTags: outputTags,
-        inOutTags: inOutTags,
-        uniquify: uniquify,
-      );
+    String? name,
+  }) {
+    final target = source.clone() as InterfaceType;
+    final registrations = target.connectIOAsStructuredPorts(
+      this,
+      source,
+      inputTags: inputTags,
+      outputTags: outputTags,
+      inOutTags: inOutTags,
+      uniquify: uniquify,
+      name: name,
+    );
+    _structuredInterfacePortBindings.addAll(
+      registrations.map(
+        (registration) => StructuredInterfacePortBinding(
+          sourceInterface: registration.sourceInterface,
+          internalInterface: registration.internalInterface,
+          inputPort: registration.inputPort,
+          outputPort: registration.outputPort,
+        ),
+      ),
+    );
+    return target;
+  }
 
   /// Registers a deliberately constructed local [target] against [source]
   /// and returns [target].
@@ -1186,23 +1236,39 @@ abstract class Module {
 
   /// Registers [source] for [role] and returns its internal clone.
   ///
-  /// This is the [PairInterface] form of [addStructuredInterface]. The [role]
-  /// determines which directions are inputs and outputs of this [Module],
-  /// including those of nested sub-interfaces.
+  /// Input and output directions become grouped typed [LogicStructure] ports,
+  /// except that a single field remains a direct port. InOut fields remain
+  /// individual ports.
   ///
-  // TODO(desmonddak): Create I/O LogicStructure ports that map the full
-  // bidirectional PairInterface.
+  /// [name] prefixes the generated directional port names. When omitted, the
+  /// prefix is derived from [uniquify] or the interface's runtime type.
+  @experimental
   InterfaceType addStructuredPairInterface<InterfaceType extends PairInterface>(
     InterfaceType source,
     PairRole role, {
     String Function(String original)? uniquify,
-  }) =>
-      addPairInterfaceFrom(
-        source.clone() as InterfaceType,
-        source,
-        role,
-        uniquify: uniquify,
-      );
+    String? name,
+  }) {
+    final target = source.clone() as InterfaceType;
+    final registrations = target.pairConnectIOAsStructuredPorts(
+      this,
+      source,
+      role,
+      uniquify: uniquify,
+      name: name,
+    );
+    _structuredInterfacePortBindings.addAll(
+      registrations.map(
+        (registration) => StructuredInterfacePortBinding(
+          sourceInterface: registration.sourceInterface,
+          internalInterface: registration.internalInterface,
+          inputPort: registration.inputPort,
+          outputPort: registration.outputPort,
+        ),
+      ),
+    );
+    return target;
+  }
 
   /// Registers a deliberately retyped pair [target] against [source] for
   /// [role] and returns [target].

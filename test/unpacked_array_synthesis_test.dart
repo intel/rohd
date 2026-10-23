@@ -70,6 +70,30 @@ class ParentArrayPortToChild extends Module {
   }
 }
 
+class ReorderedParentArrayPortToChild extends Module {
+  ReorderedParentArrayPortToChild(LogicArray source) {
+    source = addInputArray(
+      'source',
+      source,
+      dimensions: source.dimensions,
+      elementWidth: source.elementWidth,
+      numUnpackedDimensions: source.numUnpackedDimensions,
+    );
+    final reordered = LogicArray(
+      source.dimensions,
+      source.elementWidth,
+      name: 'reordered',
+      numUnpackedDimensions: source.numUnpackedDimensions,
+      naming: Naming.mergeable,
+    );
+    for (final (index, element) in reordered.elements.indexed) {
+      element <= source.elements[reordered.elements.length - index - 1];
+    }
+    final child = UnpackedConsumer(reordered);
+    addOutput('observed', width: source.width) <= child.output('observed');
+  }
+}
+
 class ArrayDriveSimulationTop extends Module {
   final expected = <String, LogicValue>{};
 
@@ -220,6 +244,25 @@ void main() {
     expect(verilog, contains('.array(source)'));
     expect(verilog, isNot(contains('logic [1:0] array [2:0];')));
 
+    SimCompare.checkVerilatorVector(module, const [], buildOnly: true);
+  }, tags: ['verilator']);
+
+  test('reordered parent array preserves element order at child', () async {
+    final module = ReorderedParentArrayPortToChild(
+      LogicArray([3], 2, numUnpackedDimensions: 1),
+    );
+    await module.build();
+
+    final verilog = module.dumpSystemVerilog();
+    expect(verilog, isNot(contains('.array(source)')));
+    expect(verilog, isNot(contains('reordered')));
+
+    await SimCompare.checkFunctionalVector(
+      module,
+      [
+        Vector({'source': 0x39}, {'observed': 0x1b})
+      ],
+    );
     SimCompare.checkVerilatorVector(module, const [], buildOnly: true);
   }, tags: ['verilator']);
 

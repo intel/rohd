@@ -20,6 +20,31 @@ The `connectIO` function under the hood calls `addInput` and `addOutput` directl
 
 When the internal interface should intentionally be a different object or type than a clone of the external one, use `addInterfaceFrom` or `addPairInterfaceFrom`, which register a provided target against the source and return that target.
 
+### Experimental structured interface ports
+
+`addStructuredInterface` and `addStructuredPairInterface` are experimental
+alternatives for module boundaries that consistently carry an interface in one
+direction. Selected input and output fields are grouped into separate typed
+`LogicStructure` ports when a direction has two or more fields. A direction
+with exactly one field instead creates a direct
+`<interface>_<field>` port, avoiding a one-field wrapper structure. InOut
+fields retain individual net ports.
+
+Pass `name:` to select the interface prefix, or use `uniquify:` to derive one.
+The returned internal interface clone remains the module implementation API.
+`structuredInterfacePortBindings` exposes the experimental, read-only
+relationship between the external interface, internal clone, and actual
+directional ports.
+
+```dart
+control = addStructuredInterface(
+  control,
+  name: 'control',
+  inputTags: {CounterDirection.inward, CounterDirection.misc},
+  outputTags: {CounterDirection.outward},
+);
+```
+
 ```dart
 // Define a set of legal directions for this interface, and pass as parameter to Interface
 enum CounterDirection { inward, outward, misc }

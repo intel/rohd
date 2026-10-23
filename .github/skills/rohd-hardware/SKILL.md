@@ -182,6 +182,19 @@ control.signalOut <= ~control.signalIn;
 Use `addInterfaceFrom` only when deliberately adapting the interface type.
 For `PairInterface`, use `addPairInterfacePorts` or `addPairInterfaceFrom`.
 
+#### Experimental structured interface ports
+
+`addStructuredInterface` and `addStructuredPairInterface` are experimental.
+They group selected multi-field input and output directions into typed
+`LogicStructure` ports. A direction with a single field becomes a direct
+`<interface>_<field>` port instead of a one-field structure. InOuts remain
+individual net ports.
+
+Pass `name:` to choose the interface prefix. The read-only experimental
+`structuredInterfacePortBindings` list records the source interface, internal
+clone, and actual input/output ports. Use the returned internal clone for
+module logic; do not publish it as a hardware API.
+
 ### 2.7 Mandatory module-boundary ownership
 
 Every hardware signal used across a `Module` boundary must cross through a port
@@ -193,7 +206,8 @@ must be audited explicitly.
 
 - Rebind every constructor signal with `addInput`, `addTypedInput`,
   `addInputArray`, `addInterfacePorts`, `addPairInterfacePorts`, or
-  `addPairInterfaceFrom`.
+  `addPairInterfaceFrom`. Experimental structured alternatives are
+  `addStructuredInterface` and `addStructuredPairInterface`.
 - Use only the returned internal signal or interface after registration.
 - Never use the original external constructor argument in module logic.
 

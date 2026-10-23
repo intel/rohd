@@ -690,18 +690,35 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
           continue;
         }
 
-        // If every source is an element of one common parent array (in any
-        // order), the aggregate is just a re-arrangement of an existing array
-        // and there is nothing to consolidate; passing that array (or letting
-        // the other collapsing mechanisms merge it) yields cleaner output, so
-        // leave it alone.  The value of this optimization is consolidating
-        // otherwise-separate signals into a single concatenation.
+        // A whole, same-order view of one parent array can retain that array's
+        // direct port connection. A partial or reordered view must instead use
+        // an inline swizzle so the element order is preserved without keeping
+        // this intermediate aggregate.
         if (elementSources.every((e) => e is SynthLogicArrayElement)) {
           final parents = elementSources
               .map((e) => (e as SynthLogicArrayElement).parentArray.resolved)
               .toSet();
           if (parents.length == 1) {
-            continue;
+            final parent = parents.single;
+            final parentElements = parent.logics
+                .whereType<BaseLogicArray>()
+                .first
+                .elements
+                .map(getSynthLogic)
+                .nonNulls
+                .map((element) => element.resolved)
+                .toList(growable: false);
+            final preservesElementOrder =
+                elementSources.length == parentElements.length &&
+                    elementSources.indexed.every(
+                      (entry) => identical(
+                        entry.$2.resolved,
+                        parentElements[entry.$1],
+                      ),
+                    );
+            if (preservesElementOrder) {
+              continue;
+            }
           }
         }
 
