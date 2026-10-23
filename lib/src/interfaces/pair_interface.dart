@@ -195,8 +195,8 @@ class PairInterface extends Interface<PairDirection> {
         final nonNullSubIntfUniquify =
             subInterfaceEntry.value.uniquify ?? (original) => original;
 
-        String newSubIntfUniquify(String original) => nonNullUniquify(
-            nonNullSubIntfUniquify(nonNullModify(original)));
+        String newSubIntfUniquify(String original) =>
+            nonNullUniquify(nonNullSubIntfUniquify(nonNullModify(original)));
 
         if (!srcInterface._subInterfaces.containsKey(subInterfaceName)) {
           throw InterfaceTypeException(

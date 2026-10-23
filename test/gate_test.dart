@@ -573,13 +573,13 @@ void main() {
           throwsA(isA<PortWidthMismatchException>()));
     });
 
-    test('mux with all-Const data operands needs mux<Logic> for a dynamic '
+    test(
+        'mux with all-Const data operands needs mux<Logic> for a dynamic '
         'select', () async {
       final sel = Logic(name: 'sel');
 
       // Inferred Const output cannot be driven by a dynamic select.
-      expect(() => mux(sel, Const(1), Const(0)),
-          throwsA(isA<Exception>()),
+      expect(() => mux(sel, Const(1), Const(0)), throwsA(isA<Exception>()),
           reason: 'mux with inferred Const output must not be constructible');
 
       final mod = _ConstMuxModule(sel);

@@ -901,10 +901,9 @@ class _EnumResetFlop extends Module {
     reset = addInput('reset', reset);
     final din = addTypedInput<LogicEnum<TestEnum>>('d', d);
     final q = addOutput('q', width: d.width);
-    q <= flop(clk, din,
-        reset: reset,
-        asyncReset: asyncReset,
-        resetValue: resetValue);
+    q <=
+        flop(clk, din,
+            reset: reset, asyncReset: asyncReset, resetValue: resetValue);
   }
 }
 

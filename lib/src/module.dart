@@ -1158,7 +1158,7 @@ abstract class Module {
   /// This form supports intentional type adaptation and does not clone
   /// [target].
   InterfaceType addInterfaceFrom<InterfaceType extends Interface<TagType>,
-      TagType extends Enum>(
+          TagType extends Enum>(
     InterfaceType target,
     Interface<TagType> source, {
     Iterable<TagType>? inputTags,
