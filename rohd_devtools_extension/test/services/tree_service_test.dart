@@ -5,7 +5,6 @@
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:devtools_app_shared/service.dart';
 import 'package:devtools_app_shared/utils.dart';
@@ -67,10 +66,23 @@ void main() {
   });
 
   test(
-    'loads packaged FilterBank data and caches incremental FLC evaluations',
+    'loads in-memory FilterBank data and caches incremental FLC evaluations',
     () async {
-      final netlist =
-          await File('test/fixtures/filter_bank.json').readAsString();
+      final netlist = jsonEncode(<String, dynamic>{
+        'modules': <String, dynamic>{
+          'FilterBank': <String, dynamic>{
+            'attributes': <String, dynamic>{'top': 1},
+            'ports': <String, dynamic>{
+              'sampleIn': <String, dynamic>{
+                'direction': 'input',
+                'bits': <int>[1],
+              },
+            },
+            'netnames': <String, dynamic>{},
+            'cells': <String, dynamic>{},
+          },
+        },
+      });
       final flcModule = <String, dynamic>{
         'version': 6,
         'files': <String>['example/filter_bank/filter_bank.dart'],

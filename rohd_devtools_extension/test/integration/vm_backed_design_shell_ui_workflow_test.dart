@@ -1,6 +1,9 @@
 // Copyright (C) 2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
+// vm_backed_design_shell_ui_workflow_test.dart
+// Tests VM-backed design-shell UI workflows.
+//
 // 2026 October 22
 // Author: Desmond A. Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 

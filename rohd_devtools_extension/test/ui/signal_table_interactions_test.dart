@@ -1,6 +1,9 @@
 // Copyright (C) 2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
+// signal_table_interactions_test.dart
+// Tests signal-table interactions.
+//
 // 2026 October 22
 // Author: Desmond A. Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 

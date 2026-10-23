@@ -1,6 +1,9 @@
 // Copyright (C) 2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
+// waveform_viewer_wrapper_test.dart
+// Tests the waveform viewer wrapper.
+//
 // 2026 October 22
 // Author: Desmond A. Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 

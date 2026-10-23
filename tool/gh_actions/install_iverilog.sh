@@ -11,4 +11,5 @@
 
 set -euo pipefail
 
+sudo apt-get update -qq
 sudo apt-get install --yes iverilog
