@@ -294,11 +294,14 @@ class SynthLogic {
   ///
   /// Subclasses that already represent a selected portion of another signal
   /// override this to compose the ranges rather than emit chained part
-  /// selects.
+  /// selects. A range covering the entire signal is rendered as [name].
   String rangeName(int lowerIndex, int upperIndex) {
     assert(lowerIndex >= 0, 'Range lower index must not be negative.');
     assert(upperIndex >= lowerIndex, 'Range must not be reversed.');
     assert(upperIndex < width, 'Range must fit within the signal.');
+    if (lowerIndex == 0 && upperIndex == width - 1) {
+      return name;
+    }
     return '$name${_packedRangeSuffix(lowerIndex, upperIndex)}';
   }
 
@@ -819,7 +822,12 @@ class SynthLogicPackedBitReference extends SynthLogic {
   String? get nameOrNull {
     final resolvedBase = packedBase.resolved;
     final baseName = resolvedBase.nameOrNull;
-    return baseName == null ? null : '$baseName[$bitIndex]';
+    if (baseName == null) {
+      return null;
+    }
+    return resolvedBase.width == 1 && bitIndex == 0
+        ? baseName
+        : '$baseName[$bitIndex]';
   }
 
   @override
@@ -908,7 +916,12 @@ class SynthLogicPackedRangeReference extends SynthLogic {
   String? get nameOrNull {
     final resolvedBase = packedBase.resolved;
     final baseName = resolvedBase.nameOrNull;
-    return baseName == null ? null : '$baseName[$upperIndex:$lowerIndex]';
+    if (baseName == null) {
+      return null;
+    }
+    return lowerIndex == 0 && upperIndex == resolvedBase.width - 1
+        ? baseName
+        : '$baseName[$upperIndex:$lowerIndex]';
   }
 
   @override

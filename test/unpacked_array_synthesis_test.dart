@@ -56,6 +56,20 @@ class UnpackedInputTop extends Module {
   }
 }
 
+class ParentArrayPortToChild extends Module {
+  ParentArrayPortToChild(LogicArray source) {
+    source = addInputArray(
+      'source',
+      source,
+      dimensions: source.dimensions,
+      elementWidth: source.elementWidth,
+      numUnpackedDimensions: source.numUnpackedDimensions,
+    );
+    final child = UnpackedConsumer(source);
+    addOutput('observed', width: source.width) <= child.output('observed');
+  }
+}
+
 class ArrayDriveSimulationTop extends Module {
   final expected = <String, LogicValue>{};
 
@@ -194,6 +208,20 @@ void main() {
     await module.build();
     expect(module.dumpSystemVerilog(), contains('.array(({value}))'));
   });
+
+  test('full-width parent array port connects directly to child', () async {
+    final module = ParentArrayPortToChild(
+      LogicArray([3], 2, numUnpackedDimensions: 1),
+    );
+    await module.build();
+
+    final verilog = module.dumpSystemVerilog();
+    expect(verilog, contains('input logic [1:0] source [2:0]'));
+    expect(verilog, contains('.array(source)'));
+    expect(verilog, isNot(contains('logic [1:0] array [2:0];')));
+
+    SimCompare.checkVerilatorVector(module, const [], buildOnly: true);
+  }, tags: ['verilator']);
 
   test('floating singleton retains its unpacked array shape', () async {
     final module = UnpackedInputTop(

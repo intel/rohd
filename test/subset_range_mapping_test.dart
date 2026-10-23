@@ -283,7 +283,7 @@ void main() {
         final body = _topBody(module);
         expect(body, isNot(contains('seed[')));
         if (!useRange && sourceWidth > 1) {
-          expect(body, contains('assign data_in[1:0] = seed;'));
+          expect(body, contains('assign data_in = seed;'));
         }
         final vectors = [
           for (final seed in _patterns(sourceWidth))
@@ -295,6 +295,25 @@ void main() {
       }
     });
   }
+
+  test('full-width sibling port mapping omits a range selection', () async {
+    final module = Top(
+      useRange: true,
+      sourceWidth: 8,
+      lower: 0,
+      width: 8,
+    );
+    await module.build();
+    final body = _topBody(module);
+    expect(body, contains('.data_in(data_out)'));
+    expect(body, isNot(contains('data_out[7:0]')));
+    final vectors = [
+      for (final seed in _patterns(8))
+        Vector({'seed': seed}, {'observed': seed}),
+    ];
+    await SimCompare.checkFunctionalVector(module, vectors);
+    SimCompare.checkIverilogVector(module, vectors);
+  });
 
   test('reversed full-width scalar selection retains bit order', () async {
     for (final useRange in [false, true]) {
@@ -677,6 +696,39 @@ void main() {
     reference.clearDeclaration();
     expect(replacement.declarationCleared, isFalse);
     expect(reference.name, '${replacement.name}[11:3]');
+  });
+
+  test('whole packed references render as their base signal', () async {
+    final module = Producer(Logic(width: 16));
+    await module.build();
+    final definition = SynthModuleDefinition(module);
+    final base = SynthLogic(
+      Logic(width: 16, name: 'base'),
+      parentSynthModuleDefinition: definition,
+    )..pickName();
+    final range = SynthLogicPackedRangeReference(
+      base,
+      0,
+      15,
+      parentSynthModuleDefinition: definition,
+    );
+    final bitBase = SynthLogic(
+      Logic(name: 'bitBase'),
+      parentSynthModuleDefinition: definition,
+    )..pickName();
+    final bit = SynthLogicPackedBitReference(
+      bitBase,
+      0,
+      parentSynthModuleDefinition: definition,
+    );
+
+    expect(base.rangeName(0, 15), base.name);
+    expect(range.name, base.name);
+    expect(range.nameOrNull, base.name);
+    expect(range.rangeName(0, 15), base.name);
+    expect(range.rangeName(3, 11), '${base.name}[11:3]');
+    expect(bit.name, bitBase.name);
+    expect(bit.nameOrNull, bitBase.name);
   });
 
   test('packed range reference rejects invalid bounds, arrays, and constants',
