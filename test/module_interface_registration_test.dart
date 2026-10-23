@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // module_interface_registration_test.dart
-// Tests for Module.addStructuredInterface, addInterfaceFrom,
-// addStructuredPairInterface, and addPairInterfaceFrom.
+// Tests for Module.addInterfacePorts, addStructuredInterface,
+// addPairInterfacePorts, and addStructuredPairInterface.
 //
 // 2026 October 21
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
@@ -53,7 +53,7 @@ class _Pair extends PairInterface {
   _Pair clone() => _Pair();
 }
 
-enum _Api { legacy, add, addFrom }
+enum _Api { ports, structured, addFrom }
 
 class _TagModule extends Module {
   late final _TagIntf intf;
@@ -61,11 +61,11 @@ class _TagModule extends Module {
 
   _TagModule(this.source, _Api api) : super(definitionName: 'TagModule') {
     intf = switch (api) {
-      _Api.legacy => addInterfacePorts(source,
+      _Api.ports => addInterfacePorts(source,
           inputTags: {_Dir.toModule},
           outputTags: {_Dir.fromModule},
           uniquify: (orig) => 'p_$orig'),
-      _Api.add => addStructuredInterface(source,
+      _Api.structured => addStructuredInterface(source,
           inputTags: {_Dir.toModule},
           outputTags: {_Dir.fromModule},
           uniquify: (orig) => 'p_$orig'),
@@ -84,9 +84,9 @@ class _PairModule extends Module {
 
   _PairModule(this.source, _Api api) : super(definitionName: 'PairModule') {
     intf = switch (api) {
-      _Api.legacy => addPairInterfacePorts(source, PairRole.consumer,
+      _Api.ports => addPairInterfacePorts(source, PairRole.consumer,
           uniquify: (orig) => 'c_$orig'),
-      _Api.add => addStructuredPairInterface(source, PairRole.consumer,
+      _Api.structured => addStructuredPairInterface(source, PairRole.consumer,
           uniquify: (orig) => 'c_$orig'),
       _Api.addFrom => addPairInterfaceFrom(_Pair(), source, PairRole.consumer,
           uniquify: (orig) => 'c_$orig'),
@@ -107,24 +107,24 @@ void main() {
     await Simulator.reset();
   });
 
-  group('addStructuredInterface', () {
-    test('returns a clone with ports matching addInterfacePorts', () async {
-      final legacy = _TagModule(_TagIntf(), _Api.legacy);
-      await legacy.build();
-      final added = _TagModule(_TagIntf(), _Api.add);
-      await added.build();
+  group('addInterfacePorts', () {
+    test('has the same behavior as addStructuredInterface', () async {
+      final ports = _TagModule(_TagIntf(), _Api.ports);
+      await ports.build();
+      final structured = _TagModule(_TagIntf(), _Api.structured);
+      await structured.build();
 
-      expect(added.intf, isNot(same(added.source)));
-      expect(added.inputs.keys, equals(legacy.inputs.keys));
-      expect(added.outputs.keys, equals(legacy.outputs.keys));
-      expect(added.inputs.keys, contains('p_a'));
-      expect(added.outputs.keys, contains('p_y'));
-      expect(_body(added), equals(_body(legacy)));
+      expect(ports.intf, isNot(same(ports.source)));
+      expect(ports.inputs.keys, equals(structured.inputs.keys));
+      expect(ports.outputs.keys, equals(structured.outputs.keys));
+      expect(ports.inputs.keys, contains('p_a'));
+      expect(ports.outputs.keys, contains('p_y'));
+      expect(_body(ports), equals(_body(structured)));
     });
 
     test('drives external interface through registered ports', () async {
       final source = _TagIntf();
-      final mod = _TagModule(source, _Api.add);
+      final mod = _TagModule(source, _Api.ports);
       await mod.build();
 
       source.a.put(0x3);
@@ -145,34 +145,34 @@ void main() {
       expect(mod.outputs.keys, contains('p_y'));
     });
 
-    test('matches addStructuredInterface output', () async {
-      final added = _TagModule(_TagIntf(), _Api.add);
-      await added.build();
+    test('matches addInterfacePorts output', () async {
+      final ports = _TagModule(_TagIntf(), _Api.ports);
+      await ports.build();
       final from = _TagModule(_TagIntf(), _Api.addFrom);
       await from.build();
 
-      expect(_body(from), equals(_body(added)));
+      expect(_body(from), equals(_body(ports)));
     });
   });
 
-  group('addStructuredPairInterface', () {
-    test('matches addPairInterfacePorts including sub-interfaces', () async {
-      final legacy = _PairModule(_Pair(), _Api.legacy);
-      await legacy.build();
-      final added = _PairModule(_Pair(), _Api.add);
-      await added.build();
+  group('addPairInterfacePorts', () {
+    test('has the same behavior as addStructuredPairInterface', () async {
+      final ports = _PairModule(_Pair(), _Api.ports);
+      await ports.build();
+      final structured = _PairModule(_Pair(), _Api.structured);
+      await structured.build();
 
-      expect(added.intf, isNot(same(added.source)));
-      expect(added.inputs.keys, equals(legacy.inputs.keys));
-      expect(added.outputs.keys, equals(legacy.outputs.keys));
-      expect(added.inputs.keys, containsAll(['c_req', 'c_s_sub_req']));
-      expect(added.outputs.keys, containsAll(['c_rsp', 'c_s_sub_rsp']));
-      expect(_body(added), equals(_body(legacy)));
+      expect(ports.intf, isNot(same(ports.source)));
+      expect(ports.inputs.keys, equals(structured.inputs.keys));
+      expect(ports.outputs.keys, equals(structured.outputs.keys));
+      expect(ports.inputs.keys, containsAll(['c_req', 'c_s_sub_req']));
+      expect(ports.outputs.keys, containsAll(['c_rsp', 'c_s_sub_rsp']));
+      expect(_body(ports), equals(_body(structured)));
     });
 
     test('drives external pair interface through registered ports', () async {
       final source = _Pair();
-      final mod = _PairModule(source, _Api.add);
+      final mod = _PairModule(source, _Api.ports);
       await mod.build();
 
       source.req.put(5);
@@ -186,15 +186,15 @@ void main() {
   });
 
   group('addPairInterfaceFrom', () {
-    test('returns the provided target and matches addStructuredPairInterface',
+    test('returns the provided target and matches addPairInterfacePorts',
         () async {
-      final added = _PairModule(_Pair(), _Api.add);
-      await added.build();
+      final ports = _PairModule(_Pair(), _Api.ports);
+      await ports.build();
       final from = _PairModule(_Pair(), _Api.addFrom);
       await from.build();
 
       expect(from.intf, isNot(same(from.source)));
-      expect(_body(from), equals(_body(added)));
+      expect(_body(from), equals(_body(ports)));
     });
   });
 }

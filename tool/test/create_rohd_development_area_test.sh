@@ -48,7 +48,7 @@ readonly TEST="$DESTINATION/test/starter_ports_test.dart"
 grep -F 'name: starter_ports' "$PUBSPEC" > /dev/null
 grep -F 'rohd_hcl: ^0.3.0' "$PUBSPEC" > /dev/null
 grep -F 'TypedLogicArray<StarterPortsPacket, LogicValue>' "$MODULE" > /dev/null
-grep -F 'addStructuredInterface(' "$MODULE" > /dev/null
+grep -F 'addInterfacePorts(' "$MODULE" > /dev/null
 grep -F 'class _StarterPortsPortInverter extends Module' "$MODULE" > /dev/null
 grep -F 'Logic get flag' "$MODULE" > /dev/null
 grep -F 'SourceTracer.activate();' "$TEST" > /dev/null

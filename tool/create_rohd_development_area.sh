@@ -273,7 +273,7 @@ class $module_name extends Module {
       numUnpackedDimensions: arrayIn.numUnpackedDimensions,
     );
     typedArrayIn = addTypedInput('typedArrayIn', typedArrayIn);
-    control = addStructuredInterface(
+    control = addInterfacePorts(
       control,
       inputTags: {${module_name}InterfacePort.toModule},
       outputTags: {${module_name}InterfacePort.fromModule},
@@ -349,7 +349,7 @@ class _${module_name}PortInverter extends Module {
       output.nibble <= ~input.nibble;
     }
 
-    final internalControl = addStructuredInterface(
+    final internalControl = addInterfacePorts(
       control,
       inputTags: {${module_name}InterfacePort.toModule},
       outputTags: {${module_name}InterfacePort.fromModule},

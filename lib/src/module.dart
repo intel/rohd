@@ -1103,28 +1103,32 @@ abstract class Module {
     return inOutArr;
   }
 
-  /// Connects the [source] to this [Module] using [Interface.connectIO] and
-  /// returns a copy of the [source] that can be used within this module.
+  /// Registers [source] on this [Module] and returns its internal clone.
   InterfaceType addInterfacePorts<InterfaceType extends Interface<TagType>,
               TagType extends Enum>(InterfaceType source,
           {Iterable<TagType>? inputTags,
           Iterable<TagType>? outputTags,
           Iterable<TagType>? inOutTags,
           String Function(String original)? uniquify}) =>
-      (source.clone() as InterfaceType)
-        ..connectIO(this, source,
-            inputTags: inputTags,
-            outputTags: outputTags,
-            inOutTags: inOutTags,
-            uniquify: uniquify);
+      addInterfaceFrom(
+        source.clone() as InterfaceType,
+        source,
+        inputTags: inputTags,
+        outputTags: outputTags,
+        inOutTags: inOutTags,
+        uniquify: uniquify,
+      );
 
-  /// Connects the [source] to this [Module] using [PairInterface.pairConnectIO]
-  /// and returns a copy of the [source] that can be used within this module.
+  /// Registers [source] for [role] and returns its internal clone.
   InterfaceType addPairInterfacePorts<InterfaceType extends PairInterface>(
           InterfaceType source, PairRole role,
           {String Function(String original)? uniquify}) =>
-      (source.clone() as InterfaceType)
-        ..pairConnectIO(this, source, role, uniquify: uniquify);
+      addPairInterfaceFrom(
+        source.clone() as InterfaceType,
+        source,
+        role,
+        uniquify: uniquify,
+      );
 
   /// Registers [source] on this [Module] and returns its internal clone.
   ///
@@ -1134,6 +1138,9 @@ abstract class Module {
   ///
   /// Prefer this over calling [Interface.connectIO] directly so that the
   /// module does not depend on how interface ports are laid out.
+  ///
+  // TODO(desmonddak): Create I/O LogicStructure ports that map the full
+  // bidirectional Interface.
   InterfaceType addStructuredInterface<InterfaceType extends Interface<TagType>,
           TagType extends Enum>(
     InterfaceType source, {
@@ -1182,6 +1189,9 @@ abstract class Module {
   /// This is the [PairInterface] form of [addStructuredInterface]. The [role]
   /// determines which directions are inputs and outputs of this [Module],
   /// including those of nested sub-interfaces.
+  ///
+  // TODO(desmonddak): Create I/O LogicStructure ports that map the full
+  // bidirectional PairInterface.
   InterfaceType addStructuredPairInterface<InterfaceType extends PairInterface>(
     InterfaceType source,
     PairRole role, {
