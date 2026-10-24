@@ -11,6 +11,8 @@ import 'dart:collection';
 
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/interfaces/interface.dart'
+    show InterfaceStructuredPortRegistration;
 import 'package:rohd/src/signals/signals.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 
