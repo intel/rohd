@@ -65,6 +65,23 @@
 <li><a href="https://intel.github.io/rohd-website/blog/">Blog</a></li>
 <li><a href="https://github.com/intel/rohd/blob/main/CONTRIBUTING.md">Contributing</a></li>
 </ul>
+<h3 id="start-a-component-development-area">Start a component development area</h3>
+<p>Create a small standalone package for experimenting with a ROHD module or
+starting a reusable component:</p>
+<pre class="language-sh"><code class="language-sh">bash tool/create_rohd_development_area.sh ../my_rohd_component \
+  --module-name MyComponent \
+  --hcl-path ../rohd-hcl
+</code></pre>
+<p>The script defaults <code>--rohd-path</code> to this checkout and uses <code>~/rohd-hcl</code> when
+<code>--hcl-path</code> is omitted. It creates local path overrides for ROHD,
+<code>rohd_hierarchy</code>, and ROHD-HCL so the new package can use component-library
+types while developing against local sources.</p>
+<p>The generated parent/child starter demonstrates correct hierarchical ownership
+for a <code>LogicStructure</code>, <code>LogicArray</code>, <code>TypedLogicArray</code>, and <code>Interface</code>. Its
+test verifies field-wise inversion and generates temporary traced netlist,
+SystemVerilog, VCD waveform, and FLC source-navigation artifacts. See the
+generated <code>doc/Component.md</code> and <code>.github/skills/</code> directory for component and
+agent guidance.</p>
 <p>You can also open this repository in a GitHub Codespace to run the example in your browser with a full IDE.  This is also an easy way to get started with contributions!</p>
 <p><a href="https://github.com/codespaces/new?hide_repo_select=true&amp;ref=main&amp;repo=409325108"><img src="https://github.com/codespaces/badge.svg" alt="Open in GitHub Codespaces"></a></p>
 <h3 id="get-involved">Get involved</h3>
@@ -126,8 +143,8 @@
 <li>Built-in event-based <strong>fast simulator</strong> with <strong>4-value</strong> (0, 1, X, and Z) support and a <strong>waveform capture service</strong> to .vcd or .fst file format</li>
 <li>Leverage the <a href="https://github.com/intel/rohd-hcl">ROHD Hardware Component Library (ROHD-HCL)</a> with reusable and configurable design and verification components</li>
 <li>Makes <strong>validation collateral</strong> simpler to develop and debug.  The <a href="https://github.com/intel/rohd-vf">ROHD Verification Framework</a> helps build well-structured testbenches</li>
-<li>Powerful capabilities like the <a href="https://github.com/rohd-schematic-viewer">ROHD Schematic Viewer</a> for high-fidelity rendering of ROHD designs as well as <a href="https://github.com/rohd-wave-viewer">ROHD Wave Viewer</a> for viewing simulation waveforms even for complex ROHD structures</li>
-<li>Debug your design with <a href="https://github.com/intel/rohd/rohd_devtools_extension">ROHD Live Debugger</a>, an integrated debugger with cross-probing into ROHD source and synthesized RTL output from schematics rendering and waveform display all connected to live RTL simulation</li>
+<li>Powerful capabilities like the <a href="https://github.com/intel/rohd-schematic-viewer">ROHD Schematic Viewer</a> for high-fidelity rendering of ROHD designs as well as <a href="https://github.com/intel/rohd-wave-viewer">ROHD Wave Viewer</a> for viewing simulation waveforms even for complex ROHD structures</li>
+<li>Debug your design with <a href="https://github.com/intel/rohd/tree/main/rohd_devtools_extension">ROHD Live Debugger</a>, an integrated debugger with cross-probing into ROHD source and synthesized RTL output from schematics rendering and waveform display all connected to live RTL simulation</li>
 <li>Support for <strong>cosimulation with Verilog modules</strong> (via <a href="https://github.com/intel/rohd-cosim">ROHD Cosim</a>) and <strong>instantiation of Verilog modules</strong> in generated SystemVerilog code</li>
 </ul>
 </li>

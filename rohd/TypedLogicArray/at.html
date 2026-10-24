@@ -55,7 +55,7 @@
     <section class="multi-line-signature">
       
 <span class="returntype">T</span>
-<span class="name ">at</span>(<wbr><ol class="parameter-list single-line"> <li><span class="parameter" id="at-param-indices"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/int-class.html">int</a></span>&gt;</span></span> <span class="parameter-name">indices</span></span></li>
+<span class="name ">at</span>(<wbr><ol class="parameter-list single-line"> <li><span class="parameter" id="at-param-indices"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>&gt;</span></span> <span class="parameter-name">indices</span></span></li>
 </ol>)
 
       
@@ -74,6 +74,9 @@
   if (indices.length != dimensions.length) {
     throw RangeError.range(indices.length, dimensions.length,
         dimensions.length, &#39;indices.length&#39;);
+  }
+  if (dimensions.isEmpty) {
+    return scalar;
   }
 
   Logic current = this;

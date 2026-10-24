@@ -56,10 +56,10 @@
       
   <div>
     <ol class="annotation-list">
-        <li>@<a href="https://api.dart.dev/stable/3.13.5/dart-core/override-constant.html">override</a></li>
+        <li>@<a href="https://api.flutter.dev/flutter/dart-core/override-constant.html">override</a></li>
     </ol>
   </div>
-<span class="returntype"><a href="https://api.dart.dev/stable/3.13.5/dart-core/bool-class.html">bool</a></span>
+<span class="returntype"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
 <span class="name ">generatesDefinition</span>(<wbr><ol class="parameter-list single-line"> <li><span class="parameter" id="generatesDefinition-param-module"><span class="type-annotation"><a href="../../rohd/Module-class.html">Module</a></span> <span class="parameter-name">module</span></span></li>
 </ol>)
 
@@ -77,8 +77,13 @@ described in-line.</p>
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@override
-bool generatesDefinition(Module module) =&gt; !(module is SystemVerilog &amp;&amp;
-    module.generatedDefinitionType == DefinitionGenerationType.none);</code></pre>
+&#47;&#47; Keep deprecated custom-SV modules definition-free during migration.
+bool generatesDefinition(Module module) =&gt;
+    &#47;&#47; Preserve handling for callers of the deprecated custom mixin.
+    &#47;&#47; ignore: deprecated_member_use_from_same_package
+    !((module is CustomSystemVerilog) ||
+        (module is SystemVerilog &amp;&amp;
+            module.generatedDefinitionType == DefinitionGenerationType.none));</code></pre>
 </section>
 
 

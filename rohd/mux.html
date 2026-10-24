@@ -58,7 +58,7 @@
 <span class="name ">mux</span>&lt;<wbr><span class="type-parameter">LogicType extends Logic</span>&gt;(<wbr><ol class="parameter-list"> <li><span class="parameter" id="mux-param-control"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">control</span>, </span></li>
 <li><span class="parameter" id="mux-param-d1"><span class="type-annotation">LogicType</span> <span class="parameter-name">d1</span>, </span></li>
 <li><span class="parameter" id="mux-param-d0"><span class="type-annotation">LogicType</span> <span class="parameter-name">d0</span>, {</span></li>
-<li><span class="parameter" id="mux-param-outputGenerator"><span class="type-annotation">LogicType</span> <span class="parameter-name">outputGenerator</span>({<ol class="parameter-list"> <li><span class="parameter" id="param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">name</span>, </span></li>
+<li><span class="parameter" id="mux-param-outputGenerator"><span class="type-annotation">LogicType</span> <span class="parameter-name">outputGenerator</span>({<ol class="parameter-list"> <li><span class="parameter" id="param-name"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">name</span>, </span></li>
 </ol>})?, </span></li>
 </ol>})
 
@@ -71,7 +71,13 @@
 <p>This is equivalent to something like:</p>
 <pre class="language-SystemVerilog"><code class="language-SystemVerilog">control ? d1 : d0
 </code></pre>
-<p>If <code>control</code> is a valid <a href="../rohd/Const-class.html">Const</a>, returns the selected input directly.</p>
+<p>If <code>control</code> is a valid <a href="../rohd/Const-class.html">Const</a> and no <code>outputGenerator</code> is given, returns
+the selected input directly without creating a <a href="../rohd/Mux-class.html">Mux</a> module. The generator
+is only used when a <a href="../rohd/Mux-class.html">Mux</a> module is built.</p>
+<p>When <code>d1</code> and <code>d0</code> are both <a href="../rohd/Const-class.html">Const</a>s, the output type is inferred as
+<a href="../rohd/Const-class.html">Const</a>, which cannot be driven by a non-constant <code>control</code>. Request
+<code>mux&lt;Logic&gt;</code> to produce a driveable <a href="../rohd/Logic-class.html">Logic</a> output, for example
+<code>mux&lt;Logic&gt;(sel, Const(1), Const(0))</code>.</p>
 </section>
 
 

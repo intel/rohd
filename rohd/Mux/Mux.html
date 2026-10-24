@@ -57,14 +57,16 @@
       <span class="name ">Mux&lt;<wbr><span class="type-parameter">LogicType extends Logic</span>&gt;</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="param-control"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">control</span>, </span></li>
 <li><span class="parameter" id="param-d1"><span class="type-annotation">LogicType</span> <span class="parameter-name">d1</span>, </span></li>
 <li><span class="parameter" id="param-d0"><span class="type-annotation">LogicType</span> <span class="parameter-name">d0</span>, {</span></li>
-<li><span class="parameter" id="param-outputGenerator"><span class="type-annotation">LogicType</span> <span class="parameter-name">outputGenerator</span>({<ol class="parameter-list"> <li><span class="parameter" id="param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">name</span>, </span></li>
+<li><span class="parameter" id="param-outputGenerator"><span class="type-annotation">LogicType</span> <span class="parameter-name">outputGenerator</span>({<ol class="parameter-list"> <li><span class="parameter" id="param-name"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">name</span>, </span></li>
 </ol>})?, </span></li>
-<li><span class="parameter" id="param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span> = <span class="default-value">&#39;mux&#39;</span>, </span></li>
+<li><span class="parameter" id="param-name"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span> = <span class="default-value">&#39;mux&#39;</span>, </span></li>
 </ol>})
     </section>
     
 <section class="desc markdown">
   <p>Constructs a mux preserving <code>LogicType</code>.</p>
+<p>Structured output schemas use leaf-level selection, including when an
+explicit <code>outputGenerator</code> preserves a structure widened to <a href="../../rohd/Logic-class.html">Logic</a>.</p>
 </section>
 
 
@@ -98,7 +100,7 @@
   validateOperationSource(d0, outputSchema, operation: &#39;Mux d0&#39;);
   validateOperationSource(d1, outputSchema, operation: &#39;Mux d1&#39;);
 
-  if (LogicType == Logic || d0 is! LogicStructure) {
+  if (outputSchema is! LogicStructure) {
     return _ScalarMux&lt;LogicType&gt;(
       control,
       d1,

@@ -56,10 +56,10 @@
       
 <span class="returntype">InterfaceType</span>
 <span class="name ">addInterfacePorts</span>&lt;<wbr><span class="type-parameter">InterfaceType extends Interface&lt;<wbr><span class="type-parameter">TagType</span>&gt;</span>, <span class="type-parameter">TagType extends Enum</span>&gt;(<wbr><ol class="parameter-list"> <li><span class="parameter" id="addInterfacePorts-param-source"><span class="type-annotation">InterfaceType</span> <span class="parameter-name">source</span>, {</span></li>
-<li><span class="parameter" id="addInterfacePorts-param-inputTags"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter">TagType</span>&gt;</span>?</span> <span class="parameter-name">inputTags</span>, </span></li>
-<li><span class="parameter" id="addInterfacePorts-param-outputTags"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter">TagType</span>&gt;</span>?</span> <span class="parameter-name">outputTags</span>, </span></li>
-<li><span class="parameter" id="addInterfacePorts-param-inOutTags"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter">TagType</span>&gt;</span>?</span> <span class="parameter-name">inOutTags</span>, </span></li>
-<li><span class="parameter" id="addInterfacePorts-param-uniquify"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">uniquify</span>(<ol class="parameter-list single-line"> <li><span class="parameter" id="param-original"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">original</span></span></li>
+<li><span class="parameter" id="addInterfacePorts-param-inputTags"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter">TagType</span>&gt;</span>?</span> <span class="parameter-name">inputTags</span>, </span></li>
+<li><span class="parameter" id="addInterfacePorts-param-outputTags"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter">TagType</span>&gt;</span>?</span> <span class="parameter-name">outputTags</span>, </span></li>
+<li><span class="parameter" id="addInterfacePorts-param-inOutTags"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter">TagType</span>&gt;</span>?</span> <span class="parameter-name">inOutTags</span>, </span></li>
+<li><span class="parameter" id="addInterfacePorts-param-uniquify"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">uniquify</span>(<ol class="parameter-list single-line"> <li><span class="parameter" id="param-original"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">original</span></span></li>
 </ol>)?, </span></li>
 </ol>})
 
@@ -68,8 +68,7 @@
     </section>
     
 <section class="desc markdown">
-  <p>Connects the <code>source</code> to this <a href="../../rohd/Module-class.html">Module</a> using <a href="../../rohd/Interface/connectIO.html">Interface.connectIO</a> and
-returns a copy of the <code>source</code> that can be used within this module.</p>
+  <p>Registers <code>source</code> on this <a href="../../rohd/Module-class.html">Module</a> and returns its internal clone.</p>
 </section>
 
 
@@ -82,12 +81,14 @@ returns a copy of the <code>source</code> that can be used within this module.</
         Iterable&lt;TagType&gt;? outputTags,
         Iterable&lt;TagType&gt;? inOutTags,
         String Function(String original)? uniquify}) =&gt;
-    (source.clone() as InterfaceType)
-      ..connectIO(this, source,
-          inputTags: inputTags,
-          outputTags: outputTags,
-          inOutTags: inOutTags,
-          uniquify: uniquify);</code></pre>
+    addInterfaceFrom(
+      source.clone() as InterfaceType,
+      source,
+      inputTags: inputTags,
+      outputTags: outputTags,
+      inOutTags: inOutTags,
+      uniquify: uniquify,
+    );</code></pre>
 </section>
 
 

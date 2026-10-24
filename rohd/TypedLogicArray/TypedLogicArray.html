@@ -54,14 +54,14 @@
 
     <section class="multi-line-signature">
       
-      <span class="name ">TypedLogicArray&lt;<wbr><span class="type-parameter">T extends Logic</span>, <span class="type-parameter">V</span>&gt;</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="param-dimensions"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/int-class.html">int</a></span>&gt;</span></span> <span class="parameter-name">dimensions</span>, </span></li>
+      <span class="name ">TypedLogicArray&lt;<wbr><span class="type-parameter">T extends Logic</span>, <span class="type-parameter">V</span>&gt;</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="param-dimensions"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>&gt;</span></span> <span class="parameter-name">dimensions</span>, </span></li>
 <li><span class="parameter" id="param-elementBuilder"><span class="type-annotation"><a href="../../rohd/TypedLogicArrayElementBuilder.html">TypedLogicArrayElementBuilder</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span></span> <span class="parameter-name">elementBuilder</span>, {</span></li>
 <li><span class="parameter" id="param-valueCodec"><span class="type-annotation"><a href="../../rohd/LogicValueCodec-class.html">LogicValueCodec</a><span class="signature">&lt;<wbr><span class="type-parameter">V</span>&gt;</span>?</span> <span class="parameter-name">valueCodec</span>, </span></li>
 <li><span class="parameter" id="param-elementCompatibility"><span class="type-annotation"><a href="../../rohd/TypedLogicArrayElementCompatibility.html">TypedLogicArrayElementCompatibility</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span>?</span> <span class="parameter-name">elementCompatibility</span>, </span></li>
-<li><span class="parameter" id="param-dimensionNames"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a></span>&gt;</span>?</span> <span class="parameter-name">dimensionNames</span>, </span></li>
-<li><span class="parameter" id="param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">name</span>, </span></li>
+<li><span class="parameter" id="param-dimensionNames"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span>?</span> <span class="parameter-name">dimensionNames</span>, </span></li>
+<li><span class="parameter" id="param-name"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">name</span>, </span></li>
 <li><span class="parameter" id="param-naming"><span class="type-annotation"><a href="../../rohd/Naming.html">Naming</a>?</span> <span class="parameter-name">naming</span>, </span></li>
-<li><span class="parameter" id="param-numUnpackedDimensions"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.13.5/dart-core/int-class.html">int</a></span> <span class="parameter-name">numUnpackedDimensions</span> = <span class="default-value">0</span>, </span></li>
+<li><span class="parameter" id="param-numUnpackedDimensions"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">numUnpackedDimensions</span> = <span class="default-value">0</span>, </span></li>
 </ol>})
     </section>
     
@@ -73,6 +73,9 @@ the canonical identity codec is used.</p>
 hardware layout and must contain only driveable signals.</p>
 <p><code>numUnpackedDimensions</code> controls how many outer dimensions are emitted as
 unpacked dimensions by synthesis.</p>
+<p>Empty <code>dimensions</code> creates a rank-zero array with exactly one <a href="../../rohd/TypedLogicArray/scalar.html">scalar</a>
+leaf and no array dimensions in synthesis. This differs from <code>[0]</code>,
+which has no array elements.</p>
 </section>
 
 
