@@ -11,7 +11,6 @@
 // Legacy Icarus helpers remain available to tests but are not referenced by
 // the current SimCompare implementation.
 // ignore_for_file: unused_element
-
 // SystemVerilog vector execution logs simulator output for debugging.
 // ignore_for_file: avoid_print
 

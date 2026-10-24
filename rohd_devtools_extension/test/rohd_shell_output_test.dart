@@ -1,3 +1,11 @@
+// Copyright (C) 2026 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// rohd_shell_output_test.dart
+//
+// 2026 October 17
+// Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/cli/rohd_shell_output.dart';
 import 'package:rohd_devtools_widgets/rohd_devtools_widgets.dart';

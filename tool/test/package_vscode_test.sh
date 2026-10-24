@@ -23,10 +23,11 @@ trap 'rm -rf "$FIXTURE"' EXIT
 readonly HELPER="$FIXTURE/repo/tool/package_vscode.sh"
 readonly OUTPUT="$FIXTURE/output space/check.vsix"
 export NPM_LOG="$FIXTURE/npm.log"
+export VERIFIER_LOG="$FIXTURE/verifier.log"
 
-mkdir -p "$FIXTURE/repo/tool" "$FIXTURE/repo/rohd_extension" "$FIXTURE/bin"
+mkdir -p "$FIXTURE/repo/tool" "$FIXTURE/repo/rohd_extension/tool" "$FIXTURE/bin"
 cp "$REPO_ROOT/tool/package_vscode.sh" "$HELPER"
-for executable in dirname mkdir; do
+for executable in bash dirname mkdir; do
   ln -s "$(command -v "$executable")" "$FIXTURE/bin/$executable"
 done
 ln -s /bin/true "$FIXTURE/bin/node"
@@ -42,8 +43,12 @@ printf '%s\n' '#!/bin/bash' \
   '  empty) : > "$5" ;;' \
   '  missing) ;;' \
   '  *) exit 99 ;;' \
-  'esac' > "$FIXTURE/bin/npm"
+  '  esac' > "$FIXTURE/bin/npm"
 chmod +x "$FIXTURE/bin/npm"
+printf '%s\n' '#!/bin/bash' \
+  'printf "%s\n" "$1" >> "$VERIFIER_LOG"' \
+  'exit "${VERIFY_STATUS:-0}"' > "$FIXTURE/repo/rohd_extension/tool/verify_marketplace_vsix.sh"
+chmod +x "$FIXTURE/repo/rohd_extension/tool/verify_marketplace_vsix.sh"
 cd "$FIXTURE"
 
 passed=0
@@ -52,6 +57,7 @@ run_case() {
   shift
   local status=0
   : > "$NPM_LOG"
+  : > "$VERIFIER_LOG"
   PATH="$FIXTURE/bin" /bin/bash "$HELPER" "$@" > "$FIXTURE/output.log" 2>&1 || status=$?
   if [[ "$status" -ne "$expected" ]]; then
     cat "$FIXTURE/output.log"
@@ -70,28 +76,35 @@ run_case 2 "$FIXTURE/not-a-vsix.zip"
 run_case 0 "$OUTPUT"
 [[ "$(cat "$OUTPUT")" == 'fixture vsix' ]]
 [[ "$(cat "$NPM_LOG")" == "$FIXTURE/repo/rohd_extension|ci"$'\n'"$FIXTURE/repo/rohd_extension|run package -- --out $OUTPUT" ]]
+[[ "$(cat "$VERIFIER_LOG")" == "$OUTPUT" ]]
 run_case 2 "$OUTPUT"
-[[ ! -s "$NPM_LOG" && "$(cat "$OUTPUT")" == 'fixture vsix' ]]
+[[ ! -s "$NPM_LOG" && ! -s "$VERIFIER_LOG" && "$(cat "$OUTPUT")" == 'fixture vsix' ]]
 rm "$OUTPUT"
 ln -s "$FIXTURE/missing.vsix" "$OUTPUT"
 run_case 2 "$OUTPUT"
-[[ ! -s "$NPM_LOG" ]]
+[[ ! -s "$NPM_LOG" && ! -s "$VERIFIER_LOG" ]]
 rm "$OUTPUT"
 
 INSTALL_STATUS=71 run_case 71 "$OUTPUT"
 [[ "$(cat "$NPM_LOG")" == "$FIXTURE/repo/rohd_extension|ci" ]]
+[[ ! -s "$VERIFIER_LOG" ]]
 PACKAGE_STATUS=72 run_case 72 "$OUTPUT"
 [[ ! -e "$OUTPUT" ]]
+[[ ! -s "$VERIFIER_LOG" ]]
 PAYLOAD=missing run_case 1 "$OUTPUT"
 PAYLOAD=empty run_case 1 "$OUTPUT"
+[[ ! -s "$VERIFIER_LOG" ]]
+rm "$OUTPUT"
+VERIFY_STATUS=73 run_case 73 "$OUTPUT"
+[[ "$(cat "$VERIFIER_LOG")" == "$OUTPUT" ]]
 rm "$OUTPUT"
 
 mv "$FIXTURE/bin/node" "$FIXTURE/node"
 run_case 2 "$OUTPUT"
-[[ ! -s "$NPM_LOG" ]]
+[[ ! -s "$NPM_LOG" && ! -s "$VERIFIER_LOG" ]]
 mv "$FIXTURE/node" "$FIXTURE/bin/node"
 rm "$FIXTURE/bin/npm"
 run_case 2 "$OUTPUT"
-[[ ! -s "$NPM_LOG" ]]
+[[ ! -s "$NPM_LOG" && ! -s "$VERIFIER_LOG" ]]
 
 echo "$passed VSIX packaging checks passed using only fake npm/Node executables."

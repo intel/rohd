@@ -8,7 +8,7 @@ permissions: {}
 
 jobs:
   attach-vsix:
-    name: Build and attach VSIX
+    name: Build, verify, and attach Marketplace VSIX
     if: startsWith(github.event.release.tag_name, 'rohd-vscode-v')
     permissions:
       contents: write
@@ -30,22 +30,52 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version-file: rohd_extension/.nvmrc
           cache: npm
           cache-dependency-path: rohd_extension/package-lock.json
 
-      - name: Verify release version
+      - name: Verify Marketplace release identity
         run: |
-          version="$(node -p "require('./package.json').version")"
+          make verify-extension-version
+          version="$(awk '$1 == "version:" { print $2; exit }' pubspec.yaml)"
+          publisher="$(node -p "require('./package.json').publisher")"
           if [[ "$RELEASE_TAG" != "rohd-vscode-v$version" ]]; then
             echo "Release tag $RELEASE_TAG does not match extension version $version." >&2
             exit 1
           fi
+          if [[ "$publisher" != "intel-corporation" ]]; then
+            echo "Marketplace publisher must be intel-corporation, got $publisher." >&2
+            exit 1
+          fi
 
-      - name: Package VSIX
+      - name: Verify Marketplace extension pack is published
+        run: bash tool/verify_extension_pack.sh --verify-published
+
+      - name: Package and verify Marketplace VSIX
         run: bash ../tool/package_vscode.sh "$RUNNER_TEMP/$RELEASE_TAG.vsix"
 
-      - name: Attach VSIX to release
+      - name: Checksum verified VSIX
+        run: |
+          cd "$RUNNER_TEMP"
+          sha256sum "$RELEASE_TAG.vsix" > "$RELEASE_TAG.vsix.sha256"
+
+      - name: Attach Marketplace VSIX and checksum to release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload "$RELEASE_TAG" "$RUNNER_TEMP/$RELEASE_TAG.vsix" --repo "$GITHUB_REPOSITORY"
+        run: |
+          gh release upload "$RELEASE_TAG" \
+            "$RUNNER_TEMP/$RELEASE_TAG.vsix" \
+            "$RUNNER_TEMP/$RELEASE_TAG.vsix.sha256" \
+            --repo "$GITHUB_REPOSITORY"
+
+      - name: Add Marketplace publication instructions
+        run: |
+          {
+            echo '## Verified Marketplace VSIX'
+            echo
+            echo "This release contains the verified \`intel-corporation.rohd\` VSIX and its SHA-256 checksum."
+            echo 'An authorized administrator of the Intel Corporation Marketplace publisher must upload this exact attached VSIX after reviewing it in VS Code.'
+            echo 'Do not rebuild or substitute a local archive before Marketplace publication.'
+            echo
+            echo 'This workflow intentionally does not run `vsce publish` and does not require Marketplace credentials.'
+          } >> "$GITHUB_STEP_SUMMARY"

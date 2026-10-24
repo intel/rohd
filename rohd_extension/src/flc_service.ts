@@ -178,17 +178,11 @@ export function queryModule(flcPath: string, moduleName: string | null): ModuleI
       return path.resolve(bases[0], relPath);
     };
 
-    // Accept exact match or case-insensitive prefix match.
     let modData: Record<string, unknown> | null = null;
-    if (moduleName && modules[moduleName]) {
-      modData = modules[moduleName] as Record<string, unknown>;
-    } else if (moduleName) {
-      const lc = moduleName.toLowerCase();
-      for (const [k, v] of Object.entries(modules)) {
-        if (k.toLowerCase() === lc || k.toLowerCase().startsWith(lc + '_')) {
-          modData = v as Record<string, unknown>;
-          break;
-        }
+    if (moduleName) {
+      const matches = matchingModuleNames(modules, moduleName);
+      if (matches.length > 0) {
+        modData = asRecord(modules[matches[0]]);
       }
     }
 
@@ -619,6 +613,19 @@ function parseOutputPositions(positions: string): FlcOutputPos[] {
 function matchingModuleNames(modules: Record<string, unknown>, moduleName: string): string[] {
   if (Object.prototype.hasOwnProperty.call(modules, moduleName)) {
     return [moduleName];
+  }
+
+  const occurrenceMatches = Object.entries(modules).filter(([, value]) => {
+    const occurrences = asRecord(value)?.['sourceOccurrences'];
+    return Array.isArray(occurrences) && occurrences.some(occurrence => {
+      const occurrencePath = asRecord(occurrence)?.['path'];
+      return typeof occurrencePath === 'string' &&
+        (occurrencePath === moduleName ||
+          occurrencePath.endsWith('/' + moduleName));
+    });
+  }).map(([name]) => name);
+  if (occurrenceMatches.length > 0) {
+    return occurrenceMatches;
   }
 
   const lower = moduleName.toLowerCase();

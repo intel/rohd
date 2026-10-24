@@ -8,8 +8,11 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-PACKAGE_CONFIG="$ROOT/.dart_tool/package_config.json"
+WORKSPACE_ROOT="$(cd "$ROOT/.." && pwd)"
+PACKAGE_CONFIG="$WORKSPACE_ROOT/.dart_tool/package_config.json"
 ASSETS_DEST="${ROOT}/assets"
+
+bash "$ROOT/scripts/install_viewer_artifacts.sh"
 
 resolve_package_root() {
     dart "$ROOT/scripts/resolve_package_root.dart" "$PACKAGE_CONFIG" "$1"
@@ -17,6 +20,7 @@ resolve_package_root() {
 
 SCHEMATIC_VIEWER="$(resolve_package_root rohd_schematic_viewer)"
 WAVE_VIEWER="$(resolve_package_root rohd_wave_viewer)"
+DART_WELLEN="$(resolve_package_root dart_wellen)"
 
 echo "Aggregating staged assets from all widgets..."
 mkdir -p "$ASSETS_DEST"
@@ -85,24 +89,20 @@ echo "Flutter will bundle from assets/ into:"
 echo "  - build/web/assets/ (for web builds)"
 echo "  - build/linux/assets/ (for Linux native builds)"
 
-# Ensure WASM pkg files exist in web/ for dev server (flutter run -d web-server).
-# The wellen_bridge WASM is built in rohd-wave-viewer/web/pkg/ and needs to be
-# copied into the host app's web/ directory for the <script> tag in index.html.
-WASM_PKG="${WAVE_VIEWER}/web/pkg"
-WEB_PKG="${ROOT}/web/pkg"
-if [ -f "$WEB_PKG/wellen_bridge.js" ] && \
-    [ -f "$WEB_PKG/wellen_bridge_bg.wasm" ]; then
-    echo "Using checked-in WASM pkg for web dev server."
-elif [ -f "$WASM_PKG/wellen_bridge.js" ] && \
+# Always stage the runtime from the selected package, not an old app-local copy.
+WASM_PKG="${DART_WELLEN}/web/pkg"
+WEB_PKG="${ROOT}/web/dart_wellen"
+if [ -f "$WASM_PKG/wellen_bridge.js" ] && \
     [ -f "$WASM_PKG/wellen_bridge_bg.wasm" ]; then
-    echo "Copying WASM pkg for web dev server..."
-    rm -rf "$WEB_PKG"
-    mkdir -p "$(dirname "$WEB_PKG")"
-    cp -R "$WASM_PKG" "$WEB_PKG"
-else
+    echo "Staging selected dart_wellen web runtime..."
     if [ -L "$WEB_PKG" ]; then
-        echo "Removing stale WASM pkg symlink..."
         rm -f "$WEB_PKG"
     fi
-    echo "Warning: complete WASM pkg not found in $WEB_PKG or $WASM_PKG."
+    mkdir -p "$WEB_PKG"
+    cp "$WASM_PKG/wellen_bridge.js" "$WASM_PKG/wellen_bridge_bg.wasm" \
+        "$WASM_PKG/LICENSE" "$WASM_PKG/wellen_bridge_LICENSES.txt" "$WEB_PKG/"
+else
+    echo "ERROR: Complete packaged WASM runtime not found in $WASM_PKG." >&2
+    echo "Supply the built viewer artifacts before running DevTools; this script does not build dependencies." >&2
+    exit 1
 fi

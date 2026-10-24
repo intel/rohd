@@ -152,6 +152,8 @@ class SynthSubModuleInstantiation {
           continue;
         }
         if (toUpdateSynth.isEnum &&
+            toUpdateSynth is! SynthLogicArrayElement &&
+            toUpdateSynth is! SynthLogicArrayStructureElement &&
             SynthEnumDefinitionKey(toUpdateSynth.characteristicEnum!) ==
                 SynthEnumDefinitionKey(enumType)) {
           // If the types are equivalent, we can just use the original, no need

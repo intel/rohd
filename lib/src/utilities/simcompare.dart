@@ -937,9 +937,15 @@ abstract class SimCompare {
       _SystemCSimCompare.cleanupSystemCCache(keepPch: keepPch);
 
   /// Builds a SystemC executable for [module] using the supplied options.
+  ///
+  /// Clocks in [drivenClockNames] are driven by vectors instead of generated
+  /// automatically and must be one-bit module inputs. Other detected clocks
+  /// retain their automatic behavior. Supplying explicit values for an
+  /// automatic clock to the built executable throws an [ArgumentError].
   static SystemCVectorExecutable? buildSystemCVectorExecutable(Module module,
           {String? moduleName,
           String? clockName,
+          Set<String> drivenClockNames = const {},
           String? resetName,
           String? systemcHome,
           String? systemcLib,
@@ -952,6 +958,7 @@ abstract class SimCompare {
       _SystemCSimCompare.buildSystemCVectorExecutable(module,
           moduleName: moduleName,
           clockName: clockName,
+          drivenClockNames: drivenClockNames,
           resetName: resetName,
           systemcHome: systemcHome,
           systemcLib: systemcLib,
@@ -972,6 +979,9 @@ abstract class SimCompare {
       _SystemCSimCompare.checkSystemCVectors(executable, vectors);
 
   /// Checks SystemC vectors generated from [module].
+  ///
+  /// Explicit clock values in [vectors] take precedence over automatic clocks.
+  /// Detected clocks omitted from every vector are generated automatically.
   static bool checkSystemCVector(Module module, List<Vector> vectors,
           {String? moduleName,
           bool dontDeleteTmpFiles = false,

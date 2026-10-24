@@ -4,81 +4,81 @@
         {
             "label": "Configure Dependency Bundle: ROHD Core",
             "type": "shell",
-            "command": "bash scripts/devtools_dev_mode.sh configure-group rohd ${input:rohdSource} && flutter pub get",
+            "command": "bash tool/devtools/devtools_dev_mode.sh configure-group rohd ${input:rohdSource} && flutter pub get",
             "options": {
                 "cwd": "${workspaceFolder}",
                 "env": {
-                    "ROHD_GIT_REF": "${input:rohdSourceValue}",
-                    "ROHD_LOCAL_PATH": "${input:rohdSourceValue}"
+                    "ROHD_GIT_SOURCE": "${input:rohdGitSource}"
                 }
             },
             "problemMatcher": [],
-            "detail": "Select hosted, Git, or local for the fundamental rohd package."
+            "detail": "Local uses the Pub workspace package; hosted and Git select an external ROHD source."
         },
         {
             "label": "Configure Dependency Bundle: ROHD Packages",
             "type": "shell",
-            "command": "bash scripts/devtools_dev_mode.sh configure-group rohd-packages ${input:rohdPackageSource} && flutter pub get",
+            "command": "bash tool/devtools/devtools_dev_mode.sh configure-group rohd-packages ${input:rohdPackageSource} && flutter pub get",
             "options": {
                 "cwd": "${workspaceFolder}",
                 "env": {
-                    "ROHD_GIT_REF": "${input:rohdSourceValue}",
-                    "ROHD_LOCAL_PATH": "${input:rohdSourceValue}"
+                    "ROHD_GIT_SOURCE": "${input:rohdGitSource}"
                 }
             },
             "problemMatcher": [],
-            "detail": "Select one source for rohd_hierarchy, rohd_waveform, rohd_devtools_widgets, and rohd_source_navigator."
+            "detail": "Local uses the Pub workspace packages; hosted and Git select external package sources."
+        },
+        {
+            "label": "Configure Dependency Bundle: Local ROHD Repository",
+            "type": "shell",
+            "command": "bash tool/devtools/devtools_dev_mode.sh configure-group rohd local && bash tool/devtools/devtools_dev_mode.sh configure-group rohd-packages local && flutter pub get",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [],
+            "detail": "Resolve rohd and all in-repository companion packages from this Pub workspace."
         },
         {
             "label": "Configure Dependency Bundle: Wave Viewer",
             "type": "shell",
-            "command": "bash scripts/devtools_dev_mode.sh configure-group wave-viewer ${input:waveViewerSource} && flutter pub get",
+            "command": "bash tool/devtools/devtools_dev_mode.sh configure-interactive wave-viewer ${input:waveViewerSource} && flutter pub get",
             "options": {
-                "cwd": "${workspaceFolder}",
-                "env": {
-                    "WAVE_VIEWER_GIT_REF": "${input:waveViewerSourceValue}",
-                    "WAVE_VIEWER_LOCAL_PATH": "${input:waveViewerSourceValue}"
-                }
+                "cwd": "${workspaceFolder}"
             },
             "problemMatcher": [],
-            "detail": "Select hosted, Git, or local for rohd_wave_viewer and dart_wellen without changing the schematic viewer."
+            "detail": "Select hosted, Git, or local for rohd_wave_viewer and dart_wellen. Git prompts once for github.com/owner/repository:branch; HTTPS is optional."
         },
         {
             "label": "Configure Dependency Bundle: Schematic Viewer",
             "type": "shell",
-            "command": "bash scripts/devtools_dev_mode.sh configure-group schematic-viewer ${input:schematicViewerSource} && flutter pub get",
+            "command": "bash tool/devtools/devtools_dev_mode.sh configure-interactive schematic-viewer ${input:schematicViewerSource} && flutter pub get",
             "options": {
-                "cwd": "${workspaceFolder}",
-                "env": {
-                    "SCHEMATIC_VIEWER_GIT_REF": "${input:schematicViewerSourceValue}",
-                    "SCHEMATIC_VIEWER_LOCAL_PATH": "${input:schematicViewerSourceValue}"
-                }
+                "cwd": "${workspaceFolder}"
             },
             "problemMatcher": [],
-            "detail": "Select hosted, Git, or local for rohd_schematic_viewer without changing the wave viewer."
+            "detail": "Select hosted, Git, or local for rohd_schematic_viewer. Git prompts once for github.com/owner/repository:branch; HTTPS is optional."
         },
         {
             "label": "Configure Dependency Bundle: All",
             "type": "shell",
-            "command": "bash scripts/devtools_dev_mode.sh configure-group all ${input:allDependencySource} && flutter pub get",
+            "command": "bash tool/devtools/devtools_dev_mode.sh configure-group all ${input:allDependencySource} && flutter pub get",
             "options": {
                 "cwd": "${workspaceFolder}",
                 "env": {
-                    "ROHD_GIT_REF": "${input:rohdSourceValue}",
-                    "ROHD_LOCAL_PATH": "${input:rohdSourceValue}",
-                    "WAVE_VIEWER_GIT_REF": "${input:waveViewerSourceValue}",
-                    "WAVE_VIEWER_LOCAL_PATH": "${input:waveViewerSourceValue}",
-                    "SCHEMATIC_VIEWER_GIT_REF": "${input:schematicViewerSourceValue}",
-                    "SCHEMATIC_VIEWER_LOCAL_PATH": "${input:schematicViewerSourceValue}"
+                    "ROHD_GIT_SOURCE": "${input:rohdGitSource}",
+                    "WAVE_VIEWER_GIT_SOURCE": "${input:waveViewerGitSource}",
+                    "SCHEMATIC_VIEWER_GIT_SOURCE": "${input:schematicViewerGitSource}"
                 }
             },
             "problemMatcher": [],
-            "detail": "Select one source for every ROHD and viewer dependency."
+            "detail": "Select hosted or Git for every ROHD and viewer dependency. Git inputs use github.com/owner/repository:branch; HTTPS is optional."
         },
         {
             "label": "Run: Web Debug (choose dependency bundles)",
             "type": "shell",
-            "command": "bash scripts/devtools_run.sh web-debug",
+            "command": "bash rohd_devtools_extension/scripts/devtools_run.sh web-debug",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
             "isBackground": true,
             "problemMatcher": {
                 "pattern": {
@@ -99,7 +99,10 @@
         {
             "label": "Run: Web Release (choose dependency bundles)",
             "type": "shell",
-            "command": "bash scripts/devtools_run.sh web-release",
+            "command": "bash rohd_devtools_extension/scripts/devtools_run.sh web-release",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
             "isBackground": true,
             "problemMatcher": {
                 "pattern": {
@@ -120,7 +123,10 @@
         {
             "label": "Run: Linux Debug (choose dependency bundles)",
             "type": "shell",
-            "command": "bash scripts/devtools_run.sh linux-debug",
+            "command": "bash rohd_devtools_extension/scripts/devtools_run.sh linux-debug",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
             "isBackground": true,
             "problemMatcher": {
                 "pattern": {
@@ -141,7 +147,10 @@
         {
             "label": "Run: Linux Release (choose dependency bundles)",
             "type": "shell",
-            "command": "bash scripts/devtools_run.sh linux-release",
+            "command": "bash rohd_devtools_extension/scripts/devtools_run.sh linux-release",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
             "isBackground": true,
             "problemMatcher": {
                 "pattern": {
@@ -162,7 +171,10 @@
         {
             "label": "Show DevTools Dependency Sources",
             "type": "shell",
-            "command": "bash scripts/devtools_dev_mode.sh show",
+            "command": "bash tool/devtools/devtools_dev_mode.sh show",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
             "problemMatcher": []
         }
     ],
@@ -172,14 +184,14 @@
             "type": "pickString",
             "description": "Source for rohd",
             "options": ["hosted", "git", "local"],
-            "default": "hosted"
+            "default": "local"
         },
         {
             "id": "rohdPackageSource",
             "type": "pickString",
             "description": "Source for the ROHD companion package bundle",
             "options": ["hosted", "git", "local"],
-            "default": "hosted"
+            "default": "local"
         },
         {
             "id": "waveViewerSource",
@@ -199,25 +211,25 @@
             "id": "allDependencySource",
             "type": "pickString",
             "description": "Source for every ROHD and viewer dependency",
-            "options": ["hosted", "git", "local"],
+            "options": ["hosted", "git"],
             "default": "hosted"
         },
         {
-            "id": "rohdSourceValue",
+            "id": "rohdGitSource",
             "type": "promptString",
-            "description": "Git ref or local ROHD checkout path (leave blank for the default)",
+            "description": "ROHD Git repository:ref, such as github.com/intel/rohd:main (blank keeps the saved/default source)",
             "default": ""
         },
         {
-            "id": "waveViewerSourceValue",
+            "id": "waveViewerGitSource",
             "type": "promptString",
-            "description": "Git ref or local Wave Viewer checkout path (leave blank for the default)",
+            "description": "Wave Viewer Git repository:ref, such as github.com/intel/rohd-wave-viewer:main (blank keeps the saved/default source)",
             "default": ""
         },
         {
-            "id": "schematicViewerSourceValue",
+            "id": "schematicViewerGitSource",
             "type": "promptString",
-            "description": "Git ref or local Schematic Viewer checkout path (leave blank for the default)",
+            "description": "Schematic Viewer Git repository:ref, such as github.com/intel/rohd-schematic-viewer:main (blank keeps the saved/default source)",
             "default": ""
         }
     ]

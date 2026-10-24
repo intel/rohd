@@ -541,18 +541,16 @@ class _TypedInputModule<T extends Logic> extends Module {
 
 void main() {
   group('TypedLogicArray', () {
-    test('requires at least one dimension', () {
-      expect(
-        () => TypedLogicArray<Logic, LogicValue>(
-          [],
-          ({name}) => Logic(name: name),
-        ),
-        throwsA(
-          predicate<LogicConstructionException>(
-            (exception) => exception.reason.contains('at least 1 dimension'),
-          ),
-        ),
+    test('rank zero contains exactly one scalar', () {
+      final scalar = TypedLogicArray<Logic, LogicValue>(
+        [],
+        ({name}) => Logic(name: name),
       );
+      expect(
+        scalar.at([]),
+        same(scalar.scalar),
+      );
+      expect(scalar.arrayElements, hasLength(1));
     });
 
     test('keeps structured leaves at the array boundary', () {
@@ -1122,10 +1120,6 @@ void main() {
     });
 
     test('validates dimensions, names, and leaf widths', () {
-      expect(
-        () => TypedLogicArray<Logic, LogicValue>(const [], Logic.new),
-        throwsA(isA<LogicConstructionException>()),
-      );
       expect(
         () => TypedLogicArray<Logic, LogicValue>(
           [2],
@@ -2095,7 +2089,7 @@ void main() {
         mixedNetlist['modules'],
         containsPair('_NestedArrayBoundaryModule', isA<Map<String, dynamic>>()),
       );
-      // Icarus 12.0 leaves child-driven unpacked array variables unknown.
+      SimCompare.checkIverilogVector(mixedModule, vectors);
       SimCompare.checkVerilatorVector(mixedModule, vectors);
     }, tags: ['verilator']);
 
@@ -2134,7 +2128,7 @@ void main() {
       );
       expect(
         sv,
-        contains('output logic [2:0][159:0] valuesOut [1:0]'),
+        contains('output wire logic [2:0][159:0] valuesOut [1:0]'),
       );
       expect(
         sv,
@@ -2159,7 +2153,7 @@ void main() {
         expect(innerType['elementWidth'], 8);
         expect(port['bits'], hasLength(960));
       }
-      // Icarus 12.0 leaves child-driven unpacked array variables unknown.
+      SimCompare.checkIverilogVector(module, vectors);
       SimCompare.checkVerilatorVector(module, vectors);
       expect(source.numUnpackedDimensions, 1);
       expect(source.at([1, 2]).numUnpackedDimensions, 1);

@@ -4,6 +4,9 @@
 // signal_selection_bus.dart
 // Cross-widget signal selection bus for cross-probing between
 // schematic viewer, waveform viewer, and other panels.
+//
+// 2026 October 17
+// Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 import 'package:flutter/widgets.dart';
 

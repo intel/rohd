@@ -133,9 +133,29 @@ generally, so logical equivalence is limited to two-state behavior.
 and configuration for explicitly permitted unsupported-module stubs. For
 lower-level control, use `SynthBuilder` with `SystemCSynthesizer()` directly.
 
+### SystemC vector comparisons
+
+`SimCompare.checkSystemCVector` honors explicit clock values in vectors,
+including repeated levels and cycles with no clock edge. Detected clocks that
+are omitted from every vector retain the automatic cycle-based clock.
+For reusable executables built with
+`SimCompare.buildSystemCVectorExecutable`, pass
+`drivenClockNames: {'clk'}` to drive a one-bit clock input from vectors
+instead of generating it automatically. Automatic and vector-driven clock
+configurations use separate compiled-executable cache entries.
+Passing explicit clock values to a reusable executable that still generates
+those clocks automatically is rejected instead of silently ignoring the values.
+
 ## Controlling port types
 
-Generated ports default to `input logic`, `output logic`, and `inout wire`, preserving the traditional ROHD declarations. Use a `SystemVerilogSynthesizerConfiguration` to independently control whether object types, such as `wire` and `var`, and data types, such as `logic`, are explicit for each port direction:
+Generated ports default to `input logic`, `output logic`, and `inout wire`, preserving the traditional ROHD declarations. Use a `SystemVerilogSynthesizerConfiguration` to independently control whether object types, such as `wire` and `var`, and data types, such as `logic`, are explicit for each port direction.
+
+Child-driven unpacked output arrays are an exception: with the default implicit
+object type and explicit data type they use `output wire logic` to avoid
+Icarus 12.0 leaving an output variable unknown. An explicitly requested output
+object type still takes precedence.
+
+For example:
 
 ```dart
 final systemVerilog = myModule.dumpSystemVerilog(

@@ -78,6 +78,9 @@ class FrameCycler {
   List<SourceFrame> _frames = [];
   int _index = 0;
 
+  /// Creates an empty frame cycler.
+  FrameCycler();
+
   /// The current list of frames.
   List<SourceFrame> get frames => _frames;
 

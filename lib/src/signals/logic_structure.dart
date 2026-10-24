@@ -161,6 +161,9 @@ class LogicStructure implements Logic {
   @override
   String get structureName {
     if (parentStructure != null) {
+      if (parentStructure case BaseLogicArray(dimensions: [])) {
+        return parentStructure!.structureName;
+      }
       if (isArrayMember) {
         return '${parentStructure!.structureName}[${arrayIndex!}]';
       } else {
@@ -559,6 +562,14 @@ class LogicStructure implements Logic {
 
   @override
   Logic xor() => packed.xor();
+
+  /// Deprecated alias for [value].
+  ///
+  /// Check [width] separately when a single-bit value is required.
+  @Deprecated(
+    'Use `value` instead. Check `width` separately to confirm single-bit.',
+  )
+  LogicValue get bit => value;
 
   @override
   late final Stream<LogicValueChanged> changed = _internalPacked.changed;

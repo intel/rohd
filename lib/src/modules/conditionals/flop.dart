@@ -188,21 +188,30 @@ class FlipFlop<LogicType extends Logic> extends Module {
   }
 }
 
+/// Resolves a constant reset value for a flop whose output is [outputSchema].
+///
+/// [enumSource] supplies the [LogicEnum] mapping when [outputSchema] is a
+/// plain [Logic], which happens when the output type is inferred as [Logic]
+/// even though the flop input is a typed [LogicEnum].
 LogicValue? _mappedConstantResetValue(
   Logic outputSchema,
+  Logic enumSource,
   Logic? reset,
   dynamic resetValue,
 ) {
   if (reset == null || resetValue is Logic) {
     return null;
   }
-  if (outputSchema is LogicEnum && resetValue is Enum) {
-    final encodedValue = outputSchema.mapping[resetValue];
+  final mappingSource = outputSchema is LogicEnum
+      ? outputSchema
+      : (enumSource is LogicEnum ? enumSource : null);
+  if (mappingSource != null && resetValue is Enum) {
+    final encodedValue = mappingSource.mapping[resetValue];
     if (encodedValue == null) {
       throw ArgumentError.value(
         resetValue,
         'resetValue',
-        'Not present in the mapping for ${outputSchema.runtimeType}.',
+        'Not present in the mapping for ${mappingSource.runtimeType}.',
       );
     }
     return encodedValue;
@@ -275,7 +284,7 @@ class _ScalarFlipFlop<LogicType extends Logic> extends FlipFlop<LogicType>
         _resetValuePort = addInput(_resetValueName, resetValue, width: d.width);
       } else {
         _resetValueConst =
-            _mappedConstantResetValue(outputSchema, reset, resetValue);
+            _mappedConstantResetValue(outputSchema, d, reset, resetValue);
       }
     }
 

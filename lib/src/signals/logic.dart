@@ -7,6 +7,7 @@
 //
 // 2021 August 2
 // Author: Max Korbel <max.korbel@intel.com>,
+
 //         Rahul Gautham Putcha <rahul.gautham.putcha@intel.com>
 
 part of 'signals.dart';
@@ -148,6 +149,9 @@ class Logic {
   /// [LogicArray] or [LogicStructure].
   String get structureName {
     if (parentStructure != null) {
+      if (parentStructure case BaseLogicArray(dimensions: [])) {
+        return parentStructure!.structureName;
+      }
       if (parentStructure is BaseLogicArray) {
         return '${parentStructure!.structureName}[${arrayIndex!}]';
       } else {

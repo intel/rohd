@@ -26,6 +26,9 @@ export 'rohd_extension_status.dart';
 ///   3. Observe connection status and module info reactively via
 ///      [isAvailable] and [currentModuleInfo] notifiers.
 abstract class RohdExtensionClient {
+  /// Creates an ROHD extension client.
+  RohdExtensionClient();
+
   /// Whether the ROHD extension is reachable.
   ///
   /// Updated after [ping] resolves and whenever the client detects a
@@ -96,6 +99,9 @@ abstract class RohdExtensionClient {
 /// [isAvailable] is always `false`, [queryModule] always returns
 /// [RohdModuleInfo.unavailable], and [ping] always returns `false`.
 class NullExtensionClient implements RohdExtensionClient {
+  /// Creates a no-op ROHD extension client.
+  NullExtensionClient();
+
   @override
   final isAvailable = ValueNotifier<bool>(false);
 

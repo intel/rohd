@@ -56,6 +56,44 @@ class UnpackedInputTop extends Module {
   }
 }
 
+class ParentArrayPortToChild extends Module {
+  ParentArrayPortToChild(LogicArray source) {
+    source = addInputArray(
+      'source',
+      source,
+      dimensions: source.dimensions,
+      elementWidth: source.elementWidth,
+      numUnpackedDimensions: source.numUnpackedDimensions,
+    );
+    final child = UnpackedConsumer(source);
+    addOutput('observed', width: source.width) <= child.output('observed');
+  }
+}
+
+class ReorderedParentArrayPortToChild extends Module {
+  ReorderedParentArrayPortToChild(LogicArray source) {
+    source = addInputArray(
+      'source',
+      source,
+      dimensions: source.dimensions,
+      elementWidth: source.elementWidth,
+      numUnpackedDimensions: source.numUnpackedDimensions,
+    );
+    final reordered = LogicArray(
+      source.dimensions,
+      source.elementWidth,
+      name: 'reordered',
+      numUnpackedDimensions: source.numUnpackedDimensions,
+      naming: Naming.mergeable,
+    );
+    for (final (index, element) in reordered.elements.indexed) {
+      element <= source.elements[reordered.elements.length - index - 1];
+    }
+    final child = UnpackedConsumer(reordered);
+    addOutput('observed', width: source.width) <= child.output('observed');
+  }
+}
+
 class ArrayDriveSimulationTop extends Module {
   final expected = <String, LogicValue>{};
 
@@ -194,6 +232,39 @@ void main() {
     await module.build();
     expect(module.dumpSystemVerilog(), contains('.array(({value}))'));
   });
+
+  test('full-width parent array port connects directly to child', () async {
+    final module = ParentArrayPortToChild(
+      LogicArray([3], 2, numUnpackedDimensions: 1),
+    );
+    await module.build();
+
+    final verilog = module.dumpSystemVerilog();
+    expect(verilog, contains('input logic [1:0] source [2:0]'));
+    expect(verilog, contains('.array(source)'));
+    expect(verilog, isNot(contains('logic [1:0] array [2:0];')));
+
+    SimCompare.checkVerilatorVector(module, const [], buildOnly: true);
+  }, tags: ['verilator']);
+
+  test('reordered parent array preserves element order at child', () async {
+    final module = ReorderedParentArrayPortToChild(
+      LogicArray([3], 2, numUnpackedDimensions: 1),
+    );
+    await module.build();
+
+    final verilog = module.dumpSystemVerilog();
+    expect(verilog, isNot(contains('.array(source)')));
+    expect(verilog, isNot(contains('reordered')));
+
+    await SimCompare.checkFunctionalVector(
+      module,
+      [
+        Vector({'source': 0x39}, {'observed': 0x1b})
+      ],
+    );
+    SimCompare.checkVerilatorVector(module, const [], buildOnly: true);
+  }, tags: ['verilator']);
 
   test('floating singleton retains its unpacked array shape', () async {
     final module = UnpackedInputTop(

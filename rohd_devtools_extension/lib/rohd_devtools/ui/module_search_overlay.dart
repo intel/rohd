@@ -2,11 +2,11 @@
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // module_search_overlay.dart
-
 // Inline module search widget for finding modules in the hierarchy. Adapted
 // from wire_search_overlay pattern, using rohd_hierarchy.searchOccurrences.
 //
-// 2026 February Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
+// 2026 February
+// Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';

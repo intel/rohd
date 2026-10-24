@@ -3,6 +3,9 @@
 //
 // rohd_shell_output.dart
 // Human-readable presentation for ROHD shell protocol responses.
+//
+// 2026 October 17
+// Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 import 'package:rohd_devtools_widgets/rohd_devtools_widgets.dart'
     show SignalValueFormat, SignalValueFormatRegistry;

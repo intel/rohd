@@ -1,3 +1,11 @@
+// Copyright (C) 2026 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// resolve_package_root.dart
+//
+// 2026 October 17
+// Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
+
 import 'dart:convert';
 import 'dart:io';
 

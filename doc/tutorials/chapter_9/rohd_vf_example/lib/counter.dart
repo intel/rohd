@@ -1,3 +1,11 @@
+// Copyright (C) 2023-2026 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// counter.dart
+//
+// 2023 September 22
+// Author: Yao Jing Quek <yao.jing.quek@intel.com>
+
 import 'package:rohd/rohd.dart';
 
 enum CounterDirection { inward, outward, misc }

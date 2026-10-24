@@ -5,6 +5,7 @@
 // Performs validation on naming.
 //
 // 2026 September 15
+// Author: Max Korbel <max.korbel@intel.com>
 
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';

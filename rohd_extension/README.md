@@ -1,9 +1,43 @@
-# ROHD VS Code Extension
+# ROHD Tools for Visual Studio Code
 
-A VS Code extension for the [ROHD](https://github.com/intel/rohd) hardware
-design framework.  It provides context-aware Dart code snippets, cross-probe
-source navigation from ROHD viewers (schematic, waveform), and automatic
-port-forwarded URI display for the Dart Tooling Daemon (DTD) and VM Service.
+ROHD Tools for Visual Studio Code adds language support, source navigation,
+and viewer integration for the [ROHD](https://github.com/intel/rohd) hardware
+design framework. It provides context-aware Dart code snippets, cross-probe
+source navigation, and automatic port-forwarded URI display for the Dart
+Tooling Daemon (DTD) and VM Service.
+
+## Included viewers
+
+`intel-corporation.rohd` is also an extension pack. Installing it through
+Marketplace or from its VSIX causes VS Code to install these companion
+extensions:
+
+- **ROHD Schematic Viewer** (`intel-corporation.rohd-schematic-viewer`) for
+  exploring ROHD and Yosys JSON netlists.
+- **ROHD Wave Viewer** (`intel-corporation.rohd-wave-viewer`) for viewing VCD,
+  FST, and GHW waveform files.
+
+The three extensions work together for signal cross-probing and source
+navigation. In a Dev Container, SSH, WSL, or other remote workspace, they are
+workspace extensions and appear in the remote extension host (for example,
+under **Installed in Dev Container** and `~/.vscode-server/extensions/`).
+
+### Linked viewer workflows
+
+When both viewers are active, the **Send** action transfers the selected signal
+to the companion viewer:
+
+- From the Schematic Viewer, send a signal to the Wave Viewer to add its
+  matching hierarchy path and recorded waveform.
+- From the Wave Viewer, send a signal to the Schematic Viewer to locate its
+  corresponding connection in the rendered RTL.
+- If an internal schematic net was not recorded in the waveform, send a
+  connected module port to investigate a useful driving or receiving signal.
+
+Both viewers can use **Go to ROHD Source** to cross-probe to the Dart code that
+created a signal or module. When synthesized SystemVerilog or SystemC output
+has an FLC mapping sidecar, either viewer can also navigate to the matching
+generated source.
 
 ## Features
 
@@ -255,15 +289,19 @@ npm run compile        # produces out/extension.js
 
 ```bash
 cd rohd_extension
-npm run package
+npm ci
+npm run package -- --out intel-corporation.rohd-0.2.0.vsix
+npm run verify:marketplace -- intel-corporation.rohd-0.2.0.vsix
 ```
 
-This produces `rohd-0.2.0.vsix`.
+This produces a locally verified `intel-corporation.rohd-0.2.0.vsix`. The
+release workflow builds the distributable VSIX from the release tag; do not
+substitute a local archive for that release artifact.
 
 ### Install
 
 ```bash
-code --install-extension rohd-0.2.0.vsix --force
+code --install-extension intel-corporation.rohd-0.2.0.vsix --force
 ```
 
 Then reload the VS Code window (**Developer: Reload Window**).
@@ -273,8 +311,9 @@ Then reload the VS Code window (**Developer: Reload Window**).
 ```bash
 cd rohd_extension \
   && npm ci \
-  && npm run package \
-  && code --install-extension rohd-0.2.0.vsix --force \
+  && npm run package -- --out intel-corporation.rohd-0.2.0.vsix \
+  && npm run verify:marketplace -- intel-corporation.rohd-0.2.0.vsix \
+  && code --install-extension intel-corporation.rohd-0.2.0.vsix --force \
   && echo "Done — reload the VS Code window to activate."
 ```
 
@@ -290,7 +329,7 @@ Place the extension source in your repo and build it on container creation:
 ```jsonc
 // .devcontainer/devcontainer.json
 {
-  "postCreateCommand": "cd rohd_extension && npm ci && npm run package && code --install-extension rohd-0.2.0.vsix --force"
+  "postCreateCommand": "cd rohd_extension && npm ci && npm run package -- --out intel-corporation.rohd-0.2.0.vsix && npm run verify:marketplace -- intel-corporation.rohd-0.2.0.vsix && code --install-extension intel-corporation.rohd-0.2.0.vsix --force"
 }
 ```
 
@@ -300,14 +339,14 @@ Build the `.vsix` on your host or in CI, then install at container start:
 
 ```jsonc
 {
-  "postStartCommand": "code --install-extension rohd_extension/rohd-0.2.0.vsix --force"
+  "postStartCommand": "code --install-extension rohd_extension/intel-corporation.rohd-0.2.0.vsix --force"
 }
 ```
 
 ### Option 3: Install via CLI while connected
 
 ```bash
-code --install-extension rohd-0.2.0.vsix --force
+code --install-extension intel-corporation.rohd-0.2.0.vsix --force
 ```
 
 The `code` CLI inside a remote session targets the VS Code Server
@@ -325,12 +364,71 @@ automatically.
 If the `code` CLI is not available (e.g. in a Dockerfile `RUN` step):
 
 ```bash
-mkdir -p ~/.vscode-server/extensions/rohd.rohd-0.2.0
+mkdir -p ~/.vscode-server/extensions/intel-corporation.rohd-0.2.0
 cp -r rohd_extension/{package.json,out,snippets,resources} \
-  ~/.vscode-server/extensions/rohd.rohd-0.2.0/
+  ~/.vscode-server/extensions/intel-corporation.rohd-0.2.0/
+mkdir -p ~/.vscode-server/extensions/intel-corporation.rohd-0.2.0/node_modules
+cp -r rohd_extension/node_modules/ws \
+  ~/.vscode-server/extensions/intel-corporation.rohd-0.2.0/node_modules/
 ```
 
 The directory name must follow the pattern `<publisher>.<name>-<version>`.
+This manual fallback requires `npm ci` first so the runtime `ws` dependency is
+present. Installing the verified VSIX is preferred because it carries the
+complete runtime.
+
+## Marketplace Release
+
+The Marketplace identity is `intel-corporation.rohd`. It is an extension pack
+for `intel-corporation.rohd-schematic-viewer` and
+`intel-corporation.rohd-wave-viewer`; installing ROHD from Marketplace installs
+the published viewers as well. ROHD itself remains usable without an open
+viewer, so they are an extension pack rather than hard extension dependencies.
+
+A release tag matching `rohd-vscode-v<version>` triggers the repository release
+workflow, which first verifies that both viewer IDs have public Marketplace
+listings, then builds, verifies, checksums, and attaches the
+Marketplace-qualified VSIX to the GitHub release. The workflow does not hold
+Marketplace credentials or publish automatically. Do not create the ROHD
+release until the Wave Viewer Marketplace listing is available.
+
+The extension version is defined only in [`pubspec.yaml`](pubspec.yaml). Before
+preparing a release, update that version, then synchronize npm metadata and
+verify the complete contract:
+
+```bash
+make sync-version
+make verify-extension-version
+```
+
+This makes `pubspec.yaml`, `package.json`, `package-lock.json`, the release
+tag, and the packaged VSIX use the same version. Do not edit npm version fields
+directly.
+
+An authorized administrator of the `intel-corporation` Marketplace publisher
+must install and smoke-test that exact attached VSIX, verify its checksum, and
+upload it through Marketplace publisher management. The older `rohd.rohd`
+listing is a separate extension identity; deprecate it with a migration notice
+only after `intel-corporation.rohd` is publicly available.
+
+### Migration from `rohd.rohd`
+
+VS Code identifies Marketplace extensions by `publisher.name`, so
+`intel-corporation.rohd` is a new extension identity rather than an update to
+the legacy `rohd.rohd` listing. Their version histories are independent:
+release the current Pub-authoritative `0.2.0` for
+`intel-corporation.rohd`; do not lower it to match the legacy extension's
+`0.1.0` version.
+
+After `intel-corporation.rohd` is available from Marketplace, users should
+install it, allow Marketplace to install the Schematic and Wave Viewer pack,
+then disable or uninstall `rohd.rohd`. Leaving both enabled can register the
+same ROHD commands and debug/DTD hooks twice.
+
+A locally built VSIX is a verified publication candidate, not a Marketplace
+publication or signature. Only an authorized `intel-corporation` publisher
+administrator can upload the checksum-verified archive through Marketplace
+publisher management.
 
 ## File Structure
 

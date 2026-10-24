@@ -30,6 +30,14 @@ fi
 package_dir="$(cd "$1" && pwd)"
 package="${package_dir##*/}"
 sdk="$2"
+allow_unpublished_hierarchy="${ROHD_ALLOW_UNPUBLISHED_HIERARCHY:-0}"
+case "$allow_unpublished_hierarchy" in
+  0|1) ;;
+  *)
+    echo "ROHD_ALLOW_UNPUBLISHED_HIERARCHY must be 0 or 1." >&2
+    exit 2
+    ;;
+esac
 analyze_arguments=(analyze --fatal-infos)
 pana_arguments=()
 pana_score_threshold=0
@@ -74,6 +82,16 @@ copy_package() {
 }
 
 copy_package "$package_dir" "$temp_dir/package"
+awk -v strip_workspace="$([[ "$package" == rohd ]] && printf true || printf false)" '
+  $0 == "resolution: workspace" { next }
+  strip_workspace == "true" && $0 == "workspace:" {
+    skip = 1
+    next
+  }
+  skip && /^[^[:space:]]/ { skip = 0 }
+  !skip { print }
+' "$temp_dir/package/pubspec.yaml" >"$temp_dir/package/pubspec.yaml.tmp"
+mv "$temp_dir/package/pubspec.yaml.tmp" "$temp_dir/package/pubspec.yaml"
 hierarchy_dir=""
 if [[ -f "$package_dir/../rohd_hierarchy/pubspec.yaml" ]]; then
   hierarchy_dir="$package_dir/../rohd_hierarchy"
@@ -104,8 +122,11 @@ echo "=== $package: dependency compatibility ==="
 "$sdk" "${analyze_arguments[@]}" lib
 
 if "$uses_local_hierarchy"; then
-  echo "=== $package: Pana score gate skipped for local rohd_hierarchy ==="
-  exit 0
+  if [[ "$allow_unpublished_hierarchy" == 1 ]]; then
+    echo "=== $package: Pana score gate deferred for unpublished rohd_hierarchy ==="
+    exit 0
+  fi
+  echo "=== $package: Pana checks hosted rohd_hierarchy availability ==="
 fi
 
 echo "=== $package: Pana score gate (threshold $pana_score_threshold) ==="

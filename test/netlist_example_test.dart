@@ -3,7 +3,6 @@
 //
 // netlist_example_test.dart
 // Convert examples to netlist JSON and check the produced output.
-
 // 2026 March 31
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 

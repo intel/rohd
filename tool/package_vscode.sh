@@ -5,8 +5,9 @@
 #
 # package_vscode.sh
 # Build the ROHD VS Code extension using the release packaging steps.
-# Installs locked npm dependencies, compiles TypeScript, and validates/packages
-# the VSIX locally. Never installs the extension, uploads, or publishes it.
+# Installs locked npm dependencies, compiles TypeScript, packages the VSIX,
+# and verifies the Marketplace archive locally. Never installs the extension,
+# uploads, or publishes it.
 #
 # Usage (from any directory):
 #   bash tool/package_vscode.sh /absolute/path/to/output.vsix
@@ -27,6 +28,7 @@ fi
 readonly VSIX_PATH="$1"
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+readonly VSIX_VERIFIER="$REPO_ROOT/rohd_extension/tool/verify_marketplace_vsix.sh"
 
 for executable in node npm; do
   if ! command -v "$executable" >/dev/null; then
@@ -39,6 +41,10 @@ if [[ -e "$VSIX_PATH" || -L "$VSIX_PATH" ]]; then
   echo "Refusing to overwrite an existing VSIX: $VSIX_PATH" >&2
   exit 2
 fi
+if [[ ! -f "$VSIX_VERIFIER" ]]; then
+  echo "VSIX verifier not found: $VSIX_VERIFIER" >&2
+  exit 2
+fi
 
 mkdir -p "$(dirname "$VSIX_PATH")"
 cd "$REPO_ROOT/rohd_extension"
@@ -48,4 +54,5 @@ if [[ ! -s "$VSIX_PATH" ]]; then
   echo "Packaging did not produce a nonempty VSIX: $VSIX_PATH" >&2
   exit 1
 fi
+bash "$VSIX_VERIFIER" "$VSIX_PATH"
 echo "VSIX packaged successfully: $VSIX_PATH"

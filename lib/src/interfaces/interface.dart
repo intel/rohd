@@ -11,6 +11,7 @@ import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/signals/signals.dart';
+import 'package:rohd/src/utilities/sanitizer.dart';
 
 /// Represents a logical interface to a [Module].
 ///
@@ -131,39 +132,237 @@ class Interface<TagType extends Enum> {
     }
 
     if (inOutTags != null) {
-      for (final port in getPorts(inOutTags).values) {
-        if (port is BaseLogicArray) {
-          if (!port.isNet) {
-            throw PortTypeException(
-                port, 'LogicArray nets must be used for inOut array ports.');
-          }
-        } else if (port is! LogicNet) {
-          throw PortTypeException(
-              port, 'LogicNet must be used for inOut ports.');
-        }
-
-        port <=
-            switch (port) {
-              LogicArray() => module.addInOutArray(
-                  uniquify(port.name),
-                  srcInterface.port(port.name),
-                  dimensions: port.dimensions,
-                  elementWidth: port.elementWidth,
-                  numUnpackedDimensions: port.numUnpackedDimensions,
-                ),
-              BaseLogicArray() => module.addTypedInOut(
-                  uniquify(port.name),
-                  srcInterface.port(port.name) as BaseLogicArray,
-                ),
-              _ => module.addInOut(
-                  uniquify(port.name),
-                  srcInterface.port(port.name),
-                  width: port.width,
-                ),
-            };
-      }
+      _connectInOutPorts(
+        module,
+        srcInterface,
+        inOutTags,
+        uniquify: uniquify,
+      );
     }
   }
+
+  /// Connects this local interface through directional grouped ports.
+  ///
+  /// A direction with two or more selected fields becomes one typed
+  /// [LogicStructure] port. A single selected field becomes a direct port
+  /// named `<interface>_<field>`. InOut fields remain individual net ports.
+  ///
+  /// The returned registrations let [Module] retain the relationship between
+  /// the external interface, this internal clone, and its directional ports.
+  @internal
+  List<InterfaceStructuredPortRegistration> connectIOAsStructuredPorts(
+    Module module,
+    Interface<dynamic> srcInterface, {
+    Iterable<TagType>? inputTags,
+    Iterable<TagType>? outputTags,
+    Iterable<TagType>? inOutTags,
+    String Function(String original)? uniquify,
+    String? name,
+  }) {
+    final prefix = _structuredPortPrefix(
+      srcInterface,
+      name: name,
+      uniquify: uniquify,
+    );
+    Logic? inputPort;
+    Logic? outputPort;
+
+    if (inputTags != null) {
+      final entries = getPorts(inputTags).entries.toList(growable: false);
+      if (entries.length == 1) {
+        final entry = entries.single;
+        final modulePort = _addSingleInputPort(
+          module,
+          _structuredFieldName(prefix, entry.key),
+          srcInterface.port(entry.key),
+        );
+        port(entry.key) <= modulePort;
+        inputPort = modulePort;
+      } else if (entries.length > 1) {
+        final sourceStructure = LogicStructure(
+          [
+            for (final entry in entries)
+              srcInterface
+                  .port(entry.key)
+                  .clone(name: _structuredFieldName(prefix, entry.key)),
+          ],
+          name: '${prefix}_in',
+        );
+        for (final (index, entry) in entries.indexed) {
+          sourceStructure.elements[index] <= srcInterface.port(entry.key);
+        }
+        final modulePort = module.addTypedInput<LogicStructure>(
+            sourceStructure.name, sourceStructure);
+        for (final (index, entry) in entries.indexed) {
+          port(entry.key) <= modulePort.elements[index];
+        }
+        inputPort = modulePort;
+      }
+    }
+
+    if (outputTags != null) {
+      final entries = getPorts(outputTags).entries.toList(growable: false);
+      if (entries.length == 1) {
+        final entry = entries.single;
+        final modulePort = _addSingleOutputPort(
+          module,
+          _structuredFieldName(prefix, entry.key),
+          port(entry.key),
+        );
+        modulePort <= port(entry.key);
+        srcInterface.port(entry.key) <= modulePort;
+        outputPort = modulePort;
+      } else if (entries.length > 1) {
+        final template = LogicStructure(
+          [
+            for (final entry in entries)
+              port(entry.key)
+                  .clone(name: _structuredFieldName(prefix, entry.key)),
+          ],
+          name: '${prefix}_out',
+        );
+        final modulePort = module.addTypedOutput<LogicStructure>(
+          template.name,
+          template.clone,
+        );
+        for (final (index, entry) in entries.indexed) {
+          modulePort.elements[index] <= port(entry.key);
+          srcInterface.port(entry.key) <= modulePort.elements[index];
+        }
+        outputPort = modulePort;
+      }
+    }
+
+    if (inOutTags != null) {
+      _connectInOutPorts(
+        module,
+        srcInterface,
+        inOutTags,
+        uniquify: uniquify ?? (original) => original,
+      );
+    }
+
+    return [
+      InterfaceStructuredPortRegistration(
+        sourceInterface: srcInterface,
+        internalInterface: this,
+        inputPort: inputPort,
+        outputPort: outputPort,
+      ),
+    ];
+  }
+
+  void _connectInOutPorts(
+    Module module,
+    Interface<dynamic> srcInterface,
+    Iterable<TagType> inOutTags, {
+    required String Function(String original) uniquify,
+  }) {
+    for (final port in getPorts(inOutTags).values) {
+      if (port is BaseLogicArray) {
+        if (!port.isNet) {
+          throw PortTypeException(
+              port, 'LogicArray nets must be used for inOut array ports.');
+        }
+      } else if (port is! LogicNet) {
+        throw PortTypeException(port, 'LogicNet must be used for inOut ports.');
+      }
+
+      port <=
+          switch (port) {
+            LogicArray() => module.addInOutArray(
+                uniquify(port.name),
+                srcInterface.port(port.name),
+                dimensions: port.dimensions,
+                elementWidth: port.elementWidth,
+                numUnpackedDimensions: port.numUnpackedDimensions,
+              ),
+            BaseLogicArray() => module.addTypedInOut(
+                uniquify(port.name),
+                srcInterface.port(port.name) as BaseLogicArray,
+              ),
+            _ => module.addInOut(
+                uniquify(port.name),
+                srcInterface.port(port.name),
+                width: port.width,
+              ),
+          };
+    }
+  }
+
+  static Logic _addSingleInputPort(
+    Module module,
+    String name,
+    Logic source,
+  ) =>
+      switch (source) {
+        LogicArray() => module.addInputArray(
+            name,
+            source,
+            dimensions: source.dimensions,
+            elementWidth: source.elementWidth,
+            numUnpackedDimensions: source.numUnpackedDimensions,
+          ),
+        BaseLogicArray() => module.addTypedInput(name, source),
+        LogicStructure() => module.addTypedInput(name, source),
+        LogicEnum() => module.addTypedInput(name, source),
+        _ => module.addInput(name, source, width: source.width),
+      };
+
+  static Logic _addSingleOutputPort(
+    Module module,
+    String name,
+    Logic template,
+  ) =>
+      switch (template) {
+        LogicArray() => module.addOutputArray(
+            name,
+            dimensions: template.dimensions,
+            elementWidth: template.elementWidth,
+            numUnpackedDimensions: template.numUnpackedDimensions,
+          ),
+        BaseLogicArray() => module.addTypedOutput(name, template.clone),
+        LogicStructure() => module.addTypedOutput(name, template.clone),
+        LogicEnum() => module.addTypedOutput(name, template.clone),
+        _ => module.addOutput(name, width: template.width),
+      };
+
+  static String _structuredPortPrefix(
+    Interface<dynamic> source, {
+    required String? name,
+    required String Function(String original)? uniquify,
+  }) {
+    if (name != null) {
+      return Sanitizer.sanitizeSV(name);
+    }
+
+    if (uniquify != null) {
+      const sentinel = '__rohd_interface_prefix__';
+      final renamed = uniquify(sentinel);
+      final prefix = switch (renamed) {
+        final value when value.endsWith(sentinel) =>
+          value.substring(0, value.length - sentinel.length),
+        final value when value.startsWith(sentinel) =>
+          value.substring(sentinel.length),
+        _ => '',
+      }
+          .replaceAll(RegExp(r'^_+|_+$'), '');
+      if (prefix.isNotEmpty) {
+        return Sanitizer.sanitizeSV(prefix);
+      }
+    }
+
+    final runtimeName = source.runtimeType.toString();
+    final genericStart = runtimeName.indexOf('<');
+    final typeName =
+        genericStart < 0 ? runtimeName : runtimeName.substring(0, genericStart);
+    return Sanitizer.sanitizeSV(
+      typeName.replaceAll(RegExp(r'^_+|_+$'), ''),
+    );
+  }
+
+  static String _structuredFieldName(String prefix, String fieldName) =>
+      Sanitizer.sanitizeSV('${prefix}_$fieldName');
 
   /// Returns all interface ports associated with the provided [tags] as a
   /// [Map] from the port name to the [Logic] port.
@@ -262,4 +461,32 @@ class Interface<TagType extends Enum> {
     });
     return newIntf;
   }
+}
+
+/// Details one directional structured-port registration.
+///
+/// This internal result lets [Module] expose
+/// [StructuredInterfacePortBinding]s without coupling [Interface] to module
+/// storage.
+@internal
+class InterfaceStructuredPortRegistration {
+  /// The external interface connected to the module.
+  final Interface<dynamic> sourceInterface;
+
+  /// The internal clone used by module logic.
+  final Interface<dynamic> internalInterface;
+
+  /// The grouped or singleton input port, if inputs were selected.
+  final Logic? inputPort;
+
+  /// The grouped or singleton output port, if outputs were selected.
+  final Logic? outputPort;
+
+  /// Creates a structured-port registration.
+  const InterfaceStructuredPortRegistration({
+    required this.sourceInterface,
+    required this.internalInterface,
+    required this.inputPort,
+    required this.outputPort,
+  });
 }

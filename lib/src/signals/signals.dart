@@ -1,5 +1,8 @@
 // Copyright (C) 2023-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
+//
+// 2023 June 6
+// Author: Max Korbel <max.korbel@intel.com>
 
 library;
 
@@ -16,6 +19,7 @@ import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:rohd/src/utilities/synchronous_propagator.dart';
 
 export 'logic_value_changed.dart';
+export 'port.dart';
 
 part 'const.dart';
 part 'logic.dart';

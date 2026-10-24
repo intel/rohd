@@ -185,6 +185,7 @@ class _SystemCSimCompare {
     Module module, {
     String? moduleName,
     String? clockName,
+    Set<String> drivenClockNames = const {},
     String? resetName,
     String? systemcHome,
     String? systemcLib,
@@ -195,6 +196,10 @@ class _SystemCSimCompare {
     SystemCSynthesizerConfiguration synthesizerConfiguration =
         const SystemCSynthesizerConfiguration(),
   }) {
+    if (drivenClockNames.any((name) => module.inputs[name]?.width != 1)) {
+      throw ArgumentError.value(drivenClockNames, 'drivenClockNames',
+          'Vector-driven clocks must name one-bit module inputs.');
+    }
     if (kIsWeb) {
       onSkip('SystemC checks require the Dart VM.');
       return null;
@@ -230,6 +235,8 @@ class _SystemCSimCompare {
       resolvedLib,
       cxxExecutable,
       usePrecompiledHeader,
+      clockName,
+      Object.hashAll(drivenClockNames.toList()..sort()),
     );
     if (_compilationCache.containsKey(cacheKey)) {
       final cached = _compilationCache[cacheKey]!;
@@ -259,6 +266,7 @@ class _SystemCSimCompare {
         clockSignals.add(clkSigName);
       }
     }
+    clockSignals.removeAll(drivenClockNames);
 
     // Collect ALL module ports for the stdin-driven harness
     final inputPorts = <String, int>{};
@@ -553,6 +561,11 @@ int sc_main(int argc, char* argv[]) {
         'SystemC binary not found: ${exe.binaryPath}',
       );
     }
+    if (vectors.any(
+        (vector) => vector.inputValues.keys.any(exe.clockSignals.contains))) {
+      throw ArgumentError('Explicit clock vectors require an executable built '
+          'with those clocks in drivenClockNames.');
+    }
     _validateTwoStateVectors(exe, vectors);
 
     // Build stdin data
@@ -782,6 +795,13 @@ int sc_main(int argc, char* argv[]) {
       module,
       moduleName: moduleName,
       clockName: clockName,
+      drivenClockNames: {
+        for (final vector in vectors)
+          for (final name in vector.inputValues.keys)
+            if (module.inputs.containsKey(name) &&
+                (name == clockName || name == 'clk' || name.contains('clock')))
+              name,
+      },
       resetName: resetName,
       systemcHome: systemcHome,
       systemcLib: systemcLib,

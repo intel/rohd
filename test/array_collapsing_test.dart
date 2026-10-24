@@ -1128,8 +1128,7 @@ class ArrayPortToIndividualNets extends Module {
 
 /// An intermediate mergeable array whose elements are all driven by elements of
 /// one common parent array (here, reversed), then passed to a child array port.
-/// The common-parent guard must leave this to the other collapsing mechanisms
-/// rather than fabricating a redundant concatenation.
+/// The connection is inlined as an order-preserving concatenation.
 class RearrangeOneArray extends Module {
   Logic get y => output('y');
   RearrangeOneArray(LogicArray src, {int n = 4}) {
@@ -2408,6 +2407,19 @@ class SplitPackedArrayOutputTop extends Module {
   }
 }
 
+class SplitPackedStructureOutputTop extends Module {
+  SplitPackedStructureOutputTop() {
+    final source = addInput('source', Logic(width: 8), width: 8);
+    final fields = LogicStructure([
+      Logic(name: 'low', width: 2),
+      Logic(name: 'flag'),
+      Logic(name: 'high', width: 5),
+    ], name: 'fields');
+    fields <= SplitPackedOutputChild(source).result;
+    addOutput('observed', width: 8) <= fields;
+  }
+}
+
 class SplitPackedMixedOutputTop extends Module {
   SplitPackedMixedOutputTop({required bool unpacked}) {
     final source = addInput('source', Logic(width: 8), width: 8);
@@ -2539,8 +2551,35 @@ void main() {
     SimCompare.checkIverilogVector(mod, vectors);
   });
 
+  test('packed child output split maps independently declared structure fields',
+      () async {
+    final mod = SplitPackedStructureOutputTop();
+    await mod.build();
+    final topBody = _topModuleBody(mod.dumpSystemVerilog());
+    expect(topBody, contains('.result({fields_high,fields_flag,fields_low})'));
+    expect(topBody, isNot(contains('logic [7:0] result;')));
+    expect(topBody, isNot(contains('assign fields_')));
+    NetlistSynthesizer().synthesizeToJson(mod);
+    expect(_topModuleBody(mod.dumpSystemVerilog()), topBody);
+    final vectors = [
+      for (final text in [
+        '00000000',
+        '11111111',
+        '10100101',
+        '01011010',
+        'xz10zx01',
+        'z01x10xz',
+      ])
+        Vector({'source': LogicValue.ofString(text)},
+            {'observed': LogicValue.ofString(text)}),
+    ];
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
+  });
+
   for (final configuration in [
     (unpacked: 0, permuted: false, internal: false),
+    (unpacked: 0, permuted: false, internal: true),
     (unpacked: 0, permuted: true, internal: false),
     (unpacked: 1, permuted: true, internal: false),
     (unpacked: 2, permuted: false, internal: false),
@@ -2558,7 +2597,9 @@ void main() {
       final concat = configuration.permuted
           ? '{parts[0][1],parts[1][1],parts[0][0],parts[1][0]}'
           : '{parts[1][1],parts[1][0],parts[0][1],parts[0][0]}';
-      expect(topBody, contains('.result($concat)'));
+      final wholePacked =
+          !configuration.permuted && configuration.unpacked == 0;
+      expect(topBody, contains('.result(${wholePacked ? 'parts' : concat})'));
       expect(topBody, isNot(contains('splitStage')));
       expect(topBody, isNot(contains('assign parts')));
       NetlistSynthesizer().synthesizeToJson(mod);
@@ -2985,7 +3026,7 @@ void main() {
     final sv = mod.dumpSystemVerilog();
     final topBody = _topModuleBody(sv);
 
-    expect(topBody, contains('assign dst[3:0] = src[5:2];'));
+    expect(topBody, contains('assign dst = src[5:2];'));
     expect(topBody, contains(RegExp(r'\.i\([^)]*src')));
 
     final vectors = [
@@ -4168,17 +4209,23 @@ void main() {
       SimCompare.checkIverilogVector(mod, vectors);
     });
 
-    test('re-arrangement of one array is left to other mechanisms', () async {
-      // every element source shares one common parent array, so the
-      // common-parent guard skips this (no fabricated concatenation); the
-      // result must still be correct.
+    test('re-arrangement of one array inlines an ordered connection', () async {
       final mod = RearrangeOneArray(LogicArray([4], 1));
       await mod.build();
       final sv = mod.dumpSystemVerilog();
       final topBody = _topModuleBody(sv);
 
-      // this pass did not fabricate a consolidating concatenation on the port
-      expect(topBody, isNot(contains('.a(({')));
+      expect(topBody, contains('.a(({'));
+      expect(topBody, isNot(contains('logic [3:0] arr;')));
+      expect(
+        topBody,
+        contains(
+          RegExp(
+            r'\.a\(\(\{\s*src\[0\].*src\[1\].*src\[2\].*src\[3\]',
+            dotAll: true,
+          ),
+        ),
+      );
 
       final vectors = [
         for (final src in [0x0, 0xA, 0x5, 0xF])

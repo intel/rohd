@@ -1,5 +1,11 @@
 // Copyright (C) 2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
+//
+// recently_deprecated_api_test.dart
+// Verifies retained deprecated ROHD APIs.
+//
+// 2026 October 17
+// Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 // Compatibility tests intentionally exercise the retained deprecated APIs.
 // ignore_for_file: deprecated_member_use_from_same_package
@@ -30,6 +36,30 @@ class _CompatibilityPairModule extends Module {
   }
 }
 
+class _LegacyCustomSvModule extends Module with CustomSystemVerilog {
+  _LegacyCustomSvModule(Logic source) : super(name: 'legacy_custom_sv') {
+    final a = addInput('a', source);
+    addOutput('b') <= a;
+  }
+
+  @override
+  String instantiationVerilog(
+    String instanceType,
+    String instanceName,
+    Map<String, String> inputs,
+    Map<String, String> outputs,
+  ) =>
+      'assign ${outputs['b']} = ~${inputs['a']}; // $instanceType $instanceName';
+}
+
+class _LegacyCustomSvWrap extends Module {
+  _LegacyCustomSvWrap(Logic source) {
+    final input = addInput('a', source);
+    final child = _LegacyCustomSvModule(input);
+    addOutput('b') <= child.outputs['b']!;
+  }
+}
+
 void main() {
   tearDown(() async {
     await Simulator.reset();
@@ -49,6 +79,87 @@ void main() {
       withoutTimestamp(mod.generateSynth()),
       withoutTimestamp(mod.dumpSystemVerilog()),
     );
+  });
+
+  test('transitional synthesis aliases delegate to current APIs', () async {
+    final mod = _CompatibilityModule(Logic());
+    await mod.build();
+    final builder = SynthBuilder(mod, SystemVerilogSynthesizer());
+
+    expect(builder.top, same(mod));
+    expect(
+      builder.getFileContents(),
+      builder.getSynthFileContents().map((contents) => contents.contents),
+    );
+    final result = builder.synthesisResults.single;
+    expect(
+      result.toFileContents(),
+      result.toSynthFileContents().single.contents,
+    );
+    for (final result
+        in SynthBuilder(mod, SystemCSynthesizer()).synthesisResults) {
+      expect(
+        result.toFileContents(),
+        result.toSynthFileContents().single.contents,
+      );
+    }
+  });
+
+  test('deprecated Port and LogicStructure aliases remain usable', () {
+    final port = Port('legacy_port', 2);
+    expect(port.name, 'legacy_port');
+    expect(port.width, 2);
+
+    final structure = LogicStructure([Logic()..put(1)]);
+    expect(structure.bit, structure.value);
+  });
+
+  test('legacy custom SystemVerilog APIs still delegate', () {
+    final module = _LegacyCustomSvModule(Logic());
+    final synthesizer = SystemVerilogSynthesizer();
+
+    expect(synthesizer.generatesDefinition(module), isFalse);
+    expect(
+      SystemVerilogSynthesizer.instantiationVerilogFor(
+        module: module,
+        instanceType: 'Legacy',
+        instanceName: 'instance',
+        ports: {'a': 'source', 'b': 'sink'},
+      ),
+      'assign sink = ~source; // Legacy instance',
+    );
+  });
+
+  test('deprecated custom SystemVerilog mixin still generates instances',
+      () async {
+    final mod = _LegacyCustomSvWrap(Logic());
+    await mod.build();
+
+    expect(
+      mod.dumpSystemVerilog(),
+      contains('assign b = ~a; // *NONE* legacy_custom_sv'),
+    );
+  });
+
+  test('deprecated SystemVerilog instantiation helper forwards arguments',
+      () async {
+    final mod = _CompatibilityModule(Logic());
+    await mod.build();
+    final legacy = SystemVerilogSynthesizer.instantiationVerilogWithParameters(
+      mod,
+      'Compatibility',
+      'instance',
+      {'a': 'source'},
+      {'b': 'sink'},
+    );
+    final current = SystemVerilogSynthesizer.instantiationVerilogFor(
+      module: mod,
+      instanceType: 'Compatibility',
+      instanceName: 'instance',
+      ports: {'a': 'source', 'b': 'sink'},
+    );
+
+    expect(legacy, current);
   });
 
   test('released hierarchy spelling remains a compatible alias', () async {
@@ -114,7 +225,7 @@ void main() {
     await mod.build();
     final outputPath = '${directory.path}/waves.vcd';
 
-    final dumper = WaveDumper(mod, outputPath: outputPath);
+    final dumper = Dumper(mod, outputPath: outputPath);
     final currentPath = '${directory.path}/current.vcd';
     mod.dumpWaves(outputPath: currentPath);
     expect(dumper.module, same(mod));

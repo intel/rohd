@@ -216,19 +216,20 @@ void main() {
     ];
     final configurations = [
       (
-        name: 'implicit variable',
+        name: 'inferred object type',
         configuration: const SystemVerilogSynthesizerConfiguration(),
-        declaration: 'output logic [8:0] valuesOut [1:0]',
-        expectedCount: 2,
-        checkIverilog: false,
+        declarations: {
+          'output logic [8:0] valuesOut [1:0]': 1,
+          'output wire logic [8:0] valuesOut [1:0]': 1,
+        },
+        checkIverilog: true,
       ),
       (
         name: 'explicit variable',
         configuration: const SystemVerilogSynthesizerConfiguration(
           outputPortType: SystemVerilogPortTypeConfiguration(),
         ),
-        declaration: 'output var logic [8:0] valuesOut [1:0]',
-        expectedCount: 2,
+        declarations: {'output var logic [8:0] valuesOut [1:0]': 2},
         checkIverilog: false,
       ),
       (
@@ -239,8 +240,7 @@ void main() {
             dataType: SystemVerilogPortType.implicit,
           ),
         ),
-        declaration: 'output [8:0] valuesOut [1:0]',
-        expectedCount: 2,
+        declarations: {'output [8:0] valuesOut [1:0]': 2},
         checkIverilog: true,
       ),
     ];
@@ -249,11 +249,13 @@ void main() {
       final sv = module.dumpSystemVerilog(
         configuration: configuration.configuration,
       );
-      expect(
-        RegExp(RegExp.escape(configuration.declaration)).allMatches(sv),
-        hasLength(configuration.expectedCount),
-        reason: configuration.name,
-      );
+      for (final declaration in configuration.declarations.entries) {
+        expect(
+          RegExp(RegExp.escape(declaration.key)).allMatches(sv),
+          hasLength(declaration.value),
+          reason: configuration.name,
+        );
+      }
       if (configuration.checkIverilog) {
         SimCompare.checkIverilogVector(
           module,

@@ -18,6 +18,33 @@ import 'package:rohd/src/utilities/namer.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
 
+/// Connects an external interface to its internal clone and directional ports.
+///
+/// A directional port is either a typed [LogicStructure] for multiple fields
+/// or a direct field port when only one field is selected.
+@experimental
+class StructuredInterfacePortBinding {
+  /// The interface supplied by the containing module.
+  final Interface<dynamic> sourceInterface;
+
+  /// The clone used by this module's implementation.
+  final Interface<dynamic> internalInterface;
+
+  /// The grouped or singleton input port, if inputs were selected.
+  final Logic? inputPort;
+
+  /// The grouped or singleton output port, if outputs were selected.
+  final Logic? outputPort;
+
+  /// Creates a structured interface port binding.
+  const StructuredInterfacePortBinding({
+    required this.sourceInterface,
+    required this.internalInterface,
+    required this.inputPort,
+    required this.outputPort,
+  });
+}
+
 /// Represents a synthesizable hardware entity with clearly defined interface
 /// boundaries.
 ///
@@ -49,6 +76,15 @@ abstract class Module {
 
   /// An internal mapping of input names to their sources to this [Module].
   late final Map<String, Logic> _inputSources = {};
+
+  /// Structured interface ports registered on this module.
+  final List<StructuredInterfacePortBinding> _structuredInterfacePortBindings =
+      [];
+
+  /// The experimental structured-interface bindings registered on this module.
+  @experimental
+  List<StructuredInterfacePortBinding> get structuredInterfacePortBindings =>
+      UnmodifiableListView(_structuredInterfacePortBindings);
 
   // ─── Central naming (Namer) ─────────────────────────────────────
 
@@ -395,6 +431,22 @@ abstract class Module {
     module._parent = this;
     await module.build();
   }
+
+  /// Makes a signal name "unpreferred" when considering between multiple
+  /// possible signal names.
+  ///
+  /// When logic is synthesized out (e.g. to SystemVerilog), equivalent
+  /// connected signals may be collapsed into one signal. Marking one name as
+  /// unpreferred allows the other name to be chosen in the generated output.
+  @Deprecated('Use `Naming.unpreferredName` or `Logic.naming` instead.')
+  @protected
+  static String unpreferredName(String name) => Naming.unpreferredName(name);
+
+  /// Returns true iff the signal name is "unpreferred".
+  ///
+  /// See documentation for [unpreferredName] for more details.
+  @Deprecated('Use `Naming.isUnpreferred` or `Logic.naming` instead.')
+  static bool isUnpreferred(String name) => Naming.isUnpreferred(name);
 
   /// Searches for [Logic]s and [Module]s within this [Module] from its inputs.
   Future<void> _traceInputForModuleContents(Logic signal,
@@ -1087,28 +1139,151 @@ abstract class Module {
     return inOutArr;
   }
 
-  /// Connects the [source] to this [Module] using [Interface.connectIO] and
-  /// returns a copy of the [source] that can be used within this module.
+  /// Registers [source] on this [Module] and returns its internal clone.
   InterfaceType addInterfacePorts<InterfaceType extends Interface<TagType>,
               TagType extends Enum>(InterfaceType source,
           {Iterable<TagType>? inputTags,
           Iterable<TagType>? outputTags,
           Iterable<TagType>? inOutTags,
           String Function(String original)? uniquify}) =>
-      (source.clone() as InterfaceType)
-        ..connectIO(this, source,
-            inputTags: inputTags,
-            outputTags: outputTags,
-            inOutTags: inOutTags,
-            uniquify: uniquify);
+      addInterfaceFrom(
+        source.clone() as InterfaceType,
+        source,
+        inputTags: inputTags,
+        outputTags: outputTags,
+        inOutTags: inOutTags,
+        uniquify: uniquify,
+      );
 
-  /// Connects the [source] to this [Module] using [PairInterface.pairConnectIO]
-  /// and returns a copy of the [source] that can be used within this module.
+  /// Registers [source] for [role] and returns its internal clone.
   InterfaceType addPairInterfacePorts<InterfaceType extends PairInterface>(
           InterfaceType source, PairRole role,
           {String Function(String original)? uniquify}) =>
-      (source.clone() as InterfaceType)
-        ..pairConnectIO(this, source, role, uniquify: uniquify);
+      addPairInterfaceFrom(
+        source.clone() as InterfaceType,
+        source,
+        role,
+        uniquify: uniquify,
+      );
+
+  /// Registers [source] on this [Module] and returns its internal clone.
+  ///
+  /// Module logic must use the returned clone rather than [source]. Ports
+  /// selected by [inputTags] and [outputTags] become grouped typed
+  /// [LogicStructure] ports, except that a single field remains a direct port.
+  /// Ports selected by [inOutTags] remain individual inOut ports.
+  ///
+  /// [name] prefixes the generated directional port names. When omitted, the
+  /// prefix is derived from [uniquify] or the interface's runtime type.
+  @experimental
+  InterfaceType addStructuredInterface<InterfaceType extends Interface<TagType>,
+      TagType extends Enum>(
+    InterfaceType source, {
+    Iterable<TagType>? inputTags,
+    Iterable<TagType>? outputTags,
+    Iterable<TagType>? inOutTags,
+    String Function(String original)? uniquify,
+    String? name,
+  }) {
+    final target = source.clone() as InterfaceType;
+    final registrations = target.connectIOAsStructuredPorts(
+      this,
+      source,
+      inputTags: inputTags,
+      outputTags: outputTags,
+      inOutTags: inOutTags,
+      uniquify: uniquify,
+      name: name,
+    );
+    _structuredInterfacePortBindings.addAll(
+      registrations.map(
+        (registration) => StructuredInterfacePortBinding(
+          sourceInterface: registration.sourceInterface,
+          internalInterface: registration.internalInterface,
+          inputPort: registration.inputPort,
+          outputPort: registration.outputPort,
+        ),
+      ),
+    );
+    return target;
+  }
+
+  /// Registers a deliberately constructed local [target] against [source]
+  /// and returns [target].
+  ///
+  /// Prefer [addStructuredInterface] when [target] would be a plain clone of
+  /// [source].
+  /// This form supports intentional type adaptation and does not clone
+  /// [target].
+  InterfaceType addInterfaceFrom<InterfaceType extends Interface<TagType>,
+          TagType extends Enum>(
+    InterfaceType target,
+    Interface<TagType> source, {
+    Iterable<TagType>? inputTags,
+    Iterable<TagType>? outputTags,
+    Iterable<TagType>? inOutTags,
+    String Function(String original)? uniquify,
+  }) =>
+      target
+        ..connectIO(
+          this,
+          source,
+          inputTags: inputTags,
+          outputTags: outputTags,
+          inOutTags: inOutTags,
+          uniquify: uniquify,
+        );
+
+  /// Registers [source] for [role] and returns its internal clone.
+  ///
+  /// Input and output directions become grouped typed [LogicStructure] ports,
+  /// except that a single field remains a direct port. InOut fields remain
+  /// individual ports.
+  ///
+  /// [name] prefixes the generated directional port names. When omitted, the
+  /// prefix is derived from [uniquify] or the interface's runtime type.
+  @experimental
+  InterfaceType addStructuredPairInterface<InterfaceType extends PairInterface>(
+    InterfaceType source,
+    PairRole role, {
+    String Function(String original)? uniquify,
+    String? name,
+  }) {
+    final target = source.clone() as InterfaceType;
+    final registrations = target.pairConnectIOAsStructuredPorts(
+      this,
+      source,
+      role,
+      uniquify: uniquify,
+      name: name,
+    );
+    _structuredInterfacePortBindings.addAll(
+      registrations.map(
+        (registration) => StructuredInterfacePortBinding(
+          sourceInterface: registration.sourceInterface,
+          internalInterface: registration.internalInterface,
+          inputPort: registration.inputPort,
+          outputPort: registration.outputPort,
+        ),
+      ),
+    );
+    return target;
+  }
+
+  /// Registers a deliberately retyped pair [target] against [source] for
+  /// [role] and returns [target].
+  ///
+  /// Prefer [addStructuredPairInterface] when [target] would be a plain clone
+  /// of [source]. This form does not clone [target] and retains the
+  /// role-specific, recursive registration behavior of
+  /// [PairInterface.pairConnectIO].
+  InterfaceType addPairInterfaceFrom<InterfaceType extends PairInterface>(
+    InterfaceType target,
+    PairInterface source,
+    PairRole role, {
+    String Function(String original)? uniquify,
+  }) =>
+      target..pairConnectIO(this, source, role, uniquify: uniquify);
 
   @override
   String toString() => [

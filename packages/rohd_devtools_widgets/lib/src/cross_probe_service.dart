@@ -15,6 +15,9 @@ import 'package:flutter/foundation.dart';
 /// schematic) and have those signals automatically highlighted in all other
 /// viewers (e.g. the waveform viewer).
 abstract class CrossProbeService {
+  /// Creates a cross-probe service.
+  CrossProbeService();
+
   /// Whether cross-probing is currently active.
   ///
   /// When `false`, neither [send] broadcasts nor incoming messages from
@@ -53,6 +56,9 @@ abstract class CrossProbeService {
 class LocalCrossProbeChannel extends ChangeNotifier {
   String? _lastSource;
   List<String>? _lastPaths;
+
+  /// Creates a local cross-probe channel.
+  LocalCrossProbeChannel();
 
   /// The source tag of the most recent broadcast.
   String? get lastSource => _lastSource;
@@ -147,6 +153,9 @@ class LocalCrossProbeService implements CrossProbeService {
 /// [isActive] is always `false`; [send] is a no-op; [incomingSignals]
 /// never changes.
 class NullCrossProbeService implements CrossProbeService {
+  /// Creates a no-op cross-probe service.
+  NullCrossProbeService();
+
   @override
   final ValueNotifier<bool> isActive = ValueNotifier<bool>(false);
 

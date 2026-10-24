@@ -236,17 +236,127 @@ flows, including debug-mode variants. Those VS Code tasks are for extension
 development only and may change or be removed; the commands above are the
 release-mode forms to use directly.
 
-The dependency tasks configure four independent bundles: ROHD core, ROHD
-companion packages, the Wave Viewer, and the Schematic Viewer. Each bundle can
-use hosted, Git, or local packages without changing the other bundles. The
-selection is persisted in the ignored `.devtools_dependency_sources` file and
-rendered into `pubspec_overrides.yaml` by
-[`scripts/devtools_dev_mode.sh`](scripts/devtools_dev_mode.sh). Local viewer
-paths default below `~/true-release` when that directory exists and otherwise
-below `~/release`; the task prompts and script environment variables can
-override those defaults. The web application loads Schematic Viewer assets
-through Flutter's package asset namespace, so hosted Schematic Viewer builds
-do not require a local viewer checkout.
+The repository uses a Pub workspace for ROHD core, its in-repository packages,
+and this extension. Those packages resolve to this checkout automatically
+when their version constraints match; no local paths need to be configured.
+Run **Configure Dependency Bundle: Local ROHD Repository** (or `flutter pub
+get` from the repository root) to resolve the workspace.
+
+Open [`rohd-multipackage.code-workspace`](../rohd-multipackage.code-workspace)
+to work in the repository as one VS Code workspace. The repository root is the
+Pub workspace root and owns the shared `.dart_tool/package_config.json`; run
+`flutter pub get` there rather than resolving each member package separately.
+The DevTools run tasks use that root package configuration and then build from
+this extension directory.
+
+Normal DevTools builds and run tasks consume prepared viewer packages; they do
+not run Cargo, generate Dart/Rust bindings, or invoke viewer Makefiles. The
+selected `dart_wellen` package owns both its generated bindings and matching web
+runtime, including the bridge version. Its artifact installer verifies local
+or hosted package files, or downloads the selected commit's checksum metadata
+and bundle
+for Git sources. No bridge version is pinned independently by the debugger.
+Python 3 is required for artifact installation and verification.
+
+Git viewer revisions are also consumer dependencies, not source-build requests.
+A revision selected for compatibility testing must contain the artifact manifest
+and installer from `dart_wellen`. The producer's General push workflow must
+complete its commit-bundle distribution job before use. An unavailable bundle or mismatched checksum is an installation
+error, never a request to compile the viewer. Hosted archives include these files
+directly; prepared local packages require no download.
+The producer records actual build checksums in `tool/bridge_artifacts.build.json`,
+included in hosted packages and installed from the Git bundle's JSON sidecar.
+Runtime bytes are checked against that metadata, not a local developer's
+compiled WASM hash committed in source.
+The minimum viewer and `dart_wellen` versions are 0.1.1; the older hosted
+0.1.0 packages predate this artifact contract.
+
+`web/dart_wellen` is ignored generated staging output, refreshed from the selected
+`dart_wellen` package before builds and runs. Viewer binaries are not checked
+into this repository. Both standalone and DevTools-extension installation paths
+use the same staging operation.
+
+To select an external viewer dependency, use the corresponding task:
+
+In **Terminal > Run Task**, use:
+
+- **Configure Dependency Bundle: Wave Viewer**
+- **Configure Dependency Bundle: Schematic Viewer**
+
+Each task first selects `hosted`, `git`, or `local`. A local choice prompts for
+its checkout/worktree path; Git prompts once for `repository:ref`, such as
+`github.com/intel/rohd-wave-viewer:main`. A GitHub repository does not require
+an `https://` prefix. Hosted requires no further input. Local paths, Git
+settings, and source selections are saved, and Pub runs from the repository
+root. `~` and paths containing spaces are supported; a blank response keeps
+the saved setting (or the default on first use).
+
+**Configure Dependency Bundle: All** uses the same combined
+`repository:ref` input for each Git-backed repository, so no task needs
+separate URL and ref values.
+
+The equivalent command-line setup for the Wave Viewer is:
+
+```bash
+WAVE_VIEWER_LOCAL_PATH=/path/to/rohd-wave-viewer \
+  bash tool/devtools/devtools_dev_mode.sh configure-group wave-viewer local
+flutter pub get
+```
+
+Run these commands from the repository root. The source selection is saved for
+subsequent VS Code run tasks.
+
+### Testing a GitHub Viewer Branch
+
+The Git ref must contain `dart_wellen`'s installer and artifact manifest.
+The viewer's General workflow distributes its prebuilt bundle automatically
+after build and browser tests pass on a branch push. Wait for its
+**Distribute commit-keyed bridge bundle** job in the configured distribution
+repository; pull-request checks alone do not distribute it.
+Every branch, tag, and `main` uses the exact resolved commit to select its
+bundle. No manual release or pub.dev publication is needed. The producer uses
+public GitHub prerelease assets as immutable CI storage, not package releases.
+
+For the development branch on the fork:
+
+```bash
+WAVE_VIEWER_GIT_URL=https://github.com/desmonddak/rohd-wave-viewer.git \
+WAVE_VIEWER_GIT_REF=shared-packages-020 \
+  bash tool/devtools/devtools_dev_mode.sh configure-group wave-viewer git
+flutter pub get
+make -C rohd_devtools_extension viewer-artifacts
+```
+
+The bundle selection configures **both** `rohd_wave_viewer` and `dart_wellen`
+from that URL/ref. Git repository URLs and refs are saved along with source
+selection, so configuring another bundle will not revert a fork to upstream.
+The VS Code viewer tasks prompt for the combined `repository:ref` source.
+
+On first use, the resolved Git package downloads and verifies its exact commit's
+bindings/runtime bundle; later invocations verify the installed files.
+`make -C rohd_devtools_extension web/dart_wellen` stages those files for the
+debugger. No local viewer path or Cargo installation is required.
+
+For hosted consumption, publish `dart_wellen` with these same artifacts first,
+then publish the embedding `rohd_wave_viewer` package against that version.
+Pub delivers the files directly, and the same installer verifies them offline.
+
+The dependency tasks configure four bundles: ROHD core, ROHD companion
+packages, the Wave Viewer, and the Schematic Viewer. Local is the normal source
+for workspace packages. Choosing hosted or Git for an in-repository package
+temporarily gives the extension an independent resolution and writes the
+necessary dependency overrides to the ignored `pubspec_overrides.yaml` via
+[`tool/devtools/devtools_dev_mode.sh`](../tool/devtools/devtools_dev_mode.sh). The selected
+sources are persisted in the ignored `.devtools_dependency_sources` file.
+Viewer packages are separate repositories; their local paths default below
+`~/true-release` when that directory exists and otherwise below `~/release`.
+The web application loads Schematic Viewer assets through Flutter's package
+asset namespace, so hosted Schematic Viewer dependencies do not require a local
+viewer checkout.
+
+Pub workspaces require Dart SDK `^3.6.0` or higher for every workspace package.
+The root workspace includes Flutter packages, so use Flutter's bundled Pub
+(`flutter pub get`) for workspace resolution.
 
 ### CI Local-Package Smoke Test
 
@@ -280,11 +390,6 @@ available DevTools or VS Code cross-probe participants. The intended DevTools
 CLI architecture is a generic command host whose connectivity, waveform, and
 future providers register their capabilities rather than expose separate
 tool-specific executables.
-
-The older `rohd-wave` implementation was a waveform-specific prototype, not
-the DevTools CLI and not a supported packaged executable. Its waveform commands
-have not yet moved into the generic command host. Do not use `make cli-build`
-or publish `build/cli/rohd-wave` as the DevTools command-line interface.
 
 ### Handle Queries
 
@@ -440,4 +545,117 @@ hardware and drive the simulator:
 
 ```sh
 flutter test test/debugger/
+```
+
+### Standalone Loopback Integration
+
+Run the real FilterBank example through the standalone application's loopback
+data path with:
+
+```sh
+make test-integration
+```
+
+This test launches the built-in FilterBank simulation, reads its hierarchy and
+schematic data through the in-process transport, exercises compact and
+incremental waveform retrieval, loads the packaged FilterBank design JSON, and
+executes a design-shell command. It uses prepared viewer dependencies only; it
+does not build Rust, generate bindings, or require a separate VM service.
+It also requests mixed tracked, computed, and bit-slice waveforms through the
+shared `BaseSignalWaveformApi` algorithm.
+The in-process service checks cover direct legacy/compact waveform APIs,
+unavailable trace output, and inactive-source behavior after disposal.
+
+The evaluator test suite combines those synthesized FilterBank paths with
+value-based coverage for every supported gate operation, width conversion,
+unknown propagation, invalid gate inputs, bus slicing, and swizzle behavior.
+
+The integration target also launches a real FilterBank process under the Dart
+VM service and exercises `IoVmConnectionStrategy`,
+`VmServiceTreeDataSource`, and `VmServiceTransport` against it. These VM-only
+tests are excluded from the Chrome widget-test pass and run in the normal Dart
+VM test pass. The transport workflow covers active compact/hierarchy requests,
+tracking across reconnect, and unavailable responses after disposal.
+The VM transport contract suite also covers fallback response decoding,
+address-to-signal restoration, quoted module requests, update delivery, and
+unavailable-library behavior.
+The VM tree-data-source workflow covers full-string retrieval, per-module FLC
+caching and refresh, source-line lookup, unavailable FLC paths, and malformed
+or failed VM response handling.
+
+The direct VM waveform-data-source workflow covers compact snapshots and
+waveforms, legacy timepoint batching, update notifications, signal tracking,
+pause/resume backfill, debugger-pause update handling, unavailable-library
+responses, and reconnect behavior against that same FilterBank target.
+
+The CLI workflow uses that same target to run hierarchy traversal, waveform
+status/value queries, schematic fanin/fanout queries, shell aliases, error
+responses, and local cross-probe sends against the actual FilterBank netlist.
+
+The VM-backed DevTools UI workflow feeds real FilterBank hierarchy and snapshot
+data into the DevTools tree, details, direction filters, sortable signal table,
+multi-selection/signal handoff, source-navigation, bit-range expansion, module
+expansion, and tab controls. It validates DevTools-owned UI state only; viewer
+package rendering remains covered in the viewer repositories.
+
+The connection workflow establishes a real FilterBank VM service before
+driving `VmConnectionForm` through the `DevToolsConnectionHost` dialog. It
+verifies URI normalization, connection lifecycle transitions, pause/resume,
+direct connection failures, demo mode, unavailable-platform feedback, dialog
+closure, and clean disconnect behavior.
+
+The same target also registers real FLC trace data. The integration workflow
+retrieves hierarchy and module FLC payloads through `VmServiceTreeDataSource`,
+resolves a real signal through `FlcService` and `SourceNavigationService`, and
+reads the traced Dart source line through the target VM service.
+
+The VM-backed shell workflow runs a real `find-ports` command and completion
+request through `VmServiceRohdDesignTarget`, then drives `RohdDesignShell`
+command submission, completion, scripted commands, and command history UI
+using those target responses.
+
+Focused widget workflows also cover the shared split-layout resizers, module
+search/tree selection, details-panel empty and tab states, and DevTools app-bar
+tools, pause/resume, theme controls, snapshot propagation, and panel overlay
+state. The waveform wrapper workflow verifies that DevTools forwards shared
+hierarchy, selected-module, snapshot-time, theme, and extension-mode state to
+the embedded viewer without testing viewer rendering behavior.
+
+The signal-table workflow also uses the production hierarchy `logicType`
+metadata contract to cover nested struct expansion, large-array range
+selection, and sanitized sub-field send paths. This supplements the live VM
+workflow when a netlist exposes the same data as flattened ports.
+
+The source-frame picker workflow presents multiple real FilterBank FLC frames
+through `showSourceFramePicker` and selects one through the DevTools UI.
+
+The VM workflow also validates `VmServiceSignalValueSource` against a target
+without registered `ext.rohd.*` handlers. Its bounded extension-call timeout
+falls back to VM evaluation for current time and snapshot data instead of
+leaving the DevTools UI waiting indefinitely.
+
+The VM-service workflow also resolves real FLC frames through
+`SourceNavigationService` in local-only mode. It verifies that source-frame
+resolution remains available without an editor DTD while navigation reports
+the unavailable editor explicitly.
+
+### Coverage
+
+Run coverage from this directory with:
+
+```sh
+make coverage
+```
+
+The report is written to `coverage/html/index.html` beneath
+`rohd_devtools_extension`, not the repository root. Serve it locally with:
+
+```sh
+make coverage-view
+```
+
+Remove only this package's generated report with:
+
+```sh
+make coverage-clean
 ```

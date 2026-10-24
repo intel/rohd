@@ -6,8 +6,6 @@
 // server-side WaveformDataService and the client-side LoopbackSignalWaveformApi
 // when running in-process (loopback mode).
 //
-// 2026 April
-// Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 // Runs every example registered in [rohdExamples] through the same checks.
 //
 // 2026 April

@@ -10,7 +10,6 @@
 // Though we usually avoid them, for this example,
 // allow `print` messages (disable lint):
 // ignore_for_file: avoid_print - example
-
 // Import necessary dart packages for this file.
 import 'dart:async';
 

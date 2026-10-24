@@ -20,7 +20,7 @@ export FLUTTER_ROOT="$FIXTURE/flutter sdk" PANA_ANALYSIS_INCLUDES=1
 
 mkdir -p "$SOURCE/lib" "$SOURCE/.dart_tool" "$SOURCE/example" \
   "$FIXTURE/bin" "$PUB_CACHE/bin" "$TMPDIR" "$FLUTTER_ROOT/bin"
-for executable in bash cat cmp dirname grep mkdir mktemp readlink rm tar; do
+for executable in awk bash cat cmp dirname grep mkdir mktemp mv readlink rm tar; do
   ln -s "$(command -v "$executable")" "$FIXTURE/bin/$executable"
 done
 printf 'name: fixture\n' > "$SOURCE/pubspec.yaml"
@@ -82,6 +82,9 @@ if [[ "$PWD" == "$SOURCE" ]]; then
   [[ "$*" == '--exit-code-threshold 10 .' ]]
 else
   [[ "$PWD" == "$TMPDIR"/rohd-pana.*/package && "$PANA_ANALYSIS_INCLUDES" == 0 ]]
+  if grep -q '^[[:space:]]*rohd_hierarchy:' pubspec.yaml; then
+    [[ -f pubspec_overrides.yaml && -f ../rohd_hierarchy/pubspec.yaml ]]
+  fi
   if [[ "$EXPECTED_SDK" == flutter ]]; then
     [[ $# -eq 5 && "$1" == --exit-code-threshold && "$2" == "$EXPECTED_THRESHOLD" &&
       "$3" == --flutter-sdk && "$4" == "$EXPECTED_FLUTTER_ROOT" && "$5" == . ]]
@@ -105,9 +108,12 @@ cd "$SOURCE"
 passed=0
 run_case() {
   local expected="$1" status=0
+  local allow_unpublished_hierarchy="${TEST_ALLOW_UNPUBLISHED_HIERARCHY:-0}"
   shift
   : > "$SDK_LOG"
-  PATH="$FIXTURE/bin" /bin/bash "$REPO_ROOT/tool/gh_actions/pana_source.sh" \
+  PATH="$FIXTURE/bin" \
+    ROHD_ALLOW_UNPUBLISHED_HIERARCHY="$allow_unpublished_hierarchy" \
+    /bin/bash "$REPO_ROOT/tool/gh_actions/pana_source.sh" \
     "$@" > "$FIXTURE/output" 2>&1 || status=$?
   if [[ "$status" -ne "$expected" ]]; then
     cat "$FIXTURE/output"
@@ -164,12 +170,19 @@ PANA_STATUS=73 run_case 73 "$WAVEFORM" dart
 mkdir -p "$FIXTURE/rohd_hierarchy/lib"
 printf 'name: rohd_hierarchy\n' > "$FIXTURE/rohd_hierarchy/pubspec.yaml"
 printf 'library rohd_hierarchy;\n' > "$FIXTURE/rohd_hierarchy/lib/rohd_hierarchy.dart"
-printf 'dependencies:\n  rohd_hierarchy:\n    path: ../rohd_hierarchy\n' >> \
+printf 'dependencies:\n  rohd_hierarchy: ^0.1.0\n' >> \
   "$SOURCE/pubspec.yaml"
 cp "$SOURCE/pubspec.yaml" "$FIXTURE/original/pubspec.yaml"
 export EXPECTED_THRESHOLD=0
 run_case 0 "$SOURCE" dart
+[[ "$(cat "$SDK_LOG")" == $'dart|pub get\ndart|analyze --fatal-infos lib\ndart|pub downgrade\ndart|analyze --fatal-infos lib\npana' ]]
+TEST_ALLOW_UNPUBLISHED_HIERARCHY=1 run_case 0 "$SOURCE" dart
 [[ "$(cat "$SDK_LOG")" == $'dart|pub get\ndart|analyze --fatal-infos lib\ndart|pub downgrade\ndart|analyze --fatal-infos lib' ]]
+grep -F 'Pana score gate deferred for unpublished rohd_hierarchy' \
+  "$FIXTURE/output" > /dev/null
+TEST_ALLOW_UNPUBLISHED_HIERARCHY=invalid run_case 2 "$SOURCE" dart
+grep -F 'ROHD_ALLOW_UNPUBLISHED_HIERARCHY must be 0 or 1.' \
+  "$FIXTURE/output" > /dev/null
 
 mkdir -p "$FIXTURE/root-package/packages"
 cp -R "$SOURCE" "$FIXTURE/root-package/package"
@@ -183,7 +196,7 @@ cp -R "$FIXTURE/root-package" "$FIXTURE/original-root-package"
 export EXPECTED_PACKAGE_SOURCE="$FIXTURE/root-package"
 run_case 0 "$FIXTURE/root-package" dart
 diff -ru "$FIXTURE/original-root-package" "$FIXTURE/root-package"
-[[ "$(cat "$SDK_LOG")" == $'dart|pub get\ndart|analyze --fatal-infos lib\ndart|pub downgrade\ndart|analyze --fatal-infos lib' ]]
+[[ "$(cat "$SDK_LOG")" == $'dart|pub get\ndart|analyze --fatal-infos lib\ndart|pub downgrade\ndart|analyze --fatal-infos lib\npana' ]]
 unset EXPECTED_PACKAGE_SOURCE
 
 mv "$PUB_CACHE/bin/pana" "$FIXTURE/pana"

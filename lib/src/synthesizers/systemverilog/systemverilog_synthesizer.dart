@@ -30,8 +30,13 @@ class SystemVerilogSynthesizer extends Synthesizer {
   });
 
   @override
-  bool generatesDefinition(Module module) => !(module is SystemVerilog &&
-      module.generatedDefinitionType == DefinitionGenerationType.none);
+  // Keep deprecated custom-SV modules definition-free during migration.
+  bool generatesDefinition(Module module) =>
+      // Preserve handling for callers of the deprecated custom mixin.
+      // ignore: deprecated_member_use_from_same_package
+      !((module is CustomSystemVerilog) ||
+          (module is SystemVerilog &&
+              module.generatedDefinitionType == DefinitionGenerationType.none));
 
   /// Creates a line of SystemVerilog that instantiates [module].
   ///
@@ -72,6 +77,24 @@ class SystemVerilogSynthesizer extends Synthesizer {
               outputPortColumns: outputPortColumns,
               forceStandardInstantiation: true,
             );
+      }
+      // Preserve the deprecated custom-instantiation hook for 0.7.x consumers.
+      // ignore: deprecated_member_use_from_same_package
+      else if (module is CustomSystemVerilog) {
+        return module.instantiationVerilog(
+          instanceType,
+          instanceName,
+          Map.fromEntries(
+            ports.entries.where(
+              (element) => module.inputs.containsKey(element.key),
+            ),
+          ),
+          Map.fromEntries(
+            ports.entries.where(
+              (element) => module.outputs.containsKey(element.key),
+            ),
+          ),
+        );
       }
     }
 
@@ -120,6 +143,31 @@ class SystemVerilogSynthesizer extends Synthesizer {
 
     return '$prefix$connectionsStr);';
   }
+
+  /// Creates a SystemVerilog instantiation using separate input and output
+  /// port mappings.
+  ///
+  /// Deprecated in favor of [instantiationVerilogFor], which uses named
+  /// arguments and a single port mapping.
+  @Deprecated('Use `instantiationVerilogFor` instead.')
+  static String instantiationVerilogWithParameters(
+    Module module,
+    String instanceType,
+    String instanceName,
+    Map<String, String> inputs,
+    Map<String, String> outputs, {
+    Map<String, String> inOuts = const {},
+    Map<String, String>? parameters,
+    bool forceStandardInstantiation = false,
+  }) =>
+      instantiationVerilogFor(
+        module: module,
+        instanceType: instanceType,
+        instanceName: instanceName,
+        ports: {...inputs, ...outputs, ...inOuts},
+        parameters: parameters,
+        forceStandardInstantiation: forceStandardInstantiation,
+      );
 
   @override
   SynthesisResult synthesize(

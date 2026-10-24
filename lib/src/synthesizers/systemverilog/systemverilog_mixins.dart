@@ -188,3 +188,25 @@ mixin InlineSystemVerilog on Module implements SystemVerilog {
   @override
   bool get isWiresOnly => false;
 }
+
+/// Allows a [Module] to define a custom implementation of SystemVerilog to be
+/// injected in generated output instead of instantiating a separate `module`.
+@Deprecated('Use `SystemVerilog` instead.')
+mixin CustomSystemVerilog on Module {
+  /// Generates custom SystemVerilog to be injected in place of a `module`
+  /// instantiation.
+  ///
+  /// The [instanceType] and [instanceName] represent the type and name,
+  /// respectively of the module that would have been instantiated had it not
+  /// been overridden. The maps [inputs] and [outputs] map port names to the
+  /// signal names passed into those ports in the generated SystemVerilog.
+  String instantiationVerilog(
+    String instanceType,
+    String instanceName,
+    Map<String, String> inputs,
+    Map<String, String> outputs,
+  );
+
+  /// Input names that must not have SystemVerilog expressions inlined.
+  final List<String> expressionlessInputs = const [];
+}

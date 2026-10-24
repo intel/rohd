@@ -3,6 +3,9 @@
 //
 // shell_command_registry.dart
 // Declarative command bindings for the target-owned ROHD shell.
+//
+// 2026 October 16
+// Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 import 'dart:convert';
 import 'dart:io';

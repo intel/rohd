@@ -1126,13 +1126,15 @@ class _SignalTableState extends State<SignalTable> {
         height: 32,
         value: 'expand',
         child: Row(
-          mainAxisSize: MainAxisSize.min,
           children: [
             const Icon(Icons.unfold_more, size: 14),
             const SizedBox(width: 8),
-            Text(
-              'Expand ($numFields ${isArray ? "elements" : "fields"})',
-              style: const TextStyle(fontSize: 13),
+            Flexible(
+              child: Text(
+                'Expand ($numFields ${isArray ? "elements" : "fields"})',
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 13),
+              ),
             ),
           ],
         ),
@@ -1142,13 +1144,15 @@ class _SignalTableState extends State<SignalTable> {
           height: 32,
           value: 'range',
           child: Row(
-            mainAxisSize: MainAxisSize.min,
             children: [
               const Icon(Icons.linear_scale, size: 14),
               const SizedBox(width: 8),
-              Text(
-                'Select Range (0:${numFields - 1})...',
-                style: const TextStyle(fontSize: 13),
+              Flexible(
+                child: Text(
+                  'Select Range (0:${numFields - 1})...',
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 13),
+                ),
               ),
             ],
           ),
@@ -1222,13 +1226,15 @@ class _SignalTableState extends State<SignalTable> {
         height: 32,
         value: 'expand',
         child: Row(
-          mainAxisSize: MainAxisSize.min,
           children: [
             const Icon(Icons.unfold_more, size: 14),
             const SizedBox(width: 8),
-            Text(
-              'Expand ($numChildren ${isArrayLike ? "elements" : "fields"})',
-              style: const TextStyle(fontSize: 13),
+            Flexible(
+              child: Text(
+                'Expand ($numChildren ${isArrayLike ? "elements" : "fields"})',
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 13),
+              ),
             ),
           ],
         ),

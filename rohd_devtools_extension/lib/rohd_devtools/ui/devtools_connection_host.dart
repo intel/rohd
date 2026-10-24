@@ -1071,7 +1071,7 @@ abstract class DevToolsConnectionHostState<T extends StatefulWidget>
     }
 
     try {
-      final dtd = await DartToolingDaemon.connect(Uri.parse(raw));
+      final dtd = await connectDtd(Uri.parse(raw));
       _persistentDtd = dtd;
 
       // Notify subclass that DTD is available.
@@ -1135,6 +1135,13 @@ abstract class DevToolsConnectionHostState<T extends StatefulWidget>
       debugPrint('[ConnectionHost] Could not start DTD listener: $e');
     }
   }
+
+  /// Connect to DTD for lifecycle and service-stream listening.
+  ///
+  /// Subclasses may override this to supply a connection managed elsewhere.
+  @protected
+  Future<DartToolingDaemon> connectDtd(Uri uri) =>
+      DartToolingDaemon.connect(uri);
 
   /// Stop the persistent DTD listener.
   @protected

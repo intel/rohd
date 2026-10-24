@@ -48,8 +48,8 @@ required_files=(
   build/web/assets/AssetManifest.bin
   build/web/assets/packages/rohd_schematic_viewer/assets/js/elk.bundled.js
   build/web/assets/packages/rohd_schematic_viewer/js_bridge/elk_layout_only.js
-  build/web/pkg/wellen_bridge.js
-  build/web/pkg/wellen_bridge_bg.wasm
+  build/web/dart_wellen/wellen_bridge.js
+  build/web/dart_wellen/wellen_bridge_bg.wasm
 )
 
 for required_file in "${required_files[@]}"; do
@@ -59,7 +59,7 @@ for required_file in "${required_files[@]}"; do
   fi
 done
 
-if [[ "$(od -An -t x1 -N4 build/web/pkg/wellen_bridge_bg.wasm | tr -d ' \n')" != "0061736d" ]]; then
+if [[ "$(od -An -t x1 -N4 build/web/dart_wellen/wellen_bridge_bg.wasm | tr -d ' \n')" != "0061736d" ]]; then
   echo "error: Wellen artifact does not have the WebAssembly magic bytes." >&2
   exit 1
 fi

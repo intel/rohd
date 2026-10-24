@@ -22,8 +22,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Dart
-        uses: dart-lang/setup-dart@v1
+      - name: Setup Flutter SDK
+        uses: flutter-actions/setup-flutter@v2
+        with:
+          channel: stable
+          version: 3.47.2
 
       - name: Install dependencies
         run: tool/gh_actions/install_dependencies.sh
@@ -39,15 +42,6 @@ jobs:
 
       - name: Save ROHD coverage badge
         run: cp /tmp/coverage-badge.svg /tmp/rohd-coverage-badge.svg
-
-      - name: Setup Flutter
-        uses: flutter-actions/setup-flutter@v2
-        with:
-          channel: stable
-          version: 3.47.2
-
-      - name: Install DevTools dependencies
-        run: flutter pub get --directory=rohd_devtools_extension
 
       - name: Generate DevTools coverage and badge
         working-directory: rohd_devtools_extension

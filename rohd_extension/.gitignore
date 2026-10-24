@@ -1,3 +1,6 @@
 node_modules/
+.dart_tool/
 out/
+build/
+pubspec.lock
 *.vsix

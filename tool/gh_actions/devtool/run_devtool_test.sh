@@ -18,7 +18,9 @@ flutter pub get
 dart run tool/verify_local_package_resolution.dart
 
 mapfile -t browser_tests < <(
-  find test -type f -name '*_test.dart' ! -path 'test/debugger/*' | sort
+  find test -type f -name '*_test.dart' \
+    ! -path 'test/debugger/*' \
+    ! -path 'test/integration/*' | sort
 )
 flutter test --platform chrome "${browser_tests[@]}"
 flutter test

@@ -11,6 +11,8 @@ import 'dart:collection';
 
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/interfaces/interface.dart'
+    show InterfaceStructuredPortRegistration;
 import 'package:rohd/src/signals/signals.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 
@@ -119,43 +121,67 @@ class PairInterface extends Interface<PairDirection> {
           })
           .toList(growable: false);
 
-  /// A simplified version of [connectIO] for [PairInterface]s where by only
-  /// specifying the [role], the input and output tags can be inferred.
+  /// Returns the input, output, and inOut tags implied by [role].
+  static ({
+    List<PairDirection> inputTags,
+    List<PairDirection> outputTags,
+    List<PairDirection> inOutTags,
+  }) tagsForRole(PairRole role) => switch (role) {
+        PairRole.consumer => (
+            inputTags: [
+              PairDirection.sharedInputs,
+              PairDirection.fromProvider,
+            ],
+            outputTags: [PairDirection.fromConsumer],
+            inOutTags: [PairDirection.commonInOuts],
+          ),
+        PairRole.provider => (
+            inputTags: [
+              PairDirection.sharedInputs,
+              PairDirection.fromConsumer,
+            ],
+            outputTags: [PairDirection.fromProvider],
+            inOutTags: [PairDirection.commonInOuts],
+          ),
+      };
+
+  /// Connects this pair interface's role directions through structured ports.
+  ///
+  /// The returned registrations include this interface and all recursively
+  /// connected subinterfaces.
+  /// Connects this pair interface's role directions through structured ports.
+  @internal
+  List<InterfaceStructuredPortRegistration> pairConnectIOAsStructuredPorts(
+    Module module,
+    Interface<PairDirection> srcInterface,
+    PairRole role, {
+    String Function(String original)? uniquify,
+    String? name,
+  }) {
+    final tags = tagsForRole(role);
+    return connectIOAsStructuredPorts(
+      module,
+      srcInterface,
+      inputTags: tags.inputTags,
+      outputTags: tags.outputTags,
+      inOutTags: tags.inOutTags,
+      uniquify: uniquify,
+      name: name,
+    );
+  }
+
+  /// Connects this pair interface using the directions implied by [role].
   void pairConnectIO(
       Module module, Interface<PairDirection> srcInterface, PairRole role,
       {String Function(String original)? uniquify}) {
-    final List<PairDirection> inputTags;
-    final List<PairDirection> outputTags;
-    final inOutTags = [
-      PairDirection.commonInOuts,
-    ];
-
-    switch (role) {
-      case PairRole.consumer:
-        inputTags = [
-          PairDirection.sharedInputs,
-          PairDirection.fromProvider,
-        ];
-        outputTags = [
-          PairDirection.fromConsumer,
-        ];
-
-      case PairRole.provider:
-        inputTags = [
-          PairDirection.sharedInputs,
-          PairDirection.fromConsumer,
-        ];
-        outputTags = [
-          PairDirection.fromProvider,
-        ];
-    }
+    final tags = tagsForRole(role);
 
     connectIO(
       module,
       srcInterface,
-      inputTags: inputTags,
-      outputTags: outputTags,
-      inOutTags: inOutTags,
+      inputTags: tags.inputTags,
+      outputTags: tags.outputTags,
+      inOutTags: tags.inOutTags,
       uniquify: uniquify,
     );
   }
@@ -196,7 +222,7 @@ class PairInterface extends Interface<PairDirection> {
             subInterfaceEntry.value.uniquify ?? (original) => original;
 
         String newSubIntfUniquify(String original) =>
-            nonNullUniquify(nonNullSubIntfUniquify(original));
+            nonNullUniquify(nonNullSubIntfUniquify(nonNullModify(original)));
 
         if (!srcInterface._subInterfaces.containsKey(subInterfaceName)) {
           throw InterfaceTypeException(
@@ -247,6 +273,100 @@ class PairInterface extends Interface<PairDirection> {
         );
       }
     }
+  }
+
+  @override
+  @internal
+  List<InterfaceStructuredPortRegistration> connectIOAsStructuredPorts(
+    Module module,
+    Interface<dynamic> srcInterface, {
+    Iterable<PairDirection>? inputTags,
+    Iterable<PairDirection>? outputTags,
+    Iterable<PairDirection>? inOutTags,
+    String Function(String original)? uniquify,
+    String? name,
+  }) {
+    final nonNullUniquify = uniquify ?? (original) => original;
+    // ignore: deprecated_member_use_from_same_package - deprecated backwards compat
+    final nonNullModify = modify ?? (original) => original;
+    String newUniquify(String original) =>
+        nonNullUniquify(nonNullModify(original));
+
+    final registrations = super.connectIOAsStructuredPorts(
+      module,
+      srcInterface,
+      inputTags: inputTags,
+      outputTags: outputTags,
+      inOutTags: inOutTags,
+      uniquify: newUniquify,
+      name: name,
+    );
+
+    if (subInterfaces.isEmpty) {
+      return registrations;
+    }
+    if (srcInterface is! PairInterface) {
+      throw InterfaceTypeException(
+        srcInterface,
+        'an Interface with subInterfaces can only connect to a PairInterface',
+      );
+    }
+
+    for (final subInterfaceEntry in _subInterfaces.entries) {
+      final subInterface = subInterfaceEntry.value.interface;
+      final subInterfaceName = subInterfaceEntry.key;
+      final nonNullSubIntfUniquify =
+          subInterfaceEntry.value.uniquify ?? (original) => original;
+      String newSubIntfUniquify(String original) =>
+          nonNullUniquify(nonNullSubIntfUniquify(nonNullModify(original)));
+
+      if (!srcInterface._subInterfaces.containsKey(subInterfaceName)) {
+        throw InterfaceTypeException(
+          srcInterface,
+          'missing a sub-interface named $subInterfaceName',
+        );
+      }
+
+      Iterable<PairDirection>? subIntfInputTags;
+      Iterable<PairDirection>? subIntfOutputTags;
+      final subIntfInOutTags = inOutTags;
+      if (subInterfaceEntry.value.reverse) {
+        if (inputTags?.contains(PairDirection.fromConsumer) ?? false) {
+          subIntfOutputTags = [PairDirection.fromConsumer];
+        }
+        if (outputTags?.contains(PairDirection.fromConsumer) ?? false) {
+          subIntfInputTags = [PairDirection.fromConsumer];
+        }
+        if (outputTags?.contains(PairDirection.fromProvider) ?? false) {
+          subIntfInputTags = [PairDirection.fromProvider];
+        }
+        if (inputTags?.contains(PairDirection.fromProvider) ?? false) {
+          subIntfOutputTags = [PairDirection.fromProvider];
+        }
+        if (inputTags?.contains(PairDirection.sharedInputs) ?? false) {
+          subIntfInputTags = [
+            if (subIntfInputTags != null) ...subIntfInputTags,
+            PairDirection.sharedInputs,
+          ];
+        }
+      } else {
+        subIntfInputTags = inputTags;
+        subIntfOutputTags = outputTags;
+      }
+
+      registrations.addAll(
+        subInterface.connectIOAsStructuredPorts(
+          module,
+          srcInterface._subInterfaces[subInterfaceName]!.interface,
+          inputTags: subIntfInputTags,
+          outputTags: subIntfOutputTags,
+          inOutTags: subIntfInOutTags,
+          uniquify: newSubIntfUniquify,
+          name: name == null ? null : '${name}_$subInterfaceName',
+        ),
+      );
+    }
+    return registrations;
   }
 
   /// A mapping from sub-interface names to instances of sub-interfaces.

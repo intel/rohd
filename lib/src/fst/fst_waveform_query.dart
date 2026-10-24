@@ -3,6 +3,9 @@
 //
 // fst_waveform_query.dart
 // Live, bounded-memory queries over FST writer output.
+//
+// 2026 October 16
+// Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 import 'package:rohd/src/fst/fst_block_reader.dart';
 import 'package:rohd/src/fst/fst_writer.dart';

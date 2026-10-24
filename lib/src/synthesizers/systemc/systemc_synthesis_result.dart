@@ -45,7 +45,7 @@ class SystemCSynthesisResult extends SynthesisResult {
     _findClockResetSignals();
     _portsString = _systemCPorts();
     _buildModuleBody(getInstanceTypeOfModule);
-    _moduleBodyString = '$_ctorBody|$_methodBodies';
+    _moduleBodyString = '$_internalSigs|$_subMembers|$_ctorBody|$_methodBodies';
   }
 
   @override
@@ -56,6 +56,9 @@ class SystemCSynthesisResult extends SynthesisResult {
 
   @override
   int get matchHashCode => _portsString.hashCode ^ _moduleBodyString.hashCode;
+
+  @override
+  String toFileContents() => _toSystemC();
 
   @override
   List<SynthFileContents> toSynthFileContents() => List.unmodifiable([
@@ -222,7 +225,8 @@ class SystemCSynthesisResult extends SynthesisResult {
 
   /// Maps a signal width to the appropriate SystemC data type.
   static String systemCType(int width) {
-    if (width == 1) {
+    // Empty signals need a bindable placeholder; their read expressions are 0.
+    if (width == 0 || width == 1) {
       return 'bool';
     } else if (width <= 64) {
       return 'sc_uint<$width>';
@@ -311,6 +315,8 @@ class SystemCSynthesisResult extends SynthesisResult {
     void addIfArrayElement(SynthLogic sl) {
       if (sl is SynthLogicArrayElement) {
         result[sl.name] = sl.logic.width;
+      } else if (sl is SynthLogicArrayStructureElement) {
+        result[sl.name] = sl.logic.width;
       }
     }
 
@@ -359,8 +365,10 @@ class SystemCSynthesisResult extends SynthesisResult {
     for (final c in conditionals) {
       for (final receiver in c.receivers) {
         final sl = _synthModuleDefinition.logicToSynthMap[receiver];
-        if (sl is SynthLogicArrayElement && !result.containsKey(sl.name)) {
-          result[sl.name] = sl.logic.width;
+        if ((sl is SynthLogicArrayElement ||
+                sl is SynthLogicArrayStructureElement) &&
+            !result.containsKey(sl!.name)) {
+          result[sl.name] = sl.width;
         }
       }
       // Recurse into sub-conditionals
@@ -374,24 +382,14 @@ class SystemCSynthesisResult extends SynthesisResult {
       _groupArrayElementsByParent() {
     final result = <String, List<({int index, int width, String elemName})>>{};
 
-    void addElement(SynthLogicArrayElement sl) {
-      // Walk up to root and compute flat bit offset
-      var flatOffset = 0;
-      SynthLogic current = sl;
-      while (current is SynthLogicArrayElement) {
-        final idx = current.logic.arrayIndex;
-        if (idx == null) {
-          return; // pruned element — skip
-        }
-        flatOffset += idx * current.logic.width;
-        current = current.parentArray.replacement ?? current.parentArray;
-      }
-      final rootName = current.name;
+    void addElement(SynthLogic sl) {
+      final (root, flatOffset) = _arrayElementLocation(sl);
+      final rootName = root.name;
 
       final entry = (
         // Use flat bit offset as "index" for assembly ordering
         index: flatOffset,
-        width: sl.logic.width,
+        width: sl.width,
         elemName: sl.name,
       );
       // Avoid duplicates
@@ -404,9 +402,11 @@ class SystemCSynthesisResult extends SynthesisResult {
     // Use logicToSynthMap to find the SynthLogicArrayElement for each written
     // element, rather than re-scanning submodule instantiations.
     for (final sl in _synthModuleDefinition.logicToSynthMap.values) {
-      if (sl is SynthLogicArrayElement && sl.replacement == null) {
+      if ((sl is SynthLogicArrayElement ||
+              sl is SynthLogicArrayStructureElement) &&
+          sl.replacement == null) {
         // Skip elements whose parent has been pruned or not named
-        final parent = sl.parentArray.replacement ?? sl.parentArray;
+        final (parent, _) = _arrayElementLocation(sl);
         if (parent.declarationCleared) {
           continue;
         }
@@ -462,11 +462,14 @@ class SystemCSynthesisResult extends SynthesisResult {
   /// Constants become typed literals; signals get `.read()`.
   /// Array elements become range expressions on their parent.
   static String _synthLogicReadExpr(SynthLogic sl) {
+    if (sl.width == 0) {
+      return '0';
+    }
     if (sl.isConstant) {
       final c = sl.logics.whereType<Const>().first;
       return _typedConstExpr(c.value, c.width);
     }
-    if (sl is SynthLogicArrayElement) {
+    if (sl is SynthLogicArrayElement || sl is SynthLogicArrayStructureElement) {
       return _arrayElementReadExpr(sl);
     }
     return '${_scName(sl.name)}.read()';
@@ -504,19 +507,37 @@ class SystemCSynthesisResult extends SynthesisResult {
   /// Generates a range read expression for an array element, handling
   /// arbitrary nesting depth.  e.g. `laIn[2][1]` in a `[3,2]x8` array
   /// → `laIn.read().range(47, 40)`.
-  static String _arrayElementReadExpr(SynthLogicArrayElement sl) {
-    final elemWidth = sl.logic.width;
-
-    // Walk up the parent chain to find the root signal and accumulate
-    // the flat bit offset.
+  static (SynthLogic, int) _arrayElementLocation(SynthLogic sl) {
+    if (sl is SynthLogicArrayStructureElement) {
+      var current = sl.logic;
+      var offset = 0;
+      final root = sl.rootArray;
+      while (!root.logics.contains(current)) {
+        final parent = current.parentStructure!;
+        for (final sibling in parent.elements) {
+          if (identical(sibling, current)) {
+            break;
+          }
+          offset += sibling.width;
+        }
+        current = parent;
+      }
+      return (root.resolved, offset);
+    }
     var flatOffset = 0;
-    SynthLogic current = sl;
+    var current = sl;
     while (current is SynthLogicArrayElement) {
       final idx = current.logic.arrayIndex!;
       final w = current.logic.width;
       flatOffset += idx * w;
       current = current.parentArray.replacement ?? current.parentArray;
     }
+    return (current, flatOffset);
+  }
+
+  static String _arrayElementReadExpr(SynthLogic sl) {
+    final elemWidth = sl.width;
+    final (current, flatOffset) = _arrayElementLocation(sl);
     final rootName = _scName(current.name);
     final rootWidth = current.width;
 
@@ -537,6 +558,9 @@ class SystemCSynthesisResult extends SynthesisResult {
   /// Returns the sensitivity signal name for a SynthLogic.
   /// For array elements, walks up to the root (non-array-element) parent.
   static String _sensitivityName(SynthLogic sl) {
+    if (sl is SynthLogicArrayStructureElement) {
+      return _scName(sl.rootArray.resolved.name);
+    }
     var current = sl;
     while (current is SynthLogicArrayElement) {
       current = current.parentArray.replacement ?? current.parentArray;
@@ -1669,6 +1693,9 @@ class SystemCSynthesisResult extends SynthesisResult {
   /// Resolves a driver Logic to a SystemC read expression using the
   /// SynthModuleDefinition's logicToSynthMap to find the canonical name.
   String _resolveDriver(Logic driver, Map<String, String> inputsMap) {
+    if (driver.width == 0) {
+      return '0';
+    }
     if (driver is Const) {
       return _typedConstExpr(driver.value, driver.width);
     }
@@ -1976,6 +2003,9 @@ class SystemCStubSynthesisResult extends SynthesisResult {
 
   @override
   int get matchHashCode => Object.hash(_portsString, reason);
+
+  @override
+  String toFileContents() => _toSystemC();
 
   String _toSystemC() {
     final moduleName = SystemCSynthesisResult.systemCIdentifier(

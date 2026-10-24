@@ -7,6 +7,8 @@
 // 2026 July
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/ui/vm_connection_form.dart';
@@ -185,5 +187,107 @@ void main() {
     await tester.tap(find.text('Continue without Connection (Demo examples)'));
 
     expect(demoRequests, 1);
+  });
+
+  testWidgets('cancels an in-flight VM discovery without applying its result', (
+    tester,
+  ) async {
+    final vmUriController = TextEditingController();
+    final dtdUriController = TextEditingController();
+    addTearDown(vmUriController.dispose);
+    addTearDown(dtdUriController.dispose);
+    final discovery = Completer<List<DiscoveredVmService>>();
+    final discovered = <List<DiscoveredVmService>>[];
+
+    await pumpForm(
+      tester,
+      vmUriController: vmUriController,
+      dtdUriController: dtdUriController,
+      onConnect: () {},
+      discoverVmServices: (_) => discovery.future,
+      onServicesDiscovered: discovered.add,
+    );
+
+    await tester.enterText(find.byType(TextField).first, 'ws://host:8181/dtd=');
+    await tester.tap(find.text('Discover'));
+    await tester.pump();
+    expect(find.text('Cancel'), findsOneWidget);
+
+    await tester.tap(find.text('Cancel'));
+    discovery.complete([
+      DiscoveredVmService(name: 'late VM', uri: 'ws://host:8181/app=/ws'),
+    ]);
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.text('late VM'), findsNothing);
+    expect(discovered, isEmpty);
+    expect(vmUriController.text, isEmpty);
+  });
+
+  testWidgets('automatically discovers a prefilled DTD URI and explains errors',
+      (tester) async {
+    final vmUriController = TextEditingController();
+    final dtdUriController = TextEditingController(
+      text: 'ws://host:8181/dtd=',
+    );
+    addTearDown(vmUriController.dispose);
+    addTearDown(dtdUriController.dispose);
+    String? discoveredFrom;
+
+    await pumpForm(
+      tester,
+      vmUriController: vmUriController,
+      dtdUriController: dtdUriController,
+      onConnect: () {},
+      discoverVmServices: (dtdUri) async {
+        discoveredFrom = dtdUri;
+        throw Exception('WebSocket connection refused');
+      },
+    );
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(discoveredFrom, 'ws://host:8181/dtd=');
+    expect(
+      find.textContaining(
+        'Failed to connect to DTD address: ws://host:8181/dtd=',
+      ),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('distinguishes timeout and certificate discovery failures', (
+    tester,
+  ) async {
+    final vmUriController = TextEditingController();
+    final dtdUriController = TextEditingController();
+    addTearDown(vmUriController.dispose);
+    addTearDown(dtdUriController.dispose);
+    var error = 'DNS timeout';
+
+    await pumpForm(
+      tester,
+      vmUriController: vmUriController,
+      dtdUriController: dtdUriController,
+      onConnect: () {},
+      discoverVmServices: (_) async => throw Exception(error),
+    );
+
+    await tester.enterText(find.byType(TextField).first, 'ws://host:8181/dtd=');
+    await tester.tap(find.text('Discover'));
+    await tester.pumpAndSettle();
+    expect(
+      find.textContaining('Connection to DTD timed out or could not resolve'),
+      findsOneWidget,
+    );
+
+    error = 'SSL certificate rejected';
+    await tester.tap(find.text('Discover'));
+    await tester.pumpAndSettle();
+    expect(
+      find.textContaining('SSL/certificate error connecting to DTD'),
+      findsOneWidget,
+    );
   });
 }

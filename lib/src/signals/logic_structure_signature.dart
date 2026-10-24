@@ -3,6 +3,9 @@
 //
 // logic_structure_signature.dart
 // Internal structural signatures for operation module definitions.
+//
+// 2026 October 18
+// Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 import 'package:meta/meta.dart';
 import 'package:rohd/src/signals/signals.dart';

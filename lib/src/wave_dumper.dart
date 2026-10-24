@@ -64,3 +64,8 @@ class WaveDumper {
   WaveDumper(Module module, {String outputPath = 'waves.vcd'})
       : _service = module.dumpWaves(outputPath: outputPath);
 }
+
+/// Deprecated alias for [WaveDumper].
+@Deprecated('Use Module.dumpWaves() for simple VCD output, or '
+    'WaveformService for advanced waveform configuration.')
+typedef Dumper = WaveDumper;

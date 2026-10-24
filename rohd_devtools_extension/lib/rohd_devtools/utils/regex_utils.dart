@@ -1,7 +1,12 @@
 // Copyright (C) 2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
-
+//
+// regex_utils.dart
 // RegExp remains the compatibility implementation until Pattern gains parity.
+//
+// 2026 October 16
+// Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
+
 // ignore_for_file: deprecated_member_use, unnecessary_ignore
 
 /// Creates a regular-expression [Pattern] while keeping direct RegExp

@@ -19,11 +19,11 @@ import 'bit_field_utils.dart';
 /// Callers may match against these string constants when handling a
 /// `showMenu<String>` result that includes bit-expansion items.
 abstract final class BitExpansionMenuValues {
-  /// Menu item: "Expand Bits [N]" — expand each bit (or a chosen range)
+  /// Menu item: `Expand Bits [N]` — expand each bit (or a chosen range)
   /// as a synthesized 1-bit waveform.
   static const String expandBits = 'expand_bits';
 
-  /// Menu item: "Define Bit Fields [N]..." — open a dialog that lets the
+  /// Menu item: `Define Bit Fields [N]...` — open a dialog that lets the
   /// user name arbitrary bit ranges.
   static const String defineFields = 'define_fields';
 }
@@ -44,6 +44,7 @@ class BitExpandRangeAction extends BitExpansionAction {
   /// High bit (inclusive) of the range to expand.
   final int bitEnd;
 
+  /// Creates an action that expands the range from [bitStart] to [bitEnd].
   const BitExpandRangeAction(this.bitStart, this.bitEnd);
 }
 
@@ -53,6 +54,7 @@ class BitDefineFieldsAction extends BitExpansionAction {
   /// The user-defined bit fields.
   final List<BitFieldDef> fields;
 
+  /// Creates an action that defines [fields].
   const BitDefineFieldsAction(this.fields);
 }
 

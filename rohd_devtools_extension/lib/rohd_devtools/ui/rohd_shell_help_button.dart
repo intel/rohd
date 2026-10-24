@@ -3,6 +3,9 @@
 //
 // rohd_shell_help_button.dart
 // Help button for the target-backed ROHD debug shell.
+//
+// 2026 October 17
+// Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 import 'package:flutter/foundation.dart';
 import 'package:material_ui/material_ui.dart';

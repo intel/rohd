@@ -79,6 +79,18 @@ expect(operation.valueEnum, Operation.read);
 
 Assignments between `LogicEnum`s require the same Dart enum type, width, and compatible encodings. A destination may have additional mapped values, but every value mapped by the source must have the same encoding in the destination.
 
+### Enum Reset Values in Flops
+
+A [`flop`](./A09-sequentials.md) can take an enum member as its `resetValue` when its data input is a `LogicEnum`. Use the explicit type argument so the output keeps the enum type:
+
+```dart
+final stateD = LogicEnum<MyState>(MyState.values, name: 'stateD');
+final stateQ = flop<LogicEnum<MyState>>(clk, stateD,
+    reset: reset, resetValue: MyState.idle);
+```
+
+Without the type argument, Dart infers a plain `Logic` output. The reset still uses the enum's encoding, but the output is not enum-typed. Use `flop<Logic>` for a plain packed register, such as when the data input is a `Const`.
+
 ## Comparisons
 
 Comparison methods and `isIn` accept enum members and use the signal's mapping:

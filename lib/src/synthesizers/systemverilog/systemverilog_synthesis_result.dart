@@ -11,6 +11,7 @@ import 'dart:io';
 
 import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/modules/conditionals/always.dart';
 import 'package:rohd/src/synthesizers/systemverilog/systemverilog_synth_module_definition.dart';
 import 'package:rohd/src/synthesizers/systemverilog/systemverilog_synth_sub_module_instantiation.dart';
 import 'package:rohd/src/synthesizers/utilities/synth_enum_definition.dart';
@@ -60,6 +61,11 @@ class SystemVerilogCustomDefinitionSynthesisResult extends SynthesisResult {
       other is SystemVerilogCustomDefinitionSynthesisResult &&
       (module as SystemVerilog).definitionVerilog('*PLACEHOLDER*')! ==
           (other.module as SystemVerilog).definitionVerilog('*PLACEHOLDER*')!;
+
+  @override
+  String toFileContents() => (module as SystemVerilog).definitionVerilog(
+        getInstanceTypeOfModule(module),
+      )!;
 
   @override
   List<SynthFileContents> toSynthFileContents() => List.unmodifiable([
@@ -146,6 +152,9 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
       _parameterString.hashCode;
 
   @override
+  String toFileContents() => _toVerilog();
+
+  @override
   List<SynthFileContents> toSynthFileContents() => List.unmodifiable([
         SynthFileContents(
           name: instanceTypeName,
@@ -170,6 +179,13 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
           module.tryOutput(sig.name) != null,
           'Named output ${sig.name} not found in module ${module.name}.',
         );
+        final portType = configuration.outputPortType;
+        if (_childDrivenUnpackedArrays.contains(sig.resolved) &&
+            portType.objectType == SystemVerilogPortType.implicit &&
+            portType.dataType == SystemVerilogPortType.explicit) {
+          return _verilogPort('output', 'wire',
+              const SystemVerilogPortTypeConfiguration(), sig);
+        }
         return _verilogPort(
           'output',
           'var',
@@ -220,13 +236,56 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
       final comment = _assignedSignalNames.contains(sig.name)
           ? ''
           : traceHelper.signalComment(sig);
-      final type = sig.definitionType(useEnumType: configuration.generateEnums);
+      final type = _childDrivenUnpackedArrays.contains(sig.resolved)
+          ? 'wire'
+          : sig.definitionType(useEnumType: configuration.generateEnums);
       final decl = '$type '
           '${sig.definitionName(useEnumType: configuration.generateEnums)};';
       declarations.add(_SvTraceHelper._pad(decl, comment));
     }
     return declarations.join('\n');
   }
+
+  /// Array declarations containing a connection view's selected bits.
+  Iterable<SynthLogic> _unpackedArrayRoots(SynthLogic signal) sync* {
+    signal = signal.resolved;
+    if (signal is SynthLogicConcat) {
+      for (final part in signal.parts) {
+        yield* _unpackedArrayRoots(part);
+      }
+    } else if (signal is SynthLogicArrayStructureElement) {
+      yield* _unpackedArrayRoots(signal.parentArray);
+    } else if (signal is SynthLogicArrayElement) {
+      yield* _unpackedArrayRoots(signal.parentArray);
+    } else if (signal.isArray &&
+        (signal.logics.first as TypedLogicArray).numUnpackedDimensions > 0) {
+      yield signal;
+    }
+  }
+
+  /// Child-driven unpacked variables stay unknown in Icarus 12.0.
+  ///
+  /// Net declarations preserve their wiring semantics without changing array
+  /// dimensions. Any array with procedural writes must remain a variable.
+  late final Set<SynthLogic> _childDrivenUnpackedArrays = () {
+    final childDriven = <SynthLogic>{};
+    final procedural = <SynthLogic>{};
+    for (final child in _synthModuleDefinition.subModuleInstantiations) {
+      if (!child.needsInstantiation) {
+        continue;
+      }
+      final targets = child.outputMapping.values.expand(_unpackedArrayRoots);
+      final childModule = child.module;
+      if (childModule is Always) {
+        procedural.addAll(targets);
+      } else if (childModule is! SystemVerilog ||
+          childModule.generatedDefinitionType !=
+              DefinitionGenerationType.none) {
+        childDriven.addAll(targets);
+      }
+    }
+    return childDriven.difference(procedural);
+  }();
 
   /// Representation of all assignments in generated SV.
   String _verilogAssignments(_SvTraceHelper traceHelper) {

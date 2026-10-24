@@ -10,8 +10,10 @@
 @TestOn('vm')
 library;
 
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:rohd_devtools_extension/rohd_devtools/cubit/cubits.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/rohd_devtools.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/ui/ui.dart';
 
@@ -40,5 +42,33 @@ void main() {
     await tester.pump();
 
     expect(find.byTooltip('Switch to dark theme'), findsOneWidget);
+  });
+
+  testWidgets('provides all page-owned DevTools cubits', (tester) async {
+    tester.view
+      ..physicalSize = const Size(1200, 800)
+      ..devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      const MaterialApp(home: RohdDevToolsPage(manageServiceManager: false)),
+    );
+    await tester.pump();
+
+    final context = tester.element(find.byType(RohdExtensionModule));
+    expect(context.read<DevToolsThemeCubit>(), isA<DevToolsThemeCubit>());
+    expect(context.read<RohdServiceCubit>(), isA<RohdServiceCubit>());
+    expect(context.read<TreeSearchTermCubit>(), isA<TreeSearchTermCubit>());
+    expect(
+      context.read<DevToolsHierarchyCubit>(),
+      isA<DevToolsHierarchyCubit>(),
+    );
+    expect(
+      context.read<SignalSearchTermCubit>(),
+      isA<SignalSearchTermCubit>(),
+    );
+    expect(context.read<DetailsTabCubit>(), isA<DetailsTabCubit>());
+    expect(context.read<SnapshotCubit>(), isA<SnapshotCubit>());
   });
 }
