@@ -385,12 +385,20 @@ for `intel-corporation.rohd-schematic-viewer` and
 the published viewers as well. ROHD itself remains usable without an open
 viewer, so they are an extension pack rather than hard extension dependencies.
 
-A release tag matching `rohd-vscode-v<version>` triggers the repository release
-workflow, which first verifies that both viewer IDs have public Marketplace
-listings, then builds, verifies, checksums, and attaches the
-Marketplace-qualified VSIX to the GitHub release. The workflow does not hold
-Marketplace credentials or publish automatically. Do not create the ROHD
-release until the Wave Viewer Marketplace listing is available.
+A release tag matching `rohd-vscode-v<version>` triggers the **Extension
+release artifact** workflow. It first verifies that both viewer IDs have public
+Marketplace listings, then builds, verifies, and checksums the
+Marketplace-qualified VSIX. The workflow uploads the VSIX and checksum as a
+90-day Actions artifact and writes publication instructions for an authorized
+Marketplace administrator. The administrator must download, verify,
+install/smoke-test, and upload the exact VSIX inside the artifact ZIP; do not
+upload the ZIP or rebuild the package.
+
+Publishing the matching GitHub release subsequently triggers the repository
+release workflow, which attaches a separately verified VSIX and checksum to
+that release. Neither workflow holds Marketplace credentials or publishes
+automatically. Do not create the ROHD release until the Wave Viewer Marketplace
+listing is available.
 
 The extension version is defined only in [`pubspec.yaml`](pubspec.yaml). Before
 preparing a release, update that version, then synchronize npm metadata and

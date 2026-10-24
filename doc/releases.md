@@ -20,7 +20,7 @@ released, not a repository-wide version.
 | [rohd_devtools_widgets](../packages/rohd_devtools_widgets) | Reusable Flutter controls and utilities for debug viewers. | Independent pub.dev package; `flutter pub publish` from its directory. | Its own `pubspec.yaml`. | Tag `rohd_devtools_widgets-v<version>`; release **rohd_devtools_widgets v<version>**. |
 | [rohd_source_navigator](../packages/rohd_source_navigator) | Shared FLC data models and source-navigation utilities for debug viewers. | Independent pub.dev package; `dart pub publish` from its directory. | Its own `pubspec.yaml`. | Tag `rohd_source_navigator-v<version>`; release **rohd_source_navigator v<version>**. |
 | [ROHD DevTools application](../rohd_devtools_extension) | Interactive hardware debug UI embedded in Dart DevTools. | Flutter web build produced by CI and bundled under `extension/devtools` in the ROHD pub.dev package; the application itself is not published to pub.dev. | Tracked by the containing ROHD release and the build's source/artifact commits, not an independent application release version. | Included in ROHD's tag and release notes; no separate release tag. The `artifacts` branch holds CI output, not an immutable release. |
-| [ROHD VS Code extension](../rohd_extension) | Editor snippets, completions, cross-probe source navigation, and the ROHD viewer extension pack. | GitHub Actions verifies the Marketplace availability of the Schematic and Wave Viewer extensions, then builds, verifies, checksums, and attaches a Marketplace-qualified VSIX for `intel-corporation.rohd` when its GitHub release is published; an authorized Marketplace administrator publishes that exact artifact separately. | `rohd_extension/pubspec.yaml`, synchronized to npm metadata. | Tag `rohd-vscode-v<version>`; release `ROHD VS Code v<version>`, with `rohd-vscode-v<version>.vsix` and its checksum attached automatically. |
+| [ROHD VS Code extension](../rohd_extension) | Editor snippets, completions, cross-probe source navigation, and the ROHD viewer extension pack. | Tag CI verifies Marketplace viewer availability, builds and checksums a Marketplace-qualified VSIX, retains it as a 90-day Actions artifact, and provides administrator publication instructions. The GitHub release workflow separately attaches a verified VSIX and checksum after the release is published; an authorized Marketplace administrator publishes the exact reviewed artifact. | `rohd_extension/pubspec.yaml`, synchronized to npm metadata. | Tag `rohd-vscode-v<version>`; release `ROHD VS Code v<version>`, with `rohd-vscode-v<version>.vsix` and its checksum attached automatically. |
 
 The source-navigation library lives in `packages/rohd_source_navigator`, alongside
 the other independently published libraries. Git dependencies following the move
@@ -498,21 +498,23 @@ Wave Viewer release, but its GitHub release must wait for that publication.
 
 1. Tag the reviewed source commit as `rohd-vscode-v<version>`, where `<version>`
    exactly matches `rohd_extension/pubspec.yaml`. The tagged commit must include
-   the [VS Code release workflow](../.github/workflows/release_vscode.yml).
-2. Publish a GitHub release for that tag, choosing the previous same-component
-   tag for auto-generated notes. Do not mark it as GitHub's latest release.
-3. Wait for **Release ROHD VS Code Extension** to succeed. It checks out the
-   release tag, verifies the extension identity and version, runs the same
+   the [VS Code extension artifact workflow](../.github/workflows/extension_artifact.yml).
+2. Wait for **Extension release artifact** to succeed. It verifies the
+   extension identity and viewer Marketplace listings, runs the same
    `tool/package_vscode.sh` helper with Node.js 24, verifies the actual VSIX
-   archive, and attaches `rohd-vscode-v<version>.vsix` plus
+   archive, uploads the VSIX plus checksum as a 90-day Actions artifact, and
+   writes administrator publication instructions in the job summary.
+3. Download and extract that tested artifact, verify its checksum, and
+   smoke-test the exact VSIX in VS Code. An authorized administrator of the
+   `intel-corporation` Marketplace publisher then uploads that same VSIX
+   through Marketplace tooling. Do not upload the artifact ZIP or rebuild the
+   package.
+4. Publish a GitHub release for that tag, choosing the previous same-component
+   tag for auto-generated notes. Do not mark it as GitHub's latest release.
+   Wait for **Release ROHD VS Code Extension** to attach
+   `rohd-vscode-v<version>.vsix` and
    `rohd-vscode-v<version>.vsix.sha256` to that release using `GITHUB_TOKEN`.
-   Other component releases are skipped. Saving a draft or pushing a tag alone
-   does not trigger the workflow.
-4. Download the attached VSIX and checksum, verify the checksum, and smoke-test
-   the exact VSIX in VS Code. An authorized administrator of the
-   `intel-corporation` Marketplace publisher then uploads that same file through
-   Marketplace tooling. Confirm the Marketplace version and link it from the
-   GitHub release notes.
+   Other component releases are skipped.
 
 If the build or upload fails, resolve the cause and rerun the failed workflow
 job. An existing same-named asset is not overwritten; do not replace an already
