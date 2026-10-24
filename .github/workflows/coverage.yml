@@ -14,6 +14,7 @@ jobs:
     name: Code Coverage
     env:
       ROHD_REQUIRE_VERILATOR: '1'
+      ROHD_REQUIRE_SYSTEMC: '1'
     timeout-minutes: 60
     permissions:
       contents: write
@@ -36,6 +37,12 @@ jobs:
 
       - name: Install Verilator
         run: bash tool/gh_actions/install_verilator.sh
+
+      - name: Install Accellera SystemC
+        run: tool/gh_actions/install_systemc.sh
+
+      - name: Pre-build SystemC PCH and Makefile
+        run: tool/gh_actions/setup_systemc_pch.sh
 
       - name: Generate coverage and badge
         run: tool/generate_coverage.sh --generate-svg
