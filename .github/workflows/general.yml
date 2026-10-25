@@ -50,11 +50,13 @@ jobs:
         with:
           globs: '**/*.md'
 
-      - name: Check Markdown links
-        uses: gaurav-nelson/github-action-markdown-link-check@v1
+      - name: Setup Node for Markdown links
+        uses: actions/setup-node@v4
         with:
-          use-quiet-mode: yes # output is too noisy, see https://github.com/gaurav-nelson/github-action-markdown-link-check/issues/121
-          config-file: .github/configs/mlc_config.json
+          node-version: 24
+
+      - name: Check Markdown links
+        run: bash tool/gh_actions/check_markdown_links.sh
 
       - name: Setup Flutter SDK
         uses: flutter-actions/setup-flutter@v2

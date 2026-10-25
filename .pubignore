@@ -23,6 +23,8 @@ coverage/
 ./devtools_options.yaml
 
 # Exceptions
+!tool/coverage/
+!tool/coverage/**
 !.vscode/extensions.json
 !rohd_devtools_extension/test/fixtures/filter_bank.vcd
 !test/example_icarus_waves.vcd
