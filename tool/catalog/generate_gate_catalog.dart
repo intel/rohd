@@ -6,7 +6,7 @@
 // [NetlistSynthesizerConfiguration].
 //
 // Usage:
-//   dart run tool/generate_gate_catalog.dart [output-path]
+//   dart run tool/catalog/generate_gate_catalog.dart [output-path]
 //
 // 2026 August 20
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
@@ -43,7 +43,7 @@ GateCatalog _buildCatalog() => GateCatalog(
 Future<void> main(List<String> arguments) async {
   if (arguments.length > 1) {
     stderr.writeln(
-      'Usage: dart run tool/generate_gate_catalog.dart [output-path]',
+      'Usage: dart run tool/catalog/generate_gate_catalog.dart [output-path]',
     );
     exitCode = 64;
     return;

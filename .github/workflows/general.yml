@@ -14,7 +14,11 @@ permissions: {}
 jobs:
   run-checks:
     name: Run Checks
-    needs: [source-checks, project-tests, devcontainer-tests, vscode-extension]
+    needs:
+      - source-checks
+      - project-tests
+      - devcontainer-tests
+      - vscode-extension
     if: ${{ always() }}
     permissions: {}
     timeout-minutes: 5
@@ -27,7 +31,10 @@ jobs:
           CONTAINER_RESULT: ${{ needs.devcontainer-tests.result }}
           VSCODE_EXTENSION_RESULT: ${{ needs.vscode-extension.result }}
         run: |
-          [[ "$SOURCE_RESULT" == success && "$TEST_RESULT" == success && "$CONTAINER_RESULT" == success && "$VSCODE_EXTENSION_RESULT" == success ]]
+          [[           "$SOURCE_RESULT" == success &&
+          "$TEST_RESULT" == success &&
+          "$CONTAINER_RESULT" == success &&
+          "$VSCODE_EXTENSION_RESULT" == success ]]
 
   source-checks:
     name: Source Checks
@@ -43,11 +50,13 @@ jobs:
         with:
           globs: '**/*.md'
 
-      - name: Check Markdown links
-        uses: gaurav-nelson/github-action-markdown-link-check@v1
+      - name: Setup Node for Markdown links
+        uses: actions/setup-node@v4
         with:
-          use-quiet-mode: yes # output is too noisy, see https://github.com/gaurav-nelson/github-action-markdown-link-check/issues/121
-          config-file: .github/configs/mlc_config.json
+          node-version: 24
+
+      - name: Check Markdown links
+        run: bash tool/gh_actions/check_markdown_links.sh
 
       - name: Setup Flutter SDK
         uses: flutter-actions/setup-flutter@v2

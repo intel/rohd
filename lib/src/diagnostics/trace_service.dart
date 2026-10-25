@@ -51,7 +51,8 @@ enum ScOutputMode {
 /// building the module, so that construction-site stack traces are
 /// captured.
 ///
-/// Typical usage (see `tool/gen_filterbank_flc.dart` for a full example):
+/// Typical usage (see `tool/diagnostics/gen_filterbank_flc.dart` for a full
+/// example):
 ///
 /// ```dart
 /// SourceTracer.activate();

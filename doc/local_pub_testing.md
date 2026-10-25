@@ -71,7 +71,7 @@ server still needs network access for packages not hosted locally.
 Use the repository helper for each publisher or consumer command:
 
 ```bash
-bash "$rohd_repo/tool/local_pub.sh" "$experiment" dart pub get
+bash "$rohd_repo/tool/release/local_pub.sh" "$experiment" dart pub get
 ```
 
 It sets `PUB_HOSTED_URL` and puts `PUB_CACHE` under the experiment directory for
@@ -172,9 +172,9 @@ In each staged package directory:
 
 ```bash
 cd "$experiment/stage/dart_wellen"
-bash "$rohd_repo/tool/local_pub.sh" "$experiment" dart pub publish --dry-run
+bash "$rohd_repo/tool/release/local_pub.sh" "$experiment" dart pub publish --dry-run
 # Review the destination, warnings, and archive inventory before upload.
-bash "$rohd_repo/tool/local_pub.sh" "$experiment" dart pub publish
+bash "$rohd_repo/tool/release/local_pub.sh" "$experiment" dart pub publish
 ```
 
 Use `flutter pub` for Flutter packages. The interactive upload is deliberate;
@@ -205,9 +205,9 @@ redirecting only `rohd_wave_viewer` with an explicit hosted URL is insufficient.
 ```bash
 cd "$experiment/consumer"
 # Create the test application's pubspec.yaml and source here.
-bash "$rohd_repo/tool/local_pub.sh" "$experiment" flutter pub get
-bash "$rohd_repo/tool/local_pub.sh" "$experiment" flutter analyze
-bash "$rohd_repo/tool/local_pub.sh" "$experiment" flutter test
+bash "$rohd_repo/tool/release/local_pub.sh" "$experiment" flutter pub get
+bash "$rohd_repo/tool/release/local_pub.sh" "$experiment" flutter analyze
+bash "$rohd_repo/tool/release/local_pub.sh" "$experiment" flutter test
 ```
 
 Check the exact result, not just Pub success:

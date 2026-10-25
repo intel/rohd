@@ -45,14 +45,14 @@ jobs:
         run: tool/gh_actions/setup_systemc_pch.sh
 
       - name: Generate coverage and badge
-        run: tool/generate_coverage.sh --generate-svg
+        run: tool/coverage/generate_coverage.sh --generate-svg
 
       - name: Save ROHD coverage badge
         run: cp /tmp/coverage-badge.svg /tmp/rohd-coverage-badge.svg
 
       - name: Generate DevTools coverage and badge
         working-directory: rohd_devtools_extension
-        run: ../tool/generate_coverage.sh --generate-svg
+        run: ../tool/coverage/generate_coverage.sh --generate-svg
 
       - name: Commit coverage badge
         run: |

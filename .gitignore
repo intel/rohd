@@ -26,6 +26,8 @@ pubspec_overrides.yaml
 /rohd_devtools_extension/web/dart_wellen/
 
 # Exceptions
+!tool/coverage/
+!tool/coverage/**
 !.vscode/extensions.json
 !.vscode/tasks.json
 !rohd_devtools_extension/test/fixtures/filter_bank.vcd

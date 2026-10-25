@@ -4,7 +4,7 @@
 // Regenerates the checked-in FilterBank netlist and FLC assets.
 //
 // Usage:
-//   dart run tool/gen_filterbank_flc.dart
+//   dart run tool/diagnostics/gen_filterbank_flc.dart
 //
 // 2026 October 16
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
@@ -14,7 +14,7 @@ import 'dart:io';
 
 import 'package:rohd/rohd.dart';
 
-import '../example/filter_bank/filter_bank_modules.dart';
+import '../../example/filter_bank/filter_bank_modules.dart';
 
 Future<void> main() async {
   SourceTracer.activate();

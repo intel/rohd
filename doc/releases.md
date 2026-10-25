@@ -110,7 +110,7 @@ with a merge or rebase; the preparation PR itself does not need to be merged yet
    Use `--run-tests` to repeat selected package suites locally. ROHD's local
    tests require Icarus Verilog; Verilator is required in CI and when
    `ROHD_REQUIRE_VERILATOR=1`.
-5. Run `tool/prepare_release.sh [--run-tests] [package ...]` on the preparation
+5. Run `tool/release/prepare_release.sh [--run-tests] [package ...]` on the preparation
    branch from the repository root. No package names selects all five; explicit
    names select only those packages. Versions come from their manifests, not
    command-line arguments. It validates selected metadata before making changes,
@@ -131,7 +131,7 @@ with a merge or rebase; the preparation PR itself does not need to be merged yet
    commit, tag, push, or upload anything. If a guard fails, incorporate the latest
    `main` or wait for its artifact workflow as appropriate, then rerun preparation.
 6. To inspect archives without preparing metadata, run
-   `tool/check_release.sh [package ...]`. Like preparation, it defaults to all five
+   `tool/release/check_release.sh [package ...]`. Like preparation, it defaults to all five
    packages and accepts explicit names: `rohd`, `rohd_hierarchy`, `rohd_waveform`,
    `rohd_devtools_widgets`, and `rohd_source_navigator`. Each uses its existing
    version. The helper runs
@@ -142,11 +142,11 @@ with a merge or rebase; the preparation PR itself does not need to be merged yet
    `extension/devtools/build` is included and passes
    `tool/gh_actions/devtool/test_devtools_install.sh extension/devtools`.
 
-Preparation runs the following checks before invoking `tool/check_release.sh`:
+Preparation runs the following checks before invoking `tool/release/check_release.sh`:
 
 | Selected Package | Default Checks | Added With `--run-tests` |
 | --- | --- | --- |
-| `rohd` | `tool/run_checks.sh --skip-tests`: dependencies, formatting, analysis, API docs, and temporary-file checks; then `tool/package_vscode.sh` compiles and packages a temporary VSIX. | Simulator prerequisites and ROHD tests via `tool/run_checks.sh`. |
+| `rohd` | `tool/run_checks.sh --skip-tests`: dependencies, formatting, analysis, API docs, and temporary-file checks; then `tool/release/package_vscode.sh` compiles and packages a temporary VSIX. | Simulator prerequisites and ROHD tests via `tool/run_checks.sh`. |
 | `rohd_hierarchy`, `rohd_waveform`, `rohd_source_navigator` | Run `flutter pub get` from the repository root, then in each package directory run `dart format --output=none --set-exit-if-changed .` and `dart analyze --fatal-infos`. | `dart test` with `--run-tests`; isolated hosted dependency checks and a blocking Pana score gate with `--run-pana`. |
 | `rohd_devtools_widgets` | Run `flutter pub get` from the repository root, then in the package directory run `dart format --output=none --set-exit-if-changed .` and `flutter analyze --fatal-infos`. | `flutter test` with `--run-tests`; isolated hosted dependency checks and a blocking Pana score gate with `--run-pana`. |
 
@@ -166,7 +166,7 @@ prerequisite or enabled check; no publication dry runs start unless all enabled
 checks pass. An early failure such as a nonempty `tmp_test` directory
 means later stages have not run. Review leftover test files before retrying.
 The ordinary package checks use the current checkout's dependency overrides.
-Run `tool/run_pana.sh` from the repository root to run hosted dependency
+Run `tool/release/run_pana.sh` from the repository root to run hosted dependency
 compatibility checks and Pana score gates for all five publishable packages
 without running release preparation. Pass package names to select a subset.
 The per-package checks and CI use the same
@@ -210,31 +210,31 @@ Preparation examples (choose one):
 
 ```sh
 # All five packages, using each manifest's version; rely on CI for test suites:
-tool/prepare_release.sh
+tool/release/prepare_release.sh
 
 # All five packages, also running their test suites locally:
-tool/prepare_release.sh --run-tests
+tool/release/prepare_release.sh --run-tests
 
 # All five packages, also running hosted dependency and Pana score gates:
-tool/prepare_release.sh --run-pana
+tool/release/prepare_release.sh --run-pana
 
 # ROHD only:
-tool/prepare_release.sh rohd
+tool/release/prepare_release.sh rohd
 
 # ROHD only, including its test suite:
-tool/prepare_release.sh --run-tests rohd
+tool/release/prepare_release.sh --run-tests rohd
 
 # ROHD plus hierarchy and waveform:
-tool/prepare_release.sh rohd rohd_hierarchy rohd_waveform
+tool/release/prepare_release.sh rohd rohd_hierarchy rohd_waveform
 
 # Only hierarchy and waveform:
-tool/prepare_release.sh rohd_hierarchy rohd_waveform
+tool/release/prepare_release.sh rohd_hierarchy rohd_waveform
 
 # Only source navigator:
-tool/prepare_release.sh rohd_source_navigator
+tool/release/prepare_release.sh rohd_source_navigator
 
 # Source navigator and widgets, including package tests and Pana score gates:
-tool/prepare_release.sh --run-tests --run-pana rohd_source_navigator rohd_devtools_widgets
+tool/release/prepare_release.sh --run-tests --run-pana rohd_source_navigator rohd_devtools_widgets
 ```
 
 Preparation requires Dart for YAML metadata parsing using the root package's
@@ -258,10 +258,10 @@ For example, validate a selection without invoking any SDK commands, then run
 the selected dry runs:
 
 ```sh
-tool/check_release.sh --validate-only
-tool/check_release.sh --validate-only rohd_hierarchy rohd_waveform rohd_devtools_widgets
-tool/check_release.sh rohd_hierarchy rohd_waveform rohd_devtools_widgets
-tool/check_release.sh rohd_source_navigator
+tool/release/check_release.sh --validate-only
+tool/release/check_release.sh --validate-only rohd_hierarchy rohd_waveform rohd_devtools_widgets
+tool/release/check_release.sh rohd_hierarchy rohd_waveform rohd_devtools_widgets
+tool/release/check_release.sh rohd_source_navigator
 ```
 
 `--validate-only` checks package names, manifest presence, and SDK availability.
@@ -460,12 +460,12 @@ prepare extension-specific release notes. `pubspec.yaml` is authoritative:
 `package.json` and `package-lock.json` must be generated from that version, not
 edited independently.
 Before merging the preparation PR, verify that the VSIX builds. The default
-`tool/prepare_release.sh` command (or an explicit selection including `rohd`)
-does this using `tool/package_vscode.sh`. For an extension-only check, or to keep
+`tool/release/prepare_release.sh` command (or an explicit selection including `rohd`)
+does this using `tool/release/package_vscode.sh`. For an extension-only check, or to keep
 a local VSIX for inspection and manual testing, run from the repository root:
 
 ```sh
-bash tool/package_vscode.sh /absolute/path/to/check.vsix
+bash tool/release/package_vscode.sh /absolute/path/to/check.vsix
 ```
 
 Choose a new output path; the helper refuses to overwrite an existing archive.
@@ -501,7 +501,7 @@ Wave Viewer release, but its GitHub release must wait for that publication.
    the [VS Code extension artifact workflow](../.github/workflows/extension_artifact.yml).
 2. Wait for **Extension release artifact** to succeed. It verifies the
    extension identity and viewer Marketplace listings, runs the same
-   `tool/package_vscode.sh` helper with Node.js 24, verifies the actual VSIX
+   `tool/release/package_vscode.sh` helper with Node.js 24, verifies the actual VSIX
    archive, uploads the VSIX plus checksum as a 90-day Actions artifact, and
    writes administrator publication instructions in the job summary.
 3. Download and extract that tested artifact, verify its checksum, and

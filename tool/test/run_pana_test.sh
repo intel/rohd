@@ -37,7 +37,7 @@ run_case() {
   local status=0
   : > "$PANA_LOG"
   PATH="$FIXTURE/bin:$PATH" PUB_CACHE="$FIXTURE/pub cache" \
-    /bin/bash "$REPO_ROOT/tool/run_pana.sh" "$@" \
+    /bin/bash "$REPO_ROOT/tool/release/run_pana.sh" "$@" \
     >"$FIXTURE/output" 2>&1 || status=$?
   if [[ "$status" -ne "$expected" ]]; then
     cat "$FIXTURE/output"

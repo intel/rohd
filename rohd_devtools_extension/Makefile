@@ -5,8 +5,8 @@ ROOT := $(shell pwd)
 WORKSPACE_ROOT := $(abspath $(ROOT)/..)
 FLUTTER_WEB_BUILD_ARGS ?=
 LOCAL_WIDGETS_DIR := $(ROOT)/../packages/rohd_devtools_widgets
-COVERAGE_SCRIPT := $(WORKSPACE_ROOT)/tool/generate_coverage.sh
-COVERAGE_VIEW_SCRIPT := $(WORKSPACE_ROOT)/tool/view_coverage.sh
+COVERAGE_SCRIPT := $(WORKSPACE_ROOT)/tool/coverage/generate_coverage.sh
+COVERAGE_VIEW_SCRIPT := $(WORKSPACE_ROOT)/tool/coverage/view_coverage.sh
 
 # Source file patterns for dependency tracking
 DART_SOURCES := $(shell find lib -name '*.dart' 2>/dev/null)

@@ -7,7 +7,7 @@
 # Check selected publication archives without uploading packages.
 #
 # Usage (from repo root):
-#   tool/check_release.sh [--validate-only] [package ...]
+#   tool/release/check_release.sh [--validate-only] [package ...]
 #
 # With no package names, check rohd, rohd_hierarchy, rohd_waveform,
 # rohd_devtools_widgets, and rohd_source_navigator. Each selected package
@@ -15,12 +15,12 @@
 # Dart is required for Dart packages; Flutter is required for widgets.
 #
 # Examples:
-#   tool/check_release.sh
-#   tool/check_release.sh rohd
-#   tool/check_release.sh rohd_hierarchy rohd_waveform
-#   tool/check_release.sh rohd_devtools_widgets
-#   tool/check_release.sh rohd_source_navigator
-#   tool/check_release.sh --validate-only
+#   tool/release/check_release.sh
+#   tool/release/check_release.sh rohd
+#   tool/release/check_release.sh rohd_hierarchy rohd_waveform
+#   tool/release/check_release.sh rohd_devtools_widgets
+#   tool/release/check_release.sh rohd_source_navigator
+#   tool/release/check_release.sh --validate-only
 #
 # --validate-only checks names, manifests, and SDK availability without invoking
 # SDK commands. Normal checks hard-code pub publish --dry-run with stdin closed;
@@ -30,7 +30,7 @@
 # and do not prove hosted dependency readiness. No commits, tags, or pushes occur.
 # SDK telemetry is suppressed for these checks and their child analyzers only.
 #
-# For ROHD, first run tool/prepare_release.sh rohd to install verified DevTools.
+# For ROHD, first run tool/release/prepare_release.sh rohd to install verified DevTools.
 # See doc/releases.md for preparation, hosted validation, and manual publication.
 #
 # 2026 September 18
@@ -63,7 +63,7 @@ if [[ $# -eq 0 ]]; then
 fi
 
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-readonly REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+readonly REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 packages=()
 directories=()
 sdks=()
@@ -118,7 +118,7 @@ for index in "${!packages[@]}"; do
   if [[ "$package" == rohd ]] &&
       [[ ! -f "$REPO_ROOT/extension/devtools/build/index.html" ||
          ! -f "$REPO_ROOT/extension/devtools/config.yaml" ]]; then
-    echo "ROHD requires its prepared DevTools build. Run tool/prepare_release.sh rohd first." >&2
+    echo "ROHD requires its prepared DevTools build. Run tool/release/prepare_release.sh rohd first." >&2
     results+=("$package: FAILED (missing DevTools payload)")
     failed=1
     continue

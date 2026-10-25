@@ -11,7 +11,7 @@
 set -euo pipefail
 
 readonly SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-readonly REPO_ROOT="$(cd -- "$SCRIPT_DIR/.." && pwd)"
+readonly REPO_ROOT="$(cd -- "$SCRIPT_DIR/../.." && pwd)"
 readonly ALL_PACKAGES=(
   rohd
   rohd_hierarchy
@@ -21,7 +21,7 @@ readonly ALL_PACKAGES=(
 )
 
 if [[ $# -eq 1 && "$1" == --help ]]; then
-  echo "Usage: tool/run_pana.sh [package ...]"
+  echo "Usage: tool/release/run_pana.sh [package ...]"
   echo "Runs hosted dependency compatibility checks and Pana score gates."
   echo "Defaults to all five publishable ROHD packages."
   exit 0
@@ -61,7 +61,7 @@ for package in "${packages[@]}"; do
     sdk=flutter
   fi
   echo "=== Running Pana for $package ==="
-  if bash "$SCRIPT_DIR/gh_actions/pana_source.sh" "$package_dir" "$sdk"; then
+  if bash "$REPO_ROOT/tool/gh_actions/pana_source.sh" "$package_dir" "$sdk"; then
     continue
   else
     package_status=$?

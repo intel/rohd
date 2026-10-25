@@ -32,9 +32,9 @@ export REAL_DART="$(command -v dart)" PACKAGE_CONFIG="$REPO_ROOT/.dart_tool/pack
 if [[ -x "$(dirname "$REAL_DART")/cache/dart-sdk/bin/dart" ]]; then
   REAL_DART="$(dirname "$REAL_DART")/cache/dart-sdk/bin/dart"
 fi
-export METADATA_SCRIPT="$RELEASE/tool/prepare_release_metadata.dart"
+export METADATA_SCRIPT="$RELEASE/tool/release/prepare_release_metadata.dart"
 
-mkdir -p "$FIXTURE/bin" "$UPSTREAM/tool/gh_actions/devtool" \
+mkdir -p "$FIXTURE/bin" "$UPSTREAM/tool/release" "$UPSTREAM/tool/gh_actions/devtool" \
   "$UPSTREAM/lib/src/utilities" "$UPSTREAM/extension/devtools"
 for executable in bash cat cp dirname find git grep mkdir mktemp rm sed tar; do
   ln -s "$(command -v "$executable")" "$FIXTURE/bin/$executable"
@@ -59,8 +59,10 @@ chmod +x "$FIXTURE/bin/dart"
 ln -s dart "$FIXTURE/bin/flutter"
 ln -s /bin/true "$FIXTURE/bin/pana"
 
-cp "$REPO_ROOT/tool/prepare_release.sh" "$REPO_ROOT/tool/check_release.sh" \
-  "$REPO_ROOT/tool/prepare_release_metadata.dart" "$UPSTREAM/tool/"
+cp "$REPO_ROOT/tool/release/prepare_release.sh" \
+  "$REPO_ROOT/tool/release/check_release.sh" \
+  "$REPO_ROOT/tool/release/prepare_release_metadata.dart" \
+  "$UPSTREAM/tool/release/"
 cp "$REPO_ROOT/tool/gh_actions/check_tmp_test.sh" "$UPSTREAM/tool/gh_actions/"
 cat > "$UPSTREAM/tool/gh_actions/pana_source.sh" <<'EOF'
 #!/bin/bash
@@ -94,7 +96,7 @@ printf '%s\n' '#!/bin/bash' \
   'printf "vsix\n" >> "$STAGE_LOG"' \
   'printf "%s\n" "$1" > "$VSIX_PATH_LOG"' \
   'printf "fixture vsix\n" > "$1"' \
-  'exit "${VSIX_STATUS:-0}"' > "$UPSTREAM/tool/package_vscode.sh"
+  'exit "${VSIX_STATUS:-0}"' > "$UPSTREAM/tool/release/package_vscode.sh"
 export VSIX_PATH_LOG="$FIXTURE/vsix-path.log"
 chmod +x "$UPSTREAM/tool/gh_actions/check_tmp_test.sh" \
   "$UPSTREAM/tool/gh_actions/devtool/test_devtools_install.sh" "$UPSTREAM/tool/run_checks.sh"
@@ -143,7 +145,7 @@ run_case() {
   : > "$STAGE_LOG"
   PATH="$FIXTURE/bin" PUB_CACHE="$FIXTURE/pub-cache" \
     ROHD_ARTIFACT_REPOSITORY="$UPSTREAM" ROHD_ARTIFACT_BRANCH=artifacts \
-    /bin/bash "$RELEASE/tool/prepare_release.sh" "$@" > "$FIXTURE/output" 2>&1 || status=$?
+    /bin/bash "$RELEASE/tool/release/prepare_release.sh" "$@" > "$FIXTURE/output" 2>&1 || status=$?
   if [[ "$status" -ne "$expected" ]] || ! grep -Fq "$message" "$FIXTURE/output"; then
     cat "$FIXTURE/output"
     echo "Expected exit $expected and '$message', got exit $status." >&2

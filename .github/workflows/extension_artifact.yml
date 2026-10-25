@@ -55,7 +55,7 @@ jobs:
         run: bash tool/verify_extension_pack.sh --verify-published
 
       - name: Package and verify Marketplace VSIX
-        run: bash ../tool/package_vscode.sh "${{ steps.package.outputs.vsix }}"
+        run: bash ../tool/release/package_vscode.sh "${{ steps.package.outputs.vsix }}"
 
       - name: Checksum verified VSIX
         run: |

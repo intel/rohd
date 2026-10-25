@@ -10,7 +10,7 @@
 # uploads, or publishes it.
 #
 # Usage (from any directory):
-#   bash tool/package_vscode.sh /absolute/path/to/output.vsix
+#   bash tool/release/package_vscode.sh /absolute/path/to/output.vsix
 #
 # Requires Node.js and npm; the release workflow uses Node.js 24.
 # npm ci replaces the extension's node_modules and packaging updates out/.
@@ -27,7 +27,7 @@ fi
 
 readonly VSIX_PATH="$1"
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-readonly REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+readonly REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 readonly VSIX_VERIFIER="$REPO_ROOT/rohd_extension/tool/verify_marketplace_vsix.sh"
 
 for executable in node npm; do
