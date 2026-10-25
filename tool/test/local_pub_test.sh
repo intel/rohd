@@ -8,7 +8,7 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 fixture="$(mktemp -d "${TMPDIR:-/tmp}/local-pub-test.XXXXXXXX")"
 trap 'rm -rf "$fixture"' EXIT
-runner="$repo_root/tool/local_pub.sh"
+runner="$repo_root/tool/release/local_pub.sh"
 unset LOCAL_PUB_URL
 
 bash "$runner" --help >"$fixture/help"

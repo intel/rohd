@@ -6,7 +6,7 @@
 set -euo pipefail
 
 usage() {
-  echo "Usage: bash tool/local_pub.sh <experiment-directory> <command> [arguments ...]"
+  echo "Usage: bash tool/release/local_pub.sh <experiment-directory> <command> [arguments ...]"
   echo "Run a command with an isolated Pub cache and a loopback hosted registry."
   echo "LOCAL_PUB_URL defaults to http://localhost:8081."
   echo "The server must already be running; this helper never publishes on its own."

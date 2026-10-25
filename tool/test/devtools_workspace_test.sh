@@ -120,11 +120,11 @@ for target in coverage coverage-view coverage-clean; do
     > "$FIXTURE/coverage-output"
   case "$target" in
     coverage)
-      grep -F "bash \"$REPO_ROOT/tool/generate_coverage.sh\"" \
+      grep -F "bash \"$REPO_ROOT/tool/coverage/generate_coverage.sh\"" \
         "$FIXTURE/coverage-output" > /dev/null
       ;;
     coverage-view)
-      grep -F "bash \"$REPO_ROOT/tool/view_coverage.sh\"" \
+      grep -F "bash \"$REPO_ROOT/tool/coverage/view_coverage.sh\"" \
         "$FIXTURE/coverage-output" > /dev/null
       ;;
     coverage-clean)

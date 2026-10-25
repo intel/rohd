@@ -35,9 +35,12 @@ you want for the API of the `Module` you are building. ROHD supports the basic
 width as a parameter to a `Module`). ROHD provides basic cloning and accessor
 helper functions like `addInput` and `input`.
 
-`LogicArray` is a uniform multidimensional array of leaf `Logic` signals. Using
-this for input/output will require special routines like `addInputArray` to
-connect external and internal signals. Examples of using `LogicArray` are in the
+`LogicArray` is a uniform multidimensional array of leaf `Logic` signals. Use
+`addTypedInput` and `addTypedOutput` when a generic component must preserve the
+caller's complete array shape. Use `addInputArray` and `addOutputArray` when
+the module intentionally declares a particular shape; those APIs require the
+correct dimensions, element width, and unpacked-dimension metadata rather than
+inferring it from the source. Examples of using `LogicArray` are in the
 `Serializer` and `Deserializer` components.
 
 `LogicStructure` is a hierarchical concatenation of named `Logic` fields, where

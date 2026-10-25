@@ -7,7 +7,7 @@
 # Prepare selected ROHD packages for release without publishing them.
 #
 # Usage (from repo root):
-#   tool/prepare_release.sh [--run-tests] [package ...]
+#   tool/release/prepare_release.sh [--run-tests] [package ...]
 #
 # Run on your preparation branch after merging or rebasing the latest intel/rohd
 # main into it. When selecting ROHD, wait for that main commit's DevTools build.
@@ -45,28 +45,28 @@
 # Examples:
 #
 #   ROHD plus all four publishable sub-packages (the default):
-#     tool/prepare_release.sh
+#     tool/release/prepare_release.sh
 #
 #   All five packages, including their test suites:
-#     tool/prepare_release.sh --run-tests
+#     tool/release/prepare_release.sh --run-tests
 #
 #   ROHD only:
-#     tool/prepare_release.sh rohd
+#     tool/release/prepare_release.sh rohd
 #
 #   ROHD only, including its test suite:
-#     tool/prepare_release.sh --run-tests rohd
+#     tool/release/prepare_release.sh --run-tests rohd
 #
 #   ROHD plus hierarchy and waveform:
-#     tool/prepare_release.sh rohd rohd_hierarchy rohd_waveform
+#     tool/release/prepare_release.sh rohd rohd_hierarchy rohd_waveform
 #
 #   Only hierarchy and waveform (no ROHD metadata or DevTools changes):
-#     tool/prepare_release.sh rohd_hierarchy rohd_waveform
+#     tool/release/prepare_release.sh rohd_hierarchy rohd_waveform
 #
 #   Only source navigator:
-#     tool/prepare_release.sh rohd_source_navigator
+#     tool/release/prepare_release.sh rohd_source_navigator
 #
 #   Sub-package archive checks only (no metadata preparation):
-#     tool/check_release.sh rohd_hierarchy rohd_waveform rohd_devtools_widgets
+#     tool/release/check_release.sh rohd_hierarchy rohd_waveform rohd_devtools_widgets
 #
 # All publication checks above use --dry-run. Review warnings and archive contents;
 # local dependency overrides do not prove hosted dependencies work for consumers.
@@ -110,7 +110,7 @@ fi
 
 # Resolve all paths and source provenance before changing the working tree.
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-readonly REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+readonly REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 bash "$SCRIPT_DIR/check_release.sh" --validate-only "$@"
 if [[ "$run_tests" == true ]]; then
   echo "Test suites enabled for selected packages (--run-tests)."
@@ -232,7 +232,7 @@ for package in "$@"; do
     fi
   )
   if [[ "$run_pana" == true ]]; then
-    bash "$SCRIPT_DIR/gh_actions/pana_source.sh" "$REPO_ROOT/packages/$package" "$sdk"
+    bash "$REPO_ROOT/tool/gh_actions/pana_source.sh" "$REPO_ROOT/packages/$package" "$sdk"
   else
     echo "=== $package: Pana score gate skipped (use --run-pana) ==="
   fi

@@ -20,13 +20,13 @@ readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 readonly FIXTURE="$(mktemp -d)"
 trap 'rm -rf "$FIXTURE"' EXIT
-readonly HELPER="$FIXTURE/repo/tool/package_vscode.sh"
+readonly HELPER="$FIXTURE/repo/tool/release/package_vscode.sh"
 readonly OUTPUT="$FIXTURE/output space/check.vsix"
 export NPM_LOG="$FIXTURE/npm.log"
 export VERIFIER_LOG="$FIXTURE/verifier.log"
 
-mkdir -p "$FIXTURE/repo/tool" "$FIXTURE/repo/rohd_extension/tool" "$FIXTURE/bin"
-cp "$REPO_ROOT/tool/package_vscode.sh" "$HELPER"
+mkdir -p "$FIXTURE/repo/tool/release" "$FIXTURE/repo/rohd_extension/tool" "$FIXTURE/bin"
+cp "$REPO_ROOT/tool/release/package_vscode.sh" "$HELPER"
 for executable in bash dirname mkdir; do
   ln -s "$(command -v "$executable")" "$FIXTURE/bin/$executable"
 done

@@ -159,6 +159,20 @@ for (final (index, sample) in samples.arrayElements.indexed) {
 }
 ```
 
+Use `addTypedInput` and `addTypedOutput` with a `LogicArray` when a generic
+module must preserve the caller's dimensions, element width, and unpacked
+layout:
+
+```dart
+arrayIn = addTypedInput('arrayIn', arrayIn);
+final arrayOut = addTypedOutput('arrayOut', arrayIn.clone);
+```
+
+Use `addInputArray` and `addOutputArray` when the module intentionally
+declares a particular array shape. Those APIs do not infer shape metadata from
+their source argument, so pass `dimensions`, `elementWidth`, and
+`numUnpackedDimensions` whenever defaults would not exactly describe the port.
+
 Define `clone()` on every concrete `LogicStructure` used as a typed port or
 typed-array element. The clone must preserve the concrete type, layout, and
 semantic metadata while honoring the requested `name`.

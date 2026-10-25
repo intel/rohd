@@ -34,15 +34,15 @@ void main() {
         Platform.resolvedExecutable,
         [
           '--packages=$packageConfig',
-          '${fixture.path}/tool/prepare_release_metadata.dart',
+          '${fixture.path}/tool/release/prepare_release_metadata.dart',
           ...arguments,
         ],
       );
 
   setUp(() {
     fixture = Directory.systemTemp.createTempSync('release-metadata-');
-    write('tool/prepare_release_metadata.dart',
-        File('tool/prepare_release_metadata.dart').readAsStringSync());
+    write('tool/release/prepare_release_metadata.dart',
+        File('tool/release/prepare_release_metadata.dart').readAsStringSync());
     write('pubspec.yaml', 'name: rohd\nversion: "0.6.11" # release\n');
     write('CHANGELOG.md', '## Next Release\n\n- Update.\n');
     write('lib/src/utilities/config.dart',

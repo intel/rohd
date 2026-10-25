@@ -12,7 +12,7 @@
 // guarantees dead-cell elimination cannot prune any of the cells this file
 // is meant to exercise.
 //
-// See `tool/generate_gate_catalog.dart` for the script that generates the
+// See `tool/catalog/generate_gate_catalog.dart` for the script that generates the
 // catalog.
 //
 // 2026 August 20

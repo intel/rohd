@@ -14,7 +14,11 @@ permissions: {}
 jobs:
   run-checks:
     name: Run Checks
-    needs: [source-checks, project-tests, devcontainer-tests, vscode-extension]
+    needs:
+      - source-checks
+      - project-tests
+      - devcontainer-tests
+      - vscode-extension
     if: ${{ always() }}
     permissions: {}
     timeout-minutes: 5
@@ -27,7 +31,10 @@ jobs:
           CONTAINER_RESULT: ${{ needs.devcontainer-tests.result }}
           VSCODE_EXTENSION_RESULT: ${{ needs.vscode-extension.result }}
         run: |
-          [[ "$SOURCE_RESULT" == success && "$TEST_RESULT" == success && "$CONTAINER_RESULT" == success && "$VSCODE_EXTENSION_RESULT" == success ]]
+          [[           "$SOURCE_RESULT" == success &&
+          "$TEST_RESULT" == success &&
+          "$CONTAINER_RESULT" == success &&
+          "$VSCODE_EXTENSION_RESULT" == success ]]
 
   source-checks:
     name: Source Checks

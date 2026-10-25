@@ -5,9 +5,9 @@
 // Prepare selected changelogs and ROHD's Config.version from package manifests.
 // Validate all selected metadata before writing; never rewrite pubspec.yaml.
 //
-// Usage (normally invoked by tool/prepare_release.sh):
-//   dart run tool/prepare_release_metadata.dart [--check] <package> [package ...]
-//   dart run tool/prepare_release_metadata.dart --check rohd rohd_hierarchy
+// Usage (normally invoked by tool/release/prepare_release.sh):
+//   dart run tool/release/prepare_release_metadata.dart [--check] <package> [package ...]
+//   dart run tool/release/prepare_release_metadata.dart --check rohd rohd_hierarchy
 //
 // --check validates and reports versions without writing files. This helper
 // never invokes publication commands or performs Git operations.
@@ -30,7 +30,7 @@ const _packagePaths = {
 void main(List<String> arguments) {
   final checkOnly = arguments.isNotEmpty && arguments.first == '--check';
   final packages = checkOnly ? arguments.skip(1).toList() : arguments;
-  final root = File.fromUri(Platform.script).parent.parent;
+  final root = File.fromUri(Platform.script).parent.parent.parent;
 
   try {
     if (packages.isEmpty) {
