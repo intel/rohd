@@ -62,7 +62,8 @@ SystemVerilog back to the Dart source location where it was constructed.</p>
 <p><strong>Prerequisite:</strong> A <a href="../rohd/SourceTracer-class.html">SourceTracer</a> must be constructed <em>before</em>
 building the module, so that construction-site stack traces are
 captured.</p>
-<p>Typical usage (see <code>tool/gen_filterbank_flc.dart</code> for a full example):</p>
+<p>Typical usage (see <code>tool/diagnostics/gen_filterbank_flc.dart</code> for a full
+example):</p>
 <pre class="language-dart"><code class="language-dart">SourceTracer.activate();
 final dut = MyModule(a, b);
 await dut.build();
