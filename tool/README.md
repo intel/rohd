@@ -6,7 +6,6 @@ from the repository root unless a tool's documentation says otherwise.
 | Directory | Purpose |
 | --- | --- |
 | [catalog/](./catalog) | Generates the gate-catalog netlist used to exercise cell mapping. |
-<<<<<<< HEAD
 | [coverage/](./coverage/README.md) | Collects and serves root or package coverage reports. |
 | [diagnostics/](./diagnostics) | Regenerates checked-in diagnostic fixture assets. |
 | [release/](./release) | Prepares and validates package and VS Code extension releases. |
