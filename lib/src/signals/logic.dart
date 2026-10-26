@@ -901,6 +901,23 @@ class Logic {
     ].swizzle();
   }
 
+  /// Returns a [Logic] that is at least [atLeast] bits wide by inserting the
+  /// minimum number of bits, each equal to [fill], at the least significant
+  /// end ([lsbs] true) or the most significant end ([lsbs] false).
+  ///
+  /// The original bits keep their positions relative to the end that is not
+  /// padded. If this signal is already at least [atLeast] bits wide, it is
+  /// returned unchanged (same object identity).
+  Logic pad({required int atLeast, bool lsbs = true, bool fill = false}) {
+    final added = atLeast > width ? atLeast - width : 0;
+    if (added == 0) {
+      return this;
+    }
+    final padding = Const(
+        LogicValue.filled(added, fill ? LogicValue.one : LogicValue.zero));
+    return (lsbs ? [this, padding] : [padding, this]).swizzle();
+  }
+
   /// Calculates the absolute value of a signal, assuming that the
   /// number is a two's complement.
   Logic abs() {

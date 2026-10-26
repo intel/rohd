@@ -26,6 +26,14 @@ class ExtendModule extends Module {
   }
 }
 
+class PadModule extends Module {
+  PadModule(Logic a, int atLeast, {required bool lsbs, required bool fill}) {
+    a = addInput('a', a, width: a.width);
+    final b = addOutput('b', width: atLeast > a.width ? atLeast : a.width);
+    (b <= a.pad(atLeast: atLeast, lsbs: lsbs, fill: fill));
+  }
+}
+
 class WithSetModule extends Module {
   WithSetModule(Logic a, int startIndex, Logic b) {
     a = addInput('a', a, width: a.width);
@@ -71,6 +79,54 @@ void main() {
       test('zero extend with same width returns identical signal', () {
         final original = Logic(width: 8);
         expect(identical(original.zeroExtend(8), original), isTrue);
+      });
+      test('pad lsbs with zeros inserts zeros at the least significant end',
+          () async {
+        final mod = PadModule(Logic(width: 4), 6, lsbs: true, fill: false);
+        await mod.build();
+        await SimCompare.checkVectors(mod, [
+          Vector({'a': 0xb}, {'b': 0x2c}),
+          Vector({'a': 0x0}, {'b': 0x0}),
+          Vector({'a': 0xf}, {'b': 0x3c}),
+        ]);
+      });
+      test('pad lsbs with ones inserts ones at the least significant end',
+          () async {
+        final mod = PadModule(Logic(width: 4), 6, lsbs: true, fill: true);
+        await mod.build();
+        await SimCompare.checkVectors(mod, [
+          Vector({'a': 0xb}, {'b': 0x2f}),
+          Vector({'a': 0x0}, {'b': 0x03}),
+        ]);
+      });
+      test('pad msbs with zeros inserts zeros at the most significant end',
+          () async {
+        final mod = PadModule(Logic(width: 4), 6, lsbs: false, fill: false);
+        await mod.build();
+        await SimCompare.checkVectors(mod, [
+          Vector({'a': 0xb}, {'b': 0x0b}),
+          Vector({'a': 0xf}, {'b': 0x0f}),
+        ]);
+      });
+      test('pad msbs with ones inserts ones at the most significant end',
+          () async {
+        final mod = PadModule(Logic(width: 4), 6, lsbs: false, fill: true);
+        await mod.build();
+        await SimCompare.checkVectors(mod, [
+          Vector({'a': 0xb}, {'b': 0x3b}),
+          Vector({'a': 0x0}, {'b': 0x30}),
+        ]);
+      });
+      test('pad at or below width returns identical signal', () {
+        final original = Logic(width: 8);
+        expect(identical(original.pad(atLeast: 8), original), isTrue);
+        expect(identical(original.pad(atLeast: 3), original), isTrue);
+        expect(
+            identical(
+                original.pad(atLeast: 8, lsbs: false, fill: true), original),
+            isTrue);
+        expect(
+            identical(original.pad(atLeast: 3, lsbs: false), original), isTrue);
       });
       test('zero extend with less width throws exception', () {
         expect(() => extendVectors([], 6, ExtendType.zero), throwsException);
