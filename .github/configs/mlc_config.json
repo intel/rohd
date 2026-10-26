@@ -43,6 +43,9 @@
       "pattern": "^https://www.nandland.com"
     },
     {
+      "pattern": "^https://www\\.electronicshub\\.org/binary-adder-and-subtractor/$"
+    },
+    {
       "pattern":"^https://.*\\.fandom\\.com"
     },
     {

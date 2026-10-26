@@ -819,8 +819,8 @@ class LShift extends _ShiftGate {
 ///
 /// When [d1] and [d0] are both [Const]s, the output type is inferred as
 /// [Const], which cannot be driven by a non-constant [control]. Request
-/// `mux<Logic>` to produce a driveable [Logic] output, for example
-/// `mux<Logic>(sel, Const(1), Const(0))`.
+/// `toDriveable()` on each source to produce a driveable [Logic] output, for
+/// example `mux(sel, Const(1).toDriveable(), Const(0).toDriveable())`.
 LogicType mux<LogicType extends Logic>(
   Logic control,
   LogicType d1,

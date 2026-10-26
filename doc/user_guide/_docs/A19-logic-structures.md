@@ -51,7 +51,7 @@ assembled from constant sign, exponent, and mantissa fields. Plain `Const` and
 explicitly:
 
 ```dart
-final Logic registered = flop<Logic>(clk, Const(0x5a, width: 8));
+final Logic registered = flop(clk, Const(0x5a, width: 8).toDriveable());
 ```
 
 For a valid constant mux control without an `outputGenerator`, `mux` returns

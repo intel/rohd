@@ -1097,3 +1097,16 @@ class Logic {
     _subsetDriver!.assignSubset(updatedSubset, start: start);
   }
 }
+
+/// Source-normalization utilities for materializing hardware operations.
+extension DriveableLogic on Logic {
+  /// Creates an ordinary [Logic] alias driven by this signal.
+  ///
+  /// The alias has a driveable [Logic] representation even when this source is
+  /// a [Const] or [LogicNet]. Use it at the boundary of an operation that
+  /// materializes a result, such as `flop(clk, Const(1).toDriveable())`.
+  ///
+  /// This does not alter this signal or its value/connectivity semantics.
+  Logic toDriveable({String? name, Naming? naming}) =>
+      Logic(name: name, width: width, naming: naming)..gets(this);
+}

@@ -69,7 +69,8 @@ driveable operation output.
 - An unmapped reset value must fail with a mapping-specific diagnostic.
 - A reset signal with a compatible enum domain must preserve that domain across
   the register boundary.
-- `flop<Logic>` is the explicit packed, driveable normalization path.
+- `toDriveable()` is the explicit packed, driveable source-normalization
+  path.
 
 ### Cases
 

@@ -89,7 +89,7 @@ final stateQ = flop<LogicEnum<MyState>>(clk, stateD,
     reset: reset, resetValue: MyState.idle);
 ```
 
-Without the type argument, Dart infers a plain `Logic` output. The reset still uses the enum's encoding, but the output is not enum-typed. Use `flop<Logic>` for a plain packed register, such as when the data input is a `Const`.
+Without the type argument, Dart infers a plain `Logic` output. The reset still uses the enum's encoding, but the output is not enum-typed. Use `toDriveable()` for a plain packed register, such as when the data input is a `Const`.
 
 ## Comparisons
 
