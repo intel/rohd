@@ -655,6 +655,10 @@ class LogicStructure implements Logic {
   Logic zeroExtend(int newWidth) => packed.zeroExtend(newWidth);
 
   @override
+  Logic pad({required int atLeast, bool lsbs = true, bool fill = false}) =>
+      packed.pad(atLeast: atLeast, lsbs: lsbs, fill: fill);
+
+  @override
   Logic? get _srcConnection => throw UnsupportedError('Delegated to elements');
 
   @override
