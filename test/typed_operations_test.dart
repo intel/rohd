@@ -456,6 +456,16 @@ void main() {
     final constantFlop = FlipFlop<Logic>(clk, constant);
     final portFlop = FlipFlop(clk, portPrototype);
     final netFlop = FlipFlop<Logic>(clk, net);
+    final constantCases = cases<Logic>(control, {
+      0: ordinary,
+      1: constant,
+    });
+    final netCases = cases<Logic>(control, {
+      0: ordinary,
+      1: net,
+    });
+    final constantPassthrough = Passthrough<Logic>(constant);
+    final netPassthrough = Passthrough<Logic>(net);
     await Future.wait([
       constantMux.build(),
       portMux.build(),
@@ -463,6 +473,8 @@ void main() {
       constantFlop.build(),
       portFlop.build(),
       netFlop.build(),
+      constantPassthrough.build(),
+      netPassthrough.build(),
     ]);
     unawaited(Simulator.run());
 
@@ -475,6 +487,10 @@ void main() {
       constantFlop.q,
       portFlop.q,
       netFlop.q,
+      constantCases,
+      netCases,
+      constantPassthrough.out,
+      netPassthrough.out,
     ]) {
       expect(output.runtimeType, Logic);
       expect(output.isNet, isFalse);
@@ -490,17 +506,105 @@ void main() {
     expect(portMux.out.value.toInt(), 5);
     expect(netMux.out.value.toInt(), 7);
     expect(netD0Mux.out.value.toInt(), 3);
+    expect(constantCases.value.toInt(), 0xa);
+    expect(netCases.value.toInt(), 7);
+    expect(constantPassthrough.out.value.toInt(), 0xa);
+    expect(netPassthrough.out.value.toInt(), 7);
     control.inject(0);
     await Simulator.tick();
     expect(constantMux.out.value.toInt(), 3);
     expect(constantD0Mux.out.value.toInt(), 0xa);
     expect(netMux.out.value.toInt(), 3);
     expect(netD0Mux.out.value.toInt(), 7);
+    expect(constantCases.value.toInt(), 3);
+    expect(netCases.value.toInt(), 3);
     await clk.nextPosedge;
     expect(constantFlop.q.value.toInt(), 0xa);
     expect(portFlop.q.value.toInt(), 5);
     expect(netFlop.q.value.toInt(), 7);
     await Simulator.endSimulation();
+  });
+
+  test('Logic.from normalizes sources for inferred operation outputs',
+      () async {
+    final clk = Logic();
+    final control = Logic();
+    final constant = Const(0xa, width: 4);
+    final netDriver = Logic(width: 4);
+    final net = LogicNet(width: 4)..gets(netDriver);
+    final constantSource = Logic.from(constant);
+    final netSource = Logic.from(net);
+
+    expect(constantSource.runtimeType, Logic);
+    expect(constantSource.srcConnection, same(constant));
+    expect(
+      () => constantSource.put(0),
+      throwsA(isA<UnassignableException>()),
+    );
+    expect(netSource.runtimeType, Logic);
+    expect(netSource.isNet, isFalse);
+    expect(netSource.srcConnection, same(net));
+    expect(
+      () => netSource < 0,
+      throwsA(isA<UnassignableException>()),
+    );
+
+    final constantFlop = flop(clk, constantSource);
+    final netFlop = flop(clk, netSource);
+    final constantMux = mux(
+      control,
+      Logic.from(constant),
+      Logic.from(Const(0x5, width: 4)),
+    );
+    final netMux = mux(control, netSource, Logic.from(net));
+    final cased = cases(control, {
+      0: Logic.from(constant),
+      1: Logic.from(net),
+    });
+    final passed = Passthrough(Logic.from(constant)).out;
+
+    for (final output in [
+      constantFlop,
+      netFlop,
+      constantMux,
+      netMux,
+      cased,
+      passed,
+    ]) {
+      _expectLogic(output);
+      expect(output.runtimeType, Logic);
+      expect(output.isNet, isFalse);
+      expect(output.width, 4);
+    }
+
+    clk.inject(0);
+    control.inject(0);
+    netDriver.inject(7);
+    await Simulator.tick();
+    expect(constantMux.value, LogicValue.ofInt(0x5, 4));
+    expect(netMux.value, LogicValue.ofInt(7, 4));
+    expect(cased.value, LogicValue.ofInt(0xa, 4));
+    expect(passed.value, LogicValue.ofInt(0xa, 4));
+
+    clk.inject(1);
+    await Simulator.tick();
+    expect(constantFlop.value, LogicValue.ofInt(0xa, 4));
+    expect(netFlop.value, LogicValue.ofInt(7, 4));
+
+    clk.inject(0);
+    control.inject(1);
+    netDriver.inject(3);
+    await Simulator.tick();
+    expect(constantMux.value, LogicValue.ofInt(0xa, 4));
+    expect(netMux.value, LogicValue.ofInt(3, 4));
+    expect(cased.value, LogicValue.ofInt(3, 4));
+    expect(passed.value, LogicValue.ofInt(0xa, 4));
+    expect(netFlop.value, LogicValue.ofInt(7, 4));
+
+    clk.inject(1);
+    await Simulator.tick();
+    expect(constantFlop.value, LogicValue.ofInt(0xa, 4));
+    expect(netFlop.value, LogicValue.ofInt(3, 4));
   });
 
   test('scalar domain subclasses retain their concrete output type', () async {

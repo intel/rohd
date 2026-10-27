@@ -51,7 +51,7 @@ assembled from constant sign, exponent, and mantissa fields. Plain `Const` and
 explicitly:
 
 ```dart
-final Logic registered = flop<Logic>(clk, Const(0x5a, width: 8));
+final Logic registered = flop(clk, Logic.from(Const(0x5a, width: 8)));
 ```
 
 For a valid constant mux control without an `outputGenerator`, `mux` returns
@@ -108,8 +108,10 @@ The former `StructureMux`, `StructureFlipFlop`, `StructurePassthrough`,
 `selectFromTyped` entry points are replaced by the corresponding established
 generic APIs. Use `cloneTyped()` and `namedTyped()` when the receiver's static
 type should be retained without a cast. `Const.cloneTyped()` remains a literal
-clone, while `Const.namedTyped()` is rejected because a named alias is
-driveable; use `Const.named()` when an ordinary `Logic` alias is intended.
+clone, while `Const.namedTyped()` is rejected because a named alias uses an
+ordinary `Logic` representation; use `Const.named()` when a named connected
+alias is intended. Use `Logic.from(constant)` when a plain-`Logic`
+source is needed for a materializing operation.
 
 ## Using `LogicStructure` to group signals
 

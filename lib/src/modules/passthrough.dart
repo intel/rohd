@@ -13,8 +13,8 @@ import 'package:rohd/src/signals/logic_structure_signature.dart';
 
 /// A no-op module that preserves [LogicType].
 ///
-/// The input supplies the output representation. Request `<Logic>` explicitly
-/// to normalize a constant or net input into a driveable scalar output.
+/// The input supplies the output representation. Normalize a constant or net
+/// input with `Logic.from(...)` to infer a driveable scalar output.
 abstract class Passthrough<LogicType extends Logic> extends Module {
   /// Input port.
   LogicType get in_;

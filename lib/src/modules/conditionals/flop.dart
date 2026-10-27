@@ -14,8 +14,8 @@ import 'package:rohd/src/signals/logic_structure_signature.dart';
 /// Constructs a positive-edge-triggered flip-flop preserving [LogicType].
 ///
 /// The input [d] supplies the output representation when [outputGenerator] is
-/// omitted. Request `<Logic>` explicitly to normalize a plain [Const] or
-/// [LogicNet] source into a driveable scalar result.
+/// omitted. Normalize a plain [Const] or [LogicNet] source with
+/// `Logic.from(...)` to infer a driveable scalar result.
 LogicType flop<LogicType extends Logic>(
   Logic clk,
   LogicType d, {

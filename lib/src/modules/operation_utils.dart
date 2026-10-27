@@ -105,18 +105,24 @@ LogicType createOperationOutput<LogicType extends Logic>({
     throw PortWidthMismatchException(prototype, width);
   }
 
-  final LogicType output;
+  final Logic output;
   if (outputGenerator != null) {
     output = outputGenerator(name: name);
+  } else if (prototype != null) {
+    output = _createDriveableOperationSchema(
+      prototype,
+      width: width,
+      name: name,
+      naming: naming,
+      normalizeToLogic: LogicType == Logic,
+    );
   } else if (LogicType == Logic) {
     if (width == null) {
       throw LogicConstructionException(
         '$operation requires a width for a normalized Logic output.',
       );
     }
-    output = Logic(name: name, width: width, naming: naming) as LogicType;
-  } else if (prototype != null) {
-    output = prototype.cloneTyped(name: name);
+    output = Logic(name: name, width: width, naming: naming);
   } else {
     throw LogicConstructionException(
       '$operation cannot infer a $LogicType output representation. '
@@ -141,7 +147,40 @@ LogicType createOperationOutput<LogicType extends Logic>({
     );
   }
 
+  if (output is! LogicType) {
+    throw LogicConstructionException(
+      '$operation inferred $LogicType from $prototype, but its driveable '
+      'output representation is ${output.runtimeType}. Normalize a Const or '
+      'LogicNet source with Logic.from(...), request <Logic>, or provide an '
+      'outputGenerator.',
+    );
+  }
+
   return output;
+}
+
+/// Creates an unconnected driveable output schema for [prototype].
+///
+/// Constants and nets describe source value or connectivity behavior rather
+/// than a driveable result representation, so they normalize to [Logic].
+/// Structures and arrays retain their concrete representation only when their
+/// clone creates driveable leaves; validation remains the responsibility of
+/// [createOperationOutput].
+Logic _createDriveableOperationSchema(
+  Logic prototype, {
+  required int? width,
+  required String name,
+  required Naming? naming,
+  required bool normalizeToLogic,
+}) {
+  if (normalizeToLogic || prototype is Const || prototype.isNet) {
+    return Logic(
+      name: name,
+      width: width ?? prototype.width,
+      naming: naming,
+    );
+  }
+  return prototype.clone(name: name);
 }
 
 /// Validates that [source] can drive [output] without losing a domain type.

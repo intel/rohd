@@ -46,5 +46,7 @@ fi
 grep -F 'markdown-link-check@3.8.7' "$LINK_CHECK_SCRIPT" > /dev/null
 grep -F "NODE_OPTIONS='--no-deprecation'" "$LINK_CHECK_SCRIPT" > /dev/null
 grep -F 'cat "$OUTPUT_FILE"' "$LINK_CHECK_SCRIPT" > /dev/null
+grep -F -- '-name .dart_tool -o -name build -o -name node_modules' \
+  "$LINK_CHECK_SCRIPT" > /dev/null
 
 echo 'Coverage tooling and workflow checks passed.'

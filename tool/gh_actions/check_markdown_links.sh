@@ -31,7 +31,10 @@ status=0
 while IFS= read -r -d '' markdown_file; do
   markdown-link-check --config "$config_file" --quiet "$markdown_file" ||
     status=1
-done < <(find . -name '*.md' -not -path './node_modules/*' -print0)
+done < <(
+  find . -type d \( -name .dart_tool -o -name build -o -name node_modules \) \
+    -prune -o -name '*.md' -print0
+)
 exit "$status"
 CHECKER
   cat "$OUTPUT_FILE"
