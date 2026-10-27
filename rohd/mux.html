@@ -75,9 +75,9 @@
 the selected input directly without creating a <a href="../rohd/Mux-class.html">Mux</a> module. The generator
 is only used when a <a href="../rohd/Mux-class.html">Mux</a> module is built.</p>
 <p>When <code>d1</code> and <code>d0</code> are both <a href="../rohd/Const-class.html">Const</a>s, the output type is inferred as
-<a href="../rohd/Const-class.html">Const</a>, which cannot be driven by a non-constant <code>control</code>. Request
-<code>mux&lt;Logic&gt;</code> to produce a driveable <a href="../rohd/Logic-class.html">Logic</a> output, for example
-<code>mux&lt;Logic&gt;(sel, Const(1), Const(0))</code>.</p>
+<a href="../rohd/Const-class.html">Const</a>, which cannot be driven by a non-constant <code>control</code>. Wrap each
+source in <code>Logic.from(...)</code> to produce a driveable <a href="../rohd/Logic-class.html">Logic</a> output, for
+example <code>mux(sel, Logic.from(Const(1)), Logic.from(Const(0)))</code>.</p>
 </section>
 
 
