@@ -312,6 +312,82 @@ class ArrayInputChildModule extends Module {
   }
 }
 
+class _ArrayElementInputChildModule extends Module {
+  _ArrayElementInputChildModule(Logic a, {required super.name})
+      : super(definitionName: 'ArrayElementInputChildModule') {
+    a = addInput('a', a, width: a.width);
+    addOutput('y') <= a.or();
+  }
+}
+
+class _ArrayElementOutputChildModule extends Module {
+  Logic get y => output('y');
+
+  _ArrayElementOutputChildModule(Logic a, {required super.name})
+      : super(definitionName: 'ArrayElementOutputChildModule') {
+    a = addInput('a', a, width: a.width);
+    addOutput('y', width: a.width) <= a;
+  }
+}
+
+class _InputArrayElementsToChildrenModule extends Module {
+  _InputArrayElementsToChildrenModule()
+      : super(definitionName: 'InputArrayElementsToChildrenModule') {
+    final values = addInputArray(
+      'values',
+      LogicArray([2], 8, name: 'values'),
+      dimensions: [2],
+      elementWidth: 8,
+    );
+    final low = _ArrayElementInputChildModule(values.elements[0], name: 'low');
+    final high =
+        _ArrayElementInputChildModule(values.elements[1], name: 'high');
+    addOutput('observed', width: 2) <=
+        [high.output('y'), low.output('y')].swizzle();
+  }
+}
+
+class _ChildrenToOutputArrayElementsModule extends Module {
+  _ChildrenToOutputArrayElementsModule()
+      : super(definitionName: 'ChildrenToOutputArrayElementsModule') {
+    final lowValue = addInput('lowValue', Logic(width: 8), width: 8);
+    final highValue = addInput('highValue', Logic(width: 8), width: 8);
+    final values = addOutputArray('values', dimensions: [2], elementWidth: 8);
+    final low = _ArrayElementOutputChildModule(lowValue, name: 'low');
+    final high = _ArrayElementOutputChildModule(highValue, name: 'high');
+    values.elements[0] <= low.y;
+    values.elements[1] <= high.y;
+  }
+}
+
+class _ArrayAggregateOutputProducer extends Module {
+  LogicArray get values => output('values') as LogicArray;
+
+  _ArrayAggregateOutputProducer(
+    Logic lowValue,
+    Logic highValue, {
+    required super.name,
+  }) : super(definitionName: 'ArrayAggregateOutputProducer') {
+    lowValue = addInput('lowValue', lowValue, width: lowValue.width);
+    highValue = addInput('highValue', highValue, width: highValue.width);
+    final values = addOutputArray('values', dimensions: [2], elementWidth: 8);
+    values.elements[0] <= lowValue;
+    values.elements[1] <= highValue;
+  }
+}
+
+class _AggregateChildToOutputArrayModule extends Module {
+  _AggregateChildToOutputArrayModule()
+      : super(definitionName: 'AggregateChildToOutputArrayModule') {
+    final lowValue = addInput('lowValue', Logic(width: 8), width: 8);
+    final highValue = addInput('highValue', Logic(width: 8), width: 8);
+    final source =
+        _ArrayAggregateOutputProducer(lowValue, highValue, name: 'source');
+    final values = addOutputArray('values', dimensions: [2], elementWidth: 8);
+    values <= source.values;
+  }
+}
+
 /// Child with a LogicArray output, used to exercise regrouping array output
 /// elements into another child array input.
 class ArrayOutputChildModule extends Module {
@@ -523,6 +599,47 @@ class StructOutputProducerDedupTop extends Module {
 
     addOutput('first', width: 8) <= first.output('pair');
     addOutput('second', width: 8) <= second.output('pair');
+  }
+}
+
+class _ScalarInputsToStructureChildModule extends Module {
+  _ScalarInputsToStructureChildModule()
+      : super(definitionName: 'ScalarInputsToStructureChildModule') {
+    final lowValue = addInput('lowValue', Logic(width: 4), width: 4);
+    final highValue = addInput('highValue', Logic(width: 4), width: 4);
+    final pair = NetlistPairStruct();
+    pair.low <= lowValue;
+    pair.high <= highValue;
+    final child = StructInputConsumerModule(pair);
+    addOutput('observed', width: pair.width) <= child.output('packedOut');
+  }
+}
+
+class _StructureOutputChildModule extends Module {
+  NetlistPairStruct get pair => output('pair') as NetlistPairStruct;
+
+  _StructureOutputChildModule(
+    Logic lowValue,
+    Logic highValue, {
+    required super.name,
+  }) : super(definitionName: 'StructureOutputChildModule') {
+    lowValue = addInput('lowValue', lowValue, width: lowValue.width);
+    highValue = addInput('highValue', highValue, width: highValue.width);
+    final value = NetlistPairStruct(name: 'pairValue');
+    value.low <= lowValue;
+    value.high <= highValue;
+    addTypedOutput('pair', value.clone).gets(value);
+  }
+}
+
+class _StructureChildToParentOutputModule extends Module {
+  _StructureChildToParentOutputModule()
+      : super(definitionName: 'StructureChildToParentOutputModule') {
+    final lowValue = addInput('lowValue', Logic(width: 4), width: 4);
+    final highValue = addInput('highValue', Logic(width: 4), width: 4);
+    final child =
+        _StructureOutputChildModule(lowValue, highValue, name: 'source');
+    addTypedOutput('pair', child.pair.clone).gets(child.pair);
   }
 }
 
@@ -2266,6 +2383,128 @@ void main() {
       }
     });
 
+    test('input array elements retain driven scalar child connections',
+        () async {
+      for (final enableDce in [false, true]) {
+        final module = _InputArrayElementsToChildrenModule();
+        final json = await _synthToMap(
+          module,
+          configuration: NetlistSynthesizerConfiguration(
+            enableDeadCellElimination: enableDce,
+          ),
+        );
+        final moduleDef =
+            _modules(json)[module.definitionName] as Map<String, dynamic>;
+        final cells = _cells(moduleDef);
+        final childCells = cells.values.where((cell) =>
+            (cell as Map<String, dynamic>)['type'] ==
+            'ArrayElementInputChildModule');
+
+        expect(childCells, hasLength(2), reason: 'enableDce=$enableDce');
+        for (final child in childCells.cast<Map<String, dynamic>>()) {
+          final inputBits =
+              (child['connections'] as Map<String, dynamic>)['a'] as List;
+          expect(inputBits.whereType<int>(), hasLength(8));
+        }
+        expect(
+          _connectivityReport(moduleDef).undrivenInputs,
+          isEmpty,
+          reason: 'enableDce=$enableDce',
+        );
+      }
+    });
+
+    test('scalar child outputs retain packed output-array connectivity',
+        () async {
+      for (final enableDce in [false, true]) {
+        final module = _ChildrenToOutputArrayElementsModule();
+        final json = await _synthToMap(
+          module,
+          configuration: NetlistSynthesizerConfiguration(
+            enableDeadCellElimination: enableDce,
+          ),
+        );
+        final moduleDef =
+            _modules(json)[module.definitionName] as Map<String, dynamic>;
+        final cells = _cells(moduleDef);
+        final outputBits = (_ports(moduleDef)['values']
+            as Map<String, dynamic>)['bits'] as List;
+        final report = _connectivityReport(moduleDef);
+        final childCells = cells.values.where((cell) =>
+            (cell as Map<String, dynamic>)['type'] ==
+            'ArrayElementOutputChildModule');
+
+        expect(childCells, hasLength(2), reason: 'enableDce=$enableDce');
+        expect(
+          outputBits.whereType<int>().every(report.driversByBit.containsKey),
+          isTrue,
+          reason: 'enableDce=$enableDce',
+        );
+        expect(
+          report.driversByBit.entries
+              .where((entry) => outputBits.contains(entry.key))
+              .every((entry) => entry.value.length == 1),
+          isTrue,
+          reason: 'enableDce=$enableDce',
+        );
+      }
+    });
+
+    test('aggregate array ports retain both packing directions', () async {
+      for (final enableDce in [false, true]) {
+        final inputJson = await _synthToMap(
+          InternalArrayToChildModule(),
+          configuration: NetlistSynthesizerConfiguration(
+            enableDeadCellElimination: enableDce,
+          ),
+        );
+        final inputModule = _modules(
+          inputJson,
+        )['InternalArrayToChildModule'] as Map<String, dynamic>;
+        final inputCells = _cells(inputModule);
+        final aggregateInput = inputCells.values.singleWhere((cell) =>
+            (cell as Map<String, dynamic>)['type'] ==
+            'ArrayInputChildModule') as Map<String, dynamic>;
+        final aggregateInputBits = (aggregateInput['connections']
+            as Map<String, dynamic>)['values'] as List;
+
+        expect(aggregateInputBits.whereType<int>(), hasLength(16));
+        expect(
+          _connectivityReport(inputModule).undrivenInputs,
+          isEmpty,
+          reason: 'input packing, enableDce=$enableDce',
+        );
+
+        final outputModule = _AggregateChildToOutputArrayModule();
+        final outputJson = await _synthToMap(
+          outputModule,
+          configuration: NetlistSynthesizerConfiguration(
+            enableDeadCellElimination: enableDce,
+          ),
+        );
+        final outputDefinition =
+            _modules(outputJson)[outputModule.definitionName]
+                as Map<String, dynamic>;
+        final outputBits = (_ports(outputDefinition)['values']
+            as Map<String, dynamic>)['bits'] as List;
+        final report = _connectivityReport(outputDefinition);
+
+        expect(outputBits.whereType<int>(), hasLength(16));
+        expect(
+          outputBits.whereType<int>().every(report.driversByBit.containsKey),
+          isTrue,
+          reason: 'output packing, enableDce=$enableDce',
+        );
+        expect(
+          report.driversByBit.entries
+              .where((entry) => outputBits.contains(entry.key))
+              .every((entry) => entry.value.length == 1),
+          isTrue,
+          reason: 'output packing, enableDce=$enableDce',
+        );
+      }
+    });
+
     test('array element outputs retain slice connectivity', () async {
       for (final enableDce in [false, true]) {
         final module = ArrayElementsToScalarOutputsModule();
@@ -2553,6 +2792,68 @@ void main() {
         }),
         isTrue,
       );
+    });
+
+    test('struct aggregates retain hierarchy packing in both directions',
+        () async {
+      for (final enableDce in [false, true]) {
+        final inputModule = _ScalarInputsToStructureChildModule();
+        final inputJson = await _synthToMap(
+          inputModule,
+          configuration: NetlistSynthesizerConfiguration(
+            enableDeadCellElimination: enableDce,
+          ),
+        );
+        final inputDefinition = _modules(inputJson)[inputModule.definitionName]
+            as Map<String, dynamic>;
+        final inputCells = _cells(inputDefinition);
+        final aggregateInput = inputCells.values.singleWhere((cell) =>
+            (cell as Map<String, dynamic>)['type'] ==
+            'StructInputConsumerModule') as Map<String, dynamic>;
+        final aggregateInputBits = (aggregateInput['connections']
+            as Map<String, dynamic>)['pair'] as List;
+
+        expect(aggregateInputBits.whereType<int>(), hasLength(8));
+        expect(
+          inputCells.values.any((cell) =>
+              (cell as Map<String, dynamic>)['type'] == r'$struct_pack'),
+          isTrue,
+          reason: 'input packing, enableDce=$enableDce',
+        );
+        expect(
+          _connectivityReport(inputDefinition).undrivenInputs,
+          isEmpty,
+          reason: 'input packing, enableDce=$enableDce',
+        );
+
+        final outputModule = _StructureChildToParentOutputModule();
+        final outputJson = await _synthToMap(
+          outputModule,
+          configuration: NetlistSynthesizerConfiguration(
+            enableDeadCellElimination: enableDce,
+          ),
+        );
+        final outputDefinition =
+            _modules(outputJson)[outputModule.definitionName]
+                as Map<String, dynamic>;
+        final outputBits = (_ports(outputDefinition)['pair']
+            as Map<String, dynamic>)['bits'] as List;
+        final report = _connectivityReport(outputDefinition);
+
+        expect(outputBits.whereType<int>(), hasLength(8));
+        expect(
+          outputBits.whereType<int>().every(report.driversByBit.containsKey),
+          isTrue,
+          reason: 'output packing, enableDce=$enableDce',
+        );
+        expect(
+          report.driversByBit.entries
+              .where((entry) => outputBits.contains(entry.key))
+              .every((entry) => entry.value.length == 1),
+          isTrue,
+          reason: 'output packing, enableDce=$enableDce',
+        );
+      }
     });
 
     test('struct aggregate netnames allow disjoint field drivers', () {

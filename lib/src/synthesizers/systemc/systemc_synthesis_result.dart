@@ -290,12 +290,13 @@ class SystemCSynthesisResult extends SynthesisResult {
     }
 
     // Declare individual signals for array elements that are written to
-    // (FlipFlop/Sequential outputs targeting array elements)
+    // (FlipFlop/Sequential outputs targeting array elements).
     for (final elemName in _arrayElementsWritten.keys) {
       final n = _scName(elemName);
       final width = _arrayElementsWritten[elemName]!;
       declarations.add('  ${systemCSignalType(width)} $n{"$n"};');
     }
+    declarations.addAll(_inputBindingSignals);
     return declarations.join('\n');
   }
 
@@ -304,6 +305,19 @@ class SystemCSynthesisResult extends SynthesisResult {
   /// partial writes to sc_signal.
   late final Map<String, int> _arrayElementsWritten =
       _findArrayElementsWritten();
+
+  /// Returns whether [synthLogic] needs a local signal for an input binding.
+  ///
+  /// SystemC ports bind to channels, while array element selections have no
+  /// independent channel. Elements already materialized for a write can be
+  /// bound directly.
+  bool _requiresInputBindingBridge(SynthLogic synthLogic) {
+    if (synthLogic is! SynthLogicArrayElement &&
+        synthLogic is! SynthLogicArrayStructureElement) {
+      return false;
+    }
+    return !_arrayElementsWritten.containsKey(synthLogic.name);
+  }
 
   /// Groups array elements by parent: parentName → list of (index, elemWidth).
   late final Map<String, List<({int index, int width, String elemName})>>
@@ -1317,6 +1331,46 @@ class SystemCSynthesisResult extends SynthesisResult {
   /// Populated by [_buildSubModuleBindings].
   final List<String> _constInputInits = [];
 
+  /// Local signals used to bind selected array inputs to child module ports.
+  final List<String> _inputBindingSignals = [];
+
+  /// Describes a bridge signal and the selected array value that drives it.
+  final List<({String name, SynthLogic source})> _inputBindingBridges = [];
+
+  String _createInputBindingBridge(SynthLogic source) {
+    final bridgeName = 'rohd_input_bridge_${_inputBindingBridges.length}';
+    _inputBindingSignals.add(
+      '  ${systemCSignalType(source.width)} $bridgeName{"$bridgeName"};',
+    );
+    _inputBindingBridges.add((name: bridgeName, source: source));
+    return bridgeName;
+  }
+
+  _MethodResult? _buildInputBindingBridgeMethods() {
+    if (_inputBindingBridges.isEmpty) {
+      return null;
+    }
+
+    final setupBuf = StringBuffer();
+    final bodyBuf = StringBuffer();
+    for (final (index, bridge) in _inputBindingBridges.indexed) {
+      final methodName = 'input_binding_bridge_$index';
+      setupBuf
+        ..writeln('    SC_METHOD($methodName);')
+        ..writeln('    sensitive << ${_sensitivityName(bridge.source)};');
+
+      bodyBuf
+        ..writeln('  void $methodName() {')
+        ..writeln(
+          '    ${bridge.name} = ${_synthLogicReadExpr(bridge.source)};',
+        )
+        ..writeln('  }')
+        ..writeln();
+    }
+
+    return _MethodResult(setup: setupBuf.toString(), body: bodyBuf.toString());
+  }
+
   String _buildSubModuleBindings(
     String Function(Module module) getInstanceTypeOfModule,
   ) {
@@ -1355,10 +1409,14 @@ class SystemCSynthesisResult extends SynthesisResult {
               '    $instanceName.${_scName(entry.key)}($constName);',
             );
           } else {
+            final bindingName = ssmi.inputMapping.containsKey(entry.key) &&
+                    _requiresInputBindingBridge(entry.value)
+                ? _createInputBindingBridge(entry.value)
+                : _scName(entry.value.name);
             lines.add(
               '    '
               '$instanceName.${_scName(entry.key)}'
-              '(${_scName(entry.value.name)});',
+              '($bindingName);',
             );
           }
         }
@@ -1783,6 +1841,7 @@ class SystemCSynthesisResult extends SynthesisResult {
     final wireAssigns = _buildWireAssignments();
     final arrayAssembly = _buildArrayAssemblyMethod();
     final subBindings = _buildSubModuleBindings(getInstanceTypeOfModule);
+    final inputBindingBridges = _buildInputBindingBridgeMethods();
 
     // Build internal signals, appending dummy signals for unconnected
     // submodule outputs (populated by _buildSubModuleBindings above).
@@ -1799,6 +1858,7 @@ class SystemCSynthesisResult extends SynthesisResult {
       if (processes != null) processes.setup,
       if (wireAssigns != null) wireAssigns.setup,
       if (arrayAssembly != null) arrayAssembly.setup,
+      if (inputBindingBridges != null) inputBindingBridges.setup,
       if (subBindings.isNotEmpty) subBindings,
     ];
     _ctorBody = ctorParts.join();
@@ -1808,6 +1868,7 @@ class SystemCSynthesisResult extends SynthesisResult {
       if (processes != null) processes.body,
       if (wireAssigns != null) wireAssigns.body,
       if (arrayAssembly != null) arrayAssembly.body,
+      if (inputBindingBridges != null) inputBindingBridges.body,
     ];
     _methodBodies = bodyParts.where((s) => s.isNotEmpty).join('\n');
   }
