@@ -151,7 +151,7 @@ LogicType createOperationOutput<LogicType extends Logic>({
     throw LogicConstructionException(
       '$operation inferred $LogicType from $prototype, but its driveable '
       'output representation is ${output.runtimeType}. Normalize a Const or '
-      'LogicNet source with toDriveable(), request <Logic>, or provide an '
+      'LogicNet source with Logic.from(...), request <Logic>, or provide an '
       'outputGenerator.',
     );
   }

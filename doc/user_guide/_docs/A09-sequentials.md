@@ -24,9 +24,9 @@ final stateQ = flop<LogicEnum<MyState>>(clk, stateD,
 
 If you write `q <= flop(clk, stateD, reset: reset, resetValue: MyState.idle)` without the type argument, Dart infers a plain `Logic` output. The reset still uses the enum's encoding, so the result is the same in simulation and SystemVerilog, but the output is not typed as the enum.
 
-Use `toDriveable()` when you want a plain packed register, for example when
+Use `Logic.from(...)` when you want a plain packed register, for example when
 the data input is a `Const`:
 
 ```dart
-final registered = flop(clk, Const(1).toDriveable());
+final registered = flop(clk, Logic.from(Const(1)));
 ```

@@ -234,6 +234,29 @@ class Logic {
   Logic({String? name, int width = 1, Naming? naming})
       : this._(name: name, width: width, naming: naming);
 
+  /// Creates an ordinary [Logic] alias driven by [source].
+  ///
+  /// The alias has a plain [Logic] representation even when [source] is a
+  /// [Const], [LogicNet], or structured signal. Use this at the source
+  /// boundary of an operation that materializes a driveable result, such as
+  /// `flop(clk, Logic.from(Const(1)))`.
+  ///
+  /// The width is copied from [source]. If [name] is omitted, the source's
+  /// name is reused. The [naming] is chosen by [Naming.chooseCloneNaming].
+  ///
+  /// The alias remains connected to [source], so it cannot accept another
+  /// hardware driver. A [Const] source remains immutable.
+  factory Logic.from(Logic source, {String? name, Naming? naming}) => Logic(
+        name: name ?? source.name,
+        width: source.width,
+        naming: Naming.chooseCloneNaming(
+          originalName: source.name,
+          newName: name,
+          originalNaming: source.naming,
+          newNaming: naming,
+        ),
+      )..gets(source);
+
   /// A cloning utility for [clone] and [named].
   Logic _clone({String? name, Naming? naming}) =>
       (isNet ? LogicNet.new : Logic.new)(
@@ -1096,17 +1119,4 @@ class Logic {
 
     _subsetDriver!.assignSubset(updatedSubset, start: start);
   }
-}
-
-/// Source-normalization utilities for materializing hardware operations.
-extension DriveableLogic on Logic {
-  /// Creates an ordinary [Logic] alias driven by this signal.
-  ///
-  /// The alias has a driveable [Logic] representation even when this source is
-  /// a [Const] or [LogicNet]. Use it at the boundary of an operation that
-  /// materializes a result, such as `flop(clk, Const(1).toDriveable())`.
-  ///
-  /// This does not alter this signal or its value/connectivity semantics.
-  Logic toDriveable({String? name, Naming? naming}) =>
-      Logic(name: name, width: width, naming: naming)..gets(this);
 }

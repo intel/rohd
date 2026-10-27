@@ -69,7 +69,7 @@ driveable operation output.
 - An unmapped reset value must fail with a mapping-specific diagnostic.
 - A reset signal with a compatible enum domain must preserve that domain across
   the register boundary.
-- `toDriveable()` is the explicit packed, driveable source-normalization
+- `Logic.from(...)` is the explicit packed, driveable source-normalization
   path.
 
 ### Cases

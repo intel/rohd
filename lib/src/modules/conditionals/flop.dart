@@ -15,7 +15,7 @@ import 'package:rohd/src/signals/logic_structure_signature.dart';
 ///
 /// The input [d] supplies the output representation when [outputGenerator] is
 /// omitted. Normalize a plain [Const] or [LogicNet] source with
-/// `toDriveable()` to infer a driveable scalar result.
+/// `Logic.from(...)` to infer a driveable scalar result.
 LogicType flop<LogicType extends Logic>(
   Logic clk,
   LogicType d, {
