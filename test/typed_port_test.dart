@@ -231,6 +231,57 @@ class ChildModuleWithPackingOutput extends Module {
   }
 }
 
+class _MyStructInputConsumer extends Module {
+  Logic get observed => output('observed');
+
+  _MyStructInputConsumer(MyStruct pair, {required super.name})
+      : super(definitionName: 'MyStructInputConsumer') {
+    pair = addTypedInput('pair', pair);
+    addOutput('observed', width: pair.width) <= pair;
+  }
+}
+
+class _ScalarInputsToMyStructChild extends Module {
+  _ScalarInputsToMyStructChild(Logic readyValue, Logic validValue)
+      : super(definitionName: 'ScalarInputsToMyStructChild') {
+    readyValue = addInput('readyValue', readyValue);
+    validValue = addInput('validValue', validValue);
+    final pair = MyStruct(name: 'pair');
+    pair.ready <= readyValue;
+    pair.valid <= validValue;
+    final child = _MyStructInputConsumer(pair, name: 'consumer');
+    addOutput('observed', width: pair.width) <= child.observed;
+  }
+}
+
+class _MyStructOutputProducer extends Module {
+  MyStruct get pair => output('pair') as MyStruct;
+
+  _MyStructOutputProducer(
+    Logic readyValue,
+    Logic validValue, {
+    required super.name,
+  }) : super(definitionName: 'MyStructOutputProducer') {
+    readyValue = addInput('readyValue', readyValue);
+    validValue = addInput('validValue', validValue);
+    final value = MyStruct(name: 'pairValue');
+    value.ready <= readyValue;
+    value.valid <= validValue;
+    addTypedOutput('pair', value.clone).gets(value);
+  }
+}
+
+class _MyStructChildToParentOutput extends Module {
+  _MyStructChildToParentOutput(Logic readyValue, Logic validValue)
+      : super(definitionName: 'MyStructChildToParentOutput') {
+    readyValue = addInput('readyValue', readyValue);
+    validValue = addInput('validValue', validValue);
+    final child =
+        _MyStructOutputProducer(readyValue, validValue, name: 'source');
+    addTypedOutput('pair', child.pair.clone).gets(child.pair);
+  }
+}
+
 void main() {
   tearDown(() async {
     await Simulator.reset();
@@ -309,6 +360,35 @@ void main() {
 
     // just building will detect if there was a bad reuse of packed
     await mod.build();
+  });
+
+  test('structure fields pack into aggregate child inputs', () async {
+    final mod = _ScalarInputsToMyStructChild(Logic(), Logic());
+    await mod.build();
+
+    final vectors = [
+      Vector({'readyValue': 0, 'validValue': 0}, {'observed': 0}),
+      Vector({'readyValue': 1, 'validValue': 0}, {'observed': 1}),
+      Vector({'readyValue': 0, 'validValue': 1}, {'observed': 2}),
+      Vector({'readyValue': 1, 'validValue': 1}, {'observed': 3}),
+    ];
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
+  });
+
+  test('aggregate structure child outputs pack through parent outputs',
+      () async {
+    final mod = _MyStructChildToParentOutput(Logic(), Logic());
+    await mod.build();
+
+    final vectors = [
+      Vector({'readyValue': 0, 'validValue': 0}, {'pair': 0}),
+      Vector({'readyValue': 1, 'validValue': 0}, {'pair': 1}),
+      Vector({'readyValue': 0, 'validValue': 1}, {'pair': 2}),
+      Vector({'readyValue': 1, 'validValue': 1}, {'pair': 3}),
+    ];
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
   });
 
   group('const typed ports', () {
