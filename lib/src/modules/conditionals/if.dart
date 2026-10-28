@@ -102,6 +102,7 @@ class If extends Conditional {
   }
 
   @override
+  @protected
   void execute(Set<Logic>? drivenSignals, [void Function(Logic)? guard]) {
     if (guard != null) {
       for (final iff in iffs) {

@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2024 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // conditional_group.dart
@@ -43,6 +43,7 @@ class ConditionalGroup extends Conditional {
       [for (final conditional in conditionals) ...conditional.receivers];
 
   @override
+  @protected
   void execute(Set<Logic>? drivenSignals, void Function(Logic toGuard)? guard) {
     for (final conditional in conditionals) {
       conditional.execute(drivenSignals, guard);
