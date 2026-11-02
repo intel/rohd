@@ -62,6 +62,9 @@
 
 ### Bug Fixes
 
+- Fixed `LogicValue` arithmetic and comparisons with direct `BigInt` operands
+  at widths up to the native integer width, preserving unsigned sign-boundary
+  semantics (<https://github.com/intel/rohd/pull/319>).
 - SystemC implementation matching now includes internal signal declarations and child-module types, preventing distinct hierarchical implementations from being incorrectly merged.
 
 - Structured `Mux` output generators now select leaf-by-leaf even when the operands have been widened to `Logic`, preserving typed layouts and avoiding raw-value writes through domain-specific `put` overrides.

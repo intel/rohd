@@ -16,6 +16,8 @@ import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
 
+import 'systemc_test_utils.dart';
+
 class _ChoiceLeaf extends Module {
   Logic get result => output('result');
 
@@ -696,6 +698,6 @@ int sc_main(int, char*[]) {
         },
       );
       expect(result, isTrue);
-    });
+    }, skip: systemCIntegrationSkip);
   });
 }

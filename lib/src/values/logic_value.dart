@@ -1381,7 +1381,8 @@ abstract class LogicValue implements Comparable<LogicValue> {
 
     final widthComparison = isDivision ? INT_BITS - 1 : INT_BITS;
 
-    if (width > widthComparison ||
+    if (other is BigInt ||
+        width > widthComparison ||
         (other is LogicValue && other.width > widthComparison)) {
       final a = toBigInt();
       final b = other is BigInt
@@ -1490,7 +1491,9 @@ abstract class LogicValue implements Comparable<LogicValue> {
 
     dynamic a;
     dynamic b;
-    if (width > INT_BITS || (other is LogicValue && other.width > INT_BITS)) {
+    if (other is BigInt ||
+        width > INT_BITS ||
+        (other is LogicValue && other.width > INT_BITS)) {
       a = toBigInt();
       b = other is BigInt
           ? other

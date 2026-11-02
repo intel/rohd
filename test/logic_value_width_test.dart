@@ -55,6 +55,47 @@ void main() {
         LogicValue.one);
   });
 
+  test('raw BigInt operands work at narrow and int widths', () {
+    final value = LogicValue.ofInt(15, 8);
+
+    expect(value + BigInt.one, LogicValue.ofInt(16, 8));
+    expect(value - BigInt.one, LogicValue.ofInt(14, 8));
+    expect(value * BigInt.two, LogicValue.ofInt(30, 8));
+    expect(value / BigInt.from(3), LogicValue.ofInt(5, 8));
+    expect(value % BigInt.from(4), LogicValue.ofInt(3, 8));
+    expect(
+      LogicValue.ofInt(2, 8).pow(BigInt.from(3)),
+      LogicValue.ofInt(8, 8),
+    );
+
+    expect(value.eq(BigInt.from(15)), LogicValue.one);
+    expect(value.neq(BigInt.from(15)), LogicValue.zero);
+    expect(value < BigInt.from(16), LogicValue.one);
+    expect(value <= BigInt.from(15), LogicValue.one);
+    expect(value > BigInt.from(14), LogicValue.one);
+    expect(value >= BigInt.from(15), LogicValue.one);
+  });
+
+  test('raw BigInt comparisons preserve unsigned sign-boundary values', () {
+    for (final width in [INT_BITS - 1, INT_BITS, INT_BITS + 1, 128]) {
+      final signBit = BigInt.one << (width - 1);
+      final value = LogicValue.ofBigInt(signBit, width);
+
+      expect(value.toBigInt(), signBit, reason: 'width=$width');
+      expect(value > BigInt.zero, LogicValue.one, reason: 'width=$width');
+      expect(
+        value < (BigInt.one << width),
+        LogicValue.one,
+        reason: 'width=$width',
+      );
+      expect(
+        value + BigInt.one,
+        LogicValue.ofBigInt(signBit + BigInt.one, width),
+        reason: 'width=$width',
+      );
+    }
+  });
+
   group('values test', () {
     for (var len = INT_BITS - 2; len <= INT_BITS + 4; len++) {
       final sslv = LogicValue.ofInt(4, len); // small Int hold Big
