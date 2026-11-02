@@ -62,7 +62,9 @@
 <section class="desc markdown">
   <p>Constructs a very simple clock generator.  Generates a non-synthesizable
 SystemVerilog representation.</p>
-<p>Set the frequency via <code>clockPeriod</code>.</p>
+<p>Set the frequency via <code>clockPeriod</code>, which must be an even number of
+time units greater than or equal to 2.  Other values throw an
+<a href="../../rohd/IllegalConfigurationException-class.html">IllegalConfigurationException</a>.</p>
 </section>
 
 
@@ -70,6 +72,16 @@ SystemVerilog representation.</p>
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">SimpleClockGenerator(this.clockPeriod, {super.name = &#39;clkgen&#39;}) {
+  if (clockPeriod &lt; 2 || clockPeriod.isOdd) {
+    throw IllegalConfigurationException(
+        &#39;The clockPeriod must be an even number of time units greater than&#39;
+        &#39; or equal to 2, but got $clockPeriod.  The clock toggles once every&#39;
+        &#39; half period, so a period below 2 would schedule both edges within&#39;
+        &#39; the same time unit and prevent the simulation from advancing, and&#39;
+        &#39; an odd period would silently generate a clock whose period is&#39;
+        &#39; ${clockPeriod - 1} instead.&#39;);
+  }
+
   addOutput(&#39;clk&#39;);
 
   clk.makeUnassignable(
