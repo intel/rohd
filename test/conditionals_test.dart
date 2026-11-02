@@ -123,6 +123,44 @@ class CaseModule extends Module {
   }
 }
 
+class _CaseItemHarness extends Module {
+  /// The case result.
+  Logic get result => output('result');
+
+  _CaseItemHarness(
+    Logic selector, {
+    required bool useCaseZ,
+    Logic? dynamicItem,
+    LogicValue? literalItem,
+  })  : assert(
+          (dynamicItem == null) != (literalItem == null),
+          'Provide exactly one dynamic or literal pattern.',
+        ),
+        super(definitionName: 'CaseItemHarness') {
+    selector = addInput('selector', selector, width: 2);
+    final pattern = dynamicItem == null
+        ? Const(literalItem)
+        : addInput('item', dynamicItem, width: 2);
+    final result = addOutput('result');
+    final caseBlock = useCaseZ
+        ? CaseZ(
+            selector,
+            [
+              CaseItem(pattern, [result < 1]),
+            ],
+            defaultItem: [result < 0],
+          )
+        : Case(
+            selector,
+            [
+              CaseItem(pattern, [result < 1]),
+            ],
+            defaultItem: [result < 0],
+          );
+    Combinational([caseBlock]);
+  }
+}
+
 class UniqueCase extends Module {
   UniqueCase(Logic a, Logic b) : super(name: 'UniqueCase') {
     a = addInput('a', a);
@@ -398,6 +436,106 @@ class MultipleConditionalModule extends Module {
 void main() {
   tearDown(() async {
     await Simulator.reset();
+  });
+
+  group('invalid case items', () {
+    Future<LogicValue> evaluateDynamicPattern({
+      required bool useCaseZ,
+      required LogicValue pattern,
+    }) async {
+      final selector = Logic(width: 2);
+      final item = Logic(width: 2);
+      final dut = _CaseItemHarness(
+        selector,
+        dynamicItem: item,
+        useCaseZ: useCaseZ,
+      );
+      await dut.build();
+
+      selector.inject(0);
+      item.inject(pattern);
+      await Simulator.tick();
+      return dut.result.value;
+    }
+
+    Future<LogicValue> evaluateLiteralPattern(LogicValue pattern) async {
+      final selector = Logic(width: 2);
+      final dut = _CaseItemHarness(
+        selector,
+        literalItem: pattern,
+        useCaseZ: true,
+      );
+      await dut.build();
+
+      selector.inject(0);
+      await Simulator.tick();
+      return dut.result.value;
+    }
+
+    Future<LogicValue> evaluateConstantAliasPattern(LogicValue pattern) async {
+      final selector = Logic(width: 2);
+      final alias = Logic(width: 2)..gets(Const(pattern));
+      final dut = _CaseItemHarness(
+        selector,
+        dynamicItem: alias,
+        useCaseZ: true,
+      );
+      await dut.build();
+
+      selector.inject(0);
+      await Simulator.tick();
+      return dut.result.value;
+    }
+
+    test('dynamic Case patterns containing X or Z drive X', () async {
+      for (final pattern in [
+        LogicValue.filled(2, LogicValue.x),
+        LogicValue.filled(2, LogicValue.z),
+      ]) {
+        expect(
+          await evaluateDynamicPattern(useCaseZ: false, pattern: pattern),
+          LogicValue.x,
+          reason: 'pattern=$pattern',
+        );
+      }
+    });
+
+    test('dynamic CaseZ patterns containing X or Z drive X', () async {
+      for (final pattern in [
+        LogicValue.filled(2, LogicValue.x),
+        LogicValue.filled(2, LogicValue.z),
+      ]) {
+        expect(
+          await evaluateDynamicPattern(useCaseZ: true, pattern: pattern),
+          LogicValue.x,
+          reason: 'pattern=$pattern',
+        );
+      }
+    });
+
+    test('literal CaseZ Z patterns retain wildcard semantics', () async {
+      expect(
+        await evaluateLiteralPattern(LogicValue.filled(2, LogicValue.z)),
+        LogicValue.one,
+      );
+    });
+
+    test('constant aliases retain CaseZ wildcard semantics', () async {
+      expect(
+        await evaluateConstantAliasPattern(
+          LogicValue.filled(2, LogicValue.z),
+        ),
+        LogicValue.one,
+      );
+    });
+
+    test('literal CaseZ X patterns drive X instead of falling through',
+        () async {
+      expect(
+        await evaluateLiteralPattern(LogicValue.filled(2, LogicValue.x)),
+        LogicValue.x,
+      );
+    });
   });
 
   group('functional', () {

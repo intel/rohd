@@ -16,6 +16,9 @@
 
 ### Major Features
 
+- Added type-safe [PairInterface] provider/consumer endpoints and role-specific
+  module connection helpers, while preserving the existing untyped API
+  (<https://github.com/intel/rohd/issues/613>).
 - Added `TypedLogicArray<TLogic, TValue>` for multidimensional arrays with fixed typed hardware elements and associated semantic values, including typed snapshots and ports, traversal, cloning, net support, and synthesis. Added shaped `LogicValueArray` and codec-backed `TypedLogicValueArray<TValue>` values with nested construction, packed `LogicValue` interoperability, and hardware-array assignment. Existing `LogicArray`, `LogicValueArray`, and concrete array port APIs remain available as specializations (<https://github.com/intel/rohd/pull/686>).
 - Added `LogicEnum<T>` hardware signals with explicit enum encodings, mapped member assignments, driveable cloning, and SystemVerilog enum generation (<https://github.com/intel/rohd/pull/599>).
 - Added compact FST waveform capture alongside VCD, with block-based reading and waveform query APIs for incremental access (<https://github.com/intel/rohd/pull/671>).
@@ -29,6 +32,11 @@
 
 ### Improvements
 
+- Allow swizzle and subset views to resolve as assignment receivers when safe,
+  and merge legal full packed-array/scalar assignments in generated
+  SystemVerilog (<https://github.com/intel/rohd/issues/530>,
+  <https://github.com/intel/rohd/issues/553>, and
+  <https://github.com/intel/rohd/issues/619>).
 - Fixed zero-width SystemC ports and constant bindings to use bindable placeholder types while preserving empty-value reads as zero, including address ports in single-register CSR blocks.
 - Fixed `SimCompare.checkSystemCVector` to honor explicit clock vectors instead of silently replacing them with a free-running clock. Reusable SystemC executables accept `drivenClockNames`, and compiled cache keys distinguish clock modes. Automatic clocks remain available when vectors omit clock inputs.
 - Emit child-driven unpacked arrays as nets to avoid unknown values in Icarus 12.0, while retaining variable declarations for procedurally written arrays. Child-driven unpacked outputs use `output wire logic` by default; explicit object-type configuration remains honored.
@@ -62,6 +70,17 @@
 
 ### Bug Fixes
 
+- Fixed [Case] and [CaseZ] handling of invalid item values: dynamic `x` and
+  `z` patterns now drive `x`, while only literal constant `z` patterns remain
+  CaseZ wildcards (<https://github.com/intel/rohd/issues/102>).
+- Fixed downstream [Sequential] blocks to capture edges from upstream
+  [Sequential] outputs during the same simulation tick, restoring clock-divider
+  behavior (<https://github.com/intel/rohd/issues/191>).
+- Omit zero-width ports and their connections from generated SystemVerilog
+  definitions and instantiations (<https://github.com/intel/rohd/issues/57>).
+- Warn when [Sequential] combines `asyncReset` with a non-constant
+  `resetValues` driver, which can infer independently timed async set and
+  clear pins in synthesis (<https://github.com/intel/rohd/issues/728>).
 - Fixed `LogicValue` arithmetic and comparisons with direct `BigInt` operands
   at widths up to the native integer width, preserving unsigned sign-boundary
   semantics (<https://github.com/intel/rohd/pull/319>).
@@ -72,6 +91,14 @@
 
 - Fixed a netlist pass that could drop connections to module output ports (<https://github.com/intel/rohd/pull/731>).
 - Fixed `LogicValue.ofRadixString` round trips with empty separators and separators containing regular-expression metacharacters (<https://github.com/intel/rohd/issues/722>).
+
+### Issue Housekeeping
+
+- Closed stale issue reports whose requested behavior is already implemented,
+  documented, or covered by regression tests:
+  - Conditional, simulator, and waveform behavior: <https://github.com/intel/rohd/issues/10>, <https://github.com/intel/rohd/issues/161>, <https://github.com/intel/rohd/issues/162>, <https://github.com/intel/rohd/issues/167>, <https://github.com/intel/rohd/issues/191>, <https://github.com/intel/rohd/issues/313>, <https://github.com/intel/rohd/issues/396>, <https://github.com/intel/rohd/issues/446>, and <https://github.com/intel/rohd/issues/728>.
+  - Synthesis, generated output, and navigation: <https://github.com/intel/rohd/issues/57>, <https://github.com/intel/rohd/issues/102>, <https://github.com/intel/rohd/issues/239>, <https://github.com/intel/rohd/issues/424>, <https://github.com/intel/rohd/issues/464>, <https://github.com/intel/rohd/issues/488>, <https://github.com/intel/rohd/issues/523>, <https://github.com/intel/rohd/issues/524>, <https://github.com/intel/rohd/issues/530>, <https://github.com/intel/rohd/issues/544>, <https://github.com/intel/rohd/issues/547>, <https://github.com/intel/rohd/issues/549>, <https://github.com/intel/rohd/issues/553>, <https://github.com/intel/rohd/issues/577>, <https://github.com/intel/rohd/issues/591>, <https://github.com/intel/rohd/issues/596>, <https://github.com/intel/rohd/issues/610>, <https://github.com/intel/rohd/issues/613>, <https://github.com/intel/rohd/issues/619>, and <https://github.com/intel/rohd/issues/734>.
+  - Project tooling and hierarchy: <https://github.com/intel/rohd/issues/270>, <https://github.com/intel/rohd/issues/275>, and <https://github.com/intel/rohd/issues/647>.
 
 ## 0.6.11
 

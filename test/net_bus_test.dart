@@ -741,6 +741,14 @@ void main() {
       SwizzleMod swizzleModConstructor(List<Logic> toSwizzle) =>
           SwizzleMod(toSwizzle, swapAssign: swapAssign);
 
+      void checkNetSwizzleAssignment(String sv, String sourceAssignment) {
+        if (swapAssign) {
+          expect(sv, isNot(contains(' _swizzled;')));
+        } else {
+          expect(sv, contains(sourceAssignment));
+        }
+      }
+
       group('swap=$swapAssign', () {
         group('build checks', () {
           test('simple net array', () async {
@@ -754,7 +762,10 @@ void main() {
             final sv = SvCleaner.removeSwizzleAnnotationComments(
                 mod.dumpSystemVerilog());
 
-            expect(sv, contains('net_connect (swizzled, ({in0[0],in1[0]}));'));
+            checkNetSwizzleAssignment(
+              sv,
+              'net_connect (swizzled, ({in0[0],in1[0]}));',
+            );
           });
 
           test('simple net array multi dim with simple net', () async {
@@ -768,10 +779,11 @@ void main() {
             final sv = SvCleaner.removeSwizzleAnnotationComments(
                 mod.dumpSystemVerilog());
 
-            expect(
-                sv,
-                contains('net_connect #(.WIDTH(5)) net_connect'
-                    ' (swizzled, ({in0,({in1[1],in1[0]})}));'));
+            checkNetSwizzleAssignment(
+              sv,
+              'net_connect #(.WIDTH(5)) net_connect'
+              ' (swizzled, ({in0,({in1[1],in1[0]})}));',
+            );
           });
 
           test('non-net array', () async {
@@ -802,10 +814,10 @@ void main() {
             final sv = SvCleaner.removeSwizzleAnnotationComments(
                 mod.dumpSystemVerilog());
 
-            expect(
-                sv,
-                contains('net_connect (swizzled,'
-                    ' ({(in0[3:0]),in1[0]}));'));
+            checkNetSwizzleAssignment(
+              sv,
+              'net_connect (swizzled, ({(in0[3:0]),in1[0]}));',
+            );
           });
 
           test('net array 3', () async {
@@ -820,12 +832,12 @@ void main() {
             final sv = SvCleaner.removeSwizzleAnnotationComments(
                 mod.dumpSystemVerilog());
 
-            expect(
-                sv,
-                contains('net_connect (swizzled, '
-                    '({({({in0[1][1],in0[1][0]}),'
-                    '({in0[0][1],in0[0][0]})}),'
-                    '(in1[3:0]),in2[0]}));'));
+            checkNetSwizzleAssignment(
+              sv,
+              'net_connect (swizzled, '
+              '({({({in0[1][1],in0[1][0]}),'
+              '({in0[0][1],in0[0][0]})}),(in1[3:0]),in2[0]}));',
+            );
           });
 
           test('net and non-net', () async {
@@ -919,6 +931,11 @@ void main() {
               for (final MapEntry(key: netTypeName, value: sigGen)
                   in netTypes.entries) {
                 void checkSV(String sv) {
+                  if (swapAssign) {
+                    expect(sv, isNot(contains(' _swizzled;')));
+                    return;
+                  }
+
                   if (netTypeName == LogicNet) {
                     expect(
                         sv,

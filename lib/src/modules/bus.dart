@@ -7,7 +7,7 @@
 // 2021 August 2
 // Author: Max Korbel <max.korbel@intel.com>
 
-import 'dart:math' show max;
+import 'dart:math' show max, min;
 
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
@@ -19,6 +19,9 @@ import 'package:rohd/src/signals/signals.dart';
 /// The output [subset] will have width equal to `|endIndex - startIndex| + 1`.
 ///
 /// This module also supports nets, allowing subsets to be bidirectional.
+///
+/// A non-net [subset] used as the receiver of a continuous assignment updates
+/// the matching range of the source bus.
 class BusSubset extends Module with InlineSystemVerilog {
   /// Name for the input port of this module.
   late final String _originalName;
@@ -44,6 +47,9 @@ class BusSubset extends Module with InlineSystemVerilog {
   /// Indicates whether this operates bidirectionally on nets.
   final bool _isNet;
 
+  /// The source bus outside of this module.
+  final Logic _source;
+
   @internal
   @override
   bool get isWiresOnly => true;
@@ -64,7 +70,8 @@ class BusSubset extends Module with InlineSystemVerilog {
     this.startIndex,
     this.endIndex, {
     super.name = 'bussubset',
-  }) : _isNet = bus.isNet {
+  })  : _isNet = bus.isNet,
+        _source = bus {
     // If a converted index value is still -ve then it's an Index out of bounds
     // on a Logic Bus
     if (startIndex < 0 || endIndex < 0) {
@@ -116,14 +123,23 @@ class BusSubset extends Module with InlineSystemVerilog {
       original = addInput(_originalName, bus, width: bus.width);
       subset = addOutput(_subsetName, width: newWidth);
 
-      // so that people can't do a slice assign, not (yet?) implemented
+      subset.setReceiverResolver(_resolveReceiver);
       subset.makeUnassignable(
-        reason: 'The output of a (non-LogicNet) '
-            'BusSubset ("$name") is read-only.',
+        reason: 'A BusSubset view can only receive continuous assignments.',
       );
 
       _setup();
     }
+  }
+
+  bool _resolveReceiver(Logic source) {
+    _source.assignSubset(
+      startIndex > endIndex
+          ? source.elements.reversed.toList(growable: false)
+          : source.elements,
+      start: min(startIndex, endIndex),
+    );
+    return true;
   }
 
   /// Performs setup steps for custom functional behavior.
@@ -195,7 +211,8 @@ class BusSubset extends Module with InlineSystemVerilog {
 /// this [Module].
 ///
 /// This module supports nets, allowing concatenation to be bidirectionally
-/// driven.
+/// driven. When [out] is used as the receiver of a continuous assignment, the
+/// corresponding portions of the source drive the original input signals.
 class Swizzle extends Module with InlineSystemVerilog {
   final String _out = Naming.unpreferredName('swizzled');
 
@@ -208,7 +225,11 @@ class Swizzle extends Module with InlineSystemVerilog {
   /// The output port containing concatenated signals.
   late final Logic out;
 
+  final List<Logic> _receiverSignals;
+
   final List<Logic> _swizzleInputs = [];
+
+  final List<LogicNet> _netInputSources = [];
 
   /// Whether this [Swizzle] concatenates [LogicNet]s (so its output is a net
   /// that can be driven bidirectionally).
@@ -221,36 +242,53 @@ class Swizzle extends Module with InlineSystemVerilog {
 
   /// Constructs a [Module] which concatenates [signals] into one large [out].
   Swizzle(List<Logic> signals, {super.name = 'swizzle'})
-      : isNet = signals.any((e) => e.isNet) {
-    var outputWidth = 0;
-
-    final inputCreator = isNet ? addInOut : addInput;
-
-    var idx = 0;
-    for (final signal in signals.reversed) {
-      //reverse so bit 0 is the last thing in the input list
-      final inputName = Naming.unpreferredName('in${idx++}');
-      _swizzleInputs.add(inputCreator(inputName, signal, width: signal.width));
-      outputWidth += signal.width;
-    }
+      : _receiverSignals = List.unmodifiable(signals),
+        isNet = signals.any((e) => e.isNet) {
+    final outputWidth =
+        _receiverSignals.fold(0, (total, signal) => total + signal.width);
 
     if (isNet) {
       out = LogicNet(name: _out, width: outputWidth, naming: Naming.unnamed);
       final internalOut = addInOut(_out, out, width: outputWidth);
+      final reversedSignals = _receiverSignals.reversed.toList(growable: false);
 
-      var idx = 0;
-      for (final swizzleInput in _swizzleInputs) {
-        internalOut.quietlyMergeSubsetTo(swizzleInput as LogicNet, start: idx);
-        idx += swizzleInput.width;
+      // Keep the net-port shape available to synthesis without connecting this
+      // view to its original signals until it is used as a driver.
+      var start = 0;
+      for (var inputIndex = 0;
+          inputIndex < reversedSignals.length;
+          inputIndex++) {
+        final signal = reversedSignals[inputIndex];
+        final inputName = Naming.unpreferredName('in$inputIndex');
+        final inputSource = LogicNet(
+          width: signal.width,
+          naming: Naming.unnamed,
+        );
+        _netInputSources.add(inputSource);
+        final swizzleInput = addInOut(
+          inputName,
+          inputSource,
+          width: signal.width,
+        );
+        _swizzleInputs.add(swizzleInput);
+        internalOut.quietlyMergeSubsetTo(swizzleInput, start: start);
+        start += swizzleInput.width;
       }
-    } else {
-      out = addOutput(_out, width: outputWidth);
 
-      // so that you can't assign the output of a (Logic) swizzle
-      out.makeUnassignable(
-        reason:
-            'The output of a (non-LogicNet) Swizzle ("$name") is read-only.',
-      );
+      out.setDriverResolver(() {
+        for (var index = 0; index < reversedSignals.length; index++) {
+          _netInputSources[index] <= reversedSignals[index];
+        }
+      });
+    } else {
+      var idx = 0;
+      for (final signal in _receiverSignals.reversed) {
+        // Reverse so bit 0 is the last thing in the input list.
+        final inputName = Naming.unpreferredName('in${idx++}');
+        _swizzleInputs.add(addInput(inputName, signal, width: signal.width));
+      }
+
+      out = addOutput(_out, width: outputWidth);
 
       _execute(); // for initial values
       for (final swizzleInput in _swizzleInputs) {
@@ -259,6 +297,29 @@ class Swizzle extends Module with InlineSystemVerilog {
         });
       }
     }
+
+    out.setReceiverResolver(_resolveReceiver);
+    if (!isNet) {
+      out.makeUnassignable(
+        reason: 'A Swizzle view can only receive continuous assignments.',
+      );
+    }
+  }
+
+  bool _resolveReceiver(Logic source) {
+    if (isNet && _receiverSignals.any((signal) => !signal.isNet)) {
+      return false;
+    }
+
+    var start = 0;
+    for (final signal in _receiverSignals.reversed) {
+      final end = start + signal.width;
+      if (signal.width > 0) {
+        signal <= source.getRange(start, end);
+      }
+      start = end;
+    }
+    return true;
   }
 
   /// Executes the functional behavior of this gate.

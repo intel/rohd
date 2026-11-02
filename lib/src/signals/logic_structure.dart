@@ -75,6 +75,15 @@ extension TypedLogicUtilities<LogicType extends Logic> on LogicType {
 /// Collects a group of [Logic] signals into one entity which can be manipulated
 /// in a similar way as an individual [Logic].
 class LogicStructure implements Logic {
+  @override
+  late bool Function(Logic)? _receiverResolver;
+
+  @override
+  late void Function()? _driverResolver;
+
+  @override
+  bool _driverResolved = false;
+
   /// All elements of this structure.
   @override
   late final List<Logic> elements = UnmodifiableListView(_elements);
@@ -113,6 +122,8 @@ class LogicStructure implements Logic {
   /// None of the [elements] can already be members of another [LogicStructure].
   LogicStructure(Iterable<Logic> elements, {String? name})
       : name = Naming.chooseName(name, null, nullStarter: 'st') {
+    _receiverResolver = null;
+    _driverResolver = null;
     _elements
       ..addAll(elements)
       ..forEach((element) {
@@ -256,7 +267,13 @@ class LogicStructure implements Logic {
   }
 
   @override
-  void operator <=(Logic other) => gets(other);
+  void operator <=(Logic other) {
+    if (_tryResolveReceiver(this, other)) {
+      return;
+    }
+
+    gets(other);
+  }
 
   @override
   Logic operator [](dynamic index) => packed[index];

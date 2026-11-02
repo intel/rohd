@@ -600,4 +600,70 @@ void main() {
 
     await Simulator.run();
   });
+
+  test('async reset warns for dynamically driven reset values', () async {
+    final warnings = <String>[];
+    final subscription = Simulator.logger.onRecord.listen((record) {
+      warnings.add(record.message);
+    });
+
+    try {
+      final clk = Logic();
+      final reset = Logic();
+      clk.put(0);
+      reset.put(0);
+      final result = Logic(width: 8);
+      final dynamicResetValue = Logic(width: 8);
+      final assignment = ConditionalAssign(result, dynamicResetValue);
+
+      Sequential(
+        clk,
+        reset: reset,
+        asyncReset: true,
+        resetValues: {result: dynamicResetValue},
+        [
+          assignment,
+        ],
+      );
+
+      expect(
+        warnings,
+        contains(contains('asyncReset with non-constant resetValues')),
+      );
+    } finally {
+      await subscription.cancel();
+    }
+  });
+
+  test('async reset accepts constant reset-value aliases without a warning',
+      () async {
+    final warnings = <String>[];
+    final subscription = Simulator.logger.onRecord.listen((record) {
+      warnings.add(record.message);
+    });
+
+    try {
+      final clk = Logic();
+      final reset = Logic();
+      clk.put(0);
+      reset.put(0);
+      final result = Logic(width: 8);
+      final constantResetValue = Logic(width: 8)..gets(Const(0xa5, width: 8));
+      final assignment = ConditionalAssign(result, constantResetValue);
+
+      Sequential(
+        clk,
+        reset: reset,
+        asyncReset: true,
+        resetValues: {result: constantResetValue},
+        [
+          assignment,
+        ],
+      );
+
+      expect(warnings, isEmpty);
+    } finally {
+      await subscription.cancel();
+    }
+  });
 }

@@ -20,22 +20,32 @@ void main() {
     }
   });
 
-  test('Swizzled outputs cannot be assigned', () {
-    try {
-      [Logic(), Logic()].swizzle() <= Logic(width: 2);
-      fail('Should have thrown an exception');
-    } on UnassignableException catch (e) {
-      expect(e.toString(), contains('Swizzle'));
-    }
+  test('Swizzled outputs reject width mismatches', () {
+    expect(
+      () => [Logic(), Logic()].swizzle() <= Logic(),
+      throwsA(isA<SignalWidthMismatchException>()),
+    );
   });
 
-  test('BusSubset outputs cannot be assigned', () {
-    try {
-      Logic(width: 2)[0] <= Logic();
-      fail('Should have thrown an exception');
-    } on UnassignableException catch (e) {
-      expect(e.toString(), contains('BusSubset'));
-    }
+  test('BusSubset outputs reject width mismatches', () {
+    expect(
+      () => Logic(width: 2)[0] <= Logic(width: 2),
+      throwsA(isA<SignalWidthMismatchException>()),
+    );
+  });
+
+  test('Swizzled outputs cannot receive conditional assignments', () {
+    expect(
+      () => Swizzle([Logic(), Logic()]).out < Logic(width: 2),
+      throwsA(isA<UnassignableException>()),
+    );
+  });
+
+  test('BusSubset outputs cannot receive conditional assignments', () {
+    expect(
+      () => Logic(width: 2)[0] < Logic(),
+      throwsA(isA<UnassignableException>()),
+    );
   });
 
   test('SimpleClockGenerator outputs cannot be assigned', () {

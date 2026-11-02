@@ -12,8 +12,64 @@
 
 part of 'signals.dart';
 
+bool _tryResolveReceiver(Logic receiver, Logic source) {
+  final receiverResolver = receiver._receiverResolver;
+  if (receiverResolver == null) {
+    return false;
+  }
+
+  if (source.width != receiver.width) {
+    throw SignalWidthMismatchException(source, receiver.width);
+  }
+
+  return receiverResolver(source);
+}
+
+void _resolveDriver(Logic logic) {
+  final driverResolver = logic._driverResolver;
+  if (driverResolver == null || logic._driverResolved) {
+    return;
+  }
+
+  logic._driverResolved = true;
+  driverResolver();
+}
+
+/// Allows a [Logic] view to resolve a continuous assignment it receives.
+extension ReceiverResolution on Logic {
+  /// Registers [receiverResolver] to redirect a continuous assignment to this
+  /// view's underlying receivers.
+  ///
+  /// The resolver is used only when this signal receives a connection through
+  /// `<=`; direct [Logic.gets] connections and using the signal as a source
+  /// are unaffected. Return `false` to retain the normal connection behavior.
+  @internal
+  void setReceiverResolver(bool Function(Logic source) receiverResolver) {
+    if (_receiverResolver != null) {
+      throw StateError('A receiver resolver is already registered for $this.');
+    }
+
+    _receiverResolver = receiverResolver;
+  }
+
+  /// Registers [driverResolver] to prepare this view before it is used as a
+  /// connection driver.
+  @internal
+  void setDriverResolver(void Function() driverResolver) {
+    if (_driverResolver != null) {
+      throw StateError('A driver resolver is already registered for $this.');
+    }
+
+    _driverResolver = driverResolver;
+  }
+}
+
 /// Represents a logical signal of any width which can change values.
 class Logic {
+  bool Function(Logic)? _receiverResolver;
+  void Function()? _driverResolver;
+  bool _driverResolved = false;
+
   // A special quiet flag to prevent `<=` and `<` where inappropriate
   bool _unassignable = false;
 
@@ -43,7 +99,10 @@ class Logic {
   int get width => _wire.width;
 
   /// The current active value of this signal.
-  LogicValue get value => _wire.value;
+  LogicValue get value {
+    _resolveDriver(this);
+    return _wire.value;
+  }
 
   /// The [Logic] signal that is driving `this`, if any.
   ///
@@ -69,41 +128,62 @@ class Logic {
   /// transitions at any time during a [Simulator] tick.
   ///
   /// This event can occur more than once per edge, or even if there is no edge.
-  SynchronousEmitter<LogicValueChanged> get glitch => _wire.glitch;
+  SynchronousEmitter<LogicValueChanged> get glitch {
+    _resolveDriver(this);
+    return _wire.glitch;
+  }
 
   /// A [Stream] of [LogicValueChanged] events which triggers at most once
   /// per [Simulator] tick, iff the value of the [Logic] has changed.
-  Stream<LogicValueChanged> get changed => _wire.changed;
+  Stream<LogicValueChanged> get changed {
+    _resolveDriver(this);
+    return _wire.changed;
+  }
 
   /// A [Stream] of [LogicValueChanged] events which triggers at most once
   /// per [Simulator] tick, iff the value of the [Logic] has changed
   /// from `1` to `0`.
   ///
   /// Throws an exception if [width] is not `1`.
-  Stream<LogicValueChanged> get negedge => _wire.negedge;
+  Stream<LogicValueChanged> get negedge {
+    _resolveDriver(this);
+    return _wire.negedge;
+  }
 
   /// A [Stream] of [LogicValueChanged] events which triggers at most once
   /// per [Simulator] tick, iff the value of the [Logic] has changed
   /// from `0` to `1`.
   ///
   /// Throws an exception if [width] is not `1`.
-  Stream<LogicValueChanged> get posedge => _wire.posedge;
+  Stream<LogicValueChanged> get posedge {
+    _resolveDriver(this);
+    return _wire.posedge;
+  }
 
   /// Triggers at most once, the next time that this [Logic] changes
   /// value at the end of a [Simulator] tick.
-  Future<LogicValueChanged> get nextChanged => _wire.nextChanged;
+  Future<LogicValueChanged> get nextChanged {
+    _resolveDriver(this);
+    return _wire.nextChanged;
+  }
 
   /// Triggers at most once, the next time that this [Logic] changes
   /// value at the end of a [Simulator] tick from `0` to `1`.
   ///
   /// Throws an exception if [width] is not `1`.
-  Future<LogicValueChanged> get nextPosedge => _wire.nextPosedge;
+  Future<LogicValueChanged> get nextPosedge {
+    _resolveDriver(this);
+    return _wire.nextPosedge;
+  }
 
   /// Triggers at most once, the next time that this [Logic] changes
   /// value at the end of a [Simulator] tick from `1` to `0`.
   ///
   /// Throws an exception if [width] is not `1`.
-  Future<LogicValueChanged> get nextNegedge => _wire.nextNegedge;
+  Future<LogicValueChanged> get nextNegedge {
+    _resolveDriver(this);
+    return _wire.nextNegedge;
+  }
 
   /// The [value] of this signal before the most recent [Simulator.tick] had
   /// completed. It will be `null` before the first tick after this signal is
@@ -119,7 +199,10 @@ class Logic {
   ///
   /// Note that if a signal is connected to another signal, the listener may
   /// be reset.
-  LogicValue? get previousValue => _wire.previousValue;
+  LogicValue? get previousValue {
+    _resolveDriver(this);
+    return _wire.previousValue;
+  }
 
   /// The [Module] that this [Logic] exists within.
   ///
@@ -356,8 +439,10 @@ class Logic {
   /// Injects a value onto this signal in the current [Simulator] tick.
   ///
   /// This function calls [put] in [Simulator.injectAction].
-  void inject(dynamic val, {bool fill = false}) =>
-      _wire.inject(val, signalName: name, fill: fill);
+  void inject(dynamic val, {bool fill = false}) {
+    _resolveDriver(this);
+    _wire.inject(val, signalName: name, fill: fill);
+  }
 
   /// Puts a value [val] onto this signal, which may or may not be picked up
   /// for [changed] in this [Simulator] tick.
@@ -369,8 +454,10 @@ class Logic {
   ///
   /// If [fill] is set, all bits of the signal gets set to [val], similar
   /// to `'` in SystemVerilog.
-  void put(dynamic val, {bool fill = false}) =>
-      _wire.put(val, signalName: name, fill: fill);
+  void put(dynamic val, {bool fill = false}) {
+    _resolveDriver(this);
+    _wire.put(val, signalName: name, fill: fill);
+  }
 
   /// Connects this [Logic] directly to be driven by [other].
   ///
@@ -382,6 +469,9 @@ class Logic {
     if (other is LogicStructure) {
       other = other.packed;
     }
+
+    _resolveDriver(this);
+    _resolveDriver(other);
 
     _assertConnectable(other);
 
@@ -452,7 +542,17 @@ class Logic {
   /// Connects this [Logic] directly to another [Logic].
   ///
   /// This is shorthand for [gets].
-  void operator <=(Logic other) => gets(other);
+  void operator <=(Logic other) {
+    if (other is LogicStructure) {
+      other = other.packed;
+    }
+
+    if (_tryResolveReceiver(this, other)) {
+      return;
+    }
+
+    gets(other);
+  }
 
   /// Logical bitwise NOT.
   Logic operator ~() => NotGate(this).out;

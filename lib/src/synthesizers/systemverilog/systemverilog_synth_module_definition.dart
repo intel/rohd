@@ -33,6 +33,9 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
       _inlineableSubmoduleMap = {};
 
   @override
+  bool get omitsZeroWidthAssignments => true;
+
+  @override
   void process() {
     _expandNestedUnpackedArrayAssignments();
     _inlinePackedRangesIntoSubmoduleInputs();
@@ -40,6 +43,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
     super.process();
     _collapseWholeNetBuses();
     _forwardPassthroughElementsIntoInlineables();
+    _collapseFullPackedArraySwizzles();
     _replaceNetConnections();
     _collapseMarkedChainableModules();
     _replaceInOutConnectionInlineableModules();
@@ -1378,6 +1382,277 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
     }
   }
 
+  /// Parses the numeric index from a [Swizzle] input name.
+  static int? _swizzlePortIndex(String portName) {
+    final match = RegExp(r'in(\d+)$').firstMatch(portName);
+    return match == null ? null : int.parse(match.group(1)!);
+  }
+
+  /// Replaces a fully packed-array-derived [Swizzle] with a scalar assignment.
+  ///
+  /// A [LogicArray] is decomposed into [BusSubset]s before synthesis. When
+  /// every packed bit is subsequently reassembled in its original order, the
+  /// generated nested swizzles are equivalent to a direct scalar connection.
+  /// This recognizes only complete, naturally ordered, non-net scalar sources;
+  /// partial, reordered, unpacked, child-port, and shared representations
+  /// remain explicit.
+  void _collapseFullPackedArraySwizzles() {
+    final inlineables =
+        Map<SynthLogic, SystemVerilogSynthSubModuleInstantiation>.of(
+      _inlineableSubmoduleMap,
+    );
+    for (final instantiation in chainableModulesToCollapse
+        .whereType<SystemVerilogSynthSubModuleInstantiation>()) {
+      final result = instantiation.inlineResultLogic?.resolved;
+      if (instantiation.needsInstantiation && result != null) {
+        inlineables.putIfAbsent(result, () => instantiation);
+      }
+    }
+    for (final instantiation in subModuleInstantiations
+        .whereType<SystemVerilogSynthSubModuleInstantiation>()) {
+      if (instantiation.module is! BusSubset &&
+          instantiation.module is! Swizzle) {
+        continue;
+      }
+      final result = instantiation.inlineResultLogic?.resolved;
+      if (result != null) {
+        inlineables.putIfAbsent(result, () => instantiation);
+      }
+    }
+
+    final resolving = <SynthLogic>{};
+
+    bool hasUnpackedArrayAncestor(SynthLogicArrayElement signal) {
+      var current = signal.logic;
+      while (current.parentStructure != null) {
+        final parent = current.parentStructure!;
+        if (parent is BaseLogicArray && parent.numUnpackedDimensions > 0) {
+          return true;
+        }
+        current = parent;
+      }
+      return false;
+    }
+
+    List<({SynthLogic source, int lower, int upper, bool fromPackedArray})>?
+        sourceSegments(
+      SynthLogic signal, {
+      bool fromPackedArray = false,
+    }) {
+      signal = signal.resolved;
+      final isArrayElement = signal is SynthLogicArrayElement;
+      if (isArrayElement && hasUnpackedArrayAncestor(signal)) {
+        return null;
+      }
+      final traversedPackedArray = fromPackedArray || isArrayElement;
+      if (!resolving.add(signal)) {
+        return null;
+      }
+
+      try {
+        final inlineable = inlineables[signal];
+        if (inlineable != null) {
+          final inlineModule = inlineable.module;
+          if (inlineModule is BusSubset &&
+              !inlineModule.original.isNet &&
+              inlineModule.startIndex <= inlineModule.endIndex) {
+            final original =
+                inlineable.inputMapping[inlineModule.original.name];
+            if (original == null) {
+              return null;
+            }
+            final originalSegments = sourceSegments(
+              original,
+              fromPackedArray: traversedPackedArray,
+            );
+            if (originalSegments == null || originalSegments.length != 1) {
+              return null;
+            }
+
+            final originalSegment = originalSegments.single;
+            if (originalSegment.upper - originalSegment.lower + 1 !=
+                original.width) {
+              return null;
+            }
+            final lower = originalSegment.lower + inlineModule.startIndex;
+            final upper = originalSegment.lower + inlineModule.endIndex;
+            if (upper >= originalSegment.source.width) {
+              return null;
+            }
+            return [
+              (
+                source: originalSegment.source,
+                lower: lower,
+                upper: upper,
+                fromPackedArray:
+                    originalSegment.fromPackedArray || traversedPackedArray,
+              ),
+            ];
+          }
+
+          if (inlineModule is Swizzle && !inlineModule.isNet) {
+            final inputs = <({int index, SynthLogic signal})>[];
+            for (final entry in inlineable.inputMapping.entries) {
+              final index = _swizzlePortIndex(entry.key);
+              if (index == null) {
+                return null;
+              }
+              inputs.add((index: index, signal: entry.value));
+            }
+            inputs.sort((a, b) => a.index.compareTo(b.index));
+            if (inputs.length != inlineModule.inputs.length ||
+                inputs.indexed.any((entry) => entry.$1 != entry.$2.index)) {
+              return null;
+            }
+
+            final segments = <({
+              SynthLogic source,
+              int lower,
+              int upper,
+              bool fromPackedArray
+            })>[];
+            for (final input in inputs) {
+              final inputSegments = sourceSegments(
+                input.signal,
+                fromPackedArray: traversedPackedArray,
+              );
+              if (inputSegments == null) {
+                return null;
+              }
+              segments.addAll(inputSegments);
+            }
+            return segments;
+          }
+        }
+
+        if (signal is SynthLogicPackedBitReference) {
+          final source = signal.packedBase.resolved;
+          if (source.runtimeType != SynthLogic ||
+              source.isArray ||
+              source.isNet) {
+            return null;
+          }
+          return [
+            (
+              source: source,
+              lower: signal.bitIndex,
+              upper: signal.bitIndex,
+              fromPackedArray: traversedPackedArray,
+            ),
+          ];
+        }
+
+        if (signal is SynthLogicPackedRangeReference) {
+          final source = signal.packedBase.resolved;
+          if (source.runtimeType != SynthLogic ||
+              source.isArray ||
+              source.isNet) {
+            return null;
+          }
+          return [
+            (
+              source: source,
+              lower: signal.lowerIndex,
+              upper: signal.upperIndex,
+              fromPackedArray: traversedPackedArray,
+            ),
+          ];
+        }
+
+        if (signal.runtimeType != SynthLogic ||
+            signal.isArray ||
+            signal.isNet) {
+          return null;
+        }
+        return [
+          (
+            source: signal,
+            lower: 0,
+            upper: signal.width - 1,
+            fromPackedArray: traversedPackedArray,
+          ),
+        ];
+      } finally {
+        resolving.remove(signal);
+      }
+    }
+
+    for (final instantiation in subModuleInstantiations
+        .whereType<SystemVerilogSynthSubModuleInstantiation>()
+        .toList()) {
+      final swizzle = instantiation.module;
+      final result = instantiation.inlineResultLogic?.resolved;
+      if (!instantiation.needsInstantiation ||
+          swizzle is! Swizzle ||
+          swizzle.isNet ||
+          result == null ||
+          result.runtimeType != SynthLogic ||
+          result.isArray ||
+          result.isNet ||
+          result.isEnum) {
+        continue;
+      }
+      final hasCompetingDriver =
+          assignments.any((assignment) => assignment.dst.resolved == result) ||
+              subModuleInstantiations.any(
+                (other) =>
+                    !identical(other, instantiation) &&
+                    [
+                      ...other.outputMapping.values,
+                      ...other.inOutMapping.values,
+                    ].any((mapped) => mapped.resolved == result),
+              );
+      if (hasCompetingDriver) {
+        continue;
+      }
+
+      final segments = sourceSegments(result);
+      if (segments == null ||
+          segments.isEmpty ||
+          !segments.any((segment) => segment.fromPackedArray)) {
+        continue;
+      }
+
+      final source = segments.first.source.resolved;
+      if (source.runtimeType != SynthLogic ||
+          source.isArray ||
+          source.isNet ||
+          source.isEnum ||
+          (source.isPort() && !source.isPort(module)) ||
+          (!inputs.contains(source) &&
+              !internalSignals.contains(source) &&
+              !source.isConstant) ||
+          source.width != result.width) {
+        continue;
+      }
+
+      var nextBit = 0;
+      var isFullNaturalOrder = true;
+      for (final segment in segments) {
+        if (segment.source.resolved != source ||
+            segment.lower != nextBit ||
+            segment.upper < segment.lower ||
+            segment.upper >= source.width) {
+          isFullNaturalOrder = false;
+          break;
+        }
+        nextBit = segment.upper + 1;
+      }
+      if (!isFullNaturalOrder || nextBit != source.width) {
+        continue;
+      }
+
+      if (source != result) {
+        assignments.add(SynthAssignment(source, result));
+      }
+      instantiation.clearInstantiation();
+      chainableModulesToCollapse.remove(instantiation);
+      if (identical(_inlineableSubmoduleMap[result], instantiation)) {
+        _inlineableSubmoduleMap.remove(result);
+      }
+    }
+  }
+
   /// Fabricates a [_SwizzleConnect] that represents [agg] as the inline
   /// concatenation of [elementSources] (ordered with index 0 as the LSB), and
   /// registers it in [_inlineableSubmoduleMap].
@@ -1402,6 +1677,12 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
         unpacked: agg.logics
             .whereType<BaseLogicArray>()
             .any((array) => array.numUnpackedDimensions > 0));
+    if (isNet) {
+      // Net swizzles register their synthetic inout ports lazily when driven.
+      // This synthesis-only instance has no real driver, so realize them
+      // before constructing its port mapping.
+      swizzle.out.value;
+    }
 
     final swizzleInst = getSynthSubModuleInstantiation(swizzle)
         as SystemVerilogSynthSubModuleInstantiation;

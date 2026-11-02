@@ -1166,6 +1166,36 @@ abstract class Module {
         uniquify: uniquify,
       );
 
+  /// Registers a provider [source] endpoint and returns its internal clone.
+  ///
+  /// This is the type-safe equivalent of [addPairInterfacePorts] with
+  /// [PairRole.provider]. Module logic must use the returned clone rather than
+  /// the interface wrapped by [source].
+  InterfaceType addPairProviderPorts<InterfaceType extends PairInterface>(
+    PairProvider<InterfaceType> source, {
+    String Function(String original)? uniquify,
+  }) =>
+      addPairInterfacePorts(
+        source.interface,
+        PairRole.provider,
+        uniquify: uniquify,
+      );
+
+  /// Registers a consumer [source] endpoint and returns its internal clone.
+  ///
+  /// This is the type-safe equivalent of [addPairInterfacePorts] with
+  /// [PairRole.consumer]. Module logic must use the returned clone rather than
+  /// the interface wrapped by [source].
+  InterfaceType addPairConsumerPorts<InterfaceType extends PairInterface>(
+    PairConsumer<InterfaceType> source, {
+    String Function(String original)? uniquify,
+  }) =>
+      addPairInterfacePorts(
+        source.interface,
+        PairRole.consumer,
+        uniquify: uniquify,
+      );
+
   /// Registers [source] on this [Module] and returns its internal clone.
   ///
   /// Module logic must use the returned clone rather than [source]. Ports
@@ -1284,6 +1314,44 @@ abstract class Module {
     String Function(String original)? uniquify,
   }) =>
       target..pairConnectIO(this, source, role, uniquify: uniquify);
+
+  /// Registers [target] against a provider [source] endpoint and returns it.
+  ///
+  /// This is the type-safe equivalent of [addPairInterfaceFrom] with
+  /// [PairRole.provider]. It supports deliberate type adaptation in the same
+  /// way as [addPairInterfaceFrom].
+  TargetInterfaceType addPairProviderFrom<
+          TargetInterfaceType extends PairInterface,
+          SourceInterfaceType extends PairInterface>(
+    TargetInterfaceType target,
+    PairProvider<SourceInterfaceType> source, {
+    String Function(String original)? uniquify,
+  }) =>
+      addPairInterfaceFrom(
+        target,
+        source.interface,
+        PairRole.provider,
+        uniquify: uniquify,
+      );
+
+  /// Registers [target] against a consumer [source] endpoint and returns it.
+  ///
+  /// This is the type-safe equivalent of [addPairInterfaceFrom] with
+  /// [PairRole.consumer]. It supports deliberate type adaptation in the same
+  /// way as [addPairInterfaceFrom].
+  TargetInterfaceType addPairConsumerFrom<
+          TargetInterfaceType extends PairInterface,
+          SourceInterfaceType extends PairInterface>(
+    TargetInterfaceType target,
+    PairConsumer<SourceInterfaceType> source, {
+    String Function(String original)? uniquify,
+  }) =>
+      addPairInterfaceFrom(
+        target,
+        source.interface,
+        PairRole.consumer,
+        uniquify: uniquify,
+      );
 
   @override
   String toString() => [

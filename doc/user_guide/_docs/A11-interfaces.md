@@ -2,7 +2,7 @@
 title: "Interfaces"
 permalink: /docs/interfaces/
 excerpt: "Interfaces"
-last_modified_at: 2025-7-24
+last_modified_at: 2026-11-02
 toc: true
 ---
 
@@ -19,6 +19,14 @@ The `connectIO` function under the hood calls `addInput` and `addOutput` directl
 `Module` has functions called `addInterfacePorts` and `addPairInterfacePorts` which register an `Interface` (or `PairInterface` for a given `PairRole`) on the `Module` and return the "internal" copy of the interface to use within the `Module`. For these to work, all `Interface`s must implement a `clone()` method so that an internal copy can be created. Prefer these over calling `connectIO` or `pairConnectIO` directly so that module code does not depend on how interface ports are laid out.
 
 When the internal interface should intentionally be a different object or type than a clone of the external one, use `addInterfaceFrom` or `addPairInterfaceFrom`, which register a provided target against the source and return that target.
+
+For a type-safe provider/consumer boundary, split a `PairInterface` with
+`intf.split()`. The returned `PairProvider` and `PairConsumer` wrappers can be
+required by module constructors, and `addPairProviderPorts`,
+`addPairConsumerPorts`, `addPairProviderFrom`, and `addPairConsumerFrom`
+select the corresponding role without accepting an endpoint for the other role.
+The existing role-based APIs remain available for compatibility and dynamic
+role selection.
 
 ### Experimental structured interface ports
 
@@ -121,33 +129,39 @@ class SimpleInterface extends PairInterface {
           sharedInputPorts: [Logic.port('clk')],
         );
 
-  SimpleInterface.clone(SimpleInterface super.otherInterface) : super.clone();
+  @override
+  SimpleInterface clone() => SimpleInterface();
 }
 ```
 
-Note that it comes with helpers in the super constructor for grouping ports as well as cloning the interface.  Using this interface in a simple provider/consumer scenario, even with module hierarchy is easy.  You can use the `addPairInterfacePorts` function which references the "role" of the component rather than listing input and output tags explicitly.
+Note that it comes with helpers in the super constructor for grouping ports as
+well as cloning the interface. Split an interface once in its owning parent,
+then require the appropriate endpoint type in each module constructor. This
+prevents a provider endpoint from accidentally being supplied to a consumer
+module.
 
 ```dart
 class SimpleProvider extends Module {
   late final SimpleInterface _intf;
-  SimpleProvider(SimpleInterface intf) {
-    _intf = addPairInterfacePorts(intf, PairRole.provider);
+  SimpleProvider(PairProvider<SimpleInterface> endpoint) {
+    _intf = addPairProviderPorts(endpoint);
 
-    SimpleSubProvider(_intf);
+    final (provider, _) = _intf.split();
+    SimpleSubProvider(provider);
   }
 }
 
 class SimpleSubProvider extends Module {
   late final SimpleInterface _intf;
-  SimpleSubProvider(SimpleInterface intf) {
-    _intf = addPairInterfacePorts(intf, PairRole.provider);
+  SimpleSubProvider(PairProvider<SimpleInterface> endpoint) {
+    _intf = addPairProviderPorts(endpoint);
   }
 }
 
 class SimpleConsumer extends Module {
   late final SimpleInterface _intf;
-  SimpleConsumer(SimpleInterface intf) {
-    _intf = addPairInterfacePorts(intf, PairRole.consumer);
+  SimpleConsumer(PairConsumer<SimpleInterface> endpoint) {
+    _intf = addPairConsumerPorts(endpoint);
   }
 }
 
@@ -156,8 +170,9 @@ class SimpleTop extends Module {
     clk = addInput('clk', clk);
     final intf = SimpleInterface();
     intf.clk <= clk;
-    SimpleConsumer(intf);
-    SimpleProvider(intf);
+    final (provider, consumer) = intf.split();
+    SimpleConsumer(consumer);
+    SimpleProvider(provider);
   }
 }
 ```

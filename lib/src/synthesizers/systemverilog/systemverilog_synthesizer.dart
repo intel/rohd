@@ -8,6 +8,7 @@
 // Author: Max Korbel <max.korbel@intel.com>
 
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/signals/signals.dart';
 import 'package:rohd/src/synthesizers/systemverilog/systemverilog_synthesis_result.dart';
 
 /// A [Synthesizer] which generates equivalent SystemVerilog as the
@@ -66,9 +67,36 @@ class SystemVerilogSynthesizer extends Synthesizer {
     bool forceStandardInstantiation = false,
     Map<String, int>? outputPortColumns,
   }) {
+    Logic? portFor(String name) =>
+        module.inputs[name] ?? module.outputs[name] ?? module.inOuts[name];
+
+    bool isZeroWidthPort(String name) {
+      final port = portFor(name);
+      return port != null && port.width == 0 && port is! BaseLogicArray;
+    }
+
+    final nonZeroWidthPorts = <String, String>{
+      for (final entry in ports.entries)
+        if (!isZeroWidthPort(entry.key)) entry.key: entry.value,
+    };
+    final nonZeroWidthOutputPorts = <String, String>{
+      for (final entry in ports.entries)
+        if (!isZeroWidthPort(entry.key) || module.inputs.containsKey(entry.key))
+          entry.key: entry.value,
+    };
+
     if (!forceStandardInstantiation) {
       if (module is SystemVerilog) {
-        return module.instantiationVerilog(instanceType, instanceName, ports) ??
+        final customPorts = module is InlineSystemVerilog
+            ? ports
+            : module.generatedDefinitionType == DefinitionGenerationType.none
+                ? nonZeroWidthOutputPorts
+                : nonZeroWidthPorts;
+        return module.instantiationVerilog(
+              instanceType,
+              instanceName,
+              customPorts,
+            ) ??
             instantiationVerilogFor(
               module: module,
               instanceType: instanceType,
@@ -85,12 +113,12 @@ class SystemVerilogSynthesizer extends Synthesizer {
           instanceType,
           instanceName,
           Map.fromEntries(
-            ports.entries.where(
+            nonZeroWidthPorts.entries.where(
               (element) => module.inputs.containsKey(element.key),
             ),
           ),
           Map.fromEntries(
-            ports.entries.where(
+            nonZeroWidthPorts.entries.where(
               (element) => module.outputs.containsKey(element.key),
             ),
           ),
@@ -113,6 +141,9 @@ class SystemVerilogSynthesizer extends Synthesizer {
     var offset = prefix.length;
 
     void addConnection(String signalName) {
+      if (isZeroWidthPort(signalName)) {
+        return;
+      }
       if (connections.isNotEmpty) {
         offset++;
       }

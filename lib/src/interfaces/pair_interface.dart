@@ -40,6 +40,42 @@ enum PairRole {
   consumer,
 }
 
+/// A typed provider endpoint produced by splitting a [PairInterface].
+///
+/// Pass this endpoint to a module that implements the provider role. Its
+/// distinct type prevents it from being passed to an API that requires a
+/// [PairConsumer].
+final class PairProvider<InterfaceType extends PairInterface> {
+  const PairProvider._(this.interface);
+
+  /// The pair interface wrapped by this endpoint.
+  final InterfaceType interface;
+}
+
+/// A typed consumer endpoint produced by splitting a [PairInterface].
+///
+/// Pass this endpoint to a module that implements the consumer role. Its
+/// distinct type prevents it from being passed to an API that requires a
+/// [PairProvider].
+final class PairConsumer<InterfaceType extends PairInterface> {
+  const PairConsumer._(this.interface);
+
+  /// The pair interface wrapped by this endpoint.
+  final InterfaceType interface;
+}
+
+/// Splitting utilities for a [PairInterface].
+///
+/// The returned endpoint types allow module constructors and registration
+/// helpers to require a provider or consumer at compile time. Existing
+/// [PairInterface] APIs remain available when a dynamic role is needed.
+extension PairInterfaceSplit<InterfaceType extends PairInterface>
+    on InterfaceType {
+  /// Returns typed provider and consumer endpoints for this interface.
+  (PairProvider<InterfaceType>, PairConsumer<InterfaceType>) split() =>
+      (PairProvider._(this), PairConsumer._(this));
+}
+
 /// A simplified version of [Interface] which is intended for a common situation
 /// where two components are communicating with each other and may share some
 /// common inputs.

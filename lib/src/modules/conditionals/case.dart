@@ -241,6 +241,14 @@ class Case extends Conditional {
   bool isMatch(LogicValue value, LogicValue expressionValue) =>
       expressionValue == value;
 
+  /// Returns whether [value] can be safely evaluated as [item]'s pattern.
+  ///
+  /// Invalid dynamic patterns cannot determine whether they match a valid case
+  /// expression, so they poison the case result instead of selecting a branch
+  /// or falling through to the default.
+  @protected
+  bool isMatchableItemValue(CaseItem item, LogicValue value) => value.isValid;
+
   /// Returns the SystemVerilog keyword to represent this case block.
   @protected
   String get caseType => 'case';
@@ -254,7 +262,8 @@ class Case extends Conditional {
       }
     }
 
-    if (!expression.value.isValid) {
+    final expressionValue = driverValue(expression);
+    if (!expressionValue.isValid) {
       // if expression has X or Z, then propagate X's!
       driveX(drivenSignals);
       return;
@@ -263,8 +272,14 @@ class Case extends Conditional {
     CaseItem? foundMatch;
 
     for (final item in items) {
+      final itemValue = driverValue(item.value);
+      if (!isMatchableItemValue(item, itemValue)) {
+        driveX(drivenSignals);
+        return;
+      }
+
       // match on the first matching item
-      if (isMatch(driverValue(item.value), driverValue(expression))) {
+      if (isMatch(itemValue, expressionValue)) {
         for (final conditional in item.then) {
           conditional.execute(drivenSignals, guard);
         }
@@ -505,7 +520,11 @@ ${subPadding}end
 /// A special version of [Case] which can do wildcard matching via `z` in
 /// the expression.
 ///
-/// Any `z` in the value of a [CaseItem] will act as a wildcard.
+/// Any `z` in a literal [Const] [CaseItem] value, or an alias of one, acts as
+/// a wildcard.
+///
+/// Invalid dynamic item values drive the case result to `x`, because they
+/// cannot safely be treated as compile-time wildcard patterns.
 ///
 /// Does not support SystemVerilog's `?` syntax, which is exactly functionally
 /// equivalent to `z` syntax.
@@ -543,5 +562,34 @@ class CaseZ extends Case {
       }
     }
     return true;
+  }
+
+  @override
+  bool isMatchableItemValue(CaseItem item, LogicValue value) {
+    if (value.isValid) {
+      return true;
+    }
+
+    return _isConstantAlias(item.value) &&
+        Iterable.generate(value.width, (index) => value[index]).every(
+          (bit) => bit.isValid || bit == LogicValue.z,
+        );
+  }
+
+  /// Returns whether [logic] is a [Const] or a connected alias of one.
+  static bool _isConstantAlias(Logic logic) {
+    final visited = <Logic>{};
+    while (visited.add(logic)) {
+      if (logic is Const) {
+        return true;
+      }
+
+      final source = logic.srcConnection;
+      if (source == null) {
+        return false;
+      }
+      logic = source;
+    }
+    return false;
   }
 }
