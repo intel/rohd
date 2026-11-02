@@ -45,7 +45,7 @@ class MyExternalModule extends ExternalSystemVerilogModule {
 class TopModule extends Module {
   TopModule(Logic a) {
     a = addInput('a', a, width: a.width);
-    MyExternalModule(a);
+    MyExternalModule(a, width: a.width);
   }
 }
 ```
