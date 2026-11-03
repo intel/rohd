@@ -7,6 +7,9 @@
 // 2026 August 18
 // Author: Max Korbel <max.korbel@intel.com>
 
+@TestOn('vm')
+library;
+
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
@@ -181,7 +184,7 @@ void main() {
         );
         await module.build();
 
-        final generated = module.generateSynth();
+        final generated = module.dumpSystemVerilog();
 
         expect(generated, contains('module ArrayRecordHierarchy'));
         expect(generated, contains('.inputData('));
@@ -197,7 +200,7 @@ void main() {
     final module = RootArrayPassThrough(LogicArray([2, 3], 4));
     await module.build();
 
-    final generated = module.generateSynth();
+    final generated = module.dumpSystemVerilog();
 
     expect(generated, contains('input logic [1:0][2:0][3:0] inputData'));
     expect(generated, contains('output logic [1:0][2:0][3:0] outputData'));

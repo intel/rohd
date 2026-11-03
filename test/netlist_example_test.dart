@@ -3,7 +3,6 @@
 //
 // netlist_example_test.dart
 // Convert examples to netlist JSON and check the produced output.
-
 // 2026 March 31
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
@@ -52,7 +51,6 @@ void main() {
 
     final counter = Counter(en, reset, clk);
     await counter.build();
-    counter.generateSynth();
 
     final modules = await convertTestWriteNetlist(
       counter,
@@ -153,7 +151,7 @@ void main() {
     });
 
     test('SynthBuilder netlist for OvenModule example', () async {
-      final button = Logic(name: 'button', width: 2);
+      final button = LogicEnum(Button.values, name: 'button');
       final reset = Logic(name: 'reset');
       final clk = SimpleClockGenerator(10).clk;
 
@@ -249,7 +247,7 @@ void main() {
   });
 
   test('Netlist dump for OvenModule example', () async {
-    final button = Logic(name: 'button', width: 2);
+    final button = LogicEnum(Button.values, name: 'button');
     final reset = Logic(name: 'reset');
     final clk = SimpleClockGenerator(10).clk;
 

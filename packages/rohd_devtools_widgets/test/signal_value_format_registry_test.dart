@@ -94,11 +94,7 @@ void main() {
       "8'hff",
     );
     expect(
-      SignalValueFormatRegistry.formatValue(
-        '1010',
-        SignalValueFormat.octal,
-        4,
-      ),
+      SignalValueFormatRegistry.formatValue('1010', SignalValueFormat.octal, 4),
       '0o12',
     );
     expect(
@@ -131,12 +127,9 @@ void main() {
   });
 
   test('looks up an occurrence address from the format trie', () {
-    SignalValueFormatRegistry.setFormatFor(
-      [
-        const OccurrenceAddress([0, 2, 4]),
-      ],
-      SignalValueFormat.signedDecimal,
-    );
+    SignalValueFormatRegistry.setFormatFor([
+      const OccurrenceAddress([0, 2, 4]),
+    ], SignalValueFormat.signedDecimal);
 
     expect(
       SignalValueFormatRegistry.formatFor(const OccurrenceAddress([0, 2, 4])),
@@ -145,12 +138,9 @@ void main() {
   });
 
   test('looks up a fallback occurrence address', () {
-    SignalValueFormatRegistry.setFormatFor(
-      [
-        const OccurrenceAddress([0, 2, 4]),
-      ],
-      SignalValueFormat.unsignedDecimal,
-    );
+    SignalValueFormatRegistry.setFormatFor([
+      const OccurrenceAddress([0, 2, 4]),
+    ], SignalValueFormat.unsignedDecimal);
 
     expect(
       SignalValueFormatRegistry.formatForAny([
@@ -189,26 +179,23 @@ void main() {
 
   test('rejects an invalid signal occurrence address', () {
     expect(
-      () => SignalValueFormatRegistry.setFormatFor(
-        const [OccurrenceAddress.root],
-        SignalValueFormat.unsignedDecimal,
-      ),
+      () => SignalValueFormatRegistry.setFormatFor(const [
+        OccurrenceAddress.root,
+      ], SignalValueFormat.unsignedDecimal),
       throwsArgumentError,
     );
     expect(
-      () => SignalValueFormatRegistry.formatFor(
-        const OccurrenceAddress([0, -1]),
-      ),
+      () =>
+          SignalValueFormatRegistry.formatFor(const OccurrenceAddress([0, -1])),
       throwsArgumentError,
     );
   });
 
   test('preserves registry state when a preference batch is invalid', () {
     const address = OccurrenceAddress([0, 2, 4]);
-    SignalValueFormatRegistry.setFormatFor(
-      [address],
-      SignalValueFormat.unsignedDecimal,
-    );
+    SignalValueFormatRegistry.setFormatFor([
+      address,
+    ], SignalValueFormat.unsignedDecimal);
     final changesBefore = SignalValueFormatRegistry.changes.value;
 
     expect(
@@ -221,28 +208,31 @@ void main() {
       ]),
       throwsArgumentError,
     );
-    expect(SignalValueFormatRegistry.formatFor(address),
-        SignalValueFormat.unsignedDecimal);
+    expect(
+      SignalValueFormatRegistry.formatFor(address),
+      SignalValueFormat.unsignedDecimal,
+    );
     expect(SignalValueFormatRegistry.changes.value, changesBefore);
   });
 
   test('preserves registry state when an address batch is invalid', () {
     const address = OccurrenceAddress([0, 2, 4]);
-    SignalValueFormatRegistry.setFormatFor(
-      [address],
-      SignalValueFormat.unsignedDecimal,
-    );
+    SignalValueFormatRegistry.setFormatFor([
+      address,
+    ], SignalValueFormat.unsignedDecimal);
     final changesBefore = SignalValueFormatRegistry.changes.value;
 
     expect(
-      () => SignalValueFormatRegistry.setFormatFor(
-        [address, OccurrenceAddress.root],
-        SignalValueFormat.signedDecimal,
-      ),
+      () => SignalValueFormatRegistry.setFormatFor([
+        address,
+        OccurrenceAddress.root,
+      ], SignalValueFormat.signedDecimal),
       throwsArgumentError,
     );
-    expect(SignalValueFormatRegistry.formatFor(address),
-        SignalValueFormat.unsignedDecimal);
+    expect(
+      SignalValueFormatRegistry.formatFor(address),
+      SignalValueFormat.unsignedDecimal,
+    );
     expect(SignalValueFormatRegistry.changes.value, changesBefore);
   });
 
@@ -252,9 +242,7 @@ void main() {
       SignalValueFormat.signedDecimal,
     );
     expect(
-      SignalValueFormatRegistry.formatToString(
-        SignalValueFormat.signedDecimal,
-      ),
+      SignalValueFormatRegistry.formatToString(SignalValueFormat.signedDecimal),
       'signedDecimal',
     );
     expect(SignalValueFormatRegistry.formatFromString('unknown'), isNull);

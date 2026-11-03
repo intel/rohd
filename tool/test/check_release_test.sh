@@ -21,9 +21,11 @@ readonly REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 readonly FIXTURE="$(mktemp -d)"
 trap 'rm -rf "$FIXTURE"' EXIT
 
-mkdir -p "$FIXTURE/repo/tool" "$FIXTURE/bin" "$FIXTURE/repo/extension/devtools/build"
-cp "$REPO_ROOT/tool/check_release.sh" "$REPO_ROOT/tool/prepare_release.sh" "$FIXTURE/repo/tool/"
-for package in rohd_hierarchy rohd_waveform rohd_devtools_widgets; do
+mkdir -p "$FIXTURE/repo/tool/release" "$FIXTURE/bin" "$FIXTURE/repo/extension/devtools/build"
+cp "$REPO_ROOT/tool/release/check_release.sh" \
+  "$REPO_ROOT/tool/release/prepare_release.sh" \
+  "$FIXTURE/repo/tool/release/"
+for package in rohd_hierarchy rohd_waveform rohd_devtools_widgets rohd_source_navigator; do
   mkdir -p "$FIXTURE/repo/packages/$package"
   touch "$FIXTURE/repo/packages/$package/pubspec.yaml"
 done
@@ -45,7 +47,7 @@ ln -s /bin/bash "$FIXTURE/bin/bash"
 ln -s "$(command -v dirname)" "$FIXTURE/bin/dirname"
 
 export SDK_LOG="$FIXTURE/sdk.log"
-readonly HELPER="$FIXTURE/repo/tool/check_release.sh"
+readonly HELPER="$FIXTURE/repo/tool/release/check_release.sh"
 passed=0
 
 run_case() {
@@ -66,24 +68,33 @@ run_case() {
 run_case 0 "$HELPER" --help
 [[ ! -s "$SDK_LOG" ]]
 run_case 0 "$HELPER"
-[[ "$(wc -l < "$SDK_LOG")" -eq 4 ]]
+[[ "$(wc -l < "$SDK_LOG")" -eq 5 ]]
+grep -Fx "dart|$FIXTURE/repo/packages/rohd_source_navigator|pub publish --dry-run" "$SDK_LOG"
 DASH__SUPPRESS_ANALYTICS=false FLUTTER_SUPPRESS_ANALYTICS=false run_case 0 "$HELPER" rohd_devtools_widgets
 run_case 0 "$HELPER" --validate-only
 [[ ! -s "$SDK_LOG" ]]
-for invalid in --force --dry-run ../rohd rohd_source_navigator rohd_devtools_extension; do
+for invalid in --force --dry-run ../rohd rohd_devtools_extension; do
   run_case 2 "$HELPER" rohd_hierarchy "$invalid"
   [[ ! -s "$SDK_LOG" ]]
 done
-run_case 0 "$HELPER" --validate-only rohd rohd_devtools_widgets
+run_case 0 "$HELPER" --validate-only rohd rohd_devtools_widgets rohd_source_navigator
 [[ ! -s "$SDK_LOG" ]]
 
 cd "$FIXTURE"
-run_case 0 "$HELPER" rohd rohd_hierarchy rohd_waveform rohd_devtools_widgets
-[[ "$(wc -l < "$SDK_LOG")" -eq 4 ]]
+run_case 0 "$HELPER" rohd rohd_hierarchy rohd_waveform rohd_devtools_widgets rohd_source_navigator
+[[ "$(wc -l < "$SDK_LOG")" -eq 5 ]]
 grep -Fx "dart|$FIXTURE/repo|pub publish --dry-run" "$SDK_LOG"
 grep -Fx "dart|$FIXTURE/repo/packages/rohd_hierarchy|pub publish --dry-run" "$SDK_LOG"
 grep -Fx "dart|$FIXTURE/repo/packages/rohd_waveform|pub publish --dry-run" "$SDK_LOG"
 grep -Fx "flutter|$FIXTURE/repo/packages/rohd_devtools_widgets|pub publish --dry-run" "$SDK_LOG"
+grep -Fx "dart|$FIXTURE/repo/packages/rohd_source_navigator|pub publish --dry-run" "$SDK_LOG"
+
+run_case 0 "$HELPER" rohd_source_navigator
+[[ "$(cat "$SDK_LOG")" == "dart|$FIXTURE/repo/packages/rohd_source_navigator|pub publish --dry-run" ]]
+FAIL_PACKAGE=rohd_source_navigator run_case 1 "$HELPER" rohd_source_navigator rohd_hierarchy
+[[ "$(wc -l < "$SDK_LOG")" -eq 2 ]]
+grep -F 'rohd_source_navigator: FAILED (exit 65;' "$FIXTURE/output"
+grep -F 'rohd_hierarchy: PASSED' "$FIXTURE/output"
 
 export FAIL_PACKAGE=rohd_hierarchy
 run_case 1 "$HELPER" rohd_hierarchy rohd_waveform
@@ -107,17 +118,20 @@ run_case 1 "$HELPER" rohd
 rm "$FIXTURE/repo/packages/rohd_waveform/pubspec.yaml"
 run_case 2 "$HELPER" rohd_hierarchy rohd_waveform
 [[ ! -s "$SDK_LOG" ]]
+rm "$FIXTURE/repo/packages/rohd_source_navigator/pubspec.yaml"
+run_case 2 "$HELPER" rohd_hierarchy rohd_source_navigator
+[[ ! -s "$SDK_LOG" ]]
 rm "$FIXTURE/bin/flutter"
 run_case 2 "$HELPER" rohd_hierarchy rohd_devtools_widgets
 [[ ! -s "$SDK_LOG" ]]
 
-run_case 2 "$FIXTURE/repo/tool/prepare_release.sh" rohd --force
+run_case 2 "$FIXTURE/repo/tool/release/prepare_release.sh" rohd --force
 [[ ! -s "$SDK_LOG" ]]
-run_case 2 "$FIXTURE/repo/tool/prepare_release.sh"
+run_case 2 "$FIXTURE/repo/tool/release/prepare_release.sh"
 [[ ! -s "$SDK_LOG" ]]
-run_case 2 "$FIXTURE/repo/tool/prepare_release.sh" 0.6.11-rc.1
+run_case 2 "$FIXTURE/repo/tool/release/prepare_release.sh" 0.6.11-rc.1
 [[ ! -s "$SDK_LOG" ]]
-run_case 2 "$FIXTURE/repo/tool/prepare_release.sh" rohd_devtools_widgets
+run_case 2 "$FIXTURE/repo/tool/release/prepare_release.sh" rohd_devtools_widgets
 [[ ! -s "$SDK_LOG" ]]
 
 echo "$passed checks passed using only fake SDK executables."

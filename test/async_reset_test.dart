@@ -114,7 +114,7 @@ void main() {
           ),
       'FlipFlop with no asyncReset': (Logic clk, Logic reset, Logic val) {
         val <=
-            FlipFlop(
+            FlipFlop<Logic>(
               clk,
               reset: reset,
               Const(1),
@@ -122,7 +122,7 @@ void main() {
       },
       'flop with no asyncReset': (Logic clk, Logic reset, Logic val) {
         val <=
-            flop(
+            flop<Logic>(
               clk,
               reset: reset,
               Const(1),
@@ -198,7 +198,7 @@ void main() {
           ),
       'FlipFlop with asyncReset': (Logic clk, Logic reset, Logic val) {
         val <=
-            FlipFlop(
+            FlipFlop<Logic>(
               clk,
               reset: reset,
               Const(1),
@@ -207,7 +207,7 @@ void main() {
       },
       'flop with asyncReset': (Logic clk, Logic reset, Logic val) {
         val <=
-            flop(
+            flop<Logic>(
               clk,
               reset: reset,
               Const(1),

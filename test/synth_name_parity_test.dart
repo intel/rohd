@@ -8,8 +8,11 @@
 // 2026 April 14
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
+import 'dart:convert';
+
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
+import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
 
 import '../example/filter_bank.dart';
@@ -47,6 +50,31 @@ class _Counter extends Module {
         ),
       ],
     );
+  }
+}
+
+class _NamingStage extends Module {
+  _NamingStage(Logic source,
+      {required String inputName, required String outputName}) {
+    source = addInput(inputName, source);
+    addOutput(outputName) <= ~source;
+  }
+}
+
+class _DriverReceiverNames extends Module {
+  late final Logic driver;
+  late final Logic receiver;
+
+  _DriverReceiverNames(
+      {String driverName = 'sent', String receiverName = 'received'}) {
+    final source = addInput('source', Logic());
+    final producer =
+        _NamingStage(source, inputName: 'data', outputName: driverName);
+    driver = producer.output(driverName);
+    final consumer =
+        _NamingStage(driver, inputName: receiverName, outputName: 'result');
+    receiver = consumer.input(receiverName);
+    addOutput('observed') <= consumer.output('result');
   }
 }
 
@@ -105,6 +133,52 @@ class _CollapsedInstanceCollidingNames extends Module {
     retainedDup <= a | b;
     y <= collapsedInstanceOut ^ retainedDup;
     z <= retainedDup;
+  }
+}
+
+class _NestedNameStructure extends LogicStructure {
+  final Logic before;
+  final LogicArray lanes;
+  final Logic after;
+
+  factory _NestedNameStructure({String? name}) => _NestedNameStructure._(
+        Logic(name: 'before', width: 2),
+        LogicArray([2], 3, name: 'lanes'),
+        Logic(name: 'after'),
+        name: name ?? 'nested',
+      );
+
+  _NestedNameStructure._(
+    this.before,
+    this.lanes,
+    this.after, {
+    required String name,
+  }) : super([before, lanes, after], name: name);
+
+  @override
+  _NestedNameStructure clone({String? name}) =>
+      _NestedNameStructure(name: name ?? this.name);
+}
+
+class _NestedNameModule extends Module {
+  late final TypedLogicArray<_NestedNameStructure, LogicValue> valuesIn;
+  late final TypedLogicArray<_NestedNameStructure, LogicValue> valuesOut;
+
+  _NestedNameModule() : super(name: 'nestedNameModule') {
+    final source = TypedLogicArray<_NestedNameStructure, LogicValue>(
+      [2],
+      _NestedNameStructure.new,
+    );
+    valuesIn = addTypedInput('valuesIn', source);
+    valuesOut = addTypedOutput('valuesOut', valuesIn.clone);
+    for (var index = 0; index < 2; index++) {
+      valuesOut.at([index]).before <= valuesIn.at([index]).before;
+      valuesOut.at([index]).after <= ~valuesIn.at([index]).after;
+      for (var lane = 0; lane < 2; lane++) {
+        valuesOut.at([index]).lanes.at([lane]) <=
+            valuesIn.at([index]).lanes.at([lane]);
+      }
+    }
   }
 }
 
@@ -186,6 +260,117 @@ void main() {
     await Simulator.reset();
   });
 
+  group('driver name preference', () {
+    for (final prefix in ['', '_']) {
+      for (final reverse in [false, true]) {
+        for (final claimed in ['none', 'driver', 'both']) {
+          test('prefix="$prefix" reverse=$reverse claimed=$claimed', () async {
+            final module = _DriverReceiverNames(
+                driverName: '${prefix}sent', receiverName: '${prefix}received');
+            await module.build();
+            for (final name in [
+              if (claimed != 'none') '${prefix}sent',
+              if (claimed == 'both') '${prefix}received',
+            ]) {
+              module.namer
+                  .signalNameOf(Logic(name: name, naming: Naming.mergeable));
+            }
+            final candidates = [module.receiver, module.driver];
+            final expected = claimed == 'driver'
+                ? '${prefix}received'
+                : '${prefix}sent${claimed == 'both' ? '_0' : ''}';
+            expect(
+                module.namer.signalNameOfBest(
+                    reverse ? candidates.reversed : candidates),
+                expected);
+            expect(module.namer.signalNameOf(module.driver), expected);
+            expect(module.namer.signalNameOf(module.receiver), expected);
+          });
+        }
+      }
+    }
+
+    for (final claimed in [false, true]) {
+      test('preferred receiver beats generated driver claimed=$claimed',
+          () async {
+        final module = _DriverReceiverNames(driverName: '_sent');
+        await module.build();
+        if (claimed) {
+          module.namer
+              .signalNameOf(Logic(name: 'received', naming: Naming.mergeable));
+        }
+        expect(module.namer.signalNameOfBest([module.driver, module.receiver]),
+            claimed ? 'received_0' : 'received');
+      });
+    }
+
+    for (final priority in ['reserved', 'renameable', 'input', 'output']) {
+      test('$priority priority remains stronger than driver preference',
+          () async {
+        final module = _DriverReceiverNames();
+        await module.build();
+        final preferred = switch (priority) {
+          'input' => module.input('source'),
+          'output' => module.output('observed'),
+          _ => Logic(
+              name: 'explicit',
+              naming:
+                  priority == 'reserved' ? Naming.reserved : Naming.renameable),
+        };
+        expect(
+            module.namer
+                .signalNameOfBest([module.receiver, module.driver, preferred]),
+            preferred.name);
+      });
+    }
+
+    for (final outputs in [false, true]) {
+      test('equal-role candidates retain order outputs=$outputs', () async {
+        final module = _DriverReceiverNames();
+        await module.build();
+        final other = _NamingStage(Logic(),
+            inputName: 'otherInput', outputName: 'otherOutput');
+        final first = outputs ? other.output('otherOutput') : module.receiver;
+        final second = outputs ? module.driver : other.input('otherInput');
+        expect(
+            module.namer.signalNameOfBest([
+              if (outputs) module.receiver,
+              first,
+              second,
+            ]),
+            first.name);
+      });
+    }
+
+    for (final netlistFirst in [false, true]) {
+      test('synthesis and simulation agree netlistFirst=$netlistFirst',
+          () async {
+        final module = _DriverReceiverNames();
+        await module.build();
+        for (final netlist in [netlistFirst, !netlistFirst]) {
+          if (netlist) {
+            module.generateNetlist();
+          } else {
+            final verilog = module.dumpSystemVerilog();
+            expect(verilog, contains('logic sent;'));
+            expect(verilog, contains('.sent(sent)'));
+            expect(verilog, contains('.received(sent)'));
+            expect(verilog, isNot(contains('logic received;')));
+          }
+          expect(module.namer.signalNameOfBest([module.driver]), 'sent');
+          expect(module.namer.signalNameOfBest([module.receiver]), 'sent');
+        }
+        final vectors = [
+          for (final value in [0, 1, LogicValue.x, LogicValue.z])
+            Vector({'source': value},
+                {'observed': value == LogicValue.z ? LogicValue.x : value}),
+        ];
+        await SimCompare.checkFunctionalVector(module, vectors);
+        SimCompare.checkIverilogVector(module, vectors);
+      });
+    }
+  });
+
   group('signalNameOfBest after netlist synthesis', () {
     test('counter — returns names after netlist synthesis', () async {
       final mod = _Counter(Logic(), Logic());
@@ -233,7 +418,7 @@ void main() {
       final mod = _Counter(Logic(), Logic());
       await mod.build();
 
-      mod.generateSynth();
+      mod.dumpSystemVerilog();
 
       expect(mod.namer.signalNameOfBest([mod.input('en')]), equals('en'));
       expect(mod.namer.signalNameOfBest([mod.input('reset')]), equals('reset'));
@@ -251,7 +436,7 @@ void main() {
 
         final modSv = _Counter(Logic(), Logic());
         await modSv.build();
-        modSv.generateSynth();
+        modSv.dumpSystemVerilog();
 
         // Both paths use the same Namer, so names must match.
         final enNetlist = modNetlist.namer.signalNameOfBest([
@@ -271,7 +456,7 @@ void main() {
       'colliding mergeable names remain stable across synthesis order',
       () async {
         void runNetlist(_CollidingNames mod) => mod.generateNetlist();
-        void runSv(_CollidingNames mod) => mod.generateSynth();
+        void runSv(_CollidingNames mod) => mod.dumpSystemVerilog();
 
         final netlistOnly = await _collisionNamesAfter([runNetlist]);
         await Simulator.reset();
@@ -316,7 +501,7 @@ void main() {
     test('colliding names stay stable when SV inlines one signal', () async {
       void runNetlist(_PartiallyInlineCollidingNames mod) =>
           mod.generateNetlist();
-      void runSv(_PartiallyInlineCollidingNames mod) => mod.generateSynth();
+      void runSv(_PartiallyInlineCollidingNames mod) => mod.dumpSystemVerilog();
 
       final netlistOnly = await _partialInlineCollisionNamesAfter([runNetlist]);
       await Simulator.reset();
@@ -347,7 +532,8 @@ void main() {
       () async {
         void runNetlist(_CollapsedInstanceCollidingNames mod) =>
             mod.generateNetlist();
-        void runSv(_CollapsedInstanceCollidingNames mod) => mod.generateSynth();
+        void runSv(_CollapsedInstanceCollidingNames mod) =>
+            mod.dumpSystemVerilog();
 
         final netlistOnly = await _collapsedInstanceCollisionNamesAfter([
           runNetlist,
@@ -374,5 +560,50 @@ void main() {
         expect(netlistOnly['retainedDup'], equals('dup'));
       },
     );
+
+    test('nested typed-array names match between SV and netlist synthesis',
+        () async {
+      Map<String, String> names(_NestedNameModule module) => {
+            'input': module.namer.signalNameOfBest([module.valuesIn]),
+            'output': module.namer.signalNameOfBest([module.valuesOut]),
+            'inputLanes': module.namer.signalNameOfBest([
+              module.valuesIn.at([0]).lanes,
+            ]),
+            'outputLanes': module.namer.signalNameOfBest([
+              module.valuesOut.at([1]).lanes,
+            ]),
+          };
+
+      final netlistModule = _NestedNameModule();
+      await netlistModule.build();
+      final netlist =
+          jsonDecode(netlistModule.generateNetlist()) as Map<String, dynamic>;
+      final netlistModules = netlist['modules'] as Map<String, dynamic>;
+      final emittedNetlistNames = {
+        for (final moduleDefinition
+            in netlistModules.values.cast<Map<String, dynamic>>()) ...[
+          ...(moduleDefinition['ports'] as Map<String, dynamic>).keys,
+          ...(moduleDefinition['netnames'] as Map<String, dynamic>).keys,
+        ],
+      };
+      final netlistNames = names(netlistModule);
+      await Simulator.reset();
+
+      final svModule = _NestedNameModule();
+      await svModule.build();
+      final sv = svModule.dumpSystemVerilog();
+      final svNames = names(svModule);
+
+      expect(svNames, equals(netlistNames));
+      expect(svNames['input'], 'valuesIn');
+      expect(svNames['output'], 'valuesOut');
+      expect(svNames['inputLanes'], 'valuesIn_0__lanes');
+      expect(svNames['outputLanes'], 'valuesOut_1__lanes');
+      for (final name in svNames.values) {
+        expect(sv, contains(name));
+        expect(emittedNetlistNames, contains(name),
+            reason: 'SV and netlist should preserve signal name $name.');
+      }
+    });
   });
 }

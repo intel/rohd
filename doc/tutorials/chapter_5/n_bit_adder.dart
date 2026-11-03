@@ -1,3 +1,12 @@
+// Copyright (C) 2023-2026 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// n_bit_adder.dart
+// Chapter 5 N-bit adder tutorial example.
+//
+// 2023 April 11
+// Author: Yao Jing Quek <yao.jing.quek@intel.com>
+
 import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
 
@@ -79,7 +88,7 @@ void main() async {
 
   await nbitAdder.build();
 
-  // print(nbitAdder.generateSynth());
+  // print(nbitAdder.dumpSystemVerilog());
 
   test('should return 20 when A and B perform add.', () {
     a.put(15);

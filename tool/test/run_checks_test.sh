@@ -28,7 +28,7 @@ printf '%s\n' '#!/bin/bash' 'printf "iverilog\n" >> "$CHECK_LOG"' \
   'exit "${IVERILOG_STATUS:-0}"' > "$FIXTURE/bin/which"
 printf '%s\n' '#!/bin/bash' 'printf "verilator\n" >> "$CHECK_LOG"' > "$FIXTURE/bin/verilator"
 chmod +x "$FIXTURE/bin/"*
-for step in install_dependencies verify_formatting analyze_source generate_documentation run_tests check_tmp_test; do
+for step in install_dependencies verify_formatting analyze_source generate_documentation run_tests cleanup_systemc_tmp check_tmp_test; do
   printf '%s\n' '#!/bin/bash' \
     'step="${0##*/}"' \
     'printf "%s\n" "$step" >> "$CHECK_LOG"' \
@@ -55,10 +55,10 @@ run_case() {
 
 readonly COMMON_STEPS=$'install_dependencies.sh\nverify_formatting.sh\nanalyze_source.sh\ngenerate_documentation.sh'
 run_case 0
-[[ "$(cat "$CHECK_LOG")" == "$COMMON_STEPS"$'\niverilog\nverilator\nrun_tests.sh\ncheck_tmp_test.sh' ]]
+[[ "$(cat "$CHECK_LOG")" == "$COMMON_STEPS"$'\niverilog\nverilator\nrun_tests.sh\ncleanup_systemc_tmp.sh\ncheck_tmp_test.sh' ]]
 
 run_case 0 --skip-tests
-[[ "$(cat "$CHECK_LOG")" == "$COMMON_STEPS"$'\ncheck_tmp_test.sh' ]]
+[[ "$(cat "$CHECK_LOG")" == "$COMMON_STEPS"$'\ncleanup_systemc_tmp.sh\ncheck_tmp_test.sh' ]]
 grep -Fq 'Skipping tests and simulator prerequisites' "$FIXTURE/output"
 
 export FAIL_STEP=run_tests.sh
@@ -70,7 +70,7 @@ unset FAIL_STEP
 rm "$FIXTURE/bin/verilator"
 export IVERILOG_STATUS=1 ROHD_REQUIRE_VERILATOR=1
 run_case 0 --skip-tests
-[[ "$(cat "$CHECK_LOG")" == "$COMMON_STEPS"$'\ncheck_tmp_test.sh' ]]
+[[ "$(cat "$CHECK_LOG")" == "$COMMON_STEPS"$'\ncleanup_systemc_tmp.sh\ncheck_tmp_test.sh' ]]
 run_case 1
 [[ "$(cat "$CHECK_LOG")" == "$COMMON_STEPS"$'\niverilog' ]]
 unset IVERILOG_STATUS ROHD_REQUIRE_VERILATOR
@@ -86,3 +86,69 @@ run_case 2 --skip-tests unexpected
 [[ ! -s "$CHECK_LOG" ]]
 
 echo "$passed project-check cases passed using isolated stubs."
+
+cp "$REPO_ROOT/tool/gh_actions/run_tests.sh" "$FIXTURE/tool/gh_actions/"
+printf '%s\n' '#!/bin/bash' \
+  'printf "dart %s NODE_OPTIONS=%s\n" "$*" "${NODE_OPTIONS:-unset}" >> "$CHECK_LOG"' \
+  'if [[ "$*" == "test --platform node --preset no-ffi" ]]; then exit "${NODE_STATUS:-0}"; fi' \
+  'if [[ "$*" == "test test/systemc_ffi_cosim_test.dart" ]]; then exit "${FFI_STATUS:-0}"; fi' \
+  'exit "${VM_STATUS:-0}"' > "$FIXTURE/bin/dart"
+chmod +x "$FIXTURE/bin/dart"
+
+run_tests_case() {
+  local expected="$1"
+  shift
+  local status=0
+  : > "$CHECK_LOG"
+  PATH="$FIXTURE/bin" NODE_OPTIONS=existing /bin/bash tool/gh_actions/run_tests.sh "$@" \
+    > "$FIXTURE/output" 2>&1 || status=$?
+  if [[ "$status" -ne "$expected" ]]; then
+    cat "$FIXTURE/output"
+    echo "Expected exit $expected, got $status for test platform: $*" >&2
+    exit 1
+  fi
+}
+
+readonly VM_CALL='dart test --preset no-ffi NODE_OPTIONS=existing'
+readonly FFI_CALL='dart test test/systemc_ffi_cosim_test.dart NODE_OPTIONS=existing'
+readonly NODE_CALL='dart test --platform node --preset no-ffi NODE_OPTIONS=--max-old-space-size=8192'
+for platform in '' all vm node; do
+  if [[ -z "$platform" ]]; then
+    run_tests_case 0
+  else
+    run_tests_case 0 "$platform"
+  fi
+  case "$platform" in
+    vm) [[ "$(cat "$CHECK_LOG")" == "$VM_CALL"$'\n'"$FFI_CALL" ]] ;;
+    node) [[ "$(cat "$CHECK_LOG")" == "$NODE_CALL" ]] ;;
+    *) [[ "$(cat "$CHECK_LOG")" == "$VM_CALL"$'\n'"$FFI_CALL"$'\n'"$NODE_CALL" ]] ;;
+  esac
+done
+
+run_tests_case 2 unknown
+[[ ! -s "$CHECK_LOG" ]]
+run_tests_case 2 vm node
+[[ ! -s "$CHECK_LOG" ]]
+
+export VM_STATUS=71
+run_tests_case 71 vm
+run_tests_case 71
+[[ "$(cat "$CHECK_LOG")" == "$VM_CALL" ]]
+run_tests_case 0 node
+unset VM_STATUS
+
+export FFI_STATUS=73
+run_tests_case 73 vm
+run_tests_case 73
+[[ "$(cat "$CHECK_LOG")" == "$VM_CALL"$'\n'"$FFI_CALL" ]]
+run_tests_case 0 node
+unset FFI_STATUS
+
+export NODE_STATUS=72
+run_tests_case 72 node
+run_tests_case 72
+[[ "$(cat "$CHECK_LOG")" == "$VM_CALL"$'\n'"$FFI_CALL"$'\n'"$NODE_CALL" ]]
+run_tests_case 0 vm
+unset NODE_STATUS
+
+echo '15 test-platform cases passed using isolated stubs.'

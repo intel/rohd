@@ -1,3 +1,11 @@
+// Copyright (C) 2023-2026 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// basic_generation.dart
+//
+// 2023 April 11
+// Author: Yao Jing Quek <yao.jing.quek@intel.com>
+
 import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
 

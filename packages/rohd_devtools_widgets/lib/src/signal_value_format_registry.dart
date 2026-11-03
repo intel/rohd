@@ -206,7 +206,8 @@ class SignalValueFormatRegistry {
         ),
       SignalValueFormat.signedDecimal =>
         logicValue.toBigInt().toSigned(logicValue.width).toString(),
-      SignalValueFormat.octal => _formatOctal(logicValue),
+      SignalValueFormat.octal =>
+        '0o${logicValue.toRadixString(radix: 8, includeWidth: false, sepChar: '')}',
       SignalValueFormat.ascii => () {
           final byteCount = (logicValue.width + 7) ~/ 8;
           return String.fromCharCodes(
@@ -222,9 +223,6 @@ class SignalValueFormatRegistry {
       SignalValueFormat.waveform => canonical,
     };
   }
-
-  static String _formatOctal(LogicValue value) =>
-      '0o${value.toRadixString(radix: 8, includeWidth: false, sepChar: '')}';
 
   /// Parses [value] as a waveform literal and returns it with its canonical
   /// waveform representation.

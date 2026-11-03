@@ -68,7 +68,7 @@ class ShorthandAssignModule extends Module {
           piOutWithB.incr(s: s, val: b),
           pdOutWithB.decr(s: s, val: b),
           maOut.mulAssign(b, s: s),
-          daOut.divAssign(b, s: s),
+          daOut.divAssign(b, s: s)
         ]);
   }
 }
@@ -80,10 +80,7 @@ class LoopyCombModule extends Module {
     a = addInput('a', a);
     final x = addOutput('x');
 
-    Combinational([
-      x < a,
-      x < ~x,
-    ]);
+    Combinational([x < a, x < ~x]);
   }
 }
 
@@ -94,10 +91,7 @@ class LoopyCombModuleSsa extends Module {
     a = addInput('a', a);
     final x = addOutput('x');
 
-    Combinational.ssa((s) => [
-          s(x) < a,
-          s(x) < ~s(x),
-        ]);
+    Combinational.ssa((s) => [s(x) < a, s(x) < ~s(x)]);
   }
 }
 
@@ -114,26 +108,16 @@ class CaseModule extends Module {
           [b, a].swizzle(),
           [
             CaseItem(Const(LogicValue.ofString('01')), [c < 1, d < 0]),
-            CaseItem(Const(LogicValue.ofString('10')), [
-              c < 1,
-              d < 0,
-            ]),
+            CaseItem(Const(LogicValue.ofString('10')), [c < 1, d < 0])
           ],
-          defaultItem: [
-            c < 0,
-            d < 1,
-          ],
+          defaultItem: [c < 0, d < 1],
           conditionalType: ConditionalType.unique),
       CaseZ(
           [b, a].rswizzle(),
           [
-            CaseItem(Const(LogicValue.ofString('1z')), [
-              e < 1,
-            ])
+            CaseItem(Const(LogicValue.ofString('1z')), [e < 1])
           ],
-          defaultItem: [
-            e < 0,
-          ],
+          defaultItem: [e < 0],
           conditionalType: ConditionalType.priority)
     ]);
   }
@@ -150,13 +134,10 @@ class UniqueCase extends Module {
           Const(1),
           [
             CaseItem(a, [c < 1, d < 0]),
-            CaseItem(b, [c < 1, d < 0]),
+            CaseItem(b, [c < 1, d < 0])
           ],
-          defaultItem: [
-            c < 0,
-            d < 1,
-          ],
-          conditionalType: ConditionalType.unique),
+          defaultItem: [c < 0, d < 1],
+          conditionalType: ConditionalType.unique)
     ]);
   }
 }
@@ -164,9 +145,7 @@ class UniqueCase extends Module {
 enum SeqCondModuleType { caseNormal, caseZ, ifNormal }
 
 class ConditionalAssignModule extends Module {
-  ConditionalAssignModule(
-    Logic a,
-  ) : super(name: 'ConditionalAssignModule') {
+  ConditionalAssignModule(Logic a) : super(name: 'ConditionalAssignModule') {
     a = addInput('a', a, width: a.width);
     final c = addOutput('c', width: a.width);
     Combinational([c < a]);
@@ -190,19 +169,13 @@ class SeqCondModule extends Module {
 
     Sequential(clk, [
       if (combType == SeqCondModuleType.ifNormal)
-        If(
-          aIncr.eq(aIncrDelayed),
-          then: [equal < 1],
-          orElse: [equal < 0],
-        )
+        If(aIncr.eq(aIncrDelayed), then: [equal < 1], orElse: [equal < 0])
       else
         genCase(aIncr, [
-          CaseItem(aIncrDelayed, [
-            equal < 1,
-          ])
+          CaseItem(aIncrDelayed, [equal < 1])
         ], defaultItem: [
-          equal < 0,
-        ]),
+          equal < 0
+        ])
     ]);
   }
 }
@@ -242,9 +215,7 @@ class SingleIfBlockModule extends Module {
     final c = addOutput('c');
 
     Combinational([
-      If.block([
-        Iff.s(a, c < 1),
-      ])
+      If.block([Iff.s(a, c < 1)])
     ]);
   }
 }
@@ -297,16 +268,9 @@ class CombModule extends Module {
         y < a,
         z < b,
         x < a & b,
-        q < d,
+        q < d
       ], orElse: [
-        If(b, then: [
-          y < b,
-          z < a,
-          q < 13,
-        ], orElse: [
-          y < 0,
-          z < 1,
-        ])
+        If(b, then: [y < b, z < a, q < 13], orElse: [y < 0, z < 1])
       ])
     ]);
   }
@@ -328,16 +292,10 @@ class SequentialModule extends Module {
         q < d,
         y < a,
         z < b,
-        x < ~x, // invert x when a
+        x < ~x // invert x when a
       ], orElse: [
         x < a, // reset x to a when not a
-        If(b, then: [
-          y < b,
-          z < a
-        ], orElse: [
-          y < 0,
-          z < 1,
-        ])
+        If(b, then: [y < b, z < a], orElse: [y < 0, z < 1])
       ])
     ]);
   }
@@ -349,11 +307,7 @@ class SingleIfModule extends Module {
 
     final q = addOutput('q');
 
-    Combinational(
-      [
-        If.s(a, q < 1),
-      ],
-    );
+    Combinational([If.s(a, q < 1)]);
   }
 }
 
@@ -365,11 +319,7 @@ class SingleIfOrElseModule extends Module {
     final q = addOutput('q');
     final x = addOutput('x');
 
-    Combinational(
-      [
-        If.s(a, q < 1, x < 1),
-      ],
-    );
+    Combinational([If.s(a, q < 1, x < 1)]);
   }
 }
 
@@ -382,10 +332,7 @@ class SingleElseModule extends Module {
     final x = addOutput('x');
 
     Combinational([
-      If.block([
-        Iff.s(a, q < 1),
-        Else.s(x < 1),
-      ])
+      If.block([Iff.s(a, q < 1), Else.s(x < 1)])
     ]);
   }
 }
@@ -402,16 +349,11 @@ class SignalRedrivenSequentialModule extends Module {
 
     final k = addOutput('k', width: 8);
     Sequential(
-      SimpleClockGenerator(10).clk,
-      [
-        If(a, then: [
-          k < k,
-          q < k,
-          q < d,
-        ])
-      ],
-      allowMultipleAssignments: allowRedrive,
-    );
+        SimpleClockGenerator(10).clk,
+        [
+          If(a, then: [k < k, q < k, q < d])
+        ],
+        allowMultipleAssignments: allowRedrive);
   }
 }
 
@@ -425,13 +367,12 @@ class SignalRedrivenSequentialModuleWithX extends Module {
     final b = addOutput('b');
 
     Sequential(
-      SimpleClockGenerator(10).clk,
-      [
-        If(a, then: [b < c]),
-        If(d, then: [b < c])
-      ],
-      allowMultipleAssignments: false,
-    );
+        SimpleClockGenerator(10).clk,
+        [
+          If(a, then: [b < c]),
+          If(d, then: [b < c])
+        ],
+        allowMultipleAssignments: false);
   }
 }
 
@@ -488,8 +429,7 @@ void main() {
           Vector({'a': 0}, {'x': 1}),
           Vector({'a': 1}, {'x': 0}),
         ];
-        await SimCompare.checkFunctionalVector(mod, vectors);
-        SimCompare.checkIverilogVector(mod, vectors);
+        await SimCompare.checkVectors(mod, vectors);
       });
     });
 
@@ -521,30 +461,19 @@ void main() {
 
     group('bad if blocks', () {
       test('IfBlock with only else fails', () {
-        expect(
-            () => If.block([
-                  Else([]),
-                ]),
-            throwsException);
+        expect(() => If.block([Else([])]), throwsException);
       });
 
       test('IfBlock with else in the middle fails', () {
         expect(
-            () => If.block([
-                  ElseIf(Logic(), []),
-                  Else([]),
-                  ElseIf(Logic(), []),
-                ]),
+            () =>
+                If.block([ElseIf(Logic(), []), Else([]), ElseIf(Logic(), [])]),
             throwsException);
       });
 
       test('IfBlock with else at the start fails', () {
         expect(
-            () => If.block([
-                  Else([]),
-                  ElseIf(Logic(), []),
-                ]),
-            throwsException);
+            () => If.block([Else([]), ElseIf(Logic(), [])]), throwsException);
       });
     });
   });
@@ -561,9 +490,14 @@ void main() {
         Vector({'a': 1, 'b': 0, 'd': 7}, {'y': 1, 'z': 0, 'x': 0, 'q': 7}),
         Vector({'a': 1, 'b': 1, 'd': 8}, {'y': 1, 'z': 1, 'x': 1, 'q': 8}),
       ];
-      await SimCompare.checkFunctionalVector(mod, vectors);
-      final simResult = SimCompare.iverilogVector(mod, vectors);
-      expect(simResult, equals(true));
+      await SimCompare.checkVectors(
+        mod,
+        vectors,
+        excludedBackends: const {
+          SimCompareBackend.systemc:
+              'This case checks four-state unassigned conditional outputs.',
+        },
+      );
     });
 
     test('iffblock comb', () async {
@@ -575,9 +509,7 @@ void main() {
         Vector({'a': 1, 'b': 0}, {'c': 1, 'd': 0}),
         Vector({'a': 1, 'b': 1}, {'c': 0, 'd': 1}),
       ];
-      await SimCompare.checkFunctionalVector(mod, vectors);
-      final simResult = SimCompare.iverilogVector(mod, vectors);
-      expect(simResult, equals(true));
+      await SimCompare.checkVectors(mod, vectors);
     });
 
     test('if invalid ', () async {
@@ -597,9 +529,7 @@ void main() {
       final vectors = [
         Vector({'a': 1}, {'c': 1}),
       ];
-      await SimCompare.checkFunctionalVector(mod, vectors);
-      final simResult = SimCompare.iverilogVector(mod, vectors);
-      expect(simResult, equals(true));
+      await SimCompare.checkVectors(mod, vectors);
     });
 
     test('elseifblock comb', () async {
@@ -611,9 +541,7 @@ void main() {
         Vector({'a': 1, 'b': 0}, {'c': 1, 'd': 0}),
         Vector({'a': 1, 'b': 1}, {'c': 0, 'd': 1}),
       ];
-      await SimCompare.checkFunctionalVector(mod, vectors);
-      final simResult = SimCompare.iverilogVector(mod, vectors);
-      expect(simResult, equals(true));
+      await SimCompare.checkVectors(mod, vectors);
     });
 
     test('Conditional assign module with invalid inputs', () async {
@@ -638,7 +566,7 @@ void main() {
         Vector({'a': LogicValue.z}, {'c': LogicValue.x}),
         Vector({'a': LogicValue.x}, {'c': LogicValue.x}),
         Vector({'a': LogicValue.ofString('01zzxx10')},
-            {'c': LogicValue.ofString('01xxxx10')}),
+            {'c': LogicValue.ofString('01xxxx10')})
       ];
       await SimCompare.checkFunctionalVector(mod, vectors);
       // no SV run here, ROHD converts Z to X
@@ -651,9 +579,7 @@ void main() {
         Vector({'a': 1}, {'c': 1}),
         Vector({'a': 0}, {'c': 0, 'd': 1}),
       ];
-      await SimCompare.checkFunctionalVector(mod, vectors);
-      final simResult = SimCompare.iverilogVector(mod, vectors);
-      expect(simResult, equals(true));
+      await SimCompare.checkVectors(mod, vectors);
     });
 
     test('case comb', () async {
@@ -665,9 +591,7 @@ void main() {
         Vector({'a': 1, 'b': 0}, {'c': 1, 'd': 0, 'e': 1}),
         Vector({'a': 1, 'b': 1}, {'c': 0, 'd': 1, 'e': 1}),
       ];
-      await SimCompare.checkFunctionalVector(mod, vectors);
-      final simResult = SimCompare.iverilogVector(mod, vectors);
-      expect(simResult, equals(true));
+      await SimCompare.checkVectors(mod, vectors);
     });
 
     test('Unique case', () async {
@@ -693,9 +617,7 @@ void main() {
         Vector({'a': 1, 'b': 1, 'd': 5}, {'y': 1, 'z': 0, 'x': 1, 'q': 4}),
         Vector({}, {'y': 1, 'z': 1, 'x': 0, 'q': 5}),
       ];
-      await SimCompare.checkFunctionalVector(mod, vectors);
-      final simResult = SimCompare.iverilogVector(mod, vectors);
-      expect(simResult, equals(true));
+      await SimCompare.checkVectors(mod, vectors);
     });
 
     test('should return exception if a conditional is used multiple times.',
@@ -712,11 +634,9 @@ void main() {
     final mod = SingleIfModule(Logic());
     await mod.build();
     final vectors = [
-      Vector({'a': 1}, {'q': 1}),
+      Vector({'a': 1}, {'q': 1})
     ];
-    await SimCompare.checkFunctionalVector(mod, vectors);
-    final simResult = SimCompare.iverilogVector(mod, vectors);
-    expect(simResult, equals(true));
+    await SimCompare.checkVectors(mod, vectors);
   });
 
   test(
@@ -728,9 +648,7 @@ void main() {
       Vector({'a': 1}, {'q': 1}),
       Vector({'a': 0}, {'x': 1}),
     ];
-    await SimCompare.checkFunctionalVector(mod, vectors);
-    final simResult = SimCompare.iverilogVector(mod, vectors);
-    expect(simResult, equals(true));
+    await SimCompare.checkVectors(mod, vectors);
   });
 
   test(
@@ -742,9 +660,7 @@ void main() {
       Vector({'a': 1}, {'q': 1}),
       Vector({'a': 0}, {'x': 1}),
     ];
-    await SimCompare.checkFunctionalVector(mod, vectors);
-    final simResult = SimCompare.iverilogVector(mod, vectors);
-    expect(simResult, equals(true));
+    await SimCompare.checkVectors(mod, vectors);
   });
 
   test(
@@ -778,8 +694,7 @@ void main() {
       Vector({'a': 1, 'b': 0, 'd': 3}, {'q': 2}),
     ];
 
-    await SimCompare.checkFunctionalVector(mod, vectors);
-    SimCompare.checkIverilogVector(mod, vectors);
+    await SimCompare.checkVectors(mod, vectors);
   });
 
   test(
@@ -844,7 +759,7 @@ void main() {
           'piOut': 6,
           'pdOut': 4,
           'maOut': 25,
-          'daOut': 1,
+          'daOut': 1
         }),
         Vector({
           'preIncr': 5,
@@ -858,7 +773,7 @@ void main() {
           'piOut': 6,
           'pdOut': 4,
           'maOut': 0,
-          'daOut': LogicValue.x,
+          'daOut': LogicValue.x
         }),
         Vector({
           'preIncr': 0,
@@ -872,7 +787,7 @@ void main() {
           'piOut': 1,
           'pdOut': 0xff,
           'maOut': 0,
-          'daOut': 0,
+          'daOut': 0
         })
       ];
 

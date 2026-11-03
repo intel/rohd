@@ -26,6 +26,8 @@ export 'src/export_toast.dart';
 export 'src/logic_type_utils.dart';
 // Help
 export 'src/markdown_help_button.dart';
+// Regular expression helpers
+export 'src/regex_utils.dart';
 export 'src/rohd_extension_client.dart';
 // ROHD extension client
 export 'src/rohd_extension_status.dart';
@@ -34,3 +36,4 @@ export 'src/save_png_stub.dart'
     if (dart.library.js_interop) 'src/save_png_web.dart';
 // Shared signal display-format preferences and value formatting
 export 'src/signal_value_format_registry.dart';
+export 'src/signal_value_format_menu.dart';

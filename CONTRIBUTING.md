@@ -6,7 +6,7 @@ Anyone interested in participating in ROHD is more than welcome to help!
 
 ## Code of Conduct
 
-ROHD adopts the [Contributor Covenant](https://www.contributor-covenant.org/) v2.1 for the code of conduct. It can be accessed [here](CODE_OF_CONDUCT.md).
+ROHD adopts the [Contributor Covenant](https://www.contributor-covenant.org/) v2.1 for the  [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## Getting Help
 
@@ -73,9 +73,13 @@ Once requirements are installed, you can clone and run the test suite:
 ```shell
 git clone https://github.com/intel/rohd.git
 cd rohd
-dart pub get
+flutter pub get
 dart test
 ```
+
+The repository is a Pub workspace and includes Flutter packages. Run
+`flutter pub get` from the repository root to resolve all in-repository
+packages together.
 
 ## How to Contribute
 
@@ -126,7 +130,7 @@ Please include the SPDX tag near the top of any new files you create:
 Here is an example of a recommended file header template:
 
 ```dart
-// Copyright (C) 2021-2023 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // example.dart

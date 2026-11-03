@@ -14,8 +14,9 @@ import 'package:rohd_devtools_extension/rohd_devtools/cubit/details_tab_cubit.da
 import 'package:rohd_devtools_extension/rohd_devtools/ui/module_tree_details_navbar.dart';
 
 void main() {
-  testWidgets('selects each details view from its matching navigation tab',
-      (tester) async {
+  testWidgets('selects each details view from its matching navigation tab', (
+    tester,
+  ) async {
     final cubit = DetailsTabCubit();
     addTearDown(cubit.close);
 

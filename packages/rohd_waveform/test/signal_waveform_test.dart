@@ -131,6 +131,31 @@ void main() {
       expect(wf.getPreviousDataPointIndex(10), 0);
       expect(wf.getPreviousDataPointIndex(0), -1);
     });
+
+    test('finds matching values and edges', () {
+      expect(
+        wf.getNextMatchingDataPointIndex(
+          -1,
+          criterion: WaveformSearchCriterion.risingEdge,
+        ),
+        1,
+      );
+      expect(
+        wf.getNextMatchingDataPointIndex(
+          10,
+          criterion: WaveformSearchCriterion.fallingEdge,
+        ),
+        3,
+      );
+      expect(
+        wf.getPreviousMatchingDataPointIndex(
+          20,
+          criterion: WaveformSearchCriterion.value,
+          value: '1',
+        ),
+        2,
+      );
+    });
   });
 
   group('SignalWaveform copy/serialization', () {
@@ -138,9 +163,13 @@ void main() {
       final original = SignalWaveform(
         signalId: 's',
         data: [Data(time: 0, value: '0')],
+        overrideName: 'signal',
+        overrideWidth: 4,
       );
       final copy = SignalWaveform.copyFrom(original);
       expect(copy.signalId, 's');
+      expect(copy.overrideName, 'signal');
+      expect(copy.overrideWidth, 4);
 
       copy.appendData([Data(time: 5, value: '1')]);
       expect(original.length, 1, reason: 'copy must not mutate the original');
@@ -156,6 +185,18 @@ void main() {
       expect(restored.signalId, 'sig');
       expect(restored.length, 2);
       expect(restored.getValueByTime(4), '1');
+    });
+
+    test('fromWaveformData accepts a canonical hierarchy path', () {
+      final waveform = SignalWaveform.fromWaveformData(
+        WaveformData(
+          signalId: 'backend.signal',
+          data: [Data(time: 0, value: '1')],
+        ),
+        signalId: 'top/signal',
+      );
+
+      expect(waveform.signalId, 'top/signal');
     });
   });
 

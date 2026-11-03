@@ -1,3 +1,12 @@
+// Copyright (C) 2023-2026 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// full_adder.dart
+// Chapter 3 full-adder tutorial example.
+//
+// 2023 March 3
+// Author: Yao Jing Quek <yao.jing.quek@intel.com>
+
 // ignore_for_file: avoid_print - tutorial
 
 import 'package:rohd/rohd.dart';
@@ -76,5 +85,5 @@ void main() async {
   final mod = FullAdderModule(a, b, cIn, faOps);
   await mod.build();
 
-  print(mod.generateSynth());
+  print(mod.dumpSystemVerilog());
 }

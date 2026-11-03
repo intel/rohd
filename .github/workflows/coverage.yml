@@ -14,6 +14,7 @@ jobs:
     name: Code Coverage
     env:
       ROHD_REQUIRE_VERILATOR: '1'
+      ROHD_REQUIRE_SYSTEMC: '1'
     timeout-minutes: 60
     permissions:
       contents: write
@@ -22,8 +23,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Dart
-        uses: dart-lang/setup-dart@v1
+      - name: Setup Flutter SDK
+        uses: flutter-actions/setup-flutter@v2
+        with:
+          channel: stable
+          version: 3.47.2
 
       - name: Install dependencies
         run: tool/gh_actions/install_dependencies.sh
@@ -34,8 +38,21 @@ jobs:
       - name: Install Verilator
         run: bash tool/gh_actions/install_verilator.sh
 
+      - name: Install Accellera SystemC
+        run: tool/gh_actions/install_systemc.sh
+
+      - name: Pre-build SystemC PCH and Makefile
+        run: tool/gh_actions/setup_systemc_pch.sh
+
       - name: Generate coverage and badge
-        run: tool/generate_coverage.sh --generate-svg
+        run: tool/coverage/generate_coverage.sh --generate-svg
+
+      - name: Save ROHD coverage badge
+        run: cp /tmp/coverage-badge.svg /tmp/rohd-coverage-badge.svg
+
+      - name: Generate DevTools coverage and badge
+        working-directory: rohd_devtools_extension
+        run: ../tool/coverage/generate_coverage.sh --generate-svg
 
       - name: Commit coverage badge
         run: |
@@ -49,10 +66,11 @@ jobs:
           
           # Clean and copy badge
           git rm -rf . 2>/dev/null || true
-          mkdir -p coverage
-          cp /tmp/coverage-badge.svg "coverage/${BRANCH_NAME}.svg"
+          mkdir -p coverage/rohd_devtools_extension
+          cp /tmp/rohd-coverage-badge.svg "coverage/${BRANCH_NAME}.svg"
+          cp /tmp/coverage-badge.svg "coverage/rohd_devtools_extension/${BRANCH_NAME}.svg"
           
-          git add "coverage/${BRANCH_NAME}.svg"
+          git add "coverage/${BRANCH_NAME}.svg" "coverage/rohd_devtools_extension/${BRANCH_NAME}.svg"
           git diff --staged --quiet || git commit -m "Update coverage badge for ${BRANCH_NAME} [skip ci]"
           
           git push origin badges --force

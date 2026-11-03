@@ -1,3 +1,12 @@
+// Copyright (C) 2023-2026 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// exercise_1_spi.dart
+// Chapter 8 SPI exercise answer.
+//
+// 2023 September 7
+// Author: Yao Jing Quek <yao.jing.quek@intel.com>
+
 // ignore_for_file: avoid_print - tutorial
 
 import 'dart:async';
@@ -139,7 +148,7 @@ void main() async {
 
   await tb.build();
 
-  print(tb.generateSynth());
+  print(tb.dumpSystemVerilog());
 
   testInterface.cs.inject(0);
   testInterface.sdi.inject(0);
@@ -163,7 +172,7 @@ void main() async {
   Simulator.setMaxSimTime(100);
   unawaited(Simulator.run());
 
-  WaveDumper(peri, outputPath: 'doc/tutorials/chapter_8/spi-new.vcd');
+  peri.dumpWaves(outputPath: 'doc/tutorials/chapter_8/spi-new.vcd');
 
   await drive(LogicValue.ofString('01010101'));
 }

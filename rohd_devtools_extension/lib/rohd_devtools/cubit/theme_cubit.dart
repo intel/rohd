@@ -3,6 +3,9 @@
 //
 // theme_cubit.dart
 // Manages light/dark theme toggle for ROHD DevTools.
+//
+// 2026 July 9
+// Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 

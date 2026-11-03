@@ -90,6 +90,10 @@ else
   print_step 'Skipping tests and simulator prerequisites (--skip-tests); verify CI results'
 fi
 
+# Clean SystemC temporary files
+print_step 'Clean SystemC temporary files'
+tool/gh_actions/cleanup_systemc_tmp.sh
+
 # Check temporary test files
 print_step 'Check temporary test files'
 tool/gh_actions/check_tmp_test.sh

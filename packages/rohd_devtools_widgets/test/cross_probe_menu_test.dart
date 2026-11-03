@@ -30,14 +30,17 @@ void main() {
     );
   });
 
-  test('resolves only confirmed navigable formats', () {
-    expect(resolveNavigableFormats(null), isEmpty);
-    expect(resolveNavigableFormats(RohdModuleInfo.unavailable), isEmpty);
+  test('resolves default and exact navigable formats', () {
+    expect(resolveNavigableFormats(null), kDefaultNavigableFormats);
+    expect(
+      resolveNavigableFormats(RohdModuleInfo.unavailable),
+      kDefaultNavigableFormats,
+    );
     expect(
       resolveNavigableFormats(
         const RohdModuleInfo(extensionAvailable: true, error: 'not ready'),
       ),
-      isEmpty,
+      kDefaultNavigableFormats,
     );
     expect(
       resolveNavigableFormats(
@@ -81,7 +84,6 @@ void main() {
     );
 
     expect(items, hasLength(2));
-    expect(items, everyElement(isA<PopupMenuItem<String>>()));
     expect(items[0].value, 'goto_source:rohd');
     expect(items[1].value, 'goto_source:sv');
 

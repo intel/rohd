@@ -9,12 +9,14 @@
 
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/signals/signals.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_cell.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_cell_mapper.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_port_direction.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_synth_module_definition.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_utils.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_validation.dart';
+import 'package:rohd/src/synthesizers/utilities/synth_enum_definition.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 
@@ -78,8 +80,23 @@ class NetlistModuleTranslation {
   int allocateWireId() => _nextId++;
 
   /// Allocates or returns the wire identifiers for [synthLogic].
+  ///
+  /// Connection views reuse their underlying IDs; netlist bits are ordered
+  /// least-significant first, unlike the parts of a concatenation.
   List<int> getIds(SynthLogic synthLogic) {
     final resolved = synthLogic.isConstant ? synthLogic : synthLogic.resolved;
+    if (resolved is SynthLogicConcat) {
+      return [
+        for (final part in resolved.parts.reversed) ...getIds(part),
+      ];
+    }
+    if (resolved is SynthLogicPackedBitReference) {
+      return [getIds(resolved.packedBase)[resolved.bitIndex]];
+    }
+    if (resolved is SynthLogicPackedRangeReference) {
+      return getIds(resolved.packedBase)
+          .sublist(resolved.lowerIndex, resolved.upperIndex + 1);
+    }
     return _synthLogicIds.putIfAbsent(
       resolved,
       () => List<int>.generate(resolved.width, (_) => allocateWireId()),
@@ -115,7 +132,7 @@ class NetlistModuleTranslation {
             final portLogic = modulePorts[portName];
             final emitOutputArrayConcat =
                 direction == NetlistPortDirection.output &&
-                    portLogic is LogicArray &&
+                    portLogic is BaseLogicArray &&
                     !_hasExistingOutputArrayConcat(synthLogic) &&
                     !_hasDirectSubmoduleOutputDriver(synthLogic);
             final originalIds = getIds(synthLogic);
@@ -152,7 +169,7 @@ class NetlistModuleTranslation {
   /// Emits a concat cell that assembles a LogicArray output port.
   void _emitOutputArrayConcat(
     String portName,
-    LogicArray array,
+    BaseLogicArray array,
     List<int> outputIds,
   ) {
     _emitOutputArrayConcatForArray(portName, array, outputIds);
@@ -161,7 +178,7 @@ class NetlistModuleTranslation {
   /// Recursively emits concat cells for nested LogicArray output elements.
   bool _emitOutputArrayConcatForArray(
     String concatName,
-    LogicArray array,
+    BaseLogicArray array,
     List<int> outputIds,
   ) {
     final definition = synthDef;
@@ -179,7 +196,7 @@ class NetlistModuleTranslation {
         return false;
       }
       var elementIds = getIds(synthLogic);
-      if (element is LogicArray &&
+      if (element is BaseLogicArray &&
           !_hasExistingOutputArrayConcat(synthLogic) &&
           !_hasDirectSubmoduleOutputDriver(synthLogic)) {
         final aggregateIds = List<int>.generate(
@@ -194,6 +211,12 @@ class NetlistModuleTranslation {
           return false;
         }
         elementIds = aggregateIds;
+      } else if (element is LogicStructure && element is! BaseLogicArray) {
+        _emitOutputArrayStructurePack(
+          '${concatName}_$index',
+          element,
+          elementIds,
+        );
       }
       final upperIndex = lowerIndex + elementIds.length - 1;
       concatConnections['[$upperIndex:$lowerIndex]'] =
@@ -226,6 +249,74 @@ class NetlistModuleTranslation {
     ).toJson();
 
     return true;
+  }
+
+  void _emitOutputArrayStructurePack(
+    String packName,
+    LogicStructure structure,
+    List<int> outputIds,
+  ) {
+    final definition = synthDef;
+    if (definition == null) {
+      return;
+    }
+
+    final layout = SynthStructureLayout(structure);
+    final connections = <String, List<Object>>{};
+    final directions = <String, NetlistPortDirection>{};
+    final fields = <({String name, int offset, int width})>[];
+    var offset = 0;
+
+    for (final leaf in structure.leafElements) {
+      final leafSynth = definition.logicToSynthMap[leaf];
+      if (leafSynth == null) {
+        throw StateError(
+          'Missing synthesized logic for array structure field ${leaf.name}.',
+        );
+      }
+
+      final fieldName = layout.fieldNameAt(
+        offset,
+        fallbackName: leaf.name,
+        anonymousUnpreferred: true,
+      );
+      var portName = fieldName;
+      var suffix = 1;
+      while (portName == 'Y' || connections.containsKey(portName)) {
+        portName = '${fieldName}_${suffix++}';
+      }
+
+      connections[portName] = getIds(leafSynth).cast<Object>();
+      directions[portName] = NetlistPortDirection.input;
+      fields.add((name: fieldName, offset: offset, width: leaf.width));
+      offset += leaf.width;
+    }
+
+    if (offset != outputIds.length) {
+      throw StateError(
+        'Array structure fields occupy $offset bits, but ${structure.name} '
+        'occupies ${outputIds.length} bits.',
+      );
+    }
+
+    connections['Y'] = outputIds.cast<Object>();
+    directions['Y'] = NetlistPortDirection.output;
+
+    cells[Sanitizer.sanitizeSV('struct_pack_$packName')] = NetlistCell(
+      type: r'$struct_pack',
+      origin: NetlistCellOrigin.structurePack,
+      parameters: <String, Object?>{
+        'STRUCT_NAME': structure.name,
+        'FIELD_COUNT': fields.length,
+        for (final (index, field) in fields.indexed) ...{
+          'FIELD_${index}_NAME': field.name,
+          'FIELD_${index}_OFFSET': field.offset,
+          'FIELD_${index}_WIDTH': field.width,
+        },
+      },
+      portDirections: directions,
+      connections: connections,
+    ).toJson();
   }
 
   /// Checks whether [synthLogic] is already driven by an output concat cell.
@@ -346,7 +437,7 @@ class NetlistModuleTranslation {
         for (final portEntry in submodule.inputs.entries) {
           final portName = portEntry.key;
           final port = portEntry.value;
-          if (port is! LogicArray ||
+          if (port is! BaseLogicArray ||
               cellPortDirs[portName] != NetlistPortDirection.input) {
             continue;
           }
@@ -555,26 +646,56 @@ class NetlistModuleTranslation {
       bool computed = false,
       bool preservedName = false,
       Map<String, Object?>? logicType,
+      SynthEnumDefinition? enumDefinition,
     }) {
       if (!emittedNames.add(name)) {
         return;
+      }
+      final attributes = <String, Object?>{
+        if (computed || isInlineSystemVerilog) 'computed': 1,
+        if (preservedName) 'preserved_name': 1,
+      };
+      if (enumDefinition != null) {
+        attributes['wiretype'] = '\\${enumDefinition.definitionName}';
+        for (final entry in enumDefinition.characteristicEnum.mapping.entries) {
+          final encoding = entry.value.toRadixString(
+              leadingZeros: true, includeWidth: false, sepChar: '');
+          attributes['enum_value_$encoding'] =
+              '\\${enumDefinition.enumToNameMapping[entry.key]}';
+        }
       }
       netnames[name] = {
         'bits': bits,
         if (hideName) 'hide_name': 1,
         if (logicType != null) 'logic_type': logicType,
-        'attributes': <String, Object?>{
-          if (computed || isInlineSystemVerilog) 'computed': 1,
-          if (preservedName) 'preserved_name': 1,
-        },
+        'attributes': attributes,
       };
     }
 
+    final modulePorts = {
+      ..._module.inputs,
+      ..._module.outputs,
+      ..._module.inOuts,
+    };
+    final enumPorts =
+        ports.keys.map((name) => modulePorts[name]).whereType<LogicEnum>();
+    final portEnumDefinitions = <LogicEnum, SynthEnumDefinition>{};
+    for (final reserved in [true, false]) {
+      for (final port in enumPorts
+          .where((port) => port.reserveDefinitionName == reserved)) {
+        portEnumDefinitions[port] =
+            synthDef?.getSynthLogic(port)?.enumDefinition ??
+                SynthEnumDefinition(port, _module.namer);
+      }
+    }
     for (final port in ports.entries) {
+      final portLogic = modulePorts[port.key]!;
       addNetname(
         Sanitizer.sanitizeSV(port.key),
         (port.value['bits']! as List).cast<Object>(),
         logicType: port.value['logic_type'] as Map<String, Object?>?,
+        enumDefinition: synthDef?.getSynthLogic(portLogic)?.enumDefinition ??
+            portEnumDefinitions[portLogic],
       );
     }
 
@@ -644,7 +765,9 @@ class NetlistModuleTranslation {
 
     if (synthDef != null) {
       for (final entry in _synthLogicIds.entries.where(
-        (entry) => !entry.key.isConstant && !entry.key.declarationCleared,
+        (entry) => entry.key.isConstant
+            ? entry.key.isEnum && !_blockedConstSynthLogics.contains(entry.key)
+            : !entry.key.declarationCleared,
       )) {
         final synthLogic = entry.key;
         final name = NetlistUtils.tryGetSynthLogicName(synthLogic);
@@ -652,6 +775,11 @@ class NetlistModuleTranslation {
           continue;
         }
         var bits = applyAlias(entry.value.cast<Object>());
+        if (pruneUndriven &&
+            synthLogic.isConstant &&
+            !bits.whereType<int>().any(drivenBits.contains)) {
+          continue;
+        }
         if (arraySliceOldToNew.isNotEmpty &&
             synthLogic is SynthLogicArrayElement) {
           bits = [
@@ -671,10 +799,12 @@ class NetlistModuleTranslation {
         addNetname(
           Sanitizer.sanitizeSV(name),
           bits,
+          computed: synthLogic.isConstant,
           preservedName: synthLogic.hasPreservedName,
           logicType: typeLogic == null
               ? null
               : NetlistUtils.buildLogicType(typeLogic, bits),
+          enumDefinition: synthLogic.enumDefinition,
         );
       }
     }
@@ -729,11 +859,8 @@ class NetlistModuleTranslation {
     }
   }
 
-  /// Separates passthrough outputs and removes dead cells when requested.
-  void processCellCleanup({
-    required bool enableDce,
-    required Set<int> preservedNameBits,
-  }) {
+  /// Separates module outputs that share wires with module inputs.
+  void insertPassthroughBuffers() {
     final inputBitIds = ports.values
         .where(
           (port) =>
@@ -762,7 +889,13 @@ class NetlistModuleTranslation {
       port.value['bits'] = freshBits;
       bufferIndex++;
     }
+  }
 
+  /// Removes dead cells after their constant drivers have been emitted.
+  void processCellCleanup({
+    required bool enableDce,
+    required Set<int> preservedNameBits,
+  }) {
     if (!enableDce) {
       return;
     }

@@ -7,14 +7,19 @@
 // 2023 May 2
 // Author: Max Korbel <max.korbel@intel.com>
 
-import 'dart:math';
-
 import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:rohd/src/utilities/sv_cleaner.dart';
-import 'package:rohd/src/utilities/web.dart';
 import 'package:test/test.dart';
+
+class _TypedInputModule<T extends Logic> extends Module {
+  late final T values;
+
+  _TypedInputModule(T source) {
+    values = addTypedInput('values', source);
+  }
+}
 
 class SimpleLAPassthrough extends Module {
   LogicArray get laOut => output('laOut') as LogicArray;
@@ -391,21 +396,25 @@ class ConstantAssignmentArrayModule extends Module {
     laIn = addInputArray('laIn', laIn,
         dimensions: [3, 3, 3, 3],
         numUnpackedDimensions: laIn.numUnpackedDimensions,
-        elementWidth: 8);
+        elementWidth: laIn.elementWidth);
 
     addOutputArray('laOut',
         dimensions: laIn.dimensions,
         numUnpackedDimensions: laIn.numUnpackedDimensions,
         elementWidth: laIn.elementWidth);
 
+    final elementWidth = laIn.elementWidth;
     laOut.elements[1] <=
-        Const([for (var i = 0; i < 3 * 3 * 3; i++) LogicValue.ofInt(i, 8)]
-            .rswizzle());
+        Const([
+          for (var i = 0; i < 3 * 3 * 3; i++) LogicValue.ofInt(i, elementWidth)
+        ].rswizzle());
     laOut.elements[2].elements[1] <=
-        (Logic(width: 3 * 3 * 8)..gets(Const(0, width: 3 * 3 * 8)));
+        (Logic(width: 3 * 3 * elementWidth)
+          ..gets(Const(0, width: 3 * 3 * elementWidth)));
     laOut.elements[2].elements[2].elements[1] <=
-        Const(1, width: 3 * 8, fill: true);
-    laOut.elements[2].elements[2].elements[2].elements[1] <= Const(0, width: 8);
+        Const(1, width: 3 * elementWidth, fill: true);
+    laOut.elements[2].elements[2].elements[2].elements[1] <=
+        Const(0, width: elementWidth);
   }
 }
 
@@ -568,14 +577,14 @@ class PartialArrayAssignTop extends Module {
 
 void main() {
   List<Vector> passthroughVectors(int width) {
-    const randWidth = 23;
-    final rand = Random(1234);
-    final values = List.generate(
-        10,
-        (index) =>
-            LogicValue.ofInt(rand.nextInt(oneSllBy(randWidth)), randWidth)
-                .replicate(width ~/ randWidth + 1)
-                .getRange(0, width));
+    final values = [
+      LogicValue.ofInt(0, width),
+      LogicValue.filled(width, LogicValue.one),
+      LogicValue.ofString([
+        for (var bit = width - 1; bit >= 0; bit--)
+          if (bit.isEven) '1' else '0',
+      ].join()),
+    ];
     return [
       for (final value in values) Vector({'laIn': value}, {'laOut': value})
     ];
@@ -619,6 +628,88 @@ void main() {
       final arr = LogicArray([5, 2, 0, 3], 6);
       expect(arr.width, 0);
       expect(arr.elementWidth, 0);
+    });
+
+    test('empty arrays preserve the selected net kind', () {
+      for (final dimensions in [
+        [0],
+        [2, 0],
+        [0, 2],
+      ]) {
+        final logicArray = LogicArray(dimensions, 8);
+        final netArray = LogicArray.net(dimensions, 8);
+
+        expect(logicArray.isNet, isFalse);
+        expect(netArray.isNet, isTrue);
+        expect(
+          logicArray.elements.every((element) => !element.isNet),
+          isTrue,
+        );
+        expect(netArray.elements.every((element) => element.isNet), isTrue);
+
+        final module = _TypedInputModule(logicArray);
+        expect(
+          module.values,
+          isA<LogicArray>(),
+        );
+        expect(
+          () => _TypedInputModule(netArray),
+          throwsA(isA<PortTypeException>()),
+        );
+      }
+    });
+
+    test('zero-width arrays fail SystemVerilog synthesis explicitly', () async {
+      for (final array in [
+        LogicArray([2, 0], 3),
+        LogicArray([2], 0),
+      ]) {
+        final module = _TypedInputModule(array);
+        await module.build();
+        expect(
+          module.dumpSystemVerilog,
+          throwsA(
+            isA<SynthException>().having(
+              (exception) => exception.message,
+              'message',
+              contains('zero-width array'),
+            ),
+          ),
+        );
+      }
+    });
+
+    test('packed value assignment remains shape-independent', () async {
+      final source = LogicArray([2], 8)..put(0x1234);
+      final target = LogicArray([1], 16);
+      final bitSource = LogicArray([1], 1)..put(1);
+      final fillTarget = LogicArray([3], 1);
+
+      target.put(source.value);
+      expect(source.value, isA<LogicValueArray>());
+      expect(target.value, isA<LogicValueArray>());
+      expect(target.value.toInt(), 0x1234);
+
+      fillTarget.put(bitSource.value, fill: true);
+      expect(fillTarget.value.toInt(), 0x7);
+      expect(
+        () => target.put(source.value, fill: true),
+        throwsA(isA<LogicValueConstructionException>()),
+      );
+
+      target
+        ..put(0)
+        ..inject(source.value);
+      fillTarget
+        ..put(0)
+        ..inject(bitSource.value, fill: true);
+      expect(target.value.toInt(), 0);
+      expect(fillTarget.value.toInt(), 0);
+
+      await Simulator.run();
+      expect(target.previousValue, isA<LogicValueArray>());
+      expect(target.value.toInt(), 0x1234);
+      expect(fillTarget.value.toInt(), 0x7);
     });
 
     test('single-dim array', () {
@@ -774,7 +865,7 @@ void main() {
       final vectors = passthroughVectors(mod.laOut.width);
 
       if (checkNoSwizzle) {
-        expect(mod.generateSynth().contains('swizzle'), false,
+        expect(mod.dumpSystemVerilog().contains('swizzle'), false,
             reason: 'Expected no swizzles but found one.');
       }
 
@@ -787,12 +878,7 @@ void main() {
 
     group('simple', () {
       test('single dimension', () async {
-        final mod = SimpleLAPassthrough(LogicArray([3], 8));
-        await testArrayPassthrough(mod);
-      });
-
-      test('single element', () async {
-        final mod = SimpleLAPassthrough(LogicArray([1], 8));
+        final mod = SimpleLAPassthrough(LogicArray([3], 3));
         await testArrayPassthrough(mod);
       });
 
@@ -802,37 +888,32 @@ void main() {
       });
 
       test('2 dimensions', () async {
-        final mod = SimpleLAPassthrough(LogicArray([3, 2], 8));
+        final mod = SimpleLAPassthrough(LogicArray([3, 2], 3));
         await testArrayPassthrough(mod);
       });
 
       test('3 dimensions', () async {
-        final mod = SimpleLAPassthrough(LogicArray([3, 2, 3], 8));
-        await testArrayPassthrough(mod);
-      });
-
-      test('4 dimensions', () async {
-        final mod = SimpleLAPassthrough(LogicArray([5, 4, 3, 2], 8));
+        final mod = SimpleLAPassthrough(LogicArray([3, 2, 2], 3));
         await testArrayPassthrough(mod);
       });
 
       testWithVerilator(
           '1d, unpacked',
           () =>
-              SimpleLAPassthrough(LogicArray([3], 8, numUnpackedDimensions: 1)),
+              SimpleLAPassthrough(LogicArray([3], 3, numUnpackedDimensions: 1)),
           (mod) async {
         // unpacked array assignment not fully supported in iverilog
         await testArrayPassthrough(mod, noSvSim: true);
 
-        final sv = mod.generateSynth();
-        expect(sv.contains(RegExp(r'\[7:0\]\s*laIn\s*\[2:0\]')), true);
-        expect(sv.contains(RegExp(r'\[7:0\]\s*laOut\s*\[2:0\]')), true);
+        final sv = mod.dumpSystemVerilog();
+        expect(sv.contains(RegExp(r'\[2:0\]\s*laIn\s*\[2:0\]')), true);
+        expect(sv.contains(RegExp(r'\[2:0\]\s*laOut\s*\[2:0\]')), true);
       });
 
       testWithVerilator(
           'single element, unpacked',
           () =>
-              SimpleLAPassthrough(LogicArray([1], 8, numUnpackedDimensions: 1)),
+              SimpleLAPassthrough(LogicArray([1], 3, numUnpackedDimensions: 1)),
           (mod) async {
         await testArrayPassthrough(mod, noSvSim: true, noIverilog: true);
       });
@@ -840,24 +921,24 @@ void main() {
       testWithVerilator(
           '4d, half packed',
           () => SimpleLAPassthrough(
-              LogicArray([5, 4, 3, 2], 8, numUnpackedDimensions: 2)),
+              LogicArray([2, 2, 2, 2], 3, numUnpackedDimensions: 2)),
           (mod) async {
         // unpacked array assignment not fully supported in iverilog
         await testArrayPassthrough(mod, noSvSim: true);
 
-        final sv = mod.generateSynth();
+        final sv = mod.dumpSystemVerilog();
         expect(
             sv.contains(RegExp(
-                r'\[2:0\]\s*\[1:0\]\s*\[7:0\]\s*laIn\s*\[4:0\]\s*\[3:0\]')),
+                r'\[1:0\]\s*\[1:0\]\s*\[2:0\]\s*laIn\s*\[1:0\]\s*\[1:0\]')),
             true);
         expect(
             sv.contains(RegExp(
-                r'\[2:0\]\s*\[1:0\]\s*\[7:0\]\s*laOut\s*\[4:0\]\s*\[3:0\]')),
+                r'\[1:0\]\s*\[1:0\]\s*\[2:0\]\s*laOut\s*\[1:0\]\s*\[1:0\]')),
             true);
       });
 
       test('sub-array', () async {
-        final superArray = LogicArray([4, 3, 2], 8);
+        final superArray = LogicArray([3, 2, 2], 3);
         final subArray = superArray.elements[0] as LogicArray;
         final mod = SimpleLAPassthrough(subArray);
         await testArrayPassthrough(mod);
@@ -865,76 +946,66 @@ void main() {
 
       test('3 dimensions with interface', () async {
         final mod = LAPassthroughWithIntf(LAPassthroughIntf(
-          dimensions: [3, 2, 3],
-          elementWidth: 8,
+          dimensions: [3, 2, 2],
+          elementWidth: 2,
           numUnpackedDimensions: 0,
         ));
 
         await testArrayPassthrough(mod);
 
         // ensure ports with interface are still an array
-        final sv = mod.generateSynth();
-        expect(sv, contains('input logic [2:0][1:0][2:0][7:0] laIn'));
-        expect(sv, contains('output logic [2:0][1:0][2:0][7:0] laOut'));
+        final sv = mod.dumpSystemVerilog();
+        expect(sv, contains('input logic [2:0][1:0][1:0][1:0] laIn'));
+        expect(sv, contains('output logic [2:0][1:0][1:0][1:0] laOut'));
       });
 
       testWithVerilator(
           '3 dimensions with interface and unpacked',
           () => LAPassthroughWithIntf(LAPassthroughIntf(
-                dimensions: [3, 2, 3],
-                elementWidth: 8,
+                dimensions: [3, 2, 2],
+                elementWidth: 2,
                 numUnpackedDimensions: 1,
               )), (mod) async {
         await testArrayPassthrough(mod, noSvSim: true);
 
         // ensure ports with interface are still an array
-        final sv = mod.generateSynth();
-        expect(sv, contains('input logic [1:0][2:0][7:0] laIn [2:0]'));
-        expect(sv, contains('output logic [1:0][2:0][7:0] laOut [2:0]'));
+        final sv = mod.dumpSystemVerilog();
+        expect(sv, contains('input logic [1:0][1:0][1:0] laIn [2:0]'));
+        expect(sv, contains('output logic [1:0][1:0][1:0] laOut [2:0]'));
       });
     });
 
     group('pack and unpack', () {
-      test('1d', () async {
-        final mod = PackAndUnpackPassthrough(LogicArray([3], 8));
-        await testArrayPassthrough(mod, checkNoSwizzle: false);
-      });
-
       test('3d', () async {
-        final mod = PackAndUnpackPassthrough(LogicArray([5, 3, 2], 8));
+        final mod = PackAndUnpackPassthrough(LogicArray([3, 2, 2], 3));
         await testArrayPassthrough(mod, checkNoSwizzle: false);
       });
 
       testWithVerilator(
           '3d unpacked',
           () => PackAndUnpackPassthrough(
-              LogicArray([5, 3, 2], 8, numUnpackedDimensions: 2)), (mod) async {
+              LogicArray([2, 2, 2], 3, numUnpackedDimensions: 2)), (mod) async {
         // unpacked array assignment not fully supported in iverilog
         await testArrayPassthrough(mod, checkNoSwizzle: false, noSvSim: true);
       });
     });
 
     group('pack and unpack with arrays', () {
-      test('1d', () async {
-        final mod = PackAndUnpackWithArraysPassthrough(LogicArray([3], 8));
-        await testArrayPassthrough(mod, checkNoSwizzle: false);
-      });
-
       test('2d', () async {
-        final mod = PackAndUnpackWithArraysPassthrough(LogicArray([3, 2], 8));
+        final mod = PackAndUnpackWithArraysPassthrough(LogicArray([3, 2], 3));
         await testArrayPassthrough(mod, checkNoSwizzle: false);
       });
 
       test('3d', () async {
         final mod =
-            PackAndUnpackWithArraysPassthrough(LogicArray([4, 3, 2], 8));
+            PackAndUnpackWithArraysPassthrough(LogicArray([3, 2, 2], 3));
         await testArrayPassthrough(mod, checkNoSwizzle: false);
       });
 
       testWithVerilator(
           '3d unpacked',
           () => PackAndUnpackWithArraysPassthrough(
-              LogicArray([4, 3, 2], 8, numUnpackedDimensions: 2),
+              LogicArray([2, 2, 2], 3, numUnpackedDimensions: 2),
               intermediateUnpacked: 1), (mod) async {
         // unpacked array assignment not fully supported in iverilog
         await testArrayPassthrough(mod, checkNoSwizzle: false, noSvSim: true);
@@ -943,31 +1014,31 @@ void main() {
 
     group('change array dimensions around and back', () {
       test('3d', () async {
-        final mod = RearrangeArraysPassthrough(LogicArray([4, 3, 2], 8));
+        final mod = RearrangeArraysPassthrough(LogicArray([3, 2, 2], 3));
         await testArrayPassthrough(mod);
       });
 
       testWithVerilator(
           '3d unpacked',
           () => RearrangeArraysPassthrough(
-              LogicArray([4, 3, 2], 8, numUnpackedDimensions: 2),
+              LogicArray([3, 2, 2], 3, numUnpackedDimensions: 2),
               intermediateUnpacked: 1), (mod) async {
         // unpacked array assignment not fully supported in iverilog
         await testArrayPassthrough(mod, noSvSim: true);
 
-        final sv = mod.generateSynth();
-        expect(sv.contains('logic [2:0][3:0][7:0] intermediate [1:0]'), true);
+        final sv = mod.dumpSystemVerilog();
+        expect(sv.contains('logic [1:0][2:0][2:0] intermediate [1:0]'), true);
       });
     });
 
     group('different port and input widths', () {
       test('array param mismatch', () async {
-        final i = LogicArray([3, 2], 8, numUnpackedDimensions: 1);
-        final o = LogicArray([3, 2], 8, numUnpackedDimensions: 1);
+        final i = LogicArray([3, 2], 3, numUnpackedDimensions: 1);
+        final o = LogicArray([3, 2], 3, numUnpackedDimensions: 1);
         final mod = SimpleLAPassthrough(
           i,
           dimOverride: [1, 3],
-          elemWidthOverride: 16,
+          elemWidthOverride: 6,
           numUnpackedOverride: 0,
         );
         o <= mod.laOut;
@@ -975,12 +1046,12 @@ void main() {
       });
 
       test('logic into array', () async {
-        final i = Logic(width: 3 * 2 * 8);
-        final o = Logic(width: 3 * 2 * 8);
+        final i = Logic(width: 3 * 2 * 3);
+        final o = Logic(width: 3 * 2 * 3);
         final mod = SimpleLAPassthroughLogic(
           i,
           dimensions: [1, 3],
-          elementWidth: 16,
+          elementWidth: 6,
           numUnpackedDimensions: 0,
         );
         o <= mod.laOut;
@@ -990,14 +1061,14 @@ void main() {
 
     group('name collisions', () {
       test('3d', () async {
-        final mod = ArrayNameConflicts(LogicArray([4, 3, 2], 8));
+        final mod = ArrayNameConflicts(LogicArray([3, 2, 2], 3));
         await testArrayPassthrough(mod, checkNoSwizzle: false);
       });
 
       testWithVerilator(
           '3d unpacked',
           () => ArrayNameConflicts(
-              LogicArray([4, 3, 2], 8, numUnpackedDimensions: 2),
+              LogicArray([2, 2, 2], 3, numUnpackedDimensions: 2),
               intermediateUnpacked: 1), (mod) async {
         // unpacked array assignment not fully supported in iverilog
         await testArrayPassthrough(mod, checkNoSwizzle: false, noSvSim: true);
@@ -1006,29 +1077,29 @@ void main() {
 
     group('simple hierarchy', () {
       test('3d', () async {
-        final mod = SimpleArraysAndHierarchy(LogicArray([2], 8));
+        final mod = SimpleArraysAndHierarchy(LogicArray([2], 3));
         await testArrayPassthrough(mod);
-        final sv = mod.generateSynth();
+        final sv = mod.dumpSystemVerilog();
         expect(sv, contains('SimpleLAPassthrough  simple_la_passthrough'));
       });
 
       testWithVerilator(
           '3d unpacked',
           () => SimpleArraysAndHierarchy(
-              LogicArray([4, 3, 2], 8, numUnpackedDimensions: 2)), (mod) async {
+              LogicArray([2, 2, 2], 3, numUnpackedDimensions: 2)), (mod) async {
         // unpacked array assignment not fully supported in iverilog
         await testArrayPassthrough(mod, noSvSim: true);
 
-        expect(mod.generateSynth(), contains('SimpleLAPassthrough'));
+        expect(mod.dumpSystemVerilog(), contains('SimpleLAPassthrough'));
       });
     });
 
     group('fancy hierarchy', () {
       test('3d', () async {
-        final mod = FancyArraysAndHierarchy(LogicArray([4, 3, 2], 8));
+        final mod = FancyArraysAndHierarchy(LogicArray([3, 2, 2], 3));
         await testArrayPassthrough(mod, checkNoSwizzle: false);
 
-        final sv = mod.generateSynth();
+        final sv = mod.dumpSystemVerilog();
 
         // make sure the 4th one is there (since we expect 4)
         expect(sv, contains('SimpleLAPassthrough  simple_la_passthrough_2'));
@@ -1037,7 +1108,7 @@ void main() {
       testWithVerilator(
           '3d unpacked',
           () => FancyArraysAndHierarchy(
-              LogicArray([4, 3, 2], 8, numUnpackedDimensions: 2),
+              LogicArray([2, 2, 2], 3, numUnpackedDimensions: 2),
               intermediateUnpacked: 1), (mod) async {
         // unpacked array assignment not fully supported in iverilog
         await testArrayPassthrough(mod, checkNoSwizzle: false, noSvSim: true);
@@ -1046,7 +1117,7 @@ void main() {
 
     group('conditionals', () {
       test('3 dimensions conditional assignment', () async {
-        final mod = CondAssignArray(LogicArray([3, 2, 3], 8));
+        final mod = CondAssignArray(LogicArray([3, 2, 2], 3));
         await testArrayPassthrough(mod);
       });
 
@@ -1070,7 +1141,8 @@ void main() {
       final mod = WithSetArrayOffsetModule(LogicArray([2, 2], 8));
       await testArrayPassthrough(mod, checkNoSwizzle: false);
 
-      final sv = SvCleaner.removeSwizzleAnnotationComments(mod.generateSynth());
+      final sv =
+          SvCleaner.removeSwizzleAnnotationComments(mod.dumpSystemVerilog());
 
       // make sure we're reassigning both times it overlaps!
       expect(
@@ -1083,6 +1155,7 @@ void main() {
         {bool doSvSim = true}) async {
       await mod.build();
 
+      final elementWidth = mod.laOut.width ~/ (3 * 3 * 3 * 3);
       final a = <LogicValue>[];
       var iIdx = 0;
       for (var i = 0; i < 3; i++) {
@@ -1090,16 +1163,16 @@ void main() {
           for (var k = 0; k < 3; k++) {
             for (var l = 0; l < 3; l++) {
               if (i == 1) {
-                a.add(LogicValue.ofInt(iIdx, 8));
+                a.add(LogicValue.ofInt(iIdx, elementWidth));
                 iIdx++;
               } else if (i == 2 && j == 1) {
-                a.add(LogicValue.filled(8, LogicValue.zero));
+                a.add(LogicValue.filled(elementWidth, LogicValue.zero));
               } else if (i == 2 && j == 2 && k == 1) {
-                a.add(LogicValue.filled(8, LogicValue.one));
+                a.add(LogicValue.filled(elementWidth, LogicValue.one));
               } else if (i == 2 && j == 2 && k == 2 && l == 1) {
-                a.add(LogicValue.filled(8, LogicValue.zero));
+                a.add(LogicValue.filled(elementWidth, LogicValue.zero));
               } else {
-                a.add(LogicValue.filled(8, LogicValue.z));
+                a.add(LogicValue.filled(elementWidth, LogicValue.z));
               }
             }
           }
@@ -1115,13 +1188,13 @@ void main() {
 
     test('with packed only', () async {
       await testArrayConstantAssignments(
-          ConstantAssignmentArrayModule(LogicArray([3, 3, 3, 3], 8)));
+          ConstantAssignmentArrayModule(LogicArray([3, 3, 3, 3], 5)));
     });
 
     testWithVerilator(
         'with unpacked also',
         () => ConstantAssignmentArrayModule(
-            LogicArray([3, 3, 3, 3], 8, numUnpackedDimensions: 2)),
+            LogicArray([3, 3, 3, 3], 5, numUnpackedDimensions: 2)),
         (mod) async {
       // unpacked array assignment not fully supported in iverilog
       await testArrayConstantAssignments(mod, doSvSim: false);

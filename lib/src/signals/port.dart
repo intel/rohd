@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2025 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // port.dart
@@ -23,9 +23,6 @@ class Port extends Logic {
       : super(
           name: name,
           width: width,
-
-          // make port names mergeable so we don't duplicate the ports
-          // when calling connectIO
           naming: Naming.mergeable,
         ) {
     if (!Sanitizer.isSanitary(name)) {

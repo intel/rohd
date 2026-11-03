@@ -7,6 +7,8 @@
 // 2026 March 12
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
+import 'dart:io';
+
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_cell_mapper.dart';
@@ -17,15 +19,19 @@ export '../utilities/synth_module_stop_policy.dart';
 /// The netlist synthesizer serves two main consumer flows, both configured
 /// through this configuration:
 ///
-/// **Flow 1 — Slim JSON** (`NetlistService.slimJson`):
+/// **Flow 1 — Slim JSON** ([NetlistSynthesizer.synthesizeToJson] with
+/// `slimMode: true`):
 ///   Batch synthesis of the entire design, producing a lightweight
 ///   representation with ports, signals, and cell stubs but **no cell
 ///   connections**.  Used for the initial DevTools hierarchy load.
 ///
-/// **Flow 2 — Full JSON, incremental** (`NetlistService.moduleJson`):
-///   Returns the complete netlist (with cell connections) for a single
-///   module definition on demand.  Results are cached; the first call
-///   may trigger a lazy `SynthBuilder` run on the requested subtree.
+/// **Flow 2 — Full JSON** ([NetlistSynthesizer.synthesizeToJson] with
+/// `slimMode: false`):
+///   Synthesizes the entire design with complete cell connections.
+///
+/// [NetlistService] exposes these projections through [NetlistService.slimJson]
+/// and [NetlistService.moduleJson], preserving a shared netlist representation
+/// across the two flows.
 ///
 /// Both flows retain complete per-module synthesis results. Flow 1 skips cell
 /// connection copying while collecting the emitted JSON projection. This keeps
@@ -52,8 +58,8 @@ class NetlistSynthesizerConfiguration {
   /// Determines which modules should stop netlist hierarchy traversal and be
   /// emitted as cells in their parent.
   ///
-  /// Defaults to matching [FlipFlop] and its subclasses, which contain internal
-  /// sequential submodules but should be emitted as `$dff` netlist cells.
+  /// Defaults to matching [Mux], [FlipFlop], and [Passthrough] and their
+  /// subclasses, which should be emitted as aggregate primitive netlist cells.
   final SynthModuleLeafPredicate leafModulePredicate;
 
   /// The netlist-internal mapper used to convert selected leaf modules to
@@ -71,9 +77,9 @@ class NetlistSynthesizerConfiguration {
   @internal
   final bool collapseTransparentClusters;
 
-  /// When `true`, dead-cell elimination is performed after aliasing to
-  /// remove cells whose inputs are entirely undriven or whose outputs
-  /// are entirely unconsumed.
+  /// When `true`, dead-cell elimination is performed after aliasing and
+  /// constant-driver emission to remove cells whose inputs are entirely
+  /// undriven or whose outputs are entirely unconsumed.
   @internal
   final bool enableDeadCellElimination;
 
@@ -98,17 +104,30 @@ class NetlistSynthesizerConfiguration {
   /// indentation.
   final bool compactJson;
 
+  /// Whether to embed `rohd.src_trace` attributes in generated modules.
+  final bool trace;
+
+  /// The package root used to make trace source paths relative.
+  final String? packageRoot;
+
   /// Creates a configuration for netlist synthesis.
   const NetlistSynthesizerConfiguration({
     this.moduleStopPolicy,
-    this.leafModulePredicate = _isFlipFlop,
+    this.leafModulePredicate = _isNetlistPrimitive,
     this.netlistCellMapper,
     @visibleForTesting this.collapseTransparentClusters = false,
     @visibleForTesting this.enableDeadCellElimination = true,
     this.slimMode = false,
     @visibleForTesting this.compressBitRanges = false,
     this.compactJson = false,
+    this.trace = false,
+    this.packageRoot,
   });
+
+  /// The package root used for trace emission, or `null` when disabled.
+  String? get effectivePackageRoot =>
+      trace ? (packageRoot ?? Directory.current.path) : null;
 }
 
-bool _isFlipFlop(Module module) => module is FlipFlop;
+bool _isNetlistPrimitive(Module module) =>
+    module is Mux || module is FlipFlop || module is Passthrough;

@@ -8,6 +8,7 @@
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:rohd_devtools_extension/rohd_devtools/services/vm_connection_strategy.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/ui/devtools_connection_host.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/ui/vm_connection_form.dart';
 
@@ -28,15 +29,17 @@ void main() {
       );
     });
 
-    test('keeps a VM URI without the standard suffix from its websocket start',
-        () {
-      expect(
-        DevToolsConnectionHostState.cleanVmServiceUri(
-          'open wss://host:8181/custom',
-        ),
-        'wss://host:8181/custom',
-      );
-    });
+    test(
+      'keeps a VM URI without the standard suffix from its websocket start',
+      () {
+        expect(
+          DevToolsConnectionHostState.cleanVmServiceUri(
+            'open wss://host:8181/custom',
+          ),
+          'wss://host:8181/custom',
+        );
+      },
+    );
 
     test('extracts DTD URI without stopping at the VM websocket suffix', () {
       expect(
@@ -136,17 +139,19 @@ void main() {
   group('VmConnectionStrategy.normalizeUri', () {
     final strategy = _UriNormalizingStrategy();
 
-    test('converts HTTP URIs to websocket URIs and appends the websocket path',
-        () {
-      expect(
-        strategy.normalizeUri('http://host:8181/debug/'),
-        Uri.parse('ws://host:8181/debug/ws'),
-      );
-      expect(
-        strategy.normalizeUri('https://host:8181'),
-        Uri.parse('wss://host:8181/ws'),
-      );
-    });
+    test(
+      'converts HTTP URIs to websocket URIs and appends the websocket path',
+      () {
+        expect(
+          strategy.normalizeUri('http://host:8181/debug/'),
+          Uri.parse('ws://host:8181/debug/ws'),
+        );
+        expect(
+          strategy.normalizeUri('https://host:8181'),
+          Uri.parse('wss://host:8181/ws'),
+        );
+      },
+    );
 
     test('retains an existing websocket path and rejects invalid URIs', () {
       expect(

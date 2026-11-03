@@ -34,7 +34,7 @@ When your space is ready, you will see a visual studio code running on your brow
 
 ### Step 4: Dart pub get
 
-Run `dart pub get` on the terminal of the visual studio code to pull your setup.
+Run `flutter pub get` on the terminal of the visual studio code to pull your setup.
 
 ![step 4](assets/codespaces_setup/step_4.png)
 
@@ -162,7 +162,7 @@ Future<void> main({bool noPrint = false}) async {
 
   // Let's see what this module looks like as SystemVerilog, so we can pass it
   // to other tools.
-  final systemVerilogCode = counter.generateSynth();
+  final systemVerilogCode = counter.dumpSystemVerilog();
   if (!noPrint) {
     print(systemVerilogCode);
   }
@@ -175,7 +175,7 @@ Future<void> main({bool noPrint = false}) async {
 
   // Attach a waveform dumper so we can see what happens.
   if (!noPrint) {
-    WaveDumper(counter);
+    counter.dumpWaves();
   }
 
   // Drop reset at time 25.
@@ -235,7 +235,7 @@ You will see VSCode automatically open up your ROHD folder.
 Open up terminal in your VSCode by go to view -> terminal. Then, get the rohd package downloaded using the command below.
 
 ```cmd
-dart pub get
+flutter pub get
 ```
 
 Then, run Rohd example.

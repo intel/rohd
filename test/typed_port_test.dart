@@ -162,6 +162,19 @@ class StructWithConst extends LogicStructure {
   StructWithConst clone({String? name}) => StructWithConst(name: name);
 }
 
+class StructWithConstAndDriveableClone extends LogicStructure {
+  Logic get data => elements.single;
+
+  StructWithConstAndDriveableClone.constant({String? name})
+      : this._(Const(1), name: name);
+
+  StructWithConstAndDriveableClone._(Logic data, {super.name}) : super([data]);
+
+  @override
+  StructWithConstAndDriveableClone clone({String? name}) =>
+      StructWithConstAndDriveableClone._(Logic(), name: name);
+}
+
 class ModuleWithPartialAssignInlineAndOutReuseModule extends Module {
   ModuleWithPartialAssignInlineAndOutReuseModule(MyStruct inp) {
     inp = addTypedInput('inp', inp);
@@ -218,6 +231,57 @@ class ChildModuleWithPackingOutput extends Module {
   }
 }
 
+class _MyStructInputConsumer extends Module {
+  Logic get observed => output('observed');
+
+  _MyStructInputConsumer(MyStruct pair, {required super.name})
+      : super(definitionName: 'MyStructInputConsumer') {
+    pair = addTypedInput('pair', pair);
+    addOutput('observed', width: pair.width) <= pair;
+  }
+}
+
+class _ScalarInputsToMyStructChild extends Module {
+  _ScalarInputsToMyStructChild(Logic readyValue, Logic validValue)
+      : super(definitionName: 'ScalarInputsToMyStructChild') {
+    readyValue = addInput('readyValue', readyValue);
+    validValue = addInput('validValue', validValue);
+    final pair = MyStruct(name: 'pair');
+    pair.ready <= readyValue;
+    pair.valid <= validValue;
+    final child = _MyStructInputConsumer(pair, name: 'consumer');
+    addOutput('observed', width: pair.width) <= child.observed;
+  }
+}
+
+class _MyStructOutputProducer extends Module {
+  MyStruct get pair => output('pair') as MyStruct;
+
+  _MyStructOutputProducer(
+    Logic readyValue,
+    Logic validValue, {
+    required super.name,
+  }) : super(definitionName: 'MyStructOutputProducer') {
+    readyValue = addInput('readyValue', readyValue);
+    validValue = addInput('validValue', validValue);
+    final value = MyStruct(name: 'pairValue');
+    value.ready <= readyValue;
+    value.valid <= validValue;
+    addTypedOutput('pair', value.clone).gets(value);
+  }
+}
+
+class _MyStructChildToParentOutput extends Module {
+  _MyStructChildToParentOutput(Logic readyValue, Logic validValue)
+      : super(definitionName: 'MyStructChildToParentOutput') {
+    readyValue = addInput('readyValue', readyValue);
+    validValue = addInput('validValue', validValue);
+    final child =
+        _MyStructOutputProducer(readyValue, validValue, name: 'source');
+    addTypedOutput('pair', child.pair.clone).gets(child.pair);
+  }
+}
+
 void main() {
   tearDown(() async {
     await Simulator.reset();
@@ -227,7 +291,7 @@ void main() {
     final mod = SimpleStructModuleContainer(Logic(), Logic());
     await mod.build();
 
-    final sv = mod.generateSynth();
+    final sv = mod.dumpSystemVerilog();
 
     expect(sv, isNot(contains('internal_struct')));
 
@@ -249,7 +313,7 @@ void main() {
 
     expect(mod.anyOut, isA<LogicArray>());
 
-    final sv = mod.generateSynth();
+    final sv = mod.dumpSystemVerilog();
 
     expect(sv, contains('input logic [3:0][1:0] anyIn'));
     expect(sv, contains('output logic [3:0][1:0] anyOut'));
@@ -275,7 +339,7 @@ void main() {
     final mod = ParentModuleWithStructsContainingPorts(Logic());
     await mod.build();
 
-    final sv = mod.generateSynth();
+    final sv = mod.dumpSystemVerilog();
 
     // if naming is wrong, these names will appear in the SV in ports
     expect(
@@ -296,6 +360,35 @@ void main() {
 
     // just building will detect if there was a bad reuse of packed
     await mod.build();
+  });
+
+  test('structure fields pack into aggregate child inputs', () async {
+    final mod = _ScalarInputsToMyStructChild(Logic(), Logic());
+    await mod.build();
+
+    final vectors = [
+      Vector({'readyValue': 0, 'validValue': 0}, {'observed': 0}),
+      Vector({'readyValue': 1, 'validValue': 0}, {'observed': 1}),
+      Vector({'readyValue': 0, 'validValue': 1}, {'observed': 2}),
+      Vector({'readyValue': 1, 'validValue': 1}, {'observed': 3}),
+    ];
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
+  });
+
+  test('aggregate structure child outputs pack through parent outputs',
+      () async {
+    final mod = _MyStructChildToParentOutput(Logic(), Logic());
+    await mod.build();
+
+    final vectors = [
+      Vector({'readyValue': 0, 'validValue': 0}, {'pair': 0}),
+      Vector({'readyValue': 1, 'validValue': 0}, {'pair': 1}),
+      Vector({'readyValue': 0, 'validValue': 1}, {'pair': 2}),
+      Vector({'readyValue': 1, 'validValue': 1}, {'pair': 3}),
+    ];
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
   });
 
   group('const typed ports', () {
@@ -347,6 +440,15 @@ void main() {
         expect(failed, portType == 'inOut');
       });
     }
+
+    test('input with const structure and driveable clone', () {
+      final source = StructWithConstAndDriveableClone.constant();
+      final input = DummyModule().addTypedInput('p', source);
+
+      expect(input, isA<StructWithConstAndDriveableClone>());
+      expect(input.hasConsts, isFalse);
+      expect(input.data.value, LogicValue.one);
+    });
   });
 
   group('simple struct module with nets', () {
@@ -355,7 +457,7 @@ void main() {
           SimpleStructModuleContainer(LogicNet(), LogicNet(), asNet: true);
       await mod.build();
 
-      final sv = mod.generateSynth();
+      final sv = mod.dumpSystemVerilog();
 
       expect(sv, isNot(contains('internal_struct')));
 
@@ -500,7 +602,7 @@ void main() {
     final mod = ModuleWithOneBitStructPort(OneBitStruct());
     await mod.build();
 
-    final sv = mod.generateSynth();
+    final sv = mod.dumpSystemVerilog();
 
     // no slicing on single-bit signals
     expect(sv, contains('assign outStruct = outStruct_oneBit'));

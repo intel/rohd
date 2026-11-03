@@ -16,6 +16,18 @@ import 'package:rohd_waveform/src/models/waveform_data.dart';
 /// Function type for looking up signal metadata by ID.
 typedef SignalLookup = SignalOccurrence? Function(String signalId);
 
+/// Criterion used when searching waveform transitions.
+enum WaveformSearchCriterion {
+  /// Match a specific waveform value.
+  value,
+
+  /// Match a low-to-high transition.
+  risingEdge,
+
+  /// Match a high-to-low transition.
+  fallingEdge,
+}
+
 /// Waveform data for a signal.
 ///
 /// This class holds the time-series waveform data for a signal and provides
@@ -72,17 +84,25 @@ class SignalWaveform {
     required this.signalId,
     List<Data>? data,
     bool isComputed = false,
+    this.overrideWidth,
+    this.overrideName,
   })  : _isComputed = isComputed,
         data = data ?? [];
 
   /// Creates an empty SignalWaveform for a signal.
-  factory SignalWaveform.empty(String signalId) =>
-      SignalWaveform(signalId: signalId);
+  factory SignalWaveform.empty(String signalId, {bool isComputed = false}) =>
+      SignalWaveform(signalId: signalId, isComputed: isComputed);
 
   /// Creates a SignalWaveform from WaveformData.
-  factory SignalWaveform.fromWaveformData(WaveformData waveformData) =>
+  ///
+  /// [signalId] may provide the canonical hierarchy path when the waveform
+  /// source uses a different textual identifier.
+  factory SignalWaveform.fromWaveformData(
+    WaveformData waveformData, {
+    String? signalId,
+  }) =>
       SignalWaveform(
-        signalId: waveformData.signalId,
+        signalId: signalId ?? waveformData.signalId,
         data: List.from(waveformData.data),
         isComputed: waveformData.isComputed,
       );
@@ -93,12 +113,17 @@ class SignalWaveform {
   /// times (e.g., for performance studies or side-by-side comparison). Each
   /// monitor entry must have its own SignalWaveform instance to avoid sharing
   /// state between rows in the waveform panel.
-  factory SignalWaveform.copyFrom(SignalWaveform other) => SignalWaveform(
-      signalId: other.signalId,
-      data: List.from(other.data),
-      isComputed: other.isComputed)
-    ..overrideWidth = other.overrideWidth
-    ..overrideName = other.overrideName;
+  factory SignalWaveform.copyFrom(
+    SignalWaveform other, {
+    bool? isComputed,
+  }) =>
+      SignalWaveform(
+        signalId: other.signalId,
+        data: List.from(other.data),
+        isComputed: isComputed ?? other.isComputed,
+        overrideWidth: other.overrideWidth,
+        overrideName: other.overrideName,
+      );
 
   // ─────────────────────────────────────────────────────────────────────────
   // Metadata accessors (via backpointer lookup)
@@ -126,13 +151,21 @@ class SignalWaveform {
   String get type => 'wire';
 
   /// The signal width from metadata, an explicit override, or derived metadata.
-  int get width => signal?.width ?? overrideWidth ?? _derivedSubFieldWidth ?? 1;
+  int get width => overrideWidth ?? signal?.width ?? _derivedSubFieldWidth ?? 1;
 
   /// The signal direction (from metadata). Returns null for internal signals.
   String? get direction => signal?.direction;
 
   /// The full hierarchical path (from metadata).
   String? get fullPath => signal?.path();
+
+  /// Whether this waveform represents [occurrence].
+  ///
+  /// Waveform sources can use different textual IDs for the same hierarchy
+  /// signal, so resolved occurrence addresses take precedence when available.
+  bool matchesOccurrence(SignalOccurrence occurrence) =>
+      signalId == occurrence.path() ||
+      (signal?.address != null && signal?.address == occurrence.address);
 
   /// Whether this signal is a port (has direction).
   bool get isPort => signal?.isPort ?? false;
@@ -353,6 +386,65 @@ class SignalWaveform {
       idx--;
     }
     return idx >= 0 ? idx : -1;
+  }
+
+  /// Finds the next sample after [currentTime] matching [criterion].
+  int getNextMatchingDataPointIndex(
+    int currentTime, {
+    required WaveformSearchCriterion criterion,
+    String? value,
+  }) {
+    for (var index = getNextDataPointIndex(currentTime);
+        index != -1 && index < data.length;
+        index++) {
+      if (_matchesSearch(index, criterion, value)) {
+        return index;
+      }
+    }
+    return -1;
+  }
+
+  /// Finds the previous sample before [currentTime] matching [criterion].
+  int getPreviousMatchingDataPointIndex(
+    int currentTime, {
+    required WaveformSearchCriterion criterion,
+    String? value,
+  }) {
+    for (var index = getPreviousDataPointIndex(currentTime);
+        index >= 0;
+        index--) {
+      if (_matchesSearch(index, criterion, value)) {
+        return index;
+      }
+    }
+    return -1;
+  }
+
+  bool _matchesSearch(
+    int index,
+    WaveformSearchCriterion criterion,
+    String? value,
+  ) {
+    final current = data[index].value;
+    if (criterion == WaveformSearchCriterion.value) {
+      return current == value;
+    }
+    if (index == 0) {
+      return false;
+    }
+    final wasHigh = _isHigh(data[index - 1].value);
+    final isHigh = _isHigh(current);
+    return criterion == WaveformSearchCriterion.risingEdge
+        ? !wasHigh && isHigh
+        : wasHigh && !isHigh;
+  }
+
+  bool _isHigh(String value) {
+    final normalized = value.toLowerCase();
+    return normalized == '1' ||
+        normalized == "1'b1" ||
+        normalized == "1'h1" ||
+        normalized == 'true';
   }
 
   @override

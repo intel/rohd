@@ -24,7 +24,6 @@ void main(List<String> args) {
   _setupLogging();
 
   final config = StandaloneAppConfig(
-    title: 'ROHD DevTools',
     connectionStrategy: createPlatformVmConnectionStrategy(),
   );
 

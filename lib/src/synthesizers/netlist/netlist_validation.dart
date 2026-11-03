@@ -10,6 +10,8 @@
 import 'package:meta/meta.dart';
 import 'package:rohd/src/exceptions/synth_exception.dart';
 
+typedef _NetlistDriver = ({String description, bool isTriState});
+
 /// Graph queries and structural checks for an emitted module netlist.
 @internal
 class NetlistValidation {
@@ -57,44 +59,27 @@ class NetlistValidation {
     final issues = <NetlistValidationIssue>[];
 
     final driversByBit = _driversByBit(ports, cells);
+    final aggregateNetnamesByBit = _aggregateNetnamesByBit(netnames);
 
     for (final entry in driversByBit.entries) {
-      if (entry.value.length <= 1) {
+      if (!_hasConflictingDrivers(entry.value)) {
         continue;
       }
+      final drivers = entry.value.map((driver) => driver.description).toList();
+      final aggregateNetnames =
+          aggregateNetnamesByBit[entry.key] ?? const <String>{};
+      final aggregateContext = aggregateNetnames.isEmpty
+          ? ''
+          : ' in aggregate net${aggregateNetnames.length == 1 ? '' : 's'} '
+              '${aggregateNetnames.map((name) => '"$name"').join(', ')}';
       issues.add(NetlistValidationIssue(
         'wire bit ${entry.key} has multiple drivers: '
-        '${entry.value.join(', ')}',
+        '${drivers.join(', ')}$aggregateContext',
         wireBit: entry.key,
-        drivers: entry.value,
+        netname:
+            aggregateNetnames.length == 1 ? aggregateNetnames.single : null,
+        drivers: drivers,
       ));
-    }
-
-    if (netnames != null) {
-      for (final entry in netnames.entries) {
-        final netname = entry.value;
-        if (netname is! Map<String, Object?>) {
-          continue;
-        }
-        final logicType = netname['logic_type'];
-        if (logicType is! Map ||
-            (logicType['arrayDims'] is! List && logicType['fields'] is! List)) {
-          continue;
-        }
-        final bits = (netname['bits'] as List?)?.whereType<int>() ?? const [];
-        final aggregateDrivers = <String>{
-          for (final bit in bits) ...driversByBit[bit] ?? const <String>[],
-        };
-        if (aggregateDrivers.length <= 1) {
-          continue;
-        }
-        issues.add(NetlistValidationIssue(
-          'aggregate net "${entry.key}" is reached from multiple drivers: '
-          '${aggregateDrivers.join(', ')}',
-          netname: entry.key,
-          drivers: aggregateDrivers.toList(),
-        ));
-      }
     }
 
     if (issues.isNotEmpty) {
@@ -102,15 +87,43 @@ class NetlistValidation {
     }
   }
 
+  static Map<int, Set<String>> _aggregateNetnamesByBit(
+    Map<String, Object?>? netnames,
+  ) {
+    final netnamesByBit = <int, Set<String>>{};
+    if (netnames == null) {
+      return netnamesByBit;
+    }
+
+    for (final entry in netnames.entries) {
+      final netname = entry.value;
+      if (netname is! Map<String, Object?>) {
+        continue;
+      }
+      final logicType = netname['logic_type'];
+      if (logicType is! Map ||
+          (logicType['arrayDims'] is! List && logicType['fields'] is! List)) {
+        continue;
+      }
+      for (final bit
+          in (netname['bits'] as List?)?.whereType<int>() ?? const <int>[]) {
+        (netnamesByBit[bit] ??= <String>{}).add(entry.key);
+      }
+    }
+
+    return netnamesByBit;
+  }
+
   /// Collects the port and cell output drivers for each integer bit ID.
-  static Map<int, List<String>> _driversByBit(
+  static Map<int, List<_NetlistDriver>> _driversByBit(
     Map<String, Map<String, Object?>> ports,
     Map<String, Map<String, Object?>> cells,
   ) {
-    final drivers = <int, List<String>>{};
+    final drivers = <int, List<_NetlistDriver>>{};
 
-    void addDriver(int bit, String driver) =>
-        (drivers[bit] ??= <String>[]).add(driver);
+    void addDriver(int bit, String description, {bool isTriState = false}) =>
+        (drivers[bit] ??= <_NetlistDriver>[])
+            .add((description: description, isTriState: isTriState));
 
     for (final entry in ports.entries) {
       final direction = entry.value['direction'] as String?;
@@ -137,19 +150,31 @@ class NetlistValidation {
       }
       for (final port in connections.entries) {
         final direction = directions[port.key] as String?;
-        final isTriStateOutput = type == r'$tribuf' && direction == 'inout';
+        final isTriStateOutput = type == r'$tribuf' &&
+            (direction == 'output' || direction == 'inout');
         if (direction != 'output' && !isTriStateOutput) {
           continue;
         }
         for (final bit in (port.value as List?) ?? const []) {
           if (bit is int) {
-            addDriver(bit, 'cell ${entry.key}.${port.key} ($type)');
+            addDriver(bit, 'cell ${entry.key}.${port.key} ($type)',
+                isTriState: isTriStateOutput);
           }
         }
       }
     }
 
     return drivers;
+  }
+
+  static bool _hasConflictingDrivers(Iterable<_NetlistDriver> drivers) {
+    var count = 0;
+    var allTriState = true;
+    for (final driver in drivers) {
+      count++;
+      allTriState &= driver.isTriState;
+    }
+    return count > 1 && !allTriState;
   }
 }
 

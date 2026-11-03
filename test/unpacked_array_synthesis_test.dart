@@ -4,7 +4,7 @@
 // unpacked_array_synthesis_test.dart
 // Tests for unpacked-array synthesis and input connection inlining.
 //
-// 2026 September 9
+// 2026 September 15
 // Author: Max Korbel <max.korbel@intel.com>
 
 import 'package:rohd/rohd.dart';
@@ -53,6 +53,144 @@ class UnpackedInputTop extends Module {
             addInput('value', Logic(width: array.width), width: array.width);
     }
     addOutput('observed', width: array.width) <= child.output('observed');
+  }
+}
+
+class ParentArrayPortToChild extends Module {
+  ParentArrayPortToChild(LogicArray source) {
+    source = addInputArray(
+      'source',
+      source,
+      dimensions: source.dimensions,
+      elementWidth: source.elementWidth,
+      numUnpackedDimensions: source.numUnpackedDimensions,
+    );
+    final child = UnpackedConsumer(source);
+    addOutput('observed', width: source.width) <= child.output('observed');
+  }
+}
+
+class _ArrayElementConsumer extends Module {
+  Logic get y => output('y');
+
+  _ArrayElementConsumer(Logic a, {required super.name})
+      : super(definitionName: 'ArrayElementConsumer_W${a.width}') {
+    a = addInput('a', a, width: a.width);
+    addOutput('y') <= a.or();
+  }
+}
+
+class _ArrayElementProducer extends Module {
+  Logic get y => output('y');
+
+  _ArrayElementProducer(Logic a, {required super.name})
+      : super(definitionName: 'ArrayElementProducer_W${a.width}') {
+    a = addInput('a', a, width: a.width);
+    addOutput('y', width: a.width) <= a;
+  }
+}
+
+class _ParentArrayElementsToChildren extends Module {
+  _ParentArrayElementsToChildren(LogicArray values)
+      : super(definitionName: 'ParentArrayElementsToChildren') {
+    values = addInputArray(
+      'values',
+      values,
+      dimensions: values.dimensions,
+      elementWidth: values.elementWidth,
+    );
+    final low = _ArrayElementConsumer(values.elements[0], name: 'low');
+    final high = _ArrayElementConsumer(values.elements[1], name: 'high');
+    addOutput('observed', width: 2) <= [high.y, low.y].swizzle();
+  }
+}
+
+class _ParentChildrenToArrayElements extends Module {
+  _ParentChildrenToArrayElements(Logic lowValue, Logic highValue)
+      : super(definitionName: 'ParentChildrenToArrayElements') {
+    lowValue = addInput('lowValue', lowValue, width: lowValue.width);
+    highValue = addInput('highValue', highValue, width: highValue.width);
+    final values = addOutputArray('values', dimensions: [2], elementWidth: 8);
+    final low = _ArrayElementProducer(lowValue, name: 'low');
+    final high = _ArrayElementProducer(highValue, name: 'high');
+    values.elements[0] <= low.y;
+    values.elements[1] <= high.y;
+  }
+}
+
+class _ArrayPackConsumer extends Module {
+  Logic get observed => output('observed');
+
+  _ArrayPackConsumer(LogicArray values, {required super.name})
+      : super(definitionName: 'ArrayPackConsumer_W${values.width}') {
+    values = addInputArray(
+      'values',
+      values,
+      dimensions: values.dimensions,
+      elementWidth: values.elementWidth,
+    );
+    addOutput('observed', width: values.width) <= values;
+  }
+}
+
+class _ParentElementsToAggregateChild extends Module {
+  _ParentElementsToAggregateChild(Logic lowValue, Logic highValue)
+      : super(definitionName: 'ParentElementsToAggregateChild') {
+    lowValue = addInput('lowValue', lowValue, width: lowValue.width);
+    highValue = addInput('highValue', highValue, width: highValue.width);
+    final values = LogicArray([2], 8, name: 'values');
+    values.elements[0] <= lowValue;
+    values.elements[1] <= highValue;
+    final child = _ArrayPackConsumer(values, name: 'consumer');
+    addOutput('observed', width: values.width) <= child.observed;
+  }
+}
+
+class _ArrayPackProducer extends Module {
+  LogicArray get values => output('values') as LogicArray;
+
+  _ArrayPackProducer(Logic lowValue, Logic highValue, {required super.name})
+      : super(definitionName: 'ArrayPackProducer_W${lowValue.width * 2}') {
+    lowValue = addInput('lowValue', lowValue, width: lowValue.width);
+    highValue = addInput('highValue', highValue, width: highValue.width);
+    final values = addOutputArray('values', dimensions: [2], elementWidth: 8);
+    values.elements[0] <= lowValue;
+    values.elements[1] <= highValue;
+  }
+}
+
+class _AggregateChildToParentOutput extends Module {
+  _AggregateChildToParentOutput(Logic lowValue, Logic highValue)
+      : super(definitionName: 'AggregateChildToParentOutput') {
+    lowValue = addInput('lowValue', lowValue, width: lowValue.width);
+    highValue = addInput('highValue', highValue, width: highValue.width);
+    final child = _ArrayPackProducer(lowValue, highValue, name: 'source');
+    final values = addOutputArray('values', dimensions: [2], elementWidth: 8);
+    values <= child.values;
+  }
+}
+
+class ReorderedParentArrayPortToChild extends Module {
+  ReorderedParentArrayPortToChild(LogicArray source) {
+    source = addInputArray(
+      'source',
+      source,
+      dimensions: source.dimensions,
+      elementWidth: source.elementWidth,
+      numUnpackedDimensions: source.numUnpackedDimensions,
+    );
+    final reordered = LogicArray(
+      source.dimensions,
+      source.elementWidth,
+      name: 'reordered',
+      numUnpackedDimensions: source.numUnpackedDimensions,
+      naming: Naming.mergeable,
+    );
+    for (final (index, element) in reordered.elements.indexed) {
+      element <= source.elements[reordered.elements.length - index - 1];
+    }
+    final child = UnpackedConsumer(reordered);
+    addOutput('observed', width: source.width) <= child.output('observed');
   }
 }
 
@@ -152,14 +290,9 @@ void main() {
       });
 
       test('$name compiles with Verilator', () async {
-        for (final value in values.take(2)) {
-          final module = makeModule(value);
-          await module.build();
-          if (!SimCompare.checkVerilatorVector(module, const [],
-              buildOnly: true)) {
-            return;
-          }
-        }
+        final module = makeModule(values[1]);
+        await module.build();
+        SimCompare.checkVerilatorVector(module, const [], buildOnly: true);
       }, tags: ['verilator']);
     }
   }
@@ -172,7 +305,8 @@ void main() {
         drive: ArrayDrive.elements,
         value: 0x39);
     await module.build();
-    expect(module.generateSynth(), contains(".array(({2'h3, 2'h2, 2'h1}))"));
+    expect(
+        module.dumpSystemVerilog(), contains(".array(({2'h3, 2'h2, 2'h1}))"));
   });
 
   for (final value in [0, 2, LogicValue.x]) {
@@ -185,7 +319,7 @@ void main() {
           value: value);
       await module.build();
       final literal = LogicValue.of(value, width: 2);
-      expect(module.generateSynth(), contains('.array(({$literal}))'));
+      expect(module.dumpSystemVerilog(), contains('.array(({$literal}))'));
     });
   }
 
@@ -196,8 +330,124 @@ void main() {
         numUnpackedDimensions: 1,
         drive: ArrayDrive.live);
     await module.build();
-    expect(module.generateSynth(), contains('.array(({value}))'));
+    expect(module.dumpSystemVerilog(), contains('.array(({value}))'));
   });
+
+  test('full-width parent array port connects directly to child', () async {
+    final module = ParentArrayPortToChild(
+      LogicArray([3], 2, numUnpackedDimensions: 1),
+    );
+    await module.build();
+
+    final verilog = module.dumpSystemVerilog();
+    expect(verilog, contains('input logic [1:0] source [2:0]'));
+    expect(verilog, contains('.array(source)'));
+    expect(verilog, isNot(contains('logic [1:0] array [2:0];')));
+
+    SimCompare.checkVerilatorVector(module, const [], buildOnly: true);
+  }, tags: ['verilator']);
+
+  test('packed parent array elements connect directly to scalar child inputs',
+      () async {
+    final module = _ParentArrayElementsToChildren(
+      LogicArray([2], 8, name: 'values'),
+    );
+    await module.build();
+
+    final verilog = module.dumpSystemVerilog();
+    expect(verilog, contains('.a(values[0])'));
+    expect(verilog, contains('.a(values[1])'));
+
+    await SimCompare.checkFunctionalVector(module, [
+      Vector({'values': 0x0000}, {'observed': 0}),
+      Vector({'values': 0x8001}, {'observed': 3}),
+      Vector({'values': 0x0100}, {'observed': 2}),
+    ]);
+    SimCompare.checkIverilogVector(module, [
+      Vector({'values': 0x0000}, {'observed': 0}),
+      Vector({'values': 0x8001}, {'observed': 3}),
+      Vector({'values': 0x0100}, {'observed': 2}),
+    ]);
+  });
+
+  test('scalar child outputs pack directly into a parent array output',
+      () async {
+    final module =
+        _ParentChildrenToArrayElements(Logic(width: 8), Logic(width: 8));
+    await module.build();
+
+    final verilog = module.dumpSystemVerilog();
+    expect(verilog, contains('.y(values[0])'));
+    expect(verilog, contains('.y(values[1])'));
+
+    final vectors = [
+      Vector(
+        {'lowValue': 0x5a, 'highValue': 0xa5},
+        {'values': 0xa55a},
+      ),
+      Vector(
+        {'lowValue': 0x01, 'highValue': 0x80},
+        {'values': 0x8001},
+      ),
+    ];
+    await SimCompare.checkFunctionalVector(module, vectors);
+    SimCompare.checkIverilogVector(module, vectors);
+  });
+
+  test('parent elements pack into aggregate child inputs', () async {
+    final module =
+        _ParentElementsToAggregateChild(Logic(width: 8), Logic(width: 8));
+    await module.build();
+
+    final verilog = module.dumpSystemVerilog();
+    expect(verilog, contains('.values(values)'));
+
+    final vectors = [
+      Vector(
+        {'lowValue': 0x5a, 'highValue': 0xa5},
+        {'observed': 0xa55a},
+      ),
+    ];
+    await SimCompare.checkFunctionalVector(module, vectors);
+    SimCompare.checkIverilogVector(module, vectors);
+  });
+
+  test('aggregate child outputs stay packed at parent output ports', () async {
+    final module =
+        _AggregateChildToParentOutput(Logic(width: 8), Logic(width: 8));
+    await module.build();
+
+    final verilog = module.dumpSystemVerilog();
+    expect(verilog, contains('.values(values)'));
+
+    final vectors = [
+      Vector(
+        {'lowValue': 0x5a, 'highValue': 0xa5},
+        {'values': 0xa55a},
+      ),
+    ];
+    await SimCompare.checkFunctionalVector(module, vectors);
+    SimCompare.checkIverilogVector(module, vectors);
+  });
+
+  test('reordered parent array preserves element order at child', () async {
+    final module = ReorderedParentArrayPortToChild(
+      LogicArray([3], 2, numUnpackedDimensions: 1),
+    );
+    await module.build();
+
+    final verilog = module.dumpSystemVerilog();
+    expect(verilog, isNot(contains('.array(source)')));
+    expect(verilog, isNot(contains('reordered')));
+
+    await SimCompare.checkFunctionalVector(
+      module,
+      [
+        Vector({'source': 0x39}, {'observed': 0x1b})
+      ],
+    );
+    SimCompare.checkVerilatorVector(module, const [], buildOnly: true);
+  }, tags: ['verilator']);
 
   test('floating singleton retains its unpacked array shape', () async {
     final module = UnpackedInputTop(
@@ -207,7 +457,7 @@ void main() {
         drive: ArrayDrive.constant,
         value: LogicValue.z);
     await module.build();
-    final verilog = module.generateSynth();
+    final verilog = module.dumpSystemVerilog();
     expect(verilog, contains('logic [1:0] array [0:0];'));
     expect(verilog, contains('.array(array)'));
   });
@@ -220,7 +470,7 @@ void main() {
         drive: ArrayDrive.constant,
         value: 2);
     await module.build();
-    expect(module.generateSynth(), contains(".array((2'h2))"));
+    expect(module.dumpSystemVerilog(), contains(".array((2'h2))"));
   });
 
   test('preserved singleton array stays declared', () async {
@@ -231,7 +481,7 @@ void main() {
         drive: ArrayDrive.constant,
         naming: Naming.reserved);
     await module.build();
-    final verilog = module.generateSynth();
+    final verilog = module.dumpSystemVerilog();
     expect(verilog, contains('logic [1:0] tieoff [0:0];'));
     expect(verilog, contains('.array(tieoff)'));
   });

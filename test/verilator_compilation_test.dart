@@ -37,10 +37,10 @@ endmodule
 class VectorArrayFixture extends Module {
   VectorArrayFixture() {
     final array = addInputArray(
-        'array', LogicArray([3], 4, numUnpackedDimensions: 1),
-        dimensions: [3], elementWidth: 4, numUnpackedDimensions: 1);
+        'array', LogicArray([2], 2, numUnpackedDimensions: 1),
+        dimensions: [2], elementWidth: 2, numUnpackedDimensions: 1);
     addOutputArray('observed',
-            dimensions: [3], elementWidth: 4, numUnpackedDimensions: 1) <=
+            dimensions: [2], elementWidth: 2, numUnpackedDimensions: 1) <=
         array;
   }
 }
@@ -100,8 +100,8 @@ void main() {
     final module = VectorArrayFixture();
     await module.build();
     SimCompare.checkVerilatorVector(module, [
-      Vector({'array': 0x123}, {'observed': 0x123}),
-      Vector({'array': 0xabc}, {'observed': 0xabc}),
+      Vector({'array': 0x3}, {'observed': 0x3}),
+      Vector({'array': 0xc}, {'observed': 0xc}),
       Vector({'array': 0}, {'observed': 0}),
     ]);
   });
@@ -112,7 +112,7 @@ void main() {
     SimCompare.checkVerilatorVector(
         module,
         [
-          Vector({'array': 0x123}, {'observed': 0x321}),
+          Vector({'array': 0x3}, {'observed': 0x2}),
         ],
         buildOnly: true);
   });
@@ -126,8 +126,8 @@ void main() {
     TestFailure? failure;
     try {
       SimCompare.checkVerilatorVector(module, [
-        Vector({'array': 0xabc}, {'observed': 0xabc}),
-        Vector({'array': 0x123}, {'observed': 0x321}),
+        Vector({'array': 0xc}, {'observed': 0xc}),
+        Vector({'array': 0x3}, {'observed': 0x2}),
       ]);
     } on TestFailure catch (error) {
       failure = error;
@@ -177,14 +177,20 @@ void main() {
   });
 
   test('missing optional Verilator explicitly skips', () {
+    final reasons = <String>[];
     expect(
         SimCompare.checkVerilatorVector(
             ArrayConnectionFixture("{2'h0}"), const [],
             buildOnly: true,
             verilatorExecutable: '/rohd/nonexistent/verilator',
-            requireTool: false),
+            requireTool: false,
+            onSkip: reasons.add),
         isFalse);
-  });
+    expect(reasons, [
+      contains('Verilator executable '
+          '"/rohd/nonexistent/verilator" not found.')
+    ]);
+  }, testOn: 'vm');
 
   test('missing required Verilator fails', () {
     expect(
@@ -199,13 +205,21 @@ void main() {
   }, testOn: 'vm');
 
   test('missing Verilator follows the environment policy', () {
+    final reasons = <String>[];
     bool check() => SimCompare.checkVerilatorVector(
         ArrayConnectionFixture("{2'h0}"), const [],
-        buildOnly: true, verilatorExecutable: '/rohd/nonexistent/verilator');
+        buildOnly: true,
+        verilatorExecutable: '/rohd/nonexistent/verilator',
+        onSkip: reasons.add);
     if (Platform.environment['ROHD_REQUIRE_VERILATOR'] == '1') {
       expect(check, throwsA(isA<TestFailure>()));
+      expect(reasons, isEmpty);
     } else {
       expect(check(), isFalse);
+      expect(reasons, [
+        contains('Verilator executable '
+            '"/rohd/nonexistent/verilator" not found.')
+      ]);
     }
   }, testOn: 'vm');
 
@@ -273,10 +287,15 @@ esac
   test('extra arguments select the warning policy and top module', () async {
     final module = ArrayConnectionFixture("{2'h0}");
     await module.build();
-    if (!SimCompare.checkVerilatorVector(module, const [],
-        buildOnly: true, verilatorExtraArgs: ['-Wall'])) {
+    if (!SimCompare.checkVerilatorVector(module, const [], buildOnly: true)) {
       return;
     }
+    expect(
+        () => expect(
+            SimCompare.checkVerilatorVector(module, const [],
+                buildOnly: true, verilatorExtraArgs: ['-Wall']),
+            isTrue),
+        prints(contains('%Warning-DECLFILENAME')));
     expect(
         () => SimCompare.checkVerilatorVector(module, const [],
             buildOnly: true,
@@ -314,8 +333,8 @@ esac
       if (!capture.run(() => SimCompare.checkVerilatorVector(
           module,
           [
-            Vector({'array': 0x123}, {'observed': 0x123}),
-            Vector({'array': 0xabc}, {'observed': 0xabc}),
+            Vector({'array': 0x3}, {'observed': 0x3}),
+            Vector({'array': 0xc}, {'observed': 0xc}),
           ],
           buildOnly: buildOnly,
           dumpWaves: true,

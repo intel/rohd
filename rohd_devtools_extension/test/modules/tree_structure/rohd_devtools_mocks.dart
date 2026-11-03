@@ -8,10 +8,10 @@
 // Author: Yao Jing Quek <yao.jing.quek@intel.com>
 
 import 'package:mocktail/mocktail.dart';
+import 'package:rohd_devtools_extension/rohd_devtools/cubit/hierarchy_cubit.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/models/signal_model.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/models/tree_model.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/rohd_devtools.dart';
-import 'package:rohd_devtools_extension/rohd_devtools/services/signal_service.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/services/tree_service.dart';
 
 class MockTreeModel extends Mock implements TreeModel {}
@@ -20,11 +20,10 @@ class MockSignalModel extends Mock implements SignalModel {}
 
 class MockTreeService extends Mock implements TreeService {}
 
-class MockSignalService extends Mock implements SignalService {}
-
 class MockRohdServiceCubit extends Mock implements RohdServiceCubit {}
 
-class MockSelectedModuleCubit extends Mock implements SelectedModuleCubit {}
+class MockDevToolsHierarchyCubit extends Mock
+    implements DevToolsHierarchyCubit {}
 
 class MockTreeSearchTermCubit extends Mock implements TreeSearchTermCubit {}
 

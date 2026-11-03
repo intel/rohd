@@ -19,6 +19,10 @@ enum SystemVerilogPortType {
 /// Configuration for types in a SystemVerilog port declaration.
 class SystemVerilogPortTypeConfiguration {
   /// Whether the object type, such as `wire` or `var`, is explicit.
+  ///
+  /// When an output port omits its object type but includes an explicit data
+  /// type, SystemVerilog infers a variable. When both are omitted, it infers a
+  /// net. See IEEE 1800-2023 section 23.2.2.3.
   final SystemVerilogPortType objectType;
 
   /// Whether the data type, such as `logic`, is explicit.
@@ -34,6 +38,9 @@ class SystemVerilogPortTypeConfiguration {
 
 /// Configuration for SystemVerilog synthesis.
 class SystemVerilogSynthesizerConfiguration {
+  /// Whether SystemVerilog enum types and symbolic values are generated.
+  final bool generateEnums;
+
   /// Type configuration for input ports.
   final SystemVerilogPortTypeConfiguration inputPortType;
 
@@ -45,6 +52,7 @@ class SystemVerilogSynthesizerConfiguration {
 
   /// Creates a new configuration for SystemVerilog synthesis.
   const SystemVerilogSynthesizerConfiguration({
+    this.generateEnums = true,
     this.inputPortType = const SystemVerilogPortTypeConfiguration(
       objectType: SystemVerilogPortType.implicit,
     ),

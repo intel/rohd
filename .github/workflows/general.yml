@@ -14,9 +14,31 @@ permissions: {}
 jobs:
   run-checks:
     name: Run Checks
+    needs:
+      - source-checks
+      - project-tests
+      - devcontainer-tests
+      - vscode-extension
+    if: ${{ always() }}
     permissions: {}
-    env:
-      ROHD_REQUIRE_VERILATOR: '1'
+    timeout-minutes: 5
+    runs-on: ${{ github.repository_owner == 'intel' && 'intel-ubuntu-latest' || 'ubuntu-latest' }}
+    steps:
+      - name: Require all checks to pass
+        env:
+          SOURCE_RESULT: ${{ needs.source-checks.result }}
+          TEST_RESULT: ${{ needs.project-tests.result }}
+          CONTAINER_RESULT: ${{ needs.devcontainer-tests.result }}
+          VSCODE_EXTENSION_RESULT: ${{ needs.vscode-extension.result }}
+        run: |
+          [[           "$SOURCE_RESULT" == success &&
+          "$TEST_RESULT" == success &&
+          "$CONTAINER_RESULT" == success &&
+          "$VSCODE_EXTENSION_RESULT" == success ]]
+
+  source-checks:
+    name: Source Checks
+    permissions: {}
     timeout-minutes: 60
     runs-on: ${{ github.repository_owner == 'intel' && 'intel-ubuntu-latest' || 'ubuntu-latest' }}
     steps:
@@ -28,19 +50,19 @@ jobs:
         with:
           globs: '**/*.md'
 
-      - name: Check Markdown links
-        uses: gaurav-nelson/github-action-markdown-link-check@v1
-        with:
-          use-quiet-mode: yes # output is too noisy, see https://github.com/gaurav-nelson/github-action-markdown-link-check/issues/121
-          config-file: .github/configs/mlc_config.json
-
-      - name: Setup Dart
-        uses: dart-lang/setup-dart@v1
-
-      - name: Setup Node
+      - name: Setup Node for Markdown links
         uses: actions/setup-node@v4
         with:
           node-version: 24
+
+      - name: Check Markdown links
+        run: bash tool/gh_actions/check_markdown_links.sh
+
+      - name: Setup Flutter SDK
+        uses: flutter-actions/setup-flutter@v2
+        with:
+          channel: stable
+          version: 3.47.2
 
       - name: Setup Pana source analysis
         run: tool/gh_actions/install_pana.sh
@@ -55,28 +77,162 @@ jobs:
         run: tool/gh_actions/analyze_source.sh
 
       - name: Run Pana on project source
-        run: tool/gh_actions/pana_source.sh
+        env:
+          # Remove after rohd_hierarchy 0.1.1 is published to pub.dev.
+          ROHD_ALLOW_UNPUBLISHED_HIERARCHY: '1'
+        run: tool/gh_actions/pana_source.sh . dart
 
       - name: Check project documentation
         run: tool/gh_actions/generate_documentation.sh
 
+  vscode-extension:
+    name: Verify VS Code Marketplace package
+    permissions: {}
+    timeout-minutes: 15
+    runs-on: ${{ github.repository_owner == 'intel' && 'intel-ubuntu-latest' || 'ubuntu-latest' }}
+    defaults:
+      run:
+        working-directory: rohd_extension
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: rohd_extension/.nvmrc
+          cache: npm
+          cache-dependency-path: rohd_extension/package-lock.json
+
+      - name: Install extension dependencies
+        run: npm ci
+
+      - name: Verify Marketplace extension identity
+        run: make verify-extension-version
+
+      - name: Verify Marketplace extension pack
+        run: make verify-extension-pack
+
+      - name: Build and verify Marketplace VSIX
+        run: make verify-vsix
+
+  project-tests:
+    name: Project Tests (${{ matrix.platform }})
+    permissions: {}
+    env:
+      ROHD_REQUIRE_VERILATOR: '1'
+      ROHD_REQUIRE_SYSTEMC: '1'
+    timeout-minutes: 60
+    runs-on: ${{ github.repository_owner == 'intel' && 'intel-ubuntu-latest' || 'ubuntu-latest' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [vm, node]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter SDK
+        uses: flutter-actions/setup-flutter@v2
+        with:
+          channel: stable
+          version: 3.47.2
+
+      - name: Setup Node
+        if: matrix.platform == 'node'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install project dependencies
+        run: tool/gh_actions/install_dependencies.sh
+
       - name: Install software - Icarus Verilog
+        if: matrix.platform == 'vm'
         run: tool/gh_actions/install_iverilog.sh
 
       - name: Install software - Verilator
+        if: matrix.platform == 'vm'
         run: bash tool/gh_actions/install_verilator.sh
+      - name: Install software - Accellera SystemC
+        run: tool/gh_actions/install_systemc.sh
+
+      - name: Pre-build SystemC PCH and Makefile
+        run: tool/gh_actions/setup_systemc_pch.sh
+
+      - name: Install software - GTKWave
+        if: matrix.platform == 'vm'
+        run: bash tool/gh_actions/install_gtkwave.sh
 
       - name: Run project tests
-        run: tool/gh_actions/run_tests.sh
+        run: tool/gh_actions/run_tests.sh ${{ matrix.platform }}
+
+      - name: Clean SystemC temporary files
+        run: tool/gh_actions/cleanup_systemc_tmp.sh
 
       - name: Check temporary test files
+        if: always()
         run: tool/gh_actions/check_tmp_test.sh
-      
+
+  devcontainer-tests:
+    name: Dev Container Tests (${{ matrix.platform }})
+    permissions: {}
+    timeout-minutes: 60
+    runs-on: ${{ github.repository_owner == 'intel' && 'intel-ubuntu-latest' || 'ubuntu-latest' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [vm, node]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       # https://github.com/devcontainers/ci/blob/main/docs/github-action.md
       - name: Build dev container and run tests in it
         uses: devcontainers/ci@v0.3
         with:
-          runCmd: ROHD_REQUIRE_VERILATOR=1 tool/gh_actions/run_tests.sh
+          push: never
+          runCmd: |
+            set -eu
+            ROHD_REQUIRE_VERILATOR=1 ROHD_REQUIRE_SYSTEMC=1 tool/gh_actions/run_tests.sh ${{ matrix.platform }}
+            tool/gh_actions/cleanup_systemc_tmp.sh
+            tool/gh_actions/check_tmp_test.sh
+
+  shell-regression-tests:
+    name: Shell Regression Tests
+    permissions: {}
+    timeout-minutes: 30
+    runs-on: ${{ github.repository_owner == 'intel' && 'intel-ubuntu-latest' || 'ubuntu-latest' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter SDK
+        uses: flutter-actions/setup-flutter@v2
+        with:
+          channel: stable
+          version: 3.44.0
+
+      - name: Prepare workspace Pub overrides
+        run: bash tool/gh_actions/write_local_package_overrides.sh
+
+      - name: Install workspace dependencies
+        run: flutter pub get
+
+      - name: Run shell regression suites
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          suites=(tool/test/*_test.sh)
+          ((${#suites[@]})) || {
+            echo 'No shell regression suites found.' >&2
+            exit 1
+          }
+          for suite in "${suites[@]}"; do
+            echo "=== $suite ==="
+            bash "$suite"
+          done
 
   sub-package-checks:
     name: Check ${{ matrix.package }}
@@ -93,6 +249,8 @@ jobs:
             sdk: dart
           - package: rohd_devtools_widgets
             sdk: flutter
+          - package: rohd_source_navigator
+            sdk: dart
     defaults:
       run:
         working-directory: packages/${{ matrix.package }}
@@ -100,19 +258,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Dart
-        if: matrix.sdk == 'dart'
-        uses: dart-lang/setup-dart@v1
-
       - name: Setup Flutter SDK
-        if: matrix.sdk == 'flutter'
         uses: flutter-actions/setup-flutter@v2
         with:
           channel: stable
-          version: 3.44.0
+          version: 3.47.2
+
+      - name: Prepare workspace Pub overrides
+        run: bash ../../tool/gh_actions/write_local_package_overrides.sh
 
       - name: Install package dependencies
-        run: ${{ matrix.sdk }} pub get
+        run: flutter pub get
+
+      - name: Setup Pana source analysis
+        run: bash ../../tool/gh_actions/install_pana.sh
 
       - name: Verify package formatting
         run: dart format --output=none --set-exit-if-changed .
@@ -122,6 +281,9 @@ jobs:
 
       - name: Run package tests
         run: ${{ matrix.sdk }} test
+
+      - name: Gate hosted dependencies and Pana score
+        run: bash ../../tool/gh_actions/pana_source.sh . ${{ matrix.sdk }}
 
   deploy-documentation:
     name: Deploy Documentation
@@ -138,8 +300,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Setup Dart
-        uses: dart-lang/setup-dart@v1
+      - name: Setup Flutter SDK
+        uses: flutter-actions/setup-flutter@v2
+        with:
+          channel: stable
+          version: 3.47.2
 
       - name: Install project dependencies
         run: tool/gh_actions/install_dependencies.sh
@@ -147,11 +312,11 @@ jobs:
       - name: Generate project documentation
         run: tool/gh_actions/generate_documentation.sh
 
-      - name: Add standalone DevTools application
+      - name: Add ROHD Live Debugger application
         uses: actions/download-artifact@v4
         with:
-          name: rohd-devtools-standalone
-          path: doc/api/rohd_devtools_extension
+          name: rohd-live-debugger
+          path: doc/api/rohd-live-debugger
 
       - name: Deploy generated documentation
         uses: JamesIves/github-pages-deploy-action@v4
@@ -160,7 +325,7 @@ jobs:
           branch: docs
 
   build-devtool:
-    name: Build Devtools
+    name: Build ROHD Live Debugger
     timeout-minutes: 30
     runs-on: ${{ github.repository_owner == 'intel' && 'intel-ubuntu-latest' || 'ubuntu-latest' }}
     steps:
@@ -170,24 +335,21 @@ jobs:
         uses: flutter-actions/setup-flutter@v2
         with:
           channel: stable
-          version: 3.44.0
+          version: 3.47.2
 
       - name: Run Flutter Test
         run: tool/gh_actions/devtool/run_devtool_test.sh
 
-      - name: Build Static Web
-        run: tool/gh_actions/devtool/install_devtools.sh
+      - name: Smoke test DevTools against local ROHD packages
+        run: tool/gh_actions/devtool/smoke_test_local_packages.sh
 
-      - name: Test DevTools Installation
-        run: tool/gh_actions/devtool/test_devtools_install.sh extension/devtools
+      - name: Build standalone ROHD Live Debugger application
+        run: rohd_devtools_extension/tool/gh_actions/build_app.sh /rohd/rohd-live-debugger/
 
-      - name: Build standalone DevTools application
-        run: rohd_devtools_extension/tool/gh_actions/build_app.sh /rohd/rohd_devtools_extension/
-
-      - name: Upload standalone DevTools application
+      - name: Upload standalone ROHD Live Debugger application
         uses: actions/upload-artifact@v4
         with:
-          name: rohd-devtools-standalone
+          name: rohd-live-debugger
           path: rohd_devtools_extension/build/web
           if-no-files-found: error
           include-hidden-files: true

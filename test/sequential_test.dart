@@ -5,6 +5,8 @@
 // Unit test for Sequential
 //
 // 2022 January 31
+// Author: Max Korbel <max.korbel@intel.com>
+
 // Substantial portion of test contributed by wswongat in https://github.com/intel/rohd/issues/79
 // Max Korbel <max.korbel@intel.com>
 
@@ -309,7 +311,7 @@ void main() {
     final mod = NegedgeTriggeredSeq(Logic());
     await mod.build();
 
-    final sv = mod.generateSynth();
+    final sv = mod.dumpSystemVerilog();
     expect(sv, contains('always_ff @(negedge'));
 
     final vectors = [

@@ -19,14 +19,15 @@ import 'package:vm_service/vm_service.dart' as vm;
 /// VM-backed [SignalValueSource] that refreshes on debugger pause events.
 class VmServiceSignalValueSource implements SignalValueSource {
   static const _moduleTreeHierarchyExpression =
-      'ModuleTree.instance.hierarchyJSON';
+      'ModuleTree.instance.hierarchyJson';
 
   static const _currentTimeExpressions = <String>[
-    'WaveformService.instance.currentTime',
+    'WaveformDataService.instance.currentTime',
   ];
 
   static const _currentTimeExtension = 'ext.rohd.currentTime';
   static const _snapshotExtension = 'ext.rohd.snapshotCompact';
+  static const _extensionTimeout = Duration(seconds: 2);
 
   /// Eval wrapper for ROHD-side expressions.
   final EvalOnDartLibrary rohdControllerEval;
@@ -78,10 +79,7 @@ class VmServiceSignalValueSource implements SignalValueSource {
 
     for (final expression in _currentTimeExpressions) {
       try {
-        final value = await _evalInstance(
-          expression,
-          isAlive: evalDisposable,
-        );
+        final value = await _evalInstance(expression, isAlive: evalDisposable);
         final raw = value.valueAsString;
         if (raw == null || raw.isEmpty) {
           continue;
@@ -129,10 +127,7 @@ class VmServiceSignalValueSource implements SignalValueSource {
 
     for (final expression in snapshotExpressions) {
       try {
-        final value = await _evalInstance(
-          expression,
-          isAlive: evalDisposable,
-        );
+        final value = await _evalInstance(expression, isAlive: evalDisposable);
         final payload = value.valueAsString;
         if (payload == null || payload.isEmpty) {
           continue;
@@ -228,7 +223,9 @@ class VmServiceSignalValueSource implements SignalValueSource {
     Map<String, String>? args,
   }) async {
     try {
-      final response = await vmService.callServiceExtension(method, args: args);
+      final response = await vmService
+          .callServiceExtension(method, args: args)
+          .timeout(_extensionTimeout);
       return response.json;
     } on Exception {
       return null;

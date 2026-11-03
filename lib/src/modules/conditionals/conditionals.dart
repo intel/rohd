@@ -5,7 +5,7 @@ export 'case.dart';
 export 'combinational.dart';
 export 'conditional.dart';
 export 'conditional_assign.dart';
-export 'conditional_group.dart';
+export 'conditional_group.dart' hide StructureConditionalGroup;
 export 'flop.dart';
 export 'if.dart';
 export 'sequential.dart';

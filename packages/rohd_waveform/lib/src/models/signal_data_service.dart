@@ -28,6 +28,9 @@ import 'package:rohd_waveform/rohd_waveform.dart';
 ///       ${waveData.data.length}');
 /// ```
 abstract class SignalDataService {
+  /// Creates a signal data service.
+  SignalDataService();
+
   /// Fetch waveform data for a signal occurrence.
   ///
   /// [port] is the signal definition from the loaded module structure.
@@ -71,7 +74,7 @@ class WaveData {
   /// This SignalOccurrence is never modified by the service.
   final SignalOccurrence port;
 
-  /// The waveform data points [time, value] pairs.
+  /// The waveform data point `(time, value)` pairs.
   /// Data type and structure depends on the source (VCD, debugger, etc.).
   final List<Data> data;
 

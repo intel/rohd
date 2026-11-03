@@ -1,3 +1,11 @@
+// Copyright (C) 2023-2026 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// helper.dart
+//
+// 2023 March 30
+// Author: Yao Jing Quek <yao.jing.quek@intel.com>
+
 class FSResult {
   int diff = 0;
   int borrowOut = 0;

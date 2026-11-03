@@ -62,8 +62,9 @@ class NetlistSynthesisResult extends SynthesisResult {
   @override
   int get matchHashCode => _cachedJson.hashCode;
 
-  @override
+  /// Returns the single netlist artifact's contents for legacy callers.
   @Deprecated('Use `toSynthFileContents()` instead.')
+  @override
   String toFileContents() => toSynthFileContents().first.contents;
 
   @override

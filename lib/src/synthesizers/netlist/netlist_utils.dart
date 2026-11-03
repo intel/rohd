@@ -9,6 +9,7 @@
 
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/signals/signals.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_cell.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_port_direction.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
@@ -424,7 +425,7 @@ abstract class NetlistUtils {
     Logic logic, [
     List<Object>? bits,
   ]) {
-    if (logic is LogicArray) {
+    if (logic is BaseLogicArray) {
       final result = <String, Object?>{
         'width': logic.width,
         'arrayDims': logic.dimensions,
@@ -434,9 +435,9 @@ abstract class NetlistUtils {
       // include the element type metadata for recursive expansion.
       if (logic.elements.isNotEmpty) {
         final first = logic.elements.first;
-        if (first is LogicStructure && first is! LogicArray) {
+        if (first is LogicStructure && first is! BaseLogicArray) {
           result['elementType'] = buildLogicType(first);
-        } else if (first is LogicArray) {
+        } else if (first is BaseLogicArray) {
           // Nested array — encode inner dimensions via recursive call.
           result['elementType'] = buildLogicType(first);
         }
@@ -447,13 +448,13 @@ abstract class NetlistUtils {
       final fields = logic.elements.map((e) {
         final fieldBits = bits?.sublist(offset, offset + e.width);
         offset += e.width;
-        if (e is LogicStructure && e is! LogicArray) {
+        if (e is LogicStructure && e is! BaseLogicArray) {
           return <String, Object?>{
             'name': e.name,
             if (fieldBits != null) 'bits': fieldBits,
             'type': buildLogicType(e, fieldBits),
           };
-        } else if (e is LogicArray) {
+        } else if (e is BaseLogicArray) {
           return <String, Object?>{
             'name': e.name,
             'width': e.width,
@@ -483,7 +484,7 @@ abstract class NetlistUtils {
     final logics = sl.logics;
     return logics
             .whereType<LogicStructure>()
-            .where((l) => l is! LogicArray)
+            .where((l) => l is! BaseLogicArray)
             .firstOrNull ??
         logics.firstOrNull;
   }

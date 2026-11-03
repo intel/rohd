@@ -12,8 +12,9 @@ import 'package:material_ui/material_ui.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/ui/signal_table_text_field.dart';
 
 void main() {
-  testWidgets('forwards typed filters and clears them on request',
-      (tester) async {
+  testWidgets('forwards typed filters and clears them on request', (
+    tester,
+  ) async {
     final terms = <String>[];
 
     await tester.pumpWidget(
@@ -21,10 +22,7 @@ void main() {
         home: Scaffold(
           body: Row(
             children: [
-              SignalTableTextField(
-                labelText: 'Signals',
-                onChanged: terms.add,
-              ),
+              SignalTableTextField(labelText: 'Signals', onChanged: terms.add),
             ],
           ),
         ),
@@ -44,7 +42,9 @@ void main() {
     await tester.pump();
 
     expect(
-        tester.widget<TextField>(find.byType(TextField)).controller!.text, '');
+      tester.widget<TextField>(find.byType(TextField)).controller!.text,
+      '',
+    );
     expect(terms.last, '');
   });
 }

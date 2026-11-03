@@ -31,6 +31,48 @@ abstract class Always extends Module with SystemVerilog {
   @internal
   final Map<Logic, Logic> assignedDriverToInputMap = HashMap<Logic, Logic>();
 
+  /// Input ports paired with their type references and owning conditionals.
+  @internal
+  final Map<Logic, ({Logic reference, Conditional conditional})> portTypePairs =
+      {};
+
+  /// Input uses distinguished by source, type reference, and conditional.
+  final Map<(Logic, Logic, Conditional), Logic> _typePairedInputs = {};
+
+  /// All registered driver ports, including distinct type-specific uses.
+  @protected
+  Iterable<Logic> get registeredDriverInputs => {
+        ...assignedDriverToInputMap.values,
+        ..._typePairedInputs.values,
+      };
+
+  /// All input ports used by [driver], including type-specific uses.
+  @internal
+  Iterable<Logic> driverInputs(Logic driver) => {
+        if (assignedDriverToInputMap.containsKey(driver))
+          assignedDriverToInputMap[driver]!,
+        for (final entry in _typePairedInputs.entries)
+          if (identical(entry.key.$1, driver)) entry.value,
+      };
+
+  /// Registers an input use without discarding another use's type reference.
+  @internal
+  Logic registerTypePairedInput(
+          Logic driver, Logic reference, Conditional conditional) =>
+      _typePairedInputs.putIfAbsent((driver, reference, conditional), () {
+        var port = assignedDriverToInputMap[driver]!;
+        final existingPair = portTypePairs[port];
+        if (existingPair != null &&
+            (existingPair.reference != reference ||
+                existingPair.conditional != conditional)) {
+          port = addInput(
+              portUniquifier.getUniqueName(initialName: port.name), driver,
+              width: driver.width);
+        }
+        portTypePairs[port] = (reference: reference, conditional: conditional);
+        return port;
+      });
+
   /// A uniquifier for ports generated on this [Always].
   @protected
   @internal
@@ -180,6 +222,9 @@ abstract class Always extends Module with SystemVerilog {
         ports.entries.where((element) => this.inputs.containsKey(element.key)));
     final outputs = Map.fromEntries(ports.entries
         .where((element) => this.outputs.containsKey(element.key)));
+
+    assert(ports.length == inputs.length + outputs.length,
+        'All ports of an always should be inputs or outputs');
 
     var verilog = '';
     verilog += '//  $instanceName\n';

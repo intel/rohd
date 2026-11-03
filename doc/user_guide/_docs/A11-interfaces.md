@@ -16,7 +16,34 @@ When connecting an `Interface` to a `Module`, you should always create a new ins
 
 The `connectIO` function under the hood calls `addInput` and `addOutput` directly on the `Module` and connects those `Module` ports to the correct ports on the `Interface`s.  Connection is based on signal names.  You can use the `uniquify` Function argument in `connectIO` to uniquify inputs and outputs in case you have multiple instances of the same `Interface` connected to your module.
 
-`Module` has functions called `addInterfacePorts` and `addPairInterfacePorts` which conveniently call `connectIO` and `pairConnectIO` and return the "internal" copy of the interface to use within the `Module`. For these to work, all `Interface`s must implement a `clone()` method so that an internal copy can be created.
+`Module` has functions called `addInterfacePorts` and `addPairInterfacePorts` which register an `Interface` (or `PairInterface` for a given `PairRole`) on the `Module` and return the "internal" copy of the interface to use within the `Module`. For these to work, all `Interface`s must implement a `clone()` method so that an internal copy can be created. Prefer these over calling `connectIO` or `pairConnectIO` directly so that module code does not depend on how interface ports are laid out.
+
+When the internal interface should intentionally be a different object or type than a clone of the external one, use `addInterfaceFrom` or `addPairInterfaceFrom`, which register a provided target against the source and return that target.
+
+### Experimental structured interface ports
+
+`addStructuredInterface` and `addStructuredPairInterface` are experimental
+alternatives for module boundaries that consistently carry an interface in one
+direction. Selected input and output fields are grouped into separate typed
+`LogicStructure` ports when a direction has two or more fields. A direction
+with exactly one field instead creates a direct
+`<interface>_<field>` port, avoiding a one-field wrapper structure. InOut
+fields retain individual net ports.
+
+Pass `name:` to select the interface prefix, or use `uniquify:` to derive one.
+The returned internal interface clone remains the module implementation API.
+`structuredInterfacePortBindings` exposes the experimental, read-only
+relationship between the external interface, internal clone, and actual
+directional ports.
+
+```dart
+control = addStructuredInterface(
+  control,
+  name: 'control',
+  inputTags: {CounterDirection.inward, CounterDirection.misc},
+  outputTags: {CounterDirection.outward},
+);
+```
 
 ```dart
 // Define a set of legal directions for this interface, and pass as parameter to Interface
@@ -98,7 +125,7 @@ class SimpleInterface extends PairInterface {
 }
 ```
 
-Note that it comes with helpers in the super constructor for grouping ports as well as cloning the interface.  Using this interface in a simple provider/consumer scenario, even with module hierarchy is easy.  You can use the `pairConnectIO` function which references the "role" of the component rather than listing input and output tags explicitly.
+Note that it comes with helpers in the super constructor for grouping ports as well as cloning the interface.  Using this interface in a simple provider/consumer scenario, even with module hierarchy is easy.  You can use the `addPairInterfacePorts` function which references the "role" of the component rather than listing input and output tags explicitly.
 
 ```dart
 class SimpleProvider extends Module {

@@ -46,8 +46,14 @@ if [[ ! "$node_major" =~ ^[0-9]+$ ]] || (( node_major < 24 )); then
   exit 1
 fi
 
-VERSION=$(node -p "require('$EXT_DIR/package.json').version")
-VSIX="$EXT_DIR/rohd-${VERSION}.vsix"
+VERSION=$(awk '$1 == "version:" { print $2; exit }' "$EXT_DIR/pubspec.yaml")
+PUBLISHER=$(node -p "require('$EXT_DIR/package.json').publisher")
+NAME=$(node -p "require('$EXT_DIR/package.json').name")
+if [[ -z "$VERSION" ]]; then
+  echo "ERROR: Unable to read extension version from $EXT_DIR/pubspec.yaml" >&2
+  exit 1
+fi
+VSIX="$EXT_DIR/${PUBLISHER}.${NAME}-${VERSION}.vsix"
 
 # ── Build ──
 if [[ "${1:-}" != "--skip-build" ]]; then
@@ -59,8 +65,9 @@ if [[ "${1:-}" != "--skip-build" ]]; then
   npx tsc
 
   echo "── Packaging VSIX ──"
-  rm -f "$EXT_DIR"/rohd-*.vsix
-  npm run package
+  rm -f "$VSIX"
+  npm run package -- --out "$VSIX"
+  npm run verify:marketplace -- "$VSIX"
 fi
 
 # ── Install ──

@@ -4,9 +4,13 @@
 .vscodeignore
 Makefile
 dart/**
+.dart_tool/
+build/
 node_modules/@types/**
 out/**/*.map
 package-lock.json
+pubspec.yaml
+pubspec.lock
 src/**
 tool/**
 tsconfig.json

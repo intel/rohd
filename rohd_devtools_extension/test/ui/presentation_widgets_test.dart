@@ -28,16 +28,12 @@ void main() {
   });
 
   group('PlatformIcon', () {
-    testWidgets('renders emoji text when color emoji is available',
-        (tester) async {
+    testWidgets('renders emoji text when color emoji is available', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         const MaterialApp(
-          home: PlatformIcon(
-            Icons.waves,
-            'wave',
-            size: 24,
-            color: Colors.teal,
-          ),
+          home: PlatformIcon(Icons.waves, 'wave', size: 24, color: Colors.teal),
         ),
       );
 
@@ -47,8 +43,9 @@ void main() {
       expect(text.style!.color, Colors.teal);
     });
 
-    testWidgets('renders the Material icon when emoji is unavailable',
-        (tester) async {
+    testWidgets('renders the Material icon when emoji is unavailable', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: PlatformIcon(

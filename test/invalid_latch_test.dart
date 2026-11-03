@@ -5,6 +5,8 @@
 // Test behavior when latch-like logic is constructed at a gate level.
 //
 // 2023 April 17
+// Author: Max Korbel <max.korbel@intel.com>
+
 // Based on bug reports:
 // - https://github.com/intel/rohd/issues/286
 // - https://github.com/intel/rohd/issues/285

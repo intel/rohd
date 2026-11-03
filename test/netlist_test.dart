@@ -373,7 +373,7 @@ void main() {
 
     test('OvenModule', () async {
       final oven = OvenModule(
-        Logic(name: 'button', width: 2),
+        LogicEnum(Button.values, name: 'button'),
         Logic(name: 'reset'),
         SimpleClockGenerator(10).clk,
       );

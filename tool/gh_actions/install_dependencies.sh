@@ -11,5 +11,6 @@
 
 set -euo pipefail
 
-dart pub get
+bash tool/gh_actions/write_local_package_overrides.sh
+flutter pub get
 dart pub get --directory=doc/tutorials/chapter_9/rohd_vf_example

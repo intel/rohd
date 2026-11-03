@@ -17,13 +17,18 @@ set -euo pipefail
 
 DEST="../extension/devtools"
 
+bash tool/gh_actions/write_local_package_overrides.sh
+
 # ═══════════════════════════════════════════════════════════════════════
 #  Build starts here
 # ═══════════════════════════════════════════════════════════════════════
 
+flutter pub get
+
 cd rohd_devtools_extension
 
-flutter pub get
+dart run tool/verify_local_package_resolution.dart
+make web/dart_wellen
 
 echo ""
 echo "════════════════════════════════════════════════════════════"
@@ -32,10 +37,21 @@ echo "════════════════════════�
 
 flutter build web --pwa-strategy=none --release --no-tree-shake-icons
 
-if [ ! -f build/web/canvaskit/canvaskit.js ] || [ ! -f build/web/canvaskit/canvaskit.wasm ]; then
-  echo "  Expected CanvasKit artifacts were not generated."
-  exit 1
-fi
+rm -rf build/web/dart_wellen
+cp -R web/dart_wellen build/web/
+
+required_web_artifacts=(
+  build/web/canvaskit/canvaskit.js
+  build/web/canvaskit/canvaskit.wasm
+  build/web/dart_wellen/wellen_bridge.js
+  build/web/dart_wellen/wellen_bridge_bg.wasm
+)
+for required_web_artifact in "${required_web_artifacts[@]}"; do
+  if [[ ! -f "$required_web_artifact" ]]; then
+    echo "  Expected web artifact was not generated: $required_web_artifact"
+    exit 1
+  fi
+done
 
 chmod 0755 build/web/canvaskit/canvaskit.js build/web/canvaskit/canvaskit.wasm
 

@@ -80,6 +80,16 @@ abstract class Conditional {
     _assignedDriverToInputMap = assignedDriverToInputMap;
     _parentConditional = parentConditional;
     _parentAlways = parentAlways;
+    for (final entry in portTypePairs.entries) {
+      final port = parentAlways.registerTypePairedInput(
+          entry.key, registeredPort(entry.value), this);
+      if (port != _assignedDriverToInputMap[entry.key]) {
+        if (identical(_assignedDriverToInputMap, assignedDriverToInputMap)) {
+          _assignedDriverToInputMap = {...assignedDriverToInputMap};
+        }
+        _assignedDriverToInputMap[entry.key] = port;
+      }
+    }
     for (final conditional in conditionals) {
       conditional.updateRegistration(
         assignedReceiverToOutputMap: assignedReceiverToOutputMap,
@@ -119,6 +129,18 @@ abstract class Conditional {
   Logic receiverOutput(Logic receiver) =>
       _assignedReceiverToOutputMap[receiver]!;
 
+  /// Gets the port registered for [driverOrReceiver] by the enclosing block.
+  @internal
+  Logic registeredPort(Logic driverOrReceiver) {
+    final port = _assignedDriverToInputMap[driverOrReceiver] ??
+        _assignedReceiverToOutputMap[driverOrReceiver];
+    if (port == null) {
+      throw StateError(
+          'Logic $driverOrReceiver is not registered in this Conditional.');
+    }
+    return port;
+  }
+
   /// Executes the functionality of this [Conditional] and
   /// populates [drivenSignals] with all [Logic]s that were driven
   /// during execution.
@@ -132,11 +154,6 @@ abstract class Conditional {
   @protected
   void execute(Set<Logic>? drivenSignals, void Function(Logic toGuard)? guard);
 
-  /// Lists *all* receivers, recursively including all sub-[Conditional]s
-  /// receivers.
-  @Deprecated('Use `receivers` instead.')
-  List<Logic> getReceivers() => receivers;
-
   /// The same as [receivers], but uncached for situations where the list of
   /// [conditionals] may still be modified or to compute the cached result
   /// for [receivers] itself.
@@ -149,24 +166,30 @@ abstract class Conditional {
   List<Logic> get receivers;
 
   /// Lists *all* drivers, recursively including all sub-[Conditional]s drivers.
-  @Deprecated('Use `drivers` instead.')
-  List<Logic> getDrivers() => drivers;
-
-  /// Lists *all* drivers, recursively including all sub-[Conditional]s drivers.
   List<Logic> get drivers;
 
   /// Lists of *all* [Conditional]s directly contained within this [Conditional]
   /// (not including itself).
   ///
   /// Does *not* recursively call down through sub-[Conditional]s.
-  @Deprecated('Use `conditionals` instead.')
-  List<Conditional> getConditionals() => conditionals;
-
-  /// Lists of *all* [Conditional]s directly contained within this [Conditional]
-  /// (not including itself).
-  ///
-  /// Does *not* recursively call down through sub-[Conditional]s.
   List<Conditional> get conditionals;
+
+  /// Type references for this conditional's own input uses.
+  ///
+  /// Child [conditionals] register their pairs independently with the enclosing
+  /// [Combinational] or [Sequential], preserving distinct uses of one driver.
+  ///
+  /// NOTE: This is for internal usage only, and the API will not be guaranteed
+  /// to be stable.
+  @internal
+  Map<Logic, Logic> get portTypePairs => const {};
+
+  /// Whether synthesis should apply [reference]'s resolved type to this use.
+  ///
+  /// A null [constantValue] indicates a non-constant input.
+  /// May throw if [constantValue] is invalid for the paired type in this use.
+  @internal
+  bool shouldPropagateType(Logic reference, LogicValue? constantValue) => true;
 
   /// Returns a [String] of SystemVerilog to be used in generated output.
   ///
@@ -179,7 +202,7 @@ abstract class Conditional {
   String verilogContents(int indent, Map<String, String> inputsNameMap,
       Map<String, String> outputsNameMap, String assignOperator);
 
-  /// Calculates an amount of padding to provie at the beginning of each new
+  /// Calculates an amount of padding to provide at the beginning of each new
   /// line based on [indent].
   static String calcPadding(int indent) => List.filled(indent, '  ').join();
 
@@ -193,39 +216,45 @@ abstract class Conditional {
 
     // take all the "current" names for these signals
     for (final ssaDriver in ssaDrivers) {
-      if (!mappings.containsKey(ssaDriver.ref)) {
-        throw UninitializedSignalException(ssaDriver.ref.name);
+      final reference = SsaLogic.referenceOf(ssaDriver, context: context);
+      if (!mappings.containsKey(reference)) {
+        throw UninitializedSignalException(reference.name);
       }
 
       // if these are already connected, just skip it, we're fine already
       if (ssaDriver.srcConnection != null &&
-          ssaDriver.srcConnection == mappings[ssaDriver.ref]!) {
+          ssaDriver.srcConnection == mappings[reference]!) {
         continue;
       }
 
       // if these are the same signal, also just skip it
-      if (ssaDriver == mappings[ssaDriver.ref]!) {
+      if (ssaDriver == mappings[reference]!) {
         continue;
       }
 
       // if at this point there's still a srcConnection, then something is wrong
       // and someone probably reused a signal when they shouldn't have
       if (ssaDriver.srcConnection != null) {
-        throw MappedSignalAlreadyAssignedException(ssaDriver.ref.name);
+        throw MappedSignalAlreadyAssignedException(reference.name);
       }
 
-      ssaDriver <= mappings[ssaDriver.ref]!;
+      ssaDriver <= mappings[reference]!;
     }
   }
 
   /// Searches for SSA nodes from a source [driver] which match the [context].
-  static List<SsaLogic> _findSsaDriversFrom(Logic driver, int context) {
-    if (driver is SsaLogic && driver.context == context) {
+  static List<Logic> _findSsaDriversFrom(Logic driver, int context) {
+    if (SsaLogic.isSsaProxy(driver, context: context)) {
       return [driver];
     }
 
     // no need to check for context on this map since it clears each time
-    return Combinational.signalToSsaDrivers[driver]?.toList() ?? const [];
+    return Combinational.signalToSsaDrivers[driver]
+            ?.where(
+              (signal) => SsaLogic.isSsaProxy(signal, context: context),
+            )
+            .toList() ??
+        const [];
   }
 
   /// Given existing [currentMappings], connects [drivers] and [receivers]
