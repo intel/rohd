@@ -9,6 +9,7 @@
 
 import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/signals/signals.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
 
 /// Represents a submodule instantiation for SystemVerilog.
@@ -38,12 +39,14 @@ class SystemVerilogSynthSubModuleInstantiation
       plainPorts.map(
         (name, synthLogic) => MapEntry(
           name,
-          synthLogicToInlineableSynthSubmoduleMap?[synthLogic]
-                  ?.inlineVerilog() ??
-              // if cleared, then empty port
-              (synthLogic.declarationCleared
-                  ? ''
-                  : _connectionName(synthLogic)),
+          synthLogic.width == 0 && !synthLogic.isArray
+              ? "1'b0"
+              : synthLogicToInlineableSynthSubmoduleMap?[synthLogic]
+                      ?.inlineVerilog() ??
+                  // if cleared, then empty port
+                  (synthLogic.declarationCleared
+                      ? ''
+                      : _connectionName(synthLogic)),
         ),
       );
 
@@ -122,6 +125,18 @@ class SystemVerilogSynthSubModuleInstantiation
     Map<String, int>? outputPortColumns,
   }) {
     if (!needsInstantiation) {
+      return null;
+    }
+    final observablePorts = [...module.outputs.values, ...module.inOuts.values];
+    if (observablePorts.isNotEmpty &&
+        observablePorts.every(
+          (port) => port.width == 0 && port is! BaseLogicArray,
+        )) {
+      return null;
+    }
+    if (module is InlineSystemVerilog &&
+        inlineResultLogic?.width == 0 &&
+        !(inlineResultLogic?.isArray ?? false)) {
       return null;
     }
 

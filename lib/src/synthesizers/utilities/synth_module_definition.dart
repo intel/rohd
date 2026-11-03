@@ -747,6 +747,16 @@ class SynthModuleDefinition {
     }
 
     // The order of these is important!
+    if (omitsZeroWidthAssignments) {
+      // Scalar empty values carry no bits, so their assignments have no
+      // observable hardware effect and cannot participate in packed-range
+      // rewrites.
+      assignments.removeWhere(
+        (assignment) =>
+            (assignment.src.width == 0 && !assignment.src.isArray) ||
+            (assignment.dst.width == 0 && !assignment.dst.isArray),
+      );
+    }
     _collapseArrays();
     _collapseSimpleRangeAssignments();
     _collapseWideArrayElementRangeSources();
@@ -777,6 +787,10 @@ class SynthModuleDefinition {
   /// concatenation of signals instead of retaining its intermediate signal.
   @protected
   bool get supportsPackedOutputPortConcatenation => true;
+
+  /// Whether this backend removes assignments with a zero-width endpoint.
+  @protected
+  bool get omitsZeroWidthAssignments => false;
 
   /// Connects an exclusively produced packed bus to meaningful destinations.
   ///

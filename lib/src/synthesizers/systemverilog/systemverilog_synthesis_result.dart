@@ -102,6 +102,10 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
   /// The main [SynthModuleDefinition] for this.
   final SynthModuleDefinition _synthModuleDefinition;
 
+  /// Whether [signal] is a scalar empty value omitted from SystemVerilog.
+  static bool _isOmittedZeroWidthSignal(SynthLogic signal) =>
+      signal.width == 0 && !signal.isArray;
+
   @override
   List<Module> get supportingModules =>
       _synthModuleDefinition.supportingModules;
@@ -164,7 +168,9 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
       ]);
 
   /// Representation of all input port declarations in generated SV.
-  Iterable<String> _verilogInputs() => _synthModuleDefinition.inputs.map((sig) {
+  Iterable<String> _verilogInputs() => _synthModuleDefinition.inputs
+          .where((sig) => !_isOmittedZeroWidthSignal(sig))
+          .map((sig) {
         assert(
           module.tryInput(sig.name) != null,
           'Named input ${sig.name} not found in module ${module.name}.',
@@ -173,8 +179,9 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
       });
 
   /// Representation of all output port declarations in generated SV.
-  Iterable<String> _verilogOutputs() =>
-      _synthModuleDefinition.outputs.map((sig) {
+  Iterable<String> _verilogOutputs() => _synthModuleDefinition.outputs
+          .where((sig) => !_isOmittedZeroWidthSignal(sig))
+          .map((sig) {
         assert(
           module.tryOutput(sig.name) != null,
           'Named output ${sig.name} not found in module ${module.name}.',
@@ -195,7 +202,9 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
       });
 
   /// Representation of all inout port declarations in generated SV.
-  Iterable<String> _verilogInOuts() => _synthModuleDefinition.inOuts.map((sig) {
+  Iterable<String> _verilogInOuts() => _synthModuleDefinition.inOuts
+          .where((sig) => !_isOmittedZeroWidthSignal(sig))
+          .map((sig) {
         assert(
           module.tryInOut(sig.name) != null,
           'Named inOut ${sig.name} not found in module ${module.name}.',
@@ -227,7 +236,7 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
   String _verilogInternalSignals(_SvTraceHelper traceHelper) {
     final declarations = <String>[];
     for (final sig in _synthModuleDefinition.internalSignals
-        .where((e) => e.needsDeclaration)
+        .where((e) => e.needsDeclaration && !_isOmittedZeroWidthSignal(e))
         .sorted((a, b) => a.name.compareTo(b.name))) {
       // Prefer placing the trace on the first assignment rather than
       // the declaration — the assignment is the more meaningful location
@@ -295,6 +304,10 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
     final tracedDsts = <String>{};
 
     for (final assignment in _synthModuleDefinition.assignments) {
+      if (_isOmittedZeroWidthSignal(assignment.dst)) {
+        continue;
+      }
+
       assert(
         !(assignment.src.isNet && assignment.dst.isNet),
         'Net connections should have been implemented as'
@@ -307,7 +320,9 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
       final normalizesWholeEnumDestination =
           assignment.dst.isEnum && assignsWholeDestination;
       var destination = assignment.dst.name;
-      var source = assignment.src.name;
+      var source = _isOmittedZeroWidthSignal(assignment.src)
+          ? "1'b0"
+          : assignment.src.name;
       if (assignment is RangeSynthAssignment) {
         if (!normalizesWholeEnumDestination) {
           destination = assignment.dst.rangeName(
@@ -315,13 +330,15 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
             assignment.dstUpperIndex,
           );
         }
-        source = assignment.srcLowerIndex == 0 &&
-                assignment.srcUpperIndex == assignment.src.width - 1
-            ? assignment.src.name
-            : assignment.src.rangeName(
-                assignment.srcLowerIndex,
-                assignment.srcUpperIndex,
-              );
+        if (!_isOmittedZeroWidthSignal(assignment.src)) {
+          source = assignment.srcLowerIndex == 0 &&
+                  assignment.srcUpperIndex == assignment.src.width - 1
+              ? assignment.src.name
+              : assignment.src.rangeName(
+                  assignment.srcLowerIndex,
+                  assignment.srcUpperIndex,
+                );
+        }
       } else if (assignment is PartialSynthAssignment &&
           assignment.width > 1 &&
           !normalizesWholeEnumDestination) {

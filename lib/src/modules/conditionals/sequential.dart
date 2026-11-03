@@ -161,6 +161,11 @@ class Sequential extends Always {
   /// If [asyncReset] is true, the [reset] signal (if provided) will be treated
   /// as an async reset. If [asyncReset] is false, the reset signal will be
   /// treated as synchronous.
+  ///
+  /// An async reset with a non-constant [resetValues] driver can infer
+  /// independently timed async set and clear pins in synthesis. Prefer a
+  /// constant async reset value followed by a synchronous load. ROHD logs a
+  /// warning when it detects this combination.
   Sequential(
     Logic clk,
     List<Conditional> conditionals, {
@@ -194,6 +199,11 @@ class Sequential extends Always {
   /// as an async reset. If [asyncReset] is false, the reset signal will be
   /// treated as synchronous.
   ///
+  /// An async reset with a non-constant [resetValues] driver can infer
+  /// independently timed async set and clear pins in synthesis. Prefer a
+  /// constant async reset value followed by a synchronous load. ROHD logs a
+  /// warning when it detects this combination.
+  ///
   /// If a trigger signal is sampled within the `conditionals`, the value will
   /// be the "new" value of that trigger, as opposed to the "old" value as with
   /// other non-trigger signals. This is meant to help model how an asynchronous
@@ -209,12 +219,14 @@ class Sequential extends Always {
     List<Logic> posedgeTriggers,
     super._conditionals, {
     Logic? reset,
-    super.resetValues,
+    Map<Logic, dynamic>? resetValues,
     this.asyncReset = false,
     super.name = 'sequential',
     this.allowMultipleAssignments = true,
     List<Logic> negedgeTriggers = const [],
-  }) : super(reset: reset) {
+  }) : super(reset: reset, resetValues: resetValues) {
+    _warnOnDynamicAsyncResetValues(reset, resetValues);
+
     _registerInputTriggers([
       ...posedgeTriggers,
       if (reset != null && asyncReset) reset,
@@ -226,6 +238,56 @@ class Sequential extends Always {
     }
 
     _setup();
+  }
+
+  /// Warns when an async reset uses a dynamically driven reset value.
+  void _warnOnDynamicAsyncResetValues(
+    Logic? reset,
+    Map<Logic, dynamic>? resetValues,
+  ) {
+    if (!asyncReset || reset == null || resetValues == null) {
+      return;
+    }
+
+    final dynamicReceivers = [
+      for (final entry in resetValues.entries)
+        if (!_isConstantResetValue(entry.value)) entry.key,
+    ];
+    if (dynamicReceivers.isEmpty) {
+      return;
+    }
+
+    Simulator.logger.warning(
+      'Sequential "$name" uses asyncReset with non-constant resetValues for '
+      '${dynamicReceivers.map((receiver) => receiver.name).join(', ')}. '
+      'This can infer independently timed async set and clear pins. Prefer a '
+      'constant async reset value followed by a synchronous load.',
+    );
+  }
+
+  /// Returns whether [value] resolves entirely to compile-time constants.
+  static bool _isConstantResetValue(dynamic value) {
+    if (value is LogicStructure) {
+      return value.leafElements.every(_isConstantLogic);
+    }
+    return value is! Logic || _isConstantLogic(value);
+  }
+
+  /// Returns whether [logic] is a [Const] or a connected alias of one.
+  static bool _isConstantLogic(Logic logic) {
+    final visited = <Logic>{};
+    while (visited.add(logic)) {
+      if (logic is Const) {
+        return true;
+      }
+
+      final source = logic.srcConnection;
+      if (source == null) {
+        return false;
+      }
+      logic = source;
+    }
+    return false;
   }
 
   /// Registers either positive or negative edge trigger inputs for
@@ -320,9 +382,7 @@ class Sequential extends Always {
             unawaited(Simulator.postTick.first.then((value) {
               // once the tick has completed,
               // we can update the override maps
-              _driverInputsPendingPostUpdate
-                ..forEach(_updateInputToPreTickInputValue)
-                ..clear();
+              _updatePendingStableInputs();
               _pendingPostUpdate = false;
             }).catchError(test: (error) => error is Exception,
                 (Object err, StackTrace stackTrace) {
@@ -344,7 +404,22 @@ class Sequential extends Always {
           _raceTracker.triggered();
         }
 
-        if (!_pendingExecute) {
+        if (Simulator.phase == SimulatorPhase.clkStable) {
+          // A Sequential output can directly clock another Sequential. Queue
+          // execution after the producer completes so all of its output
+          // assignments, including reset changes, are visible to the child.
+          if (!_pendingExecute) {
+            _pendingExecute = true;
+            Simulator.registerClkStableAction(() {
+              try {
+                _updatePendingStableInputs();
+                _execute();
+              } finally {
+                _pendingExecute = false;
+              }
+            });
+          }
+        } else if (!_pendingExecute) {
           unawaited(Simulator.clkStable.first.then<void>((value) {
             // once the clocks are stable, execute the contents of the seq
             _execute();
@@ -357,10 +432,18 @@ class Sequential extends Always {
             }
             Error.throwWithStackTrace(err, stackTrace);
           }).onError<Exception>(Simulator.throwException));
+          _pendingExecute = true;
         }
-        _pendingExecute = true;
       });
     }
+  }
+
+  /// Samples inputs updated by a producer during the current clock-stable
+  /// phase before this block runs from that producer's derived clock edge.
+  void _updatePendingStableInputs() {
+    _driverInputsPendingPostUpdate
+      ..forEach(_updateInputToPreTickInputValue)
+      ..clear();
   }
 
   /// Drives [LogicValue.x] on all outputs of this [Sequential].

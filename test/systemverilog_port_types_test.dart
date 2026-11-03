@@ -91,6 +91,53 @@ class _NestedPortTypesChild extends Module {
   }
 }
 
+class _ZeroWidthRoot extends Module {
+  _ZeroWidthRoot() {
+    final emptyInput = addInput('emptyInput', Logic(width: 0), width: 0);
+    final emptyOutput = addOutput('emptyOutput', width: 0);
+    addInOut('emptyInOut', LogicNet(width: 0), width: 0);
+    emptyOutput <= emptyInput;
+    addOutput('isEmpty') <= emptyInput.eq(Const(0, width: 0));
+  }
+}
+
+class _ZeroWidthLeaf extends Module {
+  _ZeroWidthLeaf(Logic emptyInput) {
+    emptyInput = addInput('emptyInput', emptyInput, width: 0);
+    final emptyOutput = addOutput('emptyOutput', width: 0);
+    emptyOutput <= emptyInput;
+    addOutput('isEmpty') <= emptyInput.eq(Const(0, width: 0));
+  }
+}
+
+class _ZeroWidthNestedTop extends Module {
+  _ZeroWidthNestedTop() {
+    final emptyLink = Logic(width: 0, name: 'emptyLink');
+    final child = _ZeroWidthLeaf(emptyLink);
+    addOutput('isEmpty') <= child.output('isEmpty');
+  }
+}
+
+class _ZeroWidthSequentialConditional extends Module {
+  _ZeroWidthSequentialConditional() {
+    final clk = addInput('clk', Logic());
+    final reset = addInput('reset', Logic());
+    final select = addInput('select', Logic());
+    final emptyIn = addInput('emptyIn', Logic(width: 0), width: 0);
+    final dataIn = addInput('dataIn', Logic(width: 8), width: 8);
+    final emptyOut = addOutput('emptyOut', width: 0);
+    final dataOut = addOutput('dataOut', width: 8);
+
+    Sequential(clk, reset: reset, [
+      If(
+        select,
+        then: [emptyOut < emptyIn, dataOut < dataIn],
+        orElse: [emptyOut < emptyIn, dataOut < 0],
+      ),
+    ]);
+  }
+}
+
 void main() {
   tearDown(() async {
     await Simulator.reset();
@@ -202,6 +249,66 @@ void main() {
       );
     });
   }
+
+  test('root definition omits zero-width ports', () async {
+    final module = _ZeroWidthRoot();
+    await module.build();
+
+    final sv = module.dumpSystemVerilog();
+
+    expect(sv, contains('output logic isEmpty'), reason: sv);
+    expect(sv, contains("assign isEmpty = 1'b0 == 1'b0;"), reason: sv);
+    expect(sv, isNot(contains('input logic emptyInput')), reason: sv);
+    expect(sv, isNot(contains('output logic emptyOutput')), reason: sv);
+    expect(sv, isNot(contains('inout wire emptyInOut')), reason: sv);
+    expect(sv, isNot(contains('[-1:0]')), reason: sv);
+
+    final vectors = [
+      Vector(
+        {'emptyInput': LogicValue.empty},
+        {'emptyOutput': LogicValue.empty, 'isEmpty': 1},
+      ),
+    ];
+    await SimCompare.checkFunctionalVector(module, vectors);
+    SimCompare.checkIverilogVector(module, vectors);
+  });
+
+  test('nested definitions omit zero-width port connections', () async {
+    final module = _ZeroWidthNestedTop();
+    await module.build();
+
+    final sv = module.dumpSystemVerilog();
+
+    expect(sv, contains('output logic isEmpty'), reason: sv);
+    expect(sv, contains("assign isEmpty = 1'b0 == 1'b0;"), reason: sv);
+    expect(sv, isNot(contains('input logic emptyInput')), reason: sv);
+    expect(sv, isNot(contains('output logic emptyOutput')), reason: sv);
+    expect(sv, isNot(contains('.emptyInput(')), reason: sv);
+    expect(sv, isNot(contains('.emptyOutput(')), reason: sv);
+    expect(sv, isNot(contains('logic emptyLink;')), reason: sv);
+    expect(sv, isNot(contains('[-1:0]')), reason: sv);
+
+    final vectors = [
+      Vector({}, {'isEmpty': 1})
+    ];
+    await SimCompare.checkFunctionalVector(module, vectors);
+    SimCompare.checkIverilogVector(module, vectors);
+  });
+
+  test('sequential conditionals omit zero-width assignments', () async {
+    final module = _ZeroWidthSequentialConditional();
+    await module.build();
+
+    final sv = module.dumpSystemVerilog();
+
+    expect(sv, contains('always_ff'), reason: sv);
+    expect(sv, contains('<= dataIn'), reason: sv);
+    expect(sv, isNot(contains('emptyIn')), reason: sv);
+    expect(sv, isNot(contains('emptyOut')), reason: sv);
+    expect(sv, isNot(contains('[-1:0]')), reason: sv);
+
+    SimCompare.checkIverilogVector(module, [], buildOnly: true);
+  });
 
   // Icarus 12.0 compiles the variable modes below, but a child-driven
   // unpacked output remains X. Verilator 5.020 simulates every mode.

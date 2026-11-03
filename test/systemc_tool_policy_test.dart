@@ -16,6 +16,8 @@ import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
 
+import 'systemc_test_utils.dart';
+
 class _ToolPolicyModule extends Module {
   _ToolPolicyModule() : super(name: 'toolPolicyModule') {
     final dataIn = addInput('dataIn', Logic());
@@ -43,19 +45,23 @@ void main() {
   });
   tearDownAll(SimCompare.cleanupSystemCCache);
 
-  test('shared vector defaults run ROHD, Icarus, and SystemC', () async {
+  test('shared vector defaults skip unavailable SystemC', () async {
     final module = await _buildModule();
     final report = await SimCompare.checkVectors(
       module,
       [
         Vector({'dataIn': 1}, {'dataOut': 1}),
       ],
-      requireSystemC: true,
     );
 
     expect(report.results.keys, SimCompare.defaultVectorBackends);
-    for (final result in report.results.values) {
-      expect(result.status, SimCompareBackendStatus.passed);
+    for (final entry in report.results.entries) {
+      expect(
+        entry.value.status,
+        entry.key == SimCompareBackend.systemc && !hasSystemCInstallation
+            ? SimCompareBackendStatus.skipped
+            : SimCompareBackendStatus.passed,
+      );
     }
   });
 
@@ -219,7 +225,7 @@ void main() {
     } finally {
       exe.cleanup();
     }
-  });
+  }, skip: systemCIntegrationSkip);
 
   test('SystemC vectors preserve unsigned 64-bit values', () async {
     final module = _Unsigned64BoundaryModule();
@@ -251,7 +257,7 @@ void main() {
     } finally {
       exe.cleanup();
     }
-  });
+  }, skip: systemCIntegrationSkip);
 
   test('SystemC vector checks reject four-state values', () async {
     final module = await _buildModule();
@@ -281,5 +287,5 @@ void main() {
     } finally {
       exe.cleanup();
     }
-  });
+  }, skip: systemCIntegrationSkip);
 }

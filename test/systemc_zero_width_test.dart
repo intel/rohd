@@ -15,6 +15,8 @@ import 'dart:io';
 import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
 
+import 'systemc_test_utils.dart';
+
 class _EmptyAddressLeaf extends Module {
   _EmptyAddressLeaf(Logic address) {
     address = addInput('address', address, width: 0);
@@ -77,5 +79,7 @@ int sc_main(int,char**) {
     } finally {
       await directory.delete(recursive: true);
     }
-  }, timeout: const Timeout(Duration(minutes: 2)));
+  },
+      timeout: const Timeout(Duration(minutes: 2)),
+      skip: systemCIntegrationSkip);
 }

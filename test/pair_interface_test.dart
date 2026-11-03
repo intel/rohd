@@ -233,6 +233,74 @@ class _TypedPairConsumer extends Module {
   }
 }
 
+class _EndpointPair extends PairInterface {
+  Logic get data => port('data');
+  Logic get request => port('request');
+  Logic get response => port('response');
+
+  _EndpointPair()
+      : super(
+          portsFromConsumer: [Logic.port('response', 4)],
+          portsFromProvider: [Logic.port('request', 4)],
+          sharedInputPorts: [Logic.port('data', 4)],
+        );
+
+  @override
+  _EndpointPair clone() => _EndpointPair();
+}
+
+class _EndpointProvider extends Module {
+  _EndpointProvider(
+    PairProvider<_EndpointPair> endpoint, {
+    required bool useAddFrom,
+  }) : super(
+          definitionName:
+              useAddFrom ? 'EndpointProviderFrom' : 'EndpointProviderPorts',
+        ) {
+    final pair = useAddFrom
+        ? addPairProviderFrom(_EndpointPair(), endpoint)
+        : addPairProviderPorts(endpoint);
+    pair.request <= pair.data + 1;
+  }
+}
+
+class _EndpointConsumer extends Module {
+  _EndpointConsumer(
+    PairConsumer<_EndpointPair> endpoint, {
+    required bool useAddFrom,
+  }) : super(
+          definitionName:
+              useAddFrom ? 'EndpointConsumerFrom' : 'EndpointConsumerPorts',
+        ) {
+    final pair = useAddFrom
+        ? addPairConsumerFrom(_EndpointPair(), endpoint)
+        : addPairConsumerPorts(endpoint);
+    pair.response <= pair.request + 1;
+  }
+}
+
+class _EndpointTop extends Module {
+  Logic get response => output('response');
+
+  _EndpointTop(
+    Logic data, {
+    required bool useAddFrom,
+  }) : super(
+          definitionName: useAddFrom ? 'EndpointTopFrom' : 'EndpointTopPorts',
+        ) {
+    data = addInput('data', data, width: 4);
+    final response = addOutput('response', width: 4);
+    final pair = _EndpointPair();
+    pair.data <= data;
+
+    final (provider, consumer) = pair.split();
+    _EndpointProvider(provider, useAddFrom: useAddFrom);
+    _EndpointConsumer(consumer, useAddFrom: useAddFrom);
+
+    response <= pair.response;
+  }
+}
+
 void main() {
   tearDown(() async {
     await Simulator.reset();
@@ -246,6 +314,54 @@ void main() {
     final sv = mod.dumpSystemVerilog();
     expect(sv, contains('input logic simple_clk'));
   });
+
+  test('split preserves the interface type for each endpoint', () {
+    final pair = _EndpointPair();
+    final (provider, consumer) = pair.split();
+
+    expect(provider, isA<PairProvider<_EndpointPair>>());
+    expect(consumer, isA<PairConsumer<_EndpointPair>>());
+    expect(provider.interface, same(pair));
+    expect(consumer.interface, same(pair));
+  });
+
+  for (final useAddFrom in [false, true]) {
+    test(
+        'typed endpoints connect the roles through hierarchy '
+        'with useAddFrom: $useAddFrom', () async {
+      final dut = _EndpointTop(Logic(width: 4), useAddFrom: useAddFrom);
+      await dut.build();
+
+      expect(dut.inputs.keys, contains('data'));
+      expect(dut.outputs.keys, contains('response'));
+
+      final sv = dut.dumpSystemVerilog();
+      expect(
+        sv,
+        contains(
+          useAddFrom
+              ? 'module EndpointProviderFrom'
+              : 'module EndpointProviderPorts',
+        ),
+      );
+      expect(
+        sv,
+        contains(
+          useAddFrom
+              ? 'module EndpointConsumerFrom'
+              : 'module EndpointConsumerPorts',
+        ),
+      );
+
+      final vectors = [
+        Vector({'data': 0}, {'response': 2}),
+        Vector({'data': 5}, {'response': 7}),
+        Vector({'data': 15}, {'response': 1}),
+      ];
+      await SimCompare.checkFunctionalVector(dut, vectors);
+      SimCompare.checkIverilogVector(dut, vectors);
+    });
+  }
 
   test('clone preserves typed arrays through pair interface ports', () async {
     final samples = TypedLogicArray<_PairSample, _PairValue>(

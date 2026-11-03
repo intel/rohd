@@ -72,6 +72,61 @@ class LogicNetSubsetModule extends Module {
   }
 }
 
+class _SwizzleReceiverModule extends Module {
+  _SwizzleReceiverModule(Logic source) {
+    source = addInput('source', source, width: source.width);
+    final upper = addOutput('upper', width: 4);
+    final lower = addOutput('lower', width: 4);
+
+    [upper, lower].swizzle() <= source;
+  }
+}
+
+class _SubsetReceiverModule extends Module {
+  _SubsetReceiverModule(Logic source) {
+    source = addInput('source', source, width: source.width);
+    final destination = addOutput('destination', width: 8);
+
+    destination.slice(5, 3) <= source;
+  }
+}
+
+class _NetSwizzleReceiverModule extends Module {
+  _NetSwizzleReceiverModule(
+    LogicNet source,
+    LogicNet targetUpper,
+    LogicNet targetLower,
+  ) {
+    source = addInOut('source', source, width: 8);
+    targetUpper = addInOut('targetUpper', targetUpper, width: 4);
+    targetLower = addInOut('targetLower', targetLower, width: 4);
+
+    [targetUpper, targetLower].swizzle() <= source;
+  }
+}
+
+class _NestedReceiverViewsModule extends Module {
+  _NestedReceiverViewsModule(
+    Logic a,
+    Logic b,
+    Logic c,
+    Logic d,
+  ) {
+    a = addInput('a', a);
+    b = addInput('b', b);
+    c = addInput('c', c);
+    d = addInput('d', d);
+    final destination = addOutput('destination', width: 4);
+
+    destination.getRange(0, 4)[0] <= a;
+    destination[1] <= b;
+
+    final reversedUpper = [destination[3], destination[2]].swizzle();
+    reversedUpper[0] <= c;
+    destination[3] <= d;
+  }
+}
+
 void main() {
   tearDown(() async {
     await Simulator.reset();
@@ -193,6 +248,117 @@ void main() {
         await SimCompare.checkFunctionalVector(mod, vectors);
         SimCompare.checkIverilogVector(mod, vectors);
       });
+    });
+  });
+
+  group('receiver views', () {
+    test('swizzle receiver routes source ranges to each signal', () async {
+      final dut = _SwizzleReceiverModule(Logic(width: 8));
+      await dut.build();
+
+      final sv = dut.dumpSystemVerilog();
+      expect(sv, contains('assign upper = source[7:4];'));
+      expect(sv, contains('assign lower = source[3:0];'));
+
+      final vectors = [
+        Vector({'source': 0xa5}, {'upper': 0xa, 'lower': 0x5}),
+        Vector({'source': 0x3c}, {'upper': 0x3, 'lower': 0xc}),
+      ];
+
+      await SimCompare.checkFunctionalVector(dut, vectors);
+      SimCompare.checkIverilogVector(dut, vectors);
+    });
+
+    test('subset receiver updates only its selected destination range',
+        () async {
+      final dut = _SubsetReceiverModule(Logic(width: 3));
+      await dut.build();
+
+      final sv = dut.dumpSystemVerilog();
+      expect(sv, contains('assign destination'));
+
+      final vectors = [
+        Vector(
+          {'source': 0x5},
+          {'destination': LogicValue.ofString('zz101zzz')},
+        ),
+        Vector(
+          {'source': 0x2},
+          {'destination': LogicValue.ofString('zz010zzz')},
+        ),
+      ];
+
+      await SimCompare.checkFunctionalVector(dut, vectors);
+      SimCompare.checkIverilogVector(dut, vectors);
+    });
+
+    test('net swizzle receiver generates direct net connections', () async {
+      final dut = _NetSwizzleReceiverModule(
+        LogicNet(width: 8),
+        LogicNet(width: 4),
+        LogicNet(width: 4),
+      );
+      await dut.build();
+
+      final sv = dut.dumpSystemVerilog();
+      expect(sv, contains('(targetUpper, (source[7:4]))'));
+      expect(sv, contains('(targetLower, (source[3:0]))'));
+      expect(sv, isNot(contains('_swizzled')));
+
+      final vectors = [
+        Vector(
+          {'source': 0xa5},
+          {'targetUpper': 0xa, 'targetLower': 0x5},
+        ),
+        Vector(
+          {'source': 0x3c},
+          {'targetUpper': 0x3, 'targetLower': 0xc},
+        ),
+      ];
+
+      await SimCompare.checkFunctionalVector(dut, vectors);
+      SimCompare.checkIverilogVector(dut, vectors);
+    });
+
+    test('net swizzle retains direct driver behavior', () {
+      final upperDriver = Logic(width: 2);
+      final lowerDriver = Logic();
+      final swizzledDriver = Logic(width: 3);
+      final upper = LogicNet(width: 2)..gets(upperDriver);
+      final lower = LogicNet()..gets(lowerDriver);
+      final swizzled = [upper, lower].swizzle();
+
+      upperDriver.put('10');
+      lowerDriver.put('1');
+      expect(swizzled.value, LogicValue.of('101'));
+
+      swizzled.gets(swizzledDriver);
+      swizzledDriver.put('111');
+      expect(upper.value, LogicValue.of('1x'));
+    });
+
+    test('nested views preserve disjoint receiver assignments', () async {
+      final dut = _NestedReceiverViewsModule(
+        Logic(),
+        Logic(),
+        Logic(),
+        Logic(),
+      );
+      await dut.build();
+
+      final vectors = [
+        Vector(
+          {'a': 1, 'b': 0, 'c': 1, 'd': 0},
+          {'destination': LogicValue.ofString('0101')},
+        ),
+        Vector(
+          {'a': 0, 'b': 1, 'c': 0, 'd': 1},
+          {'destination': LogicValue.ofString('1010')},
+        ),
+      ];
+
+      await SimCompare.checkFunctionalVector(dut, vectors);
+      SimCompare.checkIverilogVector(dut, vectors);
     });
   });
 }

@@ -23,6 +23,19 @@ import 'package:test/test.dart';
 part 'systemverilog_simcompare.dart';
 part 'systemc_simcompare.dart';
 
+/// Returns the vector endpoint named [signalName].
+Logic _vectorEndpoint(Module module, String signalName) =>
+    module.tryInput(signalName) ??
+    module.tryOutput(signalName) ??
+    module.tryInOut(signalName) ??
+    module.signals.firstWhere((signal) => signal.name == signalName);
+
+/// Whether [signalName] is a scalar endpoint omitted by SystemVerilog output.
+bool _isOmittedZeroWidthVectorEndpoint(Module module, String signalName) {
+  final signal = _vectorEndpoint(module, signalName);
+  return signal.width == 0 && signal is! BaseLogicArray;
+}
+
 /// Represents a single test case to check in a single clock cycle.
 ///
 /// Useful for testing equivalent behavior in different simulation environments.
@@ -86,6 +99,10 @@ class Vector {
   String _toTbVerilog(Module module,
       {Map<String, String> packedInputDrivers = const {}}) {
     final assignments = inputValues.keys.map((signalName) {
+      if (_isOmittedZeroWidthVectorEndpoint(module, signalName)) {
+        return '';
+      }
+
       final signal = module.tryInOut(signalName) ?? module.input(signalName);
 
       if (packedInputDrivers.containsKey(signalName)) {
@@ -113,6 +130,10 @@ class Vector {
     final checksList = <String>[];
     for (final expectedOutput in expectedOutputValues.entries) {
       final outputName = expectedOutput.key;
+      if (_isOmittedZeroWidthVectorEndpoint(module, outputName)) {
+        continue;
+      }
+
       final outputPort =
           module.tryInOut(outputName) ?? module.output(outputName);
       final expected = expectedOutput.value;
@@ -120,7 +141,11 @@ class Vector {
         expected,
         width: outputPort.width,
       );
-      final inputStimulus = inputValues.toString();
+      final inputStimulus = {
+        for (final input in inputValues.entries)
+          if (!_isOmittedZeroWidthVectorEndpoint(module, input.key))
+            input.key: input.value,
+      }.toString();
 
       if (outputPort is BaseLogicArray) {
         var index = 0;
@@ -707,7 +732,7 @@ abstract class SimCompare {
     String signalDeclaration(String signalName,
         {String Function(String original)? adjust,
         String? signalTypeOverride}) {
-      final signal = module.signals.firstWhere((e) => e.name == signalName);
+      final signal = _vectorEndpoint(module, signalName);
       final isOutput = module.tryOutput(signalName) != null;
 
       final signalType = signalTypeOverride ??
@@ -745,7 +770,7 @@ abstract class SimCompare {
     final allSignals = <String>{
       for (final v in vectors) ...v.inputValues.keys,
       for (final v in vectors) ...v.expectedOutputValues.keys,
-    };
+    }.where((name) => !_isOmittedZeroWidthVectorEndpoint(module, name)).toSet();
 
     late final tbWireUniquifier = Uniquifier(reservedNames: allSignals);
     late final alreadyMappedLogicToWires = <String, String>{};
@@ -755,6 +780,7 @@ abstract class SimCompare {
     final logicToWireMapping = Map.fromEntries(vectors
         .map((v) => v.inputValues.keys)
         .flattened
+        .where((name) => !_isOmittedZeroWidthVectorEndpoint(module, name))
         .where((name) => module.tryInOut(name) != null)
         .map((name) => MapEntry(name, toTbWireName(name))));
 
