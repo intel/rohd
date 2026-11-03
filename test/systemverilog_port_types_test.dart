@@ -118,6 +118,26 @@ class _ZeroWidthNestedTop extends Module {
   }
 }
 
+class _ZeroWidthSequentialConditional extends Module {
+  _ZeroWidthSequentialConditional() {
+    final clk = addInput('clk', Logic());
+    final reset = addInput('reset', Logic());
+    final select = addInput('select', Logic());
+    final emptyIn = addInput('emptyIn', Logic(width: 0), width: 0);
+    final dataIn = addInput('dataIn', Logic(width: 8), width: 8);
+    final emptyOut = addOutput('emptyOut', width: 0);
+    final dataOut = addOutput('dataOut', width: 8);
+
+    Sequential(clk, reset: reset, [
+      If(
+        select,
+        then: [emptyOut < emptyIn, dataOut < dataIn],
+        orElse: [emptyOut < emptyIn, dataOut < 0],
+      ),
+    ]);
+  }
+}
+
 void main() {
   tearDown(() async {
     await Simulator.reset();
@@ -243,13 +263,14 @@ void main() {
     expect(sv, isNot(contains('inout wire emptyInOut')), reason: sv);
     expect(sv, isNot(contains('[-1:0]')), reason: sv);
 
-    await SimCompare.checkFunctionalVector(
-      module,
-      [
-        Vector({'emptyInput': LogicValue.empty}, {'isEmpty': 1})
-      ],
-    );
-    SimCompare.checkIverilogVector(module, [], buildOnly: true);
+    final vectors = [
+      Vector(
+        {'emptyInput': LogicValue.empty},
+        {'emptyOutput': LogicValue.empty, 'isEmpty': 1},
+      ),
+    ];
+    await SimCompare.checkFunctionalVector(module, vectors);
+    SimCompare.checkIverilogVector(module, vectors);
   });
 
   test('nested definitions omit zero-width port connections', () async {
@@ -272,6 +293,21 @@ void main() {
     ];
     await SimCompare.checkFunctionalVector(module, vectors);
     SimCompare.checkIverilogVector(module, vectors);
+  });
+
+  test('sequential conditionals omit zero-width assignments', () async {
+    final module = _ZeroWidthSequentialConditional();
+    await module.build();
+
+    final sv = module.dumpSystemVerilog();
+
+    expect(sv, contains('always_ff'), reason: sv);
+    expect(sv, contains('<= dataIn'), reason: sv);
+    expect(sv, isNot(contains('emptyIn')), reason: sv);
+    expect(sv, isNot(contains('emptyOut')), reason: sv);
+    expect(sv, isNot(contains('[-1:0]')), reason: sv);
+
+    SimCompare.checkIverilogVector(module, [], buildOnly: true);
   });
 
   // Icarus 12.0 compiles the variable modes below, but a child-driven

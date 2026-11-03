@@ -25,6 +25,19 @@ bool _tryResolveReceiver(Logic receiver, Logic source) {
   return receiverResolver(source);
 }
 
+bool _tryResolveSubsetReceiver(
+  Logic receiver,
+  List<Logic> sourceElements,
+  int start,
+) {
+  final receiverResolver = receiver._subsetReceiverResolver;
+  if (receiverResolver == null) {
+    return false;
+  }
+
+  return receiverResolver(sourceElements, start);
+}
+
 void _resolveDriver(Logic logic) {
   final driverResolver = logic._driverResolver;
   if (driverResolver == null || logic._driverResolved) {
@@ -52,6 +65,20 @@ extension ReceiverResolution on Logic {
     _receiverResolver = receiverResolver;
   }
 
+  /// Registers [receiverResolver] to redirect a partial assignment to this
+  /// view's underlying receivers.
+  @internal
+  void setSubsetReceiverResolver(
+    bool Function(List<Logic> sourceElements, int start) receiverResolver,
+  ) {
+    if (_subsetReceiverResolver != null) {
+      throw StateError('A subset receiver resolver is already registered for '
+          '$this.');
+    }
+
+    _subsetReceiverResolver = receiverResolver;
+  }
+
   /// Registers [driverResolver] to prepare this view before it is used as a
   /// connection driver.
   @internal
@@ -67,6 +94,7 @@ extension ReceiverResolution on Logic {
 /// Represents a logical signal of any width which can change values.
 class Logic {
   bool Function(Logic)? _receiverResolver;
+  bool Function(List<Logic> sourceElements, int start)? _subsetReceiverResolver;
   void Function()? _driverResolver;
   bool _driverResolved = false;
 
@@ -1205,6 +1233,10 @@ class Logic {
         updatedSubset.length,
         width - start,
       );
+    }
+
+    if (_tryResolveSubsetReceiver(this, updatedSubset, start)) {
+      return;
     }
 
     if (_subsetDriver == null) {

@@ -33,8 +33,9 @@
 ### Improvements
 
 - Allow swizzle and subset views to resolve as assignment receivers when safe,
-  and merge legal full packed-array/scalar assignments in generated
-  SystemVerilog (<https://github.com/intel/rohd/issues/530>,
+  including nested partial writes without claiming unselected bits, and merge
+  legal full packed-array/scalar assignments in generated SystemVerilog
+  (<https://github.com/intel/rohd/issues/530>,
   <https://github.com/intel/rohd/issues/553>, and
   <https://github.com/intel/rohd/issues/619>).
 - Fixed zero-width SystemC ports and constant bindings to use bindable placeholder types while preserving empty-value reads as zero, including address ports in single-register CSR blocks.
@@ -74,10 +75,14 @@
   `z` patterns now drive `x`, while only literal constant `z` patterns remain
   CaseZ wildcards (<https://github.com/intel/rohd/issues/102>).
 - Fixed downstream [Sequential] blocks to capture edges from upstream
-  [Sequential] outputs during the same simulation tick, restoring clock-divider
-  behavior (<https://github.com/intel/rohd/issues/191>).
+  [Sequential] outputs during the same simulation tick after their producer
+  completes all assignments, restoring clock-divider behavior and correct
+  jointly driven async-reset release (<https://github.com/intel/rohd/issues/191>).
 - Omit zero-width ports and their connections from generated SystemVerilog
-  definitions and instantiations (<https://github.com/intel/rohd/issues/57>).
+  definitions and instantiations, including conditional assignments nested in
+  reset and branch bodies. SystemVerilog vector testbenches also omit scalar
+  zero-width endpoint declarations, connections, stimulus, and checks
+  (<https://github.com/intel/rohd/issues/57>).
 - Warn when [Sequential] combines `asyncReset` with a non-constant
   `resetValues` driver, which can infer independently timed async set and
   clear pins in synthesis (<https://github.com/intel/rohd/issues/728>).

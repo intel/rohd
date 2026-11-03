@@ -79,6 +79,10 @@ class LogicStructure implements Logic {
   late bool Function(Logic)? _receiverResolver;
 
   @override
+  late bool Function(List<Logic> sourceElements, int start)?
+      _subsetReceiverResolver;
+
+  @override
   late void Function()? _driverResolver;
 
   @override
@@ -123,6 +127,7 @@ class LogicStructure implements Logic {
   LogicStructure(Iterable<Logic> elements, {String? name})
       : name = Naming.chooseName(name, null, nullStarter: 'st') {
     _receiverResolver = null;
+    _subsetReceiverResolver = null;
     _driverResolver = null;
     _elements
       ..addAll(elements)

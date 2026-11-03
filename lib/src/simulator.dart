@@ -95,6 +95,10 @@ abstract class Simulator {
   static final Queue<dynamic Function()> _injectedEndOfTickActions =
       Queue<dynamic Function()>();
 
+  /// Functions to execute after all pending [clkStable] listeners have run.
+  static final Queue<void Function()> _clkStableActions =
+      Queue<void Function()>();
+
   /// Functions to be executed at the end of the simulation.
   ///
   /// Actions may return [Future]s, which will be `await`ed.
@@ -172,6 +176,7 @@ abstract class Simulator {
     _pendingTimestamps.clear();
     _phase = SimulatorPhase.outOfTick;
     _injectedActions.clear();
+    _clkStableActions.clear();
     _endOfSimulationActions.clear();
     _simExceptions.clear();
     _pendingList = ListQueue();
@@ -303,7 +308,7 @@ abstract class Simulator {
     if (_updateTimeStamp()) {
       _preTick();
       await _mainTick();
-      _clkStable();
+      await _clkStable();
       await _outOfTick();
     }
   }
@@ -358,12 +363,34 @@ abstract class Simulator {
     await _executeInjectedActions();
   }
 
-  /// Executes the clkStable phase
-  static void _clkStable() {
+  /// Queues an [action] to run before the current clk-stable phase ends.
+  ///
+  /// This lets derived-clock consumers observe every update made by the
+  /// producer that raised the clock, while still executing within this tick.
+  static void registerClkStableAction(void Function() action) {
+    if (_phase != SimulatorPhase.clkStable) {
+      throw StateError(
+        'clkStable actions can only be registered during the clkStable phase.',
+      );
+    }
+
+    _clkStableActions.add(action);
+  }
+
+  /// Executes the clkStable phase.
+  static Future<void> _clkStable() async {
     _phase = SimulatorPhase.clkStable;
 
     // useful for flop clk input stability
     _clkStableController.add(null);
+
+    // Let listeners scheduled through `clkStable.first` run before draining.
+    // Actions enqueued while draining are also part of this phase.
+    await Future<void>.microtask(() {
+      while (_clkStableActions.isNotEmpty) {
+        _clkStableActions.removeFirst()();
+      }
+    });
   }
 
   /// Executes all the injected actions.

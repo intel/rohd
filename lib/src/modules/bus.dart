@@ -124,6 +124,7 @@ class BusSubset extends Module with InlineSystemVerilog {
       subset = addOutput(_subsetName, width: newWidth);
 
       subset.setReceiverResolver(_resolveReceiver);
+      subset.setSubsetReceiverResolver(_resolveSubsetReceiver);
       subset.makeUnassignable(
         reason: 'A BusSubset view can only receive continuous assignments.',
       );
@@ -133,12 +134,17 @@ class BusSubset extends Module with InlineSystemVerilog {
   }
 
   bool _resolveReceiver(Logic source) {
-    _source.assignSubset(
-      startIndex > endIndex
-          ? source.elements.reversed.toList(growable: false)
-          : source.elements,
-      start: min(startIndex, endIndex),
-    );
+    _resolveSubsetReceiver(source.elements, 0);
+    return true;
+  }
+
+  bool _resolveSubsetReceiver(List<Logic> sourceElements, int start) {
+    for (var index = 0; index < sourceElements.length; index++) {
+      final sourceIndex = startIndex <= endIndex
+          ? startIndex + start + index
+          : startIndex - start - index;
+      _source.assignSubset([sourceElements[index]], start: sourceIndex);
+    }
     return true;
   }
 
@@ -300,6 +306,7 @@ class Swizzle extends Module with InlineSystemVerilog {
 
     out.setReceiverResolver(_resolveReceiver);
     if (!isNet) {
+      out.setSubsetReceiverResolver(_resolveSubsetReceiver);
       out.makeUnassignable(
         reason: 'A Swizzle view can only receive continuous assignments.',
       );
@@ -318,6 +325,30 @@ class Swizzle extends Module with InlineSystemVerilog {
         signal <= source.getRange(start, end);
       }
       start = end;
+    }
+    return true;
+  }
+
+  bool _resolveSubsetReceiver(List<Logic> sourceElements, int start) {
+    if (isNet) {
+      return false;
+    }
+
+    var receiverStart = 0;
+    for (final signal in _receiverSignals.reversed) {
+      final receiverEnd = receiverStart + signal.width;
+      final updateStart = max(start, receiverStart);
+      final updateEnd = min(start + sourceElements.length, receiverEnd);
+      if (updateStart < updateEnd) {
+        signal.assignSubset(
+          sourceElements.sublist(
+            updateStart - start,
+            updateEnd - start,
+          ),
+          start: updateStart - receiverStart,
+        );
+      }
+      receiverStart = receiverEnd;
     }
     return true;
   }

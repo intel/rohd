@@ -382,9 +382,7 @@ class Sequential extends Always {
             unawaited(Simulator.postTick.first.then((value) {
               // once the tick has completed,
               // we can update the override maps
-              _driverInputsPendingPostUpdate
-                ..forEach(_updateInputToPreTickInputValue)
-                ..clear();
+              _updatePendingStableInputs();
               _pendingPostUpdate = false;
             }).catchError(test: (error) => error is Exception,
                 (Object err, StackTrace stackTrace) {
@@ -407,11 +405,19 @@ class Sequential extends Always {
         }
 
         if (Simulator.phase == SimulatorPhase.clkStable) {
-          // A Sequential output can directly clock another Sequential. The
-          // current clkStable event has already been dispatched, so waiting
-          // for clkStable.first would defer the downstream edge by one tick.
+          // A Sequential output can directly clock another Sequential. Queue
+          // execution after the producer completes so all of its output
+          // assignments, including reset changes, are visible to the child.
           if (!_pendingExecute) {
-            _execute();
+            _pendingExecute = true;
+            Simulator.registerClkStableAction(() {
+              try {
+                _updatePendingStableInputs();
+                _execute();
+              } finally {
+                _pendingExecute = false;
+              }
+            });
           }
         } else if (!_pendingExecute) {
           unawaited(Simulator.clkStable.first.then<void>((value) {
@@ -430,6 +436,14 @@ class Sequential extends Always {
         }
       });
     }
+  }
+
+  /// Samples inputs updated by a producer during the current clock-stable
+  /// phase before this block runs from that producer's derived clock edge.
+  void _updatePendingStableInputs() {
+    _driverInputsPendingPostUpdate
+      ..forEach(_updateInputToPreTickInputValue)
+      ..clear();
   }
 
   /// Drives [LogicValue.x] on all outputs of this [Sequential].

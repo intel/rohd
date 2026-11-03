@@ -105,6 +105,28 @@ class _NetSwizzleReceiverModule extends Module {
   }
 }
 
+class _NestedReceiverViewsModule extends Module {
+  _NestedReceiverViewsModule(
+    Logic a,
+    Logic b,
+    Logic c,
+    Logic d,
+  ) {
+    a = addInput('a', a);
+    b = addInput('b', b);
+    c = addInput('c', c);
+    d = addInput('d', d);
+    final destination = addOutput('destination', width: 4);
+
+    destination.getRange(0, 4)[0] <= a;
+    destination[1] <= b;
+
+    final reversedUpper = [destination[3], destination[2]].swizzle();
+    reversedUpper[0] <= c;
+    destination[3] <= d;
+  }
+}
+
 void main() {
   tearDown(() async {
     await Simulator.reset();
@@ -313,6 +335,30 @@ void main() {
       swizzled.gets(swizzledDriver);
       swizzledDriver.put('111');
       expect(upper.value, LogicValue.of('1x'));
+    });
+
+    test('nested views preserve disjoint receiver assignments', () async {
+      final dut = _NestedReceiverViewsModule(
+        Logic(),
+        Logic(),
+        Logic(),
+        Logic(),
+      );
+      await dut.build();
+
+      final vectors = [
+        Vector(
+          {'a': 1, 'b': 0, 'c': 1, 'd': 0},
+          {'destination': LogicValue.ofString('0101')},
+        ),
+        Vector(
+          {'a': 0, 'b': 1, 'c': 0, 'd': 1},
+          {'destination': LogicValue.ofString('1010')},
+        ),
+      ];
+
+      await SimCompare.checkFunctionalVector(dut, vectors);
+      SimCompare.checkIverilogVector(dut, vectors);
     });
   });
 }

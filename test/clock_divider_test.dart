@@ -77,6 +77,44 @@ class _ClockDividerHarness extends Module {
   }
 }
 
+class _JointClockAndResetHarness extends Module {
+  /// The value captured by the derived-clock sequential block.
+  Logic get captured => output('captured');
+
+  _JointClockAndResetHarness(Logic clk, Logic releaseReset, Logic data)
+      : super(definitionName: 'JointClockAndResetHarness') {
+    clk = addInput('clk', clk);
+    releaseReset = addInput('releaseReset', releaseReset);
+    data = addInput('data', data);
+    final derivedClk = Logic(name: 'derivedClk');
+    final childReset = Logic(name: 'childReset');
+    final captured = addOutput('captured');
+
+    Sequential(clk, [
+      If(
+        releaseReset,
+        then: [
+          derivedClk < 1,
+          childReset < 0,
+        ],
+        orElse: [
+          derivedClk < 0,
+          childReset < 1,
+        ],
+      ),
+    ]);
+
+    Sequential(
+      derivedClk,
+      reset: childReset,
+      asyncReset: true,
+      [
+        captured < data,
+      ],
+    );
+  }
+}
+
 void main() {
   tearDown(Simulator.reset);
 
@@ -112,6 +150,38 @@ void main() {
       );
     });
     Simulator.setMaxSimTime(45);
+
+    await Simulator.run();
+  });
+
+  test('derived clock observes a jointly deasserted async reset', () async {
+    final clk = Logic()..put(0);
+    final releaseReset = Logic()..put(0);
+    final data = Logic()..put(1);
+    final dut = _JointClockAndResetHarness(clk, releaseReset, data);
+    await dut.build();
+
+    Simulator.registerAction(10, () {
+      clk.put(1);
+    });
+    Simulator.registerAction(11, () {
+      clk.put(0);
+    });
+    Simulator.registerAction(15, () {
+      releaseReset.put(1);
+    });
+    Simulator.registerAction(20, () {
+      clk.put(1);
+    });
+    Simulator.registerAction(21, () {
+      expect(
+        dut.captured.value,
+        LogicValue.one,
+        reason: 'The derived-clock Sequential must sample after its producer '
+            'has deasserted the async reset.',
+      );
+    });
+    Simulator.setMaxSimTime(22);
 
     await Simulator.run();
   });

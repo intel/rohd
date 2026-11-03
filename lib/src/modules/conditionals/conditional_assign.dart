@@ -100,6 +100,10 @@ class ConditionalAssign extends Conditional {
   @override
   String verilogContents(int indent, Map<String, String> inputsNameMap,
       Map<String, String> outputsNameMap, String assignOperator) {
+    if (receiver.width == 0) {
+      return '';
+    }
+
     final padding = Conditional.calcPadding(indent);
     final driverName = inputsNameMap[driverInput(driver).name]!;
     final receiverName = outputsNameMap[receiverOutput(receiver).name]!;
