@@ -87,6 +87,10 @@ receiverLogic.assignSubset([sig1, sig2], start: 2);
     );
   }
 
+  if (_tryResolveSubsetReceiver(this, updatedSubset, start)) {
+    return;
+  }
+
   if (_subsetDriver == null) {
     _subsetDriver = (isNet ? LogicArray.net : LogicArray.new)(
       [width],

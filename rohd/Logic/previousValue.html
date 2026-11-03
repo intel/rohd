@@ -83,7 +83,10 @@ be reset.</p>
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">LogicValue? get previousValue =&gt; _wire.previousValue;</code></pre>
+  <pre class="language-dart"><code class="language-dart">LogicValue? get previousValue {
+  _resolveDriver(this);
+  return _wire.previousValue;
+}</code></pre>
 </section>
 
   </section>

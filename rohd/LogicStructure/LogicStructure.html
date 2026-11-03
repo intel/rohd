@@ -70,6 +70,9 @@
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">LogicStructure(Iterable&lt;Logic&gt; elements, {String? name})
     : name = Naming.chooseName(name, null, nullStarter: &#39;st&#39;) {
+  _receiverResolver = null;
+  _subsetReceiverResolver = null;
+  _driverResolver = null;
   _elements
     ..addAll(elements)
     ..forEach((element) {

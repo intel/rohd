@@ -78,6 +78,10 @@ value.</p>
 <p>If <code>asyncReset</code> is true, the <code>reset</code> signal (if provided) will be treated
 as an async reset. If <code>asyncReset</code> is false, the reset signal will be
 treated as synchronous.</p>
+<p>An async reset with a non-constant <code>resetValues</code> driver can infer
+independently timed async set and clear pins in synthesis. Prefer a
+constant async reset value followed by a synchronous load. ROHD logs a
+warning when it detects this combination.</p>
 <p>If a trigger signal is sampled within the <code>conditionals</code>, the value will
 be the "new" value of that trigger, as opposed to the "old" value as with
 other non-trigger signals. This is meant to help model how an asynchronous
@@ -99,12 +103,14 @@ value would be sampled.</p>
   List&lt;Logic&gt; posedgeTriggers,
   super._conditionals, {
   Logic? reset,
-  super.resetValues,
+  Map&lt;Logic, dynamic&gt;? resetValues,
   this.asyncReset = false,
   super.name = &#39;sequential&#39;,
   this.allowMultipleAssignments = true,
   List&lt;Logic&gt; negedgeTriggers = const [],
-}) : super(reset: reset) {
+}) : super(reset: reset, resetValues: resetValues) {
+  _warnOnDynamicAsyncResetValues(reset, resetValues);
+
   _registerInputTriggers([
     ...posedgeTriggers,
     if (reset != null &amp;&amp; asyncReset) reset,

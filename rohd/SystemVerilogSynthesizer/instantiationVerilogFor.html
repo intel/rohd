@@ -98,9 +98,36 @@ provided.</p>
   bool forceStandardInstantiation = false,
   Map&lt;String, int&gt;? outputPortColumns,
 }) {
+  Logic? portFor(String name) =&gt;
+      module.inputs[name] ?? module.outputs[name] ?? module.inOuts[name];
+
+  bool isZeroWidthPort(String name) {
+    final port = portFor(name);
+    return port != null &amp;&amp; port.width == 0 &amp;&amp; port is! BaseLogicArray;
+  }
+
+  final nonZeroWidthPorts = &lt;String, String&gt;{
+    for (final entry in ports.entries)
+      if (!isZeroWidthPort(entry.key)) entry.key: entry.value,
+  };
+  final nonZeroWidthOutputPorts = &lt;String, String&gt;{
+    for (final entry in ports.entries)
+      if (!isZeroWidthPort(entry.key) || module.inputs.containsKey(entry.key))
+        entry.key: entry.value,
+  };
+
   if (!forceStandardInstantiation) {
     if (module is SystemVerilog) {
-      return module.instantiationVerilog(instanceType, instanceName, ports) ??
+      final customPorts = module is InlineSystemVerilog
+          ? ports
+          : module.generatedDefinitionType == DefinitionGenerationType.none
+              ? nonZeroWidthOutputPorts
+              : nonZeroWidthPorts;
+      return module.instantiationVerilog(
+            instanceType,
+            instanceName,
+            customPorts,
+          ) ??
           instantiationVerilogFor(
             module: module,
             instanceType: instanceType,
@@ -117,12 +144,12 @@ provided.</p>
         instanceType,
         instanceName,
         Map.fromEntries(
-          ports.entries.where(
+          nonZeroWidthPorts.entries.where(
             (element) =&gt; module.inputs.containsKey(element.key),
           ),
         ),
         Map.fromEntries(
-          ports.entries.where(
+          nonZeroWidthPorts.entries.where(
             (element) =&gt; module.outputs.containsKey(element.key),
           ),
         ),
@@ -145,6 +172,9 @@ provided.</p>
   var offset = prefix.length;
 
   void addConnection(String signalName) {
+    if (isZeroWidthPort(signalName)) {
+      return;
+    }
     if (connections.isNotEmpty) {
       offset++;
     }

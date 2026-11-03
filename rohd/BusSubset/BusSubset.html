@@ -77,7 +77,8 @@ in the generated SystemVerilog.</p>
   this.startIndex,
   this.endIndex, {
   super.name = &#39;bussubset&#39;,
-}) : _isNet = bus.isNet {
+})  : _isNet = bus.isNet,
+      _source = bus {
   &#47;&#47; If a converted index value is still -ve then it&#39;s an Index out of bounds
   &#47;&#47; on a Logic Bus
   if (startIndex &lt; 0 || endIndex &lt; 0) {
@@ -129,10 +130,10 @@ in the generated SystemVerilog.</p>
     original = addInput(_originalName, bus, width: bus.width);
     subset = addOutput(_subsetName, width: newWidth);
 
-    &#47;&#47; so that people can&#39;t do a slice assign, not (yet?) implemented
+    subset.setReceiverResolver(_resolveReceiver);
+    subset.setSubsetReceiverResolver(_resolveSubsetReceiver);
     subset.makeUnassignable(
-      reason: &#39;The output of a (non-LogicNet) &#39;
-          &#39;BusSubset (&quot;$name&quot;) is read-only.&#39;,
+      reason: &#39;A BusSubset view can only receive continuous assignments.&#39;,
     );
 
     _setup();

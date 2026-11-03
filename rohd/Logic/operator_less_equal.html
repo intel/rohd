@@ -71,7 +71,17 @@
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">void operator &lt;=(Logic other) =&gt; gets(other);</code></pre>
+  <pre class="language-dart"><code class="language-dart">void operator &lt;=(Logic other) {
+  if (other is LogicStructure) {
+    other = other.packed;
+  }
+
+  if (_tryResolveReceiver(this, other)) {
+    return;
+  }
+
+  gets(other);
+}</code></pre>
 </section>
 
 

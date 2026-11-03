@@ -74,7 +74,10 @@ per <a href="../../rohd/Simulator-class.html">Simulator</a> tick, iff the value 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">Stream&lt;LogicValueChanged&gt; get changed =&gt; _wire.changed;</code></pre>
+  <pre class="language-dart"><code class="language-dart">Stream&lt;LogicValueChanged&gt; get changed {
+  _resolveDriver(this);
+  return _wire.changed;
+}</code></pre>
 </section>
 
   </section>

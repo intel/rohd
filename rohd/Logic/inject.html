@@ -72,8 +72,10 @@
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">void inject(dynamic val, {bool fill = false}) =&gt;
-    _wire.inject(val, signalName: name, fill: fill);</code></pre>
+  <pre class="language-dart"><code class="language-dart">void inject(dynamic val, {bool fill = false}) {
+  _resolveDriver(this);
+  _wire.inject(val, signalName: name, fill: fill);
+}</code></pre>
 </section>
 
 

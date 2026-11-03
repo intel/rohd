@@ -96,7 +96,7 @@ timestamp, and passes through all events and phases on the way.</p>
   if (_updateTimeStamp()) {
     _preTick();
     await _mainTick();
-    _clkStable();
+    await _clkStable();
     await _outOfTick();
   }
 }</code></pre>

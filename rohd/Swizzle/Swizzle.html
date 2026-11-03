@@ -68,36 +68,53 @@
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">Swizzle(List&lt;Logic&gt; signals, {super.name = &#39;swizzle&#39;})
-    : isNet = signals.any((e) =&gt; e.isNet) {
-  var outputWidth = 0;
-
-  final inputCreator = isNet ? addInOut : addInput;
-
-  var idx = 0;
-  for (final signal in signals.reversed) {
-    &#47;&#47;reverse so bit 0 is the last thing in the input list
-    final inputName = Naming.unpreferredName(&#39;in${idx++}&#39;);
-    _swizzleInputs.add(inputCreator(inputName, signal, width: signal.width));
-    outputWidth += signal.width;
-  }
+    : _receiverSignals = List.unmodifiable(signals),
+      isNet = signals.any((e) =&gt; e.isNet) {
+  final outputWidth =
+      _receiverSignals.fold(0, (total, signal) =&gt; total + signal.width);
 
   if (isNet) {
     out = LogicNet(name: _out, width: outputWidth, naming: Naming.unnamed);
     final internalOut = addInOut(_out, out, width: outputWidth);
+    final reversedSignals = _receiverSignals.reversed.toList(growable: false);
 
-    var idx = 0;
-    for (final swizzleInput in _swizzleInputs) {
-      internalOut.quietlyMergeSubsetTo(swizzleInput as LogicNet, start: idx);
-      idx += swizzleInput.width;
+    &#47;&#47; Keep the net-port shape available to synthesis without connecting this
+    &#47;&#47; view to its original signals until it is used as a driver.
+    var start = 0;
+    for (var inputIndex = 0;
+        inputIndex &lt; reversedSignals.length;
+        inputIndex++) {
+      final signal = reversedSignals[inputIndex];
+      final inputName = Naming.unpreferredName(&#39;in$inputIndex&#39;);
+      final inputSource = LogicNet(
+        width: signal.width,
+        naming: Naming.unnamed,
+      );
+      _netInputSources.add(inputSource);
+      final swizzleInput = addInOut(
+        inputName,
+        inputSource,
+        width: signal.width,
+      );
+      _swizzleInputs.add(swizzleInput);
+      internalOut.quietlyMergeSubsetTo(swizzleInput, start: start);
+      start += swizzleInput.width;
     }
-  } else {
-    out = addOutput(_out, width: outputWidth);
 
-    &#47;&#47; so that you can&#39;t assign the output of a (Logic) swizzle
-    out.makeUnassignable(
-      reason:
-          &#39;The output of a (non-LogicNet) Swizzle (&quot;$name&quot;) is read-only.&#39;,
-    );
+    out.setDriverResolver(() {
+      for (var index = 0; index &lt; reversedSignals.length; index++) {
+        _netInputSources[index] &lt;= reversedSignals[index];
+      }
+    });
+  } else {
+    var idx = 0;
+    for (final signal in _receiverSignals.reversed) {
+      &#47;&#47; Reverse so bit 0 is the last thing in the input list.
+      final inputName = Naming.unpreferredName(&#39;in${idx++}&#39;);
+      _swizzleInputs.add(addInput(inputName, signal, width: signal.width));
+    }
+
+    out = addOutput(_out, width: outputWidth);
 
     _execute(); &#47;&#47; for initial values
     for (final swizzleInput in _swizzleInputs) {
@@ -105,6 +122,14 @@
         _execute();
       });
     }
+  }
+
+  out.setReceiverResolver(_resolveReceiver);
+  if (!isNet) {
+    out.setSubsetReceiverResolver(_resolveSubsetReceiver);
+    out.makeUnassignable(
+      reason: &#39;A Swizzle view can only receive continuous assignments.&#39;,
+    );
   }
 }</code></pre>
 </section>

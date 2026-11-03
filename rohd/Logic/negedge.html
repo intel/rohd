@@ -76,7 +76,10 @@ from <code>1</code> to <code>0</code>.</p>
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">Stream&lt;LogicValueChanged&gt; get negedge =&gt; _wire.negedge;</code></pre>
+  <pre class="language-dart"><code class="language-dart">Stream&lt;LogicValueChanged&gt; get negedge {
+  _resolveDriver(this);
+  return _wire.negedge;
+}</code></pre>
 </section>
 
   </section>

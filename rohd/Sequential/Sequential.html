@@ -76,6 +76,10 @@ value.</p>
 <p>If <code>asyncReset</code> is true, the <code>reset</code> signal (if provided) will be treated
 as an async reset. If <code>asyncReset</code> is false, the reset signal will be
 treated as synchronous.</p>
+<p>An async reset with a non-constant <code>resetValues</code> driver can infer
+independently timed async set and clear pins in synthesis. Prefer a
+constant async reset value followed by a synchronous load. ROHD logs a
+warning when it detects this combination.</p>
 </section>
 
 

@@ -77,7 +77,13 @@
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@override
-void operator &lt;=(Logic other) =&gt; gets(other);</code></pre>
+void operator &lt;=(Logic other) {
+  if (_tryResolveReceiver(this, other)) {
+    return;
+  }
+
+  gets(other);
+}</code></pre>
 </section>
 
 

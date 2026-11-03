@@ -56,7 +56,10 @@
 <section class="desc markdown">
   <p>A special version of <a href="../rohd/Case-class.html">Case</a> which can do wildcard matching via <code>z</code> in
 the expression.</p>
-<p>Any <code>z</code> in the value of a <a href="../rohd/CaseItem-class.html">CaseItem</a> will act as a wildcard.</p>
+<p>Any <code>z</code> in a literal <a href="../rohd/Const-class.html">Const</a> <a href="../rohd/CaseItem-class.html">CaseItem</a> value, or an alias of one, acts as
+a wildcard.</p>
+<p>Invalid dynamic item values drive the case result to <code>x</code>, because they
+cannot safely be treated as compile-time wildcard patterns.</p>
 <p>Does not support SystemVerilog's <code>?</code> syntax, which is exactly functionally
 equivalent to <code>z</code> syntax.</p>
 </section>
@@ -329,6 +332,19 @@ during execution.
 </dt>
 <dd>
   Returns true iff <code>value</code> matches the expressions current value.
+  <div class="features"><span class="feature">override</span></div>
+
+</dd>
+
+        <dt id="isMatchableItemValue" class="callable">
+  <span class="name"><a href="../rohd/CaseZ/isMatchableItemValue.html">isMatchableItemValue</a></span><span class="signature">(<wbr><span class="parameter" id="isMatchableItemValue-param-item"><span class="type-annotation"><a href="../rohd/CaseItem-class.html">CaseItem</a></span> <span class="parameter-name">item</span>, </span><span class="parameter" id="isMatchableItemValue-param-value"><span class="type-annotation"><a href="../rohd/LogicValue-class.html">LogicValue</a></span> <span class="parameter-name">value</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Returns whether <code>value</code> can be safely evaluated as <code>item</code>'s pattern.
   <div class="features"><span class="feature">override</span></div>
 
 </dd>

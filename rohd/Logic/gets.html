@@ -79,6 +79,9 @@ the same way.</p>
     other = other.packed;
   }
 
+  _resolveDriver(this);
+  _resolveDriver(other);
+
   _assertConnectable(other);
 
   _connect(other);

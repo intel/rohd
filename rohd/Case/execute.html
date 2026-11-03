@@ -93,7 +93,8 @@ void execute(Set&lt;Logic&gt;? drivenSignals, [void Function(Logic)? guard]) {
     }
   }
 
-  if (!expression.value.isValid) {
+  final expressionValue = driverValue(expression);
+  if (!expressionValue.isValid) {
     &#47;&#47; if expression has X or Z, then propagate X&#39;s!
     driveX(drivenSignals);
     return;
@@ -102,8 +103,14 @@ void execute(Set&lt;Logic&gt;? drivenSignals, [void Function(Logic)? guard]) {
   CaseItem? foundMatch;
 
   for (final item in items) {
+    final itemValue = driverValue(item.value);
+    if (!isMatchableItemValue(item, itemValue)) {
+      driveX(drivenSignals);
+      return;
+    }
+
     &#47;&#47; match on the first matching item
-    if (isMatch(driverValue(item.value), driverValue(expression))) {
+    if (isMatch(itemValue, expressionValue)) {
       for (final conditional in item.then) {
         conditional.execute(drivenSignals, guard);
       }
