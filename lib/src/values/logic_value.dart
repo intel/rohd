@@ -92,7 +92,8 @@ abstract class LogicValue implements Comparable<LogicValue> {
     bool allowTruncation,
   ) {
     final isTruncated = switch (value) {
-      final int value => value >= 0 && value.bitLength > width,
+      final int value =>
+        value.isFinite && value >= 0 && value.bitLength > width,
       final BigInt value => !value.isNegative && value.bitLength > width,
       _ => false,
     };
