@@ -13,6 +13,45 @@ import 'package:test/test.dart';
 
 enum MyDirection { dir1, dir2 }
 
+enum _CaptureDirection { input, output }
+
+class _ClockDataInterface extends Interface<_CaptureDirection> {
+  final bool clockFirst;
+
+  Logic get clock => port('clock');
+  Logic get data => port('data');
+  Logic get result => port('result');
+
+  _ClockDataInterface({required this.clockFirst}) {
+    final inputs = [
+      Logic.port('clock'),
+      Logic.port('data'),
+    ];
+    setPorts(
+      clockFirst ? inputs : inputs.reversed.toList(),
+      [_CaptureDirection.input],
+    );
+    setPorts([Logic.port('result')], [_CaptureDirection.output]);
+  }
+
+  @override
+  _ClockDataInterface clone() => _ClockDataInterface(clockFirst: clockFirst);
+}
+
+class _ClockDataCapture extends Module {
+  _ClockDataCapture(_ClockDataInterface interface) {
+    final local = _ClockDataInterface(clockFirst: interface.clockFirst)
+      ..connectIO(
+        this,
+        interface,
+        inputTags: {_CaptureDirection.input},
+        outputTags: {_CaptureDirection.output},
+      );
+
+    Sequential(local.clock, [local.result < local.data]);
+  }
+}
+
 class MyModuleInterface extends Interface<MyDirection> {
   MyModuleInterface() {
     setPorts([Logic.port('p1'), LogicArray.port('p1arr')], [MyDirection.dir1]);
@@ -152,6 +191,27 @@ void main() {
 
     await SimCompare.checkFunctionalVector(mod, vectors);
     SimCompare.checkIverilogVector(mod, vectors);
+  });
+
+  test('clock and data connection order preserves sequential capture',
+      () async {
+    final vectors = [
+      Vector({'clock': 0, 'data': 0}, {}),
+      Vector({'clock': 1}, {'result': 0}),
+      Vector({'clock': 0, 'data': 1}, {'result': 0}),
+      Vector({'clock': 1}, {'result': 1}),
+    ];
+
+    for (final clockFirst in [true, false]) {
+      await Simulator.reset();
+      final mod = _ClockDataCapture(
+        _ClockDataInterface(clockFirst: clockFirst),
+      );
+      await mod.build();
+
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    }
   });
 
   test('should return exception when port name is not sanitary.', () {

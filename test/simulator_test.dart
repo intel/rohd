@@ -13,8 +13,12 @@
 
 import 'dart:async';
 
+import 'package:logging/logging.dart';
 import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
+
+const _noEventsWarning =
+    'Simulator.run() completed without any registered or injected events.';
 
 void main() {
   tearDown(() async {
@@ -26,6 +30,41 @@ void main() {
     Simulator.registerAction(100, () => actionTaken = true);
     await Simulator.run();
     expect(actionTaken, equals(true));
+  });
+
+  test('simulator warns when run has no events', () async {
+    final warnings = <LogRecord>[];
+    final subscription = Simulator.logger.onRecord.listen((record) {
+      if (record.level == Level.WARNING) {
+        warnings.add(record);
+      }
+    });
+    addTearDown(subscription.cancel);
+
+    await Simulator.run();
+
+    expect(
+      warnings.map((record) => record.message),
+      contains(_noEventsWarning),
+    );
+  });
+
+  test('simulator does not warn when run has registered events', () async {
+    final warnings = <LogRecord>[];
+    final subscription = Simulator.logger.onRecord.listen((record) {
+      if (record.level == Level.WARNING) {
+        warnings.add(record);
+      }
+    });
+    addTearDown(subscription.cancel);
+
+    Simulator.registerAction(1, () {});
+    await Simulator.run();
+
+    expect(
+      warnings.map((record) => record.message),
+      isNot(contains(_noEventsWarning)),
+    );
   });
 
   test('simulator supports cancellation of previously scheduled actions',

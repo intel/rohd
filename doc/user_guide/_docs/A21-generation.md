@@ -350,6 +350,23 @@ final waveform = WaveformService(
 final vcdArtifact = waveform.artifacts.single;
 ```
 
+For browser and DartPad workflows, retain VCD data in memory without touching
+the filesystem:
+
+```dart
+final waveform = WaveformService(
+  myModule,
+  writeToFile: false,
+);
+
+// Run the simulation, then inspect or print the captured VCD.
+print(waveform.inMemoryOutput);
+```
+
+In-memory VCD capture is supported on web platforms. File-backed VCD capture
+and FST capture require a VM filesystem, so use VCD memory capture when files
+are unavailable.
+
 `timescale` is the physical duration represented by one unit of ROHD
 simulation time. For example, `WaveformTimeScale.oneNanosecond` writes an
 event at `Simulator.time == 100` at timestamp `100` with a `1ns` timescale;

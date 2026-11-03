@@ -346,6 +346,26 @@ class LogicStructure implements Logic {
   }
 
   @override
+  List<Logic> split(List<int> widths) {
+    if (widths.any((chunkWidth) => chunkWidth < 0) ||
+        widths.fold(0, (total, chunkWidth) => total + chunkWidth) != width) {
+      throw ArgumentError.value(
+        widths,
+        'widths',
+        'must be non-negative and sum to $width.',
+      );
+    }
+
+    var start = 0;
+    final chunks = <Logic>[];
+    for (final chunkWidth in widths) {
+      chunks.add(getRange(start, start + chunkWidth));
+      start += chunkWidth;
+    }
+    return List<Logic>.unmodifiable(chunks);
+  }
+
+  @override
   Logic slice(int endIndex, int startIndex) {
     final modifiedStartIndex = IndexUtilities.wrapIndex(startIndex, width);
     final modifiedEndIndex = IndexUtilities.wrapIndex(endIndex, width);
@@ -463,6 +483,9 @@ class LogicStructure implements Logic {
 
   @override
   late final int width = elements.map((e) => e.width).sum;
+
+  @override
+  bool get isEmpty => width == 0;
 
   @override
   Logic withSet(int startIndex, Logic update) {

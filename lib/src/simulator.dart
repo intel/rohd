@@ -453,6 +453,14 @@ abstract class Simulator {
     // Yield execution to the event loop before beginning the simulation.
     await Future(() {});
 
+    if (!hasStepsRemaining() &&
+        _simExceptions.isEmpty &&
+        !_simulationEndRequested) {
+      logger.warning(
+        'Simulator.run() completed without any registered or injected events.',
+      );
+    }
+
     while (hasStepsRemaining() &&
         _simExceptions.isEmpty &&
         !_simulationEndRequested &&

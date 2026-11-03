@@ -11,6 +11,16 @@ import 'package:rohd/rohd.dart';
 
 /// Allows lists of [Logic]s to be swizzled.
 extension LogicSwizzle on List<Logic> {
+  /// Concatenates signals with index 0 as the most significant bits.
+  ///
+  /// This is an alias for [swizzle].
+  Logic concat() => swizzle();
+
+  /// Concatenates signals with index 0 as the least significant bits.
+  ///
+  /// This is an alias for [rswizzle].
+  Logic rconcat() => rswizzle();
+
   /// Performs a concatenation operation on the list of signals, where index 0
   /// of this list is the *most* significant bit(s).
   ///
@@ -64,6 +74,16 @@ extension LogicSwizzle on List<Logic> {
 
 /// Allows lists of [LogicValue]s to be swizzled.
 extension LogicValueSwizzle on List<LogicValue> {
+  /// Concatenates values with index 0 as the most significant bits.
+  ///
+  /// This is an alias for [swizzle].
+  LogicValue concat() => swizzle();
+
+  /// Concatenates values with index 0 as the least significant bits.
+  ///
+  /// This is an alias for [rswizzle].
+  LogicValue rconcat() => rswizzle();
+
   /// Performs a concatenation operation on the list of signals, where index 0
   /// of this list is the *most* significant bit.
   ///

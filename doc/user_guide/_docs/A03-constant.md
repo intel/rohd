@@ -2,7 +2,7 @@
 title: "Constants"
 permalink: /docs/constant/
 excerpt: "Constants"
-last_modified_at: 2026-07-14
+last_modified_at: 2026-11-3
 toc: true
 ---
 
@@ -25,6 +25,25 @@ var hexadecimal = Const(42, width: 8, preferredRadix: 16); // 8'h2a
 ```
 
 Constants containing `x` or `z` may fall back to binary so all bit states can be represented.
+
+## Integer truncation
+
+ROHD warns when a non-negative `int` or `BigInt` does not fit the requested
+constant width. The resulting bits retain the established truncation behavior:
+
+```dart
+final lowerFourBits = Const(0x10, width: 4); // Warns and produces 4'h0.
+```
+
+For intentional narrowing, acknowledge it with `allowTruncation`:
+
+```dart
+final lowerFourBits = Const(0x10, width: 4, allowTruncation: true);
+```
+
+The same option is available through `LogicValue.of`. Negative integer
+constants do not warn because their two's-complement representation is
+sign-extended or narrowed intentionally.
 
 ## Binary integer conversion
 

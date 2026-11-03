@@ -1,7 +1,7 @@
 ---
 title: "Logic Arrays"
 permalink: /docs/logic-arrays/
-last_modified_at: 2026-10-21
+last_modified_at: 2026-11-3
 toc: true
 ---
 
@@ -130,7 +130,39 @@ not public axis metadata. See the
 [`TypedLogicArray` API documentation](https://intel.github.io/rohd/rohd/TypedLogicArray-class.html)
 for the complete constructor and cloning contracts.
 
-Hardware shape changes should use ordinary construction and connection APIs rather than specialized typed-array adapters. Construct a new `TypedLogicArray` with the desired dimensions and builder, then connect it with `gets`/`<=` when row-major assignment is sufficient. For a transpose, connect corresponding coordinates explicitly with `indexedElements` and `at`; whole-array assignment does not infer a permutation. This keeps construction disconnected and leaves driver ownership with the caller.
+## Transposing arrays
+
+`transpose()` returns a live array view with its axes reordered. Without
+arguments, it reverses every axis, so a 2-D `[rows, columns]` array becomes
+`[columns, rows]`:
+
+```dart
+final matrix = LogicArray([2, 3], 8, name: 'matrix');
+final transposed = matrix.transpose();
+
+// transposed.at([column, row]) is connected from matrix.at([row, column]).
+expect(transposed.dimensions, [3, 2]);
+```
+
+For arrays with more than two dimensions, provide an explicit permutation. The
+following output axis order `[1, 2, 0]` maps source `[a, b, c]` coordinates to
+destination `[b, c, a]`:
+
+```dart
+final tensor = TypedLogicArray<Sample, SampleValue>(
+  [2, 3, 4],
+  Sample.new,
+  valueCodec: sampleCodec,
+);
+final permuted = tensor.transpose(axes: [1, 2, 0]);
+
+expect(permuted.dimensions, [3, 4, 2]);
+```
+
+The supplied axes must be a complete permutation of the array dimensions.
+`transpose` retains the configured number of unpacked dimensions and preserves
+`LogicArray`/net-array representations; generic typed arrays retain their
+element builder and value codec.
 
 ### Rank-zero arrays and scalar views
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2025 Intel Corporation
+// Copyright (C) 2022-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // finite_state_machine.dart
@@ -8,7 +8,7 @@
 // Author: Shubham Kumar <shubham.kumar@intel.com>
 
 import 'dart:io';
-import 'dart:math';
+import 'dart:math' show max;
 
 import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
@@ -79,9 +79,6 @@ class FiniteStateMachine<StateIdentifier extends Enum> {
   late final LogicEnum<StateIdentifier> nextState =
       stateEnum(name: 'nextState');
 
-  /// Returns a ceiling on the log of [x] base [base].
-  static int _logBase(num x, num base) => (log(x) / log(base)).ceil();
-
   /// Width of the state.
   final int stateWidth;
 
@@ -118,7 +115,7 @@ class FiniteStateMachine<StateIdentifier extends Enum> {
     this.asyncReset = false,
     List<Conditional> setupActions = const [],
   })  : setupActions = List.unmodifiable(setupActions),
-        stateWidth = max(1, _logBase(_states.length, 2)) {
+        stateWidth = max(1, _states.length.log2Ceil) {
     _validate();
 
     var stateCounter = 0;

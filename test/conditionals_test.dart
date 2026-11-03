@@ -190,6 +190,59 @@ class ConditionalAssignModule extends Module {
   }
 }
 
+class _FourStateCombinationalParityModule extends Module {
+  _FourStateCombinationalParityModule(Logic select, Logic data)
+      : super(definitionName: 'FourStateCombinationalParity') {
+    select = addInput('select', select);
+    data = addInput('data', data, width: data.width);
+    final direct = addOutput('direct', width: data.width);
+    final ifResult = addOutput('ifResult', width: data.width);
+    final caseResult = addOutput('caseResult', width: data.width);
+
+    Combinational([
+      direct < data,
+      If(select, then: [ifResult < data], orElse: [ifResult < 0]),
+      Case(
+        select,
+        [
+          CaseItem(Const(1), [caseResult < data])
+        ],
+        defaultItem: [caseResult < 0],
+      ),
+    ]);
+    addOutput('muxResult', width: data.width) <=
+        mux(select, data, Const(0, width: data.width));
+  }
+}
+
+class _FourStateSequentialParityModule extends Module {
+  _FourStateSequentialParityModule(Logic clk, Logic data)
+      : super(definitionName: 'FourStateSequentialParity') {
+    clk = addInput('clk', clk);
+    data = addInput('data', data, width: data.width);
+    final result = addOutput('result', width: data.width);
+
+    Sequential(clk, [result < data]);
+  }
+}
+
+class _SequentialControlPessimismModule extends Module {
+  _SequentialControlPessimismModule(Logic clk, Logic select, Logic data)
+      : super(definitionName: 'SequentialControlPessimism') {
+    clk = addInput('clk', clk);
+    select = addInput('select', select);
+    data = addInput('data', data, width: data.width);
+    final result = addOutput('result', width: data.width);
+
+    Sequential(
+      clk,
+      [
+        If(select, then: [result < data], orElse: [result < 0]),
+      ],
+    );
+  }
+}
+
 class SeqCondModule extends Module {
   Logic get equal => output('equal');
   SeqCondModule(Logic clk, Logic a, {required SeqCondModuleType combType}) {
@@ -688,11 +741,17 @@ void main() {
       final vectors = [
         Vector({'a': 1}, {'c': 1}),
         Vector({'a': 0}, {'c': 0}),
-        Vector({'a': LogicValue.z}, {'c': LogicValue.x}),
+        Vector({'a': LogicValue.z}, {'c': LogicValue.z}),
         Vector({'a': LogicValue.x}, {'c': LogicValue.x}),
       ];
-      await SimCompare.checkFunctionalVector(mod, vectors);
-      // no SV run here, ROHD converts Z to X
+      await SimCompare.checkVectors(
+        mod,
+        vectors,
+        excludedBackends: const {
+          SimCompareBackend.systemc:
+              'SystemC does not model four-state values.',
+        },
+      );
     });
 
     test('Conditional assign module with invalid inputs wider than 1 bit',
@@ -701,13 +760,125 @@ void main() {
       await mod.build();
       final vectors = [
         Vector({'a': 0xa5}, {'c': 0xa5}),
-        Vector({'a': LogicValue.z}, {'c': LogicValue.x}),
+        Vector({'a': LogicValue.z}, {'c': LogicValue.z}),
         Vector({'a': LogicValue.x}, {'c': LogicValue.x}),
         Vector({'a': LogicValue.ofString('01zzxx10')},
-            {'c': LogicValue.ofString('01xxxx10')})
+            {'c': LogicValue.ofString('01zzxx10')})
       ];
+      await SimCompare.checkVectors(
+        mod,
+        vectors,
+        excludedBackends: const {
+          SimCompareBackend.systemc:
+              'SystemC does not model four-state values.',
+        },
+      );
+    });
+
+    test('procedural assignments and muxes preserve four-state payloads',
+        () async {
+      final mod = _FourStateCombinationalParityModule(Logic(), Logic(width: 4));
+      await mod.build();
+      final value = LogicValue.ofString('01zx');
+      final mergedOnUnknownSelect = LogicValue.ofString('0xxx');
+      final vectors = [
+        Vector(
+          {'select': 1, 'data': value},
+          {
+            'direct': value,
+            'ifResult': value,
+            'caseResult': value,
+            'muxResult': value,
+          },
+        ),
+        Vector(
+          {'select': LogicValue.x, 'data': value},
+          {'muxResult': mergedOnUnknownSelect},
+        ),
+        Vector(
+          {'select': LogicValue.z, 'data': value},
+          {'muxResult': mergedOnUnknownSelect},
+        ),
+      ];
+
+      await SimCompare.checkVectors(
+        mod,
+        vectors,
+        excludedBackends: const {
+          SimCompareBackend.systemc:
+              'SystemC does not model four-state values.',
+        },
+      );
+    });
+
+    test('sequential assignments preserve four-state payloads', () async {
+      final mod = _FourStateSequentialParityModule(Logic(), Logic(width: 4));
+      await mod.build();
+      final highImpedance = LogicValue.filled(4, LogicValue.z);
+      final mixed = LogicValue.ofString('01zx');
+      final vectors = [
+        Vector({'clk': 0, 'data': highImpedance}, {}),
+        Vector({'clk': 1}, {'result': highImpedance}),
+        Vector({'clk': 0, 'data': mixed}, {'result': highImpedance}),
+        Vector({'clk': 1}, {'result': mixed}),
+      ];
+
+      await SimCompare.checkVectors(
+        mod,
+        vectors,
+        excludedBackends: const {
+          SimCompareBackend.systemc:
+              'SystemC does not model four-state values.',
+        },
+      );
+    });
+
+    test('unknown combinational controls pessimistically drive X', () async {
+      final mod = _FourStateCombinationalParityModule(Logic(), Logic(width: 4));
+      await mod.build();
+      final data = LogicValue.ofString('1010');
+      final unknown = LogicValue.filled(4, LogicValue.x);
+      final vectors = [
+        Vector(
+          {'select': LogicValue.x, 'data': data},
+          {
+            'direct': data,
+            'ifResult': unknown,
+            'caseResult': unknown,
+          },
+        ),
+        Vector(
+          {'select': LogicValue.z, 'data': data},
+          {
+            'direct': data,
+            'ifResult': unknown,
+            'caseResult': unknown,
+          },
+        ),
+      ];
+
       await SimCompare.checkFunctionalVector(mod, vectors);
-      // no SV run here, ROHD converts Z to X
+    });
+
+    test('unknown sequential controls pessimistically drive X', () async {
+      final mod = _SequentialControlPessimismModule(
+        Logic(),
+        Logic(),
+        Logic(width: 4),
+      );
+      await mod.build();
+      final unknown = LogicValue.filled(4, LogicValue.x);
+      final vectors = [
+        Vector({'clk': 0, 'select': 0, 'data': 0}, {}),
+        Vector({'clk': 1}, {'result': 0}),
+        Vector({'clk': 0, 'select': LogicValue.x, 'data': 0xa}, {'result': 0}),
+        Vector({'clk': 1}, {'result': unknown}),
+        Vector({'clk': 0, 'select': LogicValue.z, 'data': 0x5},
+            {'result': unknown}),
+        Vector({'clk': 1}, {'result': unknown}),
+      ];
+
+      await SimCompare.checkFunctionalVector(mod, vectors);
     });
 
     test('single elseifblock comb', () async {

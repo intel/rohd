@@ -46,6 +46,9 @@
       "pattern": "^https://www\\.electronicshub\\.org/binary-adder-and-subtractor/$"
     },
     {
+      "pattern": "^https://www\\.verilogpro\\.com/verilog-case-casez-casex/$"
+    },
+    {
       "pattern":"^https://.*\\.fandom\\.com"
     },
     {

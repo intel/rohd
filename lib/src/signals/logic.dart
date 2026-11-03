@@ -126,6 +126,9 @@ class Logic {
   /// The number of bits in this signal.
   int get width => _wire.width;
 
+  /// Whether this signal has no bits.
+  bool get isEmpty => width == 0;
+
   /// The current active value of this signal.
   LogicValue get value {
     _resolveDriver(this);
@@ -439,6 +442,9 @@ class Logic {
   @override
   String toString() => [
         'Logic($width): $name',
+        'value: $value',
+        if (parentModule?.hasBuilt ?? false)
+          'hierarchy: ${parentModule!.hierarchicalName}.$structureName',
         if (isArrayMember) 'index $arrayIndex of ($parentStructure)',
       ].join(', ');
 
@@ -1022,6 +1028,29 @@ class Logic {
     return slice(modifiedEndIndex - 1, modifiedStartIndex);
   }
 
+  /// Splits this signal into LSB-first chunks with the provided [widths].
+  ///
+  /// The widths must be non-negative and sum exactly to [width]. A zero-width
+  /// entry produces an empty [Const] chunk.
+  List<Logic> split(List<int> widths) {
+    if (widths.any((chunkWidth) => chunkWidth < 0) ||
+        widths.fold(0, (total, chunkWidth) => total + chunkWidth) != width) {
+      throw ArgumentError.value(
+        widths,
+        'widths',
+        'must be non-negative and sum to $width.',
+      );
+    }
+
+    var start = 0;
+    final chunks = <Logic>[];
+    for (final chunkWidth in widths) {
+      chunks.add(getRange(start, start + chunkWidth));
+      start += chunkWidth;
+    }
+    return List<Logic>.unmodifiable(chunks);
+  }
+
   /// Returns a [Logic] with width [newWidth] where new bits added are zeros
   /// as the most significant bits.
   ///
@@ -1075,7 +1104,8 @@ class Logic {
     if (width == 0) {
       return this;
     }
-    return mux(this[-1], ~this + 1, this);
+    final twosComplement = (~this + 1).named('${name}_twosComplement');
+    return mux(this[-1], twosComplement, this).named('${name}_absolute');
   }
 
   /// Returns a new [Logic] width width [newWidth] where new bits added are sign

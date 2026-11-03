@@ -35,6 +35,9 @@ abstract class LogicValue implements Comparable<LogicValue> {
   /// The number of bits in this `LogicValue`.
   final int width;
 
+  /// Whether this value has no bits.
+  bool get isEmpty => width == 0;
+
   const LogicValue._(this.width)
       : assert(width >= 0, 'Width must be greater than or equal to 0.');
 
@@ -53,21 +56,54 @@ abstract class LogicValue implements Comparable<LogicValue> {
   /// of bits.
   ///
   /// [width] must be greater than or equal to 0.
-  static LogicValue ofInt(int value, int width) => width > INT_BITS
-      ? _bigLogicValueOrFilled(
-          BigInt.from(value).toUnsigned(INT_BITS),
-          BigInt.zero,
-          width,
-        )
-      : _smallLogicValueOrFilled(value, 0, width);
+  static LogicValue ofInt(
+    int value,
+    int width, {
+    bool allowTruncation = false,
+  }) {
+    _warnOnIntegerTruncation(value, width, allowTruncation);
+    return width > INT_BITS
+        ? _bigLogicValueOrFilled(
+            BigInt.from(value).toUnsigned(INT_BITS),
+            BigInt.zero,
+            width,
+          )
+        : _smallLogicValueOrFilled(value, 0, width);
+  }
 
   /// Converts `BigInt` [value] to a valid [LogicValue] with [width]
   /// number of bits.
   ///
   /// [width] must be greater than or equal to 0.
-  static LogicValue ofBigInt(BigInt value, int width) => width > INT_BITS
-      ? _bigLogicValueOrFilled(value, BigInt.zero, width)
-      : _smallLogicValueOrFilled(value.toIntUnsigned(width), 0, width);
+  static LogicValue ofBigInt(
+    BigInt value,
+    int width, {
+    bool allowTruncation = false,
+  }) {
+    _warnOnIntegerTruncation(value, width, allowTruncation);
+    return width > INT_BITS
+        ? _bigLogicValueOrFilled(value, BigInt.zero, width)
+        : _smallLogicValueOrFilled(value.toIntUnsigned(width), 0, width);
+  }
+
+  static void _warnOnIntegerTruncation(
+    Object value,
+    int width,
+    bool allowTruncation,
+  ) {
+    final isTruncated = switch (value) {
+      final int value =>
+        value.isFinite && value >= 0 && value.bitLength > width,
+      final BigInt value => !value.isNegative && value.bitLength > width,
+      _ => false,
+    };
+    if (!allowTruncation && isTruncated) {
+      Simulator.logger.warning(
+        'Truncating integer constant $value to $width bits. Pass '
+        'allowTruncation: true to acknowledge intentional truncation.',
+      );
+    }
+  }
 
   /// Constructs a [LogicValue] with the [width] number of bits, where every
   /// bit has the same value of [fill].
@@ -148,7 +184,12 @@ abstract class LogicValue implements Comparable<LogicValue> {
   /// [bool]s will infer a default width of `1`, but it can be overridden.
   /// Invalid 1-bit [val]s will always be [fill]ed even if [fill] is `false`,
   /// but will default to a width of 1 unless [width] is specified.
-  static LogicValue of(dynamic val, {bool fill = false, int? width}) {
+  static LogicValue of(
+    dynamic val, {
+    bool fill = false,
+    int? width,
+    bool allowTruncation = false,
+  }) {
     if (val is int) {
       if (width == null) {
         throw LogicValueConstructionException(
@@ -168,7 +209,11 @@ abstract class LogicValue implements Comparable<LogicValue> {
                     ),
         );
       } else {
-        return LogicValue.ofInt(val, width);
+        return LogicValue.ofInt(
+          val,
+          width,
+          allowTruncation: allowTruncation,
+        );
       }
     } else if (val is BigInt) {
       if (width == null) {
@@ -189,7 +234,11 @@ abstract class LogicValue implements Comparable<LogicValue> {
                     ),
         );
       } else {
-        return LogicValue.ofBigInt(val, width);
+        return LogicValue.ofBigInt(
+          val,
+          width,
+          allowTruncation: allowTruncation,
+        );
       }
     } else if (val is bool) {
       width ??= 1;
@@ -1087,6 +1136,29 @@ abstract class LogicValue implements Comparable<LogicValue> {
     IndexUtilities.validateRange(modifiedStartIndex, modifiedEndIndex);
 
     return _getRange(modifiedStartIndex, modifiedEndIndex);
+  }
+
+  /// Splits this value into LSB-first chunks with the provided [widths].
+  ///
+  /// The widths must be non-negative and sum exactly to [width]. A zero-width
+  /// entry produces [LogicValue.empty].
+  List<LogicValue> split(List<int> widths) {
+    if (widths.any((chunkWidth) => chunkWidth < 0) ||
+        widths.fold(0, (total, chunkWidth) => total + chunkWidth) != width) {
+      throw ArgumentError.value(
+        widths,
+        'widths',
+        'must be non-negative and sum to $width.',
+      );
+    }
+
+    var start = 0;
+    final chunks = <LogicValue>[];
+    for (final chunkWidth in widths) {
+      chunks.add(getRange(start, start + chunkWidth));
+      start += chunkWidth;
+    }
+    return List<LogicValue>.unmodifiable(chunks);
   }
 
   /// Returns a subset [LogicValue].  It is inclusive of [start], exclusive of

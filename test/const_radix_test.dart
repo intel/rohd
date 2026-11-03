@@ -125,7 +125,7 @@ void main() {
     test('toString remains a Logic diagnostic', () {
       expect(
         Const(42, width: 8, preferredRadix: 10).toString(),
-        'Logic(8): const_42',
+        "Logic(8): const_42, value: 8'h2a",
       );
     });
 

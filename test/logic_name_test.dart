@@ -94,6 +94,23 @@ class BusSubsetNaming extends Module {
   }
 }
 
+class NamedConvenienceOperations extends Module {
+  late final Logic caseResult;
+
+  NamedConvenienceOperations(Logic clk, Logic select, Logic data)
+      : super(name: 'namedConvenienceOperations') {
+    clk = addInput('clk', clk);
+    select = addInput('select', select);
+    data = addInput('data', data, width: data.width);
+
+    final registered = flop(clk, data, name: 'registeredData');
+    final selected = mux(select, registered, data, name: 'selectedData');
+    caseResult = cases(select, {0: data, 1: selected}, name: 'caseResult');
+
+    addOutput('out', width: caseResult.width) <= caseResult;
+  }
+}
+
 class BadlyNamedIntermediateSignalModule extends Module {
   BadlyNamedIntermediateSignalModule(Logic a) {
     a = addInput('a', a);
@@ -200,6 +217,18 @@ void main() {
       () {
     final bus = Logic();
     expect(bus.name, equals('_s'));
+  });
+
+  test('convenience operations preserve explicitly provided names', () async {
+    final module =
+        NamedConvenienceOperations(Logic(), Logic(), Logic(width: 4));
+    await module.build();
+
+    expect(
+      module.subModules.map((subModule) => subModule.name),
+      containsAll(['registeredData', 'selectedData']),
+    );
+    expect(module.caseResult.name, 'caseResult');
   });
 
   test(

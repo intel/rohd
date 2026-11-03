@@ -826,6 +826,7 @@ LogicType mux<LogicType extends Logic>(
   LogicType d1,
   LogicType d0, {
   LogicType Function({String? name})? outputGenerator,
+  String name = 'mux',
 }) {
   if (control.width != 1) {
     throw PortWidthMismatchException(control, 1);
@@ -846,12 +847,19 @@ LogicType mux<LogicType extends Logic>(
     d1,
     d0,
     outputGenerator: outputGenerator,
+    name: name,
   ).out;
 }
 
 String _muxSchemaSignature(Logic logic) => logic is LogicStructure
     ? logicStructureShapeSignature(logic)
     : '${logic.runtimeType}_W${logic.width}';
+
+LogicValue _mergeUnknownMuxControl(LogicValue d0, LogicValue d1) =>
+    LogicValue.ofIterable([
+      for (var bit = 0; bit < d0.width; bit++)
+        if (d0[bit] == d1[bit]) d0[bit] else LogicValue.x,
+    ]);
 
 /// A multiplexer with an output represented by [LogicType].
 ///
@@ -1000,11 +1008,11 @@ class _ScalarMux<LogicType extends Logic> extends Mux<LogicType>
   /// Executes the functional behavior of the mux.
   void _execute() {
     if (!_control.value.isValid) {
-      out.put(LogicValue.x);
+      out.put(_mergeUnknownMuxControl(_d0.value, _d1.value));
     } else if (_control.value == LogicValue.zero) {
-      out.put(_d0.value.isValid ? _d0.value : LogicValue.x);
+      out.put(_d0.value);
     } else if (_control.value == LogicValue.one) {
-      out.put(_d1.value.isValid ? _d1.value : LogicValue.x);
+      out.put(_d1.value);
     }
   }
 

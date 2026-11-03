@@ -183,6 +183,30 @@ void main() {
     await Simulator.reset();
   });
 
+  group('concat aliases', () {
+    test('Logic concatenation preserves ordering', () {
+      final high = Logic(width: 2)..put(0x2);
+      final low = Logic(width: 2)..put(0x1);
+
+      expect(
+        [high, low].concat().value,
+        LogicValue.ofString('1001'),
+      );
+      expect(
+        [low, high].rconcat().value,
+        LogicValue.ofString('1001'),
+      );
+    });
+
+    test('LogicValue concatenation preserves ordering', () {
+      final high = LogicValue.ofString('10');
+      final low = LogicValue.ofString('01');
+
+      expect([high, low].concat(), LogicValue.ofString('1001'));
+      expect([low, high].rconcat(), LogicValue.ofString('1001'));
+    });
+  });
+
   group('Bit Range Annotations', () {
     test('variety of element widths with aligned bit ranges', () async {
       final mod = SwizzleVariety(Logic(width: 8));
@@ -693,7 +717,10 @@ a  /*  7:0 */
   });
 
   test('zero-width swizzle', () {
-    <Logic>[].swizzle();
+    final result = <Logic>[].swizzle();
+
+    expect(result.isEmpty, isTrue);
+    expect(result.value, LogicValue.empty);
   });
 
   test('swizzle with one non-zero-width signal skips Swizzle module', () {
