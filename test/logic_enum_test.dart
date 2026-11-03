@@ -1261,8 +1261,7 @@ void main() {
         var previousOutput = zero;
         for (var index = 0; index < cases.length; index++) {
           final (input, expectedSource) = cases[index];
-          final expectedOutput =
-              expectedSource.isFloating ? unknown : expectedSource;
+          final expectedOutput = expectedSource;
           final heldValue = previousOutput;
           previousOutput = expectedOutput;
           final time = 10 + index * 10;

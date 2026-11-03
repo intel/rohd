@@ -56,3 +56,40 @@ class NotGate extends Module with InlineSystemVerilog {
   }
 }
 ```
+
+## Custom non-inline SystemVerilog
+
+Use the `SystemVerilog` mixin when a module needs a custom SystemVerilog
+instantiation but cannot be represented as one inline expression. Keep the
+ROHD behavior for functional simulation, then override
+`instantiationVerilog` with the generated implementation:
+
+```dart
+class CustomInverter extends Module with SystemVerilog {
+  CustomInverter(Logic a) {
+    a = addInput('a', a);
+    final y = addOutput('y');
+
+    // Functional ROHD behavior.
+    y <= ~a;
+  }
+
+  @override
+  String instantiationVerilog(
+    String instanceType,
+    String instanceName,
+    Map<String, String> ports,
+  ) =>
+      'assign ${ports['y']} = ~${ports['a']}; // $instanceName';
+}
+```
+
+The `ports` map contains both input and output port names. Return `null` from
+`instantiationVerilog` to use a standard module instantiation instead.
+`definitionVerilog` returns an empty string by default, so no separate module
+definition is emitted for the example above; override it when generated output
+needs a custom definition.
+
+`CustomSystemVerilog` is the deprecated predecessor of `SystemVerilog`.
+Migrate by combining its separate input and output maps into the single
+`ports` map shown above.

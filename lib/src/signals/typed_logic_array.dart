@@ -228,6 +228,39 @@ class TypedLogicArray<T extends Logic, V> extends BaseLogicArray {
     return elements.cast<TypedLogicArray<T, V>>();
   }
 
+  /// Returns a live view with dimensions reordered by [axes].
+  ///
+  /// When [axes] is omitted, dimensions are reversed. For example, a 2-D
+  /// `[rows, columns]` array becomes `[columns, rows]`; a 3-D `[a, b, c]`
+  /// array becomes `[c, b, a]`. Each result index is mapped to this array by
+  /// the corresponding axis permutation. The number of unpacked dimensions is
+  /// retained.
+  ///
+  /// Throws an [ArgumentError] when [axes] is not a permutation of the array
+  /// dimensions.
+  TypedLogicArray<T, V> transpose({List<int>? axes, String? name}) {
+    final normalizedAxes = _normalizeTransposeAxes(dimensions.length, axes);
+
+    final transposed = TypedLogicArray<T, V>(
+      [for (final axis in normalizedAxes) dimensions[axis]],
+      _elementBuilder,
+      valueCodec: valueCodec,
+      elementCompatibility: _elementCompatibility,
+      dimensionNames: [
+        for (final axis in normalizedAxes) _dimensionNames[axis],
+      ],
+      name: name ?? '${this.name}_transposed',
+      numUnpackedDimensions: numUnpackedDimensions,
+    );
+    for (final (indices, element) in indexedElements) {
+      transposed.at([
+            for (final axis in normalizedAxes) indices[axis],
+          ]) <=
+          element;
+    }
+    return transposed;
+  }
+
   @override
   TypedLogicValueArray<V> get value => TypedLogicValueArray<V>.fromPacked(
         dimensions,
@@ -511,6 +544,23 @@ class _TypedLogicArrayBuild<T extends Logic, V> {
 /// Returns the number of array positions described by [dimensions].
 int _arrayLength(List<int> dimensions) =>
     dimensions.fold(1, (length, dimension) => length * dimension);
+
+/// Validates a dimension permutation for [TypedLogicArray.transpose].
+List<int> _normalizeTransposeAxes(int rank, List<int>? axes) {
+  final normalized = List<int>.unmodifiable(
+    axes ?? List.generate(rank, (axis) => rank - axis - 1),
+  );
+  if (normalized.length != rank ||
+      normalized.any((axis) => axis < 0 || axis >= rank) ||
+      normalized.toSet().length != rank) {
+    throw ArgumentError.value(
+      axes,
+      'axes',
+      'must be a permutation of the $rank array dimensions.',
+    );
+  }
+  return normalized;
+}
 
 /// Converts [flatIndex] to row-major indices for [dimensions].
 List<int> _arrayIndices(List<int> dimensions, int flatIndex) {

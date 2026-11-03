@@ -176,6 +176,14 @@ class _TypedArrayPortModule extends Module {
   }
 }
 
+class _ArrayTransposeModule extends Module {
+  _ArrayTransposeModule(LogicArray values) {
+    values = addTypedInput('values', values);
+    final transposed = values.transpose();
+    addTypedOutput('transposed', transposed.clone) <= transposed;
+  }
+}
+
 class _TypedNetArrayPortModule extends Module {
   late final TypedLogicArray<_NetSampleStructure, _SampleValue> values;
 
@@ -1230,6 +1238,114 @@ void main() {
       ]) {
         expect(() => values.at(indices), throwsA(isA<RangeError>()));
       }
+    });
+
+    test('transposes typed arrays with live element connections', () {
+      final values = TypedLogicArray<Logic, LogicValue>(
+        [2, 3],
+        ({name}) => Logic(name: name, width: 4),
+        dimensionNames: const ['row_', 'column_'],
+        name: 'values',
+        numUnpackedDimensions: 1,
+      );
+      for (var row = 0; row < 2; row++) {
+        for (var column = 0; column < 3; column++) {
+          values.at([row, column]).put(row * 3 + column);
+        }
+      }
+
+      final transposed = values.transpose();
+
+      expect(transposed, isA<TypedLogicArray<Logic, LogicValue>>());
+      expect(transposed, isNot(isA<LogicArray>()));
+      expect(transposed.dimensions, [3, 2]);
+      expect(transposed.numUnpackedDimensions, 1);
+      expect(transposed.elements.map((element) => element.name),
+          ['column_0', 'column_1', 'column_2']);
+      expect(transposed.at([2, 1]).name, 'row_1');
+      for (var row = 0; row < 2; row++) {
+        for (var column = 0; column < 3; column++) {
+          expect(
+            transposed.at([column, row]).value.toInt(),
+            row * 3 + column,
+          );
+        }
+      }
+
+      values.at([1, 2]).put(0xf);
+      expect(transposed.at([2, 1]).value.toInt(), 0xf);
+    });
+
+    test('transposes LogicArray and net array representations', () {
+      final values = LogicArray(
+        [2, 3],
+        4,
+        name: 'values',
+        numUnpackedDimensions: 1,
+      );
+      final netValues = LogicArray.net([2, 3], 4, name: 'netValues');
+
+      final transposed = values.transpose();
+      final transposedNet = netValues.transpose();
+
+      expect(transposed, isA<LogicArray>());
+      expect(transposed.dimensions, [3, 2]);
+      expect(transposed.numUnpackedDimensions, 1);
+      expect(transposed.isNet, isFalse);
+      expect(transposedNet, isA<LogicArray>());
+      expect(transposedNet.isNet, isTrue);
+      expect(LogicArray([6], 1).transpose().dimensions, [6]);
+      expect(
+        () => LogicArray([2, 3, 4], 1).transpose(axes: [0, 0, 2]),
+        throwsArgumentError,
+      );
+      expect(
+        () => LogicArray([2, 3, 4], 1).transpose(axes: [0, 1]),
+        throwsArgumentError,
+      );
+    });
+
+    test('transposes higher-rank arrays with explicit axes', () {
+      final values = TypedLogicArray<Logic, LogicValue>(
+        [2, 3, 4],
+        ({name}) => Logic(name: name, width: 5),
+        dimensionNames: const ['a_', 'b_', 'c_'],
+        name: 'values',
+      );
+      for (var a = 0; a < 2; a++) {
+        for (var b = 0; b < 3; b++) {
+          for (var c = 0; c < 4; c++) {
+            values.at([a, b, c]).put(a * 12 + b * 4 + c);
+          }
+        }
+      }
+
+      final transposed = values.transpose(axes: [1, 2, 0]);
+
+      expect(transposed.dimensions, [3, 4, 2]);
+      expect(transposed.elements.map((element) => element.name),
+          ['b_0', 'b_1', 'b_2']);
+      expect(transposed.at([2, 3, 1]).name, 'a_1');
+      for (var a = 0; a < 2; a++) {
+        for (var b = 0; b < 3; b++) {
+          for (var c = 0; c < 4; c++) {
+            expect(
+              transposed.at([b, c, a]).value.toInt(),
+              a * 12 + b * 4 + c,
+            );
+          }
+        }
+      }
+
+      values.at([1, 2, 3]).put(0x1f);
+      expect(transposed.at([2, 3, 1]).value.toInt(), 0x1f);
+    });
+
+    test('synthesizes transposed LogicArray views', () async {
+      final module = _ArrayTransposeModule(LogicArray([2, 3], 4));
+      await module.build();
+
+      SimCompare.checkIverilogVector(module, [], buildOnly: true);
     });
 
     test('named applies every requested naming mode', () {

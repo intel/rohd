@@ -9,12 +9,93 @@
 
 part of 'signals.dart';
 
+/// Shares simulator lifecycle listeners among all [_Wire] instances.
+///
+/// The registry keeps only weak references to wires so discarded elaborations
+/// cannot be retained by simulator-global stream subscriptions.
+class _WireLifecycle {
+  static final List<WeakReference<_Wire>> _wires = [];
+  static final List<WeakReference<_Wire>> _changedWires = [];
+
+  // Replaced and cancelled together when Simulator.reset replaces its streams.
+  // ignore: cancel_subscriptions
+  static StreamSubscription<void>? _preTickSubscription;
+  // Replaced and cancelled together when Simulator.reset replaces its streams.
+  // ignore: cancel_subscriptions
+  static StreamSubscription<void>? _postTickSubscription;
+  static bool _awaitingReset = false;
+
+  /// Registers [wire] for pre-tick value snapshots.
+  static void register(_Wire wire) {
+    _wires.add(WeakReference(wire));
+    _ensureSubscriptions();
+  }
+
+  /// Registers [wire] to emit changed events at the end of each tick.
+  static void watchChanged(_Wire wire) {
+    _changedWires.add(WeakReference(wire));
+  }
+
+  static void _ensureSubscriptions() {
+    _preTickSubscription ??= Simulator.preTick.listen((_) {
+      _forEachLiveWire(_wires, (wire) {
+        wire._preTickValue = wire.value;
+      });
+    });
+    _postTickSubscription ??= Simulator.postTick.listen((_) {
+      _forEachLiveWire(_changedWires, (wire) {
+        if (wire.value != wire._preTickValue && wire._preTickValue != null) {
+          wire._changedController
+              .add(LogicValueChanged(wire.value, wire._preTickValue!));
+        }
+      });
+    });
+
+    if (!_awaitingReset) {
+      _awaitingReset = true;
+      unawaited(Simulator.resetRequested.then((_) {
+        _forEachLiveWire(_wires, (wire) {
+          wire._preTickValue = wire.value;
+        });
+
+        final oldPreTickSubscription = _preTickSubscription;
+        final oldPostTickSubscription = _postTickSubscription;
+        _preTickSubscription = null;
+        _postTickSubscription = null;
+        _awaitingReset = false;
+
+        unawaited(oldPreTickSubscription?.cancel());
+        unawaited(oldPostTickSubscription?.cancel());
+        _ensureSubscriptions();
+      }));
+    }
+  }
+
+  static void _forEachLiveWire(
+    List<WeakReference<_Wire>> references,
+    void Function(_Wire wire) action,
+  ) {
+    final liveWires = <_Wire>[];
+    references.removeWhere((reference) {
+      final wire = reference.target;
+      if (wire == null || !wire._lifecycleActive) {
+        return true;
+      }
+
+      liveWires.add(wire);
+      return false;
+    });
+
+    liveWires.forEach(action);
+  }
+}
+
 /// Represents a physical wire which shares a common value with one or
 /// more [Logic]s.
 class _Wire {
   _Wire({required this.width})
       : _currentValue = LogicValue.filled(width, LogicValue.z) {
-    _setupPreTickListener();
+    _WireLifecycle.register(this);
   }
 
   /// The current active value of this signal.
@@ -74,6 +155,10 @@ class _Wire {
 
   /// Controller for stable events that can be safely consumed at the
   /// end of a [Simulator] tick.
+  ///
+  /// The controller remains open after wire adoption so existing listeners
+  /// continue receiving forwarded [changed] events from the adopted wire.
+  // ignore: close_sinks
   final StreamController<LogicValueChanged> _changedController =
       StreamController<LogicValueChanged>.broadcast(sync: true);
 
@@ -84,54 +169,10 @@ class _Wire {
   /// per [Simulator] tick, iff the value of the [Logic] has changed.
   Stream<LogicValueChanged> get changed {
     if (!_changedBeingWatched) {
-      // only do these simulator subscriptions if someone has asked for
-      // them! saves performance!
       _changedBeingWatched = true;
-
-      StreamSubscription<void> subscribe() {
-        unawaited(Simulator.resetRequested.then((_) {
-          final oldPostTickSubscription = _postTickSubscription;
-
-          _postTickSubscription = subscribe();
-
-          unawaited(oldPostTickSubscription?.cancel());
-        }));
-
-        return Simulator.postTick.listen((event) {
-          if (value != _preTickValue && _preTickValue != null) {
-            _changedController.add(LogicValueChanged(value, _preTickValue!));
-          }
-        });
-      }
-
-      assert(_postTickSubscription == null,
-          'Should not be creating a new subscription if one exists.');
-
-      _postTickSubscription = subscribe();
+      _WireLifecycle.watchChanged(this);
     }
     return _changedController.stream;
-  }
-
-  /// Sets up the pre-tick listener for [_preTickValue].
-  ///
-  /// If one already exists, it will not create a new one.
-  void _setupPreTickListener() {
-    _preTickSubscription = Simulator.preTick.listen((event) {
-      _preTickValue = value;
-    });
-
-    unawaited(Simulator.resetRequested.then((_) {
-      assert(_preTickSubscription != null,
-          'Should not be null if we are setting up a new one.');
-
-      _preTickValue = value;
-
-      final oldPreTickSubscription = _preTickSubscription;
-
-      _setupPreTickListener();
-
-      unawaited(oldPreTickSubscription?.cancel());
-    }));
   }
 
   /// The [value] of this signal before the most recent [Simulator.tick] had
@@ -150,25 +191,16 @@ class _Wire {
   /// be reset.
   LogicValue? get previousValue => _preTickValue;
 
-  /// The subscription to the [Simulator]'s `preTick`.
-  ///
-  /// Non-null after the first tick has occurred after creation of `this`.
-  StreamSubscription<void>? _preTickSubscription;
+  /// Whether this wire should receive simulator lifecycle updates.
+  bool _lifecycleActive = true;
 
-  /// The subscription to the [Simulator]'s `postTick`.
-  ///
-  /// Only non-null if [_changedBeingWatched] is true.
-  StreamSubscription<void>? _postTickSubscription;
-
-  /// Cancels all [Simulator] subscriptions and uses [other]'s [changed] as the
-  /// source to replace all [changed] events for this [_Wire].
+  /// Stops lifecycle updates and uses [other]'s [changed] as the source to
+  /// replace all [changed] events for this [_Wire].
   void _migrateChangedTriggers(_Wire other) {
-    unawaited(_preTickSubscription?.cancel());
+    _lifecycleActive = false;
 
     if (_changedBeingWatched) {
-      final newChanged = other.changed;
-      unawaited(_postTickSubscription?.cancel());
-      newChanged.listen(_changedController.add);
+      other.changed.listen(_changedController.add);
       _changedBeingWatched = false;
     }
   }

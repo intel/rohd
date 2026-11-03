@@ -75,11 +75,17 @@ class Const extends Logic {
   /// outputs and its normalized name. Supported values are 2, 8, 10, and 16.
   /// If omitted, generated outputs select a radix automatically and the name
   /// uses decimal. Values containing `x` or `z` may fall back to binary.
-  Const(dynamic val, {int? width, bool fill = false, int? preferredRadix})
-      : this._(
+  Const(
+    dynamic val, {
+    int? width,
+    bool fill = false,
+    int? preferredRadix,
+    bool allowTruncation = false,
+  }) : this._(
             LogicValue.of(val,
                 width: width ?? (val is LogicValue ? val.width : 1),
-                fill: fill),
+                fill: fill,
+                allowTruncation: allowTruncation),
             preferredRadix: _validatePreferredRadix(preferredRadix));
 
   /// Constructs a [Const] from an already normalized [value].

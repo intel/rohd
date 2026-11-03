@@ -15,6 +15,7 @@ import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
+import 'package:rohd/src/utilities/web.dart';
 
 /// A waveform capture service that writes signal changes to a file.
 ///
@@ -38,7 +39,7 @@ class WaveformService extends ArtifactProducingService {
   ///
   /// Derived from [outputDirectory], [outputBaseName], [outputFileName],
   /// and [format].
-  String get outputPath => '$outputDirectory${Platform.pathSeparator}'
+  String get outputPath => '$outputDirectory/'
       '${outputFileName ?? '$outputBaseName.${format.fileExtension}'}';
 
   /// Path of the output waveform file.
@@ -225,6 +226,12 @@ class WaveformService extends ArtifactProducingService {
         super(module) {
     if (!module.hasBuilt) {
       throw ModuleNotBuiltException(module);
+    }
+    if (kIsWeb && writeToFile) {
+      throw UnsupportedError(
+        'File-backed waveform capture is unavailable on web platforms. '
+        'Use VCD capture with writeToFile: false and retainInMemory: true.',
+      );
     }
     if (format == WaveOutputFormat.fst && !writeToFile) {
       throw UnsupportedError('FST capture requires writeToFile: true.');

@@ -565,7 +565,7 @@ void main() {
 
       final invalidResult = mux(Const(LogicValue.z), d1, d0);
       expect(invalidResult, isNot(anyOf(same(d0), same(d1))));
-      expect(invalidResult.value, LogicValue.filled(4, LogicValue.x));
+      expect(invalidResult.value, LogicValue.filled(4, LogicValue.z));
 
       expect(() => mux(Const(0, width: 2), d1, d0),
           throwsA(isA<PortWidthMismatchException>()));
@@ -668,6 +668,11 @@ void main() {
     test('absolute', () async {
       final mod = Absolute(Logic(width: 4));
       await mod.build();
+      final sv = mod.dumpSystemVerilog();
+
+      expect(sv, contains('a_twosComplement'));
+      expect(sv, contains('a_absolute'));
+
       final vectors = [
         Vector({'a': bin('1111')}, {'y': bin('0001')}),
         Vector({'a': bin('0110')}, {'y': bin('0110')}),
@@ -692,16 +697,21 @@ void main() {
 
       final vector2 = [
         Vector(
-            {'control': 1, 'd0': 6, 'd1': LogicValue.z}, {'y': LogicValue.x}),
+            {'control': 1, 'd0': 6, 'd1': LogicValue.z}, {'y': LogicValue.z}),
+        Vector({'control': LogicValue.z, 'd0': 10, 'd1': 6},
+            {'y': LogicValue.ofString('0000xx10')}),
         Vector(
-            {'control': LogicValue.z, 'd0': 10, 'd1': 6}, {'y': LogicValue.x}),
-        Vector(
-            {'control': 0, 'd0': LogicValue.z, 'd1': 10}, {'y': LogicValue.x}),
+            {'control': 0, 'd0': LogicValue.z, 'd1': 10}, {'y': LogicValue.z}),
       ];
 
-      await SimCompare.checkFunctionalVector(mod, vector1 + vector2);
-      final simResult = SimCompare.iverilogVector(mod, vector1);
-      expect(simResult, equals(true));
+      await SimCompare.checkVectors(
+        mod,
+        vector1 + vector2,
+        excludedBackends: const {
+          SimCompareBackend.systemc:
+              'SystemC does not model four-state values.',
+        },
+      );
     });
 
     group('shift', () {

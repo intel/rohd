@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2025 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // conditional_assign.dart
@@ -80,13 +80,7 @@ class ConditionalAssign extends Conditional {
     final currentValue = driverValue(driver);
 
     try {
-      if (!currentValue.isValid) {
-        // Use bitwise & to turn Z's into X's, but keep valid signals as-is.
-        // It's too pessimistic to convert the whole bus to X.
-        _receiverOutput.put(currentValue & currentValue);
-      } else {
-        _receiverOutput.put(currentValue);
-      }
+      _receiverOutput.put(currentValue);
     } on WriteAfterReadException catch (e) {
       throw e.cloneWithAddedPath('  at $this  [$hierarchyString]');
     }

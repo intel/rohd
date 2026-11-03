@@ -1,4 +1,4 @@
-// Copyright (C) 2023 Intel Corporation
+// Copyright (C) 2023-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // previous_value_test.dart
@@ -15,6 +15,52 @@ import 'package:test/test.dart';
 void main() {
   tearDown(() async {
     await Simulator.reset();
+  });
+
+  test('discarded wires do not retain simulator lifecycle callbacks', () async {
+    // Install the shared lifecycle listener outside each counting zone.
+    Logic();
+    final callbacksByGeneration = List<int>.filled(3, 0);
+
+    Zone countingZone(int generation) =>
+        Zone.current.fork(specification: ZoneSpecification(
+          runUnary: <R, T>(
+            self,
+            parent,
+            zone,
+            R Function(T) callback,
+            argument,
+          ) {
+            if (Simulator.phase == SimulatorPhase.beforeTick) {
+              callbacksByGeneration[generation]++;
+            }
+            return parent.runUnary(zone, callback, argument);
+          },
+        ));
+
+    for (var generation = 0;
+        generation < callbacksByGeneration.length;
+        generation++) {
+      final active = countingZone(generation)
+          .run(() => List.generate(8, (_) => Logic()..put(0)));
+
+      callbacksByGeneration.fillRange(0, callbacksByGeneration.length, 0);
+      Simulator.registerAction(Simulator.time + 1, () {});
+      await Simulator.tick();
+
+      expect(
+        active.every((signal) => signal.previousValue == signal.value),
+        isTrue,
+        reason: 'Active wires must still capture their pre-tick values.',
+      );
+      expect(
+        callbacksByGeneration,
+        everyElement(0),
+        reason: 'Wire lifecycle callbacks must not accumulate by elaboration '
+            'generation.',
+      );
+      active.clear();
+    }
   });
 
   test('sample on flop with listen', () async {

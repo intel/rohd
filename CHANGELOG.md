@@ -32,6 +32,38 @@
 
 ### Improvements
 
+- Added `name` parameters to the `flop` and `mux` convenience helpers;
+  `cases` already supports naming its generated result
+  (<https://github.com/intel/rohd/issues/517>).
+- Added `concat` and `rconcat` aliases for `swizzle` and `rswizzle`
+  (<https://github.com/intel/rohd/issues/597>).
+- Include current signal value and built hierarchy in `Logic.toString()`
+  diagnostic output (<https://github.com/intel/rohd/issues/96>).
+- Added LSB-first `Logic.split` and `LogicValue.split` helpers for exact
+  arbitrary-width chunking (<https://github.com/intel/rohd/issues/236>).
+- Warn on accidental non-negative integer truncation in `Const` and
+  `LogicValue.of`, with `allowTruncation` for intentional narrowing
+  (<https://github.com/intel/rohd/issues/142>).
+- Added arbitrary-rank `TypedLogicArray.transpose`, including concrete
+  `LogicArray` and net-array views with live reordered element connections
+  (<https://github.com/intel/rohd/issues/427>).
+- Added exact `int` and `BigInt` base-two logarithm and power-of-two helpers,
+  and migrated FSM state sizing away from floating-point logarithms. ROHD-HCL
+  migration follows its next major-version change
+  (<https://github.com/intel/rohd/issues/508>).
+- Warn when `Simulator.run()` completes without registered or injected events
+  (<https://github.com/intel/rohd/issues/595>).
+- Expanded zero-width `Logic` and `LogicValue` coverage across functional
+  simulation, SystemVerilog/Icarus, SystemC, and Node; added `isEmpty`
+  convenience getters while preserving empty-value composition
+  (<https://github.com/intel/rohd/issues/111>).
+- Added X/Z optimism and pessimism regression coverage for combinational and
+  sequential conditional controls (<https://github.com/intel/rohd/issues/103>).
+- Expanded the SystemVerilog module-instantiation guide with external, inline,
+  and custom non-inline examples, including `CustomSystemVerilog` migration
+  guidance (<https://github.com/intel/rohd/issues/430>).
+- Name `Logic.abs()` two's-complement intermediates and final values
+  descriptively in generated output (<https://github.com/intel/rohd/issues/608>).
 - Allow swizzle and subset views to resolve as assignment receivers when safe,
   including nested partial writes without claiming unselected bits, and merge
   legal full packed-array/scalar assignments in generated SystemVerilog
@@ -71,6 +103,14 @@
 
 ### Bug Fixes
 
+- Made file-free, retained VCD waveform capture available on web platforms for
+  DartPad and other browser workflows (<https://github.com/intel/rohd/issues/273>).
+- Preserve four-state `z` values through procedural assignments and muxes,
+  including SystemVerilog’s bitwise merge behavior for unknown mux controls
+  (<https://github.com/intel/rohd/issues/570>).
+- Replaced per-wire simulator lifecycle subscriptions with a shared weak wire
+  registry, so discarded elaborations no longer retain callbacks or degrade
+  future simulation ticks (<https://github.com/intel/rohd/issues/708>).
 - Fixed [Case] and [CaseZ] handling of invalid item values: dynamic `x` and
   `z` patterns now drive `x`, while only literal constant `z` patterns remain
   CaseZ wildcards (<https://github.com/intel/rohd/issues/102>).
@@ -99,6 +139,14 @@
 
 ### Issue Housekeeping
 
+- Transferred fixed-point support and DSP ergonomics to
+  <https://github.com/intel/rohd-hcl/issues/321>
+  (<https://github.com/intel/rohd/issues/470>).
+- Verified that clock/data interface-port registration order does not affect
+  sequential capture (<https://github.com/intel/rohd/issues/318>).
+- Superseded the legacy hierarchy-viewer refresh workflow with the Live
+  Debugger's automatic waveform updates, resume backfill, and video snapshots
+  (<https://github.com/intel/rohd/issues/462>).
 - Closed stale issue reports whose requested behavior is already implemented,
   documented, or covered by regression tests:
   - Conditional, simulator, and waveform behavior: <https://github.com/intel/rohd/issues/10>, <https://github.com/intel/rohd/issues/161>, <https://github.com/intel/rohd/issues/162>, <https://github.com/intel/rohd/issues/167>, <https://github.com/intel/rohd/issues/191>, <https://github.com/intel/rohd/issues/313>, <https://github.com/intel/rohd/issues/396>, <https://github.com/intel/rohd/issues/446>, and <https://github.com/intel/rohd/issues/728>.

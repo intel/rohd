@@ -24,6 +24,7 @@ export 'src/simulator.dart';
 export 'src/swizzle.dart';
 export 'src/synthesizers/synthesizers.dart';
 export 'src/synthesizers/systemverilog/system_verilog_service.dart';
+export 'src/utilities/integer_math.dart';
 export 'src/utilities/naming.dart';
 export 'src/utilities/source_tracer.dart';
 export 'src/values/values.dart';

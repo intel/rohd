@@ -143,6 +143,29 @@ class LogicArray extends TypedLogicArray<Logic, LogicValue> {
     return elements.cast<LogicArray>();
   }
 
+  @override
+  LogicArray transpose({List<int>? axes, String? name}) {
+    final normalizedAxes = _normalizeTransposeAxes(dimensions.length, axes);
+
+    final transposed = LogicArray._factory(
+      [for (final axis in normalizedAxes) dimensions[axis]],
+      elementWidth,
+      name: name ?? '${this.name}_transposed',
+      numUnpackedDimensions: numUnpackedDimensions,
+      naming: Naming.renameable,
+      logicBuilder: isNet ? LogicNet.new : Logic.new,
+      logicArrayBuilder: isNet ? LogicArray.net : LogicArray.new,
+      isNet: isNet,
+    );
+    for (final (indices, element) in indexedElements) {
+      transposed.at([
+            for (final axis in normalizedAxes) indices[axis],
+          ]) <=
+          element;
+    }
+    return transposed;
+  }
+
   /// Creates an array port with a convenient constructor signature.
   ///
   /// The port uses mergeable naming so repeated interface connections retain a

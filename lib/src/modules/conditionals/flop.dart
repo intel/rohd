@@ -24,6 +24,7 @@ LogicType flop<LogicType extends Logic>(
   dynamic resetValue,
   bool asyncReset = false,
   LogicType Function({String? name})? outputGenerator,
+  String name = 'flipflop',
 }) =>
     FlipFlop<LogicType>(
       clk,
@@ -33,6 +34,7 @@ LogicType flop<LogicType extends Logic>(
       resetValue: resetValue,
       asyncReset: asyncReset,
       outputGenerator: outputGenerator,
+      name: name,
     ).q;
 
 /// A positive-edge-triggered flip-flop preserving `LogicType`.

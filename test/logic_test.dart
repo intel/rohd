@@ -10,6 +10,16 @@
 import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
 
+class _LogicToStringModule extends Module {
+  Logic get result => output('result');
+
+  _LogicToStringModule(Logic data) : super(name: 'logicToStringModule') {
+    data = addInput('data', data, width: data.width);
+    final result = addOutput('result', width: data.width);
+    result <= data;
+  }
+}
+
 void main() {
   tearDown(Simulator.reset);
 
@@ -104,6 +114,37 @@ void main() {
   test('packed simple logic returns itself', () {
     final logic = Logic();
     expect(logic.packed, logic);
+  });
+
+  test('toString includes current value and built hierarchy', () async {
+    final standalone = Logic(name: 'standalone', width: 4)..put(0xa);
+    expect(standalone.toString(), "Logic(4): standalone, value: 4'ha");
+
+    final data = Logic(name: 'data', width: 4);
+    final module = _LogicToStringModule(data);
+    await module.build();
+    data.inject(0x5);
+    await Simulator.tick();
+
+    expect(
+      module.result.toString(),
+      "Logic(4): result, value: 4'h5, "
+      'hierarchy: logicToStringModule.result',
+    );
+  });
+
+  test('isEmpty identifies zero-width signals and values', () {
+    final empty = Logic(width: 0);
+    final nonEmpty = Logic();
+    final structure = LogicStructure([Logic(width: 0)], name: 'emptyStruct');
+
+    expect(empty.isEmpty, isTrue);
+    expect(nonEmpty.isEmpty, isFalse);
+    expect(structure.isEmpty, isTrue);
+    expect(LogicValue.empty.isEmpty, isTrue);
+    expect(LogicValue.zero.isEmpty, isFalse);
+    expect((~empty).isEmpty, isTrue);
+    expect(empty.abs(), same(empty));
   });
 
   test('getRange on filled constants returns a constant', () {

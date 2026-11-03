@@ -1629,10 +1629,18 @@ void main() {
     });
 
     test('zero-width', () {
+      const empty = LogicValue.empty;
+
+      expect(empty.isEmpty, isTrue);
+      expect(LogicValue.one.isEmpty, isFalse);
       expect(LogicValue.filled(0, LogicValue.one),
           equals(LogicValue.filled(0, LogicValue.zero)));
       expect(LogicValue.filled(0, LogicValue.one).hashCode,
           equals(LogicValue.filled(0, LogicValue.zero).hashCode));
+      expect(~empty, equals(empty));
+      expect(empty & empty, equals(empty));
+      expect(empty | empty, equals(empty));
+      expect(empty ^ empty, equals(empty));
     });
   });
   group('Utility operations', () {
