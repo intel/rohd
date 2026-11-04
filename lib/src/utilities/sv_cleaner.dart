@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Intel Corporation
+// Copyright (C) 2025-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // sv_cleaner.dart
@@ -12,7 +12,7 @@ import 'package:meta/meta.dart';
 
 @internal
 abstract class SvCleaner {
-  /// Removes all swizzle bit annotation comments from a generated SystemVerilog
+  /// Removes all concat bit annotation comments from a generated SystemVerilog
   /// string for the purpose of helping test accurate SV.
   ///
   /// This function removes comments of the form `/* ... */` that contain bit
@@ -23,7 +23,7 @@ abstract class SvCleaner {
   /// bit range annotations are not relevant to the test and would only add
   /// noise.
   @internal
-  static String removeSwizzleAnnotationComments(String sv) =>
+  static String removeConcatAnnotationComments(String sv) =>
       // Single regex that handles all formatting cases
       sv.replaceAllMapped(
           RegExp(r'(\{\s+|\s*/\*\s*\d+(?::\s*\d+)?\s*\*/\s*|\s+\})',

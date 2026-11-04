@@ -121,7 +121,7 @@ this.sample = addTypedInput('sample', sample);
 
 ### 2.4 Driving `LogicArray` outputs
 
-**Always drive element-by-element**, never via `swizzle()`:
+**Always drive element-by-element**, never via `concat()`:
 
 ```dart
 // CORRECT — preserves array structure in synthesis
@@ -129,7 +129,7 @@ outputArray.elements.forEachIndexed((i, d) =>
     d <= flop(clk, reset: reset, en: enable & count.eq(i), serialized));
 
 // WRONG — flattens the array
-outputArray <= [...].swizzle();
+outputArray <= [...].concat();
 ```
 
 ### 2.5 Typed ports and typed arrays
@@ -664,13 +664,13 @@ test('pipeline latency', () async {
 });
 ```
 
-### 6.6 WaveDumper for debugging
+### 6.6 Waveform capture for debugging
 
 ```dart
 test('debug with waves', () async {
   final dut = MyModule(...);
   await dut.build();
-  WaveDumper(dut, outputPath: 'tmp_test/debug_waves.vcd');
+  dut.dumpWaves(outputPath: 'tmp_test/debug_waves.vcd');
   Simulator.setMaxSimTime(2000);
   unawaited(Simulator.run());
   // ... stimulus ...
@@ -711,7 +711,7 @@ test('debug with waves', () async {
 ### 7.1 SystemVerilog generation
 
 ```dart
-final sv = dut.generateSynth();
+final sv = dut.dumpSystemVerilog();
 // Verify it contains expected module definitions
 expect(sv, contains('module MyModule_W16'));
 ```
@@ -796,7 +796,7 @@ MyModule(Logic a, Logic b, ...) {
 | 1 | Uppercase `super.name = 'Serializer'` | Use lowercase: `'serializer'` |
 | 2 | Using external signal after `addInput` | Reassign: `sig = addInput('sig', sig, ...)` |
 | 3 | Missing `definitionName` for parameterized modules | Always encode sizing: `'Mod_W$width'` |
-| 4 | Driving `LogicArray` via `swizzle()` | Drive each element individually |
+| 4 | Driving `LogicArray` via `concat()` | Drive each element individually |
 | 5 | Unnamed `LogicStructure` instances | Always pass `name:` parameter |
 | 6 | `addOutput` in subclass when base already created it | Use `output('name')` instead |
 | 7 | Unnecessary `@protected` getters for ports used only in constructor | Just use the local variable |

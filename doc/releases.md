@@ -187,10 +187,10 @@ Pana's report is printed for review, and package scoring findings such as missin
 examples or newer dependency major versions count against the CI and preparation
 score gate. Pana's `--exit-code-threshold` is the number of
 points that may be lost from its 160-point maximum: `0` requires a full score.
-`rohd_devtools_widgets` permits up to 10 points lost (a minimum score of 150)
-while newer `cupertino_ui` and `material_ui` releases require a Dart SDK
-upgrade and accompanying formatter changes. `rohd_source_navigator` also uses
-threshold `10` temporarily while its canonical
+`rohd_devtools_widgets` requires the full Pana score of 160/160.
+`rohd_waveform` permits up to 10 points lost while newer `cupertino_ui` and
+`material_ui` releases require a Dart SDK upgrade and accompanying formatter
+changes. `rohd_source_navigator` also uses threshold `10` temporarily while its canonical
 `https://github.com/intel/rohd/tree/main/packages/rohd_source_navigator`
 repository URL cannot be validated before the path exists on upstream `main`;
 remove the exception when [#718](https://github.com/intel/rohd/pull/718) merges.
@@ -314,13 +314,11 @@ coordinated release.
 
 ### Core API migration for 0.7.0
 
-ROHD 0.7.0 removes APIs deprecated in 0.5.x or earlier and completes a few
-older breaking renames and merges. APIs deprecated in 0.6.x, and APIs whose
-deprecation release is not recorded, remain available as deprecated
-compatibility shims for this transitional release. Migrate consumers before
-widening a `^0.6.11` core constraint to include 0.7.x. The independently
-versioned shared packages do not need breaking releases just because core
-removes these APIs.
+ROHD 0.7.0 removes all deprecated APIs, including those deprecated in 0.6.x
+and APIs whose deprecation release is not recorded, and completes a few older
+breaking renames and merges. Migrate consumers before widening a `^0.6.11`
+core constraint to include 0.7.x. The independently versioned shared packages
+do not need breaking releases just because core removes these APIs.
 
 “Deprecated in” gives the first tagged release whose changelog explicitly
 records the deprecation. “Not recorded” means the changelog does not identify
@@ -340,36 +338,32 @@ rather than a deprecation.
 | `LogicValue.length`, `LogicValue.bit` | 0.3.0 | `width`, or the value itself with an explicit single-bit width check |
 | `LogicValue.fromBool`, `fromInt`, `fromBigInt`, `fromString` | 0.2.0 | `ofBool`, `ofInt`, `ofBigInt`, `ofString` |
 | `LogicValue.from(iterable)` | 0.2.0 | `LogicValue.ofIterable(iterable)` |
-| Global `swizzle(signals)`, `rswizzle(signals)` | 0.2.0 | `signals.swizzle()`, `signals.rswizzle()` |
+| Global `concat(signals)`, `rconcat(signals)` | 0.2.0 | `signals.concat()`, `signals.rconcat()` |
 | Gate `y` output aliases, including `Add.out` | 0.4.0 | `out`, `Add.sum`, or `Mux.mux`, as appropriate |
 | `getReceivers()`, `getDrivers()`, `getConditionals()` | 0.5.0 | `receivers`, `drivers`, `conditionals` |
 | `FiniteStateMachine.clk`, `Pipeline.clk` | 0.5.0 | Retain the clock supplied at construction; do not retrieve it from the module |
 
-The following deprecated APIs remain available in 0.7.0. APIs deprecated in
-0.6.x and those without a recorded deprecation release are retained for this
-transitional release; they will be removed in a later release. Update callers
-now; do not add new uses outside compatibility tests.
+The following additional deprecated APIs are also removed in 0.7.0.
 
-| Retained deprecated API | Replacement | Deprecation / release history |
+| Removed API | Replacement | Deprecation / release history |
 | --- | --- | --- |
 | `Port` | `Logic.port` | Deprecated in 0.6.4 |
 | `PairInterface.modify` and its constructor argument | Pass `uniquify` when connecting or adding sub-interfaces | Deprecated in 0.6.7 |
 | `PairInterface.clone(other)` | `other.clone()` | Deprecated in 0.6.6 |
 | `LogicStructure.bit` | `value`; explicitly check `width == 1` when required | Deprecation release not recorded |
 | `Module.unpreferredName`, `Module.isUnpreferred` | `Naming.unpreferredName`, `Naming.isUnpreferred`, or `Logic.naming` | Deprecation release not recorded |
-| `Dumper` | `WaveDumper`, `module.dumpWaves(outputPath: ...)`, or `WaveformService` | Deprecation release not recorded |
+| `Dumper`, `WaveDumper` | `module.dumpWaves(outputPath: ...)` or `WaveformService` | Deprecation release not recorded / released in 0.6.11 |
 | `SynthBuilder.top` | `tops` | Deprecation release not recorded |
 | `getFileContents()` | `getSynthFileContents()` | Deprecated in 0.6.4 |
 | `SynthesisResult.toFileContents()` and older backend overrides | `toSynthFileContents()`; use each artifact's `contents` | Deprecation release not recorded |
 | `CustomSystemVerilog` | `SystemVerilog`; combine input/output mappings into the `ports` map of `instantiationVerilog` | Deprecated in 0.6.0 |
 | `SystemVerilogSynthesizer.instantiationVerilogWithParameters` | `instantiationVerilogFor` with named arguments and a combined `ports` map | Deprecation release not recorded |
 | `Module.generateSynth` | `Module.dumpSystemVerilog` or `SystemVerilogService` | Released without deprecation in 0.6.11 |
-| `WaveDumper` | `module.dumpWaves(outputPath: ...)` or `WaveformService` | Released without deprecation in 0.6.11 |
 | `ModuleTree.hierarchyJSON` | `ModuleTree.hierarchyJson` | Released without deprecation in 0.6.11 |
 | `NetlistSynthesisResult.toFileContents()` | `toSynthFileContents()` and each artifact's `contents` | First released, already deprecated, in 0.6.11 |
 
 Compatibility APIs introduced and removed only during unreleased development
-are not retained: `FlcService` (use `TraceService`), `SystemCExecutable` (use
+are also removed: `FlcService` (use `TraceService`), `SystemCExecutable` (use
 `SystemCVectorExecutable`), `ModuleServices.hierarchyJSON` (use `hierarchyJson`),
 FLC methods on `NetlistService` (use `TraceService`), and
 `SystemVerilogService.contentsByName` (use `instanceTypeOutput` or `fileContents`).

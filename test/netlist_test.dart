@@ -85,7 +85,7 @@ class _AdjacentSliceConcatExample extends Module {
 
     final low = data.getRange(0, 4).named('low', naming: Naming.mergeable);
     final high = data.getRange(4, 8).named('high', naming: Naming.mergeable);
-    addOutput('out', width: 8) <= [high, low].swizzle();
+    addOutput('out', width: 8) <= [high, low].concat();
   }
 }
 
@@ -98,7 +98,7 @@ class _SliceAliasClusterExample extends Module {
     data = addInput('data', data, width: 8);
 
     final low = data.getRange(0, 4).named('low', naming: Naming.mergeable);
-    final alias = Swizzle([low]).out.named('alias', naming: Naming.mergeable);
+    final alias = Concat([low]).out.named('alias', naming: Naming.mergeable);
     addOutput('out', width: 4) <= alias;
   }
 }

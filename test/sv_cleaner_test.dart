@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Intel Corporation
+// Copyright (C) 2025-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // sv_cleaner_test.dart
@@ -23,7 +23,7 @@ d  /* 11: 0 */
 
       const expected = '''assign out = {a,b,c,d};''';
 
-      final result = SvCleaner.removeSwizzleAnnotationComments(input);
+      final result = SvCleaner.removeConcatAnnotationComments(input);
       expect(result, equals(expected));
     });
 
@@ -42,7 +42,7 @@ c  /* 15:8 */
 assign out = {a,b,c}; // Another regular comment
 /* This is a block comment that should stay */''';
 
-      final result = SvCleaner.removeSwizzleAnnotationComments(input);
+      final result = SvCleaner.removeConcatAnnotationComments(input);
       expect(result, equals(expected));
     });
 
@@ -50,7 +50,7 @@ assign out = {a,b,c}; // Another regular comment
       const input = 'signal /* 5 */ <= other_signal;';
       const expected = 'signal<= other_signal;';
 
-      final result = SvCleaner.removeSwizzleAnnotationComments(input);
+      final result = SvCleaner.removeConcatAnnotationComments(input);
       expect(result, equals(expected));
     });
 
@@ -58,7 +58,7 @@ assign out = {a,b,c}; // Another regular comment
       const input = 'big_signal /* 123:45 */ <= other;';
       const expected = 'big_signal<= other;';
 
-      final result = SvCleaner.removeSwizzleAnnotationComments(input);
+      final result = SvCleaner.removeConcatAnnotationComments(input);
       expect(result, equals(expected));
     });
 
@@ -79,7 +79,7 @@ module test (
 endmodule''';
 
       // Should only remove the bit range annotations
-      final result = SvCleaner.removeSwizzleAnnotationComments(input);
+      final result = SvCleaner.removeConcatAnnotationComments(input);
       expect(result, contains('input logic [7:0] a'));
       expect(result, contains('/* Regular comment */'));
       expect(result, contains('// Line comment'));
@@ -89,7 +89,7 @@ endmodule''';
     });
 
     test('handles empty input', () {
-      final result = SvCleaner.removeSwizzleAnnotationComments('');
+      final result = SvCleaner.removeConcatAnnotationComments('');
       expect(result, equals(''));
     });
 
@@ -106,7 +106,7 @@ assign out = {a,
 b,
 c};''';
 
-      final result = SvCleaner.removeSwizzleAnnotationComments(input);
+      final result = SvCleaner.removeConcatAnnotationComments(input);
       expect(result, equals(expected));
     });
   });

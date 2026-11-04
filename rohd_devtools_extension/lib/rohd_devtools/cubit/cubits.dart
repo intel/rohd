@@ -1,6 +1,9 @@
 // Copyright (C) 2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
+// 2026 July 9
+// Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
+//
 // cubits.dart
 // Barrel file for rohd_devtools cubits.
 

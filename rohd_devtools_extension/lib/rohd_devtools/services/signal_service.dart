@@ -7,16 +7,16 @@
 // 2024 January 5
 // Author: Yao Jing Quek <yao.jing.quek@intel.com>
 
-import 'package:rohd_devtools_extension/rohd_devtools/models/signal_model.dart';
+import 'package:rohd_hierarchy/rohd_hierarchy.dart';
 
 /// Utility methods for signal filtering and lookup.
 abstract class SignalService {
   /// Filters signals by case-insensitive name match.
-  static List<SignalModel> filterSignals(
-    List<SignalModel> signals,
+  static List<SignalOccurrence> filterSignals(
+    List<SignalOccurrence> signals,
     String searchTerm,
   ) {
-    final filteredSignals = <SignalModel>[];
+    final filteredSignals = <SignalOccurrence>[];
 
     for (final signal in signals) {
       if (signal.name.toLowerCase().contains(searchTerm.toLowerCase())) {

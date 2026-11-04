@@ -99,7 +99,7 @@ We can use a `for` loop to iterate over all the bits in the `a` and `b` inputs, 
 
 Since the `FullAdder` function will return a `FullAdderResult`, we can access the `cOut` property of the result using `res.cOut` and replace the value of the previous `carry`. We can append the result of `res.sum` to the `sum` list. This iteration will loop through all the bits and add the final `carry` value to the `sum` list.
 
-Then we will use `rswizzle()` on `sum` to perform a concatenation operation on the list of signals, where index 0 of this list is the least significant bit.
+Then we will use `rconcat()` on `sum` to perform a concatenation operation on the list of signals, where index 0 of this list is the least significant bit.
 
 You will see your `nBitAdder` function as below.
 
@@ -119,7 +119,7 @@ Logic nBitAdder(Logic a, Logic b) {
 
   sum.add(carry);
 
-  return sum.rswizzle();
+  return sum.rconcat();
 }
 ```
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Intel Corporation
+// Copyright (C) 2025-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // rohd_service_cubit.dart
@@ -14,10 +14,10 @@ import 'package:devtools_app_shared/utils.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rohd_devtools_extension/rohd_devtools/models/tree_model.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/services/service_manager_bridge.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/services/services.dart'
     hide serviceManager;
+import 'package:rohd_hierarchy/rohd_hierarchy.dart';
 import 'package:vm_service/vm_service.dart' as vm;
 
 part 'rohd_service_state.dart';
@@ -150,7 +150,7 @@ class RohdServiceCubit extends Cubit<RohdServiceState> {
   }
 
   Future<void> _handleModuleTreeOperation(
-    Future<TreeModel?> Function(TreeService) operation,
+    Future<HierarchyOccurrence?> Function(TreeService) operation,
   ) async {
     try {
       debugPrint(

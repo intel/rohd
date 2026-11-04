@@ -568,7 +568,7 @@ unavailable trace output, and inactive-source behavior after disposal.
 
 The evaluator test suite combines those synthesized FilterBank paths with
 value-based coverage for every supported gate operation, width conversion,
-unknown propagation, invalid gate inputs, bus slicing, and swizzle behavior.
+unknown propagation, invalid gate inputs, bus slicing, and concat behavior.
 
 The integration target also launches a real FilterBank process under the Dart
 VM service and exercises `IoVmConnectionStrategy`,

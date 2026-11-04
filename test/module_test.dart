@@ -317,7 +317,7 @@ void main() {
         await mod.build();
 
         final sv =
-            SvCleaner.removeSwizzleAnnotationComments(mod.dumpSystemVerilog());
+            SvCleaner.removeConcatAnnotationComments(mod.dumpSystemVerilog());
 
         if (!disconnectOutputs) {
           expect(sv, contains("assign o = {1'h1,(a ? 1'h0 : 1'h1)}"));
@@ -334,7 +334,7 @@ void main() {
         await mod.build();
 
         final sv =
-            SvCleaner.removeSwizzleAnnotationComments(mod.dumpSystemVerilog());
+            SvCleaner.removeConcatAnnotationComments(mod.dumpSystemVerilog());
 
         if (!disconnectOutputs) {
           expect(sv, contains("assign o = {1'h1,a}"));
@@ -350,7 +350,7 @@ void main() {
       await mod.build();
 
       final sv =
-          SvCleaner.removeSwizzleAnnotationComments(mod.dumpSystemVerilog());
+          SvCleaner.removeConcatAnnotationComments(mod.dumpSystemVerilog());
 
       expect(
           sv,

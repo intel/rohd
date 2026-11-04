@@ -106,7 +106,7 @@ void main() {
       expect(LogicValue.z.toInt, throwsA(isA<Exception>()));
       expect(LogicValue.ofString(''), equals(LogicValue.ofInt(1, 0)));
       expect(
-          <LogicValue>[].swizzle(), equals(LogicValue.ofBigInt(BigInt.two, 0)));
+          <LogicValue>[].concat(), equals(LogicValue.ofBigInt(BigInt.two, 0)));
     });
 
     test('big unsigned int string', () {
@@ -984,7 +984,7 @@ void main() {
           equals([
             LogicValue.filled(10, LogicValue.zero),
             LogicValue.filled(55, LogicValue.one)
-          ].swizzle()));
+          ].concat()));
     });
   });
 
@@ -2058,7 +2058,7 @@ void main() {
           [
             LogicValue.ofBigInt(BigInt.parse('1' * i, radix: 2), i),
             LogicValue.zero
-          ].swizzle());
+          ].concat());
     }
   });
 

@@ -161,7 +161,7 @@ class BusTestModule extends Module {
     // --- Assignments ---
     aBar <= ~a;
     aAndB <= a & b;
-    aBJoined <= [b, a].swizzle();
+    aBJoined <= [b, a].concat();
     a1 <= a[1];
     aPlusB <= a + b;
 
@@ -199,7 +199,7 @@ class BusTestModule extends Module {
     aReversed <= a.reversed;
 
     expressionBitSelect <=
-        [aBJoined, aShrunk1, aRange1, aRSliced1, aPlusB].swizzle().slice(3, 0);
+        [aBJoined, aShrunk1, aRange1, aRSliced1, aPlusB].concat().slice(3, 0);
   }
 }
 
@@ -319,7 +319,7 @@ void main() {
       expect(out6.value.toInt(), equals(bin('0')));
     });
 
-    test('Bus swizzle', () async {
+    test('Bus concat', () async {
       final a = Logic(width: 8);
       final b = Logic(width: 8);
       final gtm = BusTestModule(a, b);
@@ -614,7 +614,7 @@ void main() {
       checkBusSystemC(vectors);
     });
 
-    test('Bus swizzle', () async {
+    test('Bus concat', () async {
       final gtm = BusTestModule(Logic(width: 8), Logic(width: 8));
       await gtm.build();
       final vectors = [

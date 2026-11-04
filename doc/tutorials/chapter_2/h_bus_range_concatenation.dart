@@ -1,8 +1,8 @@
 // Copyright (C) 2023-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
-// bus_range_swizzling.dart
-// Demonstrated the use of bus range and swizzling.
+// bus_range_concatenation.dart
+// Demonstrates the use of bus range and concatenation.
 //
 // 2023 February 14
 // Author: Yao Jing Quek <yao.jing.quek@intel.com>
@@ -14,22 +14,22 @@ import 'helper.dart';
 
 void slicing(Logic a, Logic b, Logic c, Logic d, Logic e, Logic f, Logic g) {
   // assign d to the top bit of a
-  // construct e by swizzling bits from b, c, and d
+  // construct e by concatenation bits from b, c, and d
   // here, the MSB is on the left, LSB is on the right
   d <= b[7];
 
   // value:
-  // swizzle: d = [1] (MSB), c = [00111], a = [1110] (LSB) ,
+  // concat: d = [1] (MSB), c = [00111], a = [1110] (LSB) ,
   // e = [1 00111 1110] = [d, c, a]
-  e <= [d, c, a].swizzle();
+  e <= [d, c, a].concat();
 
-  // alternatively, do a reverse swizzle
+  // alternatively, do a reverse concat
   // (useful for lists where 0-index is actually the 0th element)
   //
   // Here, the LSB is on the left, the MSB is on the right
-  // right swizzle: d = [1] (MSB), c = [00111], a = [1110] (LSB),
+  // right concat: d = [1] (MSB), c = [00111], a = [1110] (LSB),
   // e = [1110 00111 1] - [a, c, d]
-  f <= [d, c, a].rswizzle();
+  f <= [d, c, a].rconcat();
 
   // Get a copy of f with one bit set to 0
   g <= f.withSet(2, Const(0));
@@ -46,8 +46,8 @@ void main() async {
   final g = Logic(name: 'g', width: d.width + c.width + a.width);
 
   // Instantiate Module and display system verilog
-  final rangeSwizzling = RangeSwizzling(a, b, c, d, e, f, g, slicing);
-  await displaySystemVerilog(rangeSwizzling);
+  final rangeConcatenation = RangeConcatenation(a, b, c, d, e, f, g, slicing);
+  await displaySystemVerilog(rangeConcatenation);
 
   print('\n');
 
@@ -61,8 +61,8 @@ void main() async {
   print('b[7]: ${b[7].value.toString(includeWidth: false)}');
   print('b[0]: ${b[0].value.toString(includeWidth: false)}');
 
-  print('d: ${rangeSwizzling.d.value.toString(includeWidth: false)}');
-  print('e: ${rangeSwizzling.e.value.toString(includeWidth: false)}');
-  print('f: ${rangeSwizzling.f.value.toString(includeWidth: false)}');
-  print('g: ${rangeSwizzling.g.value.toString(includeWidth: false)}');
+  print('d: ${rangeConcatenation.d.value.toString(includeWidth: false)}');
+  print('e: ${rangeConcatenation.e.value.toString(includeWidth: false)}');
+  print('f: ${rangeConcatenation.f.value.toString(includeWidth: false)}');
+  print('g: ${rangeConcatenation.g.value.toString(includeWidth: false)}');
 }

@@ -12,17 +12,17 @@ import 'dart:async' show unawaited;
 import 'package:flutter/foundation.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/cubit/cubits.dart';
-import 'package:rohd_devtools_extension/rohd_devtools/models/tree_model.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/ui/platform_icon.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/ui/signal_table.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/ui/signal_table_text_field.dart';
 import 'package:rohd_devtools_widgets/rohd_devtools_widgets.dart'
     show AvailableSourceFormats, GoToSourceCallback, RohdSourceFormat;
+import 'package:rohd_hierarchy/rohd_hierarchy.dart';
 
 /// Card that displays signal details for a selected module.
 class SignalDetailsCard extends StatefulWidget {
   /// The selected module whose signals are to be displayed.
-  final TreeModel? module;
+  final HierarchyOccurrence? module;
 
   /// Optional snapshot data to overlay signal values.
   final SnapshotLoaded? snapshot;
@@ -70,7 +70,7 @@ class SignalDetailsCard extends StatefulWidget {
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
     properties
-      ..add(DiagnosticsProperty<TreeModel?>('module', module))
+      ..add(DiagnosticsProperty<HierarchyOccurrence?>('module', module))
       ..add(DiagnosticsProperty<SnapshotLoaded?>('snapshot', snapshot));
   }
 }

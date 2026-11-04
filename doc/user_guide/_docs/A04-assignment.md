@@ -30,4 +30,4 @@ a.assignSubset(b.elements);
 a.assignSubset([Const(0)], 2);
 ```
 
-If you're assigning groups of bits that are already collected as a single `Logic`, consider using a [`swizzle`](https://intel.github.io/rohd-website/docs/bus-range-swizzling/).
+If you're assigning groups of bits that are already collected as a single `Logic`, consider using a [`concat`](https://intel.github.io/rohd-website/docs/bus-range-concatenation/).

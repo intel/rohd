@@ -1,36 +1,36 @@
-// Copyright (C) 2022-2026 Intel Corporation
+// Copyright (C) 2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
-// swizzle_test.dart
-// Tests for swizzling values
+// concat_test.dart
+// Tests for list concatenation values.
 //
-// 2022 January 6
-// Author: Max Korbel <max.korbel@intel.com>
+// 2026 November 4
+// Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:rohd/src/utilities/sv_cleaner.dart';
 import 'package:test/test.dart';
 
-class SwizzlyModule extends Module {
-  SwizzlyModule(Logic a) {
+class ConcatModule extends Module {
+  ConcatModule(Logic a) {
     a = addInput('a', a, width: a.width);
     final b = addOutput('b', width: a.width + 3);
-    b <= [Const(0), Const(1), a, Const(1)].swizzle();
+    b <= [Const(0), Const(1), a, Const(1)].concat();
   }
 }
 
-class SwizzlyEmpty extends Module {
-  SwizzlyEmpty(Logic a) {
+class ConcatEmpty extends Module {
+  ConcatEmpty(Logic a) {
     a = addInput('a', a, width: a.width);
     addOutput('b', width: a.width) <=
-        [a, <Logic>[].swizzle()].swizzle() +
-            <Logic>[].swizzle().zeroExtend(a.width);
+        [a, <Logic>[].concat()].concat() +
+            <Logic>[].concat().zeroExtend(a.width);
   }
 }
 
-class SwizzleVariety extends Module {
-  SwizzleVariety(Logic a) {
+class ConcatVariety extends Module {
+  ConcatVariety(Logic a) {
     a = addInput('a', a, width: a.width);
     final swz = [
       Const(0),
@@ -39,53 +39,53 @@ class SwizzleVariety extends Module {
       LogicArray(name: 'y', [3], 2),
       Const(3, width: 5),
       LogicStructure([a, Const(2, width: 3)], name: 'z'),
-    ].swizzle();
+    ].concat();
     final b = addOutput('b', width: swz.width);
     b <= swz;
   }
 }
 
-class SingleElementSwizzle extends Module {
-  SingleElementSwizzle(Logic a) {
+class SingleElementConcat extends Module {
+  SingleElementConcat(Logic a) {
     a = addInput('a', a, width: a.width);
     final b = addOutput('b', width: a.width);
-    // Force creation of Swizzle module with single element
-    b <= Swizzle([a]).out;
+    // Force creation of Concat module with single element
+    b <= Concat([a]).out;
   }
 }
 
-class AllSingleBitSwizzle extends Module {
-  AllSingleBitSwizzle() {
+class AllSingleBitConcat extends Module {
+  AllSingleBitConcat() {
     final bits = List.generate(5, (i) => addInput('bit$i', Logic()));
     final b = addOutput('b', width: bits.length);
-    b <= bits.swizzle();
+    b <= bits.concat();
   }
 }
 
-class NestedSwizzle extends Module {
-  NestedSwizzle(Logic a, Logic b) {
+class NestedConcat extends Module {
+  NestedConcat(Logic a, Logic b) {
     a = addInput('a', a, width: a.width);
     b = addInput('b', b, width: b.width);
-    final inner = [a, b].swizzle();
-    final outer = [Const(1), inner, Const(0, width: 2)].swizzle();
+    final inner = [a, b].concat();
+    final outer = [Const(1), inner, Const(0, width: 2)].concat();
     final out = addOutput('out', width: outer.width);
     out <= outer;
   }
 }
 
-class InlinedSwizzle extends Module {
-  InlinedSwizzle(Logic a, Logic b) {
+class InlinedConcat extends Module {
+  InlinedConcat(Logic a, Logic b) {
     a = addInput('a', a, width: a.width);
     b = addInput('b', b, width: b.width);
-    final swz = [a, b].swizzle();
+    final swz = [a, b].concat();
     final out = addOutput('out', width: swz.width);
-    // Inline swizzle in an expression
+    // Inline concat in an expression
     out <= swz & Const(bin('11111111'), width: swz.width);
   }
 }
 
-class VariedWidthSwizzle extends Module {
-  VariedWidthSwizzle() {
+class VariedWidthConcat extends Module {
+  VariedWidthConcat() {
     final a = addInput('a', Logic());
     final b = addInput('b', Logic(width: 12), width: 12);
     final c = addInput('c', Logic(width: 3), width: 3);
@@ -94,12 +94,12 @@ class VariedWidthSwizzle extends Module {
     final signals = [a, b, c, d, e];
     final out = addOutput('out',
         width: signals.map((s) => s.width).reduce((a, b) => a + b));
-    out <= signals.swizzle();
+    out <= signals.concat();
   }
 }
 
-class LargeWidthSwizzle extends Module {
-  LargeWidthSwizzle() {
+class LargeWidthConcat extends Module {
+  LargeWidthConcat() {
     final smallSig =
         addInput('smallSig', Logic(width: 5), width: 5); // indices 0-4
     final mediumSig =
@@ -110,49 +110,48 @@ class LargeWidthSwizzle extends Module {
 
     final totalWidth = signals.map((s) => s.width).reduce((a, b) => a + b);
     final out = addOutput('out', width: totalWidth);
-    out <= signals.swizzle();
+    out <= signals.concat();
   }
 }
 
-class SwizzleAdjacentBitSlices extends Module {
-  SwizzleAdjacentBitSlices() {
+class ConcatAdjacentBitSlices extends Module {
+  ConcatAdjacentBitSlices() {
     final a = addInput('a', Logic(width: 8), width: 8);
-    addOutput('out', width: 6) <=
-        [a[7], a[6], a[5], a[2], a[1], a[0]].swizzle();
+    addOutput('out', width: 6) <= [a[7], a[6], a[5], a[2], a[1], a[0]].concat();
   }
 }
 
-class SwizzleAllAdjacentBitSlices extends Module {
-  SwizzleAllAdjacentBitSlices() {
+class ConcatAllAdjacentBitSlices extends Module {
+  ConcatAllAdjacentBitSlices() {
     final a = addInput('a', Logic(width: 8), width: 8);
-    addOutput('out', width: 3) <= [a[7], a[6], a[5]].swizzle();
+    addOutput('out', width: 3) <= [a[7], a[6], a[5]].concat();
   }
 }
 
-class SwizzleAscendingBitSlices extends Module {
-  SwizzleAscendingBitSlices() {
+class ConcatAscendingBitSlices extends Module {
+  ConcatAscendingBitSlices() {
     final a = addInput('a', Logic(width: 8), width: 8);
-    addOutput('out', width: 3) <= [a[0], a[1], a[2]].swizzle();
+    addOutput('out', width: 3) <= [a[0], a[1], a[2]].concat();
   }
 }
 
-class SwizzleNestedAdjacentBitSlices extends Module {
-  SwizzleNestedAdjacentBitSlices() {
+class ConcatNestedAdjacentBitSlices extends Module {
+  ConcatNestedAdjacentBitSlices() {
     final a = addInput('a', Logic(width: 8), width: 8);
-    final inner = Swizzle([a[7], a[6], a[5]]).out;
-    addOutput('out', width: 5) <= [inner, a[4], a[3]].swizzle();
+    final inner = Concat([a[7], a[6], a[5]]).out;
+    addOutput('out', width: 5) <= [inner, a[4], a[3]].concat();
   }
 }
 
-class SwizzleAdjacentRanges extends Module {
-  SwizzleAdjacentRanges() {
+class ConcatAdjacentRanges extends Module {
+  ConcatAdjacentRanges() {
     final a = addInput('a', Logic(width: 8), width: 8);
-    addOutput('out', width: 6) <= [a.slice(5, 2), a.slice(1, 0)].swizzle();
+    addOutput('out', width: 6) <= [a.slice(5, 2), a.slice(1, 0)].concat();
   }
 }
 
-class SwizzlePackedArrayElementBits extends Module {
-  SwizzlePackedArrayElementBits(LogicArray arr) {
+class ConcatPackedArrayElementBits extends Module {
+  ConcatPackedArrayElementBits(LogicArray arr) {
     final inArr = addInputArray('arr', arr, dimensions: [2, 2]);
     final upper = inArr.elements[1] as LogicArray;
     final lower = inArr.elements[0] as LogicArray;
@@ -162,19 +161,19 @@ class SwizzlePackedArrayElementBits extends Module {
           upper.elements[0],
           lower.elements[1],
           lower.elements[0],
-        ].swizzle();
+        ].concat();
   }
 }
 
-class SwizzleUnpackedArrayElements extends Module {
-  SwizzleUnpackedArrayElements(LogicArray arr) {
+class ConcatUnpackedArrayElements extends Module {
+  ConcatUnpackedArrayElements(LogicArray arr) {
     final inArr = addInputArray(
       'arr',
       arr,
       dimensions: [4],
       numUnpackedDimensions: 1,
     );
-    addOutput('out', width: 4) <= inArr.elements.reversed.toList().swizzle();
+    addOutput('out', width: 4) <= inArr.elements.reversed.toList().concat();
   }
 }
 
@@ -205,11 +204,19 @@ void main() {
       expect([high, low].concat(), LogicValue.ofString('1001'));
       expect([low, high].rconcat(), LogicValue.ofString('1001'));
     });
+
+    test('deprecated aliases preserve concatenation ordering', () {
+      final high = LogicValue.ofString('10');
+      final low = LogicValue.ofString('01');
+
+      expect([high, low].concat(), LogicValue.ofString('1001'));
+      expect([low, high].rconcat(), LogicValue.ofString('1001'));
+    });
   });
 
   group('Bit Range Annotations', () {
     test('variety of element widths with aligned bit ranges', () async {
-      final mod = SwizzleVariety(Logic(width: 8));
+      final mod = ConcatVariety(Logic(width: 8));
       await mod.build();
 
       final sv = mod.dumpSystemVerilog();
@@ -231,8 +238,8 @@ void main() {
       expect(simResult, equals(true));
     });
 
-    test('single element swizzle has no bit range annotations', () async {
-      final mod = SingleElementSwizzle(Logic(width: 8));
+    test('single element concat has no bit range annotations', () async {
+      final mod = SingleElementConcat(Logic(width: 8));
       await mod.build();
 
       final sv = mod.dumpSystemVerilog();
@@ -257,7 +264,7 @@ void main() {
     });
 
     test('all single-bit elements with aligned annotations', () async {
-      final mod = AllSingleBitSwizzle();
+      final mod = AllSingleBitConcat();
       await mod.build();
 
       final sv = mod.dumpSystemVerilog();
@@ -287,13 +294,13 @@ void main() {
       expect(simResult, equals(true));
     });
 
-    test('nested swizzles with proper annotations', () async {
-      final mod = NestedSwizzle(Logic(width: 4), Logic(width: 3));
+    test('nested concats with proper annotations', () async {
+      final mod = NestedConcat(Logic(width: 4), Logic(width: 3));
       await mod.build();
 
       final sv = mod.dumpSystemVerilog();
 
-      // Should contain annotations for both inner and outer swizzles
+      // Should contain annotations for both inner and outer concats
       expect(sv, contains('/*'));
       expect(sv, contains('*/'));
 
@@ -307,13 +314,13 @@ void main() {
       expect(simResult, equals(true));
     });
 
-    test('swizzle inlined in expressions maintains annotations', () async {
-      final mod = InlinedSwizzle(Logic(width: 4), Logic(width: 4));
+    test('concat inlined in expressions maintains annotations', () async {
+      final mod = InlinedConcat(Logic(width: 4), Logic(width: 4));
       await mod.build();
 
       final sv = mod.dumpSystemVerilog();
 
-      // Should have annotations even when swizzle is part of larger expression
+      // Should have annotations even when concat is part of larger expression
       expect(sv, contains('/*'));
       expect(sv, contains('*/'));
 
@@ -328,7 +335,7 @@ void main() {
     });
 
     test('varied width elements have properly aligned annotations', () async {
-      final mod = VariedWidthSwizzle();
+      final mod = VariedWidthConcat();
       await mod.build();
 
       final sv = mod.dumpSystemVerilog();
@@ -367,7 +374,7 @@ void main() {
 
     test('alignment with different digit widths', () async {
       // Create a module with indices requiring different digit widths
-      final largeModule = LargeWidthSwizzle();
+      final largeModule = LargeWidthConcat();
       await largeModule.build();
       final sv = largeModule.dumpSystemVerilog();
 
@@ -399,7 +406,7 @@ void main() {
             LogicValue.ofBigInt(BigInt.from(0x1F), 5), // smallSig
             LogicValue.ofBigInt(BigInt.from(0x123456789ABC), 50), // mediumSig
             LogicValue.ofBigInt(BigInt.from(0x42), 500) // largeSig
-          ].swizzle()
+          ].concat()
         }),
       ];
       await SimCompare.checkFunctionalVector(largeModule, vectors);
@@ -410,11 +417,11 @@ void main() {
 
   group('SystemVerilog slice collapsing', () {
     test('collapses descending contiguous bit selects', () async {
-      final mod = SwizzleAdjacentBitSlices();
+      final mod = ConcatAdjacentBitSlices();
       await mod.build();
 
       final sv =
-          SvCleaner.removeSwizzleAnnotationComments(mod.dumpSystemVerilog());
+          SvCleaner.removeConcatAnnotationComments(mod.dumpSystemVerilog());
 
       expect(sv, contains('assign out = {a[7:5],a[2:0]};'));
       expect(sv, isNot(contains('a[7],a[6]')));
@@ -432,13 +439,12 @@ void main() {
       expect(simResult, equals(true));
     });
 
-    test('omits braces when the whole swizzle collapses to one slice',
-        () async {
-      final mod = SwizzleAllAdjacentBitSlices();
+    test('omits braces when the whole concat collapses to one slice', () async {
+      final mod = ConcatAllAdjacentBitSlices();
       await mod.build();
 
       final sv =
-          SvCleaner.removeSwizzleAnnotationComments(mod.dumpSystemVerilog());
+          SvCleaner.removeConcatAnnotationComments(mod.dumpSystemVerilog());
 
       expect(sv, contains('assign out = a[7:5];'));
       expect(sv, isNot(contains('assign out = {a[7:5]};')));
@@ -453,11 +459,11 @@ void main() {
     });
 
     test('does not collapse ascending bit selects', () async {
-      final mod = SwizzleAscendingBitSlices();
+      final mod = ConcatAscendingBitSlices();
       await mod.build();
 
       final sv =
-          SvCleaner.removeSwizzleAnnotationComments(mod.dumpSystemVerilog());
+          SvCleaner.removeConcatAnnotationComments(mod.dumpSystemVerilog());
 
       expect(sv, isNot(contains('a[2:0]')));
       expect(sv, contains('a[0]'));
@@ -479,13 +485,13 @@ void main() {
       expect(simResult, equals(true));
     });
 
-    test('collapses nested swizzle internals but not across the nested range',
+    test('collapses nested concat internals but not across the nested range',
         () async {
-      final mod = SwizzleNestedAdjacentBitSlices();
+      final mod = ConcatNestedAdjacentBitSlices();
       await mod.build();
 
       final sv =
-          SvCleaner.removeSwizzleAnnotationComments(mod.dumpSystemVerilog());
+          SvCleaner.removeConcatAnnotationComments(mod.dumpSystemVerilog());
 
       expect(sv, contains('assign out = {(a[7:5]),a[4:3]};'));
       expect(sv, isNot(contains('a[7:3]')));
@@ -500,11 +506,11 @@ void main() {
     });
 
     test('does not re-collapse adjacent range operands', () async {
-      final mod = SwizzleAdjacentRanges();
+      final mod = ConcatAdjacentRanges();
       await mod.build();
 
       final sv =
-          SvCleaner.removeSwizzleAnnotationComments(mod.dumpSystemVerilog());
+          SvCleaner.removeConcatAnnotationComments(mod.dumpSystemVerilog());
 
       expect(sv, contains('assign out = {(a[5:2]),(a[1:0])};'));
       expect(sv, isNot(contains('a[5:0]')));
@@ -520,11 +526,11 @@ void main() {
 
     test('collapses packed array element bit selects within each element',
         () async {
-      final mod = SwizzlePackedArrayElementBits(LogicArray([2, 2], 1));
+      final mod = ConcatPackedArrayElementBits(LogicArray([2, 2], 1));
       await mod.build();
 
       final sv =
-          SvCleaner.removeSwizzleAnnotationComments(mod.dumpSystemVerilog());
+          SvCleaner.removeConcatAnnotationComments(mod.dumpSystemVerilog());
 
       expect(sv, contains('assign out = {arr[1][1:0],arr[0][1:0]};'));
       expect(sv, isNot(contains('arr[1][1],arr[1][0]')));
@@ -539,13 +545,13 @@ void main() {
     });
 
     test('does not collapse unpacked array element selects', () async {
-      final mod = SwizzleUnpackedArrayElements(
+      final mod = ConcatUnpackedArrayElements(
         LogicArray([4], 1, numUnpackedDimensions: 1),
       );
       await mod.build();
 
       final sv =
-          SvCleaner.removeSwizzleAnnotationComments(mod.dumpSystemVerilog());
+          SvCleaner.removeConcatAnnotationComments(mod.dumpSystemVerilog());
 
       expect(sv, isNot(contains('arr[3:0]')));
       expect(sv, contains('arr[3]'));
@@ -555,8 +561,8 @@ void main() {
     });
   });
 
-  test('annotated elements of swizzle in generated sv', () async {
-    final mod = SwizzleVariety(Logic(width: 8));
+  test('annotated elements of concat in generated sv', () async {
+    final mod = ConcatVariety(Logic(width: 8));
     await mod.build();
 
     final sv = mod.dumpSystemVerilog();
@@ -572,127 +578,127 @@ x, /* 25:22 */
 3'h2, /* 10:8 */
 a  /*  7:0 */
 })  /* 10: 0 */
-};  // swizzle'''));
+};  // concat'''));
   });
 
   group('LogicValue', () {
-    test('simple swizzle', () {
+    test('simple concat', () {
       expect(
           [LogicValue.one, LogicValue.zero, LogicValue.x, LogicValue.z]
-              .swizzle(),
+              .concat(),
           equals(LogicValue.ofString('10xz')));
     });
-    test('simple rswizzle', () {
+    test('simple rconcat', () {
       expect(
           [LogicValue.one, LogicValue.zero, LogicValue.x, LogicValue.z]
-              .rswizzle(),
+              .rconcat(),
           equals(LogicValue.ofString('zx01')));
     });
   });
   group('LogicValue of multi-bit', () {
-    test('simple swizzle', () {
-      expect([LogicValue.ofString('10'), LogicValue.ofString('xz')].swizzle(),
+    test('simple concat', () {
+      expect([LogicValue.ofString('10'), LogicValue.ofString('xz')].concat(),
           equals(LogicValue.ofString('10xz')));
     });
 
-    test('simple rswizzle', () {
-      expect([LogicValue.ofString('10'), LogicValue.ofString('xz')].rswizzle(),
+    test('simple rconcat', () {
+      expect([LogicValue.ofString('10'), LogicValue.ofString('xz')].rconcat(),
           equals(LogicValue.ofString('xz10')));
     });
 
-    test('64-bit swizzle', () {
+    test('64-bit concat', () {
       expect(
           List.generate(
               32,
               (index) => index.isEven
                   ? LogicValue.ofString('10')
-                  : LogicValue.ofString('xz')).swizzle(),
+                  : LogicValue.ofString('xz')).concat(),
           equals(LogicValue.ofString('10xz' * 16)));
     });
-    test('>64-bit swizzle single concat', () {
+    test('>64-bit concat single concat', () {
       final str1 = '10xz' * 16;
       final str2 = 'xz10' * 10;
-      expect([LogicValue.ofString(str2), LogicValue.ofString(str1)].swizzle(),
+      expect([LogicValue.ofString(str2), LogicValue.ofString(str1)].concat(),
           equals(LogicValue.ofString(str2 + str1)));
     });
-    test('>64-bit swizzle', () {
+    test('>64-bit concat', () {
       expect(
           List.generate(
               40,
               (index) => index.isEven
                   ? LogicValue.ofString('10')
-                  : LogicValue.ofString('xz')).swizzle(),
+                  : LogicValue.ofString('xz')).concat(),
           equals(LogicValue.ofString('10xz' * 20)));
     });
 
     group('variety of sizes', () {
       test('smaller', () {
         final bits = ['0', '1', 'x', 'z'];
-        final swizzleStrings = List.generate(
+        final concatStrings = List.generate(
             100,
             (index) =>
                 bits[index % bits.length] * (index % 17) +
                 bits[(index + 1) % bits.length] * (index % 2));
-        expect(LogicValue.ofIterable(swizzleStrings.map(LogicValue.ofString)),
-            equals(LogicValue.ofString(swizzleStrings.reversed.join())));
+        expect(LogicValue.ofIterable(concatStrings.map(LogicValue.ofString)),
+            equals(LogicValue.ofString(concatStrings.reversed.join())));
       });
 
       test('larger', () {
         final bits = ['0', '1', 'x', 'z'];
-        final swizzleStrings = List.generate(
+        final concatStrings = List.generate(
             1000,
             (index) =>
                 bits[index % bits.length] * (index % 71) +
                 bits[(index + 1) % bits.length] * (index % 2));
-        expect(LogicValue.ofIterable(swizzleStrings.map(LogicValue.ofString)),
-            equals(LogicValue.ofString(swizzleStrings.reversed.join())));
+        expect(LogicValue.ofIterable(concatStrings.map(LogicValue.ofString)),
+            equals(LogicValue.ofString(concatStrings.reversed.join())));
       });
     });
 
     group('filled', () {
-      test('simple swizzle', () {
+      test('simple concat', () {
         expect(
             [LogicValue.ofString('1' * 4), LogicValue.ofString('1' * 4)]
-                .swizzle(),
+                .concat(),
             equals(LogicValue.ofString('1' * 8)));
       });
-      test('big swizzle', () {
-        expect(List.generate(100, (index) => LogicValue.one).swizzle(),
+      test('big concat', () {
+        expect(List.generate(100, (index) => LogicValue.one).concat(),
             equals(LogicValue.ofString('1' * 100)));
       });
-      test('0-width both swizzle', () {
-        expect([LogicValue.ofString(''), LogicValue.ofString('')].swizzle(),
+      test('0-width both concat', () {
+        expect([LogicValue.ofString(''), LogicValue.ofString('')].concat(),
             equals(LogicValue.ofString('')));
       });
-      test('0-width lhs swizzle', () {
-        expect([LogicValue.ofString(''), LogicValue.ofString('111')].swizzle(),
+      test('0-width lhs concat', () {
+        expect([LogicValue.ofString(''), LogicValue.ofString('111')].concat(),
             equals(LogicValue.ofString('111')));
       });
-      test('0-width rhs swizzle', () {
-        expect([LogicValue.ofString('111'), LogicValue.ofString('')].swizzle(),
+      test('0-width rhs concat', () {
+        expect([LogicValue.ofString('111'), LogicValue.ofString('')].concat(),
             equals(LogicValue.ofString('111')));
       });
     });
 
     group('non-filled', () {
-      test('0-width both swizzle', () {
-        expect([LogicValue.ofString(''), LogicValue.ofString('')].swizzle(),
+      test('0-width both concat', () {
+        expect([LogicValue.ofString(''), LogicValue.ofString('')].concat(),
             equals(LogicValue.ofString('')));
       });
-      test('0-width lhs swizzle', () {
-        expect([LogicValue.ofString(''), LogicValue.ofString('1zx0')].swizzle(),
+      test('0-width lhs concat', () {
+        expect([LogicValue.ofString(''), LogicValue.ofString('1zx0')].concat(),
             equals(LogicValue.ofString('1zx0')));
       });
-      test('0-width rhs swizzle', () {
-        expect([LogicValue.ofString('1zx0'), LogicValue.ofString('')].swizzle(),
+      test('0-width rhs concat', () {
+        expect([LogicValue.ofString('1zx0'), LogicValue.ofString('')].concat(),
             equals(LogicValue.ofString('1zx0')));
       });
     });
   });
 
   group('Logic', () {
-    test('simple swizzle', () async {
-      final mod = SwizzlyModule(Logic());
+    test('simple concat', () async {
+      final mod = ConcatModule(Logic());
       await mod.build();
       final vectors = [
         Vector({'a': 0}, {'b': bin('0101')}),
@@ -703,8 +709,8 @@ a  /*  7:0 */
       expect(simResult, equals(true));
     });
 
-    test('const 0-width swizzle', () async {
-      final mod = SwizzlyModule(Const(0, width: 0));
+    test('const 0-width concat', () async {
+      final mod = ConcatModule(Const(0, width: 0));
       await mod.build();
       final vectors = [
         Vector({}, {'b': bin('011')}),
@@ -716,27 +722,27 @@ a  /*  7:0 */
     });
   });
 
-  test('zero-width swizzle', () {
-    final result = <Logic>[].swizzle();
+  test('zero-width concat', () {
+    final result = <Logic>[].concat();
 
     expect(result.isEmpty, isTrue);
     expect(result.value, LogicValue.empty);
   });
 
-  test('swizzle with one non-zero-width signal skips Swizzle module', () {
+  test('concat with one non-zero-width signal skips Concat module', () {
     final a = Logic(name: 'a', width: 4);
-    final result = [Const(0, width: 0), a].swizzle();
+    final result = [Const(0, width: 0), a].concat();
     expect(identical(result, a), isTrue);
   });
 
-  test('rswizzle with one non-zero-width signal skips Swizzle module', () {
+  test('rconcat with one non-zero-width signal skips Concat module', () {
     final a = Logic(name: 'a', width: 4);
-    final result = [a, Const(0, width: 0)].rswizzle();
+    final result = [a, Const(0, width: 0)].rconcat();
     expect(identical(result, a), isTrue);
   });
 
-  test('zero-width swizzle module', () async {
-    final mod = SwizzlyEmpty(Logic());
+  test('zero-width concat module', () async {
+    final mod = ConcatEmpty(Logic());
     await mod.build();
     final vectors = [
       Vector({'a': 0}, {'b': bin('0')}),

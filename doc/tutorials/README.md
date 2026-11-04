@@ -31,7 +31,7 @@ Below are the ROHD tutorial content page, you can also find ROHD tutorial in our
     - [Exercise 3](./chapter_2/00_basic_logic.md#exercise-3)
 - [Constants](./chapter_2/00_basic_logic.md#constants)
   - [Exercise 4](./chapter_2/00_basic_logic.md#exercise-4)
-- [Bus Ranges and Swizzling](./chapter_2/00_basic_logic.md#bus-ranges-and-swizzling)
+- [Bus Ranges and Concatenation](./chapter_2/00_basic_logic.md#bus-ranges-and-concatenation)
 
 ## Chapter 3: Unit Testing
 
@@ -78,7 +78,7 @@ Below are the ROHD tutorial content page, you can also find ROHD tutorial in our
 - [Shift Register](./chapter_7/00_sequential_logic.md#shift-register)
 - [ROHD Simulator](./chapter_7/00_sequential_logic.md#rohd-simulator)
 - [Unit Test in Sequential Logic](./chapter_7/00_sequential_logic.md#unit-test-in-sequential-logic)
-- [Waveform Dumper](./chapter_7/00_sequential_logic.md#waveform-dumping)
+- [Waveform capture](./chapter_7/00_sequential_logic.md#waveform-dumping)
 - [Exercise](./chapter_7/00_sequential_logic.md#exercise)
 
 ## Chapter 8: Abstractions

@@ -1,6 +1,9 @@
 // Copyright (C) 2024-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
+// 2026 August 10
+// Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
+//
 // waveform_repository.dart
 // Domain layer that manages the retrieval of signal waveforms.
 //

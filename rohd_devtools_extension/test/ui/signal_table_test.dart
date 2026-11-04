@@ -10,16 +10,17 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/cubit/snapshot_cubit.dart';
-import 'package:rohd_devtools_extension/rohd_devtools/models/signal_model.dart';
-import 'package:rohd_devtools_extension/rohd_devtools/models/tree_model.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/ui/signal_table.dart';
+import 'package:rohd_hierarchy/rohd_hierarchy.dart';
 
-final _module = TreeModel(
+final _module = HierarchyOccurrence(
   name: 'counter',
   signals: [
-    SignalModel(name: 'clock', direction: 'input', value: "1'h0", width: 1),
-    SignalModel(name: 'count', direction: 'output', value: "8'h00", width: 8),
-    SignalModel(name: 'bus', direction: 'inout', value: "4'hf", width: 4),
+    SignalOccurrence(
+        name: 'clock', direction: 'input', value: "1'h0", width: 1),
+    SignalOccurrence(
+        name: 'count', direction: 'output', value: "8'h00", width: 8),
+    SignalOccurrence(name: 'bus', direction: 'inout', value: "4'hf", width: 4),
   ],
   children: const [],
 );

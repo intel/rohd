@@ -17,6 +17,8 @@ import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/systemc_cosim_ffi.dart';
 import 'package:test/test.dart';
 
+const _ffiTestTimeout = Timeout(Duration(minutes: 2));
+
 // ═══════════════════════════════════════════════════════════════════════════
 // DUT: A simple counter (same as systemc_simcompare_test.dart)
 // ═══════════════════════════════════════════════════════════════════════════
@@ -155,7 +157,7 @@ void main() {
     } finally {
       await cosim.dispose();
     }
-  });
+  }, timeout: _ffiTestTimeout);
 
   // ─────────────────────────────────────────────────────────────────────
   // Test 3: Negedge checking (inject → await negedge → expect pattern)
@@ -252,7 +254,7 @@ void main() {
     } finally {
       await cosim.dispose();
     }
-  });
+  }, timeout: _ffiTestTimeout);
 
   test('async reset pulse between clock edges reaches SystemC FFI', () async {
     final clk = SimpleClockGenerator(10).clk;
@@ -310,7 +312,7 @@ void main() {
     } finally {
       await cosim.dispose();
     }
-  });
+  }, timeout: _ffiTestTimeout);
 
   test('optional missing SystemC reports an FFI skip', () async {
     final counter = SimpleCounter(

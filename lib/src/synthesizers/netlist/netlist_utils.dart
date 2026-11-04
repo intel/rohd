@@ -21,7 +21,7 @@ typedef _BusSubsetCollapseInfo = (
   SynthSubModuleInstantiation,
 );
 
-typedef _SwizzleCollapseInfo = (
+typedef _ConcatCollapseInfo = (
   String,
   int,
   int,
@@ -34,7 +34,7 @@ typedef _SwizzleCollapseInfo = (
 class NetlistAlwaysBlockPortCollapseIndex {
   final Module _module;
   final Map<SynthLogic, _BusSubsetCollapseInfo> _busSubsets = {};
-  final Map<SynthLogic, _SwizzleCollapseInfo> _swizzles = {};
+  final Map<SynthLogic, _ConcatCollapseInfo> _concats = {};
 
   /// Indexes aggregate-producing submodules in [synthDef].
   NetlistAlwaysBlockPortCollapseIndex(SynthModuleDefinition synthDef)
@@ -47,7 +47,7 @@ class NetlistAlwaysBlockPortCollapseIndex {
         if (output != null && input != null) {
           _busSubsets[output.resolved] = (module, input.resolved, instance);
         }
-      } else if (module is Swizzle) {
+      } else if (module is Concat) {
         final output = instance.outputMapping.values.firstOrNull;
         if (output == null) {
           continue;
@@ -56,7 +56,7 @@ class NetlistAlwaysBlockPortCollapseIndex {
         var offset = 0;
         for (final input in instance.inputMapping.entries) {
           final resolvedInput = input.value.resolved;
-          _swizzles[resolvedInput] = (
+          _concats[resolvedInput] = (
             input.key,
             offset,
             resolvedInput.width,
@@ -219,8 +219,8 @@ abstract class NetlistUtils {
   /// of the root signal's wire IDs.
   ///
   /// **Output side**: Similarly, Combinational output ports that feed into
-  /// the inputs of the same Swizzle submodule are collapsed into a single
-  /// aggregate port connected to the Swizzle's output wire IDs.
+  /// the inputs of the same Concat submodule are collapsed into a single
+  /// aggregate port connected to the Concat's output wire IDs.
   static void collapseAlwaysBlockPorts(
     NetlistAlwaysBlockPortCollapseIndex index,
     SynthSubModuleInstantiation instance,
@@ -308,9 +308,9 @@ abstract class NetlistUtils {
       portDirs[rootName] = NetlistPortDirection.input;
     }
 
-    // ── Output-side collapsing (Combinational → Swizzle) ───────────────
+    // ── Output-side collapsing (Combinational → Concat) ───────────────
 
-    // Group output ports by Swizzle output signal.
+    // Group output ports by Concat output signal.
     final outputGroups = <SynthLogic,
         List<
             (
@@ -327,10 +327,10 @@ abstract class NetlistUtils {
       }
 
       final resolved = e.value.resolved;
-      final info = index._swizzles[resolved];
+      final info = index._concats[resolved];
       if (info != null) {
-        final (_, offset, width, swizzleOutputSL, szInst) = info;
-        outputGroups.putIfAbsent(swizzleOutputSL, () => []).add((
+        final (_, offset, width, concatOutputSL, szInst) = info;
+        outputGroups.putIfAbsent(concatOutputSL, () => []).add((
           portName,
           offset,
           width,
@@ -347,7 +347,7 @@ abstract class NetlistUtils {
 
       // Skip collapsing when any member's SynthLogic is a port of the
       // parent module.  Collapsing replaces the individual output ports
-      // with a single aggregate that uses the downstream Swizzle's bit
+      // with a single aggregate that uses the downstream Concat's bit
       // IDs, which would orphan the module-level port bits (they would
       // no longer be driven by any cell).
       final hasModulePort = entry.value.any((member) {
@@ -392,7 +392,7 @@ abstract class NetlistUtils {
           tryGetSynthLogicName(swizOutSL) ?? 'agg_out_${minBit}_$maxBit';
 
       // Replace individual ports with the aggregate.  The bypassed
-      // Swizzle cells are left in place; the post-synthesis DCE pass
+      // Concat cells are left in place; the post-synthesis DCE pass
       // will remove them if their outputs are no longer consumed.
       for (final (portName, _, _, _) in ports) {
         connections.remove(portName);
@@ -414,7 +414,7 @@ abstract class NetlistUtils {
   ///   [LogicStructure]s.
   ///
   /// Fields are listed in LSB-to-MSB order (matching ROHD's element ordering
-  /// via `rswizzle`: `elements[0]` occupies the lowest bits).
+  /// via `rconcat`: `elements[0]` occupies the lowest bits).
   ///
   /// When [bits] is provided, each field entry also includes a `'bits'` key
   /// containing the slice of [bits] that belongs to that field. This allows

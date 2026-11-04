@@ -8,24 +8,24 @@
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:rohd_devtools_extension/rohd_devtools/models/signal_model.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/services/signal_service.dart';
+import 'package:rohd_hierarchy/rohd_hierarchy.dart';
 
 void main() {
   final signals = [
-    SignalModel(
+    SignalOccurrence(
       name: 'ClockEnable',
       direction: 'Input',
       value: "1'h1",
       width: 1,
     ),
-    SignalModel(
+    SignalOccurrence(
       name: 'counterValue',
       direction: 'Output',
       value: "8'h2a",
       width: 8,
     ),
-    SignalModel(
+    SignalOccurrence(
       name: 'reset',
       direction: 'Input',
       value: "1'h0",

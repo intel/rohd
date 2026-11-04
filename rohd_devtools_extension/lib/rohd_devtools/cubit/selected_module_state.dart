@@ -24,7 +24,7 @@ class SelectedModuleInitial extends SelectedModuleState {}
 /// State emitted when a module has been selected.
 class SelectedModuleLoaded extends SelectedModuleState {
   /// The currently selected module.
-  final TreeModel module;
+  final HierarchyOccurrence module;
 
   /// Creates a loaded state with the selected module.
   const SelectedModuleLoaded(this.module);

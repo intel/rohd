@@ -1,4 +1,4 @@
-// Copyright (C) 2024-2025 Intel Corporation
+// Copyright (C) 2024-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // rohd_devtools_mocks.dart
@@ -9,14 +9,13 @@
 
 import 'package:mocktail/mocktail.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/cubit/hierarchy_cubit.dart';
-import 'package:rohd_devtools_extension/rohd_devtools/models/signal_model.dart';
-import 'package:rohd_devtools_extension/rohd_devtools/models/tree_model.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/rohd_devtools.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/services/tree_service.dart';
+import 'package:rohd_hierarchy/rohd_hierarchy.dart';
 
-class MockTreeModel extends Mock implements TreeModel {}
+class MockHierarchyOccurrence extends Mock implements HierarchyOccurrence {}
 
-class MockSignalModel extends Mock implements SignalModel {}
+class MockSignalOccurrence extends Mock implements SignalOccurrence {}
 
 class MockTreeService extends Mock implements TreeService {}
 

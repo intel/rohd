@@ -58,9 +58,6 @@ class SystemCSynthesisResult extends SynthesisResult {
   int get matchHashCode => _portsString.hashCode ^ _moduleBodyString.hashCode;
 
   @override
-  String toFileContents() => _toSystemC();
-
-  @override
   List<SynthFileContents> toSynthFileContents() => List.unmodifiable([
         SynthFileContents(
           name: instanceTypeName,
@@ -860,8 +857,8 @@ class SystemCSynthesisResult extends SynthesisResult {
       return '(${copies.join(', ')})';
     }
 
-    // ── Swizzle (concatenation) ──
-    if (m is Swizzle) {
+    // ── Concat (concatenation) ──
+    if (m is Concat) {
       // SystemC concatenation: (sig1, sig2, sig3)
       // bool operands must be cast to sc_uint<1> to use SystemC concat
       // (otherwise C++ comma operator is invoked instead)
@@ -885,7 +882,7 @@ class SystemCSynthesisResult extends SynthesisResult {
       if (exprList.length == 1) {
         return exprList.first;
       }
-      // Swizzle stores inputs LSB-first (in0=LSB), but SystemC concat
+      // Concat stores inputs LSB-first (in0=LSB), but SystemC concat
       // is MSB-first: (msb, ..., lsb). So reverse.
       return '(${exprList.reversed.join(', ')})';
     }
@@ -2064,9 +2061,6 @@ class SystemCStubSynthesisResult extends SynthesisResult {
 
   @override
   int get matchHashCode => Object.hash(_portsString, reason);
-
-  @override
-  String toFileContents() => _toSystemC();
 
   String _toSystemC() {
     final moduleName = SystemCSynthesisResult.systemCIdentifier(

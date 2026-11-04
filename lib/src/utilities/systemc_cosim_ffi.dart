@@ -137,7 +137,7 @@ class SystemCFfiCosim {
 
   /// Whether an input propagation step is active in this propagation wave.
   /// Prevents re-entrant stepping when multiple inputs change in the same
-  /// event (for example, a Swizzle feeding a bus).
+  /// event (for example, a Concat feeding a bus).
   bool _inputStepPending = false;
 
   // FFI function handles

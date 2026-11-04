@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Intel Corporation
+// Copyright (C) 2025-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // miter_test.dart
@@ -1001,7 +1001,7 @@ LogicValue _evalOpLV(
       final slice = src.getRange(lo, hi + 1);
       return rev ? slice.reversed : slice;
     case 'swz':
-      // Swizzle: inputs[0]=LSB, inputs[last]=MSB.
+      // Concat: inputs[0]=LSB, inputs[last]=MSB.
       if (gate == null) {
         return xOut;
       }

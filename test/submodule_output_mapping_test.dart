@@ -13,9 +13,9 @@ import 'package:test/test.dart';
 
 enum ProducerKind { independent, multiport, hierarchical, custom }
 
-enum AssignmentOrder { batch, forward, reverse, swizzle, rswizzle }
+enum AssignmentOrder { batch, forward, reverse, concat, rconcat }
 
-enum SwizzleUse { slice, wholeAndSlice, partialDestination, filledDestination }
+enum ConcatUse { slice, wholeAndSlice, partialDestination, filledDestination }
 
 enum OperandRanges { slice, reordered, overlapping, nested }
 
@@ -132,10 +132,10 @@ List<Logic> stageOutputs(Logic data, ProducerKind kind) {
 }
 
 void assignBits(Logic destination, List<Logic> bits, AssignmentOrder order) {
-  if (order == AssignmentOrder.swizzle) {
-    destination <= bits.reversed.toList().swizzle();
-  } else if (order == AssignmentOrder.rswizzle) {
-    destination <= bits.rswizzle();
+  if (order == AssignmentOrder.concat) {
+    destination <= bits.reversed.toList().concat();
+  } else if (order == AssignmentOrder.rconcat) {
+    destination <= bits.rconcat();
   } else if (order == AssignmentOrder.batch) {
     destination.assignSubset(bits);
   } else {
@@ -276,8 +276,8 @@ class MixedRangeTop extends Module {
         observed,
         [
           low,
-          if (order == AssignmentOrder.swizzle ||
-              order == AssignmentOrder.rswizzle)
+          if (order == AssignmentOrder.concat ||
+              order == AssignmentOrder.rconcat)
             middle
           else
             ...middle.elements,
@@ -290,40 +290,40 @@ class MixedRangeTop extends Module {
   }
 }
 
-class SlicedSwizzleTop extends Module {
-  SlicedSwizzleTop({
+class SlicedConcatTop extends Module {
+  SlicedConcatTop({
     required ProducerKind producer,
     required AssignmentOrder order,
     required Naming naming,
-    required SwizzleUse use,
+    required ConcatUse use,
     required bool fanout,
     required int lower,
     required int upper,
-  }) : super(name: 'sliced_swizzle_top') {
+  }) : super(name: 'sliced_concat_top') {
     final data = addInput('data', Logic(width: 4), width: 4);
     final sources = stageOutputs(data, producer);
     final operands = [
       for (final (index, source) in sources.indexed)
         source.named('operand$index', naming: naming),
     ];
-    final combined = order == AssignmentOrder.swizzle
-        ? operands.swizzle()
-        : operands.rswizzle();
+    final combined = order == AssignmentOrder.concat
+        ? operands.concat()
+        : operands.rconcat();
     final selected = combined.getRange(lower, upper);
-    final partial = use == SwizzleUse.partialDestination ||
-        use == SwizzleUse.filledDestination;
+    final partial = use == ConcatUse.partialDestination ||
+        use == ConcatUse.filledDestination;
     final observed =
         addOutput('observed', width: upper - lower + (partial ? 2 : 0));
     if (partial) {
       observed.assignSubset(selected.elements, start: 1);
-      if (use == SwizzleUse.filledDestination) {
+      if (use == ConcatUse.filledDestination) {
         observed.assignSubset([Const(0)]);
         observed.assignSubset([Const(1)], start: observed.width - 1);
       }
     } else {
       observed <= selected;
     }
-    if (use == SwizzleUse.wholeAndSlice) {
+    if (use == ConcatUse.wholeAndSlice) {
       addOutput('whole', width: 4) <= combined;
     }
     if (fanout) {
@@ -332,8 +332,8 @@ class SlicedSwizzleTop extends Module {
   }
 }
 
-class RangeOperandSwizzleTop extends Module {
-  RangeOperandSwizzleTop({
+class RangeOperandConcatTop extends Module {
+  RangeOperandConcatTop({
     required ProducerKind producer,
     required AssignmentOrder order,
     required Naming naming,
@@ -341,7 +341,7 @@ class RangeOperandSwizzleTop extends Module {
     required String constant,
     required int constantPosition,
     required bool fanout,
-  }) : super(name: 'range_operand_swizzle_top') {
+  }) : super(name: 'range_operand_concat_top') {
     final data = addInput('data', Logic(width: 4), width: 4);
     final sources = stageOutputs(data, producer);
     final wideStage = producer == ProducerKind.custom
@@ -364,9 +364,9 @@ class RangeOperandSwizzleTop extends Module {
     ];
     operands.insert(constantPosition < 0 ? operands.length : constantPosition,
         Const(LogicValue.ofString(constant)).named('tie', naming: naming));
-    final combined = order == AssignmentOrder.swizzle
-        ? operands.swizzle()
-        : operands.rswizzle();
+    final combined = order == AssignmentOrder.concat
+        ? operands.concat()
+        : operands.rconcat();
     addOutput('observed', width: combined.width) <= combined;
     if (fanout) {
       addOutput('wide_tap', width: 4) <= wide;
@@ -529,13 +529,13 @@ void main() {
       ),
       (
         producer: ProducerKind.custom,
-        order: AssignmentOrder.swizzle,
+        order: AssignmentOrder.concat,
         width: 2,
         aliasDepth: 3,
       ),
       (
         producer: ProducerKind.independent,
-        order: AssignmentOrder.rswizzle,
+        order: AssignmentOrder.rconcat,
         width: 3,
         aliasDepth: 3,
       ),
@@ -599,27 +599,27 @@ void main() {
     final configurations = [
       (
         producer: ProducerKind.independent,
-        order: AssignmentOrder.swizzle,
+        order: AssignmentOrder.concat,
         naming: Naming.reserved,
       ),
       (
         producer: ProducerKind.independent,
-        order: AssignmentOrder.rswizzle,
+        order: AssignmentOrder.rconcat,
         naming: Naming.renameable,
       ),
       (
         producer: ProducerKind.custom,
-        order: AssignmentOrder.swizzle,
+        order: AssignmentOrder.concat,
         naming: Naming.mergeable,
       ),
       (
         producer: ProducerKind.independent,
-        order: AssignmentOrder.rswizzle,
+        order: AssignmentOrder.rconcat,
         naming: Naming.mergeable,
       ),
       (
         producer: ProducerKind.custom,
-        order: AssignmentOrder.swizzle,
+        order: AssignmentOrder.concat,
         naming: Naming.unnamed,
       ),
     ];
@@ -685,12 +685,12 @@ void main() {
       (
         guard: MappingGuard.busFanout,
         producer: ProducerKind.custom,
-        order: AssignmentOrder.swizzle
+        order: AssignmentOrder.concat
       ),
       (
         guard: MappingGuard.repeatedBit,
         producer: ProducerKind.independent,
-        order: AssignmentOrder.rswizzle
+        order: AssignmentOrder.rconcat
       ),
       (
         guard: MappingGuard.wholeBusFanout,
@@ -705,12 +705,12 @@ void main() {
       (
         guard: MappingGuard.reservedBus,
         producer: ProducerKind.independent,
-        order: AssignmentOrder.swizzle
+        order: AssignmentOrder.concat
       ),
       (
         guard: MappingGuard.namedBit,
         producer: ProducerKind.multiport,
-        order: AssignmentOrder.rswizzle
+        order: AssignmentOrder.rconcat
       ),
       (
         guard: MappingGuard.partial,
@@ -802,12 +802,12 @@ void main() {
       (
         acceptsEmptyPortConnections: true,
         fanout: true,
-        order: AssignmentOrder.swizzle,
+        order: AssignmentOrder.concat,
       ),
       (
         acceptsEmptyPortConnections: false,
         fanout: true,
-        order: AssignmentOrder.rswizzle,
+        order: AssignmentOrder.rconcat,
       ),
     ];
 
@@ -883,13 +883,13 @@ void main() {
         constant: 'x',
         constantIndex: 2,
         namedConstant: false,
-        order: AssignmentOrder.swizzle,
+        order: AssignmentOrder.concat,
       ),
       (
         constant: 'z',
         constantIndex: 0,
         namedConstant: true,
-        order: AssignmentOrder.rswizzle,
+        order: AssignmentOrder.rconcat,
       ),
       (
         constant: 'z',
@@ -976,12 +976,12 @@ void main() {
       (
         wideProducer: true,
         fanout: true,
-        order: AssignmentOrder.swizzle,
+        order: AssignmentOrder.concat,
       ),
       (
         wideProducer: true,
         fanout: false,
-        order: AssignmentOrder.rswizzle,
+        order: AssignmentOrder.rconcat,
       ),
     ];
 
@@ -1026,16 +1026,16 @@ void main() {
     }
   });
 
-  group('sliced swizzle equivalence cross-products', () {
+  group('sliced concat equivalence cross-products', () {
     // Retain each naming policy, producer topology, destination form, slice
     // boundary, and fanout path. The mergeable whole-and-slice case remains
     // exhaustive over all four-state inputs.
     final configurations = [
       (
         producer: ProducerKind.independent,
-        order: AssignmentOrder.swizzle,
+        order: AssignmentOrder.concat,
         naming: Naming.reserved,
-        use: SwizzleUse.slice,
+        use: ConcatUse.slice,
         fanout: false,
         lower: 0,
         upper: 1,
@@ -1043,9 +1043,9 @@ void main() {
       ),
       (
         producer: ProducerKind.independent,
-        order: AssignmentOrder.rswizzle,
+        order: AssignmentOrder.rconcat,
         naming: Naming.renameable,
-        use: SwizzleUse.wholeAndSlice,
+        use: ConcatUse.wholeAndSlice,
         fanout: true,
         lower: 1,
         upper: 3,
@@ -1053,9 +1053,9 @@ void main() {
       ),
       (
         producer: ProducerKind.independent,
-        order: AssignmentOrder.rswizzle,
+        order: AssignmentOrder.rconcat,
         naming: Naming.mergeable,
-        use: SwizzleUse.wholeAndSlice,
+        use: ConcatUse.wholeAndSlice,
         fanout: true,
         lower: 1,
         upper: 3,
@@ -1063,9 +1063,9 @@ void main() {
       ),
       (
         producer: ProducerKind.independent,
-        order: AssignmentOrder.swizzle,
+        order: AssignmentOrder.concat,
         naming: Naming.mergeable,
-        use: SwizzleUse.partialDestination,
+        use: ConcatUse.partialDestination,
         fanout: false,
         lower: 3,
         upper: 4,
@@ -1073,9 +1073,9 @@ void main() {
       ),
       (
         producer: ProducerKind.independent,
-        order: AssignmentOrder.rswizzle,
+        order: AssignmentOrder.rconcat,
         naming: Naming.unnamed,
-        use: SwizzleUse.filledDestination,
+        use: ConcatUse.filledDestination,
         fanout: true,
         lower: 0,
         upper: 1,
@@ -1083,9 +1083,9 @@ void main() {
       ),
       (
         producer: ProducerKind.multiport,
-        order: AssignmentOrder.swizzle,
+        order: AssignmentOrder.concat,
         naming: Naming.mergeable,
-        use: SwizzleUse.slice,
+        use: ConcatUse.slice,
         fanout: true,
         lower: 1,
         upper: 3,
@@ -1093,9 +1093,9 @@ void main() {
       ),
       (
         producer: ProducerKind.hierarchical,
-        order: AssignmentOrder.rswizzle,
+        order: AssignmentOrder.rconcat,
         naming: Naming.mergeable,
-        use: SwizzleUse.wholeAndSlice,
+        use: ConcatUse.wholeAndSlice,
         fanout: false,
         lower: 1,
         upper: 3,
@@ -1103,9 +1103,9 @@ void main() {
       ),
       (
         producer: ProducerKind.custom,
-        order: AssignmentOrder.swizzle,
+        order: AssignmentOrder.concat,
         naming: Naming.mergeable,
-        use: SwizzleUse.partialDestination,
+        use: ConcatUse.partialDestination,
         fanout: true,
         lower: 1,
         upper: 3,
@@ -1125,7 +1125,7 @@ void main() {
       test(
           '${producer.name} ${order.name} ${naming.name} '
           '${use.name} fanout=$fanout [$lower:$upper]', () async {
-        final module = SlicedSwizzleTop(
+        final module = SlicedConcatTop(
           producer: producer,
           order: order,
           naming: naming,
@@ -1145,19 +1145,19 @@ void main() {
               'data': input
             }, {
               'observed': LogicValue.ofString([
-                if (use == SwizzleUse.partialDestination) 'z',
-                if (use == SwizzleUse.filledDestination) '1',
+                if (use == ConcatUse.partialDestination) 'z',
+                if (use == ConcatUse.filledDestination) '1',
                 for (var bit = upper - 1; bit >= lower; bit--)
                   invertedBit(
-                      input, order == AssignmentOrder.swizzle ? 3 - bit : bit),
-                if (use == SwizzleUse.partialDestination) 'z',
-                if (use == SwizzleUse.filledDestination) '0',
+                      input, order == AssignmentOrder.concat ? 3 - bit : bit),
+                if (use == ConcatUse.partialDestination) 'z',
+                if (use == ConcatUse.filledDestination) '0',
               ].join()),
-              if (use == SwizzleUse.wholeAndSlice)
+              if (use == ConcatUse.wholeAndSlice)
                 'whole': LogicValue.ofString([
                   for (var bit = 3; bit >= 0; bit--)
-                    invertedBit(input,
-                        order == AssignmentOrder.swizzle ? 3 - bit : bit),
+                    invertedBit(
+                        input, order == AssignmentOrder.concat ? 3 - bit : bit),
                 ].join()),
               if (fanout) 'tap': input[1].isValid ? input[1] : LogicValue.x,
             }),
@@ -1169,14 +1169,13 @@ void main() {
   });
 
   for (final filled in [false, true]) {
-    test('partial destination of a swizzle slice filled=$filled', () async {
-      final module = SlicedSwizzleTop(
+    test('partial destination of a concat slice filled=$filled', () async {
+      final module = SlicedConcatTop(
         producer: ProducerKind.independent,
-        order: AssignmentOrder.rswizzle,
+        order: AssignmentOrder.rconcat,
         naming: Naming.mergeable,
-        use: filled
-            ? SwizzleUse.filledDestination
-            : SwizzleUse.partialDestination,
+        use:
+            filled ? ConcatUse.filledDestination : ConcatUse.partialDestination,
         fanout: false,
         lower: 1,
         upper: 3,
@@ -1193,9 +1192,9 @@ void main() {
   }
 
   test('preserved Z constant beside child output slices', () async {
-    final module = RangeOperandSwizzleTop(
+    final module = RangeOperandConcatTop(
       producer: ProducerKind.custom,
-      order: AssignmentOrder.rswizzle,
+      order: AssignmentOrder.rconcat,
       naming: Naming.reserved,
       ranges: OperandRanges.slice,
       constant: 'z',
@@ -1218,7 +1217,7 @@ void main() {
     final configurations = [
       (
         producer: ProducerKind.independent,
-        order: AssignmentOrder.swizzle,
+        order: AssignmentOrder.concat,
         naming: Naming.reserved,
         ranges: OperandRanges.slice,
         constant: 'z',
@@ -1228,7 +1227,7 @@ void main() {
       ),
       (
         producer: ProducerKind.custom,
-        order: AssignmentOrder.rswizzle,
+        order: AssignmentOrder.rconcat,
         naming: Naming.reserved,
         ranges: OperandRanges.reordered,
         constant: 'z',
@@ -1238,7 +1237,7 @@ void main() {
       ),
       (
         producer: ProducerKind.independent,
-        order: AssignmentOrder.swizzle,
+        order: AssignmentOrder.concat,
         naming: Naming.reserved,
         ranges: OperandRanges.overlapping,
         constant: 'z',
@@ -1248,7 +1247,7 @@ void main() {
       ),
       (
         producer: ProducerKind.custom,
-        order: AssignmentOrder.rswizzle,
+        order: AssignmentOrder.rconcat,
         naming: Naming.renameable,
         ranges: OperandRanges.nested,
         constant: 'z',
@@ -1258,7 +1257,7 @@ void main() {
       ),
       (
         producer: ProducerKind.independent,
-        order: AssignmentOrder.swizzle,
+        order: AssignmentOrder.concat,
         naming: Naming.renameable,
         ranges: OperandRanges.slice,
         constant: 'z',
@@ -1268,7 +1267,7 @@ void main() {
       ),
       (
         producer: ProducerKind.custom,
-        order: AssignmentOrder.rswizzle,
+        order: AssignmentOrder.rconcat,
         naming: Naming.renameable,
         ranges: OperandRanges.reordered,
         constant: 'z',
@@ -1278,7 +1277,7 @@ void main() {
       ),
       (
         producer: ProducerKind.independent,
-        order: AssignmentOrder.swizzle,
+        order: AssignmentOrder.concat,
         naming: Naming.mergeable,
         ranges: OperandRanges.overlapping,
         constant: '0',
@@ -1288,7 +1287,7 @@ void main() {
       ),
       (
         producer: ProducerKind.custom,
-        order: AssignmentOrder.rswizzle,
+        order: AssignmentOrder.rconcat,
         naming: Naming.mergeable,
         ranges: OperandRanges.nested,
         constant: '1',
@@ -1298,7 +1297,7 @@ void main() {
       ),
       (
         producer: ProducerKind.independent,
-        order: AssignmentOrder.swizzle,
+        order: AssignmentOrder.concat,
         naming: Naming.mergeable,
         ranges: OperandRanges.reordered,
         constant: 'x',
@@ -1308,7 +1307,7 @@ void main() {
       ),
       (
         producer: ProducerKind.custom,
-        order: AssignmentOrder.rswizzle,
+        order: AssignmentOrder.rconcat,
         naming: Naming.unnamed,
         ranges: OperandRanges.slice,
         constant: 'z',
@@ -1318,7 +1317,7 @@ void main() {
       ),
       (
         producer: ProducerKind.custom,
-        order: AssignmentOrder.rswizzle,
+        order: AssignmentOrder.rconcat,
         naming: Naming.mergeable,
         ranges: OperandRanges.overlapping,
         constant: 'z',
@@ -1341,7 +1340,7 @@ void main() {
           '${producer.name} ${order.name} ${naming.name} '
           '${ranges.name} fanout=$fanout '
           '$constant at $constantPosition', () async {
-        final module = RangeOperandSwizzleTop(
+        final module = RangeOperandConcatTop(
           producer: producer,
           order: order,
           naming: naming,
@@ -1392,7 +1391,7 @@ void main() {
           expectedOperands.insert(
               constantPosition < 0 ? expectedOperands.length : constantPosition,
               [constant]);
-          final expectedBits = (order == AssignmentOrder.swizzle
+          final expectedBits = (order == AssignmentOrder.concat
                   ? expectedOperands.reversed
                   : expectedOperands)
               .expand((operand) => operand)
@@ -1429,13 +1428,13 @@ void main() {
       ),
       (
         width: 33,
-        order: AssignmentOrder.swizzle,
+        order: AssignmentOrder.concat,
         producer: ProducerKind.multiport,
         aliasDepth: 16,
       ),
       (
         width: 33,
-        order: AssignmentOrder.rswizzle,
+        order: AssignmentOrder.rconcat,
         producer: ProducerKind.independent,
         aliasDepth: 16,
       ),
@@ -1447,13 +1446,13 @@ void main() {
       ),
       (
         width: 65,
-        order: AssignmentOrder.swizzle,
+        order: AssignmentOrder.concat,
         producer: ProducerKind.independent,
         aliasDepth: 0,
       ),
       (
         width: 65,
-        order: AssignmentOrder.rswizzle,
+        order: AssignmentOrder.rconcat,
         producer: ProducerKind.multiport,
         aliasDepth: 0,
       ),
@@ -1525,17 +1524,17 @@ void main() {
       for (final slice in [false, true])
         for (final order in [
           AssignmentOrder.reverse,
-          AssignmentOrder.swizzle,
-          AssignmentOrder.rswizzle,
+          AssignmentOrder.concat,
+          AssignmentOrder.rconcat,
         ])
           (slice, order),
     ]) {
       for (final unpackedDimensions in [0, 1, if (!slice) 2]) {
         final unpackedOrder = slice
-            ? AssignmentOrder.rswizzle
+            ? AssignmentOrder.rconcat
             : unpackedDimensions == 1
                 ? AssignmentOrder.reverse
-                : AssignmentOrder.swizzle;
+                : AssignmentOrder.concat;
         if (unpackedDimensions != 0 && order != unpackedOrder) {
           continue;
         }

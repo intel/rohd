@@ -1,4 +1,4 @@
-// Copyright (C) 2024-2025 Intel Corporation
+// Copyright (C) 2024-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // tree_model.stub.dart
@@ -9,11 +9,11 @@
 
 import 'package:rohd_hierarchy/rohd_hierarchy.dart';
 
-final class TreeModelStub {
+final class HierarchyOccurrenceStub {
   // Private named constructor
-  const TreeModelStub._();
+  const HierarchyOccurrenceStub._();
 
-  static final simpleTreeModel = HierarchyOccurrence(
+  static final simpleHierarchyOccurrence = HierarchyOccurrence(
     name: 'counter',
     signals: [
       // Inputs

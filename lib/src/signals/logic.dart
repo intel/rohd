@@ -645,7 +645,7 @@ class Logic {
       // many SV simulators don't support shifting of nets, so default this
       final shamt = _constShiftAmount(other);
       if (shamt != null) {
-        return [this[-1].replicate(shamt), getRange(shamt)].swizzle();
+        return [this[-1].replicate(shamt), getRange(shamt)].concat();
       }
     }
 
@@ -666,7 +666,7 @@ class Logic {
       // many SV simulators don't support shifting of nets, so default this
       final shamt = _constShiftAmount(other);
       if (shamt != null) {
-        return [getRange(0, -shamt), Const(0, width: shamt)].swizzle();
+        return [getRange(0, -shamt), Const(0, width: shamt)].concat();
       }
     }
 
@@ -687,7 +687,7 @@ class Logic {
       // many SV simulators don't support shifting of nets, so default this
       final shamt = _constShiftAmount(other);
       if (shamt != null) {
-        return [Const(0, width: shamt), getRange(shamt)].swizzle();
+        return [Const(0, width: shamt), getRange(shamt)].concat();
       }
     }
 
@@ -1066,19 +1066,19 @@ class Logic {
       );
     }
     // Nothing to extend: reuse the original signal instead of building a
-    // zero-width Const + Swizzle (matches signExtend's same-width path).
+    // zero-width Const + Concat (matches signExtend's same-width path).
     if (newWidth == width) {
       return this;
     }
     // Nothing to extend: reuse the original signal instead of building a
-    // zero-width Const + Swizzle (matches signExtend's same-width path).
+    // zero-width Const + Concat (matches signExtend's same-width path).
     if (newWidth == width) {
       return this;
     }
     return [
       Const(0, width: newWidth - width),
       this,
-    ].swizzle();
+    ].concat();
   }
 
   /// Returns a [Logic] that is at least [atLeast] bits wide by inserting the
@@ -1095,7 +1095,7 @@ class Logic {
     }
     final padding = Const(
         LogicValue.filled(added, fill ? LogicValue.one : LogicValue.zero));
-    return (lsbs ? [this, padding] : [padding, this]).swizzle();
+    return (lsbs ? [this, padding] : [padding, this]).concat();
   }
 
   /// Calculates the absolute value of a signal, assuming that the
@@ -1121,7 +1121,7 @@ class Logic {
     if (width == 1) {
       return replicate(newWidth);
     } else if (newWidth > width) {
-      return [this[-1].replicate(newWidth - width), this].swizzle();
+      return [this[-1].replicate(newWidth - width), this].concat();
     } else if (newWidth == width) {
       return this;
     }
@@ -1160,7 +1160,7 @@ class Logic {
       getRange(startIndex + update.width, width),
       update,
       getRange(0, startIndex),
-    ].swizzle();
+    ].concat();
   }
 
   /// Returns a replicated signal using [ReplicationOp] with new width =
@@ -1181,7 +1181,7 @@ class Logic {
 
     if (isNet) {
       // many SV simulators don't support replication of nets
-      return List.generate(multiplier, (i) => this).swizzle();
+      return List.generate(multiplier, (i) => this).concat();
     }
 
     return ReplicationOp(this, multiplier).replicated;

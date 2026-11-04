@@ -52,7 +52,7 @@ class TopModule extends Module {
 
 `definitionName` must match the SystemVerilog module name exactly.  `parameters` are passed through as named parameter assignments on the generated instance.  ROHD will not emit a `module` definition for `external_module_name`; it only instantiates it.
 
-Building `TopModule` and calling `generateSynth()` produces an instantiation like:
+Building `TopModule` and calling `dumpSystemVerilog()` produces an instantiation like:
 
 ```systemverilog
 external_module_name #(.WIDTH(2)) external_module(.a(a),.b(b));

@@ -86,12 +86,12 @@ typedef _SubmoduleSignalUseIndex = ({
   Map<SynthLogic, Set<SynthSubModuleInstantiation>> byReferenceBase,
 });
 
-/// A proposed swizzle collapse with producer destinations in `range.base`.
+/// A proposed concat collapse with producer destinations in `range.base`.
 ///
 /// Generated helpers have a disposable `intermediate`; ordinary output
-/// swizzles leave it null and require at least one direct child-output mapping.
+/// concats leave it null and require at least one direct child-output mapping.
 /// Replacement destinations are relative to `range.lower` in `output`.
-typedef _SwizzleRangeCandidate = ({
+typedef _ConcatRangeCandidate = ({
   SynthLogic? intermediate,
   SynthLogic output,
   _SynthRangeRef range,
@@ -100,11 +100,11 @@ typedef _SwizzleRangeCandidate = ({
   Map<SynthAssignment, _SynthRangeRef> destinations,
 });
 
-/// Pre-rewrite indexes and known ranges used to collect and plan swizzles.
+/// Pre-rewrite indexes and known ranges used to collect and plan concats.
 ///
 /// Assignment destinations have both exact-signal and reference-base indexes:
 /// alias traversal needs the former, while array producers need the latter.
-typedef _SwizzleRangeContext = ({
+typedef _ConcatRangeContext = ({
   Map<SynthLogic, List<SynthAssignment>> assignmentsByDestination,
   Map<SynthLogic, List<SynthAssignment>> assignmentsByBaseDestination,
   Map<SynthLogic, List<SynthAssignment>> assignmentsBySource,
@@ -123,15 +123,15 @@ typedef _SwizzleRangeContext = ({
         _SynthRangeRef range,
         SynthSubModuleInstantiation inst,
         List<SynthAssignment> inputAssignments,
-      })> packedSwizzleSourceRanges,
+      })> packedConcatSourceRanges,
   Set<SynthLogic> outputDrivingSignals,
 });
 
-/// Validated assignment and port-mapping edits for one swizzle candidate.
+/// Validated assignment and port-mapping edits for one concat candidate.
 ///
 /// Removed input aliases and directly mapped producer assignments are recorded
 /// separately from assignments that must be replaced with composed ranges.
-typedef _SwizzleRangeRewrite = ({
+typedef _ConcatRangeRewrite = ({
   Map<SynthAssignment, SynthAssignment> replacements,
   Set<SynthAssignment> consumedAssignments,
   List<
@@ -346,15 +346,8 @@ class SynthModuleDefinition {
       } else {
         final parentModule = logic.parentModule;
         final disallowConstName = (logic.isInput || logic.isInOut) &&
-            (
-                // Preserve the legacy expressionless-input behavior.
-                // ignore: deprecated_member_use_from_same_package
-                (parentModule is CustomSystemVerilog &&
-                        parentModule.expressionlessInputs
-                            .contains(logic.name)) ||
-                    (parentModule is SystemVerilog &&
-                        parentModule.expressionlessInputs
-                            .contains(logic.name)));
+            (parentModule is SystemVerilog &&
+                parentModule.expressionlessInputs.contains(logic.name));
 
         final Naming? namingOverride;
         if (logic.isPort) {
@@ -761,7 +754,7 @@ class SynthModuleDefinition {
     _collapseSimpleRangeAssignments();
     _collapseWideArrayElementRangeSources();
     _collapseChainedRangeAssignments();
-    _collapseGeneratedSubsetSwizzleRangeAssignments();
+    _collapseGeneratedSubsetConcatRangeAssignments();
     _collapseConstantBackedRangeIntermediates();
     _collapseAssignments();
     _assignSubmodulePortMapping();
@@ -1288,16 +1281,6 @@ class SynthModuleDefinition {
 
     for (final instantiation in subModuleInstantiations) {
       final subModule = instantiation.module;
-      // Keep legacy expressionless inputs from becoming inline candidates.
-      // ignore: deprecated_member_use_from_same_package
-      if (subModule is CustomSystemVerilog) {
-        singleUseSignals.removeAll(
-          subModule.expressionlessInputs.map(
-            (e) =>
-                instantiation.inputMapping[e] ?? instantiation.inOutMapping[e],
-          ),
-        );
-      }
       if (subModule is SystemVerilog) {
         singleUseSignals.removeAll(
           subModule.expressionlessInputs.map(
@@ -1514,7 +1497,7 @@ class SynthModuleDefinition {
   }
 
   /// Prunes any signals that are not used in this definition, including any
-  /// swizzles/subsets/etc., iteratively until there's nothing left to prune.
+  /// concats/subsets/etc., iteratively until there's nothing left to prune.
   ///
   /// Note that this can remove signals from [internalSignals] after marking
   /// them as having their declaration cleared.
@@ -1525,7 +1508,7 @@ class SynthModuleDefinition {
       changed = false;
 
       // (roughly) conditions for allowing a signal to be removed:
-      // - modules that are removable: BusSubset, Swizzle
+      // - modules that are removable: BusSubset, Concat
       //   - if none of the ports are connected to any signals that exist
       // - signals that are removable; all of:
       //   - `clearable`, structs/arrays all elements are cleared
@@ -1602,12 +1585,9 @@ class SynthModuleDefinition {
             return false;
           }
 
-          // Legacy custom instantiations require explicit port connections.
-          // ignore: deprecated_member_use_from_same_package
-          return logic.parentModule! is CustomSystemVerilog ||
-              (logic.parentModule! is SystemVerilog &&
-                  !(logic.parentModule! as SystemVerilog)
-                      .acceptsEmptyPortConnections);
+          return logic.parentModule! is SystemVerilog &&
+              !(logic.parentModule! as SystemVerilog)
+                  .acceptsEmptyPortConnections;
         });
 
         if (!isCustomSvModPort) {
@@ -2453,10 +2433,10 @@ class SynthModuleDefinition {
     final generatedSubsetCandidates = generatedSubsetSets.candidates;
     final generatedSubsetIntermediates = generatedSubsetSets.intermediates;
 
-    final swizzleInputSignals = {
+    final concatInputSignals = {
       for (final instantiation in subModuleInstantiations)
-        if (instantiation.module is Swizzle &&
-            !(instantiation.module as Swizzle).isNet)
+        if (instantiation.module is Concat &&
+            !(instantiation.module as Concat).isNet)
           ...instantiation.inputMapping.values.map((signal) => signal.resolved),
     };
     final assignmentsBySourceBase = _assignmentsBy(
@@ -2513,10 +2493,10 @@ class SynthModuleDefinition {
               resolvedSrc.range.lower != dst.lower &&
               !generatedSubsetIntermediates.contains(dst.base)) ||
           (resolvedSrc.sourceSubmodule != null &&
-              !_hasOnlySwizzleConsumers(
+              !_hasOnlyConcatConsumers(
                 dst.base,
                 assignmentsBySourceBase,
-                swizzleInputSignals,
+                concatInputSignals,
               )) ||
           !_canUsePackedRangeSource(resolvedSrc.range.base) ||
           !_canUsePackedRangeBase(dst.base)) {
@@ -2594,16 +2574,16 @@ class SynthModuleDefinition {
     }
   }
 
-  /// Whether every assignment consuming [base] feeds a [Swizzle] input.
-  bool _hasOnlySwizzleConsumers(
+  /// Whether every assignment consuming [base] feeds a [Concat] input.
+  bool _hasOnlyConcatConsumers(
     SynthLogic base,
     Map<SynthLogic, List<SynthAssignment>> assignmentsBySourceBase,
-    Set<SynthLogic> swizzleInputSignals,
+    Set<SynthLogic> concatInputSignals,
   ) {
     final consumers = assignmentsBySourceBase[base] ?? const [];
     return consumers.isNotEmpty &&
         consumers.every(
-          (assignment) => swizzleInputSignals.contains(assignment.dst.resolved),
+          (assignment) => concatInputSignals.contains(assignment.dst.resolved),
         );
   }
 
@@ -3500,11 +3480,11 @@ class SynthModuleDefinition {
     internalSignals.removeAll(removedSignals);
   }
 
-  /// Collapses packed output swizzles and generated `assignSubset` helpers.
+  /// Collapses packed output concats and generated `assignSubset` helpers.
   ///
-  /// Generated helpers compose their producer ranges into the swizzle output.
-  /// Ordinary output swizzles require a direct child-output mapping to justify
-  /// replacing the swizzle. Every replacement must preserve bit positions and
+  /// Generated helpers compose their producer ranges into the concat output.
+  /// Ordinary output concats require a direct child-output mapping to justify
+  /// replacing the concat. Every replacement must preserve bit positions and
   /// avoid overlap; array-member destinations need full coverage, while scalar
   /// destinations may retain undriven bits.
   ///
@@ -3512,11 +3492,11 @@ class SynthModuleDefinition {
   /// their helpers immediately, but mapping and assignment edits are batched
   /// until all candidates have been visited. Preserve this ordering so later
   /// candidates see the same source-liveness state.
-  void _collapseGeneratedSubsetSwizzleRangeAssignments() {
-    final context = _indexSwizzleRangeUses();
+  void _collapseGeneratedSubsetConcatRangeAssignments() {
+    final context = _indexConcatRangeUses();
     final candidates = [
-      ..._collectGeneratedSubsetSwizzles(context),
-      ..._collectOutputDrivingSwizzles(context),
+      ..._collectGeneratedSubsetConcats(context),
+      ..._collectOutputDrivingConcats(context),
     ];
 
     final replacements = <SynthAssignment, SynthAssignment>{};
@@ -3527,7 +3507,7 @@ class SynthModuleDefinition {
       SynthLogicPackedBitReference reference,
     })>[];
     for (final candidate in candidates) {
-      final rewrite = _planSwizzleRangeRewrite(candidate, context);
+      final rewrite = _planConcatRangeRewrite(candidate, context);
       if (rewrite == null) {
         continue;
       }
@@ -3562,13 +3542,13 @@ class SynthModuleDefinition {
   }
 
   /// Captures assignment uses, active child outputs, and known source ranges.
-  _SwizzleRangeContext _indexSwizzleRangeUses() {
+  _ConcatRangeContext _indexConcatRangeUses() {
     final assignmentsByDestination =
         _assignmentsBy(assignments, (assignment) => assignment.dst.resolved);
     final assignmentsBySource = _assignmentsBy(
         assignments, (assignment) => _referenceBase(assignment.src));
-    final packedSwizzleSourceRanges =
-        _fullPackedSwizzleSourceRanges(assignmentsByDestination);
+    final packedConcatSourceRanges =
+        _fullPackedConcatSourceRanges(assignmentsByDestination);
     final assignmentsByBaseDestination = _assignmentsBy(
         assignments, (assignment) => _referenceBase(assignment.dst));
     final submoduleSignalUses = _submoduleSignalUseIndex();
@@ -3601,7 +3581,7 @@ class SynthModuleDefinition {
       submoduleSignalUses: submoduleSignalUses,
       realOutputMappingsBySignal: realOutputMappingsBySignal,
       knownSourceRanges: knownSourceRanges,
-      packedSwizzleSourceRanges: packedSwizzleSourceRanges,
+      packedConcatSourceRanges: packedConcatSourceRanges,
       outputDrivingSignals: _findPackedOutputDrivers(assignmentsByDestination),
     );
   }
@@ -3632,17 +3612,17 @@ class SynthModuleDefinition {
     return outputDrivingSignals;
   }
 
-  /// Collects disposable generated helpers consumed only by one packed swizzle.
+  /// Collects disposable generated helpers consumed only by one packed concat.
   ///
   /// All producer destinations remain in the helper's coordinates until the
-  /// rewrite planner translates them into the swizzle output's coordinates.
-  List<_SwizzleRangeCandidate> _collectGeneratedSubsetSwizzles(
-      _SwizzleRangeContext context) {
+  /// rewrite planner translates them into the concat output's coordinates.
+  List<_ConcatRangeCandidate> _collectGeneratedSubsetConcats(
+      _ConcatRangeContext context) {
     final generatedSubsetIntermediates = _generatedSubsetIntermediatesFrom(
-      context.packedSwizzleSourceRanges,
+      context.packedConcatSourceRanges,
       context.assignmentsBySource,
     );
-    final swizzlesByBase = <SynthLogic,
+    final concatsByBase = <SynthLogic,
         List<
             ({
               SynthLogic output,
@@ -3650,11 +3630,11 @@ class SynthModuleDefinition {
               SynthSubModuleInstantiation inst,
               List<SynthAssignment> inputAssignments,
             })>>{};
-    for (final entry in context.packedSwizzleSourceRanges.entries) {
+    for (final entry in context.packedConcatSourceRanges.entries) {
       if (!generatedSubsetIntermediates.contains(entry.value.range.base)) {
         continue;
       }
-      swizzlesByBase.putIfAbsent(entry.value.range.base, () => []).add((
+      concatsByBase.putIfAbsent(entry.value.range.base, () => []).add((
         output: entry.key,
         range: entry.value.range,
         inst: entry.value.inst,
@@ -3662,34 +3642,34 @@ class SynthModuleDefinition {
       ));
     }
 
-    final candidates = <_SwizzleRangeCandidate>[];
-    for (final entry in swizzlesByBase.entries) {
+    final candidates = <_ConcatRangeCandidate>[];
+    for (final entry in concatsByBase.entries) {
       final intermediate = entry.key;
-      final swizzle = entry.value.singleOrNull;
+      final concat = entry.value.singleOrNull;
       final sourceUsers = context.assignmentsBySource[intermediate] ?? const [];
       final producers = context.assignmentsByBaseDestination[intermediate];
-      if (swizzle == null ||
+      if (concat == null ||
           producers == null ||
           producers.isEmpty ||
           sourceUsers.any(
-            (sourceUser) => !swizzle.inputAssignments.contains(sourceUser),
+            (sourceUser) => !concat.inputAssignments.contains(sourceUser),
           )) {
         continue;
       }
 
       if (!_isRangeChainIntermediate(
         intermediate,
-        allowedInstantiation: swizzle.inst,
+        allowedInstantiation: concat.inst,
       )) {
         continue;
       }
 
       candidates.add((
         intermediate: intermediate,
-        output: swizzle.output,
-        range: swizzle.range,
-        inst: swizzle.inst,
-        inputAssignments: swizzle.inputAssignments,
+        output: concat.output,
+        range: concat.range,
+        inst: concat.inst,
+        inputAssignments: concat.inputAssignments,
         destinations: {
           for (final producer in producers)
             producer: _assignmentDestinationRange(producer),
@@ -3699,30 +3679,30 @@ class SynthModuleDefinition {
     return candidates;
   }
 
-  /// Collects ordinary output swizzles with at least one real child producer.
+  /// Collects ordinary output concats with at least one real child producer.
   ///
   /// Input order fixes the destination offsets. Only exclusive, disposable
   /// full-width aliases may be bypassed while tracing their producer drivers.
-  List<_SwizzleRangeCandidate> _collectOutputDrivingSwizzles(
-      _SwizzleRangeContext context) {
-    final candidates = <_SwizzleRangeCandidate>[];
+  List<_ConcatRangeCandidate> _collectOutputDrivingConcats(
+      _ConcatRangeContext context) {
+    final candidates = <_ConcatRangeCandidate>[];
     for (final instantiation in subModuleInstantiations) {
-      final swizzle = instantiation.module;
-      if (swizzle is! Swizzle ||
-          swizzle.isNet ||
+      final concat = instantiation.module;
+      if (concat is! Concat ||
+          concat.isNet ||
           !instantiation.needsInstantiation) {
         continue;
       }
       final output =
-          instantiation.outputMapping[swizzle.resultSignalName]?.resolved;
+          instantiation.outputMapping[concat.resultSignalName]?.resolved;
       if (output == null ||
           !context.outputDrivingSignals.contains(output) ||
-          context.packedSwizzleSourceRanges.containsKey(output)) {
+          context.packedConcatSourceRanges.containsKey(output)) {
         continue;
       }
       final indexedInputs = [
         for (final entry in instantiation.inputMapping.entries)
-          (index: _swizzleInputIndex(entry.key), signal: entry.value.resolved),
+          (index: _concatInputIndex(entry.key), signal: entry.value.resolved),
       ];
       if (indexedInputs.any((input) => input.index == null)) {
         continue;
@@ -3794,8 +3774,8 @@ class SynthModuleDefinition {
   /// width-matched, and disjoint. Missing destination bits are allowed only
   /// when neither the output nor its assignment consumers are array members.
   /// A rejected candidate leaves all of its original wiring intact.
-  _SwizzleRangeRewrite? _planSwizzleRangeRewrite(
-      _SwizzleRangeCandidate candidate, _SwizzleRangeContext context) {
+  _ConcatRangeRewrite? _planConcatRangeRewrite(
+      _ConcatRangeCandidate candidate, _ConcatRangeContext context) {
     final intermediate = candidate.range.base;
     final producers = candidate.destinations.keys;
     final output = candidate.output.resolved;
@@ -3938,12 +3918,12 @@ class SynthModuleDefinition {
     );
   }
 
-  /// Whether a swizzle reconstructs one complete packed array in bit order.
+  /// Whether a concat reconstructs one complete packed array in bit order.
   ///
-  /// Keep these on the existing swizzle path, which renders the array's packed
+  /// Keep these on the existing concat path, which renders the array's packed
   /// selection without an unnecessary destination selection.
   bool _preservesWholePackedArray(
-    _SwizzleRangeCandidate candidate,
+    _ConcatRangeCandidate candidate,
     Map<SynthAssignment, _SynthRangeRef> resolvedSources,
   ) {
     final sourceArrays = {
@@ -4046,7 +4026,7 @@ class SynthModuleDefinition {
   }
 
   /// Finds unnamed generated-subset candidates and the subset intermediates
-  /// that feed a live full-width swizzle consumer.
+  /// that feed a live full-width concat consumer.
   ({Set<SynthLogic> candidates, Set<SynthLogic> intermediates})
       _generatedSubsetIntermediateSets() {
     final assignmentsByDestination =
@@ -4054,10 +4034,10 @@ class SynthModuleDefinition {
     final assignmentsBySourceBase = _assignmentsBy(
         assignments, (assignment) => _referenceBase(assignment.src));
 
-    final swizzleSourceRanges =
-        _fullPackedSwizzleSourceRanges(assignmentsByDestination);
+    final concatSourceRanges =
+        _fullPackedConcatSourceRanges(assignmentsByDestination);
     final candidates = {
-      for (final entry in swizzleSourceRanges.entries)
+      for (final entry in concatSourceRanges.entries)
         if (_isGeneratedSubsetIntermediateCandidate(entry.value.range.base))
           entry.value.range.base,
     };
@@ -4065,7 +4045,7 @@ class SynthModuleDefinition {
     return (
       candidates: candidates,
       intermediates: _generatedSubsetIntermediatesFrom(
-        swizzleSourceRanges,
+        concatSourceRanges,
         assignmentsBySourceBase,
       ),
     );
@@ -4075,7 +4055,7 @@ class SynthModuleDefinition {
   Set<SynthLogic> _generatedSubsetIntermediates() =>
       _generatedSubsetIntermediateSets().intermediates;
 
-  /// Filters [swizzleSourceRanges] to generated subset intermediates with a
+  /// Filters [concatSourceRanges] to generated subset intermediates with a
   /// live full-width internal consumer.
   Set<SynthLogic> _generatedSubsetIntermediatesFrom(
     Map<
@@ -4085,14 +4065,14 @@ class SynthModuleDefinition {
               SynthSubModuleInstantiation inst,
               List<SynthAssignment> inputAssignments,
             })>
-        swizzleSourceRanges,
+        concatSourceRanges,
     Map<SynthLogic, List<SynthAssignment>> assignmentsBySourceBase,
   ) {
     final generatedSubsetIntermediates = <SynthLogic>{};
-    for (final entry in swizzleSourceRanges.entries) {
+    for (final entry in concatSourceRanges.entries) {
       final intermediate = entry.value.range.base;
       if (_isGeneratedSubsetIntermediateCandidate(intermediate) &&
-          _hasInternalFullWidthSwizzleConsumer(
+          _hasInternalFullWidthConcatConsumer(
             entry.key,
             assignmentsBySourceBase,
           )) {
@@ -4103,7 +4083,7 @@ class SynthModuleDefinition {
     return generatedSubsetIntermediates;
   }
 
-  /// Maps each non-net [Swizzle] output that reconstructs a complete packed
+  /// Maps each non-net [Concat] output that reconstructs a complete packed
   /// array to its source range, helper, and any full-width input assignments.
   Map<
       SynthLogic,
@@ -4111,7 +4091,7 @@ class SynthModuleDefinition {
         _SynthRangeRef range,
         SynthSubModuleInstantiation inst,
         List<SynthAssignment> inputAssignments,
-      })> _fullPackedSwizzleSourceRanges(
+      })> _fullPackedConcatSourceRanges(
     Map<SynthLogic, List<SynthAssignment>> assignmentsByDestination,
   ) {
     final ranges = <SynthLogic,
@@ -4123,7 +4103,7 @@ class SynthModuleDefinition {
 
     for (final instantiation in subModuleInstantiations) {
       final module = instantiation.module;
-      if (module is! Swizzle || module.isNet) {
+      if (module is! Concat || module.isNet) {
         continue;
       }
 
@@ -4136,7 +4116,7 @@ class SynthModuleDefinition {
       final inputAssignments = <SynthAssignment>[];
       var hasUnindexedInput = false;
       for (final entry in instantiation.inputMapping.entries) {
-        final index = _swizzleInputIndex(entry.key);
+        final index = _concatInputIndex(entry.key);
         if (index == null) {
           hasUnindexedInput = true;
           break;
@@ -4198,8 +4178,8 @@ class SynthModuleDefinition {
     return ranges;
   }
 
-  /// Parses the numeric index from a [Swizzle] input named `inN`.
-  int? _swizzleInputIndex(String portName) {
+  /// Parses the numeric index from a [Concat] input named `inN`.
+  int? _concatInputIndex(String portName) {
     final match = RegExp(r'in(\d+)$').firstMatch(portName);
     return match == null ? null : int.parse(match.group(1)!);
   }
@@ -4262,15 +4242,15 @@ class SynthModuleDefinition {
     return arrayLogic is BaseLogicArray && arrayLogic.naming == Naming.unnamed;
   }
 
-  /// Whether [swizzleOutput] feeds a full-width disposable internal signal.
-  bool _hasInternalFullWidthSwizzleConsumer(
-    SynthLogic swizzleOutput,
+  /// Whether [concatOutput] feeds a full-width disposable internal signal.
+  bool _hasInternalFullWidthConcatConsumer(
+    SynthLogic concatOutput,
     Map<SynthLogic, List<SynthAssignment>> assignmentsBySourceBase,
   ) {
-    final consumers = assignmentsBySourceBase[swizzleOutput] ?? const [];
+    final consumers = assignmentsBySourceBase[concatOutput] ?? const [];
     return consumers.any((assignment) {
       if (assignment is PartialSynthAssignment ||
-          assignment.width != swizzleOutput.width) {
+          assignment.width != concatOutput.width) {
         return false;
       }
 
@@ -4281,7 +4261,7 @@ class SynthModuleDefinition {
           dst.isPort(module) ||
           dst.isStructPortElement(module) ||
           dst.logics.any((logic) => logic.isArrayMember) ||
-          dst.width != swizzleOutput.width) {
+          dst.width != concatOutput.width) {
         return false;
       }
 

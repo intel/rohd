@@ -6,7 +6,6 @@
 
 import 'dart:convert';
 
-import 'package:rohd_devtools_extension/rohd_devtools/models/tree_model.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/services/tree_data_source.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/services/waveform_data_source.dart';
 import 'package:rohd_hierarchy/rohd_hierarchy.dart';
@@ -291,7 +290,7 @@ Future<List<CliSignal>> loadCliSignals(TreeDataSource tree) async {
     return const [];
   }
   final signals = <CliSignal>[];
-  void collect(TreeModel node, String path) {
+  void collect(HierarchyOccurrence node, String path) {
     for (final signal in [...node.inputs, ...node.outputs]) {
       signals.add(
         CliSignal(

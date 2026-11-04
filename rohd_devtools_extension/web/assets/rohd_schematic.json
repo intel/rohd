@@ -3902,7 +3902,7 @@
             ]
           }
         },
-        "swizzle": {
+        "concat": {
           "hide_name": 0,
           "type": "$buf",
           "parameters": {

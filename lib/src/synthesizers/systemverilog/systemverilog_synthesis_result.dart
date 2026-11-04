@@ -63,11 +63,6 @@ class SystemVerilogCustomDefinitionSynthesisResult extends SynthesisResult {
           (other.module as SystemVerilog).definitionVerilog('*PLACEHOLDER*')!;
 
   @override
-  String toFileContents() => (module as SystemVerilog).definitionVerilog(
-        getInstanceTypeOfModule(module),
-      )!;
-
-  @override
   List<SynthFileContents> toSynthFileContents() => List.unmodifiable([
         SynthFileContents(
           name: instanceTypeName,
@@ -154,9 +149,6 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
       _portsString.hashCode ^
       _moduleContentsForComparison.hashCode ^
       _parameterString.hashCode;
-
-  @override
-  String toFileContents() => _toVerilog();
 
   @override
   List<SynthFileContents> toSynthFileContents() => List.unmodifiable([
@@ -595,7 +587,7 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
 
     // Sub-module instantiations
     //
-    // Inline modules (BusSubset, Swizzle, gates, etc.) produce `assign`
+    // Inline modules (BusSubset, Concat, gates, etc.) produce `assign`
     // statements as their "instantiation" verilog.  Sequential/combinational
     // modules produce `always_ff`/`always_comb` blocks.  In all cases we
     // record the destination signal name(s) so cross-probing lands on the

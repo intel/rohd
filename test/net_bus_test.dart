@@ -30,8 +30,8 @@ class SubsetMod extends Module {
   }
 }
 
-class SwizzleSubArrayMod extends Module {
-  SwizzleSubArrayMod(LogicArray arr, LogicNet net) {
+class ConcatSubArrayMod extends Module {
+  ConcatSubArrayMod(LogicArray arr, LogicNet net) {
     arr = addInOutArray('arr', arr,
         dimensions: arr.dimensions, elementWidth: arr.elementWidth);
     net = addInOut('net', net, width: net.width);
@@ -41,45 +41,45 @@ class SwizzleSubArrayMod extends Module {
 
     reshaped <= arr;
 
-    final swizzled = [reshaped, net].swizzle();
+    final concatd = [reshaped, net].concat();
 
-    addInOut('swizz', LogicNet(width: swizzled.width), width: swizzled.width) <=
-        swizzled;
+    addInOut('swizz', LogicNet(width: concatd.width), width: concatd.width) <=
+        concatd;
   }
 }
 
-class HierSwizzleArraysSubsTop extends Module {
-  HierSwizzleArraysSubsTop(LogicArray arr, LogicNet net) : super(name: 'top') {
+class HierConcatArraysSubsTop extends Module {
+  HierConcatArraysSubsTop(LogicArray arr, LogicNet net) : super(name: 'top') {
     arr = addInOutArray('arr', arr,
         dimensions: arr.dimensions, elementWidth: arr.elementWidth);
     net = addInOut('net', net, width: net.width);
 
-    final swizzled = HierSwizzleArraysSubsSub(arr, net).swizz;
+    final concatd = HierConcatArraysSubsSub(arr, net).swizz;
 
-    addInOut('swizz', LogicNet(width: swizzled.width), width: swizzled.width) <=
-        swizzled;
+    addInOut('swizz', LogicNet(width: concatd.width), width: concatd.width) <=
+        concatd;
   }
 }
 
-class HierSwizzleArraysSubsSub extends Module {
+class HierConcatArraysSubsSub extends Module {
   LogicNet get swizz => inOutSource('swizz') as LogicNet;
-  HierSwizzleArraysSubsSub(LogicArray arr, LogicNet net) : super(name: 'sub') {
+  HierConcatArraysSubsSub(LogicArray arr, LogicNet net) : super(name: 'sub') {
     arr = addInOutArray('arr', arr,
         dimensions: [arr.width ~/ 2], elementWidth: 2);
     net = addInOut('net', net, width: net.width);
 
-    final swizzled = [arr, net].swizzle();
+    final concatd = [arr, net].concat();
 
-    addInOut('swizz', LogicNet(width: swizzled.width), width: swizzled.width) <=
-        swizzled;
+    addInOut('swizz', LogicNet(width: concatd.width), width: concatd.width) <=
+        concatd;
   }
 }
 
-class SwizzleMod extends Module {
-  SwizzleMod(List<Logic> toSwizzle, {bool swapAssign = false}) {
-    final innerToSwizzle = <Logic>[];
+class ConcatMod extends Module {
+  ConcatMod(List<Logic> toConcat, {bool swapAssign = false}) {
+    final innerToConcat = <Logic>[];
     var i = 0;
-    for (final ts in toSwizzle) {
+    for (final ts in toConcat) {
       final name = 'in$i';
       Logic p;
       if (ts is LogicArray) {
@@ -98,20 +98,20 @@ class SwizzleMod extends Module {
         }
       }
 
-      innerToSwizzle.add(p);
+      innerToConcat.add(p);
       i++;
     }
 
-    final swizzled = innerToSwizzle.swizzle();
+    final concatd = innerToConcat.concat();
 
-    if (!swapAssign || !swizzled.isNet) {
-      addInOut('swizzled', LogicNet(width: swizzled.width),
-              width: swizzled.width) <=
-          swizzled;
+    if (!swapAssign || !concatd.isNet) {
+      addInOut('concatd', LogicNet(width: concatd.width),
+              width: concatd.width) <=
+          concatd;
     } else {
-      swizzled <=
-          addInOut('swizzled', LogicNet(width: swizzled.width),
-              width: swizzled.width);
+      concatd <=
+          addInOut('concatd', LogicNet(width: concatd.width),
+              width: concatd.width);
     }
   }
 }
@@ -138,7 +138,7 @@ class MultiConnectionNetSubsetMod extends Module {
     bus2 = addInOut('bus2', bus2, width: 8);
 
     bus1.getRange(0, 4) <= bus2.getRange(4, 8);
-    bus2.getRange(0, 4) <= [bus1.getRange(0, 2), bus1.getRange(6, 8)].swizzle();
+    bus2.getRange(0, 4) <= [bus1.getRange(0, 2), bus1.getRange(6, 8)].concat();
 
     bus1.getRange(4, 8) <= bus2.getRange(4, 8).reversed;
   }
@@ -205,14 +205,14 @@ class ShiftTestNetModule extends Module {
   }
 }
 
-class SwizzleToSwizzleNets extends Module {
-  SwizzleToSwizzleNets(LogicNet a0, LogicNet a1, LogicNet b0, LogicNet b1) {
+class ConcatToConcatNets extends Module {
+  ConcatToConcatNets(LogicNet a0, LogicNet a1, LogicNet b0, LogicNet b1) {
     a0 = addInOut('a0', a0, width: a0.width);
     a1 = addInOut('a1', a1, width: a1.width);
     b0 = addInOut('b0', b0, width: b0.width);
     b1 = addInOut('b1', b1, width: b1.width);
 
-    [a1, a0].swizzle() <= [b1, b0].swizzle();
+    [a1, a0].concat() <= [b1, b0].concat();
   }
 }
 
@@ -233,7 +233,7 @@ class NicePortPassingTop extends Module {
     b = addInOut('b', b, width: b.width);
 
     NicePortPassingSub(
-      [a, b].swizzle() as LogicNet,
+      [a, b].concat() as LogicNet,
       a.getRange(a.width ~/ 2) as LogicNet,
     );
   }
@@ -251,12 +251,12 @@ void main() {
     await Simulator.reset();
   });
 
-  test('passing ports with swizzle and subset needs no net_connect', () async {
+  test('passing ports with concat and subset needs no net_connect', () async {
     final mod = NicePortPassingTop(LogicNet(width: 8), LogicNet(width: 8));
     await mod.build();
 
     final sv =
-        SvCleaner.removeSwizzleAnnotationComments(mod.dumpSystemVerilog());
+        SvCleaner.removeConcatAnnotationComments(mod.dumpSystemVerilog());
 
     expect(sv.contains('net_connect'), isFalse);
     expect(sv,
@@ -300,7 +300,7 @@ void main() {
 
     final b = a.getRange(0, 4);
 
-    final c = [b, b].swizzle();
+    final c = [b, b].concat();
 
     a <= c;
     c <= a;
@@ -590,7 +590,7 @@ void main() {
 
               await mod.build();
 
-              final sv = SvCleaner.removeSwizzleAnnotationComments(
+              final sv = SvCleaner.removeConcatAnnotationComments(
                   mod.dumpSystemVerilog());
               if (netTypeName == LogicNet) {
                 expect(
@@ -601,7 +601,7 @@ void main() {
                 expect(
                     sv,
                     contains('net_connect_0'
-                        ' (_original__swizzled, '
+                        ' (_original__concatd, '
                         '({bus[1][1:0],bus[0][3:2]}));'));
               }
 
@@ -620,7 +620,7 @@ void main() {
 
               await mod.build();
 
-              final sv = SvCleaner.removeSwizzleAnnotationComments(
+              final sv = SvCleaner.removeConcatAnnotationComments(
                   mod.dumpSystemVerilog());
               if (netTypeName == LogicNet) {
                 expect(
@@ -631,7 +631,7 @@ void main() {
                 expect(
                     sv,
                     contains('net_connect_0'
-                        ' (_original__swizzled, '
+                        ' (_original__concatd, '
                         '({bus[1][1:0],bus[0][3:2]}));'));
               }
 
@@ -649,41 +649,41 @@ void main() {
     });
   });
 
-  group('swizzle', () {
+  group('concat', () {
     test('func mixed net and non-net', () {
       final myNetDriver = Logic(name: 'my_net_driver');
       final myNet = LogicNet(name: 'my_net')..gets(myNetDriver);
       final myNonNet = Logic(name: 'my_non_net');
-      final swizzledDriver = Logic(name: 'swizzled_driver', width: 2);
-      final swizzled = [
+      final concatdDriver = Logic(name: 'concatd_driver', width: 2);
+      final concatd = [
         myNet,
         myNonNet,
-      ].swizzle()
-        ..gets(swizzledDriver);
+      ].concat()
+        ..gets(concatdDriver);
 
       myNetDriver.put(1);
       myNonNet.put(0);
 
-      expect(swizzled.value, LogicValue.of('10'));
+      expect(concatd.value, LogicValue.of('10'));
 
-      swizzledDriver.put('01');
+      concatdDriver.put('01');
 
-      expect(swizzled.value, LogicValue.of('xx'));
+      expect(concatd.value, LogicValue.of('xx'));
       expect(myNet.value, LogicValue.of('x'));
     });
 
-    test('func swizzle to swizzle nets', () {
+    test('func concat to concat nets', () {
       final a0Driver = Logic();
 
       final a0 = LogicNet()..gets(a0Driver);
       final a1 = LogicNet();
-      final a = [a0, a1].rswizzle();
+      final a = [a0, a1].rconcat();
 
       final inner = LogicNet(width: 2);
 
       final b0 = LogicNet();
       final b1 = LogicNet();
-      final b = [b0, b1].rswizzle();
+      final b = [b0, b1].rconcat();
 
       inner <= a;
       b <= inner;
@@ -697,9 +697,9 @@ void main() {
       expect(b0.value, LogicValue.of('0'));
     });
 
-    test('swizzle to swizzle', () async {
+    test('concat to concat', () async {
       final mod =
-          SwizzleToSwizzleNets(LogicNet(), LogicNet(), LogicNet(), LogicNet());
+          ConcatToConcatNets(LogicNet(), LogicNet(), LogicNet(), LogicNet());
       await mod.build();
 
       final vectors = [
@@ -710,8 +710,8 @@ void main() {
       SimCompare.checkIverilogVector(mod, vectors);
     });
 
-    test('array sub swizzle', () async {
-      final mod = SwizzleSubArrayMod(LogicArray.net([4, 4], 1, name: 'top_arr'),
+    test('array sub concat', () async {
+      final mod = ConcatSubArrayMod(LogicArray.net([4, 4], 1, name: 'top_arr'),
           LogicNet(width: 8, name: 'top_net'));
       await mod.build();
 
@@ -723,8 +723,8 @@ void main() {
       SimCompare.checkIverilogVector(mod, vectors);
     });
 
-    test('hier array sub swizzle', () async {
-      final mod = HierSwizzleArraysSubsTop(
+    test('hier array sub concat', () async {
+      final mod = HierConcatArraysSubsTop(
           LogicArray.net([4, 4], 1, name: 'top_arr'),
           LogicNet(width: 8, name: 'top_net'));
       await mod.build();
@@ -738,12 +738,12 @@ void main() {
     });
 
     for (final swapAssign in [false, true]) {
-      SwizzleMod swizzleModConstructor(List<Logic> toSwizzle) =>
-          SwizzleMod(toSwizzle, swapAssign: swapAssign);
+      ConcatMod concatModConstructor(List<Logic> toConcat) =>
+          ConcatMod(toConcat, swapAssign: swapAssign);
 
-      void checkNetSwizzleAssignment(String sv, String sourceAssignment) {
+      void checkNetConcatAssignment(String sv, String sourceAssignment) {
         if (swapAssign) {
-          expect(sv, isNot(contains(' _swizzled;')));
+          expect(sv, isNot(contains(' _concatd;')));
         } else {
           expect(sv, contains(sourceAssignment));
         }
@@ -752,76 +752,76 @@ void main() {
       group('swap=$swapAssign', () {
         group('build checks', () {
           test('simple net array', () async {
-            final mod = swizzleModConstructor([
+            final mod = concatModConstructor([
               LogicArray.net([1], 8),
               LogicArray.net([1], 8),
             ]);
 
             await mod.build();
 
-            final sv = SvCleaner.removeSwizzleAnnotationComments(
+            final sv = SvCleaner.removeConcatAnnotationComments(
                 mod.dumpSystemVerilog());
 
-            checkNetSwizzleAssignment(
+            checkNetConcatAssignment(
               sv,
-              'net_connect (swizzled, ({in0[0],in1[0]}));',
+              'net_connect (concatd, ({in0[0],in1[0]}));',
             );
           });
 
           test('simple net array multi dim with simple net', () async {
-            final mod = swizzleModConstructor([
+            final mod = concatModConstructor([
               LogicNet(),
               LogicArray.net([2], 2),
             ]);
 
             await mod.build();
 
-            final sv = SvCleaner.removeSwizzleAnnotationComments(
+            final sv = SvCleaner.removeConcatAnnotationComments(
                 mod.dumpSystemVerilog());
 
-            checkNetSwizzleAssignment(
+            checkNetConcatAssignment(
               sv,
               'net_connect #(.WIDTH(5)) net_connect'
-              ' (swizzled, ({in0,({in1[1],in1[0]})}));',
+              ' (concatd, ({in0,({in1[1],in1[0]})}));',
             );
           });
 
           test('non-net array', () async {
-            final mod = swizzleModConstructor([
+            final mod = concatModConstructor([
               LogicArray([2, 2], 2), // in0
               LogicArray([4], 1), // in1
             ]);
 
             await mod.build();
 
-            final sv = SvCleaner.removeSwizzleAnnotationComments(
+            final sv = SvCleaner.removeConcatAnnotationComments(
                 mod.dumpSystemVerilog());
 
             expect(
                 sv,
-                contains('assign _swizzled = '
+                contains('assign _concatd = '
                     '{({(in0[1]),(in0[0])}),(in1)};'));
           });
 
           test('net array 2', () async {
-            final mod = swizzleModConstructor([
+            final mod = concatModConstructor([
               LogicArray.net([4], 1), // in0
               LogicArray.net([1], 4), // in1
             ]);
 
             await mod.build();
 
-            final sv = SvCleaner.removeSwizzleAnnotationComments(
+            final sv = SvCleaner.removeConcatAnnotationComments(
                 mod.dumpSystemVerilog());
 
-            checkNetSwizzleAssignment(
+            checkNetConcatAssignment(
               sv,
-              'net_connect (swizzled, ({(in0[3:0]),in1[0]}));',
+              'net_connect (concatd, ({(in0[3:0]),in1[0]}));',
             );
           });
 
           test('net array 3', () async {
-            final mod = swizzleModConstructor([
+            final mod = concatModConstructor([
               LogicArray.net([2, 2], 2), // in0
               LogicArray.net([4], 1), // in1
               LogicArray.net([1], 4), // in2
@@ -829,48 +829,48 @@ void main() {
 
             await mod.build();
 
-            final sv = SvCleaner.removeSwizzleAnnotationComments(
+            final sv = SvCleaner.removeConcatAnnotationComments(
                 mod.dumpSystemVerilog());
 
-            checkNetSwizzleAssignment(
+            checkNetConcatAssignment(
               sv,
-              'net_connect (swizzled, '
+              'net_connect (concatd, '
               '({({({in0[1][1],in0[1][0]}),'
               '({in0[0][1],in0[0][0]})}),(in1[3:0]),in2[0]}));',
             );
           });
 
           test('net and non-net', () async {
-            final mod = swizzleModConstructor([
+            final mod = concatModConstructor([
               Logic(width: 2),
               LogicNet(width: 4),
             ]);
 
             await mod.build();
-            final sv = SvCleaner.removeSwizzleAnnotationComments(
+            final sv = SvCleaner.removeConcatAnnotationComments(
                 mod.dumpSystemVerilog());
 
             expect(sv, contains('assign _in1 = in0;'));
             expect(
                 sv,
                 contains('net_connect #(.WIDTH(6)) net_connect'
-                    ' (swizzled, ({_in1,in1}));'));
+                    ' (concatd, ({_in1,in1}));'));
           });
 
           test('net and non-net arrays', () async {
-            final mod = swizzleModConstructor([
+            final mod = concatModConstructor([
               LogicArray.net([2], 2),
               LogicArray([3], 4),
             ]);
 
             await mod.build();
-            final sv = SvCleaner.removeSwizzleAnnotationComments(
+            final sv = SvCleaner.removeConcatAnnotationComments(
                 mod.dumpSystemVerilog());
 
             expect(
                 sv,
                 contains('net_connect #(.WIDTH(16)) net_connect'
-                    ' (swizzled, ({({in0[1],in0[0]}),_in0}));'));
+                    ' (concatd, ({({in0[1],in0[0]}),_in0}));'));
           });
         });
 
@@ -882,33 +882,33 @@ void main() {
 
             final upper = LogicNet(width: 2, name: 'upper')..gets(upperDriver);
             final lower = LogicNet(name: 'lower')..gets(lowerDriver);
-            final swizzled = [
+            final concatd = [
               upper,
               lower,
-            ].swizzle()
+            ].concat()
               ..gets(swizzeldDriver);
 
             upperDriver.put('10');
 
-            expect(swizzled.value, LogicValue.of('10z'));
+            expect(concatd.value, LogicValue.of('10z'));
             expect(lower.value, LogicValue.of('z'));
             expect(upper.value, LogicValue.of('10'));
 
             lowerDriver.put('1');
 
-            expect(swizzled.value, LogicValue.of('101'));
+            expect(concatd.value, LogicValue.of('101'));
             expect(lower.value, LogicValue.of('1'));
             expect(upper.value, LogicValue.of('10'));
 
             swizzeldDriver.put('111');
 
-            expect(swizzled.value, LogicValue.of('1x1'));
+            expect(concatd.value, LogicValue.of('1x1'));
             expect(lower.value, LogicValue.of('1'));
             expect(upper.value, LogicValue.of('1x'));
 
             upperDriver.put('zz');
 
-            expect(swizzled.value, LogicValue.of('111'));
+            expect(concatd.value, LogicValue.of('111'));
             expect(lower.value, LogicValue.of('1'));
             expect(upper.value, LogicValue.of('11'));
           });
@@ -932,7 +932,7 @@ void main() {
                   in netTypes.entries) {
                 void checkSV(String sv) {
                   if (swapAssign) {
-                    expect(sv, isNot(contains(' _swizzled;')));
+                    expect(sv, isNot(contains(' _concatd;')));
                     return;
                   }
 
@@ -940,12 +940,12 @@ void main() {
                     expect(
                         sv,
                         contains('net_connect #(.WIDTH(16))'
-                            ' net_connect (swizzled, ({in0,in1,in2}));'));
+                            ' net_connect (concatd, ({in0,in1,in2}));'));
                   } else if (netTypeName == LogicArray) {
                     expect(
                         sv,
                         contains(
-                            'net_connect #(.WIDTH(16)) net_connect (swizzled, '
+                            'net_connect #(.WIDTH(16)) net_connect (concatd, '
                             '({({({in0[1][1],in0[1][0]}),'
                             '({in0[0][1],in0[0][0]})}),'
                             '(in1[3:0]),in2[0]}));'));
@@ -954,19 +954,19 @@ void main() {
 
                 group(netTypeName, () {
                   test('many to one', () async {
-                    final mod = swizzleModConstructor(sigGen());
+                    final mod = concatModConstructor(sigGen());
 
                     await mod.build();
 
-                    final sv = SvCleaner.removeSwizzleAnnotationComments(
+                    final sv = SvCleaner.removeConcatAnnotationComments(
                         mod.dumpSystemVerilog());
                     checkSV(sv);
 
                     final vectors = [
                       Vector({'in0': 0xab, 'in1': 0xc, 'in2': 0xd},
-                          {'swizzled': 0xabcd}),
+                          {'concatd': 0xabcd}),
                       Vector({'in0': 0x12, 'in1': 0x3, 'in2': 0x4},
-                          {'swizzled': 0x1234}),
+                          {'concatd': 0x1234}),
                     ];
 
                     await SimCompare.checkFunctionalVector(mod, vectors);
@@ -974,18 +974,18 @@ void main() {
                   });
 
                   test('one to many', () async {
-                    final mod = swizzleModConstructor(sigGen());
+                    final mod = concatModConstructor(sigGen());
 
                     await mod.build();
 
-                    final sv = SvCleaner.removeSwizzleAnnotationComments(
+                    final sv = SvCleaner.removeConcatAnnotationComments(
                         mod.dumpSystemVerilog());
                     checkSV(sv);
 
                     final vectors = [
-                      Vector({'swizzled': 0xabcd},
+                      Vector({'concatd': 0xabcd},
                           {'in0': 0xab, 'in1': 0xc, 'in2': 0xd}),
-                      Vector({'swizzled': 0x1234},
+                      Vector({'concatd': 0x1234},
                           {'in0': 0x12, 'in1': 0x3, 'in2': 0x4}),
                     ];
 
@@ -997,7 +997,7 @@ void main() {
             });
 
             test('mixed everything many to one', () async {
-              final mod = swizzleModConstructor([
+              final mod = concatModConstructor([
                 Logic(width: 4),
                 LogicNet(width: 4),
                 LogicArray([2], 2),
@@ -1007,9 +1007,9 @@ void main() {
 
               final vectors = [
                 Vector({'in0': 0xa, 'in1': 0xb, 'in2': 0xc, 'in3': 0xd},
-                    {'swizzled': 0xabcd}),
+                    {'concatd': 0xabcd}),
                 Vector({'in0': 0x1, 'in1': 0x2, 'in2': 0x3, 'in3': 0x4},
-                    {'swizzled': 0x1234}),
+                    {'concatd': 0x1234}),
               ];
 
               await SimCompare.checkFunctionalVector(mod, vectors);
@@ -1017,7 +1017,7 @@ void main() {
             });
 
             test('mixed everything one to many', () async {
-              final mod = swizzleModConstructor([
+              final mod = concatModConstructor([
                 Logic(width: 4),
                 LogicNet(width: 4),
                 LogicArray([2], 2),
@@ -1026,8 +1026,8 @@ void main() {
               await mod.build();
 
               final vectors = [
-                Vector({'swizzled': 0xabcd}, {'in1': 0xb, 'in3': 0xd}),
-                Vector({'swizzled': 0x1234}, {'in1': 0x2, 'in3': 0x4}),
+                Vector({'concatd': 0xabcd}, {'in1': 0xb, 'in3': 0xd}),
+                Vector({'concatd': 0x1234}, {'in1': 0x2, 'in3': 0x4}),
               ];
 
               await SimCompare.checkFunctionalVector(mod, vectors);
@@ -1222,7 +1222,7 @@ void main() {
         await mod.build();
 
         final sv =
-            SvCleaner.removeSwizzleAnnotationComments(mod.dumpSystemVerilog());
+            SvCleaner.removeConcatAnnotationComments(mod.dumpSystemVerilog());
 
         expect(
             sv,
@@ -1243,7 +1243,7 @@ void main() {
         await mod.build();
 
         final sv =
-            SvCleaner.removeSwizzleAnnotationComments(mod.dumpSystemVerilog());
+            SvCleaner.removeConcatAnnotationComments(mod.dumpSystemVerilog());
 
         expect(
             sv,

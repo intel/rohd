@@ -1,4 +1,4 @@
-// Copyright (C) 2024 Intel Corporation
+// Copyright (C) 2024-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // unassignable_test.dart
@@ -20,9 +20,9 @@ void main() {
     }
   });
 
-  test('Swizzled outputs reject width mismatches', () {
+  test('Concatd outputs reject width mismatches', () {
     expect(
-      () => [Logic(), Logic()].swizzle() <= Logic(),
+      () => [Logic(), Logic()].concat() <= Logic(),
       throwsA(isA<SignalWidthMismatchException>()),
     );
   });
@@ -34,9 +34,9 @@ void main() {
     );
   });
 
-  test('Swizzled outputs cannot receive conditional assignments', () {
+  test('Concatd outputs cannot receive conditional assignments', () {
     expect(
-      () => Swizzle([Logic(), Logic()]).out < Logic(width: 2),
+      () => Concat([Logic(), Logic()]).out < Logic(width: 2),
       throwsA(isA<UnassignableException>()),
     );
   });

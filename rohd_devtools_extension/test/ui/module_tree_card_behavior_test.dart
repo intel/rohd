@@ -12,17 +12,17 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/cubit/hierarchy_cubit.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/cubit/tree_search_term_cubit.dart';
-import 'package:rohd_devtools_extension/rohd_devtools/models/tree_model.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/ui/module_tree_card.dart';
+import 'package:rohd_hierarchy/rohd_hierarchy.dart';
 
 void main() {
   testWidgets('labels and selects the module tree through cubits',
       (tester) async {
-    final root = TreeModel(
+    final root = HierarchyOccurrence(
       name: 'generated_top_instance',
       definition: 'TopDefinition',
       children: [
-        TreeModel(name: 'child'),
+        HierarchyOccurrence(name: 'child'),
       ],
     )..buildAddresses();
     final hierarchyCubit = DevToolsHierarchyCubit()..loadFromNode(root);

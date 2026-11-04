@@ -26,7 +26,7 @@ class FullSubtractorComb extends FullSubtractor {
     final borrowOut = addOutput('borrow_comb');
 
     Combinational([
-      Case([a, b, borrow].swizzle(), [
+      Case([a, b, borrow].concat(), [
         CaseItem(Const(bin('000'), width: 3), [
           diff < 0,
           borrowOut < 0,
@@ -90,7 +90,7 @@ class NBitFullSubtractor extends Module {
     }
     diffList.add(borrow);
 
-    diff <= diffList.rswizzle().zeroExtend(diff.width);
+    diff <= diffList.rconcat().zeroExtend(diff.width);
   }
 
   // getter

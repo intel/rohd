@@ -184,7 +184,7 @@ class BusSubset extends Module with InlineSystemVerilog {
 
     assert(
       !a.contains(_expressionRegex),
-      'Inputs to bus swizzle cannot contain any expressions.',
+      'Inputs to bus concat cannot contain any expressions.',
     );
 
     // When, input width is 1, ignore startIndex and endIndex
@@ -195,11 +195,11 @@ class BusSubset extends Module with InlineSystemVerilog {
     // SystemVerilog doesn't allow reverse-order select to reverse a bus,
     // so do it manually
     if (startIndex > endIndex) {
-      final swizzleContents = List.generate(
+      final concatContents = List.generate(
         startIndex - endIndex + 1,
         (i) => '$a[${endIndex + i}]',
       ).join(',');
-      return '{$swizzleContents}';
+      return '{$concatContents}';
     }
 
     final sliceString =
@@ -213,14 +213,14 @@ class BusSubset extends Module with InlineSystemVerilog {
 /// The concatenation occurs such that index 0 of `signals` is the *most*
 /// significant bit(s).
 ///
-/// You can use convenience functions from [LogicSwizzle] to more easily use
+/// You can use convenience functions from [LogicConcat] to more easily use
 /// this [Module].
 ///
 /// This module supports nets, allowing concatenation to be bidirectionally
 /// driven. When [out] is used as the receiver of a continuous assignment, the
 /// corresponding portions of the source drive the original input signals.
-class Swizzle extends Module with InlineSystemVerilog {
-  final String _out = Naming.unpreferredName('swizzled');
+class Concat extends Module with InlineSystemVerilog {
+  final String _out = Naming.unpreferredName('concatd');
 
   /// A regular expression that will have matches if an expression is a single
   /// bit select of a signal or packed array element.
@@ -233,11 +233,11 @@ class Swizzle extends Module with InlineSystemVerilog {
 
   final List<Logic> _receiverSignals;
 
-  final List<Logic> _swizzleInputs = [];
+  final List<Logic> _concatInputs = [];
 
   final List<LogicNet> _netInputSources = [];
 
-  /// Whether this [Swizzle] concatenates [LogicNet]s (so its output is a net
+  /// Whether this [Concat] concatenates [LogicNet]s (so its output is a net
   /// that can be driven bidirectionally).
   @internal
   final bool isNet;
@@ -247,7 +247,7 @@ class Swizzle extends Module with InlineSystemVerilog {
   bool get isWiresOnly => true;
 
   /// Constructs a [Module] which concatenates [signals] into one large [out].
-  Swizzle(List<Logic> signals, {super.name = 'swizzle'})
+  Concat(List<Logic> signals, {super.name = 'concat'})
       : _receiverSignals = List.unmodifiable(signals),
         isNet = signals.any((e) => e.isNet) {
     final outputWidth =
@@ -271,14 +271,14 @@ class Swizzle extends Module with InlineSystemVerilog {
           naming: Naming.unnamed,
         );
         _netInputSources.add(inputSource);
-        final swizzleInput = addInOut(
+        final concatInput = addInOut(
           inputName,
           inputSource,
           width: signal.width,
         );
-        _swizzleInputs.add(swizzleInput);
-        internalOut.quietlyMergeSubsetTo(swizzleInput, start: start);
-        start += swizzleInput.width;
+        _concatInputs.add(concatInput);
+        internalOut.quietlyMergeSubsetTo(concatInput, start: start);
+        start += concatInput.width;
       }
 
       out.setDriverResolver(() {
@@ -291,14 +291,14 @@ class Swizzle extends Module with InlineSystemVerilog {
       for (final signal in _receiverSignals.reversed) {
         // Reverse so bit 0 is the last thing in the input list.
         final inputName = Naming.unpreferredName('in${idx++}');
-        _swizzleInputs.add(addInput(inputName, signal, width: signal.width));
+        _concatInputs.add(addInput(inputName, signal, width: signal.width));
       }
 
       out = addOutput(_out, width: outputWidth);
 
       _execute(); // for initial values
-      for (final swizzleInput in _swizzleInputs) {
-        swizzleInput.glitch.listen((args) {
+      for (final concatInput in _concatInputs) {
+        concatInput.glitch.listen((args) {
           _execute();
         });
       }
@@ -308,7 +308,7 @@ class Swizzle extends Module with InlineSystemVerilog {
     if (!isNet) {
       out.setSubsetReceiverResolver(_resolveSubsetReceiver);
       out.makeUnassignable(
-        reason: 'A Swizzle view can only receive continuous assignments.',
+        reason: 'A Concat view can only receive continuous assignments.',
       );
     }
   }
@@ -356,7 +356,7 @@ class Swizzle extends Module with InlineSystemVerilog {
   /// Executes the functional behavior of this gate.
   void _execute() {
     final updatedVal = LogicValue.ofIterable(
-      _swizzleInputs.map((e) => e.value),
+      _concatInputs.map((e) => e.value),
     );
     out.put(updatedVal);
   }
@@ -381,9 +381,9 @@ class Swizzle extends Module with InlineSystemVerilog {
   @override
   String inlineVerilog(Map<String, String> inputs) {
     assert(
-      inputs.length == _swizzleInputs.length ||
-          (inputs.length == _swizzleInputs.length + 1 && isNet),
-      'This swizzle has ${_swizzleInputs.length} inputs,'
+      inputs.length == _concatInputs.length ||
+          (inputs.length == _concatInputs.length + 1 && isNet),
+      'This concat has ${_concatInputs.length} inputs,'
       ' but saw $inputs with ${inputs.length} values.',
     );
 
@@ -394,7 +394,7 @@ class Swizzle extends Module with InlineSystemVerilog {
 
     // Calculate all width descriptions upfront to determine alignment
     final validInputs =
-        _swizzleInputs.reversed.where((e) => e.width > 0).toList();
+        _concatInputs.reversed.where((e) => e.width > 0).toList();
     final operands = _collapseContiguousBitSelects(validInputs, inputs);
 
     // If there's only one element, no need for width descriptions
@@ -464,22 +464,22 @@ ${inputLines.join('\n')}
 
   /// Returns the source array for a natural-order packing of a packed 1D array.
   String? _packedArrayAlias(Map<String, String> inputs) {
-    if (isNet || _swizzleInputs.isEmpty) {
+    if (isNet || _concatInputs.isEmpty) {
       return null;
     }
 
-    final firstSource = _swizzleInputs.first.srcConnection;
+    final firstSource = _concatInputs.first.srcConnection;
     final array = firstSource?.parentStructure;
     if (array is! BaseLogicArray ||
         array.dimensions.length != 1 ||
         array.numUnpackedDimensions != 0 ||
-        array.elements.length != _swizzleInputs.length) {
+        array.elements.length != _concatInputs.length) {
       return null;
     }
 
     String? arrayExpression;
-    for (var index = 0; index < _swizzleInputs.length; index++) {
-      final input = _swizzleInputs[index];
+    for (var index = 0; index < _concatInputs.length; index++) {
+      final input = _concatInputs[index];
       final source = input.srcConnection;
       if (source?.parentStructure != array || source?.arrayIndex != index) {
         return null;

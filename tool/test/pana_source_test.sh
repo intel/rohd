@@ -156,10 +156,10 @@ export EXPECTED_SDK=dart EXPECTED_THRESHOLD=10
 run_case 0 "$NAVIGATOR" dart
 [[ "$(cat "$SDK_LOG")" == $'dart|pub get\ndart|analyze --fatal-infos lib\ndart|pub downgrade\ndart|analyze --fatal-infos lib\npana' ]]
 
-export EXPECTED_SDK=flutter EXPECTED_THRESHOLD=10
-PANA_SCORE=150 run_case 0 "$WIDGETS" flutter
+export EXPECTED_SDK=flutter EXPECTED_THRESHOLD=0
+PANA_SCORE=160 run_case 0 "$WIDGETS" flutter
 [[ "$(cat "$SDK_LOG")" == $'flutter|pub get\nflutter|analyze --fatal-infos --no-pub lib\nflutter|pub downgrade\nflutter|analyze --fatal-infos --no-pub lib\npana' ]]
-PANA_SCORE=149 run_case 1 "$WIDGETS" flutter
+PANA_SCORE=159 run_case 1 "$WIDGETS" flutter
 PANA_STATUS=73 run_case 73 "$WIDGETS" flutter
 
 export EXPECTED_SDK=dart EXPECTED_THRESHOLD=10

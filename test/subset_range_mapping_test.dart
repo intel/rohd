@@ -114,7 +114,7 @@ class Top extends Module {
       dataIn <=
           (sourceIndices == null
               ? dataOut.getRange(lower, lower + width)
-              : [for (final index in sourceIndices) dataOut[index]].rswizzle());
+              : [for (final index in sourceIndices) dataOut[index]].rconcat());
     } else {
       final indices = List.generate(width, (index) => index);
       for (final index in reverseAssignments ? indices.reversed : indices) {
@@ -150,7 +150,7 @@ class MixedTop extends Module {
             source.getRange(12, 12 + selectedWidth),
             other.getRange(8, 10),
             source.getRange(3, 5),
-          ].rswizzle();
+          ].rconcat();
     } else {
       for (final index in [3, 0, 2, 1]) {
         dataIn.assignSubset([source[index + 2]], start: index);
@@ -336,7 +336,7 @@ void main() {
           }, {
             'observed': [
               for (final index in [3, 2, 1, 0]) seed[index]
-            ].rswizzle(),
+            ].rconcat(),
           }),
       ];
       await SimCompare.checkFunctionalVector(module, vectors);
@@ -467,7 +467,7 @@ void main() {
                       SourceKind.nested => seed.getRange(4, sourceWidth - 4),
                       _ => seed,
                     })[index],
-                ].rswizzle(),
+                ].rconcat(),
               }),
           ];
           for (final useRange in [false, true]) {
@@ -517,7 +517,7 @@ void main() {
                     (~seed).getRange(8, 10),
                     (sourceKind == SourceKind.computed ? ~seed : seed)
                         .getRange(3, 5),
-                  ].rswizzle(),
+                  ].rconcat(),
                   if (fanout)
                     'fanout': sourceKind == SourceKind.computed ? ~seed : seed,
                 }),
@@ -565,7 +565,7 @@ void main() {
           LogicValue selectedValue(LogicValue seed) => [
                 for (final index in sourceIndices)
                   (computed ? ~seed : seed)[index],
-              ].rswizzle();
+              ].rconcat();
           final vectors = [
             for (final seed in _patterns(16))
               Vector({
@@ -582,7 +582,7 @@ void main() {
                           selectedValue(seed).getRange(2, 4)
                         else
                           (computed ? ~seed : seed).getRange(11, 13),
-                      ].rswizzle()
+                      ].rconcat()
                     : selectedValue(seed),
                 if (guard == Guard.fanout) 'second': selectedValue(seed),
                 if (guard == Guard.output) 'exposed': selectedValue(seed),

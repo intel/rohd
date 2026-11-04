@@ -13,7 +13,7 @@ import 'package:rohd_devtools_extension/rohd_devtools/cubit/selected_module_cubi
 import 'package:rohd_devtools_extension/rohd_devtools/cubit/signal_search_term_cubit.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/cubit/theme_cubit.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/cubit/tree_search_term_cubit.dart';
-import 'package:rohd_devtools_extension/rohd_devtools/models/tree_model.dart';
+import 'package:rohd_hierarchy/rohd_hierarchy.dart';
 
 void main() {
   group('search term cubits', () {
@@ -50,7 +50,7 @@ void main() {
   test('SelectedModuleCubit exposes the selected module', () {
     final cubit = SelectedModuleCubit();
     addTearDown(cubit.close);
-    final module = TreeModel(
+    final module = HierarchyOccurrence(
       name: 'counter',
       signals: const [],
       children: const [],

@@ -277,7 +277,7 @@ So, how about `switch...case`? Well, its pretty much the same. Let see the synta
 
 ## Case
 
-ROHD supports Case statements, including priority and unique flavors, which are implemented in the same way as SystemVerilog. For example:
+ROHD supports Case statements, including priority and unique flavors, which generate SystemVerilog `case` statements. Functional simulation can use pessimistic or exact four-state matching; see the [conditionals guide](../../user_guide/_docs/A10-conditionals.md#four-state-case-matching). For example:
 
 ### Start by declaring a Case
 
@@ -293,12 +293,12 @@ Case(
 
 ### Add Expressions
 
-`Logic expression`: `Case` expressions are made up of logical values. If you have multiple signals that you want to combine into one expression, you can use the `swizzle()` function. This function allows you to create a new expression by selecting individual elements from existing expressions and combining them in a specified order. By using `swizzle()`, you can create complex expressions that represent the behavior of your circuit.
+`Logic expression`: `Case` expressions are made up of logical values. If you have multiple signals that you want to combine into one expression, you can use the `concat()` function. This function allows you to create a new expression by selecting individual elements from existing expressions and combining them in a specified order. By using `concat()`, you can create complex expressions that represent the behavior of your circuit.
 
 ```dart
 Case(
-  // swizzle signal a and b as expression
-  [b, a].swizzle(),
+  // concat signal a and b as expression
+  [b, a].concat(),
 )
 ```
 
@@ -314,8 +314,8 @@ Remember that, the `CaseItem` should be in the List of the `List<CaseItem>` resi
 
 ```dart
 Case(
-  // swizzle signal a and b as expression
-  [b, a].swizzle(),
+  // concat signal a and b as expression
+  [b, a].concat(),
   [
     // Case Items here
     CaseItem(Const(LogicValue.ofString('01')), [
@@ -333,8 +333,8 @@ Case(
 
 ```dart
 Case(
-  // swizzle signal a and b as expression
-  [b, a].swizzle(),
+  // concat signal a and b as expression
+  [b, a].concat(),
   [
     // Case Items here
     CaseItem(Const(LogicValue.ofString('01')), [
@@ -350,7 +350,7 @@ Case(
 
 ```dart
 Combinational([
-  Case([b,a].swizzle(), [
+  Case([b,a].concat(), [
       CaseItem(Const(LogicValue.ofString('01')), [
         c < 1,
         d < 0
@@ -375,7 +375,7 @@ ROHD also support `CaseZ` statements with the `z` syntax, not the `?` syntax (th
 Below is the example of using `CaseZ`.
 
 ```dart
-CaseZ([b,a].swizzle(),[
+CaseZ([b,a].concat(),[
     CaseItem(Const(LogicValue.ofString('z1')), [
       e < 1,
     ])

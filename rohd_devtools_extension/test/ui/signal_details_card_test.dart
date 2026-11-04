@@ -10,21 +10,22 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/cubit/snapshot_cubit.dart';
-import 'package:rohd_devtools_extension/rohd_devtools/models/signal_model.dart';
-import 'package:rohd_devtools_extension/rohd_devtools/models/tree_model.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/ui/signal_details_card.dart';
+import 'package:rohd_hierarchy/rohd_hierarchy.dart';
 
-final _module = TreeModel(
+final _module = HierarchyOccurrence(
   name: 'top',
   signals: [
-    SignalModel(name: 'input_enable', direction: 'input', value: '0', width: 1),
-    SignalModel(
+    SignalOccurrence(
+        name: 'input_enable', direction: 'input', value: '0', width: 1),
+    SignalOccurrence(
       name: 'output_value',
       direction: 'output',
       value: '00',
       width: 8,
     ),
-    SignalModel(name: 'shared_bus', direction: 'inout', value: 'zz', width: 8),
+    SignalOccurrence(
+        name: 'shared_bus', direction: 'inout', value: 'zz', width: 8),
   ],
   children: const [],
 );
@@ -32,7 +33,7 @@ final _module = TreeModel(
 void main() {
   Future<void> pumpCard(
     WidgetTester tester, {
-    TreeModel? module,
+    HierarchyOccurrence? module,
     bool includeModule = true,
     SnapshotLoaded? snapshot,
   }) =>

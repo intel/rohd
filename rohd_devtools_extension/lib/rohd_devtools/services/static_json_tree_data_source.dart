@@ -8,9 +8,9 @@
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 import 'package:flutter/foundation.dart';
-import 'package:rohd_devtools_extension/rohd_devtools/models/tree_model.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/services/design_data_adapter.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/services/tree_data_source.dart';
+import 'package:rohd_hierarchy/rohd_hierarchy.dart';
 
 /// [TreeDataSource] backed by a static JSON map.
 ///
@@ -23,7 +23,7 @@ class StaticJsonTreeDataSource implements TreeDataSource {
   /// Human-readable name for this data source.
   final String name;
 
-  TreeModel? _cachedTree;
+  HierarchyOccurrence? _cachedTree;
   Map<String, dynamic>? _cachedSchematicJson;
   bool _isRunning = true;
 
@@ -40,7 +40,7 @@ class StaticJsonTreeDataSource implements TreeDataSource {
   Map<String, dynamic>? getSchematicJson() => _cachedSchematicJson;
 
   @override
-  Future<TreeModel?> evalModuleTree() async {
+  Future<HierarchyOccurrence?> evalModuleTree() async {
     if (!_isRunning) {
       return null;
     }
@@ -69,7 +69,7 @@ class StaticJsonTreeDataSource implements TreeDataSource {
   }
 
   @override
-  Future<TreeModel?> refreshModuleTree() {
+  Future<HierarchyOccurrence?> refreshModuleTree() {
     _cachedTree = null;
     return evalModuleTree();
   }

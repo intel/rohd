@@ -42,7 +42,7 @@ x.value.toBigInt()
 LogicValue.ofRadixString("31'h5761_F87A");            // 0x5761F87A
 LogicValue.ofString('0101xz01');                      // 0b0101xz01
 LogicValue.of([LogicValue.one, LogicValue.zero]);     // 0b10
-[LogicValue.z, LogicValue.x].swizzle();               // 0bzx
+[LogicValue.z, LogicValue.x].concat();               // 0bzx
 LogicValue.ofInt(15, 4);                              // 0xf
 ```
 

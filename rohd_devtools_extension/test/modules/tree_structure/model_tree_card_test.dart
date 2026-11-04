@@ -24,13 +24,13 @@ void main() {
   final mockTreeSearchTermCubit = MockTreeSearchTermCubit();
 
   setUpAll(() {
-    // Register a fallback value for TreeModel
-    registerFallbackValue(TreeModelStub.selectedModule);
+    // Register a fallback value for HierarchyOccurrence
+    registerFallbackValue(HierarchyOccurrenceStub.selectedModule);
   });
 
   testWidgets('ModuleTreeCard renders tree correctly', (tester) async {
     // Initialize the futureModuleTree
-    final futureModuleTree = TreeModelStub.simpleTreeModel;
+    final futureModuleTree = HierarchyOccurrenceStub.simpleHierarchyOccurrence;
 
     // Mock the behavior of the cubits
     when(() => mockHierarchyCubit.state).thenReturn(const HierarchyNotLoaded());

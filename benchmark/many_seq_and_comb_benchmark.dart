@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Intel Corporation
+// Copyright (C) 2023-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // many_seq_and_comb_benchmark.dart
@@ -88,7 +88,7 @@ class _MemoryControllerUnit extends Module {
         ]));
         readHalfwordCaseItems
             .add(CaseItem(Const(i, width: intf.address.width), [
-          intf.outputData < [memory[i + 1], memory[i]].swizzle()
+          intf.outputData < [memory[i + 1], memory[i]].concat()
         ]));
       }
     }

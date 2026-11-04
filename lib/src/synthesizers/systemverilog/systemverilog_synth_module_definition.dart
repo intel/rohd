@@ -43,7 +43,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
     super.process();
     _collapseWholeNetBuses();
     _forwardPassthroughElementsIntoInlineables();
-    _collapseFullPackedArraySwizzles();
+    _collapseFullPackedArrayConcats();
     _replaceNetConnections();
     _collapseMarkedChainableModules();
     _replaceInOutConnectionInlineableModules();
@@ -208,7 +208,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
   /// into an inline concatenation.
   ///
   /// This remains SystemVerilog-specific because the replacement is an inline
-  /// [Swizzle] expression. Backend-neutral range discovery and composition are
+  /// [Concat] expression. Backend-neutral range discovery and composition are
   /// handled by the base [SynthModuleDefinition] before [process] is called.
   void _inlinePackedRangesIntoSubmoduleInputs() {
     final inputUses = <SynthLogic,
@@ -351,7 +351,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
         continue;
       }
 
-      _addSwizzleConnect(bus, sources);
+      _addConcatConnect(bus, sources);
       removedAssignments
         ..addAll(drivers)
         ..addAll(constantDrivers);
@@ -445,7 +445,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
   /// Collapses an internal aggregate signal (e.g. a [LogicArray]) whose
   /// individual elements are each connected one-to-one to some other signal,
   /// and which is itself used as a whole in exactly one place, by replacing
-  /// that single aggregate use with an inlined concatenation ([Swizzle]) of the
+  /// that single aggregate use with an inlined concatenation ([Concat]) of the
   /// per-element sources.
   ///
   /// For example, a parent with individual nets `sig0..sigN` each connected to
@@ -696,7 +696,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
 
         // A whole, same-order view of one parent array can retain that array's
         // direct port connection. A partial or reordered view must instead use
-        // an inline swizzle so the element order is preserved without keeping
+        // an inline concat so the element order is preserved without keeping
         // this intermediate aggregate.
         if (elementSources.every((e) => e is SynthLogicArrayElement)) {
           final parents = elementSources
@@ -726,11 +726,11 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
           }
         }
 
-        // Fabricate a swizzle (post-build instrumentation, not connected to the
+        // Fabricate a concat (post-build instrumentation, not connected to the
         // real hardware) whose concatenation reproduces the aggregate, and
         // register it so the single aggregate use renders as the inline
         // concatenation.
-        _addSwizzleConnect(agg, elementSources);
+        _addConcatConnect(agg, elementSources);
 
         // Remove the now-inlined element assignments and clear the aggregate
         // declaration.
@@ -1014,12 +1014,12 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
           continue;
         }
 
-        // A whole-width use of a [Swizzle] is its concatenation *result*, which
+        // A whole-width use of a [Concat] is its concatenation *result*, which
         // already drives this bus; the per-bit subsets are then reads of the
         // bus (e.g. bit-blasting it onto an array port) rather than its
         // definers, so collapsing here would double-drive the bus and orphan
         // its real consumer.  Skip these.
-        if (consumer is Swizzle) {
+        if (consumer is Concat) {
           continue;
         }
 
@@ -1077,7 +1077,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
 
         // Inline the bus as a concatenation of its per-bit nets and drop the
         // bus plus its definer [BusSubset]s.
-        _addSwizzleConnect(bus, elementSources);
+        _addConcatConnect(bus, elementSources);
 
         for (final view in definers) {
           view.inst.clearInstantiation();
@@ -1167,7 +1167,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
       };
 
   /// Forwards the per-element sources of a pass-through [LogicArray] directly
-  /// into the single inlineable submodule (e.g. a [Swizzle]) that consumes
+  /// into the single inlineable submodule (e.g. a [Concat]) that consumes
   /// those elements, then drops the now-dead array.
   ///
   /// `assignSubset` (e.g. via `connectPorts`/`Logic.assignSubset`) introduces
@@ -1189,7 +1189,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
 
       // Only instantiations that will actually render count as real uses: a
       // module that still needs instantiation, or a fabricated inlineable (e.g.
-      // a [_SwizzleConnect] from an earlier collapse) registered in
+      // a [_ConcatConnect] from an earlier collapse) registered in
       // [_inlineableSubmoduleMap].  Dead/consumed definers (e.g. a [BusSubset]
       // already cleared by [_collapseWholeNetBuses]) carry stale port mappings
       // that must NOT be mistaken for live uses.
@@ -1382,21 +1382,21 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
     }
   }
 
-  /// Parses the numeric index from a [Swizzle] input name.
-  static int? _swizzlePortIndex(String portName) {
+  /// Parses the numeric index from a [Concat] input name.
+  static int? _concatPortIndex(String portName) {
     final match = RegExp(r'in(\d+)$').firstMatch(portName);
     return match == null ? null : int.parse(match.group(1)!);
   }
 
-  /// Replaces a fully packed-array-derived [Swizzle] with a scalar assignment.
+  /// Replaces a fully packed-array-derived [Concat] with a scalar assignment.
   ///
   /// A [LogicArray] is decomposed into [BusSubset]s before synthesis. When
   /// every packed bit is subsequently reassembled in its original order, the
-  /// generated nested swizzles are equivalent to a direct scalar connection.
+  /// generated nested concats are equivalent to a direct scalar connection.
   /// This recognizes only complete, naturally ordered, non-net scalar sources;
   /// partial, reordered, unpacked, child-port, and shared representations
   /// remain explicit.
-  void _collapseFullPackedArraySwizzles() {
+  void _collapseFullPackedArrayConcats() {
     final inlineables =
         Map<SynthLogic, SystemVerilogSynthSubModuleInstantiation>.of(
       _inlineableSubmoduleMap,
@@ -1411,7 +1411,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
     for (final instantiation in subModuleInstantiations
         .whereType<SystemVerilogSynthSubModuleInstantiation>()) {
       if (instantiation.module is! BusSubset &&
-          instantiation.module is! Swizzle) {
+          instantiation.module is! Concat) {
         continue;
       }
       final result = instantiation.inlineResultLogic?.resolved;
@@ -1490,10 +1490,10 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
             ];
           }
 
-          if (inlineModule is Swizzle && !inlineModule.isNet) {
+          if (inlineModule is Concat && !inlineModule.isNet) {
             final inputs = <({int index, SynthLogic signal})>[];
             for (final entry in inlineable.inputMapping.entries) {
-              final index = _swizzlePortIndex(entry.key);
+              final index = _concatPortIndex(entry.key);
               if (index == null) {
                 return null;
               }
@@ -1580,11 +1580,11 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
     for (final instantiation in subModuleInstantiations
         .whereType<SystemVerilogSynthSubModuleInstantiation>()
         .toList()) {
-      final swizzle = instantiation.module;
+      final concat = instantiation.module;
       final result = instantiation.inlineResultLogic?.resolved;
       if (!instantiation.needsInstantiation ||
-          swizzle is! Swizzle ||
-          swizzle.isNet ||
+          concat is! Concat ||
+          concat.isNet ||
           result == null ||
           result.runtimeType != SynthLogic ||
           result.isArray ||
@@ -1653,16 +1653,16 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
     }
   }
 
-  /// Fabricates a [_SwizzleConnect] that represents [agg] as the inline
+  /// Fabricates a [_ConcatConnect] that represents [agg] as the inline
   /// concatenation of [elementSources] (ordered with index 0 as the LSB), and
   /// registers it in [_inlineableSubmoduleMap].
-  void _addSwizzleConnect(SynthLogic agg, List<SynthLogic> elementSources) {
+  void _addConcatConnect(SynthLogic agg, List<SynthLogic> elementSources) {
     final isNet = agg.isNet;
 
-    // The [Swizzle] concatenates its `signals` with `signals[0]` as the MSB,
+    // The [Concat] concatenates its `signals` with `signals[0]` as the MSB,
     // i.e. `out = {signals[0], signals[1], ..., signals[last]}`.  Our
     // [elementSources] are LSB-first (index 0 is the LSB), so we reverse them
-    // to build the swizzle's MSB-first signal list.  Only the widths and order
+    // to build the concat's MSB-first signal list.  Only the widths and order
     // of these dummy signals matter; they are throwaway placeholders since the
     // real sources are mapped onto the ports below.
     final dummySignals = <Logic>[
@@ -1673,44 +1673,44 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
           Logic(width: source.width),
     ];
 
-    final swizzle = _SwizzleConnect(dummySignals,
+    final concat = _ConcatConnect(dummySignals,
         unpacked: agg.logics
             .whereType<BaseLogicArray>()
             .any((array) => array.numUnpackedDimensions > 0));
     if (isNet) {
-      // Net swizzles register their synthetic inout ports lazily when driven.
+      // Net concats register their synthetic inout ports lazily when driven.
       // This synthesis-only instance has no real driver, so realize them
       // before constructing its port mapping.
-      swizzle.out.value;
+      concat.out.value;
     }
 
-    final swizzleInst = getSynthSubModuleInstantiation(swizzle)
+    final concatInst = getSynthSubModuleInstantiation(concat)
         as SystemVerilogSynthSubModuleInstantiation;
 
     // [orderedInputPortNames] are in creation order (`in0`, `in1`, ...), which
-    // the [Swizzle] assigns to `signals.reversed`; i.e. `in0` is the LSB.  So
+    // the [Concat] assigns to `signals.reversed`; i.e. `in0` is the LSB.  So
     // port `in${i}` corresponds to element `i` (LSB-first).
     for (var i = 0; i < elementSources.length; i++) {
-      final portName = swizzle.orderedInputPortNames[i];
+      final portName = concat.orderedInputPortNames[i];
       final source = elementSources[i];
       if (isNet) {
-        swizzleInst.setInOutMapping(portName, source);
+        concatInst.setInOutMapping(portName, source);
       } else {
-        swizzleInst.setInputMapping(portName, source);
+        concatInst.setInputMapping(portName, source);
       }
     }
 
     if (isNet) {
-      swizzleInst.setInOutMapping(swizzle.resultSignalName, agg);
+      concatInst.setInOutMapping(concat.resultSignalName, agg);
     } else {
-      swizzleInst.setOutputMapping(swizzle.resultSignalName, agg);
+      concatInst.setOutputMapping(concat.resultSignalName, agg);
     }
 
-    swizzleInst.clearInstantiation();
+    concatInst.clearInstantiation();
 
-    supportingModules.add(swizzle);
+    supportingModules.add(concat);
 
-    _inlineableSubmoduleMap[agg] = swizzleInst;
+    _inlineableSubmoduleMap[agg] = concatInst;
   }
 
   /// Collapses chainable, inlineable modules after naming.
@@ -1914,14 +1914,14 @@ inout wire[WIDTH-1:0] w;
 endmodule''';
 }
 
-/// A [Swizzle] fabricated post-build purely as instrumentation for
+/// A [Concat] fabricated post-build purely as instrumentation for
 /// SystemVerilog generation; it is never connected to the real hardware
 /// hierarchy or used in simulation.
 ///
 /// Used by [SystemVerilogSynthModuleDefinition._collapseAggregateConnections]
 /// to render an aggregate's single use as an inline concatenation of its
 /// per-element sources.
-class _SwizzleConnect extends Swizzle {
+class _ConcatConnect extends Concat {
   /// Whether the connection represents an unpacked array and must preserve
   /// concatenation braces and element boundaries, even for a single element.
   final bool _unpacked;
@@ -1938,8 +1938,8 @@ class _SwizzleConnect extends Swizzle {
   /// significant to least significant.
   ///
   /// When [unpacked] is true, renders an unpacked-array concatenation instead
-  /// of applying packed-swizzle simplifications.
-  _SwizzleConnect(super.signals, {required bool unpacked})
+  /// of applying packed-concat simplifications.
+  _ConcatConnect(super.signals, {required bool unpacked})
       : _unpacked = unpacked {
     orderedInputPortNames = (isNet ? inOuts.keys : inputs.keys)
         .where((name) => name != resultSignalName)

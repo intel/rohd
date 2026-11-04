@@ -3,19 +3,11 @@
 ### Breaking Changes
 
 - `FiniteStateMachine` and `State` now require Dart enum state identifiers. Replace integer, string, or custom-object identifiers with enum members; update reset and transition targets accordingly. `currentState` and `nextState` are now `LogicEnum` signals (<https://github.com/intel/rohd/pull/599>).
-- Removed APIs deprecated in 0.5.x or earlier, and completed earlier breaking renames and merges: `StateMachine`, `FF`, `IfBlock`, `ExternalModule`, `LogicValues`, `Logic.bit`, `valueInt`, `valueBigInt`, `hasValidValue`, `isFloating`, `LogicValue.length`, `LogicValue.bit`, the `LogicValue.from...` constructors and `LogicValue.from(iterable)`, global `swizzle` and `rswizzle`, gate `y` output aliases including `Add.out`, `getReceivers`, `getDrivers`, `getConditionals`, `FiniteStateMachine.clk`, and `Pipeline.clk`. See the [0.7.0 migration guide](doc/releases.md#core-api-migration-for-070) for replacements. APIs deprecated in 0.6.x or with unrecorded deprecation history remain available as deprecated compatibility shims in 0.7.0.
-
-### Deprecated APIs retained for a later release
-
-- `PairInterface.modify`, its constructor argument, and the `PairInterface.clone` constructor remain deprecated but available for downstream interface compatibility. Prefer `uniquify` when connecting or adding sub-interfaces, and `other.clone()`.
-- `WaveDumper`, `Module.generateSynth`, and `ModuleTree.hierarchyJSON` remain available with deprecation warnings. They were released APIs in 0.6.11, but their deprecations had not shipped in a tagged release. Use `Module.dumpWaves`, `Module.dumpSystemVerilog`, and `ModuleTree.hierarchyJson`, respectively.
-- `NetlistSynthesisResult.toFileContents()` remains deprecated but available because it first shipped in 0.6.11. Use `toSynthFileContents()` and read the returned artifacts' `contents`.
-- `Port`, `getFileContents()`, and `CustomSystemVerilog` remain available because they were deprecated in 0.6.4, 0.6.4, and 0.6.0, respectively. `LogicStructure.bit`, `Module.unpreferredName`, `Module.isUnpreferred`, `Dumper`, `SynthBuilder.top`, `SynthesisResult.toFileContents()` and its backend overrides, and `SystemVerilogSynthesizer.instantiationVerilogWithParameters` remain available because their deprecation release is not recorded. Use the replacement APIs in the migration guide.
-- These APIs are not removed in 0.7.0; migrate callers now in preparation for removal in a later release. Compatibility retention follows the same approach as a 0.6.12 release, despite the version change.
-- Unreleased compatibility APIs (`FlcService`, `SystemCExecutable`, `ModuleServices.hierarchyJSON`, FLC methods on `NetlistService`, and `SystemVerilogService.contentsByName`) remain removed. They were never part of a tagged core release.
+- Removed all deprecated APIs: `StateMachine`, `FF`, `IfBlock`, `ExternalModule`, `LogicValues`, `Logic.bit`, `valueInt`, `valueBigInt`, `hasValidValue`, `isFloating`, `LogicValue.length`, `LogicValue.bit`, the `LogicValue.from...` constructors and `LogicValue.from(iterable)`, global concatenation helpers, gate `y` output aliases including `Add.out`, `getReceivers`, `getDrivers`, `getConditionals`, `FiniteStateMachine.clk`, `Pipeline.clk`, `Port`, `PairInterface.modify`, the `PairInterface.clone` constructor, `LogicStructure.bit`, `Module.unpreferredName`, `Module.isUnpreferred`, `Dumper`, `WaveDumper`, `SynthBuilder.top`, `SynthBuilder.getFileContents()`, `SynthesisResult.toFileContents()` and backend overrides, `CustomSystemVerilog`, `SystemVerilogSynthesizer.instantiationVerilogWithParameters`, `Module.generateSynth`, `ModuleTree.hierarchyJSON`, `NetlistSynthesisResult.toFileContents()`, and `SystemVerilogService.contentsByName`. See the [0.7.0 migration guide](doc/releases.md#core-api-migration-for-070) for replacements. The legacy `List` concatenation aliases remain available but are deprecated in favor of `concat` and `rconcat`.
 
 ### Major Features
 
+- Added opt-in `exactMatch` to `Case` and `cases` for SystemVerilog-style four-state matching in functional simulation, including exact X/Z matches in expressions and dynamic case items. Existing pessimistic behavior remains the default; generated SystemVerilog is unchanged.
 - Added type-safe [PairInterface] provider/consumer endpoints and role-specific module connection helpers, while preserving the existing untyped API (<https://github.com/intel/rohd/issues/613>).
 - Added `TypedLogicArray<TLogic, TValue>` for multidimensional arrays with fixed typed hardware elements and associated semantic values, including typed snapshots and ports, traversal, cloning, net support, and synthesis. Added shaped `LogicValueArray` and codec-backed `TypedLogicValueArray<TValue>` values with nested construction, packed `LogicValue` interoperability, and hardware-array assignment. Existing `LogicArray`, `LogicValueArray`, and concrete array port APIs remain available as specializations (<https://github.com/intel/rohd/pull/686>).
 - Added `LogicEnum<T>` hardware signals with explicit enum encodings, mapped member assignments, driveable cloning, and SystemVerilog enum generation (<https://github.com/intel/rohd/pull/599>).
@@ -26,12 +18,12 @@
 - Added the standalone ROHD Live Debugger with hierarchy browsing, signal inspection, connectivity traversal, source navigation, waveform access, and cross-probing over DTD and VM-service transports (<https://github.com/intel/rohd/pull/736>).
 - Added `rohd-shell`, a DTD-attached terminal client for hierarchy, port, signal, and fan-in/fan-out queries, JSON output, and cross-probe selections (<https://github.com/intel/rohd/pull/736>).
 - Added the `ModuleService` API, the `ModuleServices` registry, `ArtifactProducingService`, `ModuleServiceArtifact`, `SystemVerilogService`, and `WaveformService` for module-scoped generation, capture, and inspection.
-- Added `Module.dumpSystemVerilog` and `Module.dumpWaves` convenience methods. `dumpSystemVerilog()` returns in-memory SystemVerilog; `dumpWaves()` provides standard VCD capture. The released `generateSynth` and `WaveDumper` APIs now delegate to these methods and remain available as deprecated wrappers.
+- Added `Module.dumpSystemVerilog` and `Module.dumpWaves` convenience methods. `dumpSystemVerilog()` returns in-memory SystemVerilog; `dumpWaves()` provides standard VCD capture and replaces the removed `generateSynth` and `WaveDumper` APIs.
 
 ### Improvements
 
 - Added `name` parameters to the `flop` and `mux` convenience helpers; `cases` already supports naming its generated result (<https://github.com/intel/rohd/issues/517>).
-- Added `concat` and `rconcat` aliases for `swizzle` and `rswizzle` (<https://github.com/intel/rohd/issues/597>).
+- Added `concat` and `rconcat` as the preferred concatenation APIs; the legacy aliases are deprecated (<https://github.com/intel/rohd/issues/597>).
 - Include current signal value and built hierarchy in `Logic.toString()` diagnostic output (<https://github.com/intel/rohd/issues/96>).
 - Added LSB-first `Logic.split` and `LogicValue.split` helpers for exact arbitrary-width chunking (<https://github.com/intel/rohd/issues/236>).
 - Warn on accidental non-negative integer truncation in `Const` and `LogicValue.of`, with `allowTruncation` for intentional narrowing (<https://github.com/intel/rohd/issues/142>).
@@ -40,9 +32,9 @@
 - Warn when `Simulator.run()` completes without registered or injected events (<https://github.com/intel/rohd/issues/595>).
 - Expanded zero-width `Logic` and `LogicValue` coverage across functional simulation, SystemVerilog/Icarus, SystemC, and Node; added `isEmpty` convenience getters while preserving empty-value composition (<https://github.com/intel/rohd/issues/111>).
 - Added X/Z optimism and pessimism regression coverage for combinational and sequential conditional controls (<https://github.com/intel/rohd/issues/103>).
-- Expanded the SystemVerilog module-instantiation guide with external, inline, and custom non-inline examples, including `CustomSystemVerilog` migration guidance (<https://github.com/intel/rohd/issues/430>).
+- Expanded the SystemVerilog module-instantiation guide with external, inline, and custom non-inline `SystemVerilog` examples (<https://github.com/intel/rohd/issues/430>).
 - Name `Logic.abs()` two's-complement intermediates and final values descriptively in generated output (<https://github.com/intel/rohd/issues/608>).
-- Allow swizzle and subset views to resolve as assignment receivers when safe, including nested partial writes without claiming unselected bits, and merge legal full packed-array/scalar assignments in generated SystemVerilog (<https://github.com/intel/rohd/issues/530>, <https://github.com/intel/rohd/issues/553>, and <https://github.com/intel/rohd/issues/619>).
+- Allow concatenation and subset views to resolve as assignment receivers when safe, including nested partial writes without claiming unselected bits, and merge legal full packed-array/scalar assignments in generated SystemVerilog (<https://github.com/intel/rohd/issues/530>, <https://github.com/intel/rohd/issues/553>, and <https://github.com/intel/rohd/issues/619>).
 - Fixed zero-width SystemC ports and constant bindings to use bindable placeholder types while preserving empty-value reads as zero, including address ports in single-register CSR blocks.
 - Fixed `SimCompare.checkSystemCVector` to honor explicit clock vectors instead of silently replacing them with a free-running clock. Reusable SystemC executables accept `drivenClockNames`, and compiled cache keys distinguish clock modes. Automatic clocks remain available when vectors omit clock inputs.
 - Emit child-driven unpacked arrays as nets to avoid unknown values in Icarus 12.0, while retaining variable declarations for procedurally written arrays. Child-driven unpacked outputs use `output wire logic` by default; explicit object-type configuration remains honored.
@@ -80,7 +72,7 @@
 - Preserve four-state `z` values through procedural assignments and muxes, including SystemVerilog’s bitwise merge behavior for unknown mux controls (<https://github.com/intel/rohd/issues/570>).
 - Replaced per-wire simulator lifecycle subscriptions with a shared weak wire registry, so discarded elaborations no longer retain callbacks or degrade future simulation ticks (<https://github.com/intel/rohd/issues/708>).
 - Prevent truncation diagnostics from throwing on non-finite arithmetic intermediates in Node.
-- Fixed [Case] and [CaseZ] handling of invalid item values: dynamic `x` and `z` patterns now drive `x`, while only literal constant `z` patterns remain CaseZ wildcards (<https://github.com/intel/rohd/issues/102>).
+- Fixed default [Case] and [CaseZ] handling of invalid item values: dynamic `x` and `z` patterns now drive `x`, while only literal constant `z` patterns remain CaseZ wildcards (<https://github.com/intel/rohd/issues/102>). Opt-in `Case.exactMatch` instead compares all four states exactly.
 - Fixed downstream [Sequential] blocks to capture edges from upstream [Sequential] outputs during the same simulation tick after their producer completes all assignments, restoring clock-divider behavior and correct jointly driven async-reset release (<https://github.com/intel/rohd/issues/191>).
 - Omit zero-width ports and their connections from generated SystemVerilog definitions and instantiations, including conditional assignments nested in reset and branch bodies. SystemVerilog vector testbenches also omit scalar zero-width endpoint declarations, connections, stimulus, and checks (<https://github.com/intel/rohd/issues/57>).
 - Warn when [Sequential] combines `asyncReset` with a non-constant `resetValues` driver, which can infer independently timed async set and clear pins in synthesis (<https://github.com/intel/rohd/issues/728>).
@@ -131,7 +123,7 @@
 - Added the `rohd_hierarchy` package for compact hierarchy dictionaries, canonical occurrence addresses, hierarchy search, and netlist adapters (<https://github.com/intel/rohd/pull/653>).
 - Added the ROHD VS Code extension with context-aware snippets, Dart Tooling Daemon integration, and source navigation for cross-probing from ROHD viewers (<https://github.com/intel/rohd/pull/670>).
 - Improved `Logic.getRange` and `slice` on filled `Const`s to return direct constants instead of constructing `BusSubset` modules (<https://github.com/intel/rohd/pull/677>).
-- Improved generated SystemVerilog for swizzles to compact adjacent bit selections into legal slice expressions (<https://github.com/intel/rohd/pull/674>).
+- Improved generated SystemVerilog for concatenations to compact adjacent bit selections into legal slice expressions (<https://github.com/intel/rohd/pull/674>).
 - Improved generated SystemVerilog to collapse a variety of intermediate `LogicArray`s and net buses (e.g. from bit-blasting, aggregate connections, `assignSubset`) into inline concatenations on their consuming connections, eliminating unnecessary intermediate declarations, `assign`s, and `net_connect`s when it is safe to do so (<https://github.com/intel/rohd/pull/663>).
 - Centralized synthesizer naming so output names in different contexts are more consistent. Generated SystemVerilog signal and instance names may change in designs with name collisions, repeated constants, or mergeable intermediate signals, so tests or downstream scripts that match exact generated identifiers may need updates (<https://github.com/intel/rohd/pull/652>).
 
@@ -148,8 +140,8 @@
 
 ## 0.6.7
 
-- Significantly improved and simplified generated outputs (including SystemVerilog) by reducing unnecessary signal slicing and swizzling operations and leaving unconnected ports on module instantiations empty (<https://github.com/intel/rohd/pull/638>).
-- Enhanced generated SystemVerilog to include annotated bit ranges in comments for swizzles, improving readability and debugability (<https://github.com/intel/rohd/pull/627>).
+- Significantly improved and simplified generated outputs (including SystemVerilog) by reducing unnecessary signal slicing and concatenation operations and leaving unconnected ports on module instantiations empty (<https://github.com/intel/rohd/pull/638>).
+- Enhanced generated SystemVerilog to include annotated bit ranges in comments for concatenations, improving readability and debugability (<https://github.com/intel/rohd/pull/627>).
 - Fixed a bug where, in some rare scenarios, partial array assignments could cause missing assignments in generated outputs (<https://github.com/intel/rohd/pull/637>).
 - Fixed a bug where non-port `LogicStructure`s that contain elements which are ports could cause incorrect name selection in generated outputs (<https://github.com/intel/rohd/pull/630>).
 - Fixed a bug where `packed` on output port `LogicStructure`s being accessed both inside and outside of its parent module could cause build trace failures (<https://github.com/intel/rohd/pull/631>).
@@ -290,7 +282,7 @@
 - Added `PairInterface` to make it easier to build and use simple `Interface`s.
 - Breaking: `connectIO` in `Interface` now accepts `Iterable`s instead of only `Set`s.
 - Improved numerous `Exception`s throughout to provide more specific information about errors and make them easier to catch and handle.
-- Upgraded some operations to avoid generating unnecessary hardware and SystemVerilog when configured to leave a signal unchanged (e.g. `getRange`, `swizzle`, `slice`, etc.).
+- Upgraded some operations to avoid generating unnecessary hardware and SystemVerilog when configured to leave a signal unchanged (e.g. `getRange`, `concat`, `slice`, etc.).
 - Added extension to generate randomized `LogicValue`s from a `Random`.
 - Added replication operations to `LogicValue` and `Logic`.
 - Added `equalsWithDontCare` to `LogicValue` for comparisons where invalid bits are "don't-care".
@@ -387,12 +379,12 @@
 
 - Breaking: Merged `LogicValue` and `LogicValues` into one type called `LogicValue`.
 - Deprecation: Aligned `LogicValue` to `Logic` by renaming `length` to `width`.
-- Breaking: `Logic.put` no longer accepts `List<LogicValue>`, swizzle it together instead.
+- Breaking: `Logic.put` no longer accepts `List<LogicValue>`; concatenate it together instead.
 - Deprecated `Logic.valueInt` and `Logic.valueBigInt`; instead use equivalent functions on `Logic.value`.
 - Deprecated `bit` on both `LogicValue` and `Logic`; instead just check `width`.
 - Added ability in `LogicValue.toString` to decide whether or not to include the width annotation through `includeWidth` argument.
 - Fixed a bug related to zero-width construction of `LogicValue`s (<https://github.com/intel/rohd/issues/90>).
-- Fixed a bug where generated constants in SystemVerilog had no width, which can cause issues in some cases (e.g. swizzles) (<https://github.com/intel/rohd/issues/89>)
+- Fixed a bug where generated constants in SystemVerilog had no width, which can cause issues in some cases (e.g. concatenations) (<https://github.com/intel/rohd/issues/89>)
 - Added capability to convert binary strings to ints with underscore separators using `bin` (<https://github.com/intel/rohd/issues/56>).
 - Added `getRange` and `reversed` on `Logic` and `slice` on `LogicValue` to improve consistency.
 - Using `slice` in reverse-index order now reverses the order.
@@ -408,7 +400,7 @@
 - Added `ofBool` to `LogicValue` and `LogicValues` (<https://github.com/intel/rohd/issues/34>).
 - Breaking: updated `Interface` API so that `getPorts` returns a `Map` from port names to `Logic` signals instead of just a list, which makes it easier to work with when names are uniquified.
 - Breaking: removed `setPort` from `Interface`.  Use `setPorts` instead.
-- Deprecated `swizzle` and `rswizzle` global functions and replaced them with extensions on `List`s of certain types including `Logic`, `LogicValue`, and `LogicValues` (<https://github.com/intel/rohd/issues/70>).
+- Deprecated legacy global concatenation functions and replaced them with extensions on `List`s of certain types including `Logic`, `LogicValue`, and `LogicValues` (<https://github.com/intel/rohd/issues/70>).
 - Breaking: renamed `ExternalModule` to `ExternalSystemVerilogModule` since it is specifically for SystemVerilog.
 - Breaking: made `topModuleName` a required named parameter in `ExternalSystemVerilogModule` to reduce confusion.
 - Added `simulationHasEnded` bool to `Simulator`.

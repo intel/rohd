@@ -66,14 +66,14 @@ class CarrySaveMultiplier extends Module {
                         valA.width - 1,
                         (index) =>
                             p.get(sum[(valA.width + valB.width - 2) - index]))
-                  ].swizzle(),
+                  ].concat(),
               p.get(rCarryB) <
                   <Logic>[
                     ...List.generate(
                         valA.width,
                         (index) =>
                             p.get(carry[(valA.width + valB.width - 2) - index]))
-                  ].swizzle()
+                  ].concat()
             ],
       ],
       reset: reset,
@@ -95,7 +95,7 @@ class CarrySaveMultiplier extends Module {
             valA.width,
             (index) => pipeline.get(sum[valA.width - index - 1]),
           )
-        ].swizzle();
+        ].concat();
   }
 
   Logic get product => output('product');

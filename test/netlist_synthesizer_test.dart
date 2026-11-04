@@ -284,13 +284,13 @@ class SubModule extends Module {
   }
 }
 
-/// Exercises Swizzle ($concat).
-class SwizzleModule extends Module {
+/// Exercises Concat ($concat).
+class ConcatModule extends Module {
   Logic get y => output('y');
-  SwizzleModule(Logic a, Logic b, {int width = 4}) : super(name: 'swizmod') {
+  ConcatModule(Logic a, Logic b, {int width = 4}) : super(name: 'swizmod') {
     a = addInput('a', a, width: width);
     b = addInput('b', b, width: width);
-    addOutput('y', width: width * 2) <= [a, b].swizzle();
+    addOutput('y', width: width * 2) <= [a, b].concat();
   }
 }
 
@@ -308,7 +308,7 @@ class ArrayInputChildModule extends Module {
       elementWidth: values.elementWidth,
     );
     addOutput('packedOut', width: values.width) <=
-        [for (final element in values.elements.reversed) element].swizzle();
+        [for (final element in values.elements.reversed) element].concat();
   }
 }
 
@@ -343,7 +343,7 @@ class _InputArrayElementsToChildrenModule extends Module {
     final high =
         _ArrayElementInputChildModule(values.elements[1], name: 'high');
     addOutput('observed', width: 2) <=
-        [high.output('y'), low.output('y')].swizzle();
+        [high.output('y'), low.output('y')].concat();
   }
 }
 
@@ -552,8 +552,7 @@ class StructInputConsumerModule extends Module {
   StructInputConsumerModule(NetlistPairStruct pair)
       : super(name: 'structinputconsumer') {
     pair = addTypedInput('pair', pair);
-    addOutput('packedOut', width: pair.width) <=
-        [pair.high, pair.low].swizzle();
+    addOutput('packedOut', width: pair.width) <= [pair.high, pair.low].concat();
   }
 }
 
@@ -812,10 +811,10 @@ class _NamedConstModule extends Module {
 class _ConstantPaths extends Module {
   _ConstantPaths(Logic data) : super(definitionName: 'ConstantPaths') {
     data = addInput('data', data, width: 8);
-    final buffered = [Const(0xa5, width: 8)].swizzle();
+    final buffered = [Const(0xa5, width: 8)].concat();
     addOutput('buffered', width: 8) <= buffered;
     addOutput('concatenated', width: 8) <=
-        [Const(0xb, width: 4), Const(0x4, width: 4)].swizzle();
+        [Const(0xb, width: 4), Const(0x4, width: 4)].concat();
     addOutput('sliced', width: 4) <= Const(0xa6, width: 8).getRange(2, 6);
     addOutput('sum', width: 8) <= data + buffered;
     addOutput('forwarded', width: 8) <= data;
@@ -1463,9 +1462,9 @@ void main() {
       expect(_hasCellType(json, r'$slice'), isTrue);
     });
 
-    test(r'Swizzle maps to $concat cell', () async {
+    test(r'Concat maps to $concat cell', () async {
       final json = await _synthToMap(
-        SwizzleModule(Logic(width: 4), Logic(width: 4)),
+        ConcatModule(Logic(width: 4), Logic(width: 4)),
       );
       expect(_hasCellType(json, r'$concat'), isTrue);
     });

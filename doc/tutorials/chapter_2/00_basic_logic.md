@@ -15,7 +15,7 @@
     - [Exercise 3](./00_basic_logic.md#exercise-3)
 - [Constants](./00_basic_logic.md#constants)
   - [Exercise 4](./00_basic_logic.md#exercise-4)
-- [Bus Ranges and Swizzling](./00_basic_logic.md#bus-ranges-and-swizzling)
+- [Bus Ranges and Concatenation](./00_basic_logic.md#bus-ranges-and-concatenation)
 
 ## Learning Outcome
 
@@ -25,7 +25,7 @@ In this chapter:
 
 - You will learn about the fundamentals of ROHD variables, including how to define a logic, logic value, and initialize width for logic. You will learn by creating a simple 2-inputs and 1-output AND logic gate. In the process of creating the logic gate, you will understand how to use assignment, logical, mathematical, and comparison operations. You will also learn how to use non-synthesizable signal deposition (put) to send signals to the simulator to test your created logic gate.
 
-- You will learn how to define constants, bus ranges, and swizzling to slice or access a range of bits from a bus.
+- You will learn how to define constants, bus ranges, and concatenation to slice or access a range of bits from a bus.
 
 # Basic Logic
 
@@ -243,11 +243,11 @@ You can find the executable code at [constant](./g_constant.dart).
 
 Answer to this exercise can be found at [answers/exercise_3.dart](./answers/exercise_3.dart)
 
-# Bus Ranges and Swizzling
+# Bus Ranges and Concatenation
 
-In the previous module, we learned about the `width` property of `Logic`. Now, we can perform operations like slicing and swizzling on `Logic` values.
+In the previous module, we learned about the `width` property of `Logic`. Now, we can perform operations like slicing and concatenation on `Logic` values.
 
-We can access multi-bit buses using single bits, ranges, or by combining multiple signals. Additionally, we can use operations like slicing and swizzling on `Logic` values.
+We can access multi-bit buses using single bits, ranges, or by combining multiple signals. Additionally, we can use operations like slicing and concatenation on `Logic` values.
 
 ```dart
 // Declare Logic
@@ -259,22 +259,22 @@ final e = Logic(name: 'e', width: d.width + c.width + a.width);
 final f = Logic(name: 'f', width: d.width + c.width + a.width);
 
 // assign d to the top bit of a
-// construct e by swizzling bits from b, c, and d
+// construct e by concatenation bits from b, c, and d
 // here, the MSB is on the left, LSB is on the right
 d <= b[7];
 
 // value:
-// swizzle: d = [1] (MSB), c = [00111], a = [1110] (LSB) ,
+// concat: d = [1] (MSB), c = [00111], a = [1110] (LSB) ,
 // e = [1 00111 1110] = [d, c, a]
-e <= [d, c, a].swizzle();
+e <= [d, c, a].concat();
 
-// alternatively, do a reverse swizzle
+// alternatively, do a reverse concat
 // (useful for lists where 0-index is actually the 0th element)
 //
 // Here, the LSB is on the left, the MSB is on the right
-// right swizzle: d = [1] (MSB), c = [00111], a = [1110] (LSB),
+// right concat: d = [1] (MSB), c = [00111], a = [1110] (LSB),
 // e = [1110 00111 1] - [a, c, d]
-f <= [d, c, a].rswizzle();
+f <= [d, c, a].rconcat();
 
 print('\n');
 
@@ -293,7 +293,7 @@ print('e: ${e.value.toString(includeWidth: false)}');
 print('f: ${f.value.toString(includeWidth: false)}');
 ```
 
-You can find the executable code at [bus range and slicing](./h_bus_range_swizzling.dart).
+You can find the executable code at [bus range and slicing](./h_bus_range_concatenation.dart).
 
 ROHD does not support assignment to a subset of a bus. That is, you cannot do something like `e[3] <= d`. Instead, you can use the withSet function to get a copy with that subset of the bus assigned to something else. This applies for both Logic and LogicValue. For example:
 

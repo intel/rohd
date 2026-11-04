@@ -1,5 +1,8 @@
 // Copyright (C) 2022-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
+//
+// 2022 November 2
+// Author: Yao Jing Quek <yao.jing.quek@intel.com>
 
 export 'conditionals/conditional_exceptions.dart';
 export 'illegal_configuration_exception.dart';

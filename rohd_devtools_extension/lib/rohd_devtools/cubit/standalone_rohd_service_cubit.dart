@@ -9,8 +9,8 @@
 
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rohd_devtools_extension/rohd_devtools/models/tree_model.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/services/standalone_tree_service.dart';
+import 'package:rohd_hierarchy/rohd_hierarchy.dart';
 import 'package:vm_service/vm_service.dart';
 
 part 'standalone_rohd_service_state.dart';

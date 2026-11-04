@@ -1,6 +1,9 @@
 // Copyright (C) 2023-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
+// 2026 October 16
+// Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
+//
 // oven_fsm_modules.dart
 // Web-safe module class definitions for the Oven FSM example.
 //

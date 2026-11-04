@@ -61,11 +61,11 @@ Sequential(clk, [
 
 #### `Case` and `CaseZ`
 
-ROHD supports [`Case`](https://intel.github.io/rohd/rohd/Case-class.html) and [`CaseZ`](https://intel.github.io/rohd/rohd/CaseZ-class.html) statements, including priority and unique flavors, which are implemented in the same way as SystemVerilog.  For example:
+ROHD supports [`Case`](https://intel.github.io/rohd/rohd/Case-class.html) and [`CaseZ`](https://intel.github.io/rohd/rohd/CaseZ-class.html) statements, including priority and unique flavors. These generate SystemVerilog `case` and `casez` statements, respectively. For example:
 
 ```dart
 Combinational([
-  Case([b,a].swizzle(), [
+  Case([b,a].concat(), [
       CaseItem(Const(LogicValue.ofString('01')), [
         c < 1,
         d < 0
@@ -80,7 +80,7 @@ Combinational([
     ],
     conditionalType: ConditionalType.unique
   ),
-  CaseZ([b,a].swizzle(),[
+  CaseZ([b,a].concat(),[
       CaseItem(Const(LogicValue.ofString('z1')), [
         e < 1,
       ])
@@ -91,6 +91,45 @@ Combinational([
   )
 ]);
 ```
+
+##### Four-state case matching
+
+By default, ROHD functional simulation is pessimistic: a `Case` expression
+containing X or Z drives the case outputs to X. An invalid case item encountered
+while searching also drives the outputs to X. This can differ from generated
+SystemVerilog, whose `case` statement compares all four states exactly.
+
+Set `exactMatch: true` on `Case` to compare 0, 1, X, and Z bit-for-bit in
+functional simulation. For example, an expression of `1x` matches an item of
+`1x`, but not `1z` or `10`:
+
+```dart
+Combinational([
+  Case(selector, [
+    CaseItem(pattern, [hit < 1]),
+  ], defaultItem: [
+    hit < 0,
+  ], exactMatch: true),
+]);
+```
+
+The `cases` shorthand also accepts `exactMatch: true`:
+
+```dart
+final hit = cases(
+  selector,
+  {pattern: Const(1)},
+  defaultValue: Const(0),
+  exactMatch: true,
+);
+```
+
+Use this mode when exact four-state identity is part of the intended behavior,
+such as matching stored CAM tags. It is not wildcard matching: X and Z match
+only the same state. The option affects functional simulation; both modes
+generate the same SystemVerilog `case`. ROHD's generated SystemC is two-state
+and cannot represent X or Z. `CaseZ` retains its existing wildcard and
+pessimistic simulation behavior; it does not accept `exactMatch`.
 
 The `cases` helper accepts enum members as keys when its selector is a compatible [`LogicEnum`](https://intel.github.io/rohd-website/docs/logic-enums/). It returns an ordinary `Logic`, so enum results must be supplied as explicitly mapped signals rather than bare Dart enum members.
 

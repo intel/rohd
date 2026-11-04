@@ -41,11 +41,16 @@ class CaseItem {
 /// matching typed branch supplies the output prototype. Supply
 /// [outputGenerator] to establish an explicit result representation when
 /// sources are mixed or no typed branch is available.
+///
+/// With [exactMatch], simulation compares all four logic states exactly, as
+/// SystemVerilog `case` does. By default, unknown expressions and dynamic
+/// patterns produce unknown results.
 LogicType cases<LogicType extends Logic>(
   Logic expression,
   Map<dynamic, dynamic> conditions, {
   int? width,
   ConditionalType conditionalType = ConditionalType.none,
+  bool exactMatch = false,
   dynamic defaultValue,
   LogicType Function({String? name})? outputGenerator,
   String name = 'result',
@@ -166,6 +171,7 @@ LogicType cases<LogicType extends Logic>(
           ),
       ],
       conditionalType: conditionalType,
+      exactMatch: exactMatch,
       defaultItem: defaultValue != null ? [result < defaultValue] : null,
     ),
   ]);
@@ -198,6 +204,14 @@ class Case extends Conditional {
   /// See [ConditionalType] for more details.
   final ConditionalType conditionalType;
 
+  /// Whether functional simulation compares X and Z as exact bit values.
+  ///
+  /// The default is false: unknown expressions or dynamic item values
+  /// pessimistically drive the outputs to X. When true, matching follows
+  /// SystemVerilog `case` four-state equality. Generated SystemVerilog uses
+  /// `case` in either mode.
+  final bool exactMatch;
+
   @override
   Map<Logic, Logic> get portTypePairs => {
         ...super.portTypePairs,
@@ -221,11 +235,13 @@ class Case extends Conditional {
   /// Whenever an item in [items] matches [expression], it will be executed.
   ///
   /// If none of [items] match, then [defaultItem] is executed.
+  /// Set [exactMatch] to compare X and Z exactly in functional simulation.
   Case(
     this.expression,
     this.items, {
     List<Conditional>? defaultItem,
     this.conditionalType = ConditionalType.none,
+    this.exactMatch = false,
   }) : _defaultItem = defaultItem {
     for (final item in items) {
       if (item.value.width != expression.width) {
@@ -263,7 +279,7 @@ class Case extends Conditional {
     }
 
     final expressionValue = driverValue(expression);
-    if (!expressionValue.isValid) {
+    if (!exactMatch && !expressionValue.isValid) {
       // if expression has X or Z, then propagate X's!
       driveX(drivenSignals);
       return;
@@ -273,7 +289,7 @@ class Case extends Conditional {
 
     for (final item in items) {
       final itemValue = driverValue(item.value);
-      if (!isMatchableItemValue(item, itemValue)) {
+      if (!exactMatch && !isMatchableItemValue(item, itemValue)) {
         driveX(drivenSignals);
         return;
       }

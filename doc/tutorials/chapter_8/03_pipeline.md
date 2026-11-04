@@ -168,7 +168,7 @@ pipeline = Pipeline(clk,
 );
 ```
 
-We have successfully created stages 0 to 3. Next, we manually add the final stage where we swizzle the `sum` and `carry` and connect them to `rCarryA` and `rCarryB`, respectively.
+We have successfully created stages 0 to 3. Next, we manually add the final stage where we concat the `sum` and `carry` and connect them to `rCarryA` and `rCarryB`, respectively.
 
 ```dart
 (p) => [
@@ -179,14 +179,14 @@ We have successfully created stages 0 to 3. Next, we manually add the final stag
             valA.width - 1,
             (index) =>
                 p.get(sum[(valA.width + valB.width - 2) - index]))
-      ].swizzle(),
+      ].concat(),
   p.get(rCarryB) <
       <Logic>[
         ...List.generate(
             valA.width,
             (index) =>
                 p.get(carry[(valA.width + valB.width - 2) - index]))
-      ].swizzle()
+      ].concat()
 ],
 ```
 
@@ -227,14 +227,14 @@ pipeline = Pipeline(
                     valA.width - 1,
                     (index) =>
                         p.get(sum[(valA.width + valB.width - 2) - index]))
-              ].swizzle(),
+              ].concat(),
           p.get(rCarryB) <
               <Logic>[
                 ...List.generate(
                     valA.width,
                     (index) =>
                         p.get(carry[(valA.width + valB.width - 2) - index]))
-              ].swizzle()
+              ].concat()
         ],
   ],
   reset: reset,
@@ -242,7 +242,7 @@ pipeline = Pipeline(
 );
 ```
 
-To obtain our final result, we can instantiate the `NBitAdder` module and pass `rCarryA` and `rCarryB` to the module. Finally, we need to swizzle the results from `nBitAdder` and the last four bits from the pipeline.
+To obtain our final result, we can instantiate the `NBitAdder` module and pass `rCarryA` and `rCarryB` to the module. Finally, we need to concat the results from `nBitAdder` and the last four bits from the pipeline.
 
 ```dart
 final nBitAdder = NBitAdder(
@@ -260,7 +260,7 @@ product <=
     valA.width,
     (index) => pipeline.get(sum[valA.width - index - 1]),
   )
-].swizzle();
+].concat();
 ```
 
 We can test and simulate the final output by creating the `main()` function as below:

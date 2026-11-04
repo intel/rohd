@@ -27,7 +27,7 @@ class RohdServiceLoading extends RohdServiceState {}
 /// State emitted after ROHD service data has been loaded.
 class RohdServiceLoaded extends RohdServiceState {
   /// Loaded module tree data, if available.
-  final TreeModel? treeModel;
+  final HierarchyOccurrence? treeModel;
 
   /// Creates a loaded state with tree data.
   const RohdServiceLoaded(this.treeModel);

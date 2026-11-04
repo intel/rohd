@@ -11,7 +11,7 @@ import 'package:rohd/rohd.dart';
 Case truthTableCase(
         Logic a, Logic b, Logic carryIn, Logic sum, Logic carryOut) =>
     Case(
-      [a, b, carryIn].swizzle(),
+      [a, b, carryIn].concat(),
       [
         CaseItem(Const(bin('000')), [sum < 0, carryOut < 0]),
         CaseItem(Const(bin('001')), [sum < 1, carryOut < 0]),

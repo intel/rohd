@@ -33,7 +33,7 @@ Logic nBitAdder(Logic a, Logic b) {
 
   sum.add(carry);
 
-  return sum.rswizzle();
+  return sum.rconcat();
 }
 
 void recursiveFullAdder(Logic a, Logic b, Logic carry, List<Logic> sum, int i) {

@@ -981,7 +981,7 @@ abstract class LogicValue implements Comparable<LogicValue> {
           lastCpos = i.$2.start;
           lastPos = pos;
         }
-        return logicValList.rswizzle();
+        return logicValList.rconcat();
       }
     }
     throw LogicValueConstructionException(
@@ -1764,7 +1764,7 @@ abstract class LogicValue implements Comparable<LogicValue> {
     if (fill.width != 1) {
       throw Exception('The fill must be 1 bit, but got $fill.');
     }
-    return [LogicValue.filled(newWidth - width, fill), this].swizzle();
+    return [LogicValue.filled(newWidth - width, fill), this].concat();
   }
 
   /// Returns a new [LogicValue] with width [newWidth] where new bits added are
@@ -1801,7 +1801,7 @@ abstract class LogicValue implements Comparable<LogicValue> {
       getRange(startIndex + update.width, width),
       update,
       getRange(0, startIndex),
-    ].swizzle();
+    ].concat();
   }
 
   /// Checks if `this` is equal to [other], except ignoring bits of

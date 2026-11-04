@@ -1,4 +1,4 @@
-// Copyright (C) 2024-2025 Intel Corporation
+// Copyright (C) 2024-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // tree_service.dart
@@ -12,8 +12,8 @@ import 'dart:convert';
 import 'package:devtools_app_shared/service.dart';
 import 'package:devtools_app_shared/utils.dart';
 import 'package:flutter/foundation.dart';
-import 'package:rohd_devtools_extension/rohd_devtools/models/tree_model.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/services/design_data_adapter.dart';
+import 'package:rohd_hierarchy/rohd_hierarchy.dart';
 import 'package:vm_service/vm_service.dart';
 
 /// Service for managing the module tree.
@@ -75,7 +75,7 @@ class TreeService {
   /// Evaluates `NetlistService.current?.slimJson` (falling back to
   /// `ModuleServices.instance.hierarchyJson`) which returns a unified
   /// netlist format containing hierarchy and schematic data.
-  Future<TreeModel?> evalModuleTree() async {
+  Future<HierarchyOccurrence?> evalModuleTree() async {
     try {
       final instance = await _evalInstance(
         _unifiedFunc,
@@ -114,7 +114,7 @@ class TreeService {
   /// Refresh the module tree from the connected ROHD application.
   ///
   /// Uses the same unified → fallback strategy as [evalModuleTree].
-  Future<TreeModel> refreshModuleTree() async {
+  Future<HierarchyOccurrence> refreshModuleTree() async {
     final treeModel = await evalModuleTree();
     if (treeModel == null) {
       throw StateError('Failed to refresh module tree.');
