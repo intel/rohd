@@ -1,4 +1,4 @@
-## Next Release
+## 0.7.0
 
 ### Breaking Changes
 
@@ -16,9 +16,7 @@
 
 ### Major Features
 
-- Added type-safe [PairInterface] provider/consumer endpoints and role-specific
-  module connection helpers, while preserving the existing untyped API
-  (<https://github.com/intel/rohd/issues/613>).
+- Added type-safe [PairInterface] provider/consumer endpoints and role-specific module connection helpers, while preserving the existing untyped API (<https://github.com/intel/rohd/issues/613>).
 - Added `TypedLogicArray<TLogic, TValue>` for multidimensional arrays with fixed typed hardware elements and associated semantic values, including typed snapshots and ports, traversal, cloning, net support, and synthesis. Added shaped `LogicValueArray` and codec-backed `TypedLogicValueArray<TValue>` values with nested construction, packed `LogicValue` interoperability, and hardware-array assignment. Existing `LogicArray`, `LogicValueArray`, and concrete array port APIs remain available as specializations (<https://github.com/intel/rohd/pull/686>).
 - Added `LogicEnum<T>` hardware signals with explicit enum encodings, mapped member assignments, driveable cloning, and SystemVerilog enum generation (<https://github.com/intel/rohd/pull/599>).
 - Added compact FST waveform capture alongside VCD, with block-based reading and waveform query APIs for incremental access (<https://github.com/intel/rohd/pull/671>).
@@ -32,44 +30,19 @@
 
 ### Improvements
 
-- Added `name` parameters to the `flop` and `mux` convenience helpers;
-  `cases` already supports naming its generated result
-  (<https://github.com/intel/rohd/issues/517>).
-- Added `concat` and `rconcat` aliases for `swizzle` and `rswizzle`
-  (<https://github.com/intel/rohd/issues/597>).
-- Include current signal value and built hierarchy in `Logic.toString()`
-  diagnostic output (<https://github.com/intel/rohd/issues/96>).
-- Added LSB-first `Logic.split` and `LogicValue.split` helpers for exact
-  arbitrary-width chunking (<https://github.com/intel/rohd/issues/236>).
-- Warn on accidental non-negative integer truncation in `Const` and
-  `LogicValue.of`, with `allowTruncation` for intentional narrowing
-  (<https://github.com/intel/rohd/issues/142>).
-- Added arbitrary-rank `TypedLogicArray.transpose`, including concrete
-  `LogicArray` and net-array views with live reordered element connections
-  (<https://github.com/intel/rohd/issues/427>).
-- Added exact `int` and `BigInt` base-two logarithm and power-of-two helpers,
-  and migrated FSM state sizing away from floating-point logarithms. ROHD-HCL
-  migration follows its next major-version change
-  (<https://github.com/intel/rohd/issues/508>).
-- Warn when `Simulator.run()` completes without registered or injected events
-  (<https://github.com/intel/rohd/issues/595>).
-- Expanded zero-width `Logic` and `LogicValue` coverage across functional
-  simulation, SystemVerilog/Icarus, SystemC, and Node; added `isEmpty`
-  convenience getters while preserving empty-value composition
-  (<https://github.com/intel/rohd/issues/111>).
-- Added X/Z optimism and pessimism regression coverage for combinational and
-  sequential conditional controls (<https://github.com/intel/rohd/issues/103>).
-- Expanded the SystemVerilog module-instantiation guide with external, inline,
-  and custom non-inline examples, including `CustomSystemVerilog` migration
-  guidance (<https://github.com/intel/rohd/issues/430>).
-- Name `Logic.abs()` two's-complement intermediates and final values
-  descriptively in generated output (<https://github.com/intel/rohd/issues/608>).
-- Allow swizzle and subset views to resolve as assignment receivers when safe,
-  including nested partial writes without claiming unselected bits, and merge
-  legal full packed-array/scalar assignments in generated SystemVerilog
-  (<https://github.com/intel/rohd/issues/530>,
-  <https://github.com/intel/rohd/issues/553>, and
-  <https://github.com/intel/rohd/issues/619>).
+- Added `name` parameters to the `flop` and `mux` convenience helpers; `cases` already supports naming its generated result (<https://github.com/intel/rohd/issues/517>).
+- Added `concat` and `rconcat` aliases for `swizzle` and `rswizzle` (<https://github.com/intel/rohd/issues/597>).
+- Include current signal value and built hierarchy in `Logic.toString()` diagnostic output (<https://github.com/intel/rohd/issues/96>).
+- Added LSB-first `Logic.split` and `LogicValue.split` helpers for exact arbitrary-width chunking (<https://github.com/intel/rohd/issues/236>).
+- Warn on accidental non-negative integer truncation in `Const` and `LogicValue.of`, with `allowTruncation` for intentional narrowing (<https://github.com/intel/rohd/issues/142>).
+- Added arbitrary-rank `TypedLogicArray.transpose`, including concrete `LogicArray` and net-array views with live reordered element connections (<https://github.com/intel/rohd/issues/427>).
+- Added exact `int` and `BigInt` base-two logarithm and power-of-two helpers, and migrated FSM state sizing away from floating-point logarithms. ROHD-HCL migration follows its next major-version change (<https://github.com/intel/rohd/issues/508>).
+- Warn when `Simulator.run()` completes without registered or injected events (<https://github.com/intel/rohd/issues/595>).
+- Expanded zero-width `Logic` and `LogicValue` coverage across functional simulation, SystemVerilog/Icarus, SystemC, and Node; added `isEmpty` convenience getters while preserving empty-value composition (<https://github.com/intel/rohd/issues/111>).
+- Added X/Z optimism and pessimism regression coverage for combinational and sequential conditional controls (<https://github.com/intel/rohd/issues/103>).
+- Expanded the SystemVerilog module-instantiation guide with external, inline, and custom non-inline examples, including `CustomSystemVerilog` migration guidance (<https://github.com/intel/rohd/issues/430>).
+- Name `Logic.abs()` two's-complement intermediates and final values descriptively in generated output (<https://github.com/intel/rohd/issues/608>).
+- Allow swizzle and subset views to resolve as assignment receivers when safe, including nested partial writes without claiming unselected bits, and merge legal full packed-array/scalar assignments in generated SystemVerilog (<https://github.com/intel/rohd/issues/530>, <https://github.com/intel/rohd/issues/553>, and <https://github.com/intel/rohd/issues/619>).
 - Fixed zero-width SystemC ports and constant bindings to use bindable placeholder types while preserving empty-value reads as zero, including address ports in single-register CSR blocks.
 - Fixed `SimCompare.checkSystemCVector` to honor explicit clock vectors instead of silently replacing them with a free-running clock. Reusable SystemC executables accept `drivenClockNames`, and compiled cache keys distinguish clock modes. Automatic clocks remain available when vectors omit clock inputs.
 - Emit child-driven unpacked arrays as nets to avoid unknown values in Icarus 12.0, while retaining variable declarations for procedurally written arrays. Child-driven unpacked outputs use `output wire logic` by default; explicit object-type configuration remains honored.
@@ -103,32 +76,15 @@
 
 ### Bug Fixes
 
-- Made file-free, retained VCD waveform capture available on web platforms for
-  DartPad and other browser workflows (<https://github.com/intel/rohd/issues/273>).
-- Preserve four-state `z` values through procedural assignments and muxes,
-  including SystemVerilog’s bitwise merge behavior for unknown mux controls
-  (<https://github.com/intel/rohd/issues/570>).
-- Replaced per-wire simulator lifecycle subscriptions with a shared weak wire
-  registry, so discarded elaborations no longer retain callbacks or degrade
-  future simulation ticks (<https://github.com/intel/rohd/issues/708>).
-- Fixed [Case] and [CaseZ] handling of invalid item values: dynamic `x` and
-  `z` patterns now drive `x`, while only literal constant `z` patterns remain
-  CaseZ wildcards (<https://github.com/intel/rohd/issues/102>).
-- Fixed downstream [Sequential] blocks to capture edges from upstream
-  [Sequential] outputs during the same simulation tick after their producer
-  completes all assignments, restoring clock-divider behavior and correct
-  jointly driven async-reset release (<https://github.com/intel/rohd/issues/191>).
-- Omit zero-width ports and their connections from generated SystemVerilog
-  definitions and instantiations, including conditional assignments nested in
-  reset and branch bodies. SystemVerilog vector testbenches also omit scalar
-  zero-width endpoint declarations, connections, stimulus, and checks
-  (<https://github.com/intel/rohd/issues/57>).
-- Warn when [Sequential] combines `asyncReset` with a non-constant
-  `resetValues` driver, which can infer independently timed async set and
-  clear pins in synthesis (<https://github.com/intel/rohd/issues/728>).
-- Fixed `LogicValue` arithmetic and comparisons with direct `BigInt` operands
-  at widths up to the native integer width, preserving unsigned sign-boundary
-  semantics (<https://github.com/intel/rohd/pull/319>).
+- Made file-free, retained VCD waveform capture available on web platforms for DartPad and other browser workflows (<https://github.com/intel/rohd/issues/273>).
+- Preserve four-state `z` values through procedural assignments and muxes, including SystemVerilog’s bitwise merge behavior for unknown mux controls (<https://github.com/intel/rohd/issues/570>).
+- Replaced per-wire simulator lifecycle subscriptions with a shared weak wire registry, so discarded elaborations no longer retain callbacks or degrade future simulation ticks (<https://github.com/intel/rohd/issues/708>).
+- Prevent truncation diagnostics from throwing on non-finite arithmetic intermediates in Node.
+- Fixed [Case] and [CaseZ] handling of invalid item values: dynamic `x` and `z` patterns now drive `x`, while only literal constant `z` patterns remain CaseZ wildcards (<https://github.com/intel/rohd/issues/102>).
+- Fixed downstream [Sequential] blocks to capture edges from upstream [Sequential] outputs during the same simulation tick after their producer completes all assignments, restoring clock-divider behavior and correct jointly driven async-reset release (<https://github.com/intel/rohd/issues/191>).
+- Omit zero-width ports and their connections from generated SystemVerilog definitions and instantiations, including conditional assignments nested in reset and branch bodies. SystemVerilog vector testbenches also omit scalar zero-width endpoint declarations, connections, stimulus, and checks (<https://github.com/intel/rohd/issues/57>).
+- Warn when [Sequential] combines `asyncReset` with a non-constant `resetValues` driver, which can infer independently timed async set and clear pins in synthesis (<https://github.com/intel/rohd/issues/728>).
+- Fixed `LogicValue` arithmetic and comparisons with direct `BigInt` operands at widths up to the native integer width, preserving unsigned sign-boundary semantics (<https://github.com/intel/rohd/pull/319>).
 - SystemC implementation matching now includes internal signal declarations and child-module types, preventing distinct hierarchical implementations from being incorrectly merged.
 
 - Structured `Mux` output generators now select leaf-by-leaf even when the operands have been widened to `Logic`, preserving typed layouts and avoiding raw-value writes through domain-specific `put` overrides.
@@ -139,16 +95,10 @@
 
 ### Issue Housekeeping
 
-- Transferred fixed-point support and DSP ergonomics to
-  <https://github.com/intel/rohd-hcl/issues/321>
-  (<https://github.com/intel/rohd/issues/470>).
-- Verified that clock/data interface-port registration order does not affect
-  sequential capture (<https://github.com/intel/rohd/issues/318>).
-- Superseded the legacy hierarchy-viewer refresh workflow with the Live
-  Debugger's automatic waveform updates, resume backfill, and video snapshots
-  (<https://github.com/intel/rohd/issues/462>).
-- Closed stale issue reports whose requested behavior is already implemented,
-  documented, or covered by regression tests:
+- Transferred fixed-point support and DSP ergonomics to <https://github.com/intel/rohd-hcl/issues/321> (<https://github.com/intel/rohd/issues/470>).
+- Verified that clock/data interface-port registration order does not affect sequential capture (<https://github.com/intel/rohd/issues/318>).
+- Superseded the legacy hierarchy-viewer refresh workflow with the Live Debugger's automatic waveform updates, resume backfill, and video snapshots (<https://github.com/intel/rohd/issues/462>).
+- Closed stale issue reports whose requested behavior is already implemented, documented, or covered by regression tests:
   - Conditional, simulator, and waveform behavior: <https://github.com/intel/rohd/issues/10>, <https://github.com/intel/rohd/issues/161>, <https://github.com/intel/rohd/issues/162>, <https://github.com/intel/rohd/issues/167>, <https://github.com/intel/rohd/issues/191>, <https://github.com/intel/rohd/issues/313>, <https://github.com/intel/rohd/issues/396>, <https://github.com/intel/rohd/issues/446>, and <https://github.com/intel/rohd/issues/728>.
   - Synthesis, generated output, and navigation: <https://github.com/intel/rohd/issues/57>, <https://github.com/intel/rohd/issues/102>, <https://github.com/intel/rohd/issues/239>, <https://github.com/intel/rohd/issues/424>, <https://github.com/intel/rohd/issues/464>, <https://github.com/intel/rohd/issues/488>, <https://github.com/intel/rohd/issues/523>, <https://github.com/intel/rohd/issues/524>, <https://github.com/intel/rohd/issues/530>, <https://github.com/intel/rohd/issues/544>, <https://github.com/intel/rohd/issues/547>, <https://github.com/intel/rohd/issues/549>, <https://github.com/intel/rohd/issues/553>, <https://github.com/intel/rohd/issues/577>, <https://github.com/intel/rohd/issues/591>, <https://github.com/intel/rohd/issues/596>, <https://github.com/intel/rohd/issues/610>, <https://github.com/intel/rohd/issues/613>, <https://github.com/intel/rohd/issues/619>, and <https://github.com/intel/rohd/issues/734>.
   - Project tooling and hierarchy: <https://github.com/intel/rohd/issues/270>, <https://github.com/intel/rohd/issues/275>, and <https://github.com/intel/rohd/issues/647>.
