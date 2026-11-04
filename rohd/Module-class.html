@@ -78,8 +78,8 @@ This construct is similar to a SystemVerilog <code>module</code>.</p>
               <li><a href="../rohd/BusSubset-class.html">BusSubset</a></li>
               <li><a href="../examples/CoeffBank-class.html">CoeffBank</a></li>
               <li><a href="../rohd/Combinational-class.html">Combinational</a></li>
+              <li><a href="../rohd/Concat-class.html">Concat</a></li>
               <li><a href="../examples/Counter-class.html">Counter</a></li>
-              <li><a class="deprecated" href="../rohd/CustomSystemVerilog-mixin.html">CustomSystemVerilog</a></li>
               <li><a href="../rohd/Divide-class.html">Divide</a></li>
               <li><a href="../rohd/Equals-class.html">Equals</a></li>
               <li><a href="../rohd/ExternalSystemVerilogModule-class.html">ExternalSystemVerilogModule</a></li>
@@ -111,7 +111,6 @@ This construct is similar to a SystemVerilog <code>module</code>.</p>
               <li><a href="../examples/SharedDataBus-class.html">SharedDataBus</a></li>
               <li><a href="../rohd/SimpleClockGenerator-class.html">SimpleClockGenerator</a></li>
               <li><a href="../rohd/Subtract-class.html">Subtract</a></li>
-              <li><a href="../rohd/Swizzle-class.html">Swizzle</a></li>
               <li><a href="../rohd/SystemVerilog-mixin.html">SystemVerilog</a></li>
               <li><a href="../examples/TreeOfTwoInputModules-class.html">TreeOfTwoInputModules</a></li>
               <li><a href="../rohd/TriStateBuffer-class.html">TriStateBuffer</a></li>
@@ -677,19 +676,6 @@ properly update the <code>name</code> of the generated <code>LogicType</code> as
 
 </dd>
 
-        <dt id="generateSynth" class="callable">
-  <span class="name deprecated"><a class="deprecated" href="../rohd/Module/generateSynth.html">generateSynth</a></span><span class="signature">(<wbr>{<span class="parameter" id="generateSynth-param-configuration"><span class="type-annotation"><a href="../rohd/SystemVerilogSynthesizerConfiguration-class.html">SystemVerilogSynthesizerConfiguration</a></span> <span class="parameter-name">configuration</span> = <span class="default-value">const SystemVerilogSynthesizerConfiguration()</span></span>})
-    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
-  </span>
-  
-
-</dt>
-<dd>
-  Returns a synthesized version of this <a href="../rohd/Module-class.html">Module</a>.
-  
-
-</dd>
-
         <dt id="hierarchy" class="callable">
   <span class="name"><a href="../rohd/Module/hierarchy.html">hierarchy</a></span><span class="signature">(<wbr>)
     <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Module-class.html">Module</a></span>&gt;</span></span>
@@ -934,38 +920,6 @@ named <code>name</code>.
   </section>
     
     
-  <section class="summary offset-anchor" id="static-methods">
-    <h2>Static Methods</h2>
-    <dl class="callables">
-        <dt id="isUnpreferred" class="callable">
-  <span class="name deprecated"><a class="deprecated" href="../rohd/Module/isUnpreferred.html">isUnpreferred</a></span><span class="signature">(<wbr><span class="parameter" id="isUnpreferred-param-name"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span></span>)
-    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
-  </span>
-  
-
-</dt>
-<dd>
-  Returns true iff the signal name is "unpreferred".
-  
-
-</dd>
-
-        <dt id="unpreferredName" class="callable">
-  <span class="name deprecated"><a class="deprecated" href="../rohd/Module/unpreferredName.html">unpreferredName</a></span><span class="signature">(<wbr><span class="parameter" id="unpreferredName-param-name"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span></span>)
-    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
-  </span>
-  
-
-</dt>
-<dd>
-  Makes a signal name "unpreferred" when considering between multiple
-possible signal names.
-  
-
-</dd>
-
-    </dl>
-  </section>
     
 
   </div> <!-- /.main-content -->
@@ -991,7 +945,7 @@ possible signal names.
 <footer>
   <span class="no-break">
     rohd
-      0.6.11
+      0.7.0
   </span>
   
 </footer>

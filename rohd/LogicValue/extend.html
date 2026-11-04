@@ -84,7 +84,7 @@ exception will be thrown. <code>fill</code> must be a single bit (<a href="../..
   if (fill.width != 1) {
     throw Exception(&#39;The fill must be 1 bit, but got $fill.&#39;);
   }
-  return [LogicValue.filled(newWidth - width, fill), this].swizzle();
+  return [LogicValue.filled(newWidth - width, fill), this].concat();
 }</code></pre>
 </section>
 
@@ -113,7 +113,7 @@ exception will be thrown. <code>fill</code> must be a single bit (<a href="../..
 <footer>
   <span class="no-break">
     rohd
-      0.6.11
+      0.7.0
   </span>
   
 </footer>

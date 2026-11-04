@@ -77,13 +77,8 @@ described in-line.</p>
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@override
-&#47;&#47; Keep deprecated custom-SV modules definition-free during migration.
-bool generatesDefinition(Module module) =&gt;
-    &#47;&#47; Preserve handling for callers of the deprecated custom mixin.
-    &#47;&#47; ignore: deprecated_member_use_from_same_package
-    !((module is CustomSystemVerilog) ||
-        (module is SystemVerilog &amp;&amp;
-            module.generatedDefinitionType == DefinitionGenerationType.none));</code></pre>
+bool generatesDefinition(Module module) =&gt; !(module is SystemVerilog &amp;&amp;
+    module.generatedDefinitionType == DefinitionGenerationType.none);</code></pre>
 </section>
 
 
@@ -111,7 +106,7 @@ bool generatesDefinition(Module module) =&gt;
 <footer>
   <span class="no-break">
     rohd
-      0.6.11
+      0.7.0
   </span>
   
 </footer>

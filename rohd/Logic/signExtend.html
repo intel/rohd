@@ -80,7 +80,7 @@ an exception will be thrown.</p>
   if (width == 1) {
     return replicate(newWidth);
   } else if (newWidth &gt; width) {
-    return [this[-1].replicate(newWidth - width), this].swizzle();
+    return [this[-1].replicate(newWidth - width), this].concat();
   } else if (newWidth == width) {
     return this;
   }
@@ -116,7 +116,7 @@ an exception will be thrown.</p>
 <footer>
   <span class="no-break">
     rohd
-      0.6.11
+      0.7.0
   </span>
   
 </footer>

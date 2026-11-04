@@ -94,7 +94,7 @@ String inlineVerilog(Map&lt;String, String&gt; inputs) {
 
   assert(
     !a.contains(_expressionRegex),
-    &#39;Inputs to bus swizzle cannot contain any expressions.&#39;,
+    &#39;Inputs to bus concat cannot contain any expressions.&#39;,
   );
 
   &#47;&#47; When, input width is 1, ignore startIndex and endIndex
@@ -105,11 +105,11 @@ String inlineVerilog(Map&lt;String, String&gt; inputs) {
   &#47;&#47; SystemVerilog doesn&#39;t allow reverse-order select to reverse a bus,
   &#47;&#47; so do it manually
   if (startIndex &gt; endIndex) {
-    final swizzleContents = List.generate(
+    final concatContents = List.generate(
       startIndex - endIndex + 1,
       (i) =&gt; &#39;$a[${endIndex + i}]&#39;,
     ).join(&#39;,&#39;);
-    return &#39;{$swizzleContents}&#39;;
+    return &#39;{$concatContents}&#39;;
   }
 
   final sliceString =
@@ -143,7 +143,7 @@ String inlineVerilog(Map&lt;String, String&gt; inputs) {
 <footer>
   <span class="no-break">
     rohd
-      0.6.11
+      0.7.0
   </span>
   
 </footer>

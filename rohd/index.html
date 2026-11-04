@@ -154,6 +154,14 @@ the expression.
   Represents a block of combinational logic.
 </dd>
 
+          <dt id="Concat">
+  <span class="name "><a href="../rohd/Concat-class.html">Concat</a></span> 
+
+</dt>
+<dd>
+  A <a href="../rohd/Module-class.html">Module</a> that performs concatenation of signals into one bigger <a href="../rohd/Logic-class.html">Logic</a>.
+</dd>
+
           <dt id="Conditional">
   <span class="name "><a href="../rohd/Conditional-class.html">Conditional</a></span> 
 
@@ -637,15 +645,6 @@ common inputs.
   Information and accessors associated with a <a href="../rohd/Pipeline-class.html">Pipeline</a> stage.
 </dd>
 
-          <dt id="Port">
-  <span class="name deprecated"><a class="deprecated" href="../rohd/Port-class.html">Port</a></span> 
-
-</dt>
-<dd>
-  An extension of <a href="../rohd/Logic-class.html">Logic</a> which performs some additional validation for
-inputs and outputs of <a href="../rohd/Module-class.html">Module</a>s.
-</dd>
-
           <dt id="Power">
   <span class="name "><a href="../rohd/Power-class.html">Power</a></span> 
 
@@ -865,14 +864,6 @@ sites, allowing later queries by hierarchical address.
   A two-input subtraction module.
 </dd>
 
-          <dt id="Swizzle">
-  <span class="name "><a href="../rohd/Swizzle-class.html">Swizzle</a></span> 
-
-</dt>
-<dd>
-  A <a href="../rohd/Module-class.html">Module</a> that performs concatenation of signals into one bigger <a href="../rohd/Logic-class.html">Logic</a>.
-</dd>
-
           <dt id="SynthBuilder">
   <span class="name "><a href="../rohd/SynthBuilder-class.html">SynthBuilder</a></span> 
 
@@ -1046,14 +1037,6 @@ semantic values of type <code>V</code>.
 </dt>
 <dd>
   VCD implementation of <a href="../rohd/WaveformWriter-class.html">WaveformWriter</a>.
-</dd>
-
-          <dt id="WaveDumper">
-  <span class="name deprecated"><a class="deprecated" href="../rohd/WaveDumper-class.html">WaveDumper</a></span> 
-
-</dt>
-<dd>
-  Records VCD waveforms through <a href="../rohd/Module/dumpWaves.html">Module.dumpWaves</a> for legacy callers.
 </dd>
 
           <dt id="WaveformDataService">
@@ -1309,15 +1292,6 @@ signal value changes during simulation for DevTools inspection.
     <section class="summary offset-anchor" id="mixins">
       <h2>Mixins</h2>
       <dl>
-          <dt id="CustomSystemVerilog">
-  <span class="name deprecated"><a class="deprecated" href="../rohd/CustomSystemVerilog-mixin.html">CustomSystemVerilog</a></span> 
-
-</dt>
-<dd>
-  Allows a <a href="../rohd/Module-class.html">Module</a> to define a custom implementation of SystemVerilog to be
-injected in generated output instead of instantiating a separate <code>module</code>.
-</dd>
-
           <dt id="InlineSystemVerilog">
   <span class="name "><a href="../rohd/InlineSystemVerilog-mixin.html">InlineSystemVerilog</a></span> 
 
@@ -1385,24 +1359,24 @@ index.
   Exact base-two math helpers for <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a> values.
 </dd>
 
-          <dt id="LogicSwizzle">
-  <span class="name "><a href="../rohd/LogicSwizzle.html">LogicSwizzle</a></span>
+          <dt id="LogicConcat">
+  <span class="name "><a href="../rohd/LogicConcat.html">LogicConcat</a></span>
   on <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span>
   
 
 </dt>
 <dd>
-  Allows lists of <a href="../rohd/Logic-class.html">Logic</a>s to be swizzled.
+  Provides concatenation utilities for lists of <a href="../rohd/Logic-class.html">Logic</a>s.
 </dd>
 
-          <dt id="LogicValueSwizzle">
-  <span class="name "><a href="../rohd/LogicValueSwizzle.html">LogicValueSwizzle</a></span>
+          <dt id="LogicValueConcat">
+  <span class="name "><a href="../rohd/LogicValueConcat.html">LogicValueConcat</a></span>
   on <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/LogicValue-class.html">LogicValue</a></span>&gt;</span>
   
 
 </dt>
 <dd>
-  Allows lists of <a href="../rohd/LogicValue-class.html">LogicValue</a>s to be swizzled.
+  Provides concatenation utilities for lists of <a href="../rohd/LogicValue-class.html">LogicValue</a>s.
 </dd>
 
           <dt id="PairInterfaceSplit">
@@ -1467,7 +1441,7 @@ index.
 </dd>
 
           <dt id="cases" class="callable">
-  <span class="name"><a href="../rohd/cases.html">cases</a></span><span class="signature">&lt;<wbr><span class="type-parameter">LogicType extends <a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span><span class="signature">(<wbr><span class="parameter" id="cases-param-expression"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">expression</span>, </span><span class="parameter" id="cases-param-conditions"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a></span> <span class="parameter-name">conditions</span>, {</span><span class="parameter" id="cases-param-width"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">width</span>, </span><span class="parameter" id="cases-param-conditionalType"><span class="type-annotation"><a href="../rohd/ConditionalType.html">ConditionalType</a></span> <span class="parameter-name">conditionalType</span> = <span class="default-value">ConditionalType.none</span>, </span><span class="parameter" id="cases-param-defaultValue"><span class="type-annotation">dynamic</span> <span class="parameter-name">defaultValue</span>, </span><span class="parameter" id="cases-param-outputGenerator"><span class="type-annotation">LogicType</span> <span class="parameter-name">outputGenerator</span>({<span class="parameter" id="param-name"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">name</span></span>})?, </span><span class="parameter" id="cases-param-name"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span> = <span class="default-value">&#39;result&#39;</span></span>})
+  <span class="name"><a href="../rohd/cases.html">cases</a></span><span class="signature">&lt;<wbr><span class="type-parameter">LogicType extends <a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span><span class="signature">(<wbr><span class="parameter" id="cases-param-expression"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">expression</span>, </span><span class="parameter" id="cases-param-conditions"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a></span> <span class="parameter-name">conditions</span>, {</span><span class="parameter" id="cases-param-width"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">width</span>, </span><span class="parameter" id="cases-param-conditionalType"><span class="type-annotation"><a href="../rohd/ConditionalType.html">ConditionalType</a></span> <span class="parameter-name">conditionalType</span> = <span class="default-value">ConditionalType.none</span>, </span><span class="parameter" id="cases-param-exactMatch"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">exactMatch</span> = <span class="default-value">false</span>, </span><span class="parameter" id="cases-param-defaultValue"><span class="type-annotation">dynamic</span> <span class="parameter-name">defaultValue</span>, </span><span class="parameter" id="cases-param-outputGenerator"><span class="type-annotation">LogicType</span> <span class="parameter-name">outputGenerator</span>({<span class="parameter" id="param-name"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">name</span></span>})?, </span><span class="parameter" id="cases-param-name"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span> = <span class="default-value">&#39;result&#39;</span></span>})
     <span class="returntype parameter">&#8594; LogicType</span>
   </span>
   
@@ -1511,21 +1485,6 @@ index.
     <section class="summary offset-anchor" id="typedefs">
       <h2>Typedefs</h2>
       <dl>
-          
-  <dt id="Dumper" class="">
-  <span class="name deprecated"><a class="deprecated" href="../rohd/Dumper.html">Dumper</a></span>
-    = <a class="deprecated" href="../rohd/WaveDumper-class.html">WaveDumper</a>
-  </span>
-  
-
-</dt>
-<dd>
-  Deprecated alias for <a class="deprecated" href="../rohd/WaveDumper-class.html">WaveDumper</a>.
-  
-
-</dd>
-
-
           
   <dt id="Iff" class="">
   <span class="name"><a href="../rohd/Iff.html">Iff</a></span>
@@ -1986,7 +1945,7 @@ signal is being used before it was initialized.
 <footer>
   <span class="no-break">
     rohd
-      0.6.11
+      0.7.0
   </span>
   
 </footer>

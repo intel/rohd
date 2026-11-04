@@ -82,19 +82,19 @@ returns the original signal (same object identity).</p>
     );
   }
   &#47;&#47; Nothing to extend: reuse the original signal instead of building a
-  &#47;&#47; zero-width Const + Swizzle (matches signExtend&#39;s same-width path).
+  &#47;&#47; zero-width Const + Concat (matches signExtend&#39;s same-width path).
   if (newWidth == width) {
     return this;
   }
   &#47;&#47; Nothing to extend: reuse the original signal instead of building a
-  &#47;&#47; zero-width Const + Swizzle (matches signExtend&#39;s same-width path).
+  &#47;&#47; zero-width Const + Concat (matches signExtend&#39;s same-width path).
   if (newWidth == width) {
     return this;
   }
   return [
     Const(0, width: newWidth - width),
     this,
-  ].swizzle();
+  ].concat();
 }</code></pre>
 </section>
 
@@ -123,7 +123,7 @@ returns the original signal (same object identity).</p>
 <footer>
   <span class="no-break">
     rohd
-      0.6.11
+      0.7.0
   </span>
   
 </footer>

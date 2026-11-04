@@ -84,7 +84,7 @@ replicating once is a no-op and would otherwise generate a redundant
 
   if (isNet) {
     &#47;&#47; many SV simulators don&#39;t support replication of nets
-    return List.generate(multiplier, (i) =&gt; this).swizzle();
+    return List.generate(multiplier, (i) =&gt; this).concat();
   }
 
   return ReplicationOp(this, multiplier).replicated;
@@ -116,7 +116,7 @@ replicating once is a no-op and would otherwise generate a redundant
 <footer>
   <span class="no-break">
     rohd
-      0.6.11
+      0.7.0
   </span>
   
 </footer>

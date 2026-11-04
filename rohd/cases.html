@@ -59,6 +59,7 @@
 <li><span class="parameter" id="cases-param-conditions"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a></span> <span class="parameter-name">conditions</span>, {</span></li>
 <li><span class="parameter" id="cases-param-width"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">width</span>, </span></li>
 <li><span class="parameter" id="cases-param-conditionalType"><span class="type-annotation"><a href="../rohd/ConditionalType.html">ConditionalType</a></span> <span class="parameter-name">conditionalType</span> = <span class="default-value">ConditionalType.none</span>, </span></li>
+<li><span class="parameter" id="cases-param-exactMatch"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">exactMatch</span> = <span class="default-value">false</span>, </span></li>
 <li><span class="parameter" id="cases-param-defaultValue"><span class="type-annotation">dynamic</span> <span class="parameter-name">defaultValue</span>, </span></li>
 <li><span class="parameter" id="cases-param-outputGenerator"><span class="type-annotation">LogicType</span> <span class="parameter-name">outputGenerator</span>({<ol class="parameter-list"> <li><span class="parameter" id="param-name"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">name</span>, </span></li>
 </ol>})?, </span></li>
@@ -80,6 +81,9 @@ normalized to ordinary <a href="../rohd/Logic-class.html">Logic</a>. For a more 
 matching typed branch supplies the output prototype. Supply
 <code>outputGenerator</code> to establish an explicit result representation when
 sources are mixed or no typed branch is available.</p>
+<p>With <code>exactMatch</code>, simulation compares all four logic states exactly, as
+SystemVerilog <code>case</code> does. By default, unknown expressions and dynamic
+patterns produce unknown results.</p>
 </section>
 
 
@@ -91,6 +95,7 @@ sources are mixed or no typed branch is available.</p>
   Map&lt;dynamic, dynamic&gt; conditions, {
   int? width,
   ConditionalType conditionalType = ConditionalType.none,
+  bool exactMatch = false,
   dynamic defaultValue,
   LogicType Function({String? name})? outputGenerator,
   String name = &#39;result&#39;,
@@ -211,6 +216,7 @@ sources are mixed or no typed branch is available.</p>
           ),
       ],
       conditionalType: conditionalType,
+      exactMatch: exactMatch,
       defaultItem: defaultValue != null ? [result &lt; defaultValue] : null,
     ),
   ]);
@@ -243,7 +249,7 @@ sources are mixed or no typed branch is available.</p>
 <footer>
   <span class="no-break">
     rohd
-      0.6.11
+      0.7.0
   </span>
   
 </footer>

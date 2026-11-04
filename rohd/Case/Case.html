@@ -58,12 +58,14 @@
 <li><span class="parameter" id="param-items"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/CaseItem-class.html">CaseItem</a></span>&gt;</span></span> <span class="parameter-name">items</span>, {</span></li>
 <li><span class="parameter" id="param-defaultItem"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/Conditional-class.html">Conditional</a></span>&gt;</span>?</span> <span class="parameter-name">defaultItem</span>, </span></li>
 <li><span class="parameter" id="param-conditionalType"><span class="type-annotation"><a href="../../rohd/ConditionalType.html">ConditionalType</a></span> <span class="parameter-name">conditionalType</span> = <span class="default-value">ConditionalType.none</span>, </span></li>
+<li><span class="parameter" id="param-exactMatch"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">exactMatch</span> = <span class="default-value">false</span>, </span></li>
 </ol>})
     </section>
     
 <section class="desc markdown">
   <p>Whenever an item in <code>items</code> matches <code>expression</code>, it will be executed.</p>
-<p>If none of <code>items</code> match, then <code>defaultItem</code> is executed.</p>
+<p>If none of <code>items</code> match, then <code>defaultItem</code> is executed.
+Set <code>exactMatch</code> to compare X and Z exactly in functional simulation.</p>
 </section>
 
 
@@ -75,6 +77,7 @@
   this.items, {
   List&lt;Conditional&gt;? defaultItem,
   this.conditionalType = ConditionalType.none,
+  this.exactMatch = false,
 }) : _defaultItem = defaultItem {
   for (final item in items) {
     if (item.value.width != expression.width) {
@@ -111,7 +114,7 @@
 <footer>
   <span class="no-break">
     rohd
-      0.6.11
+      0.7.0
   </span>
   
 </footer>

@@ -94,7 +94,7 @@ void execute(Set&lt;Logic&gt;? drivenSignals, [void Function(Logic)? guard]) {
   }
 
   final expressionValue = driverValue(expression);
-  if (!expressionValue.isValid) {
+  if (!exactMatch &amp;&amp; !expressionValue.isValid) {
     &#47;&#47; if expression has X or Z, then propagate X&#39;s!
     driveX(drivenSignals);
     return;
@@ -104,7 +104,7 @@ void execute(Set&lt;Logic&gt;? drivenSignals, [void Function(Logic)? guard]) {
 
   for (final item in items) {
     final itemValue = driverValue(item.value);
-    if (!isMatchableItemValue(item, itemValue)) {
+    if (!exactMatch &amp;&amp; !isMatchableItemValue(item, itemValue)) {
       driveX(drivenSignals);
       return;
     }
@@ -167,7 +167,7 @@ void execute(Set&lt;Logic&gt;? drivenSignals, [void Function(Logic)? guard]) {
 <footer>
   <span class="no-break">
     rohd
-      0.6.11
+      0.7.0
   </span>
   
 </footer>

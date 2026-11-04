@@ -95,7 +95,7 @@ modify behavior in ways similar to what is available in SystemVerilog.</p>
     <h2>Constructors</h2>
     <dl class="constructor-summary-list">
         <dt id="Case.new" class="callable">
-          <span class="name"><a href="../rohd/Case/Case.html">Case</a></span><span class="signature">(<span class="parameter" id="param-expression"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">expression</span>, </span><span class="parameter" id="param-items"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/CaseItem-class.html">CaseItem</a></span>&gt;</span></span> <span class="parameter-name">items</span>, {</span><span class="parameter" id="param-defaultItem"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Conditional-class.html">Conditional</a></span>&gt;</span>?</span> <span class="parameter-name">defaultItem</span>, </span><span class="parameter" id="param-conditionalType"><span class="type-annotation"><a href="../rohd/ConditionalType.html">ConditionalType</a></span> <span class="parameter-name">conditionalType</span> = <span class="default-value">ConditionalType.none</span></span>})</span>
+          <span class="name"><a href="../rohd/Case/Case.html">Case</a></span><span class="signature">(<span class="parameter" id="param-expression"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">expression</span>, </span><span class="parameter" id="param-items"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/CaseItem-class.html">CaseItem</a></span>&gt;</span></span> <span class="parameter-name">items</span>, {</span><span class="parameter" id="param-defaultItem"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Conditional-class.html">Conditional</a></span>&gt;</span>?</span> <span class="parameter-name">defaultItem</span>, </span><span class="parameter" id="param-conditionalType"><span class="type-annotation"><a href="../rohd/ConditionalType.html">ConditionalType</a></span> <span class="parameter-name">conditionalType</span> = <span class="default-value">ConditionalType.none</span>, </span><span class="parameter" id="param-exactMatch"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">exactMatch</span> = <span class="default-value">false</span></span>})</span>
         </dt>
         <dd>
           Whenever an item in <code>items</code> matches <code>expression</code>, it will be executed.
@@ -167,6 +167,18 @@ modify behavior in ways similar to what is available in SystemVerilog.</p>
 <dd>
   Lists <em>all</em> drivers, recursively including all sub-<a href="../rohd/Conditional-class.html">Conditional</a>s drivers.
   <div class="features"><span class="feature">late</span><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="exactMatch" class="property">
+  <span class="name"><a href="../rohd/Case/exactMatch.html">exactMatch</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  Whether functional simulation compares X and Z as exact bit values.
+  <div class="features"><span class="feature">final</span></div>
 
 </dd>
 
@@ -478,7 +490,7 @@ accordingly to <code>SsaLogic</code>s and returns an updated set of mappings.
 <footer>
   <span class="no-break">
     rohd
-      0.6.11
+      0.7.0
   </span>
   
 </footer>

@@ -137,24 +137,6 @@ provided.</p>
             forceStandardInstantiation: true,
           );
     }
-    &#47;&#47; Preserve the deprecated custom-instantiation hook for 0.7.x consumers.
-    &#47;&#47; ignore: deprecated_member_use_from_same_package
-    else if (module is CustomSystemVerilog) {
-      return module.instantiationVerilog(
-        instanceType,
-        instanceName,
-        Map.fromEntries(
-          nonZeroWidthPorts.entries.where(
-            (element) =&gt; module.inputs.containsKey(element.key),
-          ),
-        ),
-        Map.fromEntries(
-          nonZeroWidthPorts.entries.where(
-            (element) =&gt; module.outputs.containsKey(element.key),
-          ),
-        ),
-      );
-    }
   }
 
   &#47;&#47;non-custom needs more details
@@ -232,7 +214,7 @@ provided.</p>
 <footer>
   <span class="no-break">
     rohd
-      0.6.11
+      0.7.0
   </span>
   
 </footer>

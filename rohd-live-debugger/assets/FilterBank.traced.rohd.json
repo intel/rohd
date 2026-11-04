@@ -9,7 +9,7 @@
     ".dart_tool/../lib/src/interfaces/interface.dart",
     "example/filter_bank/filter_controller.dart",
     ".dart_tool/../lib/src/finite_state_machine.dart",
-    ".dart_tool/../lib/src/swizzle.dart",
+    ".dart_tool/../lib/src/concat.dart",
     "example/filter_bank/filter_sample.dart"
   ],
   "modules": {
@@ -6895,7 +6895,7 @@
               "5:100:12",
               "2:189:24"
             ],
-            "swizzle": [
+            "concat": [
               "7:23:44",
               "5:161:32",
               "2:189:24"
@@ -7091,7 +7091,7 @@
             ]
           }
         },
-        "swizzle": {
+        "concat": {
           "hide_name": 0,
           "type": "$buf",
           "parameters": {
