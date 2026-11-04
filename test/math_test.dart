@@ -81,19 +81,100 @@ class AddWithCarryMod extends Module {
   }
 }
 
+class AddInvertedWithCarryMod extends Module {
+  AddInvertedWithCarryMod({int width = 8}) {
+    final a = addInput('a', Logic(width: width), width: width);
+    final b = addInput('b', Logic(width: width), width: width);
+    final adder = Add(~a, b);
+    addOutput('sum', width: width) <= adder.sum;
+    addOutput('carry') <= adder.carry;
+  }
+}
+
+class AddModuloWithCarryMod extends Module {
+  AddModuloWithCarryMod() {
+    final a = addInput('a', Logic(width: 8), width: 8);
+    final b = addInput('b', Logic(width: 8), width: 8);
+    final adder = Add(a % 3, b);
+    addOutput('sum', width: 8) <= adder.sum;
+    addOutput('carry') <= adder.carry;
+  }
+}
+
+class AddEmptyWithCarryMod extends Module {
+  AddEmptyWithCarryMod() {
+    final adder = Add(Logic(width: 0), Logic(width: 0));
+    addOutput('carry') <= adder.carry;
+  }
+}
+
 void main() {
   tearDown(() async {
     await Simulator.reset();
   });
 
   group('add with carry', () {
+    test('inverted operand keeps its width for the carry', () async {
+      final mod = AddInvertedWithCarryMod();
+      await mod.build();
+      final vectors = [
+        Vector({'a': 0xff, 'b': 1}, {'sum': 1, 'carry': 0}),
+        Vector({'a': 0, 'b': 1}, {'sum': 0, 'carry': 1}),
+        Vector({'a': 0x80, 'b': 0xff}, {'sum': 0x7e, 'carry': 1}),
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+      expect(SimCompare.checkVerilatorVector(mod, vectors), isTrue);
+    });
+
+    test('inverted one-bit operands and unknowns', () async {
+      final mod = AddInvertedWithCarryMod(width: 1);
+      await mod.build();
+      final vectors = [
+        Vector({'a': 0, 'b': 1}, {'sum': 0, 'carry': 1}),
+        Vector({'a': 1, 'b': 1}, {'sum': 1, 'carry': 0}),
+        Vector({'a': LogicValue.x, 'b': 0},
+            {'sum': LogicValue.x, 'carry': LogicValue.x}),
+        Vector({'a': LogicValue.z, 'b': 1},
+            {'sum': LogicValue.x, 'carry': LogicValue.x}),
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+      expect(SimCompare.checkVerilatorVector(mod, vectors.take(2).toList()),
+          isTrue);
+    });
+
+    test('modulo operand keeps its width for the carry', () async {
+      final mod = AddModuloWithCarryMod();
+      await mod.build();
+      final vectors = [
+        Vector({'a': 255, 'b': 255}, {'sum': 255, 'carry': 0}),
+        Vector({'a': 254, 'b': 255}, {'sum': 1, 'carry': 1}),
+        Vector({'a': 253, 'b': 255}, {'sum': 0, 'carry': 1}),
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+      expect(SimCompare.checkVerilatorVector(mod, vectors), isTrue);
+    });
+
+    test('zero-width operands produce zero carry', () async {
+      final mod = AddEmptyWithCarryMod();
+      await mod.build();
+      final vectors = [
+        Vector({}, {'carry': 0})
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+      expect(SimCompare.checkVerilatorVector(mod, vectors), isTrue);
+    });
+
     test('sv gen', () async {
       final mod = AddWithCarryMod(Logic(width: 8), Logic(width: 8));
       await mod.build();
 
       final sv = mod.dumpSystemVerilog();
 
-      expect(sv, contains('assign {carry, sum} = a + b'));
+      expect(sv, contains("assign {carry, sum} = {1'b0, a} + {1'b0, b}"));
     });
 
     test('simcompare', () async {

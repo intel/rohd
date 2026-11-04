@@ -607,12 +607,16 @@ class Add extends Module with SystemVerilog {
     assert(inputs.length == 2, 'Gate has exactly two inputs');
     assert(outputs.length == 2, 'Gate has exactly two outputs');
 
+    final carry = ports[_carryName]!;
+    if (width == 0) {
+      return "assign $carry = 1'b0;";
+    }
+
     final in0 = ports[_in0Name]!;
     final in1 = ports[_in1Name]!;
     final sum = ports[_sumName]!;
-    final carry = ports[_carryName]!;
 
-    return 'assign {$carry, $sum} = $in0 $_addOpStr $in1;';
+    return "assign {$carry, $sum} = {1'b0, $in0} $_addOpStr {1'b0, $in1};";
   }
 }
 
