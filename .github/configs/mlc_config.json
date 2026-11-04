@@ -49,6 +49,12 @@
       "pattern": "^https://www\\.verilogpro\\.com/verilog-case-casez-casex/$"
     },
     {
+      "pattern": "^https://amaranth-lang\\.org/$"
+    },
+    {
+      "pattern": "^https://spade-lang\\.org/$"
+    },
+    {
       "pattern":"^https://.*\\.fandom\\.com"
     },
     {
