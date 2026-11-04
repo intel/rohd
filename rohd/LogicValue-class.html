@@ -112,6 +112,18 @@ of <code>0</code>, <code>1</code>, <code>x</code> (contention), or <code>z</code
 
 </dd>
 
+        <dt id="isEmpty" class="property">
+  <span class="name"><a href="../rohd/LogicValue/isEmpty.html">isEmpty</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  Whether this value has no bits.
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
         <dt id="isFloating" class="property">
   <span class="name"><a href="../rohd/LogicValue/isFloating.html">isFloating</a></span>
   <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
@@ -406,6 +418,19 @@ value and extends with that.
 <dd>
   Accesses a subset of this <a href="../rohd/LogicValue-class.html">LogicValue</a> from <code>startIndex</code> to <code>endIndex</code>,
 both inclusive.
+  
+
+</dd>
+
+        <dt id="split" class="callable">
+  <span class="name"><a href="../rohd/LogicValue/split.html">split</a></span><span class="signature">(<wbr><span class="parameter" id="split-param-widths"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>&gt;</span></span> <span class="parameter-name">widths</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/LogicValue-class.html">LogicValue</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Splits this value into LSB-first chunks with the provided <code>widths</code>.
   
 
 </dd>
@@ -837,7 +862,7 @@ bit has the same value of <code>fill</code>.
 </dd>
 
         <dt id="of" class="callable">
-  <span class="name"><a href="../rohd/LogicValue/of.html">of</a></span><span class="signature">(<wbr><span class="parameter" id="of-param-val"><span class="type-annotation">dynamic</span> <span class="parameter-name">val</span>, {</span><span class="parameter" id="of-param-fill"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">fill</span> = <span class="default-value">false</span>, </span><span class="parameter" id="of-param-width"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">width</span></span>})
+  <span class="name"><a href="../rohd/LogicValue/of.html">of</a></span><span class="signature">(<wbr><span class="parameter" id="of-param-val"><span class="type-annotation">dynamic</span> <span class="parameter-name">val</span>, {</span><span class="parameter" id="of-param-fill"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">fill</span> = <span class="default-value">false</span>, </span><span class="parameter" id="of-param-width"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">width</span>, </span><span class="parameter" id="of-param-allowTruncation"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">allowTruncation</span> = <span class="default-value">false</span></span>})
     <span class="returntype parameter">&#8594; <a href="../rohd/LogicValue-class.html">LogicValue</a></span>
   </span>
   
@@ -850,7 +875,7 @@ bit has the same value of <code>fill</code>.
 </dd>
 
         <dt id="ofBigInt" class="callable">
-  <span class="name"><a href="../rohd/LogicValue/ofBigInt.html">ofBigInt</a></span><span class="signature">(<wbr><span class="parameter" id="ofBigInt-param-value"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/BigInt-class.html">BigInt</a></span> <span class="parameter-name">value</span>, </span><span class="parameter" id="ofBigInt-param-width"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">width</span></span>)
+  <span class="name"><a href="../rohd/LogicValue/ofBigInt.html">ofBigInt</a></span><span class="signature">(<wbr><span class="parameter" id="ofBigInt-param-value"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/BigInt-class.html">BigInt</a></span> <span class="parameter-name">value</span>, </span><span class="parameter" id="ofBigInt-param-width"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">width</span>, {</span><span class="parameter" id="ofBigInt-param-allowTruncation"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">allowTruncation</span> = <span class="default-value">false</span></span>})
     <span class="returntype parameter">&#8594; <a href="../rohd/LogicValue-class.html">LogicValue</a></span>
   </span>
   
@@ -892,7 +917,7 @@ width that would fit <code>val</code> automatically.
 </dd>
 
         <dt id="ofInt" class="callable">
-  <span class="name"><a href="../rohd/LogicValue/ofInt.html">ofInt</a></span><span class="signature">(<wbr><span class="parameter" id="ofInt-param-value"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">value</span>, </span><span class="parameter" id="ofInt-param-width"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">width</span></span>)
+  <span class="name"><a href="../rohd/LogicValue/ofInt.html">ofInt</a></span><span class="signature">(<wbr><span class="parameter" id="ofInt-param-value"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">value</span>, </span><span class="parameter" id="ofInt-param-width"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">width</span>, {</span><span class="parameter" id="ofInt-param-allowTruncation"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">allowTruncation</span> = <span class="default-value">false</span></span>})
     <span class="returntype parameter">&#8594; <a href="../rohd/LogicValue-class.html">LogicValue</a></span>
   </span>
   

@@ -230,6 +230,18 @@ transitions at any time during a <a href="../rohd/Simulator-class.html">Simulato
 
 </dd>
 
+        <dt id="isEmpty" class="property">
+  <span class="name"><a href="../rohd/LogicStructure/isEmpty.html">isEmpty</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  Whether this signal has no bits.
+  <div class="features"><span class="feature">no setter</span><span class="feature">override</span></div>
+
+</dd>
+
         <dt id="isInOut" class="property">
   <span class="name"><a href="../rohd/LogicStructure/isInOut.html">isInOut</a></span>
   <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
@@ -966,6 +978,19 @@ and extends with that.
 <dd>
   Accesses a subset of this signal from <code>startIndex</code> to <code>endIndex</code>,
 both inclusive.
+  <div class="features"><span class="feature">override</span></div>
+
+</dd>
+
+        <dt id="split" class="callable">
+  <span class="name"><a href="../rohd/LogicStructure/split.html">split</a></span><span class="signature">(<wbr><span class="parameter" id="split-param-widths"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>&gt;</span></span> <span class="parameter-name">widths</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Splits this signal into LSB-first chunks with the provided <code>widths</code>.
   <div class="features"><span class="feature">override</span></div>
 
 </dd>

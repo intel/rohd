@@ -58,6 +58,7 @@
 <li><span class="parameter" id="param-width"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">width</span>, </span></li>
 <li><span class="parameter" id="param-fill"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">fill</span> = <span class="default-value">false</span>, </span></li>
 <li><span class="parameter" id="param-preferredRadix"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">preferredRadix</span>, </span></li>
+<li><span class="parameter" id="param-allowTruncation"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">allowTruncation</span> = <span class="default-value">false</span>, </span></li>
 </ol>})
     </section>
     
@@ -77,11 +78,17 @@ uses decimal. Values containing <code>x</code> or <code>z</code> may fall back t
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">Const(dynamic val, {int? width, bool fill = false, int? preferredRadix})
-    : this._(
+  <pre class="language-dart"><code class="language-dart">Const(
+  dynamic val, {
+  int? width,
+  bool fill = false,
+  int? preferredRadix,
+  bool allowTruncation = false,
+}) : this._(
           LogicValue.of(val,
               width: width ?? (val is LogicValue ? val.width : 1),
-              fill: fill),
+              fill: fill,
+              allowTruncation: allowTruncation),
           preferredRadix: _validatePreferredRadix(preferredRadix));</code></pre>
 </section>
 

@@ -55,9 +55,10 @@
     <section class="multi-line-signature">
       
 <span class="returntype"><a href="../../rohd/LogicValue-class.html">LogicValue</a></span>
-<span class="name ">ofBigInt</span>(<wbr><ol class="parameter-list single-line"> <li><span class="parameter" id="ofBigInt-param-value"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/BigInt-class.html">BigInt</a></span> <span class="parameter-name">value</span>, </span></li>
-<li><span class="parameter" id="ofBigInt-param-width"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">width</span></span></li>
-</ol>)
+<span class="name ">ofBigInt</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="ofBigInt-param-value"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/BigInt-class.html">BigInt</a></span> <span class="parameter-name">value</span>, </span></li>
+<li><span class="parameter" id="ofBigInt-param-width"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">width</span>, {</span></li>
+<li><span class="parameter" id="ofBigInt-param-allowTruncation"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">allowTruncation</span> = <span class="default-value">false</span>, </span></li>
+</ol>})
 
       
 
@@ -73,9 +74,16 @@ number of bits.</p>
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">static LogicValue ofBigInt(BigInt value, int width) =&gt; width &gt; INT_BITS
-    ? _bigLogicValueOrFilled(value, BigInt.zero, width)
-    : _smallLogicValueOrFilled(value.toIntUnsigned(width), 0, width);</code></pre>
+  <pre class="language-dart"><code class="language-dart">static LogicValue ofBigInt(
+  BigInt value,
+  int width, {
+  bool allowTruncation = false,
+}) {
+  _warnOnIntegerTruncation(value, width, allowTruncation);
+  return width &gt; INT_BITS
+      ? _bigLogicValueOrFilled(value, BigInt.zero, width)
+      : _smallLogicValueOrFilled(value.toIntUnsigned(width), 0, width);
+}</code></pre>
 </section>
 
 

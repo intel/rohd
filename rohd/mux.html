@@ -60,6 +60,7 @@
 <li><span class="parameter" id="mux-param-d0"><span class="type-annotation">LogicType</span> <span class="parameter-name">d0</span>, {</span></li>
 <li><span class="parameter" id="mux-param-outputGenerator"><span class="type-annotation">LogicType</span> <span class="parameter-name">outputGenerator</span>({<ol class="parameter-list"> <li><span class="parameter" id="param-name"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">name</span>, </span></li>
 </ol>})?, </span></li>
+<li><span class="parameter" id="mux-param-name"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span> = <span class="default-value">&#39;mux&#39;</span>, </span></li>
 </ol>})
 
         
@@ -89,6 +90,7 @@ example <code>mux(sel, Logic.from(Const(1)), Logic.from(Const(0)))</code>.</p>
   LogicType d1,
   LogicType d0, {
   LogicType Function({String? name})? outputGenerator,
+  String name = &#39;mux&#39;,
 }) {
   if (control.width != 1) {
     throw PortWidthMismatchException(control, 1);
@@ -109,6 +111,7 @@ example <code>mux(sel, Logic.from(Const(1)), Logic.from(Const(0)))</code>.</p>
     d1,
     d0,
     outputGenerator: outputGenerator,
+    name: name,
   ).out;
 }</code></pre>
 </section>

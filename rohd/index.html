@@ -1343,6 +1343,16 @@ generated SystemVerilog for that module.
     <section class="summary offset-anchor" id="extensions">
       <h2>Extensions</h2>
       <dl>
+          <dt id="BigIntMath">
+  <span class="name "><a href="../rohd/BigIntMath.html">BigIntMath</a></span>
+  on <a href="https://api.flutter.dev/flutter/dart-core/BigInt-class.html">BigInt</a>
+  
+
+</dt>
+<dd>
+  Exact base-two math helpers for <a href="https://api.flutter.dev/flutter/dart-core/BigInt-class.html">BigInt</a> values.
+</dd>
+
           <dt id="BigLogicValueBigIntUtilities">
   <span class="name "><a href="../rohd/BigLogicValueBigIntUtilities.html">BigLogicValueBigIntUtilities</a></span>
   on <a href="https://api.flutter.dev/flutter/dart-core/BigInt-class.html">BigInt</a>
@@ -1363,6 +1373,16 @@ large bit vectors and conversion between types.
 <dd>
   Allows a list of <code>LogicType</code>s to have an element selected by a <a href="../rohd/Logic-class.html">Logic</a>
 index.
+</dd>
+
+          <dt id="IntegerMath">
+  <span class="name "><a href="../rohd/IntegerMath.html">IntegerMath</a></span>
+  on <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>
+  
+
+</dt>
+<dd>
+  Exact base-two math helpers for <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a> values.
 </dd>
 
           <dt id="LogicSwizzle">
@@ -1460,7 +1480,7 @@ index.
 </dd>
 
           <dt id="flop" class="callable">
-  <span class="name"><a href="../rohd/flop.html">flop</a></span><span class="signature">&lt;<wbr><span class="type-parameter">LogicType extends <a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span><span class="signature">(<wbr><span class="parameter" id="flop-param-clk"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">clk</span>, </span><span class="parameter" id="flop-param-d"><span class="type-annotation">LogicType</span> <span class="parameter-name">d</span>, {</span><span class="parameter" id="flop-param-en"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a>?</span> <span class="parameter-name">en</span>, </span><span class="parameter" id="flop-param-reset"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a>?</span> <span class="parameter-name">reset</span>, </span><span class="parameter" id="flop-param-resetValue"><span class="type-annotation">dynamic</span> <span class="parameter-name">resetValue</span>, </span><span class="parameter" id="flop-param-asyncReset"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">asyncReset</span> = <span class="default-value">false</span>, </span><span class="parameter" id="flop-param-outputGenerator"><span class="type-annotation">LogicType</span> <span class="parameter-name">outputGenerator</span>({<span class="parameter" id="param-name"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">name</span></span>})?</span>})
+  <span class="name"><a href="../rohd/flop.html">flop</a></span><span class="signature">&lt;<wbr><span class="type-parameter">LogicType extends <a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span><span class="signature">(<wbr><span class="parameter" id="flop-param-clk"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">clk</span>, </span><span class="parameter" id="flop-param-d"><span class="type-annotation">LogicType</span> <span class="parameter-name">d</span>, {</span><span class="parameter" id="flop-param-en"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a>?</span> <span class="parameter-name">en</span>, </span><span class="parameter" id="flop-param-reset"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a>?</span> <span class="parameter-name">reset</span>, </span><span class="parameter" id="flop-param-resetValue"><span class="type-annotation">dynamic</span> <span class="parameter-name">resetValue</span>, </span><span class="parameter" id="flop-param-asyncReset"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">asyncReset</span> = <span class="default-value">false</span>, </span><span class="parameter" id="flop-param-outputGenerator"><span class="type-annotation">LogicType</span> <span class="parameter-name">outputGenerator</span>({<span class="parameter" id="param-name"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">name</span></span>})?, </span><span class="parameter" id="flop-param-name"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span> = <span class="default-value">&#39;flipflop&#39;</span></span>})
     <span class="returntype parameter">&#8594; LogicType</span>
   </span>
   
@@ -1473,7 +1493,7 @@ index.
 </dd>
 
           <dt id="mux" class="callable">
-  <span class="name"><a href="../rohd/mux.html">mux</a></span><span class="signature">&lt;<wbr><span class="type-parameter">LogicType extends <a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span><span class="signature">(<wbr><span class="parameter" id="mux-param-control"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">control</span>, </span><span class="parameter" id="mux-param-d1"><span class="type-annotation">LogicType</span> <span class="parameter-name">d1</span>, </span><span class="parameter" id="mux-param-d0"><span class="type-annotation">LogicType</span> <span class="parameter-name">d0</span>, {</span><span class="parameter" id="mux-param-outputGenerator"><span class="type-annotation">LogicType</span> <span class="parameter-name">outputGenerator</span>({<span class="parameter" id="param-name"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">name</span></span>})?</span>})
+  <span class="name"><a href="../rohd/mux.html">mux</a></span><span class="signature">&lt;<wbr><span class="type-parameter">LogicType extends <a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span><span class="signature">(<wbr><span class="parameter" id="mux-param-control"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">control</span>, </span><span class="parameter" id="mux-param-d1"><span class="type-annotation">LogicType</span> <span class="parameter-name">d1</span>, </span><span class="parameter" id="mux-param-d0"><span class="type-annotation">LogicType</span> <span class="parameter-name">d0</span>, {</span><span class="parameter" id="mux-param-outputGenerator"><span class="type-annotation">LogicType</span> <span class="parameter-name">outputGenerator</span>({<span class="parameter" id="param-name"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">name</span></span>})?, </span><span class="parameter" id="mux-param-name"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span> = <span class="default-value">&#39;mux&#39;</span></span>})
     <span class="returntype parameter">&#8594; LogicType</span>
   </span>
   

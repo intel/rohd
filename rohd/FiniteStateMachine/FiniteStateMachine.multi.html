@@ -82,7 +82,7 @@ positive edges of any of <code>_clks</code>.</p>
   this.asyncReset = false,
   List&lt;Conditional&gt; setupActions = const [],
 })  : setupActions = List.unmodifiable(setupActions),
-      stateWidth = max(1, _logBase(_states.length, 2)) {
+      stateWidth = max(1, _states.length.log2Ceil) {
   _validate();
 
   var stateCounter = 0;

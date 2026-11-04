@@ -58,6 +58,7 @@
 <span class="name ">of</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="of-param-val"><span class="type-annotation">dynamic</span> <span class="parameter-name">val</span>, {</span></li>
 <li><span class="parameter" id="of-param-fill"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">fill</span> = <span class="default-value">false</span>, </span></li>
 <li><span class="parameter" id="of-param-width"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">width</span>, </span></li>
+<li><span class="parameter" id="of-param-allowTruncation"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">allowTruncation</span> = <span class="default-value">false</span>, </span></li>
 </ol>})
 
       
@@ -88,7 +89,12 @@ but will default to a width of 1 unless <code>width</code> is specified.</p>
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">static LogicValue of(dynamic val, {bool fill = false, int? width}) {
+  <pre class="language-dart"><code class="language-dart">static LogicValue of(
+  dynamic val, {
+  bool fill = false,
+  int? width,
+  bool allowTruncation = false,
+}) {
   if (val is int) {
     if (width == null) {
       throw LogicValueConstructionException(
@@ -108,7 +114,11 @@ but will default to a width of 1 unless <code>width</code> is specified.</p>
                   ),
       );
     } else {
-      return LogicValue.ofInt(val, width);
+      return LogicValue.ofInt(
+        val,
+        width,
+        allowTruncation: allowTruncation,
+      );
     }
   } else if (val is BigInt) {
     if (width == null) {
@@ -129,7 +139,11 @@ but will default to a width of 1 unless <code>width</code> is specified.</p>
                   ),
       );
     } else {
-      return LogicValue.ofBigInt(val, width);
+      return LogicValue.ofBigInt(
+        val,
+        width,
+        allowTruncation: allowTruncation,
+      );
     }
   } else if (val is bool) {
     width ??= 1;
