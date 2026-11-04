@@ -9,6 +9,7 @@
 
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
+import 'package:rohd/src/utilities/web.dart';
 import 'package:test/test.dart';
 
 class MathTestModule extends Module {
@@ -113,6 +114,12 @@ void main() {
     await Simulator.reset();
   });
 
+  void checkVerilatorVectors(Module module, List<Vector> vectors) {
+    if (!kIsWeb) {
+      expect(SimCompare.checkVerilatorVector(module, vectors), isTrue);
+    }
+  }
+
   group('add with carry', () {
     test('inverted operand keeps its width for the carry', () async {
       final mod = AddInvertedWithCarryMod();
@@ -124,7 +131,7 @@ void main() {
       ];
       await SimCompare.checkFunctionalVector(mod, vectors);
       SimCompare.checkIverilogVector(mod, vectors);
-      expect(SimCompare.checkVerilatorVector(mod, vectors), isTrue);
+      checkVerilatorVectors(mod, vectors);
     });
 
     test('inverted one-bit operands and unknowns', () async {
@@ -140,8 +147,7 @@ void main() {
       ];
       await SimCompare.checkFunctionalVector(mod, vectors);
       SimCompare.checkIverilogVector(mod, vectors);
-      expect(SimCompare.checkVerilatorVector(mod, vectors.take(2).toList()),
-          isTrue);
+      checkVerilatorVectors(mod, vectors.take(2).toList());
     });
 
     test('modulo operand keeps its width for the carry', () async {
@@ -154,7 +160,7 @@ void main() {
       ];
       await SimCompare.checkFunctionalVector(mod, vectors);
       SimCompare.checkIverilogVector(mod, vectors);
-      expect(SimCompare.checkVerilatorVector(mod, vectors), isTrue);
+      checkVerilatorVectors(mod, vectors);
     });
 
     test('zero-width operands produce zero carry', () async {
@@ -165,7 +171,7 @@ void main() {
       ];
       await SimCompare.checkFunctionalVector(mod, vectors);
       SimCompare.checkIverilogVector(mod, vectors);
-      expect(SimCompare.checkVerilatorVector(mod, vectors), isTrue);
+      checkVerilatorVectors(mod, vectors);
     });
 
     test('sv gen', () async {

@@ -22,7 +22,7 @@
 
 ### Improvements
 
-- Fixed SystemVerilog addition with carry to preserve the original width of inline operands, including bitwise complements and modulo expressions.
+- Fixed SystemVerilog addition with carry to preserve the original width of inline operands, including bitwise complements and modulo expressions, and to emit a zero carry for zero-width operands.
 - Added `name` parameters to the `flop` and `mux` convenience helpers; `cases` already supports naming its generated result (<https://github.com/intel/rohd/issues/517>).
 - Added `concat` and `rconcat` as the preferred concatenation APIs; the legacy aliases are deprecated (<https://github.com/intel/rohd/issues/597>).
 - Include current signal value and built hierarchy in `Logic.toString()` diagnostic output (<https://github.com/intel/rohd/issues/96>).
