@@ -7,6 +7,7 @@
 // 2026 July
 // Author: ROHD Contributors
 
+export 'src/concat.dart';
 export 'src/diagnostics/diagnostics.dart';
 export 'src/exceptions/exceptions.dart';
 export 'src/external.dart';
@@ -21,11 +22,9 @@ export 'src/modules/modules.dart';
 export 'src/selection.dart';
 export 'src/signals/signals.dart' hide BaseLogicArray, LogicDef;
 export 'src/simulator.dart';
-export 'src/swizzle.dart';
 export 'src/synthesizers/synthesizers.dart';
 export 'src/synthesizers/systemverilog/system_verilog_service.dart';
 export 'src/utilities/integer_math.dart';
 export 'src/utilities/naming.dart';
 export 'src/utilities/source_tracer.dart';
 export 'src/values/values.dart';
-export 'src/wave_dumper.dart';

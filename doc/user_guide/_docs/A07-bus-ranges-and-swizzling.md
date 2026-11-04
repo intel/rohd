@@ -1,7 +1,7 @@
 ---
 title: "Bus ranges and concatenation"
-permalink: /docs/bus-range-swizzling/
-excerpt: "Bus ranges and swizzling"
+permalink: /docs/bus-range-concatenation/
+excerpt: "Bus ranges and concatenation"
 last_modified_at: 2026-11-3
 toc: true
 ---
@@ -37,8 +37,8 @@ e <= [b, c, d].rconcat();
 
 `concat` is equivalent to SystemVerilog's `{}` notation: list index 0
 contributes the most significant bits. `rconcat` reverses that convention, so
-list index 0 contributes the least significant bits. The existing `swizzle`
-and `rswizzle` names remain available as aliases during the migration.
+list index 0 contributes the least significant bits. The existing `concat`
+and `rconcat` names remain available as aliases during the migration.
 
 ## Splitting buses
 

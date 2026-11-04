@@ -18,14 +18,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/cubit/hierarchy_cubit.dart';
-import 'package:rohd_devtools_extension/rohd_devtools/models/signal_model.dart';
-import 'package:rohd_devtools_extension/rohd_devtools/models/tree_model.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/rohd_devtools.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/services/devtools_dtd_connection.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/ui/module_tree_card.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/ui/signal_details_card.dart';
 import 'package:rohd_devtools_widgets/rohd_devtools_widgets.dart'
     show RohdSourceFormat;
+import 'package:rohd_hierarchy/rohd_hierarchy.dart';
 import 'package:rohd_schematic_viewer/schematic_viewer.dart'
     show EmbeddedSchematicViewer;
 
@@ -89,7 +88,7 @@ void main() {
         tester.view.resetDevicePixelRatio();
       });
 
-      final treeModel = TreeModelStub.simpleTreeModel;
+      final treeModel = HierarchyOccurrenceStub.simpleHierarchyOccurrence;
 
       when(() => rohdServiceCubit.state)
           .thenReturn(RohdServiceLoaded(treeModel));
@@ -139,7 +138,7 @@ void main() {
           tester.view.resetDevicePixelRatio();
         });
 
-        final treeModel = TreeModelStub.simpleTreeModel;
+        final treeModel = HierarchyOccurrenceStub.simpleHierarchyOccurrence;
 
         when(() => rohdServiceCubit.state)
             .thenReturn(RohdServiceLoaded(treeModel));
@@ -269,7 +268,7 @@ void main() {
         when(() => treeSearchTermCubit.state).thenReturn(null);
         when(() => treeSearchTermCubit.stream)
             .thenAnswer((_) => const Stream.empty());
-        final tree = TreeModelStub.simpleTreeModel;
+        final tree = HierarchyOccurrenceStub.simpleHierarchyOccurrence;
         final connectionStates = <bool>[];
         void onConnectionStateChanged({required bool connected}) =>
             connectionStates.add(connected);
@@ -346,10 +345,10 @@ void main() {
         when(() => treeSearchTermCubit.state).thenReturn(null);
         when(() => treeSearchTermCubit.stream)
             .thenAnswer((_) => const Stream.empty());
-        final tree = TreeModel(
+        final tree = HierarchyOccurrence(
           name: 'top',
           signals: [
-            SignalModel(
+            SignalOccurrence(
               name: 'value',
               width: 4,
               direction: 'output',
@@ -459,10 +458,10 @@ void main() {
         when(() => treeSearchTermCubit.state).thenReturn(null);
         when(() => treeSearchTermCubit.stream)
             .thenAnswer((_) => const Stream.empty());
-        final tree = TreeModel(
+        final tree = HierarchyOccurrence(
           name: 'top',
           signals: [
-            SignalModel(name: 'signal', width: 1, direction: 'output'),
+            SignalOccurrence(name: 'signal', width: 1, direction: 'output'),
           ],
           children: const [],
         );
@@ -571,8 +570,8 @@ void main() {
         );
         await tester.pump();
 
-        serviceCubit
-            .emitForTest(RohdServiceLoaded(TreeModelStub.simpleTreeModel));
+        serviceCubit.emitForTest(RohdServiceLoaded(
+            HierarchyOccurrenceStub.simpleHierarchyOccurrence));
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 10));
 

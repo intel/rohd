@@ -1,5 +1,5 @@
-// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (C) 2021-2026 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
 //
 // sequential_test.dart
 // Unit test for Sequential

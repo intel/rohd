@@ -23,7 +23,6 @@ import 'package:rohd_devtools_extension/rohd_devtools/const/app_theme.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/cubit/cubits.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/examples/rohd_examples.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/models/dtd_vm_service_info.dart';
-import 'package:rohd_devtools_extension/rohd_devtools/models/tree_model.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/services/services.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/services/third_party_license_registry.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/ui/ui.dart';
@@ -38,6 +37,7 @@ import 'package:rohd_devtools_widgets/rohd_devtools_widgets.dart'
         resolveNavigableFormats;
 import 'package:rohd_hierarchy/rohd_hierarchy.dart'
     show HierarchyOccurrence, HierarchyService;
+import 'package:rohd_hierarchy/rohd_hierarchy.dart';
 import 'package:rohd_schematic_viewer/schematic_viewer.dart';
 import 'package:rohd_waveform/rohd_waveform.dart';
 import 'package:vm_service/vm_service.dart' hide Stack;
@@ -195,7 +195,7 @@ class _StandaloneDevToolsPageState
   bool _autoReconnect = false;
 
   // Tree model - starts with loopback data
-  TreeModel? _treeModel;
+  HierarchyOccurrence? _treeModel;
 
   /// The schematic JSON extracted from the ROHD WaveformService.
   Map<String, dynamic>? _schematicJson;
@@ -1663,16 +1663,16 @@ class _StandaloneDevToolsPageState
   // the cached widget tree) gets the new _waveformApi after a
   // reconnect instead of routing to the disposed old data source.
   Widget? _cachedBody;
-  TreeModel? _lastTreeModel;
+  HierarchyOccurrence? _lastHierarchyOccurrence;
   String? _lastError;
   int _lastConnectionGeneration = 0;
 
   Widget _getCachedBody(BuildContext context) {
     if (_cachedBody == null ||
-        _lastTreeModel != _treeModel ||
+        _lastHierarchyOccurrence != _treeModel ||
         _lastError != _error ||
         _lastConnectionGeneration != _connectionGeneration) {
-      _lastTreeModel = _treeModel;
+      _lastHierarchyOccurrence = _treeModel;
       _lastError = _error;
       _lastConnectionGeneration = _connectionGeneration;
       _cachedBody = _buildBody(context);

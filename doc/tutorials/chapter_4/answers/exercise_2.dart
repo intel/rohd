@@ -36,7 +36,7 @@ Logic nBitSubtractor(Logic a, Logic b) {
   }
   diff.add(borrow);
 
-  return diff.rswizzle();
+  return diff.rconcat();
 }
 
 FullSubtractorResult rippleBorrowSubtractor(Logic a, Logic b, Logic borrowIn) {

@@ -45,17 +45,11 @@ extension _ModuleDevToolUtils on Module {
       'outputs': outputs.map((key, value) => MapEntry(key, value.toMap())),
     };
 
-    // Continue treating legacy custom SV modules as opaque in the inspector.
-    // ignore: deprecated_member_use_from_same_package
-    final isCustomModule = this is CustomSystemVerilog || this is SystemVerilog;
+    final isCustomModule = this is SystemVerilog;
 
     if (!isCustomModule || !skipCustomModules) {
       json['subModules'] = subModules
-          .where((module) =>
-              // Preserve filtering for the deprecated custom SV mixin.
-              // ignore: deprecated_member_use_from_same_package
-              !((module is CustomSystemVerilog || module is SystemVerilog) &&
-                  skipCustomModules))
+          .where((module) => !(module is SystemVerilog && skipCustomModules))
           .map((module) => module.toJson(skipCustomModules: skipCustomModules))
           .toList();
     }
@@ -123,8 +117,4 @@ class ModuleTree {
     return rootModule?.buildModuleTreeJsonSchema(rootModule) ??
         json.encode({'status': 'fail', 'reason': 'module not yet build'});
   }
-
-  /// Returns the built module hierarchy as JSON.
-  @Deprecated('Use hierarchyJson instead.')
-  String get hierarchyJSON => hierarchyJson;
 }

@@ -10,10 +10,10 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
-import 'package:rohd_devtools_extension/rohd_devtools/models/tree_model.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/services/design_data_adapter.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/services/flc_service.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/services/tree_data_source.dart';
+import 'package:rohd_hierarchy/rohd_hierarchy.dart';
 import 'package:vm_service/vm_service.dart';
 
 /// VM service-based tree data source for connecting to running ROHD apps.
@@ -50,7 +50,7 @@ class VmServiceTreeDataSource implements TreeDataSource {
   Map<String, dynamic>? getSchematicJson() => _cachedSchematicJson;
 
   @override
-  Future<TreeModel?> evalModuleTree() async {
+  Future<HierarchyOccurrence?> evalModuleTree() async {
     try {
       debugPrint('[VmServiceTreeDataSource] Getting isolate $_isolateId...');
       final isolate = await _vmService.getIsolate(_isolateId);
@@ -458,7 +458,7 @@ class VmServiceTreeDataSource implements TreeDataSource {
   }
 
   @override
-  Future<TreeModel?> refreshModuleTree() => evalModuleTree();
+  Future<HierarchyOccurrence?> refreshModuleTree() => evalModuleTree();
 
   @override
   Future<void> dispose() async {
@@ -510,7 +510,7 @@ class VmServiceTreeDataSource implements TreeDataSource {
     return ref;
   }
 
-  Future<TreeModel?> _parseResult(Response result) async {
+  Future<HierarchyOccurrence?> _parseResult(Response result) async {
     if (result is InstanceRef) {
       // Get the full string - VM service truncates by default
       final valueStr = await _getFullString(result);
@@ -559,7 +559,8 @@ class VmServiceTreeDataSource implements TreeDataSource {
 
           final model = designData.hierarchy.root;
           debugPrint(
-            '[VmServiceTreeDataSource] Successfully created TreeModel',
+            '[VmServiceTreeDataSource] Successfully created '
+            'HierarchyOccurrence',
           );
           return model;
         } on FormatException catch (e) {

@@ -68,7 +68,7 @@ class SsaModWithStructElements extends SsaTestModule {
     return [
       orig.getRange(0, 4) + 1,
       orig.getRange(4, 8) + 2,
-    ].rswizzle().toInt();
+    ].rconcat().toInt();
   }
 }
 

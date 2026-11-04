@@ -11,10 +11,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/cubit/cubits.dart';
-import 'package:rohd_devtools_extension/rohd_devtools/models/signal_model.dart';
-import 'package:rohd_devtools_extension/rohd_devtools/models/tree_model.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/ui/details_panel_content.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/ui/signal_details_card.dart';
+import 'package:rohd_hierarchy/rohd_hierarchy.dart';
 
 void main() {
   Future<void> pumpPanel(
@@ -84,10 +83,10 @@ void main() {
   testWidgets('switches default details content when a module is selected', (
     tester,
   ) async {
-    final module = TreeModel(
+    final module = HierarchyOccurrence(
       name: 'counter',
       signals: [
-        SignalModel(
+        SignalOccurrence(
           name: 'count',
           direction: 'output',
           value: "8'h00",
@@ -96,8 +95,9 @@ void main() {
       ],
       children: const [],
     );
-    final root = TreeModel(name: 'top', signals: const [], children: [module])
-      ..buildAddresses();
+    final root =
+        HierarchyOccurrence(name: 'top', signals: const [], children: [module])
+          ..buildAddresses();
     final hierarchyCubit = DevToolsHierarchyCubit()..loadFromNode(root);
     final detailsTabCubit = DetailsTabCubit();
     final snapshotCubit = SnapshotCubit();

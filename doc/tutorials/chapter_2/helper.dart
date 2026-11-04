@@ -65,12 +65,12 @@ class ConstantValue extends Module {
   }
 }
 
-class RangeSwizzling extends Module {
+class RangeConcatenation extends Module {
   Logic get d => output('d');
   Logic get e => output('e');
   Logic get f => output('f');
   Logic get g => output('g');
-  RangeSwizzling(
+  RangeConcatenation(
       Logic a,
       Logic b,
       Logic c,
@@ -81,7 +81,7 @@ class RangeSwizzling extends Module {
       void Function(
               Logic a, Logic b, Logic c, Logic d, Logic e, Logic f, Logic g)
           slice)
-      : super(name: 'range_swizzling') {
+      : super(name: 'range_concatenation') {
     a = addInput(a.name, a, width: a.width);
     b = addInput(b.name, b, width: b.width);
     c = addInput(c.name, c, width: c.width);

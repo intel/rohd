@@ -90,6 +90,5 @@ The `ports` map contains both input and output port names. Return `null` from
 definition is emitted for the example above; override it when generated output
 needs a custom definition.
 
-`CustomSystemVerilog` is the deprecated predecessor of `SystemVerilog`.
-Migrate by combining its separate input and output maps into the single
-`ports` map shown above.
+`CustomSystemVerilog` was removed in 0.7.0. Use the single `ports` map shown
+above when migrating its separate input and output maps to `SystemVerilog`.

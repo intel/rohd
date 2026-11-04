@@ -1,5 +1,8 @@
-// Copyright (C) 2024 Intel Corporation
+// Copyright (C) 2024-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
+//
+// 2024 December 30
+// Author: Max Korbel <max.korbel@intel.com>
 
 export 'case.dart';
 export 'combinational.dart';

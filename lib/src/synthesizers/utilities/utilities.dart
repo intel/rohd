@@ -1,5 +1,8 @@
 // Copyright (C) 2024-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
+//
+// 2025 June 25
+// Author: Max Korbel <max.korbel@intel.com>
 
 export 'synth_array_concat.dart';
 export 'synth_array_slice.dart';

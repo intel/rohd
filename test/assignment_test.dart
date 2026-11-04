@@ -72,13 +72,13 @@ class LogicNetSubsetModule extends Module {
   }
 }
 
-class _SwizzleReceiverModule extends Module {
-  _SwizzleReceiverModule(Logic source) {
+class _ConcatReceiverModule extends Module {
+  _ConcatReceiverModule(Logic source) {
     source = addInput('source', source, width: source.width);
     final upper = addOutput('upper', width: 4);
     final lower = addOutput('lower', width: 4);
 
-    [upper, lower].swizzle() <= source;
+    [upper, lower].concat() <= source;
   }
 }
 
@@ -91,8 +91,8 @@ class _SubsetReceiverModule extends Module {
   }
 }
 
-class _NetSwizzleReceiverModule extends Module {
-  _NetSwizzleReceiverModule(
+class _NetConcatReceiverModule extends Module {
+  _NetConcatReceiverModule(
     LogicNet source,
     LogicNet targetUpper,
     LogicNet targetLower,
@@ -101,7 +101,7 @@ class _NetSwizzleReceiverModule extends Module {
     targetUpper = addInOut('targetUpper', targetUpper, width: 4);
     targetLower = addInOut('targetLower', targetLower, width: 4);
 
-    [targetUpper, targetLower].swizzle() <= source;
+    [targetUpper, targetLower].concat() <= source;
   }
 }
 
@@ -121,7 +121,7 @@ class _NestedReceiverViewsModule extends Module {
     destination.getRange(0, 4)[0] <= a;
     destination[1] <= b;
 
-    final reversedUpper = [destination[3], destination[2]].swizzle();
+    final reversedUpper = [destination[3], destination[2]].concat();
     reversedUpper[0] <= c;
     destination[3] <= d;
   }
@@ -252,8 +252,8 @@ void main() {
   });
 
   group('receiver views', () {
-    test('swizzle receiver routes source ranges to each signal', () async {
-      final dut = _SwizzleReceiverModule(Logic(width: 8));
+    test('concat receiver routes source ranges to each signal', () async {
+      final dut = _ConcatReceiverModule(Logic(width: 8));
       await dut.build();
 
       final sv = dut.dumpSystemVerilog();
@@ -292,8 +292,8 @@ void main() {
       SimCompare.checkIverilogVector(dut, vectors);
     });
 
-    test('net swizzle receiver generates direct net connections', () async {
-      final dut = _NetSwizzleReceiverModule(
+    test('net concat receiver generates direct net connections', () async {
+      final dut = _NetConcatReceiverModule(
         LogicNet(width: 8),
         LogicNet(width: 4),
         LogicNet(width: 4),
@@ -303,7 +303,7 @@ void main() {
       final sv = dut.dumpSystemVerilog();
       expect(sv, contains('(targetUpper, (source[7:4]))'));
       expect(sv, contains('(targetLower, (source[3:0]))'));
-      expect(sv, isNot(contains('_swizzled')));
+      expect(sv, isNot(contains('_concatd')));
 
       final vectors = [
         Vector(
@@ -320,20 +320,20 @@ void main() {
       SimCompare.checkIverilogVector(dut, vectors);
     });
 
-    test('net swizzle retains direct driver behavior', () {
+    test('net concat retains direct driver behavior', () {
       final upperDriver = Logic(width: 2);
       final lowerDriver = Logic();
-      final swizzledDriver = Logic(width: 3);
+      final concatdDriver = Logic(width: 3);
       final upper = LogicNet(width: 2)..gets(upperDriver);
       final lower = LogicNet()..gets(lowerDriver);
-      final swizzled = [upper, lower].swizzle();
+      final concatd = [upper, lower].concat();
 
       upperDriver.put('10');
       lowerDriver.put('1');
-      expect(swizzled.value, LogicValue.of('101'));
+      expect(concatd.value, LogicValue.of('101'));
 
-      swizzled.gets(swizzledDriver);
-      swizzledDriver.put('111');
+      concatd.gets(concatdDriver);
+      concatdDriver.put('111');
       expect(upper.value, LogicValue.of('1x'));
     });
 

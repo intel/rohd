@@ -11,10 +11,10 @@ import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/signals/signals.dart';
 
-/// A [Swizzle] used by synthesis backends to explicitly assemble a
+/// A [Concat] used by synthesis backends to explicitly assemble a
 /// [BaseLogicArray] from its elements.
 @internal
-class SynthArrayConcat extends Swizzle {
+class SynthArrayConcat extends Concat {
   /// The canonical base name for synthesized array concat operations.
   static const String operationName = 'array_concat';
 

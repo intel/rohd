@@ -4,7 +4,7 @@
 // gate_catalog.dart
 // A single ROHD module that instantiates every public gate API in
 // `lib/src/modules/gates.dart` (plus a few closely related primitives:
-// FlipFlop variants, TriStateBuffer, BusSubset, and Swizzle) so that the
+// FlipFlop variants, TriStateBuffer, BusSubset, and Concat) so that the
 // netlist synthesizer's cell-mapper output can be generated as one catalog.
 //
 // Every instantiated gate's output (or, for multi-output gates, every
@@ -25,7 +25,7 @@ import 'package:rohd/rohd.dart';
 /// Instantiates one (or a small number of representative variants) of every
 /// gate [Module] and top-level gate-building function exposed by
 /// `lib/src/modules/gates.dart`, along with [FlipFlop] (in all mapper-
-/// supported configurations), [TriStateBuffer], [BusSubset], and [Swizzle].
+/// supported configurations), [TriStateBuffer], [BusSubset], and [Concat].
 ///
 /// All inputs are plain free (unconnected) top-level signals; this module is
 /// intended purely for structural (netlist) synthesis, not simulation.
@@ -168,8 +168,8 @@ class GateCatalog extends Module {
     // ── BusSubset → $slice ────────────────────────────────────────────
     addOutput('slice_out', width: 4) <= a8.getRange(2, 6);
 
-    // ── Swizzle → $concat ─────────────────────────────────────────────
-    addOutput('swizzle_out', width: 8) <= [a4, b4].swizzle();
+    // ── Concat → $concat ─────────────────────────────────────────────
+    addOutput('concat_out', width: 8) <= [a4, b4].concat();
 
     // ── TriStateBuffer → $tribuf ───────────────────────────────────────
     TriStateBuffer(a8, enable: enableTri, name: 'tsb').out.gets(bus);

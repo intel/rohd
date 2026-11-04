@@ -8,7 +8,7 @@
 // 2026 January
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
-import 'package:rohd_devtools_extension/rohd_devtools/models/tree_model.dart';
+import 'package:rohd_hierarchy/rohd_hierarchy.dart';
 
 /// Abstract interface for obtaining module tree hierarchy data.
 ///
@@ -26,10 +26,10 @@ abstract class TreeDataSource {
 
   /// Evaluate and return the module tree hierarchy.
   /// Returns null if no tree is available.
-  Future<TreeModel?> evalModuleTree();
+  Future<HierarchyOccurrence?> evalModuleTree();
 
   /// Refresh and return the updated module tree.
-  Future<TreeModel?> refreshModuleTree();
+  Future<HierarchyOccurrence?> refreshModuleTree();
 
   /// Fetch the full schematic JSON for a single module definition.
   ///

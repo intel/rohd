@@ -118,7 +118,7 @@ class NetlistSynthModuleDefinition extends SynthModuleDefinition {
         Logic(width: element.width, name: 'DUMMY'),
     ];
 
-    // Swizzle reverses its inputs, so reverse here to keep in0 aligned with
+    // Concat reverses its inputs, so reverse here to keep in0 aligned with
     // element[0], the least-significant array element.
     final concatModule = SynthArrayConcat(
       dummyElements.reversed.toList(),

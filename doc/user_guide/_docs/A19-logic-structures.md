@@ -127,7 +127,7 @@ You could now assign this like any other `Logic` all together:
 
 ```dart
 Logic ready, valid;
-rvStruct <= [ready, valid].rswizzle();
+rvStruct <= [ready, valid].rconcat();
 ```
 
 Or you can assign individual `elements`:

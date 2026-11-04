@@ -30,7 +30,7 @@ class Shuffler extends Module {
           (index) => index.isEven
               ? innerPayload1[index ~/ 2]
               : innerPayload2[index ~/ 2],
-        ).reversed.toList().rswizzle();
+        ).reversed.toList().rconcat();
   }
 }
 

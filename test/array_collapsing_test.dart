@@ -84,7 +84,7 @@ class PartialArrayRangeAssignment extends Module {
       dst.elements[dstIndex] <= src.elements[srcIndex];
     }
 
-    addOutput('y', width: 6) <= dst.elements.rswizzle();
+    addOutput('y', width: 6) <= dst.elements.rconcat();
   }
 }
 
@@ -105,9 +105,9 @@ class ChainedPartialArrayRangeAssignment extends Module {
       dst.elements[index] <= intermediate.elements[index];
     }
 
-    addOutput('y', width: 6) <= dst.elements.rswizzle();
+    addOutput('y', width: 6) <= dst.elements.rconcat();
     if (exposeIntermediate) {
-      addOutput('z', width: 6) <= intermediate.elements.rswizzle();
+      addOutput('z', width: 6) <= intermediate.elements.rconcat();
     }
   }
 }
@@ -126,7 +126,7 @@ class ConstantLeafArrayAssignment extends Module {
       banana.leafElements[index] <= Const(values[index]);
     }
 
-    addOutput('y', width: banana.width) <= banana.leafElements.rswizzle();
+    addOutput('y', width: banana.width) <= banana.leafElements.rconcat();
   }
 }
 
@@ -148,7 +148,7 @@ class ThreeDeepChainedPartialArrayRangeAssignment extends Module {
       dst.elements[index] <= intermediate1.elements[index];
     }
 
-    addOutput('y', width: 6) <= dst.elements.rswizzle();
+    addOutput('y', width: 6) <= dst.elements.rconcat();
   }
 }
 
@@ -178,7 +178,7 @@ class LongChainedPartialArrayRangeAssignment extends Module {
     for (var index = 2; index <= 4; index++) {
       dst.elements[index] <= previous.elements[index];
     }
-    addOutput('y', width: 6) <= dst.elements.rswizzle();
+    addOutput('y', width: 6) <= dst.elements.rconcat();
   }
 }
 
@@ -199,7 +199,7 @@ class ChainedSubrangeArrayRangeAssignment extends Module {
       dst.elements[index] <= intermediate.elements[index + 1];
     }
 
-    addOutput('y', width: 8) <= dst.elements.rswizzle();
+    addOutput('y', width: 8) <= dst.elements.rconcat();
   }
 }
 
@@ -218,7 +218,7 @@ class PartialBusToArrayRangeAssignment extends Module {
       dst.elements[dstIndex] <= src[srcIndex];
     }
 
-    addOutput('y', width: 8) <= dst.leafElements.rswizzle();
+    addOutput('y', width: 8) <= dst.leafElements.rconcat();
   }
 }
 
@@ -285,7 +285,7 @@ class BusSubsetBitsWithExtraConsumers extends Module {
     }
 
     addOutput('y', width: 4) <= dst;
-    addOutput('z', width: 4) <= inverted.rswizzle();
+    addOutput('z', width: 4) <= inverted.rconcat();
   }
 }
 
@@ -618,7 +618,7 @@ class WideTemporarySliceToArrayWords extends Module {
       for (final word in words) {
         inverted.add(InverterMod(word, width: 16).o);
       }
-      addOutput('z', width: 64) <= inverted.rswizzle();
+      addOutput('z', width: 64) <= inverted.rconcat();
     }
   }
 }
@@ -635,7 +635,7 @@ class ManualSubsetNamedArrayRangeAssignment extends Module {
       intermediate.elements[index] <= src.elements[index];
     }
 
-    addOutput('y', width: 6) <= intermediate.elements.rswizzle();
+    addOutput('y', width: 6) <= intermediate.elements.rconcat();
   }
 }
 
@@ -658,7 +658,7 @@ class PartialInnerArrayRangeAssignment extends Module {
       dstRow.elements[index] <= srcRow.elements[index];
     }
 
-    addOutput('y', width: 8) <= dst.leafElements.rswizzle();
+    addOutput('y', width: 8) <= dst.leafElements.rconcat();
   }
 }
 
@@ -679,7 +679,7 @@ class PartialUnpackedArrayRangeAssignment extends Module {
       dst.elements[index] <= src.elements[index];
     }
 
-    addOutput('y', width: 6) <= dst.leafElements.rswizzle();
+    addOutput('y', width: 6) <= dst.leafElements.rconcat();
   }
 }
 
@@ -700,7 +700,7 @@ class PartialWideArrayRangeAssignment extends Module {
       dst.elements[index] <= src.elements[index];
     }
 
-    addOutput('y', width: 8) <= dst.leafElements.rswizzle();
+    addOutput('y', width: 8) <= dst.leafElements.rconcat();
   }
 }
 
@@ -721,7 +721,7 @@ class PartialNetArrayRangeAssignment extends Module {
       dst.elements[index] <= src.elements[index];
     }
 
-    mirror <= dst.leafElements.rswizzle();
+    mirror <= dst.leafElements.rconcat();
   }
 }
 
@@ -784,7 +784,7 @@ class ArrayElementFanout extends Module {
       results.add(InverterMod(leaves[srcIdx], width: elementWidth).o);
     }
 
-    addOutput('y', width: total) <= results.rswizzle();
+    addOutput('y', width: total) <= results.rconcat();
   }
 }
 
@@ -815,7 +815,7 @@ class NetArrayElementFanout extends Module {
 }
 
 /// An array where only some leaf elements are driven (the first and last are
-/// left undriven), with the whole array reconstructed via a swizzle.  This must
+/// left undriven), with the whole array reconstructed via a concat.  This must
 /// NOT be inlined away (partial inlining would change `x`/`z` behavior of the
 /// undriven bits).
 class PartiallyDrivenArray extends Module {
@@ -831,7 +831,7 @@ class PartiallyDrivenArray extends Module {
       leaves[i] <= a[i - 1];
     }
 
-    addOutput('y', width: total) <= leaves.rswizzle();
+    addOutput('y', width: total) <= leaves.rconcat();
   }
 }
 
@@ -848,7 +848,7 @@ class ArrayElementsWithAggregateUse extends Module {
     for (final leaf in arr.leafElements) {
       results.add(InverterMod(leaf).o);
     }
-    addOutput('y', width: 4) <= results.rswizzle();
+    addOutput('y', width: 4) <= results.rconcat();
 
     // whole-array (aggregate) use, which blocks element inlining
     addOutputArray('arrCopy', dimensions: [4]) <= arr;
@@ -866,7 +866,7 @@ class ArrayPortElementsToSubmodules extends Module {
     for (final leaf in a.leafElements) {
       results.add(InverterMod(leaf, width: a.elementWidth).o);
     }
-    addOutput('y', width: a.width) <= results.rswizzle();
+    addOutput('y', width: a.width) <= results.rconcat();
   }
 }
 
@@ -899,7 +899,7 @@ class StructArrayFieldToSubmodules extends Module {
     for (final leaf in s.arr.leafElements) {
       results.add(InverterMod(leaf).o);
     }
-    addOutput('y', width: s.arr.width) <= results.rswizzle();
+    addOutput('y', width: s.arr.width) <= results.rconcat();
   }
 }
 
@@ -933,7 +933,7 @@ class ArrayPortInvChild extends Module {
   ArrayPortInvChild(LogicArray a, {int n = 4, int elementWidth = 1})
       : super(name: 'arr_inv_child') {
     a = addInputArray('a', a, dimensions: [n], elementWidth: elementWidth);
-    addOutput('y', width: n * elementWidth) <= ~a.elements.rswizzle();
+    addOutput('y', width: n * elementWidth) <= ~a.elements.rconcat();
   }
 }
 
@@ -1045,7 +1045,7 @@ class ArrayPortNetChild extends Module {
       : super(name: 'arr_net_child') {
     a = addInOutArray('a', a, dimensions: [n]);
     b = addInOut('b', b, width: n);
-    b <= a.elements.rswizzle();
+    b <= a.elements.rconcat();
   }
 }
 
@@ -1091,7 +1091,7 @@ class ArrayOutChild extends Module {
   LogicArray get a => output('a') as LogicArray;
   ArrayOutChild(Logic x, {int n = 4}) : super(name: 'array_out_child') {
     x = addInput('x', x, width: n);
-    addOutputArray('a', dimensions: [n]) <= (~x).elements.rswizzle();
+    addOutputArray('a', dimensions: [n]) <= (~x).elements.rconcat();
   }
 }
 
@@ -1150,7 +1150,7 @@ class ExpressionlessArrayPortChild extends Module with SystemVerilog {
   ExpressionlessArrayPortChild(LogicArray a, {int n = 4})
       : super(name: 'expressionless_child') {
     a = addInputArray('a', a, dimensions: [n]);
-    addOutput('y', width: n) <= a.elements.rswizzle();
+    addOutput('y', width: n) <= a.elements.rconcat();
   }
 
   @override
@@ -1177,7 +1177,7 @@ class IndividualSignalsToExpressionlessPort extends Module {
 }
 
 /// A child whose single inout net array port `data` is bidirectionally mirrored
-/// to `mirror` (`mirror = data.rswizzle()`).
+/// to `mirror` (`mirror = data.rconcat()`).
 class WholeNetBusChild extends Module {
   WholeNetBusChild(LogicNet data, LogicNet mirror, {int n = 8})
       : super(name: 'whole_net_bus_child') {
@@ -1252,7 +1252,7 @@ class WholeNetBusToPortWithReadOnlyInlineSubsetConsumer extends Module {
       guarded.add(enable & ~selected);
     }
 
-    addOutput('z', width: n) <= guarded.rswizzle();
+    addOutput('z', width: n) <= guarded.rconcat();
     WholeNetBusChild(bus, mirror, n: n);
   }
 }
@@ -1281,13 +1281,13 @@ class WholeNetBusCollapseNamingCollision extends Module {
 }
 
 /// A child whose inout net *array* port `data` is bidirectionally mirrored to
-/// `mirror` (`mirror = data.elements.rswizzle()`).
+/// `mirror` (`mirror = data.elements.rconcat()`).
 class ArrayNetBusChild extends Module {
   ArrayNetBusChild(LogicNet bus, LogicNet mirror, {int n = 8})
       : super(name: 'array_net_bus_child') {
     final data = addInOutArray('data', bus, dimensions: [n]);
     mirror = addInOut('mirror', mirror, width: n);
-    mirror <= data.elements.rswizzle();
+    mirror <= data.elements.rconcat();
   }
 }
 
@@ -1487,7 +1487,7 @@ class WholeBusChild extends Module {
 class ArrayBusChild extends Module {
   ArrayBusChild(Logic data, {int n = 4}) : super(name: 'array_bus_child') {
     final d = addInputArray('data', data, dimensions: [n]);
-    addOutput('mirror', width: n) <= d.elements.rswizzle();
+    addOutput('mirror', width: n) <= d.elements.rconcat();
   }
 }
 
@@ -2402,7 +2402,7 @@ class SplitPackedArrayOutputTop extends Module {
           intermediate.getRange(2 * index, 2 * index + 2);
     }
     if (internalArray) {
-      addOutput('observed', width: 8) <= parts.leafElements.rswizzle();
+      addOutput('observed', width: 8) <= parts.leafElements.rconcat();
     }
   }
 }
@@ -3796,7 +3796,7 @@ void main() {
       return [
         for (var i = 0; i < leafCount; i++)
           ~leaves[reversed ? leafCount - 1 - i : i]
-      ].rswizzle();
+      ].rconcat();
     }
 
     final fanoutConfigs = <({
@@ -4021,7 +4021,7 @@ void main() {
               for (var i = 0; i < cfg.n; i++)
                 ~LogicValue.ofInt(sigVal(cfg.perm == null ? i : cfg.perm![i]),
                     cfg.elementWidth)
-            ].rswizzle();
+            ].rconcat();
 
         final vectors = [
           for (final pattern in [0, 1, 2])
@@ -4130,7 +4130,7 @@ void main() {
                 for (var i = 0; i < cfg.n; i++)
                   LogicValue.ofInt(
                       (pattern >> (cfg.perm == null ? i : cfg.perm![i])) & 1, 1)
-              ].rswizzle()
+              ].rconcat()
             })
         ];
         await SimCompare.checkFunctionalVector(mod, vectors);
@@ -4232,11 +4232,11 @@ void main() {
           Vector({
             'src': src
           }, {
-            // arr element i = src element (3 - i); child inverts the swizzle
+            // arr element i = src element (3 - i); child inverts the concat
             'y': [
               for (var i = 0; i < 4; i++)
                 ~LogicValue.ofInt((src >> (3 - i)) & 1, 1)
-            ].rswizzle()
+            ].rconcat()
           })
       ];
       await SimCompare.checkFunctionalVector(mod, vectors);
@@ -4551,7 +4551,7 @@ void main() {
         final topBody = _topModuleBody(sv);
 
         // the bus collapses into an inline concatenation of the merged net, and
-        // the swizzle must not reference a now-deleted bus slice
+        // the concat must not reference a now-deleted bus slice
         expect(topBody, isNot(contains('net_connect')));
         expect(topBody, isNot(contains('wire [1:0] bus')));
         expect(topBody, contains('.data(({'));

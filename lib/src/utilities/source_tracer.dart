@@ -1110,7 +1110,7 @@ class SourceTracer {
 
   /// Returns `true` if [module] can be wrapped in a [SynthModuleDefinition].
   ///
-  /// Inline SystemVerilog helpers (e.g. `BusSubset`, `Swizzle`) set
+  /// Inline SystemVerilog helpers (e.g. `BusSubset`, `Concat`) set
   /// [DefinitionGenerationType.none] and must not be passed to the
   /// [SynthModuleDefinition] constructor.
   static bool _canBuildSynthDef(Module module) => !(module is SystemVerilog &&

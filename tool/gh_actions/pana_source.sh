@@ -47,9 +47,9 @@ case "$package" in
     # exception after the package move is on main and Pana can verify its URL.
     pana_score_threshold=10
     ;;
-  rohd_devtools_widgets|rohd_waveform)
-    # Pana gates points lost: 10 permits a score of 150/160. These packages
-    # retain dependency bounds for their supported SDK ranges.
+  rohd_waveform)
+    # Pana gates points lost: 10 permits a score of 150/160. This package
+    # retains dependency bounds for its supported SDK ranges.
     pana_score_threshold=10
     ;;
 esac

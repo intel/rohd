@@ -53,7 +53,7 @@ class _ArrayModule extends Module {
     final arr = LogicArray([2], 4, name: 'myArray');
     arr.elements[0] <= a.getRange(0, 4);
     arr.elements[1] <= a.getRange(4, 8);
-    y <= arr.elements.rswizzle();
+    y <= arr.elements.rconcat();
   }
 }
 

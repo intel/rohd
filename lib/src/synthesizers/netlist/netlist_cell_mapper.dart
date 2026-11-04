@@ -294,9 +294,9 @@ class NetlistCellMapper {
           },
         );
       })
-      // ── Swizzle → $concat ─────────────────────────────────────────────
+      // ── Concat → $concat ─────────────────────────────────────────────
       ..register((ctx) {
-        if (ctx.module is! Swizzle) {
+        if (ctx.module is! Concat) {
           return null;
         }
         final outName = ctx.firstOutput;

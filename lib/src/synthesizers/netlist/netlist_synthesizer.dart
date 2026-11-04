@@ -374,7 +374,7 @@ class NetlistSynthesizer extends Synthesizer {
           }
         }
         if (inst.module is SynthArrayConcat) {
-          // The output of the Swizzle is the array signal.
+          // The output of the Concat is the array signal.
           for (final outputSL in inst.outputMapping.values) {
             final logic = synthDef.logicToSynthMap.entries
                 .where(

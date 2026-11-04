@@ -112,7 +112,7 @@ class LogicStructure implements Logic {
         }
       })
       .toList(growable: false)
-      .rswizzle()
+      .rconcat()
       .named(name, naming: Naming.mergeable);
 
   @override
@@ -342,7 +342,7 @@ class LogicStructure implements Logic {
       'If the requested width is not 0, expect to get some matches.',
     );
 
-    return matchingElements.rswizzle();
+    return matchingElements.rconcat();
   }
 
   @override
@@ -471,15 +471,12 @@ class LogicStructure implements Logic {
 
   @override
   LogicValue get value =>
-      elements.map((e) => e.value).toList(growable: false).rswizzle();
+      elements.map((e) => e.value).toList(growable: false).rconcat();
 
   @override
   LogicValue? get previousValue => elements.any((e) => e.previousValue == null)
       ? null
-      : elements
-          .map((e) => e.previousValue!)
-          .toList(growable: false)
-          .rswizzle();
+      : elements.map((e) => e.previousValue!).toList(growable: false).rconcat();
 
   @override
   late final int width = elements.map((e) => e.width).sum;
@@ -607,14 +604,6 @@ class LogicStructure implements Logic {
 
   @override
   Logic xor() => packed.xor();
-
-  /// Deprecated alias for [value].
-  ///
-  /// Check [width] separately when a single-bit value is required.
-  @Deprecated(
-    'Use `value` instead. Check `width` separately to confirm single-bit.',
-  )
-  LogicValue get bit => value;
 
   @override
   late final Stream<LogicValueChanged> changed = _internalPacked.changed;

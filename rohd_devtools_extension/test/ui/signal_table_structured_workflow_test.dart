@@ -10,15 +10,14 @@
 import 'package:flutter/gestures.dart' show PointerDeviceKind, kSecondaryButton;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:rohd_devtools_extension/rohd_devtools/models/signal_model.dart';
-import 'package:rohd_devtools_extension/rohd_devtools/models/tree_model.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/ui/signal_table.dart';
+import 'package:rohd_hierarchy/rohd_hierarchy.dart';
 
 void main() {
   testWidgets(
     'expands typed signals and sends real derived field paths',
     (tester) async {
-      final packet = SignalModel(
+      final packet = SignalOccurrence(
         name: 'packet',
         direction: 'input',
         value: "9'h101",
@@ -58,7 +57,7 @@ void main() {
           ],
         },
       );
-      final lanes = SignalModel(
+      final lanes = SignalOccurrence(
         name: 'lanes',
         direction: 'output',
         value: "40'h0123456789",
@@ -68,7 +67,7 @@ void main() {
           'elementWidth': 4,
         },
       );
-      final module = TreeModel(
+      final module = HierarchyOccurrence(
         name: 'typed',
         signals: [packet, lanes],
         children: const [],

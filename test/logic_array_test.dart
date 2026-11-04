@@ -72,19 +72,19 @@ class RangeAndSliceArrModule extends Module implements SimpleLAPassthrough {
         [
           laIn.elements[0].getRange(16),
           laIn.elements[0].getRange(0, 16),
-        ].swizzle();
+        ].concat();
 
     laOut.elements[1] <=
         [
           laIn.elements[1].slice(16, 3 * 3 * 8 - 1).reversed,
           laIn.elements[1].slice(15, 0),
-        ].swizzle();
+        ].concat();
 
     laOut.elements[2] <=
         [
           laIn.elements[2].slice(-1, 0).getRange(3 * 3 * 8 ~/ 2),
           laIn.elements[2].getRange(-3 * 3 * 8).getRange(0, 3 * 3 * 8 ~/ 2),
-        ].swizzle();
+        ].concat();
   }
 }
 
@@ -407,7 +407,7 @@ class ConstantAssignmentArrayModule extends Module {
     laOut.elements[1] <=
         Const([
           for (var i = 0; i < 3 * 3 * 3; i++) LogicValue.ofInt(i, elementWidth)
-        ].rswizzle());
+        ].rconcat());
     laOut.elements[2].elements[1] <=
         (Logic(width: 3 * 3 * elementWidth)
           ..gets(Const(0, width: 3 * 3 * elementWidth)));
@@ -856,7 +856,7 @@ void main() {
 
   group('logicarray passthrough', () {
     Future<void> testArrayPassthrough(SimpleLAPassthrough mod,
-        {bool checkNoSwizzle = true,
+        {bool checkNoConcat = true,
         bool noSvSim = false,
         bool noIverilog = false,
         bool dontDeleteTmpFiles = false}) async {
@@ -864,9 +864,9 @@ void main() {
 
       final vectors = passthroughVectors(mod.laOut.width);
 
-      if (checkNoSwizzle) {
-        expect(mod.dumpSystemVerilog().contains('swizzle'), false,
-            reason: 'Expected no swizzles but found one.');
+      if (checkNoConcat) {
+        expect(mod.dumpSystemVerilog().contains('concat'), false,
+            reason: 'Expected no concats but found one.');
       }
 
       await SimCompare.checkFunctionalVector(mod, vectors);
@@ -978,7 +978,7 @@ void main() {
     group('pack and unpack', () {
       test('3d', () async {
         final mod = PackAndUnpackPassthrough(LogicArray([3, 2, 2], 3));
-        await testArrayPassthrough(mod, checkNoSwizzle: false);
+        await testArrayPassthrough(mod, checkNoConcat: false);
       });
 
       testWithVerilator(
@@ -986,20 +986,20 @@ void main() {
           () => PackAndUnpackPassthrough(
               LogicArray([2, 2, 2], 3, numUnpackedDimensions: 2)), (mod) async {
         // unpacked array assignment not fully supported in iverilog
-        await testArrayPassthrough(mod, checkNoSwizzle: false, noSvSim: true);
+        await testArrayPassthrough(mod, checkNoConcat: false, noSvSim: true);
       });
     });
 
     group('pack and unpack with arrays', () {
       test('2d', () async {
         final mod = PackAndUnpackWithArraysPassthrough(LogicArray([3, 2], 3));
-        await testArrayPassthrough(mod, checkNoSwizzle: false);
+        await testArrayPassthrough(mod, checkNoConcat: false);
       });
 
       test('3d', () async {
         final mod =
             PackAndUnpackWithArraysPassthrough(LogicArray([3, 2, 2], 3));
-        await testArrayPassthrough(mod, checkNoSwizzle: false);
+        await testArrayPassthrough(mod, checkNoConcat: false);
       });
 
       testWithVerilator(
@@ -1008,7 +1008,7 @@ void main() {
               LogicArray([2, 2, 2], 3, numUnpackedDimensions: 2),
               intermediateUnpacked: 1), (mod) async {
         // unpacked array assignment not fully supported in iverilog
-        await testArrayPassthrough(mod, checkNoSwizzle: false, noSvSim: true);
+        await testArrayPassthrough(mod, checkNoConcat: false, noSvSim: true);
       });
     });
 
@@ -1062,7 +1062,7 @@ void main() {
     group('name collisions', () {
       test('3d', () async {
         final mod = ArrayNameConflicts(LogicArray([3, 2, 2], 3));
-        await testArrayPassthrough(mod, checkNoSwizzle: false);
+        await testArrayPassthrough(mod, checkNoConcat: false);
       });
 
       testWithVerilator(
@@ -1071,7 +1071,7 @@ void main() {
               LogicArray([2, 2, 2], 3, numUnpackedDimensions: 2),
               intermediateUnpacked: 1), (mod) async {
         // unpacked array assignment not fully supported in iverilog
-        await testArrayPassthrough(mod, checkNoSwizzle: false, noSvSim: true);
+        await testArrayPassthrough(mod, checkNoConcat: false, noSvSim: true);
       });
     });
 
@@ -1097,7 +1097,7 @@ void main() {
     group('fancy hierarchy', () {
       test('3d', () async {
         final mod = FancyArraysAndHierarchy(LogicArray([3, 2, 2], 3));
-        await testArrayPassthrough(mod, checkNoSwizzle: false);
+        await testArrayPassthrough(mod, checkNoConcat: false);
 
         final sv = mod.dumpSystemVerilog();
 
@@ -1111,7 +1111,7 @@ void main() {
               LogicArray([2, 2, 2], 3, numUnpackedDimensions: 2),
               intermediateUnpacked: 1), (mod) async {
         // unpacked array assignment not fully supported in iverilog
-        await testArrayPassthrough(mod, checkNoSwizzle: false, noSvSim: true);
+        await testArrayPassthrough(mod, checkNoConcat: false, noSvSim: true);
       });
     });
 
@@ -1129,7 +1129,7 @@ void main() {
 
     test('slice and dice', () async {
       final mod = RangeAndSliceArrModule(LogicArray([3, 3, 3], 8));
-      await testArrayPassthrough(mod, checkNoSwizzle: false);
+      await testArrayPassthrough(mod, checkNoConcat: false);
     });
 
     test('withset', () async {
@@ -1139,14 +1139,13 @@ void main() {
 
     test('withset offset', () async {
       final mod = WithSetArrayOffsetModule(LogicArray([2, 2], 8));
-      await testArrayPassthrough(mod, checkNoSwizzle: false);
+      await testArrayPassthrough(mod, checkNoConcat: false);
 
       final sv =
-          SvCleaner.removeSwizzleAnnotationComments(mod.dumpSystemVerilog());
+          SvCleaner.removeConcatAnnotationComments(mod.dumpSystemVerilog());
 
       // make sure we're reassigning both times it overlaps!
-      expect(
-          RegExp(r'assign laOut\[1\].*=.*swizzled').allMatches(sv).length, 2);
+      expect(RegExp(r'assign laOut\[1\].*=.*concatd').allMatches(sv).length, 2);
     });
   });
 
@@ -1179,7 +1178,7 @@ void main() {
         }
       }
       final vectors = [
-        Vector({'laIn': 0}, {'laOut': a.rswizzle()})
+        Vector({'laIn': 0}, {'laOut': a.rconcat()})
       ];
 
       await SimCompare.checkFunctionalVector(mod, vectors);

@@ -173,7 +173,7 @@ void main() {
 
     final sv = mod.dumpSystemVerilog();
 
-    expect(sv.contains('swizzle'), isFalse,
+    expect(sv.contains('concat'), isFalse,
         reason: 'Should not pack from instrumentation!');
   });
 

@@ -47,7 +47,7 @@ class NBitAdder extends Module {
 
     sumContainer.add(carry);
 
-    sum <= sumContainer.rswizzle().zeroExtend(sum.width);
+    sum <= sumContainer.rconcat().zeroExtend(sum.width);
   }
   Logic get sum => output('sum');
 }

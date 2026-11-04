@@ -11,11 +11,10 @@ import 'package:flutter/gestures.dart' show PointerDeviceKind, kSecondaryButton;
 import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:rohd_devtools_extension/rohd_devtools/models/signal_model.dart';
-import 'package:rohd_devtools_extension/rohd_devtools/models/tree_model.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/ui/signal_table.dart';
 import 'package:rohd_devtools_widgets/rohd_devtools_widgets.dart'
     show RohdSourceFormat, SignalValueFormat, SignalValueFormatRegistry;
+import 'package:rohd_hierarchy/rohd_hierarchy.dart';
 
 Future<void> _openContextMenu(WidgetTester tester, Finder finder) async {
   await tester.ensureVisible(finder);
@@ -29,7 +28,7 @@ Future<void> _openContextMenu(WidgetTester tester, Finder finder) async {
 }
 
 Widget _table({
-  required TreeModel module,
+  required HierarchyOccurrence module,
   String? searchTerm,
   bool inputSelected = true,
   bool outputSelected = true,
@@ -62,13 +61,13 @@ void main() {
   testWidgets(
     'performs top-level copy, send, source, and format menu actions',
     (tester) async {
-      final wide = SignalModel(
+      final wide = SignalOccurrence(
         name: 'wide',
         direction: 'output',
         value: "4'hf",
         width: 4,
       );
-      final module = TreeModel(
+      final module = HierarchyOccurrence(
         name: 'top',
         signals: [wide],
         children: const [],
@@ -131,7 +130,7 @@ void main() {
   testWidgets('shift-expands and collapses all nested typed fields', (
     tester,
   ) async {
-    final packet = SignalModel(
+    final packet = SignalOccurrence(
       name: 'packet',
       direction: 'input',
       value: "9'h101",
@@ -166,7 +165,7 @@ void main() {
         ],
       },
     );
-    final module = TreeModel(
+    final module = HierarchyOccurrence(
       name: 'typed',
       signals: [packet],
       children: const [],
@@ -210,27 +209,27 @@ void main() {
   testWidgets('filters regex and invalid expressions and evaluates fallbacks', (
     tester,
   ) async {
-    final module = TreeModel(
+    final module = HierarchyOccurrence(
       name: 'top',
       signals: [
-        SignalModel(
+        SignalOccurrence(
           name: 'alpha',
           direction: 'input',
           value: "1'b0",
           width: 1,
         ),
-        SignalModel(
+        SignalOccurrence(
           name: 'outbound',
           direction: 'output',
           value: '0xff',
           width: 8,
         ),
-        SignalModel(
+        SignalOccurrence(
           name: 'computed',
           direction: 'output',
           width: 4,
         ),
-        SignalModel(
+        SignalOccurrence(
           name: 'internalOnly',
           width: 1,
           value: "1'b1",
@@ -288,7 +287,7 @@ void main() {
 
   testWidgets('expands large nested fields and routes subfield source actions',
       (tester) async {
-    final packet = SignalModel(
+    final packet = SignalOccurrence(
       name: 'packet',
       direction: 'input',
       value: "10'h3ff",
@@ -313,7 +312,7 @@ void main() {
         ],
       },
     );
-    final module = TreeModel(
+    final module = HierarchyOccurrence(
       name: 'typed',
       signals: [packet],
       children: const [],

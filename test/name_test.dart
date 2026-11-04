@@ -21,7 +21,7 @@ class TopModule extends Module {
 
     // note: order matters
     SpeciallyNamedModule(
-      [a, a].swizzle(),
+      [a, a].concat(),
       reserveDefName: causeDefConflict,
       reserveInstanceName: causeInstConflict,
     );

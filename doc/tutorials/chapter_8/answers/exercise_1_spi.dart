@@ -104,7 +104,7 @@ class Peripheral extends Module {
 
     Sequential(sck, [
       If(shiftRegIntF.cs, then: [
-        data < [data.slice(regWidth - 2, 0), sdi].swizzle()
+        data < [data.slice(regWidth - 2, 0), sdi].concat()
       ], orElse: [
         data < 0
       ])

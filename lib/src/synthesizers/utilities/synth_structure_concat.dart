@@ -10,10 +10,10 @@
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 
-/// A [Swizzle] used by synthesis backends to explicitly assemble a
+/// A [Concat] used by synthesis backends to explicitly assemble a
 /// [LogicStructure] from its leaf elements.
 @internal
-class SynthStructureConcat extends Swizzle {
+class SynthStructureConcat extends Concat {
   /// The canonical base name for synthesized structure concat operations.
   static const String operationName = 'struct_concat';
 

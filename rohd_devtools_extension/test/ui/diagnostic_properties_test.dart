@@ -11,9 +11,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/cubit/snapshot_cubit.dart';
-import 'package:rohd_devtools_extension/rohd_devtools/models/tree_model.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/ui/ui.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/view/tree_structure_page.dart';
+import 'package:rohd_hierarchy/rohd_hierarchy.dart';
 
 void main() {
   test('public diagnostic objects expose at least one property', () {
@@ -21,7 +21,7 @@ void main() {
     final dtdUriController = TextEditingController();
     addTearDown(vmServiceUriController.dispose);
     addTearDown(dtdUriController.dispose);
-    final module = TreeModel(
+    final module = HierarchyOccurrence(
       name: 'top',
       signals: const [],
       children: const [],

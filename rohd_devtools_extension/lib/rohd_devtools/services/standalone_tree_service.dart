@@ -9,8 +9,8 @@
 
 import 'dart:convert';
 
-import 'package:rohd_devtools_extension/rohd_devtools/models/tree_model.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/services/design_data_adapter.dart';
+import 'package:rohd_hierarchy/rohd_hierarchy.dart';
 import 'package:vm_service/vm_service.dart';
 
 /// Tree service that uses VmService directly without devtools_app_shared.
@@ -35,7 +35,7 @@ class StandaloneTreeService {
   StandaloneTreeService({required this.vmService, required this.isolateId});
 
   /// Evaluate the module tree from the connected ROHD application.
-  Future<TreeModel?> evalModuleTree() async {
+  Future<HierarchyOccurrence?> evalModuleTree() async {
     try {
       // Find the ROHD library in the isolate
       final isolate = await vmService.getIsolate(isolateId);
@@ -72,7 +72,7 @@ class StandaloneTreeService {
   }
 
   /// Fallback: try to evaluate on the isolate directly
-  Future<TreeModel?> _evalOnIsolate() async {
+  Future<HierarchyOccurrence?> _evalOnIsolate() async {
     try {
       // Get the root library and evaluate
       final isolate = await vmService.getIsolate(isolateId);
@@ -102,7 +102,7 @@ class StandaloneTreeService {
     }
   }
 
-  TreeModel? _parseResult(Response result) {
+  HierarchyOccurrence? _parseResult(Response result) {
     if (result is InstanceRef) {
       final valueStr = result.valueAsString;
       if (valueStr == null) {
@@ -131,5 +131,5 @@ class StandaloneTreeService {
   }
 
   /// Refresh the module tree
-  Future<TreeModel?> refreshModuleTree() => evalModuleTree();
+  Future<HierarchyOccurrence?> refreshModuleTree() => evalModuleTree();
 }

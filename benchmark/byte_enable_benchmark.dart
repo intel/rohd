@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2023 Intel Corporation
+// Copyright (C) 2022-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // byte_enable_benchmark.dart
@@ -36,7 +36,7 @@ class ByteEnableBenchmark extends BenchmarkBase {
               select[index],
               original.getRange(index * 8, (index + 1) * 8),
               Const(0, width: 8),
-            )).swizzle();
+            )).concat();
   }
 
   @override

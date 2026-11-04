@@ -105,7 +105,7 @@ class CaseModule extends Module {
 
     Combinational([
       Case(
-          [b, a].swizzle(),
+          [b, a].concat(),
           [
             CaseItem(Const(LogicValue.ofString('01')), [c < 1, d < 0]),
             CaseItem(Const(LogicValue.ofString('10')), [c < 1, d < 0])
@@ -113,7 +113,7 @@ class CaseModule extends Module {
           defaultItem: [c < 0, d < 1],
           conditionalType: ConditionalType.unique),
       CaseZ(
-          [b, a].rswizzle(),
+          [b, a].rconcat(),
           [
             CaseItem(Const(LogicValue.ofString('1z')), [e < 1])
           ],
@@ -132,6 +132,7 @@ class _CaseItemHarness extends Module {
     required bool useCaseZ,
     Logic? dynamicItem,
     LogicValue? literalItem,
+    bool exactMatch = false,
   })  : assert(
           (dynamicItem == null) != (literalItem == null),
           'Provide exactly one dynamic or literal pattern.',
@@ -156,8 +157,25 @@ class _CaseItemHarness extends Module {
               CaseItem(pattern, [result < 1]),
             ],
             defaultItem: [result < 0],
+            exactMatch: exactMatch,
           );
     Combinational([caseBlock]);
+  }
+}
+
+class _CaseShorthandHarness extends Module {
+  _CaseShorthandHarness(Logic selector, Logic item)
+      : super(name: 'exact_case_shorthand') {
+    final input = addInput('selector', selector, width: 2);
+    final pattern = addInput('item', item, width: 2);
+    addOutput('result') <=
+        cases(
+          input,
+          {pattern: 1},
+          width: 1,
+          defaultValue: 0,
+          exactMatch: true,
+        );
   }
 }
 
@@ -550,6 +568,40 @@ void main() {
           LogicValue.x,
           reason: 'pattern=$pattern',
         );
+      }
+    });
+
+    test('exact Case and cases match four-state dynamic patterns', () async {
+      for (final shorthand in [false, true]) {
+        final selector = Logic(width: 2);
+        final item = Logic(width: 2);
+        final Module dut;
+        if (shorthand) {
+          dut = _CaseShorthandHarness(selector, item);
+        } else {
+          dut = _CaseItemHarness(
+            selector,
+            dynamicItem: item,
+            useCaseZ: false,
+            exactMatch: true,
+          );
+        }
+        await dut.build();
+        final values = [
+          for (final bits in ['00', '01', '0x', '0z', 'xx', 'zz'])
+            LogicValue.ofString(bits),
+        ];
+        final vectors = [
+          for (final expression in values)
+            for (final pattern in values)
+              Vector(
+                {'selector': expression, 'item': pattern},
+                {'result': expression == pattern ? 1 : 0},
+              ),
+        ];
+        await SimCompare.checkFunctionalVector(dut, vectors);
+        SimCompare.checkIverilogVector(dut, vectors);
+        await Simulator.reset();
       }
     });
 

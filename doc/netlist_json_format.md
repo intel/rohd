@@ -147,7 +147,7 @@ an optional **ROHD-only** `logic_type` key describing that shape:
 - `LogicStructure`: `{"typeName": "ClassName", "fields": [...]}` where each
   field is `{"name": ..., "width": ..., "bits": [...]?}` for a leaf field,
   or `{"name": ..., "type": {...}, "bits": [...]?}` for a nested structure/
-  array field. Fields are listed LSB-to-MSB (matching `rswizzle` /
+  array field. Fields are listed LSB-to-MSB (matching `rconcat` /
   `elements[0]` = lowest bits). The per-field `bits` key (a slice of the
   parent's bit-ID list) is only included when the caller supplied bit IDs,
   which lets a consumer identify which wire IDs belong to which field even

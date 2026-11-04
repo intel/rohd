@@ -227,11 +227,9 @@ The `Naming.unpreferredName` function will modify a signal name to indicate to d
 
 ### Migrating legacy generation APIs
 
-`generateSynth` and `WaveDumper` remain available as deprecated compatibility
-APIs because their replacements were introduced in `0.6.11`. Prefer
+In 0.7.0, `generateSynth` and `WaveDumper` were removed. Use
 `dumpSystemVerilog`, `SystemVerilogService`, `dumpWaves`, and
-`WaveformService` for new code. Their deprecation does not imply removal in
-this `0.7.0` release.
+`WaveformService` instead.
 
 `ModuleService` is the shared API for module-scoped generation, capture, and
 inspection. Services can register with `ModuleServices` for lookup by DevTools

@@ -11,7 +11,7 @@ import 'package:rohd/rohd.dart';
 Case truthTableCase(
         Logic a, Logic b, Logic carryIn, Logic sum, Logic carryOut) =>
     Case(
-      [a, b, carryIn].swizzle(),
+      [a, b, carryIn].concat(),
       [
         // Mistake 1. The width of the Const is missing, remember that the width
         // of the constant should exists when the value have width larger

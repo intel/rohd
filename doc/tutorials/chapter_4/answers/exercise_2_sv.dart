@@ -49,7 +49,7 @@ class NBitSubtractor extends Module {
     }
     diffList.add(borrow);
 
-    diff <= diffList.rswizzle().zeroExtend(diff.width);
+    diff <= diffList.rconcat().zeroExtend(diff.width);
   }
 }
 

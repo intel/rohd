@@ -78,7 +78,7 @@ void main() {
 
     expect(sv, contains('assign out = data;'), reason: sv);
     expect(sv, isNot(contains('intermediate')), reason: sv);
-    expect(sv, isNot(contains('// swizzle')), reason: sv);
+    expect(sv, isNot(contains('// concat')), reason: sv);
 
     final vectors = [
       Vector({'data': 0x00}, {'out': 0x00}),
@@ -96,7 +96,7 @@ void main() {
     final sv = module.dumpSystemVerilog();
 
     expect(sv, isNot(contains('assign out = data;')), reason: sv);
-    expect(sv, contains('// swizzle'), reason: sv);
+    expect(sv, contains('// concat'), reason: sv);
 
     final vectors = [
       Vector({'data': 0x00}, {'out': 0x0}),
@@ -114,7 +114,7 @@ void main() {
     final sv = module.dumpSystemVerilog();
 
     expect(sv, isNot(contains('assign out = data;')), reason: sv);
-    expect(sv, contains('// swizzle'), reason: sv);
+    expect(sv, contains('// concat'), reason: sv);
 
     final vectors = [
       Vector({'data': 0x0}, {'out': 0x0}),

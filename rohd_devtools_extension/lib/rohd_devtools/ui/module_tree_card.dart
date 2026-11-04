@@ -12,13 +12,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_simple_treeview/flutter_simple_treeview.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/cubit/cubits.dart';
-import 'package:rohd_devtools_extension/rohd_devtools/models/tree_model.dart';
 import 'package:rohd_hierarchy/rohd_hierarchy.dart';
 
 /// Widget that displays the module tree in a card.
 class ModuleTreeCard extends StatefulWidget {
   /// The module tree to display.
-  final TreeModel futureModuleTree;
+  final HierarchyOccurrence futureModuleTree;
 
   /// Creates a [ModuleTreeCard] with the given module tree.
   const ModuleTreeCard({required this.futureModuleTree, super.key});
@@ -30,7 +29,8 @@ class ModuleTreeCard extends StatefulWidget {
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
     properties.add(
-      DiagnosticsProperty<TreeModel>('futureModuleTree', futureModuleTree),
+      DiagnosticsProperty<HierarchyOccurrence>(
+          'futureModuleTree', futureModuleTree),
     );
   }
 }
@@ -72,10 +72,10 @@ class _ModuleTreeCardState extends State<ModuleTreeCard> {
 /// Stateful widget that builds the tree and manages tree controller.
 /// Manages the tree controller to keep nodes collapsed by default.
 class _ModuleTreeView extends StatefulWidget {
-  final TreeModel moduleTree;
+  final HierarchyOccurrence moduleTree;
   final String? treeSearchTerm;
-  final TreeModel? selectedModule;
-  final ValueChanged<TreeModel> onModuleSelected;
+  final HierarchyOccurrence? selectedModule;
+  final ValueChanged<HierarchyOccurrence> onModuleSelected;
 
   const _ModuleTreeView({
     required this.moduleTree,
@@ -91,11 +91,12 @@ class _ModuleTreeView extends StatefulWidget {
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
     properties
-      ..add(DiagnosticsProperty<TreeModel>('moduleTree', moduleTree))
+      ..add(DiagnosticsProperty<HierarchyOccurrence>('moduleTree', moduleTree))
       ..add(StringProperty('treeSearchTerm', treeSearchTerm))
-      ..add(DiagnosticsProperty<TreeModel?>('selectedModule', selectedModule))
+      ..add(DiagnosticsProperty<HierarchyOccurrence?>(
+          'selectedModule', selectedModule))
       ..add(
-        ObjectFlagProperty<ValueChanged<TreeModel>>.has(
+        ObjectFlagProperty<ValueChanged<HierarchyOccurrence>>.has(
           'onModuleSelected',
           onModuleSelected,
         ),
@@ -117,16 +118,17 @@ class _ModuleTreeViewState extends State<_ModuleTreeView> {
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
     properties
-      ..add(DiagnosticsProperty<TreeModel>('moduleTree', widget.moduleTree))
+      ..add(DiagnosticsProperty<HierarchyOccurrence>(
+          'moduleTree', widget.moduleTree))
       ..add(StringProperty('treeSearchTerm', widget.treeSearchTerm))
       ..add(
-        DiagnosticsProperty<TreeModel?>(
+        DiagnosticsProperty<HierarchyOccurrence?>(
           'selectedModule',
           widget.selectedModule,
         ),
       )
       ..add(
-        ObjectFlagProperty<ValueChanged<TreeModel>>.has(
+        ObjectFlagProperty<ValueChanged<HierarchyOccurrence>>.has(
           'onModuleSelected',
           widget.onModuleSelected,
         ),
@@ -143,7 +145,7 @@ class _ModuleTreeViewState extends State<_ModuleTreeView> {
     }
   }
 
-  TreeNode? _buildNode(TreeModel module) {
+  TreeNode? _buildNode(HierarchyOccurrence module) {
     // If there's a search term, ensure that either this node or a descendant
     // node matches it.
     if (widget.treeSearchTerm != null &&
@@ -169,7 +171,7 @@ class _ModuleTreeViewState extends State<_ModuleTreeView> {
     );
   }
 
-  List<TreeNode> _buildChildrenNodes(TreeModel treeModule) {
+  List<TreeNode> _buildChildrenNodes(HierarchyOccurrence treeModule) {
     final childrenNodes = <TreeNode>[];
     final subModules = treeModule.children;
     for (final module in subModules) {
@@ -196,7 +198,7 @@ class _ModuleTreeViewState extends State<_ModuleTreeView> {
 
 /// Stateless widget for node content to avoid rebuilds.
 class _NodeContent extends StatelessWidget {
-  final TreeModel module;
+  final HierarchyOccurrence module;
   final bool isSelected;
 
   const _NodeContent({required this.module, required this.isSelected});
@@ -205,7 +207,7 @@ class _NodeContent extends StatelessWidget {
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
     properties
-      ..add(DiagnosticsProperty<TreeModel>('module', module))
+      ..add(DiagnosticsProperty<HierarchyOccurrence>('module', module))
       ..add(
         FlagProperty(
           'isSelected',

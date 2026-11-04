@@ -139,7 +139,7 @@ class NetISubMod extends Module {
     intf = NetIntf()..connectIO(this, intf, inOutTags: [drive]);
 
     final internal = LogicNet(name: 'internal', width: 8);
-    internal <= [norm.getRange(0, 4), net.getRange(0, 4)].swizzle();
+    internal <= [norm.getRange(0, 4), net.getRange(0, 4)].concat();
 
     intf.getPorts([drive]).values.first <= internal;
   }

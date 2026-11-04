@@ -14,8 +14,6 @@ import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:rohd/rohd.dart' hide State;
 import 'package:rohd_devtools_extension/rohd_devtools/cubit/cubits.dart';
-import 'package:rohd_devtools_extension/rohd_devtools/models/signal_model.dart';
-import 'package:rohd_devtools_extension/rohd_devtools/models/tree_model.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/utils/regex_utils.dart';
 import 'package:rohd_devtools_widgets/rohd_devtools_widgets.dart'
     show
@@ -43,7 +41,7 @@ import 'package:rohd_hierarchy/rohd_hierarchy.dart';
 /// Widget that displays a table of signals for a selected module.
 class SignalTable extends StatefulWidget {
   /// The selected module whose signals are to be displayed.
-  final TreeModel selectedModule;
+  final HierarchyOccurrence selectedModule;
 
   /// The search term for filtering signals.
   final String? searchTerm;
@@ -102,7 +100,8 @@ class SignalTable extends StatefulWidget {
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
     properties
-      ..add(DiagnosticsProperty<TreeModel>('selectedModule', selectedModule))
+      ..add(DiagnosticsProperty<HierarchyOccurrence>(
+          'selectedModule', selectedModule))
       ..add(StringProperty('searchTerm', searchTerm))
       ..add(DiagnosticsProperty<bool>('inputSelectedVal', inputSelectedVal))
       ..add(DiagnosticsProperty<bool>('outputSelectedVal', outputSelectedVal))
@@ -235,8 +234,8 @@ class _SignalTableState extends State<SignalTable> {
   /// Supports regex patterns (auto-detected by metacharacter presence).
   /// Plain text uses case-insensitive prefix matching on name and
   /// path(); regex uses `hasMatch` across all three fields.
-  static List<SignalModel> _filterSignals(
-    List<SignalModel> signals,
+  static List<SignalOccurrence> _filterSignals(
+    List<SignalOccurrence> signals,
     String searchTerm,
   ) {
     if (searchTerm.isEmpty) {
@@ -381,7 +380,7 @@ class _SignalTableState extends State<SignalTable> {
   }
 
   /// Look up the display value for a signal (snapshot or live).
-  String? _lookupValue(SignalModel signal) {
+  String? _lookupValue(SignalOccurrence signal) {
     final snapshotData = widget.snapshot;
     if (snapshotData != null) {
       final ss = snapshotData.getSignal(signal.path()) ??
@@ -394,15 +393,15 @@ class _SignalTableState extends State<SignalTable> {
   }
 
   /// Collect filtered signals as a single flat list.
-  List<SignalModel> _collectSignals(
-    TreeModel module, {
+  List<SignalOccurrence> _collectSignals(
+    HierarchyOccurrence module, {
     required bool inputSelected,
     required bool outputSelected,
     required bool inoutSelected,
     bool internalsSelected = false,
     String? searchTerm,
   }) {
-    final result = <SignalModel>[];
+    final result = <SignalOccurrence>[];
     if (inputSelected) {
       result.addAll(_filterSignals(module.inputs, searchTerm ?? ''));
     }
@@ -436,7 +435,7 @@ class _SignalTableState extends State<SignalTable> {
     return result;
   }
 
-  TableRow _generateSignalRow(int index, List<SignalModel> allRows) {
+  TableRow _generateSignalRow(int index, List<SignalOccurrence> allRows) {
     final signal = allRows[index];
     final isSelected = _selectedIndices.contains(index);
 
@@ -634,7 +633,7 @@ class _SignalTableState extends State<SignalTable> {
   ///
   /// Only shows one hierarchy level at a time. Sub-fields that have children
   /// get their own expand caret — clicking it expands the next level.
-  List<TableRow> _generateSubFieldRows(SignalModel signal) {
+  List<TableRow> _generateSubFieldRows(SignalOccurrence signal) {
     final logicType = signal.logicType;
     if (logicType == null) {
       return const [];
@@ -1060,7 +1059,7 @@ class _SignalTableState extends State<SignalTable> {
   }
 
   /// Expand a top-level signal and all its sub-field descendants.
-  void _expandFullyFromSignal(SignalModel signal) {
+  void _expandFullyFromSignal(SignalOccurrence signal) {
     final logicType = signal.logicType;
     if (logicType == null) {
       return;
@@ -1100,7 +1099,7 @@ class _SignalTableState extends State<SignalTable> {
   /// immediately.
   Future<void> _showExpandPopup(
     BuildContext context, {
-    required SignalModel signal,
+    required SignalOccurrence signal,
     required Offset tapPosition,
   }) async {
     final logicType = signal.logicType;

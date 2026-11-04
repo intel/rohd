@@ -84,7 +84,7 @@ If.block();
 To build our shift register, we want to say something like:
 
 1. IF reset signal, then data will be set to 0
-2. ELSE swizzle the sin with existing value
+2. ELSE concat the sin with existing value
 3. SET output port to the data
 
 Our `ShiftRegister` module will be look like this instead.
@@ -108,7 +108,7 @@ class ShiftRegister extends Module {
       If.block([
         Iff(reset, [data < 0]),
         Else([
-          data < [data.slice(regWidth - 2, 0), sin].swizzle() 
+          data < [data.slice(regWidth - 2, 0), sin].concat()
         ])
       ]),
     ]);

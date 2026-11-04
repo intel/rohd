@@ -8,22 +8,21 @@
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:rohd_devtools_extension/rohd_devtools/models/signal_model.dart';
-import 'package:rohd_devtools_extension/rohd_devtools/models/tree_model.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/services/design_data_adapter.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/ui/ui.dart';
+import 'package:rohd_hierarchy/rohd_hierarchy.dart';
 
 void main() {
-  group('SignalModel', () {
+  group('SignalOccurrence', () {
     test('round trips through the legacy map format', () {
-      final signal = SignalModel(
+      final signal = SignalOccurrence(
         name: 'accumulator',
         direction: 'Output',
         value: "8'h2a",
         width: 8,
       );
 
-      final restored = SignalModel.fromMap(signal.toMap());
+      final restored = SignalOccurrence.fromMap(signal.toMap());
 
       expect(restored.name, signal.name);
       expect(restored.direction, signal.direction);
@@ -32,7 +31,7 @@ void main() {
     });
 
     test('exposes occurrence properties', () {
-      final signal = SignalModel(
+      final signal = SignalOccurrence(
         name: 'accumulator',
         direction: 'output',
         value: "8'h2a",
@@ -46,12 +45,12 @@ void main() {
     });
   });
 
-  group('TreeModel', () {
+  group('HierarchyOccurrence', () {
     test('supports the legacy directional constructor', () {
-      final tree = TreeModel(
+      final tree = HierarchyOccurrence(
         name: 'top',
         inputs: [
-          SignalModel(
+          SignalOccurrence(
             name: 'clock',
             direction: 'Input',
             value: "1'h0",
@@ -60,7 +59,7 @@ void main() {
         ],
         outputs: const [],
         inouts: const [],
-        subModules: [TreeModel(name: 'child')],
+        subModules: [HierarchyOccurrence(name: 'child')],
       );
 
       expect(tree.inputs.single.name, 'clock');
@@ -68,7 +67,7 @@ void main() {
     });
 
     test('parses the legacy JSON format', () {
-      final tree = TreeModel.fromJson({
+      final tree = HierarchyOccurrence.fromJson({
         'name': 'top',
         'inputs': {
           'clock': {'value': "1'h0", 'width': 1},
@@ -111,24 +110,25 @@ void main() {
     });
 
     test('groups signals by direction and exposes child occurrences', () {
-      final tree = TreeModel(
+      final tree = HierarchyOccurrence(
         name: 'top',
         signals: [
-          SignalModel(
+          SignalOccurrence(
             name: 'clock',
             direction: 'input',
             value: "1'h0",
             width: 1,
           ),
-          SignalModel(
+          SignalOccurrence(
             name: 'result',
             direction: 'output',
             value: "8'h2a",
             width: 8,
           ),
-          SignalModel(name: 'bus', direction: 'inout', value: "4'hf", width: 4),
+          SignalOccurrence(
+              name: 'bus', direction: 'inout', value: "4'hf", width: 4),
         ],
-        children: [TreeModel(name: 'child')],
+        children: [HierarchyOccurrence(name: 'child')],
       );
 
       expect(tree.name, 'top');
@@ -139,9 +139,11 @@ void main() {
     });
 
     test('uses no inout signals when none are present', () {
-      final tree = TreeModel(
+      final tree = HierarchyOccurrence(
         name: 'leaf',
-        signals: [SignalModel(name: 'clock', direction: 'input', width: 1)],
+        signals: [
+          SignalOccurrence(name: 'clock', direction: 'input', width: 1)
+        ],
       );
 
       expect(tree.inouts, isEmpty);

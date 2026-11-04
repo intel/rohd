@@ -130,7 +130,7 @@ class ModWithUselessWireMods extends Module {
     final b = addInput('b', Logic(width: 8), width: 8);
 
     // none of these should show up, unused stuff
-    [a, b].swizzle();
+    [a, b].concat();
     b.replicate(3);
     a.getRange(2, 6);
   }
@@ -396,8 +396,8 @@ class SubSv extends Module with SystemVerilog {
   List<String> get expressionlessInputs =>
       banExpressions ? inputs.keys.toList() : const [];
 
-  SubSv(List<Logic> toSwizzle, {this.banExpressions = false}) {
-    addInput('fer_swizzle', toSwizzle.swizzle(), width: toSwizzle.length);
+  SubSv(List<Logic> toConcat, {this.banExpressions = false}) {
+    addInput('fer_concat', toConcat.concat(), width: toConcat.length);
   }
 
   @override
@@ -405,7 +405,7 @@ class SubSv extends Module with SystemVerilog {
           Map<String, String> ports) =>
       '''
 logic my_fancy_new_signal; // $instanceName (of type $instanceType)
-assign my_fancy_new_signal <= ^${ports['fer_swizzle']};
+assign my_fancy_new_signal <= ^${ports['fer_concat']};
 ''';
 }
 
@@ -503,7 +503,7 @@ class ReversedPackedArrayToLogic extends Module {
       dimensions: array.dimensions,
       elementWidth: array.elementWidth,
     );
-    addOutput('out', width: array.width) <= array.elements.swizzle();
+    addOutput('out', width: array.width) <= array.elements.concat();
   }
 }
 
@@ -842,10 +842,10 @@ void main() {
             TopCustomSvWrap(Logic(), Logic(), banExpressions: banExpressions);
         await mod.build();
         final sv =
-            SvCleaner.removeSwizzleAnnotationComments(mod.dumpSystemVerilog());
+            SvCleaner.removeConcatAnnotationComments(mod.dumpSystemVerilog());
 
         if (banExpressions) {
-          expect(sv, contains('assign my_fancy_new_signal <= ^fer_swizzle;'));
+          expect(sv, contains('assign my_fancy_new_signal <= ^fer_concat;'));
         } else {
           expect(sv, contains('assign my_fancy_new_signal <= ^({a,b});'));
         }
@@ -895,7 +895,7 @@ void main() {
 
     final sv = mod.dumpSystemVerilog();
 
-    expect(sv, isNot(contains('swizzle')));
+    expect(sv, isNot(contains('concat')));
     expect(sv, isNot(contains('replicate')));
     expect(sv, isNot(contains('subset')));
 
@@ -934,7 +934,7 @@ void main() {
     final sv = mod.dumpSystemVerilog();
 
     expect(sv, contains('assign out = array;'), reason: sv);
-    expect(sv, isNot(contains('// swizzle')), reason: sv);
+    expect(sv, isNot(contains('// concat')), reason: sv);
 
     final vectors = [
       Vector({'array': 0x00}, {'out': 0x00}),
@@ -974,13 +974,13 @@ void main() {
     SimCompare.checkIverilogVector(mod, vectors);
   });
 
-  test('reordered packed array assignment retains its swizzle', () async {
+  test('reordered packed array assignment retains its concat', () async {
     final mod = ReversedPackedArrayToLogic(LogicArray([4], 2, name: 'array'));
     await mod.build();
     final sv = mod.dumpSystemVerilog();
 
     expect(sv, isNot(contains('assign out = array;')), reason: sv);
-    expect(sv, contains('// swizzle'), reason: sv);
+    expect(sv, contains('// concat'), reason: sv);
   });
 
   group('connected ports and pruning', () {
@@ -1084,7 +1084,7 @@ void main() {
             'outArrTopC': [
               LogicValue.ofInt(3, 24),
               LogicValue.of('110011').replicate(4)
-            ].swizzle(),
+            ].concat(),
             'outStructTopA': LogicValue.of('110011110011'),
             'outStructTopB': LogicValue.of('0011'),
             'outStructTopC': [
@@ -1093,7 +1093,7 @@ void main() {
                 12,
               ),
               LogicValue.of('110011110011')
-            ].swizzle(),
+            ].concat(),
             'outTopIoA': '10',
             'outTopIoArrA': LogicValue.of('110011').replicate(2),
             'outTopIoStructA': LogicValue.of('101011101010')

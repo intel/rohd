@@ -35,7 +35,7 @@ class _ArrayElementInputParent extends Module {
     );
     final low = _ArrayInputLeaf(values.elements[0], name: 'low');
     final high = _ArrayInputLeaf(values.elements[1], name: 'high');
-    addOutput('observed', width: values.width) <= [high.y, low.y].swizzle();
+    addOutput('observed', width: values.width) <= [high.y, low.y].concat();
   }
 }
 
@@ -193,7 +193,7 @@ class _StructuredArrayElementInputParent extends Module {
     );
     final low = _ArrayInputLeaf(values.at([0]).data, name: 'low');
     final high = _ArrayInputLeaf(values.at([1]).data, name: 'high');
-    addOutput('observed', width: values.width) <= [high.y, low.y].swizzle();
+    addOutput('observed', width: values.width) <= [high.y, low.y].concat();
   }
 }
 
@@ -208,7 +208,7 @@ class _NestedArrayElementInputParent extends Module {
     );
     final low = _ArrayInputLeaf(values.elements[0].elements[1], name: 'low');
     final high = _ArrayInputLeaf(values.elements[1].elements[0], name: 'high');
-    addOutput('observed', width: 16) <= [high.y, low.y].swizzle();
+    addOutput('observed', width: 16) <= [high.y, low.y].concat();
   }
 }
 
@@ -219,7 +219,7 @@ class _PackedSelectionInputParent extends Module {
     final low = _ArrayInputLeaf(data.getRange(0, 8), name: 'low');
     final high = _ArrayInputLeaf(data.getRange(8, 16), name: 'high');
     final msb = _ArrayInputLeaf(data.getRange(15, 16), name: 'msb');
-    addOutput('observed', width: data.width) <= [high.y, low.y].swizzle();
+    addOutput('observed', width: data.width) <= [high.y, low.y].concat();
     addOutput('observedMsb') <= msb.y;
   }
 }

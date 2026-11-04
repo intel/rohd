@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2023 Intel Corporation
+// Copyright (C) 2022-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // trace_bounce_test.dart
@@ -32,7 +32,7 @@ class SubModule extends Module {
     c <= b;
     d <= (Logic()..gets(b));
     e <= ~b;
-    bundle <= [c, d, e].swizzle();
+    bundle <= [c, d, e].concat();
   }
 }
 

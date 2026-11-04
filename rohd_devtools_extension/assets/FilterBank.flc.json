@@ -9,7 +9,7 @@
     "example/filter_bank/mac_unit.dart",
     "example/filter_bank/coeff_bank.dart",
     ".dart_tool/../lib/src/finite_state_machine.dart",
-    ".dart_tool/../lib/src/swizzle.dart"
+    ".dart_tool/../lib/src/concat.dart"
   ],
   "modules": {
     "FilterBank": {
@@ -795,7 +795,7 @@
             [
               "8:23:44",
               "0'h0~const_0",
-              "*swizzle@375:34"
+              "*concat@375:34"
             ]
           ],
           [
@@ -811,7 +811,7 @@
         ]
       ]
     },
-    "Swizzle": {
+    "Concat": {
       "tree": [
         [
           "0:189:24",
@@ -821,7 +821,7 @@
               "8:23:44",
               "_in0",
               "_in1",
-              "_swizzled"
+              "_concatd"
             ]
           ]
         ]

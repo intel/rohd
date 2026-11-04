@@ -37,7 +37,7 @@ Logic nBitAdder(Logic a, Logic b) {
 
   sum.add(carry);
 
-  return sum.rswizzle();
+  return sum.rconcat();
 }
 
 class FullAdderResult {

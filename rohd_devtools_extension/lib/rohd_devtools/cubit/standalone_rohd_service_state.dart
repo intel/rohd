@@ -26,7 +26,7 @@ class StandaloneRohdServiceLoading extends StandaloneRohdServiceState {}
 /// Loaded state when the module tree has been successfully evaluated.
 class StandaloneRohdServiceLoaded extends StandaloneRohdServiceState {
   /// The evaluated module tree model.
-  final TreeModel? treeModel;
+  final HierarchyOccurrence? treeModel;
 
   /// Constructor for [StandaloneRohdServiceLoaded].
   const StandaloneRohdServiceLoaded(this.treeModel);

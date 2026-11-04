@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2023 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // filled_logic_value.dart
@@ -330,7 +330,7 @@ class _FilledLogicValue extends LogicValue {
     return [
       getRange(0, width - shamt),
       _FilledLogicValue(_LogicValueEnum.zero, shamt),
-    ].swizzle();
+    ].concat();
   }
 
   @override
@@ -342,7 +342,7 @@ class _FilledLogicValue extends LogicValue {
     return [
       _FilledLogicValue(_LogicValueEnum.zero, shamt),
       _getRange(shamt, width),
-    ].swizzle();
+    ].concat();
   }
 
   @override
@@ -351,7 +351,7 @@ class _FilledLogicValue extends LogicValue {
       : [
           _FilledLogicValue(_LogicValueEnum.x, shamt),
           _getRange(shamt, width),
-        ].swizzle();
+        ].concat();
 
   @override
   BigInt get _bigIntInvalid =>

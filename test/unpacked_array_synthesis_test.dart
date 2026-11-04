@@ -20,7 +20,7 @@ class UnpackedConsumer extends Module {
         elementWidth: source.elementWidth,
         numUnpackedDimensions: source.numUnpackedDimensions);
     addOutput('observed', width: array.width) <=
-        array.leafElements.toList().rswizzle();
+        array.leafElements.toList().rconcat();
   }
 }
 
@@ -101,7 +101,7 @@ class _ParentArrayElementsToChildren extends Module {
     );
     final low = _ArrayElementConsumer(values.elements[0], name: 'low');
     final high = _ArrayElementConsumer(values.elements[1], name: 'high');
-    addOutput('observed', width: 2) <= [high.y, low.y].swizzle();
+    addOutput('observed', width: 2) <= [high.y, low.y].concat();
   }
 }
 

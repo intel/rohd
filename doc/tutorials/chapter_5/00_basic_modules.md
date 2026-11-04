@@ -211,7 +211,7 @@ class NBitAdder extends Module {
     sum.add(carry);
   }
 
-  LogicValue get sumRes => sum.rswizzle().value;
+  LogicValue get sumRes => sum.rconcat().value;
 }
 ```
 

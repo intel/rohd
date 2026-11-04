@@ -102,7 +102,7 @@ void main() {
       );
     });
 
-    test('evaluates arithmetic, shifts, logical, bus, and swizzle operations',
+    test('evaluates arithmetic, shifts, logical, bus, and concat operations',
         () {
       expect(
         evalOp('add', [_value(3, 4), _value(2, 4)], 4, const {}),

@@ -33,7 +33,7 @@ class ShiftRegister extends Module {
       If.block([
         Iff(reset, [data < 0]),
         Else([
-          data < [data.slice(regWidth - 2, 0), sin].swizzle() // left shift
+          data < [data.slice(regWidth - 2, 0), sin].concat() // left shift
         ])
       ]),
     ]);

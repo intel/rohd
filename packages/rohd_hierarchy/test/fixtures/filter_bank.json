@@ -629,7 +629,7 @@
             "_out45_nextState": "output"
           }
         },
-        "swizzle_1": {
+        "concat_1": {
           "type": "$buf",
           "port_directions": {
             "A": "input",
