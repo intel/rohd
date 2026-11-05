@@ -83,23 +83,12 @@ extension PairInterfaceSplit<InterfaceType extends PairInterface>
 /// It can be either directly used for simple scenarios, or extended for more
 /// complex situations.
 class PairInterface extends Interface<PairDirection> {
-  /// A function that modifies all port names during connection.
-  @Deprecated(
-      'Use `uniquify` when connecting or adding sub interfaces instead.')
-  String Function(String original)? modify;
-
   /// Constructs an instance of a [PairInterface] with the specified ports.
-  ///
-  /// The deprecated `modify` callback is composed before any connection-time
-  /// `uniquify` callback.
   PairInterface({
     List<Logic>? portsFromConsumer,
     List<Logic>? portsFromProvider,
     List<Logic>? sharedInputPorts,
     List<Logic>? commonInOutPorts,
-    @Deprecated(
-        'Use `uniquify` when connecting or adding sub interfaces instead.')
-    this.modify,
   }) {
     if (portsFromConsumer != null) {
       setPorts(portsFromConsumer, [PairDirection.fromConsumer]);
@@ -114,22 +103,6 @@ class PairInterface extends Interface<PairDirection> {
       setPorts(commonInOutPorts, [PairDirection.commonInOuts]);
     }
   }
-
-  /// Creates a new instance of a [PairInterface] with the same ports.
-  @Deprecated('Use `clone()` on an instance instead.')
-  PairInterface.clone(PairInterface otherInterface)
-      : this(
-          portsFromConsumer:
-              _getMatchPorts(otherInterface, PairDirection.fromConsumer),
-          portsFromProvider:
-              _getMatchPorts(otherInterface, PairDirection.fromProvider),
-          sharedInputPorts:
-              _getMatchPorts(otherInterface, PairDirection.sharedInputs),
-          commonInOutPorts:
-              _getMatchPorts(otherInterface, PairDirection.commonInOuts),
-          // Preserve the deprecated callback for legacy constructor callers.
-          modify: otherInterface.modify,
-        );
 
   /// Collects ports on a given [interface] tagged with [tag].
   static List<Logic> _getMatchPorts(
@@ -231,17 +204,12 @@ class PairInterface extends Interface<PairDirection> {
       Iterable<PairDirection>? inOutTags,
       String Function(String original)? uniquify}) {
     final nonNullUniquify = uniquify ?? (original) => original;
-    // Preserve the deprecated callback's connection-time naming behavior.
-    // ignore: deprecated_member_use_from_same_package
-    final nonNullModify = modify ?? (original) => original;
-    String newUniquify(String original) =>
-        nonNullUniquify(nonNullModify(original));
 
     super.connectIO(module, srcInterface,
         inputTags: inputTags,
         outputTags: outputTags,
         inOutTags: inOutTags,
-        uniquify: newUniquify);
+        uniquify: nonNullUniquify);
 
     if (subInterfaces.isNotEmpty) {
       if (srcInterface is! PairInterface) {
@@ -259,7 +227,7 @@ class PairInterface extends Interface<PairDirection> {
             subInterfaceEntry.value.uniquify ?? (original) => original;
 
         String newSubIntfUniquify(String original) =>
-            nonNullUniquify(nonNullSubIntfUniquify(nonNullModify(original)));
+            nonNullUniquify(nonNullSubIntfUniquify(original));
 
         if (!srcInterface._subInterfaces.containsKey(subInterfaceName)) {
           throw InterfaceTypeException(
@@ -324,11 +292,6 @@ class PairInterface extends Interface<PairDirection> {
     String? name,
   }) {
     final nonNullUniquify = uniquify ?? (original) => original;
-    // Preserve the deprecated callback's structured-port naming behavior.
-    // ignore: deprecated_member_use_from_same_package
-    final nonNullModify = modify ?? (original) => original;
-    String newUniquify(String original) =>
-        nonNullUniquify(nonNullModify(original));
 
     final registrations = super.connectIOAsStructuredPorts(
       module,
@@ -336,7 +299,7 @@ class PairInterface extends Interface<PairDirection> {
       inputTags: inputTags,
       outputTags: outputTags,
       inOutTags: inOutTags,
-      uniquify: newUniquify,
+      uniquify: nonNullUniquify,
       name: name,
     );
 
@@ -356,7 +319,7 @@ class PairInterface extends Interface<PairDirection> {
       final nonNullSubIntfUniquify =
           subInterfaceEntry.value.uniquify ?? (original) => original;
       String newSubIntfUniquify(String original) =>
-          nonNullUniquify(nonNullSubIntfUniquify(nonNullModify(original)));
+          nonNullUniquify(nonNullSubIntfUniquify(original));
 
       if (!srcInterface._subInterfaces.containsKey(subInterfaceName)) {
         throw InterfaceTypeException(
@@ -579,9 +542,6 @@ class PairInterface extends Interface<PairDirection> {
         portsFromProvider: _getMatchPorts(this, PairDirection.fromProvider),
         sharedInputPorts: _getMatchPorts(this, PairDirection.sharedInputs),
         commonInOutPorts: _getMatchPorts(this, PairDirection.commonInOuts),
-        // Preserve the deprecated callback on clones for legacy consumers.
-        // ignore: deprecated_member_use_from_same_package
-        modify: modify,
       );
 }
 
