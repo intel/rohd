@@ -112,6 +112,8 @@ class SimpleTop extends Module {
   }
 }
 
+class _ModifyHarness extends Module {}
+
 class PassthroughPairIntfModule extends Module {
   PassthroughPairIntfModule(SimpleInterface intf1, SimpleInterface intf2,
       {required bool useConditional, required bool useConnectApi}) {
@@ -313,6 +315,34 @@ void main() {
     // Make sure the "modify" went through:
     final sv = mod.dumpSystemVerilog();
     expect(sv, contains('input logic simple_clk'));
+  });
+
+  test('deprecated modify composes with uniquify and survives cloning',
+      () async {
+    String legacyPrefix(String original) => 'legacy_$original';
+    final source = PairInterface(
+      portsFromConsumer: [Logic(name: 'response')],
+      portsFromProvider: [Logic(name: 'request')],
+      // Exercise the deprecated callback during the compatibility window.
+      // ignore: deprecated_member_use_from_same_package
+      modify: legacyPrefix,
+    );
+    final destination = source.clone();
+    final module = _ModifyHarness();
+
+    // Verify that cloning preserves the deprecated callback for consumers.
+    // ignore: deprecated_member_use_from_same_package
+    expect(destination.modify, same(legacyPrefix));
+    destination.pairConnectIO(
+      module,
+      source,
+      PairRole.provider,
+      uniquify: (original) => 'outer_$original',
+    );
+    await module.build();
+
+    expect(module.inputs.keys, ['outer_legacy_response']);
+    expect(module.outputs.keys, ['outer_legacy_request']);
   });
 
   test('split preserves the interface type for each endpoint', () {
