@@ -96,12 +96,16 @@ String instantiationVerilog(
   assert(inputs.length == 2, &#39;Gate has exactly two inputs&#39;);
   assert(outputs.length == 2, &#39;Gate has exactly two outputs&#39;);
 
+  final carry = ports[_carryName]!;
+  if (width == 0) {
+    return &quot;assign $carry = 1&#39;b0;&quot;;
+  }
+
   final in0 = ports[_in0Name]!;
   final in1 = ports[_in1Name]!;
   final sum = ports[_sumName]!;
-  final carry = ports[_carryName]!;
 
-  return &#39;assign {$carry, $sum} = $in0 $_addOpStr $in1;&#39;;
+  return &quot;assign {$carry, $sum} = {1&#39;b0, $in0} $_addOpStr {1&#39;b0, $in1};&quot;;
 }</code></pre>
 </section>
 
