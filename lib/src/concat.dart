@@ -12,6 +12,16 @@
 
 import 'package:rohd/rohd.dart';
 
+/// Deprecated module alias for [Concat].
+///
+/// The legacy default instance name is retained for generated output
+/// compatibility.
+@Deprecated('Use Concat instead.')
+class Swizzle extends Concat {
+  /// Constructs a deprecated [Swizzle] module.
+  Swizzle(List<Logic> signals, {super.name = 'swizzle'}) : super(signals);
+}
+
 /// Provides concatenation utilities for lists of [Logic]s.
 extension LogicConcat on List<Logic> {
   /// Concatenates signals with index 0 as the most significant bits.

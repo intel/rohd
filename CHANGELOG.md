@@ -3,7 +3,7 @@
 ### Breaking Changes
 
 - `FiniteStateMachine` and `State` now require Dart enum state identifiers. Replace integer, string, or custom-object identifiers with enum members; update reset and transition targets accordingly. `currentState` and `nextState` are now `LogicEnum` signals (<https://github.com/intel/rohd/pull/599>).
-- Removed all deprecated APIs: `StateMachine`, `FF`, `IfBlock`, `ExternalModule`, `LogicValues`, `Logic.bit`, `valueInt`, `valueBigInt`, `hasValidValue`, `isFloating`, `LogicValue.length`, `LogicValue.bit`, the `LogicValue.from...` constructors and `LogicValue.from(iterable)`, global concatenation helpers, gate `y` output aliases including `Add.out`, `getReceivers`, `getDrivers`, `getConditionals`, `FiniteStateMachine.clk`, `Pipeline.clk`, `Port`, `PairInterface.modify`, the `PairInterface.clone` constructor, `LogicStructure.bit`, `Module.unpreferredName`, `Module.isUnpreferred`, `Dumper`, `WaveDumper`, `SynthBuilder.top`, `SynthBuilder.getFileContents()`, `SynthesisResult.toFileContents()` and backend overrides, `CustomSystemVerilog`, `SystemVerilogSynthesizer.instantiationVerilogWithParameters`, `Module.generateSynth`, `ModuleTree.hierarchyJSON`, `NetlistSynthesisResult.toFileContents()`, and `SystemVerilogService.contentsByName`. See the [0.7.0 migration guide](doc/releases.md#core-api-migration-for-070) for replacements. The legacy `List` concatenation aliases remain available but are deprecated in favor of `concat` and `rconcat`.
+- Removed all deprecated APIs: `StateMachine`, `FF`, `IfBlock`, `ExternalModule`, `LogicValues`, `Logic.bit`, `valueInt`, `valueBigInt`, `hasValidValue`, `isFloating`, `LogicValue.length`, `LogicValue.bit`, the `LogicValue.from...` constructors and `LogicValue.from(iterable)`, global concatenation helpers, gate `y` output aliases including `Add.out`, `getReceivers`, `getDrivers`, `getConditionals`, `FiniteStateMachine.clk`, `Pipeline.clk`, `Port`, `PairInterface.modify`, the `PairInterface.clone` constructor, `LogicStructure.bit`, `Module.unpreferredName`, `Module.isUnpreferred`, `Dumper`, `WaveDumper`, `SynthBuilder.top`, `SynthBuilder.getFileContents()`, `SynthesisResult.toFileContents()` and backend overrides, `CustomSystemVerilog`, `SystemVerilogSynthesizer.instantiationVerilogWithParameters`, `Module.generateSynth`, `ModuleTree.hierarchyJSON`, `NetlistSynthesisResult.toFileContents()`, and `SystemVerilogService.contentsByName`. See the [0.7.0 migration guide](doc/releases.md#core-api-migration-for-070) for replacements. The legacy `Swizzle` module and `List` concatenation aliases remain available but are deprecated in favor of `Concat`, `concat`, and `rconcat`.
 
 ### Major Features
 
@@ -22,7 +22,7 @@
 
 ### Improvements
 
-- Fixed SystemVerilog addition with carry to preserve the original width of inline operands, including bitwise complements and modulo expressions.
+- Fixed SystemVerilog addition with carry to preserve the original width of inline operands, including bitwise complements and modulo expressions, and to emit a zero carry for zero-width operands.
 - Added `name` parameters to the `flop` and `mux` convenience helpers; `cases` already supports naming its generated result (<https://github.com/intel/rohd/issues/517>).
 - Added `concat` and `rconcat` as the preferred concatenation APIs; the legacy aliases are deprecated (<https://github.com/intel/rohd/issues/597>).
 - Include current signal value and built hierarchy in `Logic.toString()` diagnostic output (<https://github.com/intel/rohd/issues/96>).

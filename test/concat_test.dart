@@ -209,8 +209,22 @@ void main() {
       final high = LogicValue.ofString('10');
       final low = LogicValue.ofString('01');
 
-      expect([high, low].concat(), LogicValue.ofString('1001'));
-      expect([low, high].rconcat(), LogicValue.ofString('1001'));
+      // ignore: deprecated_member_use
+      expect([high, low].swizzle(), LogicValue.ofString('1001'));
+      // ignore: deprecated_member_use
+      expect([low, high].rswizzle(), LogicValue.ofString('1001'));
+    });
+
+    test('deprecated Swizzle module preserves direct construction', () async {
+      final high = Logic(width: 2)..put(0x2);
+      final low = Logic(width: 2)..put(0x1);
+
+      // ignore: deprecated_member_use
+      final legacy = Swizzle([high, low]);
+      await legacy.build();
+
+      expect(legacy.name, 'swizzle');
+      expect(legacy.out.value, LogicValue.ofString('1001'));
     });
   });
 
