@@ -115,6 +115,22 @@ class PairInterface extends Interface<PairDirection> {
     }
   }
 
+  /// Creates a new instance of a [PairInterface] with the same ports.
+  @Deprecated('Use `clone()` on an instance instead.')
+  PairInterface.clone(PairInterface otherInterface)
+      : this(
+          portsFromConsumer:
+              _getMatchPorts(otherInterface, PairDirection.fromConsumer),
+          portsFromProvider:
+              _getMatchPorts(otherInterface, PairDirection.fromProvider),
+          sharedInputPorts:
+              _getMatchPorts(otherInterface, PairDirection.sharedInputs),
+          commonInOutPorts:
+              _getMatchPorts(otherInterface, PairDirection.commonInOuts),
+          // Preserve the deprecated callback for legacy constructor callers.
+          modify: otherInterface.modify,
+        );
+
   /// Collects ports on a given [interface] tagged with [tag].
   static List<Logic> _getMatchPorts(
           Interface<PairDirection> interface, PairDirection tag) =>

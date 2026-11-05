@@ -327,6 +327,9 @@ void main() {
       modify: legacyPrefix,
     );
     final destination = source.clone();
+    // Exercise the deprecated clone constructor for compatibility.
+    // ignore: deprecated_member_use_from_same_package
+    final legacyDestination = PairInterface.clone(source);
     final module = _PairHarness();
 
     // Verify that cloning preserves the deprecated callback for consumers.
@@ -334,6 +337,13 @@ void main() {
     expect(destination.modify, same(legacyPrefix));
     expect(
       destination.ports.keys,
+      unorderedEquals(['response', 'request']),
+    );
+    // Verify that the deprecated constructor also preserves the callback.
+    // ignore: deprecated_member_use_from_same_package
+    expect(legacyDestination.modify, same(legacyPrefix));
+    expect(
+      legacyDestination.ports.keys,
       unorderedEquals(['response', 'request']),
     );
     destination.pairConnectIO(
