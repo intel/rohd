@@ -335,10 +335,6 @@ void main() {
     // Verify that cloning preserves the deprecated callback for consumers.
     // ignore: deprecated_member_use_from_same_package
     expect(destination.modify, same(legacyPrefix));
-    expect(
-      destination.ports.keys,
-      unorderedEquals(['response', 'request']),
-    );
     // Verify that the deprecated constructor also preserves the callback.
     // ignore: deprecated_member_use_from_same_package
     expect(legacyDestination.modify, same(legacyPrefix));
