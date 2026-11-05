@@ -209,9 +209,11 @@ void main() {
       final high = LogicValue.ofString('10');
       final low = LogicValue.ofString('01');
 
-      // ignore: deprecated_member_use
+      // Exercise the deprecated alias during the 0.7.x compatibility window.
+      // ignore: deprecated_member_use_from_same_package
       expect([high, low].swizzle(), LogicValue.ofString('1001'));
-      // ignore: deprecated_member_use
+      // Exercise the deprecated alias during the 0.7.x compatibility window.
+      // ignore: deprecated_member_use_from_same_package
       expect([low, high].rswizzle(), LogicValue.ofString('1001'));
     });
 
@@ -219,7 +221,8 @@ void main() {
       final high = Logic(width: 2)..put(0x2);
       final low = Logic(width: 2)..put(0x1);
 
-      // ignore: deprecated_member_use
+      // Exercise the deprecated module during the 0.7.x compatibility window.
+      // ignore: deprecated_member_use_from_same_package
       final legacy = Swizzle([high, low]);
       await legacy.build();
 
