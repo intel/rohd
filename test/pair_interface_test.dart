@@ -112,6 +112,8 @@ class SimpleTop extends Module {
   }
 }
 
+class _PairHarness extends Module {}
+
 class PassthroughPairIntfModule extends Module {
   PassthroughPairIntfModule(SimpleInterface intf1, SimpleInterface intf2,
       {required bool useConditional, required bool useConnectApi}) {
@@ -310,9 +312,33 @@ void main() {
     final mod = SimpleTop(Logic());
     await mod.build();
 
-    // Make sure the "modify" went through:
+    // Make sure the port uniquification went through:
     final sv = mod.dumpSystemVerilog();
     expect(sv, contains('input logic simple_clk'));
+  });
+
+  test('cloned pair interface connects with uniquified ports', () async {
+    final source = PairInterface(
+      portsFromConsumer: [Logic(name: 'response')],
+      portsFromProvider: [Logic(name: 'request')],
+    );
+    final destination = source.clone();
+    final module = _PairHarness();
+
+    expect(
+      destination.ports.keys,
+      unorderedEquals(['response', 'request']),
+    );
+    destination.pairConnectIO(
+      module,
+      source,
+      PairRole.provider,
+      uniquify: (original) => 'outer_$original',
+    );
+    await module.build();
+
+    expect(module.inputs.keys, ['outer_response']);
+    expect(module.outputs.keys, ['outer_request']);
   });
 
   test('split preserves the interface type for each endpoint', () {

@@ -4342,6 +4342,17 @@ class SynthModuleDefinition {
         assignments.whereType<PartialSynthAssignment>().toList();
     assignments.removeWhere((e) => e is PartialSynthAssignment);
 
+    // Net-to-net connections are bidirectional. Remember the ones whose
+    // endpoints are distinct before merging, since their getters resolve and
+    // overwrite those endpoints as merges proceed.
+    final distinctNetConnections = <SynthAssignment>{
+      for (final assignment in assignments)
+        if (assignment.src.isNet &&
+            assignment.dst.isNet &&
+            assignment.src != assignment.dst)
+          assignment,
+    };
+
     while (prevAssignmentCount != assignments.length) {
       // keep looping until it stops shrinking
       final reducedAssignments = <SynthAssignment>[];
@@ -4368,10 +4379,9 @@ class SynthModuleDefinition {
           internalSignals.add(src);
         }
 
-        if (src == dst && src.isConstant) {
-          // looks like this assignment does nothing -- some sort of circular
-          // constant assignment, can just remove it
-
+        if (src == dst &&
+            (src.isConstant || distinctNetConnections.contains(assignment))) {
+          // A net connection can become redundant after its endpoints merge.
           continue;
         }
 

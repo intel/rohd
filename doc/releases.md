@@ -314,11 +314,11 @@ coordinated release.
 
 ### Core API migration for 0.7.0
 
-ROHD 0.7.0 removes all deprecated APIs, including those deprecated in 0.6.x
-and APIs whose deprecation release is not recorded, and completes a few older
-breaking renames and merges. Migrate consumers before widening a `^0.6.11`
-core constraint to include 0.7.x. The independently versioned shared packages
-do not need breaking releases just because core removes these APIs.
+ROHD 0.7.0 removes long-deprecated and obsolete APIs and completes a few older
+breaking renames and merges. Recent deprecations, including `Swizzle`,
+`swizzle`, and `rswizzle`, remain available. Migrate affected consumers to the
+replacement APIs and release them with a `^0.7.0` core constraint rather than
+trying to support both 0.6.x and 0.7.x.
 
 “Deprecated in” gives the first tagged release whose changelog explicitly
 records the deprecation. “Not recorded” means the changelog does not identify
@@ -387,11 +387,10 @@ require hierarchy 0.1.1 to be published first. ROHD 0.7.0 does require hierarchy
 0.1.1 for its new APIs, so publish hierarchy before ROHD. Widgets accepts ROHD
 0.6.10 through 0.7.x and can be published before ROHD 0.7.0.
 
-The viewer compatibility releases are `rohd_wave_viewer` 0.1.1,
-`dart_wellen` 0.1.1, and `rohd_schematic_viewer` 0.2.5. They accept ROHD
-0.6.11 through 0.7.x and widen shared-package constraints to accept both
-0.1.x and 0.2.x. They do not need the new shared-package releases first.
-Publish `dart_wellen` before the wave viewer.
+Assess the viewers and their dependencies against ROHD 0.7.0 before assigning
+release versions. Packages requiring changes should depend on ROHD `^0.7.0`
+rather than attempting to span 0.6.x and 0.7.x. Publish `dart_wellen` before
+the wave viewer if the latter requires a new `dart_wellen` release.
 
 Widgets and viewers retain Flutter 3.44 as their lower bound and allow
 Material UI 1.1.0 through 1.x, including 1.7.0. Resolving the newer UI stack
@@ -402,22 +401,18 @@ and 2.x. The application, wave viewer, and waveform package allow Equatable
 2.x and 3.x. These changes do not increase package Dart language-version floors.
 
 The DevTools application requires hierarchy and waveform 0.1.1 and widgets
-0.1.2, but accepts the published wave viewer and `dart_wellen` 0.1.0 and
-schematic viewer 0.2.4 as well as the planned compatibility releases. Its
-Cupertino Icons range accepts 1.x and 2.x. Checkout CI uses local ROHD and
-companion-package overrides, allowing the published viewers to be checked
-against the current sources despite their ROHD `^0.6.11` constraints.
-Final hosted resolution with ROHD 0.7.0 still requires the compatibility
-viewer releases. A build using local overrides is a development check,
-not proof of hosted resolution.
+0.1.2. Its Cupertino Icons range accepts 1.x and 2.x. Checkout CI uses local
+ROHD and companion-package overrides; these allow development checks but do
+not prove that hosted dependencies resolve together. Final hosted resolution
+with ROHD 0.7.0 requires compatible viewer releases and corresponding
+dependency constraints.
 
 The published wave viewer and `dart_wellen` 0.1.0 use Flutter Rust Bridge 2.7.0
-together; do not override that runtime independently. The planned 0.1.1 releases
-must use Flutter Rust Bridge 2.7.1 consistently in their Dart runtime dependency,
-Rust runtime and generator dependencies, and generated bindings. Use the wave
-viewer Makefile to regenerate and validate the bridge before preparing either
-archive. A dependency-constraint edit alone is not sufficient for this runtime
-update.
+together; do not override that runtime independently. If updating Flutter Rust
+Bridge, use the same version consistently in Dart runtime, Rust runtime and
+generator dependencies, and generated bindings. Use the wave viewer Makefile
+to regenerate and validate the bridge before preparing either archive. A
+dependency-constraint edit alone is not sufficient for this runtime update.
 
 `rohd_source_navigator` has only hosted Dart dependencies and can be published
 independently of ROHD and the Flutter packages. Once its version is available on

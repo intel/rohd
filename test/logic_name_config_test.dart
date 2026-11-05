@@ -151,6 +151,42 @@ class _PreservedNetChain extends Module {
   }
 }
 
+class _PreservedNetArrayLoop extends Module {
+  final aliases = <LogicArray>[];
+
+  _PreservedNetArrayLoop(int unpackedDimensions, {required bool reversed}) {
+    final source = addInput('source', Logic(width: 8), width: 8);
+    final first = LogicArray.net([4], 2,
+        name: 'shared',
+        naming: Naming.renameable,
+        numUnpackedDimensions: unpackedDimensions);
+    final second = LogicArray.net([4], 2,
+        name: 'shared',
+        naming: Naming.reserved,
+        numUnpackedDimensions: unpackedDimensions);
+    final junction = LogicArray.net([4], 2,
+        name: 'junction',
+        naming: Naming.mergeable,
+        numUnpackedDimensions: unpackedDimensions);
+    aliases.addAll([first, second, junction]);
+
+    for (var i = 0; i < 4; i++) {
+      first.elements[i] <= source.getRange(i * 2, i * 2 + 2);
+      if (reversed) {
+        first.elements[i] <= second.elements[i];
+        second.elements[i] <= junction.elements[i];
+        junction.elements[i] <= first.elements[i];
+      } else {
+        second.elements[i] <= first.elements[i];
+        junction.elements[i] <= second.elements[i];
+        first.elements[i] <= junction.elements[i];
+      }
+    }
+    addOutput('result', width: 8) <= junction.packed;
+    addOutput('early', width: 8) <= first.packed;
+  }
+}
+
 void main() {
   tearDown(Simulator.reset);
 
@@ -305,6 +341,95 @@ void main() {
           expect(signal.resolved, same(merged.kept));
         }
       });
+    }
+
+    for (final reversed in [false, true]) {
+      test(
+          'same-name net aliases with redundant connection, reversed=$reversed',
+          () async {
+        final aliases = <LogicNet>[];
+        final dut = FunctionGeneratedModule((in1, in2, out1) {
+          final first = LogicNet(name: 'shared', naming: Naming.renameable);
+          final second = LogicNet(name: 'shared', naming: Naming.reserved);
+          final junction = LogicNet(name: 'junction', naming: Naming.mergeable);
+          first <= in1;
+          second <= in2;
+          if (reversed) {
+            first <= second;
+            second <= junction;
+            junction <= first;
+          } else {
+            second <= first;
+            junction <= second;
+            first <= junction;
+          }
+          aliases.addAll([first, second, junction]);
+          out1 <= junction;
+        });
+
+        await dut.build();
+        final definition = SystemVerilogSynthModuleDefinition(dut);
+        final shared = definition.getSynthLogic(aliases.first)!;
+        expect(shared.logics, containsAll(aliases));
+        for (final alias in aliases) {
+          expect(definition.getSynthLogic(alias), same(shared));
+        }
+        for (final assignment in definition.assignments) {
+          if (assignment is! PartialSynthAssignment) {
+            expect(assignment.src, isNot(same(assignment.dst)));
+          }
+        }
+
+        final vectors = [
+          for (final value in [0, 1, 'x', 'z'])
+            Vector({'in1': value, 'in2': 'z'}, {'out1': value}),
+          Vector({'in1': 'z', 'in2': 1}, {'out1': 1}),
+          Vector({'in1': 0, 'in2': 1}, {'out1': 'x'}),
+          Vector({'in1': 1, 'in2': 1}, {'out1': 1}),
+        ];
+        await SimCompare.checkFunctionalVector(dut, vectors);
+        SimCompare.checkIverilogVector(dut, vectors);
+      });
+    }
+
+    for (final unpackedDimensions in [0, 1]) {
+      for (final reversed in [false, true]) {
+        test(
+            'same-name net arrays with redundant connection, '
+            'unpackedDimensions=$unpackedDimensions, reversed=$reversed',
+            () async {
+          final dut =
+              _PreservedNetArrayLoop(unpackedDimensions, reversed: reversed);
+          await dut.build();
+          final definition = SystemVerilogSynthModuleDefinition(dut);
+          final shared = definition.getSynthLogic(dut.aliases.first)!;
+          expect(shared.logics, containsAll(dut.aliases));
+          for (final alias in dut.aliases) {
+            expect(definition.getSynthLogic(alias), same(shared));
+            for (var i = 0; i < 4; i++) {
+              expect(definition.getSynthLogic(alias.elements[i])!.name,
+                  'shared[$i]');
+            }
+          }
+          for (final assignment in definition.assignments) {
+            if (assignment is! PartialSynthAssignment) {
+              expect(assignment.src, isNot(same(assignment.dst)));
+            }
+          }
+          final sv = dut.dumpSystemVerilog();
+          expect(
+              sv,
+              contains(unpackedDimensions == 0
+                  ? 'wire [3:0][1:0] shared;'
+                  : 'wire [1:0] shared [3:0];'));
+          final vectors = [
+            for (final value in [0, 0x96, 0xff, 'xxxxxxxx', 'zzzzzzzz'])
+              Vector({'source': value}, {'result': value, 'early': value}),
+          ];
+          await SimCompare.checkFunctionalVector(dut, vectors);
+          SimCompare.checkIverilogVector(dut, vectors);
+        });
+      }
     }
 
     for (final naming in [Naming.reserved, Naming.renameable]) {

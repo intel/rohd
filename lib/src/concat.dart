@@ -19,7 +19,8 @@ import 'package:rohd/rohd.dart';
 @Deprecated('Use Concat instead.')
 class Swizzle extends Concat {
   /// Constructs a deprecated [Swizzle] module.
-  Swizzle(List<Logic> signals, {super.name = 'swizzle'}) : super(signals);
+  @Deprecated('Use Concat instead.')
+  Swizzle(super.signals, {super.name = 'swizzle'});
 }
 
 /// Provides concatenation utilities for lists of [Logic]s.
