@@ -59,6 +59,9 @@ run_case() {
   )
   grep -F -- "-std=$expected_standard" "$FIXTURE/cxx.log" >/dev/null
   [[ -f "$FIXTURE/tmp_test/pch/systemc.h.gch" ]]
+  grep -Fx "systemc_home=$FIXTURE/include" "$FIXTURE/tmp_test/pch/systemc.pch" >/dev/null
+  grep -Fx "systemc_lib=$FIXTURE/lib" "$FIXTURE/tmp_test/pch/systemc.pch" >/dev/null
+  grep -Fx "cxx_std=$expected_standard" "$FIXTURE/tmp_test/pch/systemc.pch" >/dev/null
 }
 
 # The C++20 marker appears before enough trailing output to exceed a pipe

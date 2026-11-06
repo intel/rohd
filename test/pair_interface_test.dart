@@ -318,15 +318,28 @@ void main() {
   });
 
   test('cloned pair interface connects with uniquified ports', () async {
+    String legacyPrefix(String original) => 'legacy_$original';
     final source = PairInterface(
       portsFromConsumer: [Logic(name: 'response')],
       portsFromProvider: [Logic(name: 'request')],
+      // Exercise the deprecated callback during the compatibility window.
+      // ignore: deprecated_member_use_from_same_package
+      modify: legacyPrefix,
     );
     final destination = source.clone();
+    // Exercise the deprecated clone constructor for compatibility.
+    // ignore: deprecated_member_use_from_same_package
+    final legacyDestination = PairInterface.clone(source);
     final module = _PairHarness();
 
+    // Verify that cloning preserves the deprecated callback for consumers.
+    // ignore: deprecated_member_use_from_same_package
+    expect(destination.modify, same(legacyPrefix));
+    // Verify that the deprecated constructor also preserves the callback.
+    // ignore: deprecated_member_use_from_same_package
+    expect(legacyDestination.modify, same(legacyPrefix));
     expect(
-      destination.ports.keys,
+      legacyDestination.ports.keys,
       unorderedEquals(['response', 'request']),
     );
     destination.pairConnectIO(
@@ -337,8 +350,8 @@ void main() {
     );
     await module.build();
 
-    expect(module.inputs.keys, ['outer_response']);
-    expect(module.outputs.keys, ['outer_request']);
+    expect(module.inputs.keys, ['outer_legacy_response']);
+    expect(module.outputs.keys, ['outer_legacy_request']);
   });
 
   test('split preserves the interface type for each endpoint', () {

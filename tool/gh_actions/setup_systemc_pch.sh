@@ -39,5 +39,11 @@ mkdir -p "$PCH_DIR"
 cp "$SC_HOME/systemc.h" "$PCH_DIR/systemc.h"
 g++ -std="$CXX_STD" -I"$SC_HOME" -x c++-header \
     -o "$PCH_DIR/systemc.h.gch" "$SC_HOME/systemc.h"
+cat > "$PCH_DIR/systemc.pch" <<EOF
+systemc_home=$SC_HOME
+systemc_lib=$SC_LIB
+cxx_std=$CXX_STD
+cxx=g++
+EOF
 
 echo "PCH built: $PCH_DIR/systemc.h.gch"

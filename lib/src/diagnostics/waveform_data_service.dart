@@ -15,6 +15,7 @@ import 'dart:developer' as developer;
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
+import 'package:rohd/src/utilities/web.dart';
 import 'package:rohd_hierarchy/rohd_hierarchy.dart';
 
 /// Represents a single value change for a signal.
@@ -311,9 +312,10 @@ class WaveformDataService {
   /// Call this after the module is built.
   static void init(Module module) {
     instance._rootModule = module;
-    instance
-      .._collectSignalsFromNetlist(module)
-      .._registerServiceExtensions();
+    instance._collectSignalsFromNetlist(module);
+    if (!kIsWeb) {
+      instance._registerServiceExtensions();
+    }
   }
 
   /// Whether [startRecording] has already attached change listeners.

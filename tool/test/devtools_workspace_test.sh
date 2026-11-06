@@ -268,7 +268,10 @@ def run_task(viewer, source, responses="", expected=0):
         f"{viewer}-viewer ${{input:{viewer}ViewerSource}} && flutter pub get"
     )
     assert f"{viewer}ViewerLocalPath" not in inputs
-    assert inputs[f"{viewer}ViewerSource"]["options"] == ["hosted", "git", "local"]
+    expected_sources = ["hosted", "git", "local"]
+    if viewer == "wave":
+        expected_sources.append("ci")
+    assert inputs[f"{viewer}ViewerSource"]["options"] == expected_sources
     environment = dict(os.environ, HOME=str(home))
     command = task["command"].replace(
         f"${{input:{viewer}ViewerSource}}", source
@@ -353,6 +356,10 @@ run_task("wave", "git", "\n")
 assert state()["wave_viewer_git_url"] == wave_url
 assert state()["wave_viewer_git_ref"] == wave_ref
 assert f"url: {schematic_url}" in overrides.read_text()
+run_task("wave", "ci", f"{wave_source}\n")
+assert state()["dart_wellen"] == state()["rohd_wave_viewer"] == "ci"
+assert state()["wave_viewer_git_url"] == wave_url
+assert state()["wave_viewer_git_ref"] == wave_ref
 before = overrides.read_bytes()
 saved = state()
 result = run_task("wave", "git", "github.com/example/rohd-wave-viewer\n", expected=2)

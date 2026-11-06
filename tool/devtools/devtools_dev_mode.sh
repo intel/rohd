@@ -69,7 +69,7 @@ Usage: tool/devtools/devtools_dev_mode.sh <mode>
 
 Configure individual package sources:
   tool/devtools/devtools_dev_mode.sh configure <package> <source> ...
-  where each source is hosted, git, or local.
+  where each source is hosted, git, local, or ci.
 
 Configure a package bundle:
   tool/devtools/devtools_dev_mode.sh configure-group <group> <source>
@@ -102,7 +102,7 @@ Local checkout defaults for external viewer packages:
 If ~/true-release exists, viewer paths default below it; otherwise they default
 below ~/release. RELEASE_DIR changes both viewer defaults.
 
-Git sources use the package's public repository and main branch by default.
+Git and CI sources use the package's public repository and main branch by default.
 Override them with ROHD_GIT_URL / ROHD_GIT_REF,
 WAVE_VIEWER_GIT_URL / WAVE_VIEWER_GIT_REF, and
 SCHEMATIC_VIEWER_GIT_URL / SCHEMATIC_VIEWER_GIT_REF. VS Code tasks can
@@ -110,17 +110,19 @@ instead provide ROHD_GIT_SOURCE, WAVE_VIEWER_GIT_SOURCE, or
 SCHEMATIC_VIEWER_GIT_SOURCE as `repository:ref`.
 
 configure-interactive prompts only for the selected external viewer source:
-local asks for a checkout path, git asks once for `repository:ref` (for
+local asks for a checkout path, git and ci ask once for `repository:ref` (for
 example `github.com/intel/rohd-wave-viewer:main`), and hosted needs no
-additional input. GitHub repository inputs do not need an `https://` prefix.
+additional input. CI mode is available only for Wave Viewer and downloads the
+complete prepared artifact from the public `artifacts` branch at the resolved
+Git commit. GitHub repository inputs do not need an `https://` prefix.
 USAGE
 }
 
 validate_source() {
   case "$1" in
-    hosted|git|local) ;;
+    hosted|git|local|ci) ;;
     *)
-      echo "Invalid dependency source '$1'; expected hosted, git, or local." >&2
+      echo "Invalid dependency source '$1'; expected hosted, git, local, or ci." >&2
       exit 2
       ;;
   esac
@@ -285,7 +287,7 @@ append_dependency_override() {
       path="$(local_package_path "$package")"
       printf '  %s:\n    path: %s\n' "$package" "$path" >>"$file"
       ;;
-    git)
+    git|ci)
       cat >>"$file" <<YAML
   $package:
     git:
@@ -485,7 +487,7 @@ apply_environment_for_group() {
 
   case "$group" in
     rohd|rohd-packages)
-      if [[ "$source" == "git" ]]; then
+      if [[ "$source" == "git" || "$source" == "ci" ]]; then
         if [[ -n "${ROHD_GIT_SOURCE:-}" ]]; then
           configure_git_source rohd "$ROHD_GIT_SOURCE"
         else
@@ -497,7 +499,7 @@ apply_environment_for_group() {
       fi
       ;;
     wave-viewer)
-      if [[ "$source" == "git" ]]; then
+      if [[ "$source" == "git" || "$source" == "ci" ]]; then
         if [[ -n "${WAVE_VIEWER_GIT_SOURCE:-}" ]]; then
           configure_git_source wave-viewer "$WAVE_VIEWER_GIT_SOURCE"
         else
@@ -509,7 +511,7 @@ apply_environment_for_group() {
       fi
       ;;
     schematic-viewer)
-      if [[ "$source" == "git" ]]; then
+      if [[ "$source" == "git" || "$source" == "ci" ]]; then
         if [[ -n "${SCHEMATIC_VIEWER_GIT_SOURCE:-}" ]]; then
           configure_git_source schematic-viewer "$SCHEMATIC_VIEWER_GIT_SOURCE"
         else
@@ -521,7 +523,7 @@ apply_environment_for_group() {
       fi
       ;;
     all)
-      if [[ "$source" == "git" ]]; then
+      if [[ "$source" == "git" || "$source" == "ci" ]]; then
         if [[ -n "${ROHD_GIT_SOURCE:-}" ]]; then
           configure_git_source rohd "$ROHD_GIT_SOURCE"
         else
@@ -554,7 +556,11 @@ configure_group() {
   local source="${2:-}"
 
   if [[ "$#" -ne 2 ]]; then
-    echo "Usage: $0 configure-group <group> <hosted|git|local>" >&2
+    echo "Usage: $0 configure-group <group> <hosted|git|local|ci>" >&2
+    exit 2
+  fi
+  if [[ "$source" == "ci" && "$group" != "wave-viewer" ]]; then
+    echo "The ci source is supported only for the wave-viewer dependency group." >&2
     exit 2
   fi
   load_source_state
@@ -640,7 +646,7 @@ configure_interactive_viewer_group() {
   local source="${2:-}"
 
   if [[ "$#" -ne 2 ]]; then
-    echo "Usage: $0 configure-interactive <wave-viewer|schematic-viewer> <hosted|git|local>" >&2
+    echo "Usage: $0 configure-interactive <wave-viewer|schematic-viewer> <hosted|git|local|ci>" >&2
     exit 2
   fi
   case "$group" in
@@ -658,9 +664,9 @@ configure_interactive_viewer_group() {
       wave_viewer_path="$(prompt_value \
         "Wave Viewer checkout/worktree path" "$wave_viewer_path")"
       ;;
-    wave-viewer:git)
+    wave-viewer:git|wave-viewer:ci)
       configure_git_source wave-viewer "$(prompt_value \
-        "Wave Viewer Git repository:ref" \
+        "Wave Viewer Git/CI repository:ref" \
         "$(display_git_source "$wave_viewer_git_url" "$wave_viewer_git_ref")")"
       ;;
     schematic-viewer:local)
@@ -686,7 +692,7 @@ configure_packages() {
   local source
 
   if [[ "$#" -eq 0 || "$(( $# % 2 ))" -ne 0 ]]; then
-    echo "Usage: $0 configure <package> <hosted|git|local> ..." >&2
+    echo "Usage: $0 configure <package> <hosted|git|local|ci> ..." >&2
     exit 2
   fi
   load_source_state
@@ -696,6 +702,12 @@ configure_packages() {
     shift 2
     validate_package "$package"
     validate_source "$source"
+    if [[ "$source" == "ci" &&
+        "$package" != "dart_wellen" &&
+        "$package" != "rohd_wave_viewer" ]]; then
+      echo "The ci source is supported only for dart_wellen and rohd_wave_viewer." >&2
+      exit 2
+    fi
     sources["$package"]="$source"
     case "$package" in
       rohd) apply_environment_for_group rohd "$source" ;;
