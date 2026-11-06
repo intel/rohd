@@ -237,7 +237,7 @@ for package in "$@"; do
     echo "=== $package: Pana score gate skipped (use --run-pana) ==="
   fi
 done
-git diff --check
+git --no-pager diff --check
 bash "$SCRIPT_DIR/check_release.sh" "$@"
 
 echo "Selected packages prepared from source commit $SOURCE_COMMIT."
