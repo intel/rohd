@@ -25,6 +25,12 @@ fail explicitly.
 Use `make viewer-artifacts` to install or verify the selected dependency's
 artifacts without building the debugger.
 
+When `tool/devtools/devtools_dev_mode.sh configure-group wave-viewer ci` is
+selected, the installer instead downloads the complete
+`dart-wellen` payload from the public Wave Viewer `artifacts` branch. General
+CI publishes it under the resolved Git commit, so CI-artifact mode never builds
+Rust, calls the GitHub Actions API, or publishes a release.
+
 ### stage_assets.sh
 
 Stages widget-owned assets into the local asset root.

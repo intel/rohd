@@ -45,7 +45,7 @@
                 "cwd": "${workspaceFolder}"
             },
             "problemMatcher": [],
-            "detail": "Select hosted, Git, or local for rohd_wave_viewer and dart_wellen. Git prompts once for github.com/owner/repository:branch; HTTPS is optional."
+            "detail": "Select hosted, Git, local, or CI artifacts for rohd_wave_viewer and dart_wellen. Git and CI prompt once for github.com/owner/repository:branch; HTTPS is optional."
         },
         {
             "label": "Configure Dependency Bundle: Schematic Viewer",
@@ -197,7 +197,7 @@
             "id": "waveViewerSource",
             "type": "pickString",
             "description": "Source for rohd_wave_viewer and dart_wellen",
-            "options": ["hosted", "git", "local"],
+            "options": ["hosted", "git", "local", "ci"],
             "default": "hosted"
         },
         {

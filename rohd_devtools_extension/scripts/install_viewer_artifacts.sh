@@ -14,6 +14,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 WORKSPACE_ROOT="$(cd "$ROOT_DIR/.." && pwd)"
 PACKAGE_CONFIG="$WORKSPACE_ROOT/.dart_tool/package_config.json"
+SOURCE_STATE="$ROOT_DIR/.devtools_dependency_sources"
 
 resolve_package_root() {
     dart "$ROOT_DIR/scripts/resolve_package_root.dart" "$PACKAGE_CONFIG" "$1"
@@ -26,7 +27,14 @@ if [ ! -f "$INSTALLER" ]; then
     echo "Select a viewer revision/package with packaged web artifacts. DevTools does not build dependencies." >&2
     exit 1
 fi
-python3 "$INSTALLER" install
+
+if [[ -f "$SOURCE_STATE" ]] &&
+    grep -qx 'dart_wellen=ci' "$SOURCE_STATE"; then
+    python3 "$ROOT_DIR/scripts/install_ci_viewer_artifacts.py" \
+        --package-root "$DART_WELLEN_DIR"
+else
+    python3 "$INSTALLER" install
+fi
 
 missing=0
 for binding in api.dart frb_generated.dart frb_generated.io.dart frb_generated.web.dart; do

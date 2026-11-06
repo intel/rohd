@@ -30,6 +30,18 @@ class _SystemCSimCompare {
 
   /// Path to the precompiled header, built lazily on first compilation.
   static String? _pchPath;
+  static String? _pchSignature;
+
+  static String _makePchSignature(
+    String scHome,
+    String scLib,
+    String cxxStd,
+    String cxxExecutable,
+  ) =>
+      'systemc_home=$scHome\n'
+      'systemc_lib=$scLib\n'
+      'cxx_std=$cxxStd\n'
+      'cxx=$cxxExecutable\n';
 
   /// Builds the precompiled header for systemc.h if not already done.
   /// Returns the directory containing systemc.h.gch, or null on failure.
@@ -39,22 +51,39 @@ class _SystemCSimCompare {
   /// on first use (safe because local runs are typically sequential).
   static String? _ensurePch(
     String scHome,
+    String scLib,
     String cxxStd, {
     String cxxExecutable = 'g++',
   }) {
-    if (_pchPath != null) {
+    final signature = _makePchSignature(
+      scHome,
+      scLib,
+      cxxStd,
+      cxxExecutable,
+    );
+    if (_pchPath != null && _pchSignature == signature) {
       return _pchPath;
     }
 
     const dir = 'tmp_test';
     const pchDir = '$dir/pch';
     const gchFile = '$pchDir/systemc.h.gch';
+    const metadataFile = '$pchDir/systemc.pch';
 
-    // Reuse if already on disk (pre-built by CI or a previous run)
-    if (File(gchFile).existsSync()) {
-      return _pchPath = pchDir;
+    // Reuse only a PCH built for the current SystemC installation and ABI.
+    // This cache is shared across local runs, which may switch between the
+    // CI-installed Accellera library and a system package installation.
+    if (File(gchFile).existsSync() &&
+        File(metadataFile).existsSync() &&
+        File(metadataFile).readAsStringSync() == signature) {
+      _pchPath = pchDir;
+      _pchSignature = signature;
+      return pchDir;
     }
 
+    if (Directory(pchDir).existsSync()) {
+      Directory(pchDir).deleteSync(recursive: true);
+    }
     Directory(pchDir).createSync(recursive: true);
 
     // Copy the original header next to the .gch so g++ matches them
@@ -76,7 +105,10 @@ class _SystemCSimCompare {
       return null;
     }
 
-    return _pchPath = pchDir;
+    File(metadataFile).writeAsStringSync(signature);
+    _pchPath = pchDir;
+    _pchSignature = signature;
+    return pchDir;
   }
 
   /// Resolves SystemC home/lib paths. If explicit paths are given, uses them.
@@ -498,6 +530,7 @@ int sc_main(int argc, char* argv[]) {
     final pchDir = usePrecompiledHeader
         ? _ensurePch(
             resolvedHome,
+            resolvedLib,
             cxxStd,
             cxxExecutable: cxxExecutable,
           )

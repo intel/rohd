@@ -253,9 +253,9 @@ Normal DevTools builds and run tasks consume prepared viewer packages; they do
 not run Cargo, generate Dart/Rust bindings, or invoke viewer Makefiles. The
 selected `dart_wellen` package owns both its generated bindings and matching web
 runtime, including the bridge version. Its artifact installer verifies local
-or hosted package files, or downloads the selected commit's checksum metadata
-and bundle
-for Git sources. No bridge version is pinned independently by the debugger.
+or hosted package files, downloads a versioned release bundle for Git sources,
+or downloads the selected commit's General CI artifact when CI source mode is
+selected. No bridge version is pinned independently by the debugger.
 Python 3 is required for artifact installation and verification.
 
 Git viewer revisions are also consumer dependencies, not source-build requests.
@@ -268,8 +268,8 @@ The producer records actual build checksums in `tool/bridge_artifacts.build.json
 included in hosted packages and installed from the Git bundle's JSON sidecar.
 Runtime bytes are checked against that metadata, not a local developer's
 compiled WASM hash committed in source.
-The minimum viewer and `dart_wellen` versions are 0.1.1; the older hosted
-0.1.0 packages predate this artifact contract.
+The minimum `dart_wellen` version is 0.1.3; older hosted packages predate the
+current Flutter Rust Bridge dependency set and artifact contract.
 
 `web/dart_wellen` is ignored generated staging output, refreshed from the selected
 `dart_wellen` package before builds and runs. Viewer binaries are not checked
@@ -283,13 +283,15 @@ In **Terminal > Run Task**, use:
 - **Configure Dependency Bundle: Wave Viewer**
 - **Configure Dependency Bundle: Schematic Viewer**
 
-Each task first selects `hosted`, `git`, or `local`. A local choice prompts for
-its checkout/worktree path; Git prompts once for `repository:ref`, such as
-`github.com/intel/rohd-wave-viewer:main`. A GitHub repository does not require
-an `https://` prefix. Hosted requires no further input. Local paths, Git
-settings, and source selections are saved, and Pub runs from the repository
-root. `~` and paths containing spaces are supported; a blank response keeps
-the saved setting (or the default on first use).
+Each task first selects `hosted`, `git`, `local`, or, for Wave Viewer, `ci`.
+A local choice prompts for its checkout/worktree path; Git and CI prompt once
+for `repository:ref`, such as `github.com/intel/rohd-wave-viewer:main`. CI
+uses the commit-addressed payload that successful General CI publishes to the
+public `artifacts` branch and does not require a GitHub Release. A GitHub
+repository does not require an `https://` prefix. Hosted requires no further
+input. Local paths, Git settings, and source selections are saved, and Pub runs
+from the repository root. `~` and paths containing spaces are supported; a
+blank response keeps the saved setting (or the default on first use).
 
 **Configure Dependency Bundle: All** uses the same combined
 `repository:ref` input for each Git-backed repository, so no task needs
@@ -309,20 +311,18 @@ subsequent VS Code run tasks.
 ### Testing a GitHub Viewer Branch
 
 The Git ref must contain `dart_wellen`'s installer and artifact manifest.
-The viewer's General workflow distributes its prebuilt bundle automatically
-after build and browser tests pass on a branch push. Wait for its
-**Distribute commit-keyed bridge bundle** job in the configured distribution
-repository; pull-request checks alone do not distribute it.
-Every branch, tag, and `main` uses the exact resolved commit to select its
-bundle. No manual release or pub.dev publication is needed. The producer uses
-public GitHub prerelease assets as immutable CI storage, not package releases.
+Select `ci` to download the complete `dart-wellen-consumer-artifacts` payload
+from the public `artifacts` branch for the exact resolved commit. The installer
+verifies the payload's source commit, package contract, archive, and every file
+checksum before copying it into the Git dependency. No GitHub Release, pub.dev
+publication, or GitHub API token is needed.
 
 For the development branch on the fork:
 
 ```bash
 WAVE_VIEWER_GIT_URL=https://github.com/desmonddak/rohd-wave-viewer.git \
 WAVE_VIEWER_GIT_REF=shared-packages-020 \
-  bash tool/devtools/devtools_dev_mode.sh configure-group wave-viewer git
+  bash tool/devtools/devtools_dev_mode.sh configure-group wave-viewer ci
 flutter pub get
 make -C rohd_devtools_extension viewer-artifacts
 ```
@@ -332,8 +332,9 @@ from that URL/ref. Git repository URLs and refs are saved along with source
 selection, so configuring another bundle will not revert a fork to upstream.
 The VS Code viewer tasks prompt for the combined `repository:ref` source.
 
-On first use, the resolved Git package downloads and verifies its exact commit's
-bindings/runtime bundle; later invocations verify the installed files.
+On first use, the resolved Git package downloads and verifies the CI artifact
+for its exact commit; later invocations verify the installed files. Git mode
+remains available for versioned release bundles.
 `make -C rohd_devtools_extension web/dart_wellen` stages those files for the
 debugger. No local viewer path or Cargo installation is required.
 
