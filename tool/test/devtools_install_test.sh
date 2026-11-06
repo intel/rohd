@@ -21,6 +21,7 @@ readonly REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 readonly FIXTURE="$(mktemp -d)"
 readonly PACKAGE_ROOT="$FIXTURE/package with spaces"
 readonly EXTENSION_DIR="$PACKAGE_ROOT/extension/devtools"
+readonly STANDALONE_EXTENSION_DIR="$FIXTURE/standalone package/extension/devtools"
 trap 'rm -rf "$FIXTURE"' EXIT
 
 mkdir -p "$EXTENSION_DIR/build/assets" "$EXTENSION_DIR/build/canvaskit" \
@@ -45,13 +46,19 @@ for asset in index.html flutter_bootstrap.js flutter.js main.dart.js version.jso
   assets/AssetManifest.bin assets/FontManifest.json canvaskit/canvaskit.js canvaskit/canvaskit.wasm; do
   touch "$EXTENSION_DIR/build/$asset"
 done
+mkdir -p "$(dirname "$STANDALONE_EXTENSION_DIR")"
+cp -R "$EXTENSION_DIR" "$STANDALONE_EXTENSION_DIR"
 
-for target in "$PACKAGE_ROOT" "$EXTENSION_DIR"; do
+for target in "$PACKAGE_ROOT" "$EXTENSION_DIR" "$STANDALONE_EXTENSION_DIR"; do
   if ! bash "$REPO_ROOT/tool/gh_actions/devtool/test_devtools_install.sh" "$target" > "$FIXTURE/output" 2>&1; then
     cat "$FIXTURE/output"
     exit 1
   fi
-  grep -F "DevTools loader found extension \"rohd\" at $EXTENSION_DIR/build" "$FIXTURE/output"
+  if [[ "$target" == "$STANDALONE_EXTENSION_DIR" ]]; then
+    grep -F 'DevTools loader found extension "rohd" at ' "$FIXTURE/output"
+  else
+    grep -F "DevTools loader found extension \"rohd\" at $EXTENSION_DIR/build" "$FIXTURE/output"
+  fi
 done
 
-echo '2 DevTools artifact-discovery checks passed against temporary packages.'
+echo '3 DevTools artifact-discovery checks passed against temporary packages.'
