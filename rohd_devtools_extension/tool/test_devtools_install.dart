@@ -23,11 +23,8 @@ Future<void> main(List<String> args) async {
     _fail('Expected target directory not found: ${targetDir.path}');
   }
 
-  final installRoot = _installRootFor(targetDir);
-  final extensionDir = Directory(
-    p.join(installRoot.path, 'extension', 'devtools'),
-  );
-  final projectRoot = await _writeProjectRootPointingTo(installRoot);
+  final install = await _resolveInstall(targetDir);
+  final projectRoot = await _writeProjectRootPointingTo(install.root);
 
   try {
     final logs = <String>[];
@@ -38,7 +35,7 @@ Future<void> main(List<String> args) async {
       null,
     );
 
-    final extensionAssetsPath = p.join(extensionDir.path, 'build');
+    final extensionAssetsPath = p.join(install.extensionDir.path, 'build');
     final rohdExtensions = manager.devtoolsExtensions
         .where(
           (extension) =>
@@ -50,7 +47,7 @@ Future<void> main(List<String> args) async {
     if (rohdExtensions.length != 1) {
       _fail(
         'Expected one available ROHD DevTools extension from '
-        '${extensionDir.path}, found ${rohdExtensions.length}.\n'
+        '${install.extensionDir.path}, found ${rohdExtensions.length}.\n'
         'Loader logs:\n${logs.join('\n')}',
       );
     }
@@ -79,6 +76,7 @@ Future<void> main(List<String> args) async {
     );
   } finally {
     await projectRoot.delete(recursive: true);
+    await install.cleanupDir?.delete(recursive: true);
     await resolvedTarget.cleanupDir?.delete(recursive: true);
   }
 }
@@ -183,24 +181,88 @@ final class _ResolvedTarget {
   const _ResolvedTarget(this.directory, {this.cleanupDir});
 }
 
-Directory _installRootFor(Directory extensionDir) {
+final class _ResolvedInstall {
+  final Directory root;
+  final Directory extensionDir;
+  final Directory? cleanupDir;
+
+  const _ResolvedInstall({
+    required this.root,
+    required this.extensionDir,
+    this.cleanupDir,
+  });
+}
+
+Future<_ResolvedInstall> _resolveInstall(Directory extensionDir) async {
   final extensionParent = extensionDir.parent;
   if (p.basename(extensionDir.path) == 'devtools' &&
       p.basename(extensionParent.path) == 'extension') {
-    return extensionParent.parent;
+    final installRoot = extensionParent.parent;
+    if (File(p.join(installRoot.path, 'pubspec.yaml')).existsSync()) {
+      return _ResolvedInstall(
+        root: installRoot,
+        extensionDir: extensionDir,
+      );
+    }
+
+    return _createStandaloneInstall(extensionDir);
   }
 
   final nestedExtensionDir = Directory(
     p.join(extensionDir.path, 'extension', 'devtools'),
   );
-  if (nestedExtensionDir.existsSync()) {
-    return extensionDir;
+  if (nestedExtensionDir.existsSync() &&
+      File(p.join(extensionDir.path, 'pubspec.yaml')).existsSync()) {
+    return _ResolvedInstall(
+      root: extensionDir,
+      extensionDir: nestedExtensionDir,
+    );
   }
 
   _fail(
     'Expected target to be a package root containing extension/devtools or the '
     'extension/devtools directory itself, got ${extensionDir.path}',
   );
+}
+
+Future<_ResolvedInstall> _createStandaloneInstall(
+  Directory extensionDir,
+) async {
+  final root = await Directory.systemTemp.createTemp(
+    'rohd_devtools_extension_package_',
+  );
+  final stagedExtensionDir = Directory(
+    p.join(root.path, 'extension', 'devtools'),
+  );
+  await _copyDirectory(extensionDir, stagedExtensionDir);
+  await File(p.join(root.path, 'pubspec.yaml')).writeAsString('''
+name: rohd
+environment:
+  sdk: ^3.6.0
+''');
+
+  return _ResolvedInstall(
+    root: root,
+    extensionDir: stagedExtensionDir,
+    cleanupDir: root,
+  );
+}
+
+Future<void> _copyDirectory(Directory source, Directory destination) async {
+  await destination.create(recursive: true);
+  await for (final entity in source.list(recursive: true, followLinks: false)) {
+    final relativePath = p.relative(entity.path, from: source.path);
+    final destinationPath = p.join(destination.path, relativePath);
+    if (entity is Directory) {
+      await Directory(destinationPath).create(recursive: true);
+    } else if (entity is File) {
+      await entity.copy(destinationPath);
+    } else {
+      _fail(
+        'Unsupported file-system entry in extension artifact: ${entity.path}',
+      );
+    }
+  }
 }
 
 Future<Directory> _writeProjectRootPointingTo(Directory packageRoot) async {
