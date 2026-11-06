@@ -75,9 +75,10 @@ Call this after the module is built.</p>
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">static void init(Module module) {
   instance._rootModule = module;
-  instance
-    .._collectSignalsFromNetlist(module)
-    .._registerServiceExtensions();
+  instance._collectSignalsFromNetlist(module);
+  if (!kIsWeb) {
+    instance._registerServiceExtensions();
+  }
 }</code></pre>
 </section>
 
