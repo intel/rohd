@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <script>if(window.parent===window){window.location.replace("debugger/")}</script>
+  <!--
+    If you are serving your web app in a path other than the root, change the
+    href value below to reflect the base path you are serving from.
+
+    The path provided below has to start and end with a slash "/" in order for
+    it to work correctly.
+
+    For more details:
+    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
+
+    This is a placeholder for base href that will be replaced by the value of
+    the `--base-href` argument provided to `flutter build`.
+  -->
+  <base href="/">
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="ROHD Live Debugger (DevTools Extension)">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="debugger.png" />
+
+  <title>ROHD Live Debugger</title>
+
+  <!-- Preload Material Icons font so glyphs render on the first Flutter frame
+       instead of showing tofu boxes while the font downloads. -->
+  <link rel="preload" href="assets/fonts/MaterialIcons-Regular.otf" as="font" type="font/otf" crossorigin>
+
+  <!-- Schematic viewer package assets are available for hosted, Git, and local sources. -->
+  <script src="assets/packages/rohd_schematic_viewer/assets/js/elk.bundled.js"></script>
+  <script src="assets/packages/rohd_schematic_viewer/js_bridge/elk_layout_only.js"></script>
+
+  <!-- Wellen WASM bindings (flutter_rust_bridge) for VCD/FST/GHW waveform parsing -->
+  <script src="dart_wellen/wellen_bridge.js"></script>
+</head>
+
+<body>
+  <script>
+    // Initialize wellen_bridge WASM before Flutter starts.
+    // wasm_bindgen (from dart_wellen/wellen_bridge.js) must be called to fetch+compile
+    // the .wasm binary and expose frb_* functions that Dart's @JS interop needs.
+    (async function() {
+      try {
+        var base = document.querySelector('base');
+        var baseHref = base ? base.getAttribute('href') : '/';
+        if (!baseHref.endsWith('/')) baseHref += '/';
+
+        var wasmPath = baseHref + 'dart_wellen/wellen_bridge_bg.wasm';
+        await wasm_bindgen({ module_or_path: wasmPath });
+
+        // Dart's @JS("wasm_bindgen.frb_*") expects window.wasm_bindgen
+        window.wasm_bindgen = wasm_bindgen;
+        console.log('wellen_bridge WASM initialized');
+      } catch (e) {
+        console.warn('wellen_bridge WASM init failed (VCD loading will be unavailable):', e);
+      }
+    })();
+  </script>
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+
+</html>
