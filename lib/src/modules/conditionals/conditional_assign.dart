@@ -71,6 +71,7 @@ class ConditionalAssign extends Conditional {
   late final Logic _receiverOutput = receiverOutput(receiver);
 
   @override
+  @protected
   void execute(Set<Logic>? drivenSignals,
       [void Function(Logic toGuard)? guard]) {
     if (guard != null) {

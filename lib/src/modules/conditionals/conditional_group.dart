@@ -43,6 +43,7 @@ class ConditionalGroup extends Conditional {
       [for (final conditional in conditionals) ...conditional.receivers];
 
   @override
+  @protected
   void execute(Set<Logic>? drivenSignals, void Function(Logic toGuard)? guard) {
     for (final conditional in conditionals) {
       conditional.execute(drivenSignals, guard);
