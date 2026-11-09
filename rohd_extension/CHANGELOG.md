@@ -2,6 +2,10 @@
 
 All notable changes to the ROHD VS Code extension are documented in this file.
 
+## 0.2.1
+
+- Updated the VSIX packaging toolchain to `@vscode/vsce` 4.1.0 and added a `minimatch` 11.0.5 override to address the vulnerability without downgrading VSCE.
+
 ## 0.2.0
 
 - Resolve waveform instance paths through FLC source occurrences for source format discovery and signal navigation.

@@ -60,7 +60,7 @@ On activation the extension prints:
 
 ```text
 ════════════════════════════════════════════════════════════
-ROHD 0.2.0:  Extension loaded for FLC crossprobing.
+ROHD 0.2.1:  Extension loaded for FLC crossprobing.
 
 DTD:
   URI: ws://127.0.0.1:44123/token
@@ -275,6 +275,12 @@ so the construction site closest to the signal or instance is selected first.
 
 - **npm** (comes with Node)
 
+The VSIX toolchain in [package.json](./package.json) pins `@vscode/vsce` to
+`4.1.0` and overrides `minimatch` to patched `11.0.5`. VSCE still requests
+`^10.2.6`, which excludes `11.x`, so upgrading VSCE alone is not sufficient.
+Keep the override until VSCE accepts a patched version; validate toolchain
+changes with `npm audit` and the VSIX packaging and verification steps below.
+
 ## Build
 
 ```bash
@@ -290,18 +296,18 @@ npm run compile        # produces out/extension.js
 ```bash
 cd rohd_extension
 npm ci
-npm run package -- --out intel-corporation.rohd-0.2.0.vsix
-npm run verify:marketplace -- intel-corporation.rohd-0.2.0.vsix
+npm run package -- --out intel-corporation.rohd-0.2.1.vsix
+npm run verify:marketplace -- intel-corporation.rohd-0.2.1.vsix
 ```
 
-This produces a locally verified `intel-corporation.rohd-0.2.0.vsix`. The
+This produces a locally verified `intel-corporation.rohd-0.2.1.vsix`. The
 release workflow builds the distributable VSIX from the release tag; do not
 substitute a local archive for that release artifact.
 
 ### Install
 
 ```bash
-code --install-extension intel-corporation.rohd-0.2.0.vsix --force
+code --install-extension intel-corporation.rohd-0.2.1.vsix --force
 ```
 
 Then reload the VS Code window (**Developer: Reload Window**).
@@ -311,9 +317,9 @@ Then reload the VS Code window (**Developer: Reload Window**).
 ```bash
 cd rohd_extension \
   && npm ci \
-  && npm run package -- --out intel-corporation.rohd-0.2.0.vsix \
-  && npm run verify:marketplace -- intel-corporation.rohd-0.2.0.vsix \
-  && code --install-extension intel-corporation.rohd-0.2.0.vsix --force \
+  && npm run package -- --out intel-corporation.rohd-0.2.1.vsix \
+  && npm run verify:marketplace -- intel-corporation.rohd-0.2.1.vsix \
+  && code --install-extension intel-corporation.rohd-0.2.1.vsix --force \
   && echo "Done — reload the VS Code window to activate."
 ```
 
@@ -329,7 +335,7 @@ Place the extension source in your repo and build it on container creation:
 ```jsonc
 // .devcontainer/devcontainer.json
 {
-  "postCreateCommand": "cd rohd_extension && npm ci && npm run package -- --out intel-corporation.rohd-0.2.0.vsix && npm run verify:marketplace -- intel-corporation.rohd-0.2.0.vsix && code --install-extension intel-corporation.rohd-0.2.0.vsix --force"
+  "postCreateCommand": "cd rohd_extension && npm ci && npm run package -- --out intel-corporation.rohd-0.2.1.vsix && npm run verify:marketplace -- intel-corporation.rohd-0.2.1.vsix && code --install-extension intel-corporation.rohd-0.2.1.vsix --force"
 }
 ```
 
@@ -339,14 +345,14 @@ Build the `.vsix` on your host or in CI, then install at container start:
 
 ```jsonc
 {
-  "postStartCommand": "code --install-extension rohd_extension/intel-corporation.rohd-0.2.0.vsix --force"
+  "postStartCommand": "code --install-extension rohd_extension/intel-corporation.rohd-0.2.1.vsix --force"
 }
 ```
 
 ### Option 3: Install via CLI while connected
 
 ```bash
-code --install-extension intel-corporation.rohd-0.2.0.vsix --force
+code --install-extension intel-corporation.rohd-0.2.1.vsix --force
 ```
 
 The `code` CLI inside a remote session targets the VS Code Server
@@ -364,12 +370,12 @@ automatically.
 If the `code` CLI is not available (e.g. in a Dockerfile `RUN` step):
 
 ```bash
-mkdir -p ~/.vscode-server/extensions/intel-corporation.rohd-0.2.0
+mkdir -p ~/.vscode-server/extensions/intel-corporation.rohd-0.2.1
 cp -r rohd_extension/{package.json,out,snippets,resources} \
-  ~/.vscode-server/extensions/intel-corporation.rohd-0.2.0/
-mkdir -p ~/.vscode-server/extensions/intel-corporation.rohd-0.2.0/node_modules
+  ~/.vscode-server/extensions/intel-corporation.rohd-0.2.1/
+mkdir -p ~/.vscode-server/extensions/intel-corporation.rohd-0.2.1/node_modules
 cp -r rohd_extension/node_modules/ws \
-  ~/.vscode-server/extensions/intel-corporation.rohd-0.2.0/node_modules/
+  ~/.vscode-server/extensions/intel-corporation.rohd-0.2.1/node_modules/
 ```
 
 The directory name must follow the pattern `<publisher>.<name>-<version>`.
@@ -424,7 +430,7 @@ only after `intel-corporation.rohd` is publicly available.
 VS Code identifies Marketplace extensions by `publisher.name`, so
 `intel-corporation.rohd` is a new extension identity rather than an update to
 the legacy `rohd.rohd` listing. Their version histories are independent:
-release the current Pub-authoritative `0.2.0` for
+release the current Pub-authoritative `0.2.1` for
 `intel-corporation.rohd`; do not lower it to match the legacy extension's
 `0.1.0` version.
 

@@ -2,7 +2,7 @@
   "name": "rohd",
   "displayName": "ROHD",
   "description": "ROHD extension for VS Code — snippets, cross-probe source navigation, and language support for the ROHD hardware design framework.",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "publisher": "intel-corporation",
   "license": "SEE LICENSE IN LICENSE",
   "repository": {
@@ -108,7 +108,10 @@
     "@types/node": "^20.2.5",
     "@types/vscode": "^1.80.0",
     "@types/ws": "^8.5.5",
-    "@vscode/vsce": "4.0.0",
+    "@vscode/vsce": "4.1.0",
     "typescript": "^5.9.3"
+  },
+  "overrides": {
+    "minimatch": "11.0.5"
   }
 }
