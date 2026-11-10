@@ -58,9 +58,9 @@ You can also open this repository in a GitHub Codespace to run the example in yo
   - Makes **validation collateral** simpler to develop and debug.  The [ROHD Verification Framework](https://github.com/intel/rohd-vf) helps build well-structured testbenches
   - Powerful capabilities like the [ROHD Schematic Viewer](https://github.com/intel/rohd-schematic-viewer) for high-fidelity rendering of ROHD designs as well as [ROHD Wave Viewer](https://github.com/intel/rohd-wave-viewer) for viewing simulation waveforms even for complex ROHD structures
   - Debug your design with [ROHD Live Debugger](https://github.com/intel/rohd/tree/main/rohd_devtools_extension), an integrated debugger with cross-probing into ROHD source and synthesized RTL output from schematics rendering and waveform display all connected to live RTL simulation
-  - These tools are also available as web apps:
-    - [ROHD Schematic Viewer](https://intel.github.io/rohd-schematic-viewer/)
-    - [ROHD Wave Viewer](https://intel.github.io/rohd-wave-viewer/)
+  - All three tools are available as web apps; the schematic and wave viewers are also available as VS Code extensions:
+    - [ROHD Schematic Viewer](https://intel.github.io/rohd-schematic-viewer/) ([VS Code extension](https://marketplace.visualstudio.com/items?itemName=intel-corporation.rohd-schematic-viewer))
+    - [ROHD Wave Viewer](https://intel.github.io/rohd-wave-viewer/) ([VS Code extension](https://marketplace.visualstudio.com/items?itemName=intel-corporation.rohd-wave-viewer))
     - [ROHD Live Debugger](https://intel.github.io/rohd/rohd-live-debugger/)
   - Support for **cosimulation with Verilog modules** (via [ROHD Cosim](https://github.com/intel/rohd-cosim)) and **instantiation of Verilog modules** in generated SystemVerilog code
 
