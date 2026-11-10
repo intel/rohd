@@ -8,7 +8,6 @@
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 // Deprecated aliases remain through the 0.7.x migration window.
-// ignore_for_file: remove_deprecations_in_breaking_versions
 
 import 'package:rohd/rohd.dart';
 
