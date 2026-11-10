@@ -7,6 +7,9 @@
 // 2025 June
 // Author: Max Korbel <max.korbel@intel.com>
 
+import 'dart:collection';
+
+import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/signals/signals.dart';
 import 'package:rohd/src/synthesizers/systemverilog/systemverilog_synth_sub_module_instantiation.dart';
@@ -26,9 +29,8 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
   /// A shared mapping from [SynthLogic]s which are the result of an inlineable
   /// submodule to the instantiation that produces them.
   ///
-  /// Populated by aggregate-collapse passes, then distributed alongside
-  /// [_collapseMarkedChainableModules] so inline rendering (including
-  /// recursive, multi-level chains) can resolve them.
+  /// Populated by aggregate and chain-collapse passes, remapped during enum
+  /// lowering, then shared by submodule instantiations for recursive rendering.
   final Map<SynthLogic, SystemVerilogSynthSubModuleInstantiation>
       _inlineableSubmoduleMap = {};
 
@@ -48,6 +50,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
     _collapseMarkedChainableModules();
     _replaceInOutConnectionInlineableModules();
     _lowerEnumPorts();
+    _shareInlineableSubmoduleMap();
   }
 
   /// Lowers enum ports to packed boundaries backed by internal enum signals.
@@ -100,6 +103,14 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
             SynthAssignment(backing, output),
         ...rewrittenAssignments,
       ]);
+
+    final rewrittenInlineableSubmodules = {
+      for (final entry in _inlineableSubmoduleMap.entries)
+        entry.key.replaceReferences(backingSignals): entry.value,
+    };
+    _inlineableSubmoduleMap
+      ..clear()
+      ..addAll(rewrittenInlineableSubmodules);
 
     for (final instantiation in subModuleInstantiations) {
       (instantiation as SystemVerilogSynthSubModuleInstantiation)
@@ -1397,6 +1408,22 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
   /// partial, reordered, unpacked, child-port, and shared representations
   /// remain explicit.
   void _collapseFullPackedArrayConcats() {
+    final concats = subModuleInstantiations
+        .whereType<SystemVerilogSynthSubModuleInstantiation>()
+        .where((instantiation) {
+      final concat = instantiation.module;
+      return instantiation.needsInstantiation &&
+          concat is Concat &&
+          !concat.isNet;
+    }).toList();
+    if (concats.isEmpty) {
+      return;
+    }
+
+    final assignedSignals = {
+      for (final assignment in assignments) assignment.dst.resolved,
+    };
+    final submoduleDrivers = <SynthLogic, Set<SynthSubModuleInstantiation>>{};
     final inlineables =
         Map<SynthLogic, SystemVerilogSynthSubModuleInstantiation>.of(
       _inlineableSubmoduleMap,
@@ -1408,10 +1435,19 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
         inlineables.putIfAbsent(result, () => instantiation);
       }
     }
-    for (final instantiation in subModuleInstantiations
-        .whereType<SystemVerilogSynthSubModuleInstantiation>()) {
-      if (instantiation.module is! BusSubset &&
-          instantiation.module is! Concat) {
+    for (final instantiation in subModuleInstantiations) {
+      // Multiple ports on one instance still count as a single driver.
+      for (final signal in instantiation.outputMapping.values
+          .followedBy(instantiation.inOutMapping.values)) {
+        submoduleDrivers
+            .putIfAbsent(
+                signal.resolved, Set<SynthSubModuleInstantiation>.identity)
+            .add(instantiation);
+      }
+
+      if (instantiation is! SystemVerilogSynthSubModuleInstantiation ||
+          (instantiation.module is! BusSubset &&
+              instantiation.module is! Concat)) {
         continue;
       }
       final result = instantiation.inlineResultLogic?.resolved;
@@ -1577,31 +1613,17 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
       }
     }
 
-    for (final instantiation in subModuleInstantiations
-        .whereType<SystemVerilogSynthSubModuleInstantiation>()
-        .toList()) {
-      final concat = instantiation.module;
+    for (final instantiation in concats) {
       final result = instantiation.inlineResultLogic?.resolved;
-      if (!instantiation.needsInstantiation ||
-          concat is! Concat ||
-          concat.isNet ||
-          result == null ||
+      if (result == null ||
           result.runtimeType != SynthLogic ||
           result.isArray ||
           result.isNet ||
           result.isEnum) {
         continue;
       }
-      final hasCompetingDriver =
-          assignments.any((assignment) => assignment.dst.resolved == result) ||
-              subModuleInstantiations.any(
-                (other) =>
-                    !identical(other, instantiation) &&
-                    [
-                      ...other.outputMapping.values,
-                      ...other.inOutMapping.values,
-                    ].any((mapped) => mapped.resolved == result),
-              );
+      final hasCompetingDriver = assignedSignals.contains(result) ||
+          submoduleDrivers[result]!.length > 1;
       if (hasCompetingDriver) {
         continue;
       }
@@ -1644,6 +1666,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
 
       if (source != result) {
         assignments.add(SynthAssignment(source, result));
+        assignedSignals.add(result);
       }
       instantiation.clearInstantiation();
       chainableModulesToCollapse.remove(instantiation);
@@ -1722,9 +1745,6 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
     //      assign _d_and_e = d & e
     //      assign y = _d_and_e
 
-    final synthLogicToInlineableSynthSubmoduleMap = {
-      ..._inlineableSubmoduleMap,
-    };
     final inlinedParentArrays = <SynthLogic>{};
     for (final subModuleInstantiation in chainableModulesToCollapse
         .cast<SystemVerilogSynthSubModuleInstantiation>()) {
@@ -1745,21 +1765,26 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
       // clear declaration of instantiation for inline module
       subModuleInstantiation.clearInstantiation();
 
-      synthLogicToInlineableSynthSubmoduleMap[resultSynthLogic] =
-          subModuleInstantiation;
+      _inlineableSubmoduleMap[resultSynthLogic] = subModuleInstantiation;
     }
 
     // Drop any parent array whose elements have all been inlined away, so the
     // now-unused array declaration is not emitted.
     _dropEmptiedArrays(inlinedParentArrays);
+  }
 
+  /// Shares inline lookups after all signal remapping has completed.
+  void _shareInlineableSubmoduleMap() {
+    final sharedMap = UnmodifiableMapView(_inlineableSubmoduleMap);
     for (final subModuleInstantiation in subModuleInstantiations) {
       subModuleInstantiation as SystemVerilogSynthSubModuleInstantiation;
 
-      subModuleInstantiation.synthLogicToInlineableSynthSubmoduleMap = {
-        ...?subModuleInstantiation.synthLogicToInlineableSynthSubmoduleMap,
-        ...synthLogicToInlineableSynthSubmoduleMap,
-      };
+      final localMap =
+          subModuleInstantiation.synthLogicToInlineableSynthSubmoduleMap;
+      subModuleInstantiation.synthLogicToInlineableSynthSubmoduleMap =
+          localMap == null || localMap.isEmpty
+              ? sharedMap
+              : CombinedMapView([sharedMap, localMap]);
     }
   }
 

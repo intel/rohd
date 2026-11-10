@@ -19,14 +19,35 @@ import 'package:rohd/src/utilities/sanitizer.dart';
 /// Represents a logic signal in the generated code within a module.
 @internal
 class SynthLogic {
-  /// All [Logic]s represented, regardless of type.
-  List<Logic> get logics => UnmodifiableListView([
+  /// An immutable snapshot of all represented [Logic]s, in naming-priority
+  /// order.
+  ///
+  /// Reused between merges; previously returned snapshots remain unchanged.
+  List<Logic> get logics => _logics ??= UnmodifiableListView([
         ..._reservedLogics,
         if (_constLogic != null) _constLogic!,
         ..._renameableLogics,
         ..._mergeableLogics,
         ..._unnamedLogics,
       ]);
+
+  List<Logic>? _logics;
+
+  /// The first represented [Logic], without materializing [logics].
+  Logic get firstLogic =>
+      _reservedLogics.firstOrNull ??
+      _constLogic ??
+      _renameableLogics.firstOrNull ??
+      _mergeableLogics.firstOrNull ??
+      _unnamedLogics.first;
+
+  /// Whether [logic] is represented, without materializing [logics].
+  bool _containsAlias(Logic logic) =>
+      _constLogic == logic ||
+      _reservedLogics.contains(logic) ||
+      _renameableLogics.contains(logic) ||
+      _mergeableLogics.contains(logic) ||
+      _unnamedLogics.contains(logic);
 
   /// If this was merged and is now replaced by another, then this is non-null
   /// and points to it.
@@ -108,7 +129,7 @@ class SynthLogic {
   SynthLogic? _replacement;
 
   /// The width of any/all of the [logics].
-  int get width => logics.first.width;
+  int get width => firstLogic.width;
 
   /// Indicates that this has a reserved name.
   bool get isReserved => _reservedLogics.isNotEmpty;
@@ -172,9 +193,10 @@ class SynthLogic {
   }
 
   /// Whether this represents a net.
-  bool get isNet =>
-      // can just look at the first since nets and non-nets cannot be merged
-      logics.first.isNet || (isArray && (logics.first as BaseLogicArray).isNet);
+  bool get isNet {
+    final logic = firstLogic;
+    return logic.isNet || (isArray && (logic as BaseLogicArray).isNet);
+  }
 
   /// Whether this represents an enum.
   bool get isEnum => characteristicEnum != null;
@@ -364,7 +386,7 @@ class SynthLogic {
     if (generatedNameKey != null) {
       return parentSynthModuleDefinition.module.namer.identifierNameOf(
           generatedNameKey,
-          initialName: Namer.baseName(logics.first));
+          initialName: Namer.baseName(firstLogic));
     }
 
     return parentSynthModuleDefinition.module.namer.signalNameOfBest(
@@ -525,8 +547,8 @@ class SynthLogic {
   /// Whether two array signals have compatible declarations and element trees.
   static bool _arrayRepresentationsCompatible(SynthLogic a, SynthLogic b) =>
       _arrayLayoutsCompatible(
-        a.logics.first as BaseLogicArray,
-        b.logics.first as BaseLogicArray,
+        a.firstLogic as BaseLogicArray,
+        b.firstLogic as BaseLogicArray,
       );
 
   static bool _arrayLayoutsCompatible(
@@ -615,13 +637,17 @@ class SynthLogic {
     _renameableLogics.addAll(other._renameableLogics);
     _mergeableLogics.addAll(other._mergeableLogics);
     _unnamedLogics.addAll(other._unnamedLogics);
+    _logics = null;
 
     // keep track that it was replaced by this
-    other.replacement = this;
+    other
+      .._logics = null
+      ..replacement = this;
   }
 
   /// Adds a new [logic] to be represented by this.
   void _addLogic(Logic logic, {Naming? namingOverride}) {
+    _logics = null;
     final naming = namingOverride ?? logic.naming;
     if (logic is Const) {
       _constLogic = logic;
@@ -683,7 +709,7 @@ class SynthLogic {
     String unpackedDims;
 
     // we only use this for dimensions, so first is fine
-    final logic = logics.first;
+    final logic = firstLogic;
 
     if (isArray) {
       final logicArr = logic as BaseLogicArray;
@@ -988,10 +1014,12 @@ class SynthLogicArrayElement extends SynthLogic {
     // we need to make sure it still gets in there.
     if (force) {
       for (final otherLogic in other.logics) {
-        if (!logics.contains(otherLogic)) {
+        if (!_containsAlias(otherLogic)) {
           _mergeableLogics.add(otherLogic);
+          _logics = null;
         }
       }
+      other._logics = null;
     }
   }
 
