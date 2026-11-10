@@ -520,6 +520,7 @@ bash tool/release/stage_live_debugger.sh "$stage_root/rohd_live_debugger"
 cd "$stage_root/rohd_live_debugger"
 dart pub publish --dry-run
 ```
+
 Start a new pending changelog section when subsequent changes are made; do not
 rewrite notes for already published versions.
 
