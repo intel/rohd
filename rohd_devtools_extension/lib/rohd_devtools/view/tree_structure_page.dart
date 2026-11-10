@@ -433,46 +433,56 @@ class TreeStructurePageState extends State<TreeStructurePage> {
                 state is HierarchyLoaded ? state.selectedModule : null;
             _queryModuleInfoForSelection(selectedModule);
           },
-          child: DevToolsSplitLayout(
-            moduleTreeConfig: ModuleTreePanelConfig(
-              icon: platformIcon(Icons.account_tree, '🌳'),
-              refreshIcon: platformIcon(Icons.refresh, '🔃', size: 24),
-              onRefresh: () =>
-                  context.read<RohdServiceCubit>().evalModuleTree(),
-              treeContent: _buildTreeContent(context),
-              verticalController: _vertical,
-              horizontalController: _horizontal,
-            ),
-            detailsConfig: DetailsPanelConfig(
-              content: SourceFramePointerTracker(
-                child: DetailsPanelContent(
-                  waveformConfig: WaveformTabConfig(
-                    waveformViewer: WaveformViewerWrapper(
-                      signalWaveformApi: _waveformApi,
-                      crossProbeService: _waveformXp,
-                      onGoToSource: _sourceNavService != null
-                          ? (format, paths) => _goToSource(paths, format)
-                          : null,
-                      extensionClient: _extensionClient,
+          child: BlocBuilder<DevToolsHierarchyCubit, DevToolsHierarchyState>(
+            buildWhen: (previous, current) =>
+                (previous is HierarchyLoaded
+                    ? previous.hierarchyService
+                    : null) !=
+                (current is HierarchyLoaded ? current.hierarchyService : null),
+            builder: (context, hierarchyState) => DevToolsSplitLayout(
+              moduleTreeConfig: ModuleTreePanelConfig(
+                icon: platformIcon(Icons.account_tree, '🌳'),
+                refreshIcon: platformIcon(Icons.refresh, '🔃', size: 24),
+                onRefresh: () =>
+                    context.read<RohdServiceCubit>().evalModuleTree(),
+                treeContent: _buildTreeContent(context),
+                verticalController: _vertical,
+                horizontalController: _horizontal,
+                hierarchyService: hierarchyState is HierarchyLoaded
+                    ? hierarchyState.hierarchyService
+                    : null,
+              ),
+              detailsConfig: DetailsPanelConfig(
+                content: SourceFramePointerTracker(
+                  child: DetailsPanelContent(
+                    waveformConfig: WaveformTabConfig(
+                      waveformViewer: WaveformViewerWrapper(
+                        signalWaveformApi: _waveformApi,
+                        crossProbeService: _waveformXp,
+                        onGoToSource: _sourceNavService != null
+                            ? (format, paths) => _goToSource(paths, format)
+                            : null,
+                        extensionClient: _extensionClient,
+                      ),
                     ),
-                  ),
-                  schematicConfig: SchematicTabConfig(
-                    assetPath: 'rohd_schematic.json',
-                    customWidgetBuilder: ({required isVisible}) =>
-                        _buildExtensionSchematicViewer(
-                      context,
-                      isVisible: isVisible,
+                    schematicConfig: SchematicTabConfig(
+                      assetPath: 'rohd_schematic.json',
+                      customWidgetBuilder: ({required isVisible}) =>
+                          _buildExtensionSchematicViewer(
+                        context,
+                        isVisible: isVisible,
+                      ),
                     ),
-                  ),
-                  noModuleSelectedText: 'No module selected',
-                  onSendSignals: (paths) {
-                    _crossProbeChannel.broadcast(paths, 'details');
-                  },
-                  onGoToSource: _sourceNavService != null
-                      ? (format, paths) => _goToSource(paths, format)
-                      : null,
-                  availableSourceFormats: () => resolveNavigableFormats(
-                    _extensionClient?.currentModuleInfo.value,
+                    noModuleSelectedText: 'No module selected',
+                    onSendSignals: (paths) {
+                      _crossProbeChannel.broadcast(paths, 'details');
+                    },
+                    onGoToSource: _sourceNavService != null
+                        ? (format, paths) => _goToSource(paths, format)
+                        : null,
+                    availableSourceFormats: () => resolveNavigableFormats(
+                      _extensionClient?.currentModuleInfo.value,
+                    ),
                   ),
                 ),
               ),

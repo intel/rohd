@@ -12,13 +12,21 @@ COVERAGE_VIEW_SCRIPT := $(WORKSPACE_ROOT)/tool/coverage/view_coverage.sh
 DART_SOURCES := $(shell find lib -name '*.dart' 2>/dev/null)
 ASSET_STAGING_INPUTS := scripts/stage_assets.sh scripts/install_viewer_artifacts.sh scripts/resolve_package_root.dart $(wildcard $(WORKSPACE_ROOT)/.dart_tool/package_config.json)
 
-.PHONY: all build-linux build-web clean clean-linux clean-web clean-stamps web web-release web-run web-run-profile help force real-clean extension install-local install-remote test test-integration test-all coverage coverage-view coverage-clean viewer-artifacts
+.PHONY: all build-linux build-web clean clean-linux clean-web clean-stamps web web-release web-run web-run-profile help force real-clean extension install-local install-remote test test-integration test-all coverage coverage-view coverage-clean viewer-artifacts devtools-package devtools-package-check
 
 all: linux
 
 # Validate dependency artifacts without generating or compiling them.
 viewer-artifacts:
 	@bash $(ROOT)/scripts/install_viewer_artifacts.sh
+
+# Build and install the opt-in Dart DevTools package's web payload.
+devtools-package:
+	@cd "$(WORKSPACE_ROOT)" && bash tool/gh_actions/devtool/install_devtools.sh
+
+# Verify DevTools discovers the installed package and its required assets.
+devtools-package-check:
+	@cd "$(WORKSPACE_ROOT)" && bash tool/gh_actions/devtool/test_devtools_install.sh
 
 # Run the lightweight cubit and widget tests on the Flutter VM. The extension
 # entry point uses `dart:js_interop`, but these tests exercise platform-neutral
@@ -189,6 +197,8 @@ help:
 	@echo "  coverage   - Generate coverage for rohd_devtools_extension"
 	@echo "  coverage-view - Serve rohd_devtools_extension coverage locally"
 	@echo "  coverage-clean - Remove rohd_devtools_extension coverage output"
+	@echo "  devtools-package - Build the opt-in Dart DevTools package"
+	@echo "  devtools-package-check - Check DevTools package discovery"
 	@echo ""
 	@echo "Extension Targets:"
 	@echo "  extension  - Build VS Code extension"

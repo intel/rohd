@@ -5,7 +5,7 @@
 #
 # install_devtools.sh
 # Build the ROHD DevTools extension web artifact:
-#   extension/devtools/           – DevTools extension (iframe in Chrome DevTools)
+#   packages/rohd_live_debugger/extension/devtools/ – DevTools extension
 #
 # Usage (from repo root):
 #   bash tool/gh_actions/devtool/install_devtools.sh
@@ -15,7 +15,7 @@
 
 set -euo pipefail
 
-DEST="../extension/devtools"
+DEST="../packages/rohd_live_debugger/extension/devtools"
 
 bash tool/gh_actions/write_local_package_overrides.sh
 
@@ -65,7 +65,7 @@ rm -f "$DEST/build/manifest.json" "$DEST/build/flutter_service_worker.js"
 if [ ! -f "$DEST/config.yaml" ]; then
   echo "  Creating config.yaml..."
   cat > "$DEST/config.yaml" << 'CFGEOF'
-name: rohd
+name: rohd_live_debugger
 issueTracker: https://github.com/intel/rohd/issues
 version: 0.0.1
 materialIconCodePoint: '0xe1c5'
@@ -74,8 +74,8 @@ CFGEOF
 fi
 
 # Inject a redirect as the very first <script> in <head>.
-# When loaded outside a DevTools iframe, redirect to /debugger/.
+# When loaded outside a DevTools iframe, open the hosted standalone debugger.
 echo "  Injecting head-of-page redirect for non-iframe access..."
-sed -i 's|<head>|<head>\n  <script>if(window.parent===window){window.location.replace("debugger/")}</script>|' "$DEST/build/index.html"
+sed -i 's|<head>|<head>\n  <script>if(window.parent===window){window.location.replace("https://intel.github.io/rohd/rohd-live-debugger/")}</script>|' "$DEST/build/index.html"
 
 echo "  Extension deployed to $DEST/ (web assets in $DEST/build/)"

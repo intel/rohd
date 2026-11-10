@@ -10,7 +10,7 @@
 #   tool/release/check_release.sh [--validate-only] [package ...]
 #
 # With no package names, check rohd, rohd_hierarchy, rohd_waveform,
-# rohd_devtools_widgets, and rohd_source_navigator. Each selected package
+# rohd_devtools_widgets, rohd_source_navigator, and rohd_live_debugger. Each selected package
 # uses its existing pubspec.yaml version; manifests and changelogs are not edited.
 # Dart is required for Dart packages; Flutter is required for widgets.
 #
@@ -26,11 +26,12 @@
 # SDK commands. Normal checks hard-code pub publish --dry-run with stdin closed;
 # there is no upload mode and no forwarding of arbitrary pub options.
 # Results are summarized; any failure or nonzero warning makes this script fail.
-# Dry runs may update dependency caches/lockfiles. Local overrides are preserved
+# The debugger dry run uses a temporary standalone copy, because the root
+# package's .pubignore excludes the packages/ directory. Dry runs may update dependency caches/lockfiles. Local overrides are preserved
 # and do not prove hosted dependency readiness. No commits, tags, or pushes occur.
 # SDK telemetry is suppressed for these checks and their child analyzers only.
 #
-# For ROHD, first run tool/release/prepare_release.sh rohd to install verified DevTools.
+# For rohd_live_debugger, first run its preparation to install verified DevTools.
 # See doc/releases.md for preparation, hosted validation, and manual publication.
 #
 # 2026 September 18
@@ -43,8 +44,8 @@ export FLUTTER_SUPPRESS_ANALYTICS=true
 
 usage() {
   echo "Usage: $0 [--validate-only] [package ...]"
-  echo "Packages: rohd rohd_hierarchy rohd_waveform rohd_devtools_widgets rohd_source_navigator"
-  echo "Defaults to all five packages, using each package's pubspec.yaml version."
+  echo "Packages: rohd rohd_hierarchy rohd_waveform rohd_devtools_widgets rohd_source_navigator rohd_live_debugger"
+  echo "Defaults to all six packages, using each package's pubspec.yaml version."
   echo "Runs publication dry runs only; never uploads packages."
 }
 
@@ -59,7 +60,7 @@ if [[ "${1:-}" == '--validate-only' ]]; then
   shift
 fi
 if [[ $# -eq 0 ]]; then
-  set -- rohd rohd_hierarchy rohd_waveform rohd_devtools_widgets rohd_source_navigator
+  set -- rohd rohd_hierarchy rohd_waveform rohd_devtools_widgets rohd_source_navigator rohd_live_debugger
 fi
 
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -74,7 +75,7 @@ for package in "$@"; do
       directory="$REPO_ROOT"
       sdk=dart
       ;;
-    rohd_hierarchy|rohd_waveform|rohd_source_navigator)
+    rohd_hierarchy|rohd_waveform|rohd_source_navigator|rohd_live_debugger)
       directory="$REPO_ROOT/packages/$package"
       sdk=dart
       ;;
@@ -110,18 +111,37 @@ echo "Dry runs only. Package versions and local overrides are left unchanged."
 echo "Local overrides can hide hosted dependency problems; repeat without them in a disposable checkout before publishing."
 results=()
 failed=0
+TEMP_DIR=""
+cleanup() {
+  if [[ -n "$TEMP_DIR" ]]; then
+    rm -rf "$TEMP_DIR"
+  fi
+}
+trap cleanup EXIT
 for index in "${!packages[@]}"; do
   package="${packages[$index]}"
   directory="${directories[$index]}"
   sdk="${sdks[$index]}"
   printf '\n=== %s ===\n' "$package"
-  if [[ "$package" == rohd ]] &&
-      [[ ! -f "$REPO_ROOT/extension/devtools/build/index.html" ||
-         ! -f "$REPO_ROOT/extension/devtools/config.yaml" ]]; then
-    echo "ROHD requires its prepared DevTools build. Run tool/release/prepare_release.sh rohd first." >&2
+  if [[ "$package" == rohd_live_debugger ]] &&
+      [[ ! -f "$directory/extension/devtools/build/index.html" ||
+         ! -f "$directory/extension/devtools/config.yaml" ]]; then
+    echo "rohd_live_debugger requires its prepared DevTools build. Run tool/release/prepare_release.sh rohd_live_debugger first." >&2
     results+=("$package: FAILED (missing DevTools payload)")
     failed=1
     continue
+  fi
+  if [[ "$package" == rohd_live_debugger ]]; then
+    if [[ -z "$TEMP_DIR" ]]; then
+      TEMP_DIR="$(mktemp -d)"
+    fi
+    mkdir -p "$TEMP_DIR/$index"
+    directory="$TEMP_DIR/$index/rohd_live_debugger"
+    if ! bash "$SCRIPT_DIR/stage_live_debugger.sh" "$directory"; then
+      results+=("$package: FAILED (could not stage package)")
+      failed=1
+      continue
+    fi
   fi
   echo "Directory: $directory"
   echo "Command: $sdk pub publish --dry-run"

@@ -22,7 +22,7 @@ set -euo pipefail
 package="${2##*/}"
 case "$package:$3" in
   rohd:dart|rohd_hierarchy:dart|rohd_waveform:dart|\
-    rohd_devtools_widgets:flutter|rohd_source_navigator:dart) ;;
+    rohd_devtools_widgets:flutter|rohd_source_navigator:dart|rohd_live_debugger:dart) ;;
   *) exit 99 ;;
 esac
 printf '%s|%s\n' "$package" "$3" >> "$PANA_LOG"
@@ -48,7 +48,10 @@ run_case() {
 }
 
 run_case 0
-[[ "$(cat "$PANA_LOG")" == $'rohd|dart\nrohd_hierarchy|dart\nrohd_waveform|dart\nrohd_devtools_widgets|flutter\nrohd_source_navigator|dart' ]]
+[[ "$(cat "$PANA_LOG")" == $'rohd|dart\nrohd_hierarchy|dart\nrohd_waveform|dart\nrohd_devtools_widgets|flutter\nrohd_source_navigator|dart\nrohd_live_debugger|dart' ]]
+
+run_case 0 rohd_live_debugger
+[[ "$(cat "$PANA_LOG")" == 'rohd_live_debugger|dart' ]]
 
 run_case 0 rohd_devtools_widgets rohd_waveform
 [[ "$(cat "$PANA_LOG")" == $'rohd_devtools_widgets|flutter\nrohd_waveform|dart' ]]

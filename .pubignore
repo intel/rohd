@@ -13,6 +13,7 @@ build/
 /packages/
 /rohd_devtools_extension/
 /rohd_extension/
+/extension/devtools/
 
 # Directory created by dartdoc
 doc/api/
@@ -34,6 +35,3 @@ coverage/
 !test/example_icarus_waves.vcd
 !test/example_verilator_waves.vcd
 !test/sv_param_passthrough.sv
-
-# Release with devtools build
-!extension/devtools/build

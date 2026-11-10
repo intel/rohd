@@ -4,4 +4,5 @@ workspace:
   - packages/rohd_waveform
   - packages/rohd_devtools_widgets
   - packages/rohd_source_navigator
+  - packages/rohd_live_debugger
   - rohd_devtools_extension

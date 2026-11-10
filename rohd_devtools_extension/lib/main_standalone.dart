@@ -16,12 +16,15 @@
 import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:rohd_devtools_extension/rohd_devtools/const/app_version.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/services/services.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/ui/standalone_app_shell.dart';
 
 /// Entry point for the standalone ROHD DevTools app.
-void main(List<String> args) {
+Future<void> main(List<String> args) async {
+  WidgetsFlutterBinding.ensureInitialized();
   _setupLogging();
+  await initAppVersion();
 
   final config = StandaloneAppConfig(
     connectionStrategy: createPlatformVmConnectionStrategy(),

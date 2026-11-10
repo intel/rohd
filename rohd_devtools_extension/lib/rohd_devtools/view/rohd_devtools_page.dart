@@ -7,82 +7,134 @@
 // 2025 January 28
 // Author: Roberto Torres <roberto.torres@intel.com>
 
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:rohd_devtools_extension/rohd_devtools/const/app_theme.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/cubit/cubits.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/rohd_devtools.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/ui/ui.dart';
 
 /// The main ROHD DevTools page with all necessary BlocProviders.
-class RohdDevToolsPage extends StatelessWidget {
+class RohdDevToolsPage extends StatefulWidget {
   /// Whether the page-owned service cubit manages the global service manager.
   final bool _manageServiceManager;
 
+  /// Current theme supplied by the embedding DevTools host.
+  final DevToolsThemeMode hostThemeMode;
+
   /// Creates the ROHD DevTools page.
-  const RohdDevToolsPage({super.key, bool manageServiceManager = true})
-      : _manageServiceManager = manageServiceManager;
+  const RohdDevToolsPage({
+    super.key,
+    bool manageServiceManager = true,
+    this.hostThemeMode = DevToolsThemeMode.dark,
+  }) : _manageServiceManager = manageServiceManager;
+
+  @override
+  State<RohdDevToolsPage> createState() => _RohdDevToolsPageState();
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties
+        .add(EnumProperty<DevToolsThemeMode>('hostThemeMode', hostThemeMode));
+  }
+}
+
+class _RohdDevToolsPageState extends State<RohdDevToolsPage> {
+  late final DevToolsThemeCubit _themeCubit;
+
+  @override
+  void initState() {
+    super.initState();
+    _themeCubit = DevToolsThemeCubit(initialMode: widget.hostThemeMode);
+  }
+
+  @override
+  void didUpdateWidget(RohdDevToolsPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.hostThemeMode != oldWidget.hostThemeMode) {
+      _themeCubit.setTheme(widget.hostThemeMode);
+    }
+  }
+
+  @override
+  void dispose() {
+    unawaited(_themeCubit.close());
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     debugPrint('[RohdDevToolsPage] Building page with BlocProviders...');
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider(
-          create: (context) {
-            debugPrint('[RohdDevToolsPage] Creating DevToolsThemeCubit...');
-            return DevToolsThemeCubit();
-          },
+    return Localizations.override(
+      context: context,
+      delegates: const [DefaultMaterialLocalizations.delegate],
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider.value(value: _themeCubit),
+          BlocProvider(
+            create: (context) {
+              debugPrint('[RohdDevToolsPage] Creating RohdServiceCubit...');
+              final cubit = RohdServiceCubit(
+                manageServiceManager: widget._manageServiceManager,
+              );
+              debugPrint('[RohdDevToolsPage] RohdServiceCubit created');
+              return cubit;
+            },
+          ),
+          BlocProvider(
+            create: (context) {
+              debugPrint('[RohdDevToolsPage] Creating TreeSearchTermCubit...');
+              final cubit = TreeSearchTermCubit();
+              debugPrint('[RohdDevToolsPage] TreeSearchTermCubit created');
+              return cubit;
+            },
+          ),
+          BlocProvider(
+            create: (context) {
+              debugPrint(
+                  '[RohdDevToolsPage] Creating DevToolsHierarchyCubit...');
+              final cubit = DevToolsHierarchyCubit();
+              debugPrint('[RohdDevToolsPage] DevToolsHierarchyCubit created');
+              return cubit;
+            },
+          ),
+          BlocProvider(
+            create: (context) {
+              debugPrint(
+                  '[RohdDevToolsPage] Creating SignalSearchTermCubit...');
+              final cubit = SignalSearchTermCubit();
+              debugPrint('[RohdDevToolsPage] SignalSearchTermCubit created');
+              return cubit;
+            },
+          ),
+          BlocProvider(
+            create: (context) {
+              debugPrint('[RohdDevToolsPage] Creating DetailsTabCubit...');
+              final cubit = DetailsTabCubit();
+              debugPrint('[RohdDevToolsPage] DetailsTabCubit created');
+              return cubit;
+            },
+          ),
+          BlocProvider(
+            create: (context) {
+              debugPrint('[RohdDevToolsPage] Creating SnapshotCubit...');
+              return SnapshotCubit();
+            },
+          ),
+        ],
+        child: BlocBuilder<DevToolsThemeCubit, DevToolsThemeMode>(
+          builder: (context, themeMode) => Theme(
+            data: themeMode == DevToolsThemeMode.dark
+                ? buildDarkTheme()
+                : buildLightTheme(),
+            child: const RohdExtensionModule(),
+          ),
         ),
-        BlocProvider(
-          create: (context) {
-            debugPrint('[RohdDevToolsPage] Creating RohdServiceCubit...');
-            final cubit = RohdServiceCubit(
-              manageServiceManager: _manageServiceManager,
-            );
-            debugPrint('[RohdDevToolsPage] RohdServiceCubit created');
-            return cubit;
-          },
-        ),
-        BlocProvider(
-          create: (context) {
-            debugPrint('[RohdDevToolsPage] Creating TreeSearchTermCubit...');
-            final cubit = TreeSearchTermCubit();
-            debugPrint('[RohdDevToolsPage] TreeSearchTermCubit created');
-            return cubit;
-          },
-        ),
-        BlocProvider(
-          create: (context) {
-            debugPrint('[RohdDevToolsPage] Creating DevToolsHierarchyCubit...');
-            final cubit = DevToolsHierarchyCubit();
-            debugPrint('[RohdDevToolsPage] DevToolsHierarchyCubit created');
-            return cubit;
-          },
-        ),
-        BlocProvider(
-          create: (context) {
-            debugPrint('[RohdDevToolsPage] Creating SignalSearchTermCubit...');
-            final cubit = SignalSearchTermCubit();
-            debugPrint('[RohdDevToolsPage] SignalSearchTermCubit created');
-            return cubit;
-          },
-        ),
-        BlocProvider(
-          create: (context) {
-            debugPrint('[RohdDevToolsPage] Creating DetailsTabCubit...');
-            final cubit = DetailsTabCubit();
-            debugPrint('[RohdDevToolsPage] DetailsTabCubit created');
-            return cubit;
-          },
-        ),
-        BlocProvider(
-          create: (context) {
-            debugPrint('[RohdDevToolsPage] Creating SnapshotCubit...');
-            return SnapshotCubit();
-          },
-        ),
-      ],
-      child: const RohdExtensionModule(),
+      ),
     );
   }
 }

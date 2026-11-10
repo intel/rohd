@@ -12,7 +12,7 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:material_ui/material_ui.dart';
-
+import 'package:rohd_devtools_extension/rohd_devtools/const/app_version.dart';
 import 'package:rohd_devtools_widgets/rohd_devtools_widgets.dart';
 
 /// A help button for the ROHD DevTools app bar.
@@ -23,19 +23,35 @@ class DevToolsHelpButton extends StatelessWidget {
   /// Whether the current theme is dark mode.
   final bool isDark;
 
+  /// Whether color emoji rendering is available on this platform.
+  final bool hasColorEmoji;
+
   /// Create a [DevToolsHelpButton].
-  const DevToolsHelpButton({required this.isDark, super.key});
+  const DevToolsHelpButton({
+    required this.isDark,
+    this.hasColorEmoji = true,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) => MarkdownHelpButton(
         assetPath: 'assets/help/devtools_help.md',
         isDark: isDark,
-        labelIcon: kIsWeb ? const Icon(Icons.help_outline, size: 20) : null,
+        substitutions: {'VERSION': appVersion},
+        labelIcon: hasColorEmoji
+            ? null
+            : Icon(
+                Icons.help_outline,
+                size: 18,
+                color: isDark ? Colors.white70 : Colors.black54,
+              ),
       );
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(DiagnosticsProperty<bool>('isDark', isDark));
+    properties
+      ..add(DiagnosticsProperty<bool>('isDark', isDark))
+      ..add(DiagnosticsProperty<bool>('hasColorEmoji', hasColorEmoji));
   }
 }

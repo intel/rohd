@@ -53,7 +53,7 @@ chmod +x \
 
 bash "$FIXTURE_REPO/tool/gh_actions/devtool/smoke_test_local_packages.sh"
 
-expected=$'configure|https://github.com/intel/rohd-wave-viewer.git|528178830b081c0aca2e6bbb321372d26725fc59|configure-group|wave-viewer\ninstall\nverify|extension/devtools'
+expected=$'configure|https://github.com/intel/rohd-wave-viewer.git|528178830b081c0aca2e6bbb321372d26725fc59|configure-group|wave-viewer\ninstall\nverify|packages/rohd_live_debugger'
 [[ "$(cat "$COMMAND_LOG")" == "$expected" ]]
 
 echo 'DevTools smoke local-package checks passed.'

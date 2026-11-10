@@ -5,8 +5,8 @@
 The libraries and VS Code extension in this repository have independent versions
 and release schedules. Releasing ROHD does not require releasing every component,
 and a sub-package or VS Code extension release does not require a new ROHD
-version. The DevTools application is the exception: its web build ships with
-ROHD. Bump dependency constraints only when a consumer needs a newer version;
+version. The private DevTools application is built into the independently
+published `rohd_live_debugger` package. Bump dependency constraints only when a consumer needs a newer version;
 versions do not need to match across components.
 
 In the table below, `<version>` means the version of the component being
@@ -14,12 +14,13 @@ released, not a repository-wide version.
 
 | Component and Source | Purpose | Distribution and Release | Version Source | GitHub Tracking |
 | --- | --- | --- | --- | --- |
-| [rohd](../lib) | main framework | Independent pub.dev package, published with `dart pub publish` from the repository root; includes the DevTools web build. | Root `pubspec.yaml`, synchronized with `Config.version`. | Tag `v<version>`; release **ROHD v<version>**. |
+| [rohd](../lib) | main framework | Independent pub.dev package, published with `dart pub publish` from the repository root. | Root `pubspec.yaml`, synchronized with `Config.version`. | Tag `v<version>`; release **ROHD v<version>**. |
 | [rohd_hierarchy](../packages/rohd_hierarchy) | Shared hierarchy models, addressing, adapters, and search. | Independent pub.dev package; `dart pub publish` from its directory. | Its own `pubspec.yaml`. | Tag `rohd_hierarchy-v<version>`; release **rohd_hierarchy v<version>**. |
 | [rohd_waveform](../packages/rohd_waveform) | Shared waveform models and data services. | Independent pub.dev package; `dart pub publish` from its directory. | Its own `pubspec.yaml`. | Tag `rohd_waveform-v<version>`; release **rohd_waveform v<version>**. |
 | [rohd_devtools_widgets](../packages/rohd_devtools_widgets) | Reusable Flutter controls and utilities for debug viewers. | Independent pub.dev package; `flutter pub publish` from its directory. | Its own `pubspec.yaml`. | Tag `rohd_devtools_widgets-v<version>`; release **rohd_devtools_widgets v<version>**. |
 | [rohd_source_navigator](../packages/rohd_source_navigator) | Shared FLC data models and source-navigation utilities for debug viewers. | Independent pub.dev package; `dart pub publish` from its directory. | Its own `pubspec.yaml`. | Tag `rohd_source_navigator-v<version>`; release **rohd_source_navigator v<version>**. |
-| [ROHD DevTools application](../rohd_devtools_extension) | Interactive hardware debug UI embedded in Dart DevTools. | Flutter web build produced by CI and bundled under `extension/devtools` in the ROHD pub.dev package; the application itself is not published to pub.dev. | Tracked by the containing ROHD release and the build's source/artifact commits, not an independent application release version. | Included in ROHD's tag and release notes; no separate release tag. The `artifacts` branch holds CI output, not an immutable release. |
+| [rohd_live_debugger](../packages/rohd_live_debugger) | Opt-in ROHD Dart DevTools extension. | Independent pub.dev package; publish a staged standalone copy with its prepared web build. | Its own `pubspec.yaml`, synchronized with the DevTools config and Flutter application version. | Tag `rohd_live_debugger-v<version>`; release **rohd_live_debugger v<version>**. |
+| [ROHD DevTools application](../rohd_devtools_extension) | Interactive hardware debug UI embedded in Dart DevTools. | Private Flutter app; its CI-built web bundle ships in `rohd_live_debugger`, not in `rohd`. | Application build metadata matches the debugger package version. | Tracked by the debugger release and its source/artifact commits; no separate app tag. The `artifacts` branch holds CI output, not an immutable release. |
 | [ROHD VS Code extension](../rohd_extension) | Editor snippets, completions, cross-probe source navigation, and the ROHD viewer extension pack. | Tag CI verifies Marketplace viewer availability, builds and checksums a Marketplace-qualified VSIX, retains it as a 90-day Actions artifact, and provides administrator publication instructions. The GitHub release workflow separately attaches a verified VSIX and checksum after the release is published; an authorized Marketplace administrator publishes the exact reviewed artifact. | `rohd_extension/pubspec.yaml`, synchronized to npm metadata. | Tag `rohd-vscode-v<version>`; release `ROHD VS Code v<version>`, with `rohd-vscode-v<version>.vsix` and its checksum attached automatically. |
 
 The source-navigation library lives in `packages/rohd_source_navigator`, alongside
@@ -43,8 +44,20 @@ development.
 
 The built DevTools distribution is different from the application's source:
 `extension/devtools/config.yaml` and the complete `extension/devtools/build/`
-payload must remain in the ROHD archive. Prepare and smoke-test that distribution
-before publication; excluding the application source does not replace that gate.
+payload must be included in the `rohd_live_debugger` archive, not the ROHD
+archive. Prepare and smoke-test that distribution before publishing the debugger.
+Pub applies the checkout root's `/packages/` exclusion to nested packages, so
+the debugger's archive checks and publication use a standalone staged copy.
+The staging helper removes only checkout workspace resolution and retains the
+prepared payload; it does not change the checkout or publish anything.
+This exclusion also affects direct Pub archive checks for the other nested
+packages. Their existing release checks still run in the checkout and can fail
+with a hidden-pubspec error; use a standalone staging copy for their final
+archive validation as described in [local package testing](local_pub_testing.md).
+The DevTools `config.yaml` version identifies the extension and its served asset
+path. Bump it when releasing a new DevTools build and keep the installer's
+fallback configuration and the debugger application's `pubspec.yaml` version
+in sync with the debugger package version; it is separate from the ROHD version.
 
 ## GitHub Strategy
 
@@ -118,7 +131,8 @@ with a merge or rebase; the preparation PR itself does not need to be merged yet
 4. Verify the PR's CI results cover the relevant tests for the release commit,
    including DevTools app tests when shared widgets change. The General workflow
    has separate `Check rohd_hierarchy`, `Check rohd_waveform`,
-   `Check rohd_devtools_widgets`, and `Check rohd_source_navigator` jobs for
+   `Check rohd_devtools_widgets`, `Check rohd_source_navigator`, and
+   `Check rohd_live_debugger` jobs for
    dependency resolution, formatting, fatal-info analysis, package tests, and
    isolated hosted dependency checks and blocking Pana score gates.
    These run alongside the root checks and DevTools app job; documentation
@@ -129,15 +143,16 @@ with a merge or rebase; the preparation PR itself does not need to be merged yet
    tests require Icarus Verilog; Verilator is required in CI and when
    `ROHD_REQUIRE_VERILATOR=1`.
 5. Run `tool/release/prepare_release.sh [--run-tests] [package ...]` on the preparation
-   branch from the repository root. No package names selects all five; explicit
+   branch from the repository root. No package names selects all six; explicit
    names select only those packages. Versions come from their manifests, not
    command-line arguments. It validates selected metadata before making changes,
    fetches `main` from `intel/rohd`, and requires that commit to be an ancestor
-   of the release branch's `HEAD`. When ROHD is selected, it also fetches
+   of the release branch's `HEAD`. When `rohd_live_debugger` is selected, it also fetches
    `artifacts` and requires the artifact's source commit to match that fetched
    `main` commit, not the release branch's tip. It smoke-tests and installs that
-   web build before preparing metadata, then runs ROHD's checks. Sub-package-only
-   preparation leaves ROHD metadata and DevTools untouched. Each selected
+   web build before preparing metadata; its config must match the release branch.
+   ROHD-only preparation does not fetch or require the DevTools artifact.
+   Sub-package-only preparation leaves ROHD metadata untouched. Each selected
    sub-package gets dependency resolution, formatting checks, and analysis in its
    own directory. Tests run when `--run-tests` is supplied, and isolated hosted
    dependency checks plus the blocking Pana score gate run when `--run-pana` is
@@ -149,31 +164,35 @@ with a merge or rebase; the preparation PR itself does not need to be merged yet
    commit, tag, push, or upload anything. If a guard fails, incorporate the latest
    `main` or wait for its artifact workflow as appropriate, then rerun preparation.
 6. To inspect archives without preparing metadata, run
-   `tool/release/check_release.sh [package ...]`. Like preparation, it defaults to all five
+   `tool/release/check_release.sh [package ...]`. Like preparation, it defaults to all six
    packages and accepts explicit names: `rohd`, `rohd_hierarchy`, `rohd_waveform`,
-   `rohd_devtools_widgets`, and `rohd_source_navigator`. Each uses its existing
+   `rohd_devtools_widgets`, `rohd_source_navigator`, and `rohd_live_debugger`. Each uses its existing
    version. The helper runs
-   `dart pub publish --dry-run` in each selected Dart package directory or
+   `dart pub publish --dry-run` in each selected Dart package directory (or a
+   temporary standalone copy for `rohd_live_debugger`) or
    `flutter pub publish --dry-run` for widgets. Review
-   warnings, included files, and compressed archive sizes. For ROHD, first prepare
-   the verified DevTools build as above, then verify that
+   warnings, included files, and compressed archive sizes. For ROHD, verify that
    `packages/`, `rohd_devtools_extension/`, `rohd_extension/`, and
-   `pubspec_overrides.yaml` are absent from the archive, while
+   `pubspec_overrides.yaml`, and the old `extension/devtools/` are absent. For
+   `rohd_live_debugger`, first prepare the verified build as above, then verify
    `extension/devtools/config.yaml` and the complete `extension/devtools/build`
-   payload are included and pass
-   `tool/gh_actions/devtool/test_devtools_install.sh extension/devtools`.
+   payload are included and pass `tool/gh_actions/devtool/test_devtools_install.sh packages/rohd_live_debugger`.
+   A leftover ignored root `extension/devtools/build` can still trigger Pub's
+   DevTools validation warning even though it is excluded from the ROHD archive;
+   inspect and remove or preserve that obsolete local build outside the checkout
+   before the final clean-checkout dry run.
 
 Preparation runs the following checks before invoking `tool/release/check_release.sh`:
 
 | Selected Package | Default Checks | Added With `--run-tests` |
 | --- | --- | --- |
 | `rohd` | `tool/run_checks.sh --skip-tests`: dependencies, formatting, analysis, API docs, and temporary-file checks; then `tool/release/package_vscode.sh` compiles and packages a temporary VSIX. | Simulator prerequisites and ROHD tests via `tool/run_checks.sh`. |
-| `rohd_hierarchy`, `rohd_waveform`, `rohd_source_navigator` | Run `flutter pub get` from the repository root, then in each package directory run `dart format --output=none --set-exit-if-changed .` and `dart analyze --fatal-infos`. | `dart test` with `--run-tests`; isolated hosted dependency checks and a blocking Pana score gate with `--run-pana`. |
+| `rohd_hierarchy`, `rohd_waveform`, `rohd_source_navigator`, `rohd_live_debugger` | Run `flutter pub get` from the repository root, then in each package directory run `dart format --output=none --set-exit-if-changed .` and `dart analyze --fatal-infos`. | `dart test` with `--run-tests`; isolated hosted dependency checks and a blocking Pana score gate with `--run-pana`. |
 | `rohd_devtools_widgets` | Run `flutter pub get` from the repository root, then in the package directory run `dart format --output=none --set-exit-if-changed .` and `flutter analyze --fatal-infos`. | `flutter test` with `--run-tests`; isolated hosted dependency checks and a blocking Pana score gate with `--run-pana`. |
 
 Artifact provenance verification and the DevTools installation smoke test always
-run when ROHD is selected, even when test suites are skipped. The VSIX packaging
-check also always runs for that selection and discards its temporary archive on
+run when `rohd_live_debugger` is selected, even when test suites are skipped. The VSIX packaging
+check always runs when ROHD is selected and discards its temporary archive on
 exit. It checks the current preparation branch, not the DevTools artifact branch.
 Packaging failure stops preparation before any pub.dev dry runs. This catches
 TypeScript compilation and VSCE packaging errors; it is not an interactive
@@ -188,13 +207,14 @@ checks pass. An early failure such as a nonempty `tmp_test` directory
 means later stages have not run. Review leftover test files before retrying.
 The ordinary package checks use the current checkout's dependency overrides.
 Run `tool/release/run_pana.sh` from the repository root to run hosted dependency
-compatibility checks and Pana score gates for all five publishable packages
+compatibility checks and Pana score gates for all six publishable packages
 without running release preparation. Pass package names to select a subset.
 The per-package checks and CI use the same
 `tool/gh_actions/pana_source.sh` runner; local release preparation also invokes
 that runner only when `--run-pana` is supplied.
 Its package mode uses a disposable copy without checkout lockfiles, generated
-resolution/build state, or repository-relative analyzer configuration. Inline
+resolution/build state, or repository-relative analyzer configuration, except
+that the debugger package's prepared web payload is retained. Inline
 overrides are rejected; keep local overrides in `pubspec_overrides.yaml`.
 When a package depends on `rohd_hierarchy`, the isolated sibling checkout is
 used for compatibility analysis. Pana separately verifies the package's hosted
@@ -215,6 +235,9 @@ changes. `rohd_source_navigator` also uses threshold `10` temporarily while its 
 `https://github.com/intel/rohd/tree/main/packages/rohd_source_navigator`
 repository URL cannot be validated before the path exists on upstream `main`;
 remove the exception when [#718](https://github.com/intel/rohd/pull/718) merges.
+`rohd_live_debugger` temporarily permits 10 points lost while its package path
+is absent from upstream `main`; restore its full-score gate once the path is
+available for Pana's repository URL check.
 Hosted dependency resolution, lower-bound analysis, and fatal-info library
 analysis remain mandatory whenever Pana runs. No custom report parser is used.
 The root's existing no-argument Pana invocation and score gate are unchanged.
@@ -230,13 +253,13 @@ application remain a separate step when its shared widgets change.
 Preparation examples (choose one):
 
 ```sh
-# All five packages, using each manifest's version; rely on CI for test suites:
+# All six packages, using each manifest's version; rely on CI for test suites:
 tool/release/prepare_release.sh
 
-# All five packages, also running their test suites locally:
+# All six packages, also running their test suites locally:
 tool/release/prepare_release.sh --run-tests
 
-# All five packages, also running hosted dependency and Pana score gates:
+# All six packages, also running hosted dependency and Pana score gates:
 tool/release/prepare_release.sh --run-pana
 
 # ROHD only:
@@ -253,6 +276,9 @@ tool/release/prepare_release.sh rohd_hierarchy rohd_waveform
 
 # Only source navigator:
 tool/release/prepare_release.sh rohd_source_navigator
+
+# Only the opt-in debugger:
+tool/release/prepare_release.sh rohd_live_debugger
 
 # Source navigator and widgets, including package tests and Pana score gates:
 tool/release/prepare_release.sh --run-tests --run-pana rohd_source_navigator rohd_devtools_widgets
@@ -327,11 +353,35 @@ that dependency first. If compatible dependency versions are already available
 on pub.dev, the consumer can be released independently without a new dependency
 release.
 
-For example, `rohd_waveform` depends on `rohd_hierarchy`, and
-`rohd_devtools_widgets` depends on both `rohd_hierarchy` and ROHD. These
-dependencies determine ordering only when the required versions have not yet
-been published. Sharing a repository or source commit does not require a
-coordinated release.
+When releasing all six packages together, the following is one safe order:
+
+1. `rohd_hierarchy`
+2. `rohd_source_navigator` (independent of the other ROHD packages)
+3. `rohd` (depends on `rohd_hierarchy`)
+4. `rohd_waveform` (depends on `rohd_hierarchy`)
+5. `rohd_devtools_widgets` (depends on `rohd` and `rohd_hierarchy`)
+6. `rohd_live_debugger`
+
+`rohd` and `rohd_waveform` can be published in either order after
+`rohd_hierarchy`; `rohd_source_navigator` can be published at any point.
+Only publish a dependency first when the consumer needs a version that is not
+already available. Sharing a repository or source commit does not by itself
+require a coordinated release.
+
+The published `rohd_live_debugger` package carries the prepared web assets and
+has no Pub dependency on `rohd` or the other ROHD packages. Conversely, `rohd`
+does not depend on the debugger, so there is no Pub dependency cycle. The
+private Flutter application used to build the debugger does depend on `rohd`,
+`rohd_hierarchy`, `rohd_waveform`, `rohd_devtools_widgets`, and
+`rohd_source_navigator`, as well as viewer packages. Ensure that build can
+resolve the required versions and that its verified artifact is ready before
+releasing the debugger; these build dependencies are not dependencies of the
+published debugger package.
+
+For the migration from the embedded ROHD extension, release the ROHD version
+that removes its old DevTools config before the separate debugger. Users who
+add the debugger while still using a ROHD version with the embedded extension
+may see both tabs.
 
 ### Core API migration for 0.7.0
 
@@ -456,9 +506,20 @@ preparation branch. A maintainer runs `dart pub publish` or `flutter pub publish
 from the selected package directory. Confirm each version on pub.dev, then create
 its tag at the preparation-branch commit used for publication and publish its
 GitHub release using the strategy above. Record the release source commit and,
-for ROHD, both the DevTools source (`main`) and artifact commits in the release
+for `rohd_live_debugger`, both the DevTools source (`main`) and artifact commits in the release
 notes. Once all selected packages have been published successfully, merge the
 preparation PR; do not move release tags to a later merge or squash commit.
+
+For `rohd_live_debugger`, stage the prepared package outside the repository
+before manual publication. Review the staged archive with the dry run below;
+only an authorized maintainer should subsequently publish it:
+
+```sh
+stage_root="$(mktemp -d)"
+bash tool/release/stage_live_debugger.sh "$stage_root/rohd_live_debugger"
+cd "$stage_root/rohd_live_debugger"
+dart pub publish --dry-run
+```
 Start a new pending changelog section when subsequent changes are made; do not
 rewrite notes for already published versions.
 

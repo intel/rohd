@@ -10,18 +10,18 @@
 #   tool/release/prepare_release.sh [--run-tests] [package ...]
 #
 # Run on your preparation branch after merging or rebasing the latest intel/rohd
-# main into it. When selecting ROHD, wait for that main commit's DevTools build.
+# main into it. When selecting rohd_live_debugger, wait for main's DevTools build.
 # Publish from the preparation branch; merge its PR after publication succeeds.
 #
 # With no arguments, select rohd, rohd_hierarchy, rohd_waveform,
-# rohd_devtools_widgets, and rohd_source_navigator.
+# rohd_devtools_widgets, rohd_source_navigator, and rohd_live_debugger.
 # Explicit package names select only those packages.
 # Set each selected package's version in its own pubspec.yaml before running.
 # The manifests are never rewritten; each pending changelog heading is promoted
 # to its package's version (an existing version heading is also accepted).
 #
-# Selecting ROHD also synchronizes Config.version, fetches and verifies artifacts,
-# smoke-tests and installs the DevTools build, and runs tool/run_checks.sh with
+# Selecting rohd_live_debugger fetches, verifies, smoke-tests and installs the
+# DevTools build. Selecting ROHD synchronizes Config.version and runs tool/run_checks.sh with
 # --skip-tests by default. It also compiles and packages a temporary VSIX using
 # the release workflow's helper. The smoke test and VSIX check always run.
 # The DevTools build comes from main, not from branch-only implementation changes.
@@ -44,10 +44,10 @@
 #
 # Examples:
 #
-#   ROHD plus all four publishable sub-packages (the default):
+#   ROHD plus all five publishable sub-packages (the default):
 #     tool/release/prepare_release.sh
 #
-#   All five packages, including their test suites:
+#   All six packages, including their test suites:
 #     tool/release/prepare_release.sh --run-tests
 #
 #   ROHD only:
@@ -82,11 +82,11 @@ export FLUTTER_SUPPRESS_ANALYTICS=true
 
 if [[ $# -eq 1 && "$1" == '--help' ]]; then
   echo "Usage: $0 [--run-tests] [--run-pana] [package ...]"
-  echo "Packages: rohd rohd_hierarchy rohd_waveform rohd_devtools_widgets rohd_source_navigator"
-  echo "Defaults to all five packages, using each package's pubspec.yaml version."
+  echo "Packages: rohd rohd_hierarchy rohd_waveform rohd_devtools_widgets rohd_source_navigator rohd_live_debugger"
+  echo "Defaults to all six packages, using each package's pubspec.yaml version."
   echo "Test suites are skipped by default; use --run-tests to include them."
   echo "Pana score checks are skipped by default; use --run-pana to include them."
-  echo "Artifact verification and its smoke test still run when ROHD is selected."
+  echo "Artifact verification and its smoke test run when rohd_live_debugger is selected."
   echo "Selecting ROHD also checks VSIX packaging (requires Node.js and npm)."
   echo "Prepares metadata, runs package checks and publication dry runs; never uploads packages."
   exit 0
@@ -105,7 +105,7 @@ for argument in "$@"; do
 done
 set -- "${packages[@]}"
 if [[ $# -eq 0 ]]; then
-  set -- rohd rohd_hierarchy rohd_waveform rohd_devtools_widgets rohd_source_navigator
+  set -- rohd rohd_hierarchy rohd_waveform rohd_devtools_widgets rohd_source_navigator rohd_live_debugger
 fi
 
 # Resolve all paths and source provenance before changing the working tree.
@@ -123,13 +123,19 @@ else
   echo "Pana score checks skipped; verify CI results for the release commit. Use --run-pana to run them locally."
 fi
 prepare_rohd=false
+prepare_debugger=false
 for package in "$@"; do
   if [[ "$package" == rohd ]]; then
     prepare_rohd=true
-  elif [[ "$run_pana" == true ]] &&
+  else
+    if [[ "$package" == rohd_live_debugger ]]; then
+      prepare_debugger=true
+    fi
+    if [[ "$run_pana" == true ]] &&
       ! PATH="$PATH:${PUB_CACHE:-$HOME/.pub-cache}/bin" command -v pana > /dev/null; then
-    echo "Pana is required; run tool/gh_actions/install_pana.sh first." >&2
-    exit 2
+      echo "Pana is required; run tool/gh_actions/install_pana.sh first." >&2
+      exit 2
+    fi
   fi
 done
 cd "$REPO_ROOT"
@@ -163,7 +169,7 @@ if ! git merge-base --is-ancestor "$MAIN_COMMIT" "$SOURCE_COMMIT"; then
   exit 1
 fi
 
-if [[ "$prepare_rohd" == true ]]; then
+if [[ "$prepare_debugger" == true ]]; then
   echo "Fetching the ROHD DevTools build from $ARTIFACT_REPOSITORY ($ARTIFACT_BRANCH)..."
   git fetch --quiet --no-tags "$ARTIFACT_REPOSITORY" "refs/heads/$ARTIFACT_BRANCH"
   readonly ARTIFACT_COMMIT="$(git rev-parse FETCH_HEAD)"
@@ -179,19 +185,23 @@ if [[ "$prepare_rohd" == true ]]; then
 
   # Extract into a temporary directory and smoke-test before replacing the local
   # release payload, leaving the existing build intact if validation fails.
-  git cat-file -e "$ARTIFACT_COMMIT:extension/devtools/build/index.html"
-  git cat-file -e "$ARTIFACT_COMMIT:extension/devtools/config.yaml"
-  git archive "$ARTIFACT_COMMIT" extension/devtools | tar -x -C "$TEMP_DIR"
+  readonly EXTENSION_PATH="packages/rohd_live_debugger/extension/devtools"
+  git cat-file -e "$ARTIFACT_COMMIT:$EXTENSION_PATH/build/index.html"
+  git cat-file -e "$ARTIFACT_COMMIT:$EXTENSION_PATH/config.yaml"
+  git archive "$ARTIFACT_COMMIT" "$EXTENSION_PATH" | tar -x -C "$TEMP_DIR"
+
+  if ! cmp -s "$TEMP_DIR/$EXTENSION_PATH/config.yaml" "$EXTENSION_PATH/config.yaml"; then
+    echo "The DevTools artifact configuration differs from the release package." >&2
+    exit 1
+  fi
 
   tool/gh_actions/devtool/test_devtools_install.sh \
-    "$TEMP_DIR/extension/devtools"
+    "$TEMP_DIR/$EXTENSION_PATH"
 
   # Install the tested artifact. The web build is ignored by Git but included in
   # the published package through the exception in .pubignore.
-  rm -rf extension/devtools/build
-  mkdir -p extension/devtools
-  cp -R "$TEMP_DIR/extension/devtools/build" extension/devtools/build
-  cp "$TEMP_DIR/extension/devtools/config.yaml" extension/devtools/config.yaml
+  rm -rf "$EXTENSION_PATH/build"
+  cp -R "$TEMP_DIR/$EXTENSION_PATH/build" "$EXTENSION_PATH/build"
 fi
 
 dart run "$SCRIPT_DIR/prepare_release_metadata.dart" "$@"
@@ -241,9 +251,11 @@ git --no-pager diff --check
 bash "$SCRIPT_DIR/check_release.sh" "$@"
 
 echo "Selected packages prepared from source commit $SOURCE_COMMIT."
-if [[ "$prepare_rohd" == true ]]; then
+if [[ "$prepare_debugger" == true ]]; then
   echo "DevTools source commit (upstream main): $MAIN_COMMIT"
   echo "DevTools artifact commit: $ARTIFACT_COMMIT"
+fi
+if [[ "$prepare_rohd" == true ]]; then
   echo "VSIX build check passed; its temporary archive is discarded, not published."
 fi
 

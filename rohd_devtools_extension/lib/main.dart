@@ -14,14 +14,19 @@ import 'package:devtools_app_shared/utils.dart';
 import 'package:devtools_extensions/api.dart';
 import 'package:devtools_extensions/devtools_extensions.dart';
 import 'package:flutter/foundation.dart';
+// DevToolsExtension supplies Flutter's Material theme, not material_ui's.
+// ignore: migrate_design_widgets
+import 'package:flutter/material.dart' as flutter_material;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:rohd_devtools_extension/rohd_devtools/const/app_theme.dart';
+import 'package:rohd_devtools_extension/rohd_devtools/const/app_version.dart';
+import 'package:rohd_devtools_extension/rohd_devtools/cubit/theme_cubit.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/view/rohd_devtools_page.dart';
 import 'package:rohd_devtools_extension/rohd_devtools_observer.dart';
 import 'package:web/web.dart' as web;
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   debugPrint('[main.dart] Starting ROHD DevTools Extension...');
   debugPrint('[main.dart] Platform: ${kIsWeb ? "Web" : "Native"}');
 
@@ -32,6 +37,7 @@ void main() {
   // before DevToolsExtension handles it so reconnect is graceful instead of a
   // hard reload.
   _installMessageInterceptor();
+  await initAppVersion();
 
   /// Initializing the [BlocObserver] created and calling runApp
   debugPrint('[main.dart] Initializing BlocObserver...');
@@ -134,10 +140,12 @@ class RohdDevToolsApp extends StatelessWidget {
             ),
           );
 
-          final isDark = Theme.of(context).brightness == Brightness.dark;
-          final base = isDark ? buildDarkTheme() : buildLightTheme();
-
-          return Theme(data: base, child: const RohdDevToolsPage());
+          final isDark =
+              flutter_material.Theme.of(context).brightness == Brightness.dark;
+          return RohdDevToolsPage(
+            hostThemeMode:
+                isDark ? DevToolsThemeMode.dark : DevToolsThemeMode.light,
+          );
         },
       ),
     );
