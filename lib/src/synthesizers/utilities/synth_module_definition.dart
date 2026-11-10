@@ -2271,9 +2271,9 @@ class SynthModuleDefinition {
       for (final MapEntry(key: (srcArray, dstArray), value: arrAssignments)
           in groupedAssignments.entries) {
         // first requirement is that all elements have been assigned
-        var shouldMerge = srcArray.logics.first.elements.length ==
-                dstArray.logics.first.elements.length &&
-            arrAssignments.length == srcArray.logics.first.elements.length;
+        var shouldMerge = srcArray.firstLogic.elements.length ==
+                dstArray.firstLogic.elements.length &&
+            arrAssignments.length == srcArray.firstLogic.elements.length;
 
         if (shouldMerge) {
           // only check each element if the lengths match
@@ -2395,8 +2395,8 @@ class SynthModuleDefinition {
     if (srcArray.logics.length != 1 || dstArray.logics.length != 1) {
       return false;
     }
-    final srcLogic = srcArray.logics.first;
-    final dstLogic = dstArray.logics.first;
+    final srcLogic = srcArray.firstLogic;
+    final dstLogic = dstArray.firstLogic;
     if (srcLogic is! BaseLogicArray || dstLogic is! BaseLogicArray) {
       return false;
     }
@@ -3053,7 +3053,7 @@ class SynthModuleDefinition {
     if (base.logics.length != 1) {
       return false;
     }
-    final logic = base.logics.first;
+    final logic = base.firstLogic;
     return logic is BaseLogicArray &&
         logic.dimensions.length == 1 &&
         logic.elementWidth == 1 &&
@@ -4162,7 +4162,7 @@ class SynthModuleDefinition {
         continue;
       }
 
-      final arrayLogic = parentArray.logics.first;
+      final arrayLogic = parentArray.firstLogic;
       if (arrayLogic is! BaseLogicArray ||
           indexedInputs.length != arrayLogic.elements.length) {
         continue;
@@ -4469,13 +4469,12 @@ class SynthModuleDefinition {
 
     if (mergedAway.isArray) {
       for (final (keptElementIndex, keptElementLogic)
-          in (kept.logics.first as BaseLogicArray).elements.indexed) {
+          in (kept.firstLogic as BaseLogicArray).elements.indexed) {
         // should be safe to just check the first logic's elements since they
         // should all be the same synth, and arrays only merge with arrays
         final keptElement = getSynthLogic(keptElementLogic)!;
         final mergedAwayElement = getSynthLogic(
-          (mergedAway.logics.first as BaseLogicArray)
-              .elements[keptElementIndex],
+          (mergedAway.firstLogic as BaseLogicArray).elements[keptElementIndex],
         )!;
 
         if (keptElement == mergedAwayElement) {

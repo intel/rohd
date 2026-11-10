@@ -1,6 +1,9 @@
 ## 0.7.1
 
 - Exclude independently published package sources and the DevTools and VS Code application sources from the ROHD pub.dev archive, while retaining the built DevTools extension and checkout-only workspace configuration.
+- Avoid quadratic memory growth during SystemVerilog synthesis by sharing inline-expression lookup tables and remapping them only once during enum-port lowering, while preserving instance-specific net connections.
+- Avoid repeated synthesis alias-list copies by reusing immutable snapshots and reading signal metadata without materializing aliases, including during array merges.
+- Avoid quadratic SystemVerilog concat driver checks by indexing driver ownership once per optimization pass.
 
 ## 0.7.0
 

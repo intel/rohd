@@ -26,8 +26,10 @@ class SystemVerilogSynthSubModuleInstantiation
   /// [module].
   SystemVerilogSynthSubModuleInstantiation(super.module);
 
-  /// Mapping from [SynthLogic]s which are outputs of inlineable SV to those
-  /// inlineable modules.
+  /// Mapping from [SynthLogic]s to their inlineable SV producers.
+  ///
+  /// After module processing, this is a read-only view over the shared lookup
+  /// table and any instance-specific mappings.
   Map<SynthLogic, SystemVerilogSynthSubModuleInstantiation>?
       synthLogicToInlineableSynthSubmoduleMap;
 
