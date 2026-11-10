@@ -114,8 +114,9 @@ runtime. ROHD publication also requires its verified DevTools distribution.
 Do not strip required build outputs merely because they were generated.
 
 For workspace members, remove `resolution: workspace` in the disposable
-manifest. For a workspace root staged without its members, remove `workspace:`
-and its member list. Remove any inline `dependency_overrides`; actual
+manifest. ROHD's root workspace membership is in `pubspec_overrides.yaml`, so
+excluding that file lets the root resolve without its workspace members.
+Remove any inline `dependency_overrides`; actual
 dependencies must be normal hosted version constraints. Checkout-only override
 files, lockfiles, and package configurations must not mask missing publications.
 Do not fix missing package APIs by adding path or Git overrides in the consumer.

@@ -8,7 +8,6 @@
 // Author: Max Korbel <max.korbel@intel.com>
 
 // Deprecated APIs remain while packages constrained to ROHD 0.6.x migrate.
-// ignore_for_file: remove_deprecations_in_breaking_versions
 
 import 'dart:collection';
 

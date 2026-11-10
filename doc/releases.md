@@ -28,6 +28,24 @@ must use the new package path; older pinned commits retain `rohd_extension/dart`
 The VS Code extension still compiles its separate TypeScript implementation.
 Tutorial applications are not independently released packages.
 
+## ROHD Package Contents
+
+The root ROHD pub.dev package excludes the independently published sources under
+`packages/`, the private `rohd_devtools_extension/` application, and the separate
+`rohd_extension/` VS Code extension. Consumers resolve the root manifest's hosted
+dependencies, including `rohd_hierarchy`, from their own published packages.
+
+The checkout's workspace membership lives in the version-controlled root
+`pubspec_overrides.yaml`, which Pub excludes from publication. Keep the published
+`pubspec.yaml` free of workspace paths so it also resolves without those source
+directories. Run `flutter pub get` from the repository root for local workspace
+development.
+
+The built DevTools distribution is different from the application's source:
+`extension/devtools/config.yaml` and the complete `extension/devtools/build/`
+payload must remain in the ROHD archive. Prepare and smoke-test that distribution
+before publication; excluding the application source does not replace that gate.
+
 ## GitHub Strategy
 
 Create an annotated tag and a GitHub release for each independently published
@@ -93,10 +111,10 @@ with a merge or rebase; the preparation PR itself does not need to be merged yet
 2. Ensure each package has a README, license, changelog, and package-specific
    repository URL. Publishable dependencies must use hosted version constraints,
    not local paths or Git checkouts. Keep minimum versions tied to APIs used.
-3. For checkout development, waveform and widgets use checked-in
-   `pubspec_overrides.yaml` files. These files are excluded from publication;
-   overrides apply only to the root package being resolved, not its consumers.
-   The non-published DevTools app therefore also declares its own local overrides.
+3. For checkout development, the root `pubspec_overrides.yaml` declares the
+   workspace members. The non-published DevTools app can also declare local
+   dependency overrides. Pub excludes these files from publication; consumers
+   use the published manifests' hosted dependency constraints.
 4. Verify the PR's CI results cover the relevant tests for the release commit,
    including DevTools app tests when shared widgets change. The General workflow
    has separate `Check rohd_hierarchy`, `Check rohd_waveform`,
@@ -139,7 +157,10 @@ with a merge or rebase; the preparation PR itself does not need to be merged yet
    `flutter pub publish --dry-run` for widgets. Review
    warnings, included files, and compressed archive sizes. For ROHD, first prepare
    the verified DevTools build as above, then verify that
-   `extension/devtools/build` is included and passes
+   `packages/`, `rohd_devtools_extension/`, `rohd_extension/`, and
+   `pubspec_overrides.yaml` are absent from the archive, while
+   `extension/devtools/config.yaml` and the complete `extension/devtools/build`
+   payload are included and pass
    `tool/gh_actions/devtool/test_devtools_install.sh extension/devtools`.
 
 Preparation runs the following checks before invoking `tool/release/check_release.sh`:
