@@ -57,6 +57,7 @@
   <div>
     <ol class="annotation-list">
         <li>@<a href="https://api.flutter.dev/flutter/dart-core/override-constant.html">override</a></li>
+        <li>@<a href="https://pub.dev/documentation/meta/1.19.0/meta/protected-constant.html">protected</a></li>
     </ol>
   </div>
 <span class="returntype">void</span>
@@ -85,6 +86,7 @@ that signals are not "written after read", for example.</p>
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@override
+@protected
 void execute(Set&lt;Logic&gt;? drivenSignals, [void Function(Logic)? guard]) {
   if (guard != null) {
     for (final iff in iffs) {
