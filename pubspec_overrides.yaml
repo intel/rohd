@@ -1,0 +1,7 @@
+# Keep workspace membership in the checkout, not the published package.
+workspace:
+  - packages/rohd_hierarchy
+  - packages/rohd_waveform
+  - packages/rohd_devtools_widgets
+  - packages/rohd_source_navigator
+  - rohd_devtools_extension
