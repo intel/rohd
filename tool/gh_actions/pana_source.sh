@@ -47,11 +47,6 @@ case "$package" in
     # exception after the package move is on main and Pana can verify its URL.
     pana_score_threshold=10
     ;;
-  rohd_live_debugger)
-    # The package path is not yet on upstream main; restore the full score gate
-    # once Pana can verify the canonical repository URL.
-    pana_score_threshold=10
-    ;;
   rohd_waveform)
     # Pana gates points lost: 10 permits a score of 150/160. This package
     # retains dependency bounds for its supported SDK ranges.

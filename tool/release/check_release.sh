@@ -26,8 +26,9 @@
 # SDK commands. Normal checks hard-code pub publish --dry-run with stdin closed;
 # there is no upload mode and no forwarding of arbitrary pub options.
 # Results are summarized; any failure or nonzero warning makes this script fail.
-# The debugger dry run uses a temporary standalone copy, because the root
-# package's .pubignore excludes the packages/ directory. Dry runs may update dependency caches/lockfiles. Local overrides are preserved
+# Nested-package checks temporarily remove the root /packages/ ignore rule.
+# Do not publish or edit .pubignore concurrently in this checkout.
+# Dry runs may update dependency caches/lockfiles. Local overrides are preserved
 # and do not prove hosted dependency readiness. No commits, tags, or pushes occur.
 # SDK telemetry is suppressed for these checks and their child analyzers only.
 #
@@ -109,15 +110,49 @@ fi
 
 echo "Dry runs only. Package versions and local overrides are left unchanged."
 echo "Local overrides can hide hosted dependency problems; repeat without them in a disposable checkout before publishing."
-results=()
-failed=0
-TEMP_DIR=""
-cleanup() {
-  if [[ -n "$TEMP_DIR" ]]; then
-    rm -rf "$TEMP_DIR"
+readonly IGNORE_FILE="$REPO_ROOT/.pubignore"
+readonly LOCK_DIR="$REPO_ROOT/.pubignore-release.lock"
+if [[ ! -f "$IGNORE_FILE" || -L "$IGNORE_FILE" ]] ||
+    [[ "$(grep -cFx '/packages/' "$IGNORE_FILE" || true)" != 1 ]]; then
+  echo "Expected exactly one /packages/ rule in the regular root .pubignore file." >&2
+  exit 2
+fi
+if ! mkdir "$LOCK_DIR"; then
+  echo "Release check lock exists: $LOCK_DIR. Another check may be running, or recovery may be required." >&2
+  exit 2
+fi
+
+ignore_active=false
+restore_ignore() {
+  if [[ "$ignore_active" == true ]]; then
+    if ! cmp -s "$IGNORE_FILE" "$LOCK_DIR/without-packages"; then
+      echo "Root .pubignore changed during the check; not overwriting it." >&2
+      echo "Restore the /packages/ rule manually; the original is saved at $LOCK_DIR/original." >&2
+      return 1
+    fi
+    cp -p "$LOCK_DIR/original" "$LOCK_DIR/replacement" || return 1
+    mv "$LOCK_DIR/replacement" "$IGNORE_FILE" || return 1
+    ignore_active=false
   fi
 }
-trap cleanup EXIT
+cleanup() {
+  if ! restore_ignore; then
+    echo "Release check could not restore .pubignore; retain $LOCK_DIR for recovery." >&2
+    return 1
+  fi
+  rm -f "$LOCK_DIR/original" "$LOCK_DIR/without-packages" "$LOCK_DIR/replacement"
+  rmdir "$LOCK_DIR"
+}
+trap 'cleanup || exit 1' EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
+cp -p "$IGNORE_FILE" "$LOCK_DIR/original"
+cp -p "$IGNORE_FILE" "$LOCK_DIR/without-packages"
+sed '/^\/packages\/$/d' "$IGNORE_FILE" > "$LOCK_DIR/without-packages"
+
+results=()
+failed=0
 for index in "${!packages[@]}"; do
   package="${packages[$index]}"
   directory="${directories[$index]}"
@@ -131,24 +166,27 @@ for index in "${!packages[@]}"; do
     failed=1
     continue
   fi
-  if [[ "$package" == rohd_live_debugger ]]; then
-    if [[ -z "$TEMP_DIR" ]]; then
-      TEMP_DIR="$(mktemp -d)"
-    fi
-    mkdir -p "$TEMP_DIR/$index"
-    directory="$TEMP_DIR/$index/rohd_live_debugger"
-    if ! bash "$SCRIPT_DIR/stage_live_debugger.sh" "$directory"; then
-      results+=("$package: FAILED (could not stage package)")
-      failed=1
-      continue
-    fi
+  if ! cmp -s "$IGNORE_FILE" "$LOCK_DIR/original"; then
+    echo "Root .pubignore changed during the check; not overwriting it." >&2
+    failed=1
+    break
+  fi
+  if [[ "$package" != rohd ]]; then
+    cp -p "$LOCK_DIR/without-packages" "$LOCK_DIR/replacement"
+    ignore_active=true
+    mv "$LOCK_DIR/replacement" "$IGNORE_FILE"
   fi
   echo "Directory: $directory"
   echo "Command: $sdk pub publish --dry-run"
-  if (cd "$directory" && "$sdk" pub publish --dry-run </dev/null); then
+  status=0
+  (cd "$directory" && "$sdk" pub publish --dry-run </dev/null) || status=$?
+  if ! restore_ignore; then
+    failed=1
+    break
+  fi
+  if [[ "$status" -eq 0 ]]; then
     results+=("$package: PASSED")
   else
-    status=$?
     results+=("$package: FAILED (exit $status; see output above)")
     failed=1
   fi

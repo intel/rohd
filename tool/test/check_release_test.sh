@@ -24,7 +24,6 @@ trap 'rm -rf "$FIXTURE"' EXIT
 mkdir -p "$FIXTURE/repo/tool/release" "$FIXTURE/bin" "$FIXTURE/repo/packages/rohd_live_debugger/extension/devtools/build"
 cp "$REPO_ROOT/tool/release/check_release.sh" \
   "$REPO_ROOT/tool/release/prepare_release.sh" \
-  "$REPO_ROOT/tool/release/stage_live_debugger.sh" \
   "$FIXTURE/repo/tool/release/"
 for package in rohd_hierarchy rohd_waveform rohd_devtools_widgets rohd_source_navigator rohd_live_debugger; do
   mkdir -p "$FIXTURE/repo/packages/$package"
@@ -32,32 +31,44 @@ for package in rohd_hierarchy rohd_waveform rohd_devtools_widgets rohd_source_na
 done
 touch "$FIXTURE/repo/pubspec.yaml" "$FIXTURE/repo/packages/rohd_live_debugger/extension/devtools/build/index.html"
 touch "$FIXTURE/repo/packages/rohd_live_debugger/extension/devtools/config.yaml"
+cp "$REPO_ROOT/.pubignore" "$FIXTURE/repo/.pubignore"
+cp "$FIXTURE/repo/.pubignore" "$FIXTURE/original-pubignore"
 printf 'name: rohd_live_debugger\nresolution: workspace\n' > \
   "$FIXTURE/repo/packages/rohd_live_debugger/pubspec.yaml"
 
 printf '%s\n' \
   '#!/bin/bash' \
-  'directory="$PWD"' \
-  'if [[ "${PWD##*/}" == rohd_live_debugger ]]; then' \
-  '  [[ "$PWD" != "$TEST_DEBUGGER_DIR" && -f extension/devtools/build/index.html && -f extension/devtools/config.yaml ]] || exit 96' \
-  '  ! grep -q "^resolution: workspace$" pubspec.yaml || exit 95' \
-  '  directory="$TEST_DEBUGGER_DIR"' \
+  'if [[ "$PWD" == "$TEST_REPO" ]]; then' \
+  '  grep -Fxq /packages/ "$TEST_REPO/.pubignore" || exit 94' \
+  'else' \
+  '  ! grep -Fxq /packages/ "$TEST_REPO/.pubignore" || exit 93' \
   'fi' \
-  'printf "%s|%s|%s\n" "${0##*/}" "$directory" "$*" >> "$SDK_LOG"' \
+  'if [[ "${PWD##*/}" == rohd_live_debugger ]]; then' \
+  '  [[ "$PWD" == "$TEST_DEBUGGER_DIR" && -f extension/devtools/build/index.html && -f extension/devtools/config.yaml ]] || exit 96' \
+  '  grep -q "^resolution: workspace$" pubspec.yaml || exit 95' \
+  'fi' \
+  'printf "%s|%s|%s\n" "${0##*/}" "$PWD" "$*" >> "$SDK_LOG"' \
   '[[ "$#" -eq 3 && "$1" == pub && "$2" == publish && "$3" == --dry-run ]] || exit 99' \
   '[[ "${DASH__SUPPRESS_ANALYTICS:-}" == true ]] || exit 98' \
   '[[ "${FLUTTER_SUPPRESS_ANALYTICS:-}" == true ]] || exit 97' \
+  'if [[ "${MUTATE_IGNORE:-}" == 1 ]]; then printf "# concurrent edit\n" >> "$TEST_REPO/.pubignore"; fi' \
+  'if [[ "${SIGNAL_PARENT:-}" == 1 ]]; then' \
+  '  while [[ ! -s "$SIGNAL_PID_FILE" ]]; do sleep 0.01; done' \
+  '  read -r check_pid < "$SIGNAL_PID_FILE"' \
+  '  kill -TERM "$check_pid"' \
+  'fi' \
   'if [[ "${FAIL_PACKAGE:-}" == "${PWD##*/}" ]]; then exit 65; fi' \
   'exit 0' > "$FIXTURE/bin/sdk"
 chmod +x "$FIXTURE/bin/sdk"
 ln -s sdk "$FIXTURE/bin/dart"
 ln -s sdk "$FIXTURE/bin/flutter"
 ln -s /bin/bash "$FIXTURE/bin/bash"
-for executable in awk dirname grep mkdir mktemp mv rm tar; do
+for executable in awk cmp cp dirname grep mkdir mktemp mv rm rmdir sed sleep tar; do
   ln -s "$(command -v "$executable")" "$FIXTURE/bin/$executable"
 done
 
 export SDK_LOG="$FIXTURE/sdk.log"
+export TEST_REPO="$FIXTURE/repo"
 export TEST_DEBUGGER_DIR="$FIXTURE/repo/packages/rohd_live_debugger"
 readonly HELPER="$FIXTURE/repo/tool/release/check_release.sh"
 passed=0
@@ -74,6 +85,8 @@ run_case() {
     echo "Expected exit $expected, got $status for: $*" >&2
     exit 1
   fi
+  cmp "$FIXTURE/original-pubignore" "$FIXTURE/repo/.pubignore"
+  [[ ! -e "$FIXTURE/repo/.pubignore-release.lock" ]]
   passed=$((passed + 1))
 }
 
@@ -115,6 +128,34 @@ run_case 1 "$HELPER" rohd_hierarchy rohd_waveform
 grep -F 'rohd_hierarchy: FAILED (exit 65;' "$FIXTURE/output"
 grep -F 'rohd_waveform: PASSED' "$FIXTURE/output"
 unset FAIL_PACKAGE
+
+SIGNAL_PARENT=1 SIGNAL_PID_FILE="$FIXTURE/check.pid" PATH="$FIXTURE/bin" \
+  /bin/bash "$HELPER" rohd_hierarchy > "$FIXTURE/output" 2>&1 &
+check_pid=$!
+printf '%s\n' "$check_pid" > "$FIXTURE/check.pid"
+status=0
+wait "$check_pid" || status=$?
+[[ "$status" -eq 143 ]]
+cmp "$FIXTURE/original-pubignore" "$FIXTURE/repo/.pubignore"
+[[ ! -e "$FIXTURE/repo/.pubignore-release.lock" ]]
+
+mkdir "$FIXTURE/repo/.pubignore-release.lock"
+status=0
+PATH="$FIXTURE/bin" /bin/bash "$HELPER" rohd_hierarchy > "$FIXTURE/output" 2>&1 || status=$?
+[[ "$status" -eq 2 ]]
+grep -Fq 'Release check lock exists' "$FIXTURE/output"
+cmp "$FIXTURE/original-pubignore" "$FIXTURE/repo/.pubignore"
+rmdir "$FIXTURE/repo/.pubignore-release.lock"
+
+status=0
+MUTATE_IGNORE=1 PATH="$FIXTURE/bin" /bin/bash "$HELPER" rohd_hierarchy > "$FIXTURE/output" 2>&1 || status=$?
+[[ "$status" -eq 1 ]]
+grep -Fq 'not overwriting it' "$FIXTURE/output"
+grep -Fxq '# concurrent edit' "$FIXTURE/repo/.pubignore"
+cmp "$FIXTURE/original-pubignore" "$FIXTURE/repo/.pubignore-release.lock/original"
+cp "$FIXTURE/original-pubignore" "$FIXTURE/repo/.pubignore"
+rm "$FIXTURE/repo/.pubignore-release.lock/original" "$FIXTURE/repo/.pubignore-release.lock/without-packages"
+rmdir "$FIXTURE/repo/.pubignore-release.lock"
 
 rm "$FIXTURE/repo/packages/rohd_live_debugger/extension/devtools/build/index.html"
 run_case 1 "$HELPER" rohd rohd_live_debugger

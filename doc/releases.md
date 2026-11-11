@@ -19,8 +19,8 @@ released, not a repository-wide version.
 | [rohd_waveform](../packages/rohd_waveform) | Shared waveform models and data services. | Independent pub.dev package; `dart pub publish` from its directory. | Its own `pubspec.yaml`. | Tag `rohd_waveform-v<version>`; release **rohd_waveform v<version>**. |
 | [rohd_devtools_widgets](../packages/rohd_devtools_widgets) | Reusable Flutter controls and utilities for debug viewers. | Independent pub.dev package; `flutter pub publish` from its directory. | Its own `pubspec.yaml`. | Tag `rohd_devtools_widgets-v<version>`; release **rohd_devtools_widgets v<version>**. |
 | [rohd_source_navigator](../packages/rohd_source_navigator) | Shared FLC data models and source-navigation utilities for debug viewers. | Independent pub.dev package; `dart pub publish` from its directory. | Its own `pubspec.yaml`. | Tag `rohd_source_navigator-v<version>`; release **rohd_source_navigator v<version>**. |
-| [rohd_live_debugger](../packages/rohd_live_debugger) | Opt-in ROHD Dart DevTools extension. | Independent pub.dev package; publish a staged standalone copy with its prepared web build. | Its own `pubspec.yaml`, synchronized with the DevTools config and Flutter application version. | Tag `rohd_live_debugger-v<version>`; release **rohd_live_debugger v<version>**. |
-| [ROHD DevTools application](../rohd_devtools_extension) | Interactive hardware debug UI embedded in Dart DevTools. | Private Flutter app; its CI-built web bundle ships in `rohd_live_debugger`, not in `rohd`. | Application build metadata matches the debugger package version. | Tracked by the debugger release and its source/artifact commits; no separate app tag. The `artifacts` branch holds CI output, not an immutable release. |
+| [rohd_live_debugger](../packages/rohd_live_debugger) | Opt-in ROHD Dart DevTools extension. | Independent pub.dev package; `dart pub publish` from its directory with its prepared web build. | Its own `pubspec.yaml`, synchronized with the DevTools config and Flutter application version. | Tag `rohd_live_debugger-v<version>`; release **rohd_live_debugger v<version>**. |
+| [ROHD DevTools application](../rohd_devtools_extension) | Interactive hardware debug UI embedded in Dart DevTools. | Private Flutter app; its CI-built web bundle is distributed as the `rohd_live_debugger` extension. | Application build metadata matches the debugger package version. | Tracked by the debugger release and its source/artifact commits; no separate app tag. The `artifacts` branch holds CI output, not an immutable release. |
 | [ROHD VS Code extension](../rohd_extension) | Editor snippets, completions, cross-probe source navigation, and the ROHD viewer extension pack. | Tag CI verifies Marketplace viewer availability, builds and checksums a Marketplace-qualified VSIX, retains it as a 90-day Actions artifact, and provides administrator publication instructions. The GitHub release workflow separately attaches a verified VSIX and checksum after the release is published; an authorized Marketplace administrator publishes the exact reviewed artifact. | `rohd_extension/pubspec.yaml`, synchronized to npm metadata. | Tag `rohd-vscode-v<version>`; release `ROHD VS Code v<version>`, with `rohd-vscode-v<version>.vsix` and its checksum attached automatically. |
 
 The source-navigation library lives in `packages/rohd_source_navigator`, alongside
@@ -44,16 +44,11 @@ development.
 
 The built DevTools distribution is different from the application's source:
 `extension/devtools/config.yaml` and the complete `extension/devtools/build/`
-payload must be included in the `rohd_live_debugger` archive, not the ROHD
-archive. Prepare and smoke-test that distribution before publishing the debugger.
-Pub applies the checkout root's `/packages/` exclusion to nested packages, so
-the debugger's archive checks and publication use a standalone staged copy.
-The staging helper removes only checkout workspace resolution and retains the
-prepared payload; it does not change the checkout or publish anything.
-This exclusion also affects direct Pub archive checks for the other nested
-packages. Their existing release checks still run in the checkout and can fail
-with a hidden-pubspec error; use a standalone staging copy for their final
-archive validation as described in [local package testing](local_pub_testing.md).
+payload must be included in the `rohd_live_debugger` archive. Prepare and
+smoke-test that distribution before publishing the debugger. Pub applies the
+root ignore rules to nested packages, so the `/packages/` exclusion must be
+temporarily removed to publish one of them. The old root DevTools extension
+remains excluded.
 The DevTools `config.yaml` version identifies the extension and its served asset
 path. Bump it when releasing a new DevTools build and keep the installer's
 fallback configuration and the debugger application's `pubspec.yaml` version
@@ -503,21 +498,34 @@ overrides from their working checkout just to perform this check.
 
 After reviewing the final archive, publish from a reviewed, clean commit on the
 preparation branch. A maintainer runs `dart pub publish` or `flutter pub publish`
-from the selected package directory. Confirm each version on pub.dev, then create
+from the selected package directory. For a package under `packages/`, first
+temporarily remove the `/packages/` line from the root `.pubignore` (leave its
+other rules intact). Restore that line immediately after publication, including
+if publication fails. Do not publish ROHD or run other release checks concurrently
+while the line is absent. Confirm the line is restored before a root ROHD dry run
+or publication. The temporary uncommitted ignore edit does not change the
+release source commit.
+
+`tool/release/check_release.sh` automatically removes and restores the line for
+each nested-package dry run, and checks ROHD with the line in place. It never
+uploads a package. Do not edit `.pubignore` or run publication concurrently with
+the helper. If it is forcibly terminated or detects a concurrent edit, it retains
+`.pubignore-release.lock/original` for recovery. Check that no release check is
+running, restore the `/packages/` rule without discarding other edits, and remove
+the lock directory before retrying.
+
+Confirm each version on pub.dev, then create
 its tag at the preparation-branch commit used for publication and publish its
 GitHub release using the strategy above. Record the release source commit and,
 for `rohd_live_debugger`, both the DevTools source (`main`) and artifact commits in the release
 notes. Once all selected packages have been published successfully, merge the
 preparation PR; do not move release tags to a later merge or squash commit.
 
-For `rohd_live_debugger`, stage the prepared package outside the repository
-before manual publication. Review the staged archive with the dry run below;
+For `rohd_live_debugger`, review the prepared archive with the dry run below;
 only an authorized maintainer should subsequently publish it:
 
 ```sh
-stage_root="$(mktemp -d)"
-bash tool/release/stage_live_debugger.sh "$stage_root/rohd_live_debugger"
-cd "$stage_root/rohd_live_debugger"
+cd packages/rohd_live_debugger
 dart pub publish --dry-run
 ```
 

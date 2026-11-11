@@ -37,7 +37,7 @@ export METADATA_SCRIPT="$RELEASE/tool/release/prepare_release_metadata.dart"
 mkdir -p "$FIXTURE/bin" "$UPSTREAM/tool/release" "$UPSTREAM/tool/gh_actions/devtool" \
   "$UPSTREAM/lib/src/utilities" "$UPSTREAM/packages/rohd_live_debugger/extension/devtools" \
   "$UPSTREAM/rohd_devtools_extension"
-for executable in awk bash cat cmp cp dirname find git grep mkdir mktemp mv rm sed tar; do
+for executable in awk bash cat cmp cp dirname find git grep mkdir mktemp mv rm rmdir sed tar; do
   ln -s "$(command -v "$executable")" "$FIXTURE/bin/$executable"
 done
 printf '%s\n' \
@@ -46,11 +46,7 @@ printf '%s\n' \
   '  shift' \
   '  exec "$REAL_DART" "--packages=$PACKAGE_CONFIG" "$@"' \
   'fi' \
-  'directory="$PWD"' \
-  'if [[ "${PWD##*/}" == rohd_live_debugger && "$*" == "pub publish --dry-run" ]]; then' \
-  '  directory="$RELEASE_DEBUGGER_DIR"' \
-  'fi' \
-  'printf "%s|%s|%s\n" "${0##*/}" "$directory" "$*" >> "$SDK_LOG"' \
+  'printf "%s|%s|%s\n" "${0##*/}" "$PWD" "$*" >> "$SDK_LOG"' \
   'case "$*" in' \
   '  "pub publish --dry-run") printf "dry-run\n" >> "$STAGE_LOG" ;;' \
   '  "pub get"|"format --output=none --set-exit-if-changed ."|"analyze --fatal-infos"|"test")' \
@@ -66,7 +62,6 @@ ln -s /bin/true "$FIXTURE/bin/pana"
 
 cp "$REPO_ROOT/tool/release/prepare_release.sh" \
   "$REPO_ROOT/tool/release/check_release.sh" \
-  "$REPO_ROOT/tool/release/stage_live_debugger.sh" \
   "$REPO_ROOT/tool/release/prepare_release_metadata.dart" \
   "$UPSTREAM/tool/release/"
 cp "$REPO_ROOT/tool/gh_actions/check_tmp_test.sh" "$UPSTREAM/tool/gh_actions/"
@@ -104,7 +99,6 @@ printf '%s\n' '#!/bin/bash' \
   'printf "fixture vsix\n" > "$1"' \
   'exit "${VSIX_STATUS:-0}"' > "$UPSTREAM/tool/release/package_vscode.sh"
 export VSIX_PATH_LOG="$FIXTURE/vsix-path.log"
-export RELEASE_DEBUGGER_DIR="$RELEASE/packages/rohd_live_debugger"
 chmod +x "$UPSTREAM/tool/gh_actions/check_tmp_test.sh" \
   "$UPSTREAM/tool/gh_actions/devtool/test_devtools_install.sh" "$UPSTREAM/tool/run_checks.sh"
 printf "version: '0.6.11' # release\n" > "$UPSTREAM/pubspec.yaml"
@@ -113,6 +107,7 @@ printf '## Next Release\n' > "$UPSTREAM/CHANGELOG.md"
 printf 'name: rohd_live_debugger\nversion: 0.0.1\n' > "$UPSTREAM/packages/rohd_live_debugger/extension/devtools/config.yaml"
 printf 'version: 0.0.1+1\n' > "$UPSTREAM/rohd_devtools_extension/pubspec.yaml"
 printf 'packages/rohd_live_debugger/extension/devtools/build/\n' > "$UPSTREAM/.gitignore"
+cp "$REPO_ROOT/.pubignore" "$UPSTREAM/.pubignore"
 for package in rohd_hierarchy rohd_waveform rohd_devtools_widgets rohd_source_navigator rohd_live_debugger; do
   mkdir -p "$UPSTREAM/packages/$package"
   printf '## Next Release\n' > "$UPSTREAM/packages/$package/CHANGELOG.md"

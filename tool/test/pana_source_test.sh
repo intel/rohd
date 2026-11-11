@@ -178,7 +178,7 @@ run_case 0 "$WAVEFORM" dart
 [[ "$(cat "$SDK_LOG")" == $'dart|pub get\ndart|analyze --fatal-infos lib\ndart|pub downgrade\ndart|analyze --fatal-infos lib\npana' ]]
 PANA_STATUS=73 run_case 73 "$WAVEFORM" dart
 
-export EXPECTED_SDK=dart EXPECTED_THRESHOLD=10 EXPECT_DEBUGGER_BUILD=1
+export EXPECTED_SDK=dart EXPECTED_THRESHOLD=0 EXPECT_DEBUGGER_BUILD=1
 export EXPECTED_PACKAGE_SOURCE="$DEBUGGER"
 run_case 0 "$DEBUGGER" dart
 unset EXPECT_DEBUGGER_BUILD EXPECTED_PACKAGE_SOURCE
