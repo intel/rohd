@@ -117,11 +117,6 @@ void main() {
                   refreshIcon: const Icon(Icons.refresh),
                   onRefresh: () => refreshes++,
                   treeContent: ModuleTreeCard(futureModuleTree: root),
-                  bottomContent: Container(
-                    key: const ValueKey('shell-content'),
-                    color: Colors.blue,
-                  ),
-                  bottomContentHeight: 160,
                   verticalController: verticalController,
                   horizontalController: horizontalController,
                   hierarchyService: hierarchyCubit.currentService,
@@ -129,6 +124,11 @@ void main() {
                 detailsConfig: const DetailsPanelConfig(
                   content: Center(child: Text('Details canvas')),
                 ),
+                bottomContent: Container(
+                  key: const ValueKey('shell-content'),
+                  color: Colors.blue,
+                ),
+                bottomContentHeight: 160,
               ),
             ),
           ),
@@ -158,6 +158,27 @@ void main() {
       await tester.tap(find.byIcon(Icons.refresh));
       expect(refreshes, 1);
 
+      final treePanel = find.ancestor(
+        of: find.text('Module Tree'),
+        matching: find.byType(Card),
+      );
+      final detailsPanel = find.ancestor(
+        of: find.text('Details canvas'),
+        matching: find.byType(Card),
+      );
+      final shellContent = find.byKey(const ValueKey('shell-content'));
+      final initialShellRect = tester.getRect(shellContent);
+      final initialTreeRect = tester.getRect(treePanel);
+      final initialDetailsRect = tester.getRect(detailsPanel);
+      expect(initialShellRect.left, closeTo(initialTreeRect.left, 5));
+      expect(initialShellRect.right, closeTo(initialDetailsRect.right, 5));
+      expect(
+          initialShellRect.top, greaterThanOrEqualTo(initialTreeRect.bottom));
+      expect(
+        initialShellRect.top,
+        greaterThanOrEqualTo(initialDetailsRect.bottom),
+      );
+
       final detailsDivider = find.byKey(
         const ValueKey('details-resize-divider'),
       );
@@ -168,16 +189,41 @@ void main() {
         tester.getCenter(detailsDivider).dx,
         greaterThan(initialDetailsDividerX),
       );
+      expect(tester.getRect(shellContent), initialShellRect);
 
-      final shellContent = find.byKey(const ValueKey('shell-content'));
       final initialShellHeight = tester.getSize(shellContent).height;
       await tester.drag(
         find.byKey(const ValueKey('shell-resize-divider')),
         const Offset(0, -80),
       );
       await tester.pump();
+      expect(tester.getSize(shellContent).height,
+          closeTo(initialShellHeight + 80, 1));
+      expect(tester.getRect(treePanel).bottom,
+          closeTo(initialTreeRect.bottom - 80, 1));
       expect(
-          tester.getSize(shellContent).height, greaterThan(initialShellHeight));
+        tester.getRect(detailsPanel).bottom,
+        closeTo(initialDetailsRect.bottom - 80, 1),
+      );
+      expect(tester.getRect(shellContent).width, initialShellRect.width);
+
+      await tester.drag(
+        find.byKey(const ValueKey('shell-resize-divider')),
+        const Offset(0, 1000),
+      );
+      await tester.pump();
+      expect(tester.getSize(shellContent).height, closeTo(132, 1));
+      expect(tester.takeException(), isNull);
+
+      tester.view.physicalSize = const Size(1200, 330);
+      await tester.pump();
+      await tester.drag(
+        find.byKey(const ValueKey('shell-resize-divider')),
+        const Offset(0, -1000),
+      );
+      await tester.pump();
+      expect(tester.getRect(shellContent).width, initialShellRect.width);
+      expect(tester.takeException(), isNull);
     },
   );
 

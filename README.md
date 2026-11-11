@@ -62,6 +62,7 @@ You can also open this repository in a GitHub Codespace to run the example in yo
     - [ROHD Schematic Viewer](https://intel.github.io/rohd-schematic-viewer/) ([VS Code extension](https://marketplace.visualstudio.com/items?itemName=intel-corporation.rohd-schematic-viewer))
     - [ROHD Wave Viewer](https://intel.github.io/rohd-wave-viewer/) ([VS Code extension](https://marketplace.visualstudio.com/items?itemName=intel-corporation.rohd-wave-viewer))
     - [ROHD Live Debugger](https://intel.github.io/rohd/rohd-live-debugger/)
+  - Finally, the [ROHD Extension](https://marketplace.visualstudio.com/items?itemName=intel-corporation.rohd-tools) is a VS Code extensiion that provides ROHD syntax support and installs both viewers as an extension pack
   - Support for **cosimulation with Verilog modules** (via [ROHD Cosim](https://github.com/intel/rohd-cosim)) and **instantiation of Verilog modules** in generated SystemVerilog code
 
 ROHD is *not* a new language, it is *not* a hardware description language (HDL), and it is *not* a version of High-Level Synthesis (HLS).  ROHD can be classified as a generator framework, extending a powerful software language into the hardware domain and providing a full suite of tools and capabilities to accelerate hardware design and validation.

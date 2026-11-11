@@ -36,7 +36,7 @@ for asset in index.html flutter_bootstrap.js flutter.js main.dart.js version.jso
   dart_wellen/wellen_bridge.js dart_wellen/wellen_bridge_bg.wasm; do
   touch "$EXTENSION_DIR/build/$asset"
 done
-printf '{"version":"0.0.1"}\n' > "$EXTENSION_DIR/build/version.json"
+printf '{"version":"0.1.0"}\n' > "$EXTENSION_DIR/build/version.json"
 mkdir -p "$(dirname "$STANDALONE_EXTENSION_DIR")"
 cp -R "$EXTENSION_DIR" "$STANDALONE_EXTENSION_DIR"
 
@@ -60,7 +60,7 @@ if bash "$REPO_ROOT/tool/gh_actions/devtool/test_devtools_install.sh" "$PACKAGE_
   exit 1
 fi
 grep -Fq 'Web build version does not match DevTools config' "$FIXTURE/output"
-printf '{"version":"0.0.1"}\n' > "$EXTENSION_DIR/build/version.json"
+printf '{"version":"0.1.0"}\n' > "$EXTENSION_DIR/build/version.json"
 
 # A stale ignored build alone must not make ROHD provide an extension.
 [[ ! -f "$REPO_ROOT/extension/devtools/config.yaml" ]]
@@ -103,7 +103,7 @@ touch "$BUILD_REPO/rohd_devtools_extension/web/dart_wellen/wellen_bridge.js" \
 )
 grep -Fq 'if(window.parent===window){window.location.replace("https://intel.github.io/rohd/rohd-live-debugger/")}' \
   "$BUILD_REPO/packages/rohd_live_debugger/extension/devtools/build/index.html"
-grep -Fxq 'version: 0.0.1' "$BUILD_REPO/packages/rohd_live_debugger/extension/devtools/config.yaml"
+grep -Fxq 'version: 0.1.0' "$BUILD_REPO/packages/rohd_live_debugger/extension/devtools/config.yaml"
 cmp "$REPO_ROOT/packages/rohd_live_debugger/extension/devtools/config.yaml" \
   "$BUILD_REPO/packages/rohd_live_debugger/extension/devtools/config.yaml"
 [[ "$(awk '/^version: / {print $2}' "$REPO_ROOT/packages/rohd_live_debugger/extension/devtools/config.yaml")" == \

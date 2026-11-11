@@ -10,7 +10,7 @@ the complete process.
 | Tool | Purpose |
 | --- | --- |
 | `prepare_release.sh` | Prepares selected package metadata, validates required artifacts, runs enabled checks, and performs publication dry runs. |
-| `check_release.sh` | Checks selected publication archives with `pub publish --dry-run`. |
+| `check_release.sh` | Checks selected publication archives with `pub publish --dry-run`, temporarily adjusting the root ignore rule for nested packages. |
 | `run_pana.sh` | Runs isolated hosted-dependency compatibility and Pana score gates. |
 | `local_pub.sh` | Runs a command against an already-running loopback Pub registry with an isolated cache. |
 | `package_vscode.sh` | Builds and verifies a local Marketplace-qualified ROHD VSIX. |

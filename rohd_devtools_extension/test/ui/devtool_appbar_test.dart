@@ -20,8 +20,10 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/const/app_version.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/cubit/theme_cubit.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/services/vm_connection_strategy.dart';
+import 'package:rohd_devtools_extension/rohd_devtools/ui/details_panel_content.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/ui/devtool_appbar.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/ui/devtools_help_button.dart';
+import 'package:rohd_devtools_extension/rohd_devtools/ui/rohd_design_shell.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/ui/rohd_shell_help_button.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/ui/rohd_website_button.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/ui/standalone_app_shell.dart';
@@ -235,6 +237,48 @@ void main() {
         'https://intel.github.io/rohd/rohd-live-debugger/',
       },
     );
+  });
+
+  testWidgets('standalone shell spans both upper panels', (tester) async {
+    tester.view
+      ..physicalSize = const Size(1400, 900)
+      ..devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      DefaultAssetBundle(
+        bundle: _HelpAssetBundle(),
+        child: StandaloneRohdDevToolsApp(
+          config: StandaloneAppConfig(
+            connectionStrategy: _UnusedConnectionStrategy(),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    Navigator.of(tester.element(find.byType(RohdWebsiteButton))).pop();
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+
+    final treePanel = find.ancestor(
+      of: find.text('Module Tree'),
+      matching: find.byType(Card),
+    );
+    final detailsPanel = find.ancestor(
+      of: find.byType(DetailsPanelContent),
+      matching: find.byType(Card),
+    );
+    final shell = tester.getRect(find.byType(RohdDesignShell));
+    final tree = tester.getRect(treePanel);
+    final details = tester.getRect(detailsPanel);
+    expect(shell.left, closeTo(tree.left, 5));
+    expect(shell.right, closeTo(details.right, 5));
+    expect(shell.top, greaterThanOrEqualTo(tree.bottom));
+    expect(shell.top, greaterThanOrEqualTo(details.bottom));
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump(const Duration(seconds: 5));
   });
 
   testWidgets('standalone app bar opens the licenses page', (

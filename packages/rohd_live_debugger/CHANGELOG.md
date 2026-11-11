@@ -1,4 +1,4 @@
-## 0.0.1
+## 0.1.0
 
 - Publish the ROHD Live Debugger as an opt-in Dart DevTools extension.
 - Fix the embedded DevTools module tree and search when opened through Dart DevTools in a browser.
@@ -7,3 +7,4 @@
 - Fix the Licenses page in the embedded DevTools extension.
 - Make the debugger's ROHD logo open the ROHD website.
 - Update Live Debugger help to cover its panes and controls and display the debugger build version.
+- Extend the standalone debug shell across the full window beneath the module tree and details panels.
