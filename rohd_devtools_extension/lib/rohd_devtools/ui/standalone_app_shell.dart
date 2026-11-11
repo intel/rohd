@@ -1953,22 +1953,22 @@ class _StandaloneDevToolsPageState
               verticalController: _verticalController,
               horizontalController: _horizontalController,
               hierarchyService: hierarchyService,
-              bottomContent: RohdDesignShell(
-                targetProvider: _shellTarget,
-                formatForPath: (path) => SignalValueFormatRegistry.formatForAny(
-                  [hierarchyService?.pathnameToAddress(path)],
-                ),
-                onSendSignals: (paths) {
-                  _shellXp.send(paths, source: 'rohd-shell');
-                },
-                headerActions: [
-                  RohdShellHelpButton(
-                    isDark: context.watch<DevToolsThemeCubit>().state ==
-                        DevToolsThemeMode.dark,
-                    hasColorEmoji: _hasColorEmoji,
-                  ),
-                ],
+            ),
+            bottomContent: RohdDesignShell(
+              targetProvider: _shellTarget,
+              formatForPath: (path) => SignalValueFormatRegistry.formatForAny(
+                [hierarchyService?.pathnameToAddress(path)],
               ),
+              onSendSignals: (paths) {
+                _shellXp.send(paths, source: 'rohd-shell');
+              },
+              headerActions: [
+                RohdShellHelpButton(
+                  isDark: context.watch<DevToolsThemeCubit>().state ==
+                      DevToolsThemeMode.dark,
+                  hasColorEmoji: _hasColorEmoji,
+                ),
+              ],
             ),
             detailsConfig: DetailsPanelConfig(
               content: SourceFramePointerTracker(

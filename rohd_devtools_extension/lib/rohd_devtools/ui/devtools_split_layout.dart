@@ -29,12 +29,6 @@ class ModuleTreePanelConfig {
   /// The module tree content widget.
   final Widget treeContent;
 
-  /// Optional panel displayed beneath the module tree.
-  final Widget? bottomContent;
-
-  /// Initial height reserved for [bottomContent].
-  final double bottomContentHeight;
-
   /// Scroll controllers for the tree content.
   final ScrollController verticalController;
 
@@ -54,8 +48,6 @@ class ModuleTreePanelConfig {
     required this.verticalController,
     required this.horizontalController,
     this.hierarchyService,
-    this.bottomContent,
-    this.bottomContentHeight = 260,
   });
 }
 
@@ -73,6 +65,7 @@ class DetailsPanelConfig {
 /// This widget provides the two-panel layout with a resizable divider:
 /// - Left panel: Module tree with search and refresh
 /// - Right panel: Details/waveform/schematic tabs
+/// - Optional bottom panel: Full-width content with a resizable divider
 ///
 /// Usage:
 /// ```dart
@@ -97,6 +90,12 @@ class DevToolsSplitLayout extends StatelessWidget {
   /// Configuration for the details panel.
   final DetailsPanelConfig detailsConfig;
 
+  /// Optional full-width panel displayed beneath the tree and details panels.
+  final Widget? bottomContent;
+
+  /// Initial height reserved for [bottomContent].
+  final double bottomContentHeight;
+
   /// Initial fractions for the split pane.
   final List<double> initialFractions;
 
@@ -111,6 +110,8 @@ class DevToolsSplitLayout extends StatelessWidget {
     required this.moduleTreeConfig,
     required this.detailsConfig,
     super.key,
+    this.bottomContent,
+    this.bottomContentHeight = 260,
     this.initialFractions = const [0.23, 0.77],
     this.minSizes = const [100, 200],
     this.padding = const EdgeInsets.all(10),
@@ -119,15 +120,28 @@ class DevToolsSplitLayout extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
         padding: padding,
-        child: _TwoPaneLayout(
-          initialFractions: initialFractions,
-          minSizes: minSizes,
-          children: [
-            _buildModuleTreePanel(context),
-            _buildDetailsPanel(context)
-          ],
-        ),
+        child: _buildContent(context),
       );
+
+  Widget _buildContent(BuildContext context) {
+    final topContent = _TwoPaneLayout(
+      initialFractions: initialFractions,
+      minSizes: minSizes,
+      children: [
+        _buildModuleTreePanel(context),
+        _buildDetailsPanel(context),
+      ],
+    );
+    final bottom = bottomContent;
+    if (bottom == null) {
+      return topContent;
+    }
+    return _VerticalSplitLayout(
+      initialBottomHeight: bottomContentHeight,
+      topContent: topContent,
+      bottomContent: Card(clipBehavior: Clip.antiAlias, child: bottom),
+    );
+  }
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
@@ -142,6 +156,7 @@ class DevToolsSplitLayout extends StatelessWidget {
       ..add(
         DiagnosticsProperty<DetailsPanelConfig>('detailsConfig', detailsConfig),
       )
+      ..add(DoubleProperty('bottomContentHeight', bottomContentHeight))
       ..add(IterableProperty<double>('initialFractions', initialFractions))
       ..add(IterableProperty<double>('minSizes', minSizes))
       ..add(DiagnosticsProperty<EdgeInsets>('padding', padding));
@@ -154,13 +169,10 @@ class DevToolsSplitLayout extends StatelessWidget {
       Card(clipBehavior: Clip.antiAlias, child: detailsConfig.content);
 }
 
-class _ModuleTreePanel extends StatefulWidget {
+class _ModuleTreePanel extends StatelessWidget {
   const _ModuleTreePanel({required this.config});
 
   final ModuleTreePanelConfig config;
-
-  @override
-  State<_ModuleTreePanel> createState() => _ModuleTreePanelState();
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
@@ -169,127 +181,148 @@ class _ModuleTreePanel extends StatefulWidget {
       DiagnosticsProperty<ModuleTreePanelConfig>('config', config),
     );
   }
-}
-
-class _ModuleTreePanelState extends State<_ModuleTreePanel> {
-  static const _minimumTreeHeight = 160.0;
-  static const _minimumBottomHeight = 140.0;
-  double? _bottomContentHeight;
-  double? _dragStartBottomHeight;
-  double? _dragStartGlobalY;
-
-  double _boundedBottomHeight(BoxConstraints constraints) {
-    final initial = _bottomContentHeight ?? widget.config.bottomContentHeight;
-    final maximum = constraints.maxHeight - _minimumTreeHeight;
-    if (!maximum.isFinite || maximum <= _minimumBottomHeight) {
-      return _minimumBottomHeight;
-    }
-    return initial.clamp(_minimumBottomHeight, maximum);
-  }
 
   @override
   Widget build(BuildContext context) => Card(
         clipBehavior: Clip.antiAlias,
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final config = widget.config;
-            final bottomHeight = _boundedBottomHeight(constraints);
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(10),
-                  child: Row(
-                    children: [
-                      config.icon,
-                      const SizedBox(width: 10),
-                      const Expanded(
-                        child: Text(
-                          'Module Tree',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      IconButton(
-                        icon: config.refreshIcon,
-                        onPressed: config.onRefresh,
-                      ),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 10),
-                  child: ModuleSearchField(
-                    hierarchy: config.hierarchyService,
-                    onSearchTermChanged: (term) {
-                      context.read<TreeSearchTermCubit>().setTerm(term);
-                    },
-                  ),
-                ),
-                const Divider(height: 1),
-                Expanded(
-                  child: Scrollbar(
-                    controller: config.verticalController,
-                    thumbVisibility: true,
-                    child: SingleChildScrollView(
-                      controller: config.verticalController,
-                      child: SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        controller: config.horizontalController,
-                        child: config.treeContent,
-                      ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(10),
+              child: Row(
+                children: [
+                  config.icon,
+                  const SizedBox(width: 10),
+                  const Expanded(
+                    child: Text(
+                      'Module Tree',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                ),
-                if (config.bottomContent case final bottomContent?) ...[
-                  MouseRegion(
-                    cursor: SystemMouseCursors.resizeUpDown,
-                    child: GestureDetector(
-                      key: const ValueKey('shell-resize-divider'),
-                      behavior: HitTestBehavior.opaque,
-                      onVerticalDragStart: (details) {
-                        _dragStartBottomHeight = bottomHeight;
-                        _dragStartGlobalY = details.globalPosition.dy;
-                      },
-                      onVerticalDragUpdate: (details) {
-                        final startHeight = _dragStartBottomHeight;
-                        final startY = _dragStartGlobalY;
-                        if (startHeight == null || startY == null) {
-                          return;
-                        }
-                        setState(() {
-                          _bottomContentHeight = (startHeight -
-                                  (details.globalPosition.dy - startY))
-                              .clamp(
-                            _minimumBottomHeight,
-                            constraints.maxHeight - _minimumTreeHeight,
-                          );
-                        });
-                      },
-                      onVerticalDragEnd: (_) {
-                        _dragStartBottomHeight = null;
-                        _dragStartGlobalY = null;
-                      },
-                      child: Container(
-                        height: 8,
-                        color: Theme.of(context)
-                            .colorScheme
-                            .surfaceContainerHighest,
-                        alignment: Alignment.center,
-                        child: Container(
-                          height: 2,
-                          margin: const EdgeInsets.symmetric(horizontal: 24),
-                          color: Theme.of(context).colorScheme.outlineVariant,
-                        ),
-                      ),
-                    ),
+                  IconButton(
+                    icon: config.refreshIcon,
+                    onPressed: config.onRefresh,
                   ),
-                  SizedBox(height: bottomHeight, child: bottomContent),
                 ],
-              ],
-            );
-          },
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              child: ModuleSearchField(
+                hierarchy: config.hierarchyService,
+                onSearchTermChanged: (term) {
+                  context.read<TreeSearchTermCubit>().setTerm(term);
+                },
+              ),
+            ),
+            const Divider(height: 1),
+            Expanded(
+              child: Scrollbar(
+                controller: config.verticalController,
+                thumbVisibility: true,
+                child: SingleChildScrollView(
+                  controller: config.verticalController,
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    controller: config.horizontalController,
+                    child: config.treeContent,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
+      );
+}
+
+class _VerticalSplitLayout extends StatefulWidget {
+  const _VerticalSplitLayout({
+    required this.initialBottomHeight,
+    required this.topContent,
+    required this.bottomContent,
+  });
+
+  final double initialBottomHeight;
+  final Widget topContent;
+  final Widget bottomContent;
+
+  @override
+  State<_VerticalSplitLayout> createState() => _VerticalSplitLayoutState();
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DoubleProperty('initialBottomHeight', initialBottomHeight));
+  }
+}
+
+class _VerticalSplitLayoutState extends State<_VerticalSplitLayout> {
+  static const _dividerHeight = 8.0;
+  static const _minimumTopHeight = 160.0;
+  static const _minimumBottomHeight = 140.0;
+  double? _bottomHeight;
+  double? _dragStartBottomHeight;
+  double? _dragStartGlobalY;
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+        builder: (context, constraints) {
+          final availableHeight = (constraints.maxHeight - _dividerHeight)
+              .clamp(0.0, double.infinity);
+          final minBottom =
+              _minimumBottomHeight.clamp(0.0, availableHeight / 2);
+          final minTop = _minimumTopHeight.clamp(0.0, availableHeight / 2);
+          final maxBottom = availableHeight - minTop;
+          final bottomHeight = (_bottomHeight ?? widget.initialBottomHeight)
+              .clamp(minBottom, maxBottom);
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(child: widget.topContent),
+              MouseRegion(
+                cursor: SystemMouseCursors.resizeUpDown,
+                child: GestureDetector(
+                  key: const ValueKey('shell-resize-divider'),
+                  behavior: HitTestBehavior.opaque,
+                  onVerticalDragStart: (details) {
+                    _dragStartBottomHeight = bottomHeight;
+                    _dragStartGlobalY = details.globalPosition.dy;
+                  },
+                  onVerticalDragUpdate: (details) {
+                    final startHeight = _dragStartBottomHeight;
+                    final startY = _dragStartGlobalY;
+                    if (startHeight == null || startY == null) {
+                      return;
+                    }
+                    setState(() {
+                      _bottomHeight =
+                          (startHeight - (details.globalPosition.dy - startY))
+                              .clamp(minBottom, maxBottom);
+                    });
+                  },
+                  onVerticalDragEnd: (_) {
+                    _dragStartBottomHeight = null;
+                    _dragStartGlobalY = null;
+                  },
+                  child: Container(
+                    height: _dividerHeight,
+                    color:
+                        Theme.of(context).colorScheme.surfaceContainerHighest,
+                    alignment: Alignment.center,
+                    child: Container(
+                      height: 2,
+                      margin: const EdgeInsets.symmetric(horizontal: 24),
+                      color: Theme.of(context).colorScheme.outlineVariant,
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(height: bottomHeight, child: widget.bottomContent),
+            ],
+          );
+        },
       );
 }
 

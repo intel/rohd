@@ -67,7 +67,8 @@ service URI. The embedded extension uses the Dart DevTools connection.
 
 ## Shell and Pane Help
 
-The standalone debugger includes a ROHD Debug Shell below the module tree.
+The standalone debugger includes a full-width ROHD Debug Shell below the module
+tree and details panels.
 Use its help button for command syntax and available operations.
 The question-mark button in the right pane opens detailed help for the
 currently selected Details, Waveform, or Schematic tab.
