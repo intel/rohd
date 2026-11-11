@@ -2954,6 +2954,7 @@ rohd
 rohd_devtools_extension
 rohd_devtools_widgets
 rohd_hierarchy
+rohd_live_debugger
 rohd_schematic_viewer
 rohd_source_navigator
 rohd_waveform
