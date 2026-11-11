@@ -104,8 +104,8 @@ chmod +x "$UPSTREAM/tool/gh_actions/check_tmp_test.sh" \
 printf "version: '0.6.11' # release\n" > "$UPSTREAM/pubspec.yaml"
 printf "static const String version = '0.0.0';\n" > "$UPSTREAM/lib/src/utilities/config.dart"
 printf '## Next Release\n' > "$UPSTREAM/CHANGELOG.md"
-printf 'name: rohd_live_debugger\nversion: 0.0.1\n' > "$UPSTREAM/packages/rohd_live_debugger/extension/devtools/config.yaml"
-printf 'version: 0.0.1+1\n' > "$UPSTREAM/rohd_devtools_extension/pubspec.yaml"
+printf 'name: rohd_live_debugger\nversion: 0.1.0\n' > "$UPSTREAM/packages/rohd_live_debugger/extension/devtools/config.yaml"
+printf 'version: 0.1.0+1\n' > "$UPSTREAM/rohd_devtools_extension/pubspec.yaml"
 printf 'packages/rohd_live_debugger/extension/devtools/build/\n' > "$UPSTREAM/.gitignore"
 cp "$REPO_ROOT/.pubignore" "$UPSTREAM/.pubignore"
 for package in rohd_hierarchy rohd_waveform rohd_devtools_widgets rohd_source_navigator rohd_live_debugger; do
@@ -116,7 +116,7 @@ printf 'version: 1.2.3\n' > "$UPSTREAM/packages/rohd_hierarchy/pubspec.yaml"
 printf 'version: 2.3.4\n' > "$UPSTREAM/packages/rohd_waveform/pubspec.yaml"
 printf 'version: 3.4.5\n' > "$UPSTREAM/packages/rohd_devtools_widgets/pubspec.yaml"
 printf 'version: 4.5.6\n' > "$UPSTREAM/packages/rohd_source_navigator/pubspec.yaml"
-printf 'version: 0.0.1\n' > "$UPSTREAM/packages/rohd_live_debugger/pubspec.yaml"
+printf 'version: 0.1.0\n' > "$UPSTREAM/packages/rohd_live_debugger/pubspec.yaml"
 
 git init --quiet --initial-branch=main "$UPSTREAM"
 git -C "$UPSTREAM" add .
@@ -164,7 +164,7 @@ assert_unchanged() {
   [[ "$(cat "$RELEASE/lib/src/utilities/config.dart")" == "static const String version = '0.0.0';" ]]
   [[ "$(cat "$RELEASE/CHANGELOG.md")" == '## Next Release' ]]
   [[ "$(cat "$RELEASE/packages/rohd_live_debugger/extension/devtools/build/index.html")" == 'original payload' ]]
-  [[ "$(cat "$RELEASE/packages/rohd_live_debugger/extension/devtools/config.yaml")" == $'name: rohd_live_debugger\nversion: 0.0.1' ]]
+  [[ "$(cat "$RELEASE/packages/rohd_live_debugger/extension/devtools/config.yaml")" == $'name: rohd_live_debugger\nversion: 0.1.0' ]]
   for package in rohd_hierarchy rohd_waveform rohd_devtools_widgets rohd_source_navigator rohd_live_debugger; do
     [[ "$(cat "$RELEASE/packages/$package/CHANGELOG.md")" == '## Next Release' ]]
   done
@@ -240,7 +240,7 @@ expected_log="$(
 [[ "$(cat "$RELEASE/packages/rohd_waveform/CHANGELOG.md")" == '## 2.3.4' ]]
 [[ "$(cat "$RELEASE/packages/rohd_devtools_widgets/CHANGELOG.md")" == '## 3.4.5' ]]
 [[ "$(cat "$RELEASE/packages/rohd_source_navigator/CHANGELOG.md")" == '## 4.5.6' ]]
-[[ "$(cat "$RELEASE/packages/rohd_live_debugger/CHANGELOG.md")" == '## 0.0.1' ]]
+[[ "$(cat "$RELEASE/packages/rohd_live_debugger/CHANGELOG.md")" == '## 0.1.0' ]]
 git -C "$RELEASE" diff --exit-code -- pubspec.yaml 'packages/*/pubspec.yaml'
 
 run_case 0 "DevTools source commit (upstream main): $MAIN_COMMIT" --run-tests
@@ -275,11 +275,11 @@ expected_log="$(
 [[ "$(cat "$SDK_LOG")" == "$expected_log" ]]
 [[ "$(cat "$STAGE_LOG")" == $'smoke\ndry-run' ]]
 
-printf 'name: rohd_live_debugger\nversion: 0.0.1\n# Changed on release branch\n' \
+printf 'name: rohd_live_debugger\nversion: 0.1.0\n# Changed on release branch\n' \
   > "$RELEASE/packages/rohd_live_debugger/extension/devtools/config.yaml"
 run_case 1 'artifact configuration differs' rohd_live_debugger
 [[ ! -s "$SDK_LOG" && ! -s "$STAGE_LOG" ]]
-printf 'name: rohd_live_debugger\nversion: 0.0.1\n' \
+printf 'name: rohd_live_debugger\nversion: 0.1.0\n' \
   > "$RELEASE/packages/rohd_live_debugger/extension/devtools/config.yaml"
 
 export VSIX_STATUS=73

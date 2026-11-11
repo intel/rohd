@@ -2,7 +2,7 @@ name: rohd_devtools_extension
 description: "DevTool extension on ROHD."
 publish_to: 'none'
 
-version: 0.0.1+1
+version: 0.1.0+1
 
 environment:
   sdk: ^3.6.0

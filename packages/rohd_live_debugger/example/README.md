@@ -4,7 +4,7 @@ Add the debugger to a ROHD project's `pubspec.yaml`:
 
 ```yaml
 dev_dependencies:
-  rohd_live_debugger: ^0.0.1
+  rohd_live_debugger: ^0.1.0
 ```
 
 Run `dart pub get` and start a debug session for an instrumented ROHD program.

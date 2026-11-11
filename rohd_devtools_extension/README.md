@@ -126,7 +126,7 @@ services. The examples above deliberately show the individual services.
 
 ## Opening from Flutter DevTools
 
-The embedded extension is opt-in. Add `rohd_live_debugger: ^0.0.1` to
+The embedded extension is opt-in. Add `rohd_live_debugger: ^0.1.0` to
 your project's `dev_dependencies` and run `dart pub get`. ROHD itself no longer
 bundles the extension; projects upgrading from the old **ROHD** tab need to
 add this package explicitly. The standalone web debugger does not require it.

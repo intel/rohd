@@ -1,4 +1,4 @@
-## 0.0.1
+## 0.1.0
 
 - Publish the ROHD Live Debugger as an opt-in Dart DevTools extension.
 - Fix the embedded DevTools module tree and search when opened through Dart DevTools in a browser.

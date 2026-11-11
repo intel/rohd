@@ -8,7 +8,7 @@ Add it to the ROHD project's `dev_dependencies`:
 
 ```yaml
 dev_dependencies:
-  rohd_live_debugger: ^0.0.1
+  rohd_live_debugger: ^0.1.0
 ```
 
 Run `dart pub get`, start debugging the ROHD program, and open DevTools in a
