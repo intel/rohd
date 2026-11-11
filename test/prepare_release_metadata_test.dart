@@ -55,6 +55,11 @@ void main() {
     write('packages/rohd_devtools_widgets/CHANGELOG.md', '## Next Release\n');
     write('packages/rohd_source_navigator/pubspec.yaml', 'version: 4.5.6\n');
     write('packages/rohd_source_navigator/CHANGELOG.md', '## Next Release\n');
+    write('packages/rohd_live_debugger/pubspec.yaml', 'version: 0.0.1\n');
+    write('packages/rohd_live_debugger/CHANGELOG.md', '## Next Release\n');
+    write('packages/rohd_live_debugger/extension/devtools/config.yaml',
+        'name: rohd_live_debugger\nversion: 0.0.1\n');
+    write('rohd_devtools_extension/pubspec.yaml', 'version: 0.0.1+1\n');
   });
 
   tearDown(() => fixture.deleteSync(recursive: true));
@@ -67,6 +72,7 @@ void main() {
       'rohd_waveform',
       'rohd_devtools_widgets',
       'rohd_source_navigator',
+      'rohd_live_debugger',
     ]);
     expect(result.exitCode, 0, reason: '${result.stderr}');
     expect(result.stdout, contains('rohd: 0.6.11 (prepared'));
@@ -74,6 +80,7 @@ void main() {
     expect(result.stdout, contains('rohd_waveform: 2.3.4 (prepared'));
     expect(result.stdout, contains('rohd_devtools_widgets: 3.4.5 (prepared'));
     expect(result.stdout, contains('rohd_source_navigator: 4.5.6 (prepared'));
+    expect(result.stdout, contains('rohd_live_debugger: 0.0.1 (prepared'));
     expect(read('pubspec.yaml'), manifest);
     expect(read('CHANGELOG.md'), '## 0.6.11\n\n- Update.\n');
     expect(read('lib/src/utilities/config.dart'),
@@ -82,6 +89,7 @@ void main() {
     expect(read('packages/rohd_waveform/CHANGELOG.md'), '## 2.3.4\n');
     expect(read('packages/rohd_devtools_widgets/CHANGELOG.md'), '## 3.4.5\n');
     expect(read('packages/rohd_source_navigator/CHANGELOG.md'), '## 4.5.6\n');
+    expect(read('packages/rohd_live_debugger/CHANGELOG.md'), '## 0.0.1\n');
     expect(read('packages/rohd_source_navigator/pubspec.yaml'),
         'version: 4.5.6\n');
   });
@@ -118,6 +126,31 @@ void main() {
         'version: 4.5.6\n');
     expect(read('CHANGELOG.md'), startsWith('## Next Release'));
     expect(read('lib/src/utilities/config.dart'), contains('0.6.10'));
+  });
+
+  test('debugger metadata must match before any selected package is changed',
+      () {
+    for (final (path, contents) in [
+      (
+        'packages/rohd_live_debugger/extension/devtools/config.yaml',
+        'name: rohd\nversion: 0.0.1\n'
+      ),
+      (
+        'packages/rohd_live_debugger/extension/devtools/config.yaml',
+        'name: rohd_live_debugger\nversion: 0.1.1\n'
+      ),
+      ('rohd_devtools_extension/pubspec.yaml', 'version: 0.1.1+1\n'),
+    ]) {
+      final original = read(path);
+      write(path, contents);
+      final result = run(['rohd', 'rohd_live_debugger']);
+      expect(result.exitCode, 2, reason: '$path: ${result.stderr}');
+      expect(result.stderr, contains('versions must match'));
+      expect(read('CHANGELOG.md'), startsWith('## Next Release'));
+      expect(read('packages/rohd_live_debugger/CHANGELOG.md'),
+          '## Next Release\n');
+      write(path, original);
+    }
   });
 
   for (final manifest in [

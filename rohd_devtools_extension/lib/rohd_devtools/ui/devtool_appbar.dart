@@ -15,6 +15,7 @@ import 'package:rohd_devtools_extension/rohd_devtools/services/extension_manager
 import 'package:rohd_devtools_extension/rohd_devtools/services/third_party_license_registry.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/ui/devtools_help_button.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/ui/platform_icon.dart';
+import 'package:rohd_devtools_extension/rohd_devtools/ui/rohd_website_button.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/utils/browser_window.dart';
 
 /// A custom AppBar for the ROHD DevTool application.
@@ -71,15 +72,7 @@ class DevtoolAppBar extends StatelessWidget implements PreferredSizeWidget {
         'ROHD DevTools',
         style: TextStyle(color: isDark ? Colors.white : Colors.black87),
       ),
-      leading: Padding(
-        padding: const EdgeInsets.all(8),
-        child: Image.asset(
-          'assets/rohd_icon.png',
-          width: 28,
-          height: 28,
-          fit: BoxFit.contain,
-        ),
-      ),
+      leading: const RohdWebsiteButton(),
       actions: <Widget>[
         // ── Tools menu ──
         PopupMenuButton<String>(
@@ -90,37 +83,21 @@ class DevtoolAppBar extends StatelessWidget implements PreferredSizeWidget {
             hasColorEmoji: _hasColorEmoji,
           ),
           tooltip: 'Tools',
-          onSelected: (value) {
-            // The extension iframe is served by DevTools at a path like:
-            //   http://host:port/devtools_extensions/rohd_0.0.1/index.html
-            // DevTools serves everything under build/ at that root, so
-            // the standalone viewers at build/waves/ and build/schematics/
-            // are accessible relative to the current directory.
-            //
-            // The standalone debugger runs on port 9099 on the same host,
-            // so we construct an absolute URL for that case.
-            final String toolUrl;
-            if (value.startsWith('http')) {
-              toolUrl = value;
-            } else {
-              final href = browserCurrentHref();
-              final base = href.substring(0, href.lastIndexOf('/') + 1);
-              toolUrl = '$base$value';
-            }
-            debugPrint('[Tools] Opening: $toolUrl');
-            openBrowserTab(toolUrl);
+          onSelected: (url) {
+            debugPrint('[Tools] Opening: $url');
+            openBrowserTab(url);
           },
           itemBuilder: (context) => [
             const PopupMenuItem<String>(
-              value: 'waves/index.html',
+              value: 'https://intel.github.io/rohd-wave-viewer/',
               child: Text('Wave Viewer'),
             ),
             const PopupMenuItem<String>(
-              value: 'schematics/index.html',
+              value: 'https://intel.github.io/rohd-schematic-viewer/',
               child: Text('Schematic Viewer'),
             ),
             const PopupMenuItem<String>(
-              value: 'debugger/index.html',
+              value: 'https://intel.github.io/rohd/rohd-live-debugger/',
               child: Text('Standalone Debugger'),
             ),
           ],
@@ -156,13 +133,12 @@ class DevtoolAppBar extends StatelessWidget implements PreferredSizeWidget {
         ),
 
         // ── Help ──
-        DevToolsHelpButton(isDark: isDark),
+        DevToolsHelpButton(isDark: isDark, hasColorEmoji: _hasColorEmoji),
 
         // ── Licenses ──
         TextButton(
           onPressed: () {
-            registerBundledThirdPartyLicenses();
-            showLicensePage(context: context);
+            showRohdLicensePage(context);
           },
           child: Text(
             'Licenses',

@@ -21,6 +21,7 @@ export 'module_tree_details_navbar.dart';
 export 'platform_icon.dart';
 export 'rohd_design_shell.dart';
 export 'rohd_shell_help_button.dart';
+export 'rohd_website_button.dart';
 export 'schematic_icon.dart';
 export 'signal_details_card.dart';
 export 'signal_table.dart';

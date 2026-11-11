@@ -1,4 +1,4 @@
-name: rohd
+name: rohd_live_debugger
 issueTracker: https://github.com/intel/rohd/issues
 version: 0.0.1
 materialIconCodePoint: '0xe1c5'

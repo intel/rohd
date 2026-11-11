@@ -47,6 +47,11 @@ case "$package" in
     # exception after the package move is on main and Pana can verify its URL.
     pana_score_threshold=10
     ;;
+  rohd_live_debugger)
+    # The package path is not yet on upstream main; restore the full score gate
+    # once Pana can verify the canonical repository URL.
+    pana_score_threshold=10
+    ;;
   rohd_waveform)
     # Pana gates points lost: 10 permits a score of 150/160. This package
     # retains dependency bounds for its supported SDK ranges.
@@ -79,6 +84,10 @@ copy_package() {
     --exclude=pubspec.lock --exclude=pubspec_overrides.yaml \
     --exclude=.flutter-plugins --exclude=.flutter-plugins-dependencies \
     -cf - . | tar -C "$destination_dir" -xf -
+  if [[ "$source_dir" == "$package_dir" && "$package" == rohd_live_debugger &&
+        -d "$source_dir/extension/devtools/build" ]]; then
+    cp -R "$source_dir/extension/devtools/build" "$destination_dir/extension/devtools/build"
+  fi
 }
 
 copy_package "$package_dir" "$temp_dir/package"

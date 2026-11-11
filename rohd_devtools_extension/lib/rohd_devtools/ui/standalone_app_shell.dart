@@ -1600,8 +1600,7 @@ class _StandaloneDevToolsPageState
 
   /// Show licenses page (cached callback to prevent rebuild).
   void _showLicenses() {
-    registerBundledThirdPartyLicenses();
-    showLicensePage(context: context);
+    showRohdLicensePage(context);
   }
 
   /// Get or create cached AppBar - only recreates if values changed.
@@ -2997,15 +2996,7 @@ class _StandaloneAppBarState extends State<_StandaloneAppBar> {
     return AppBar(
       backgroundColor: _backgroundColor,
       title: Text(widget.title),
-      leading: Padding(
-        padding: const EdgeInsets.all(8),
-        child: Image.asset(
-          'assets/rohd_icon.png',
-          width: 28,
-          height: 28,
-          fit: BoxFit.contain,
-        ),
-      ),
+      leading: const RohdWebsiteButton(),
       actions: [
         // Example selector
         if (widget.isLoopbackMode)
@@ -3161,7 +3152,10 @@ class _StandaloneAppBarState extends State<_StandaloneAppBar> {
           tooltip: 'Refresh',
         ),
         // Help button
-        DevToolsHelpButton(isDark: isDark),
+        DevToolsHelpButton(
+          isDark: isDark,
+          hasColorEmoji: widget.hasColorEmoji,
+        ),
         // Licenses button
         TextButton(
           onPressed: widget.onLicenses,

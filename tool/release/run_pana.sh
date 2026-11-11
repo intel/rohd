@@ -18,12 +18,13 @@ readonly ALL_PACKAGES=(
   rohd_waveform
   rohd_devtools_widgets
   rohd_source_navigator
+  rohd_live_debugger
 )
 
 if [[ $# -eq 1 && "$1" == --help ]]; then
   echo "Usage: tool/release/run_pana.sh [package ...]"
   echo "Runs hosted dependency compatibility checks and Pana score gates."
-  echo "Defaults to all five publishable ROHD packages."
+  echo "Defaults to all six publishable ROHD packages."
   exit 0
 fi
 
@@ -36,7 +37,7 @@ failure_status=0
 for package in "${packages[@]}"; do
   case "$package" in
     rohd|rohd_hierarchy|rohd_waveform|rohd_devtools_widgets|\
-      rohd_source_navigator) ;;
+      rohd_source_navigator|rohd_live_debugger) ;;
     *)
       echo "Unsupported package '$package'." >&2
       echo "Supported packages: ${ALL_PACKAGES[*]}." >&2

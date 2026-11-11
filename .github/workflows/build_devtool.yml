@@ -38,7 +38,7 @@ jobs:
             git checkout -b artifacts
             git pull origin main
             git add .
-            git add -f extension/*
+            git add -f packages/rohd_live_debugger/extension/devtools/build/
             git commit -m "Add build artifacts"
 
         - name: Push changes

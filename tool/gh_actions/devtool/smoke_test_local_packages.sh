@@ -23,4 +23,4 @@ WAVE_VIEWER_GIT_URL="https://github.com/intel/rohd-wave-viewer.git" \
   bash tool/devtools/devtools_dev_mode.sh configure-group wave-viewer git
 
 bash tool/gh_actions/devtool/install_devtools.sh
-bash tool/gh_actions/devtool/test_devtools_install.sh extension/devtools
+bash tool/gh_actions/devtool/test_devtools_install.sh packages/rohd_live_debugger

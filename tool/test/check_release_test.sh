@@ -21,20 +21,29 @@ readonly REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 readonly FIXTURE="$(mktemp -d)"
 trap 'rm -rf "$FIXTURE"' EXIT
 
-mkdir -p "$FIXTURE/repo/tool/release" "$FIXTURE/bin" "$FIXTURE/repo/extension/devtools/build"
+mkdir -p "$FIXTURE/repo/tool/release" "$FIXTURE/bin" "$FIXTURE/repo/packages/rohd_live_debugger/extension/devtools/build"
 cp "$REPO_ROOT/tool/release/check_release.sh" \
   "$REPO_ROOT/tool/release/prepare_release.sh" \
+  "$REPO_ROOT/tool/release/stage_live_debugger.sh" \
   "$FIXTURE/repo/tool/release/"
-for package in rohd_hierarchy rohd_waveform rohd_devtools_widgets rohd_source_navigator; do
+for package in rohd_hierarchy rohd_waveform rohd_devtools_widgets rohd_source_navigator rohd_live_debugger; do
   mkdir -p "$FIXTURE/repo/packages/$package"
   touch "$FIXTURE/repo/packages/$package/pubspec.yaml"
 done
-touch "$FIXTURE/repo/pubspec.yaml" "$FIXTURE/repo/extension/devtools/build/index.html"
-touch "$FIXTURE/repo/extension/devtools/config.yaml"
+touch "$FIXTURE/repo/pubspec.yaml" "$FIXTURE/repo/packages/rohd_live_debugger/extension/devtools/build/index.html"
+touch "$FIXTURE/repo/packages/rohd_live_debugger/extension/devtools/config.yaml"
+printf 'name: rohd_live_debugger\nresolution: workspace\n' > \
+  "$FIXTURE/repo/packages/rohd_live_debugger/pubspec.yaml"
 
 printf '%s\n' \
   '#!/bin/bash' \
-  'printf "%s|%s|%s\n" "${0##*/}" "$PWD" "$*" >> "$SDK_LOG"' \
+  'directory="$PWD"' \
+  'if [[ "${PWD##*/}" == rohd_live_debugger ]]; then' \
+  '  [[ "$PWD" != "$TEST_DEBUGGER_DIR" && -f extension/devtools/build/index.html && -f extension/devtools/config.yaml ]] || exit 96' \
+  '  ! grep -q "^resolution: workspace$" pubspec.yaml || exit 95' \
+  '  directory="$TEST_DEBUGGER_DIR"' \
+  'fi' \
+  'printf "%s|%s|%s\n" "${0##*/}" "$directory" "$*" >> "$SDK_LOG"' \
   '[[ "$#" -eq 3 && "$1" == pub && "$2" == publish && "$3" == --dry-run ]] || exit 99' \
   '[[ "${DASH__SUPPRESS_ANALYTICS:-}" == true ]] || exit 98' \
   '[[ "${FLUTTER_SUPPRESS_ANALYTICS:-}" == true ]] || exit 97' \
@@ -44,9 +53,12 @@ chmod +x "$FIXTURE/bin/sdk"
 ln -s sdk "$FIXTURE/bin/dart"
 ln -s sdk "$FIXTURE/bin/flutter"
 ln -s /bin/bash "$FIXTURE/bin/bash"
-ln -s "$(command -v dirname)" "$FIXTURE/bin/dirname"
+for executable in awk dirname grep mkdir mktemp mv rm tar; do
+  ln -s "$(command -v "$executable")" "$FIXTURE/bin/$executable"
+done
 
 export SDK_LOG="$FIXTURE/sdk.log"
+export TEST_DEBUGGER_DIR="$FIXTURE/repo/packages/rohd_live_debugger"
 readonly HELPER="$FIXTURE/repo/tool/release/check_release.sh"
 passed=0
 
@@ -68,7 +80,7 @@ run_case() {
 run_case 0 "$HELPER" --help
 [[ ! -s "$SDK_LOG" ]]
 run_case 0 "$HELPER"
-[[ "$(wc -l < "$SDK_LOG")" -eq 5 ]]
+[[ "$(wc -l < "$SDK_LOG")" -eq 6 ]]
 grep -Fx "dart|$FIXTURE/repo/packages/rohd_source_navigator|pub publish --dry-run" "$SDK_LOG"
 DASH__SUPPRESS_ANALYTICS=false FLUTTER_SUPPRESS_ANALYTICS=false run_case 0 "$HELPER" rohd_devtools_widgets
 run_case 0 "$HELPER" --validate-only
@@ -81,13 +93,14 @@ run_case 0 "$HELPER" --validate-only rohd rohd_devtools_widgets rohd_source_navi
 [[ ! -s "$SDK_LOG" ]]
 
 cd "$FIXTURE"
-run_case 0 "$HELPER" rohd rohd_hierarchy rohd_waveform rohd_devtools_widgets rohd_source_navigator
-[[ "$(wc -l < "$SDK_LOG")" -eq 5 ]]
+run_case 0 "$HELPER" rohd rohd_hierarchy rohd_waveform rohd_devtools_widgets rohd_source_navigator rohd_live_debugger
+[[ "$(wc -l < "$SDK_LOG")" -eq 6 ]]
 grep -Fx "dart|$FIXTURE/repo|pub publish --dry-run" "$SDK_LOG"
 grep -Fx "dart|$FIXTURE/repo/packages/rohd_hierarchy|pub publish --dry-run" "$SDK_LOG"
 grep -Fx "dart|$FIXTURE/repo/packages/rohd_waveform|pub publish --dry-run" "$SDK_LOG"
 grep -Fx "flutter|$FIXTURE/repo/packages/rohd_devtools_widgets|pub publish --dry-run" "$SDK_LOG"
 grep -Fx "dart|$FIXTURE/repo/packages/rohd_source_navigator|pub publish --dry-run" "$SDK_LOG"
+grep -Fx "dart|$FIXTURE/repo/packages/rohd_live_debugger|pub publish --dry-run" "$SDK_LOG"
 
 run_case 0 "$HELPER" rohd_source_navigator
 [[ "$(cat "$SDK_LOG")" == "dart|$FIXTURE/repo/packages/rohd_source_navigator|pub publish --dry-run" ]]
@@ -103,16 +116,16 @@ grep -F 'rohd_hierarchy: FAILED (exit 65;' "$FIXTURE/output"
 grep -F 'rohd_waveform: PASSED' "$FIXTURE/output"
 unset FAIL_PACKAGE
 
-rm "$FIXTURE/repo/extension/devtools/build/index.html"
-run_case 1 "$HELPER" rohd rohd_hierarchy
+rm "$FIXTURE/repo/packages/rohd_live_debugger/extension/devtools/build/index.html"
+run_case 1 "$HELPER" rohd rohd_live_debugger
 [[ "$(wc -l < "$SDK_LOG")" -eq 1 ]]
-grep -F 'rohd: FAILED (missing DevTools payload)' "$FIXTURE/output"
-run_case 0 "$HELPER" --validate-only rohd
+grep -F 'rohd_live_debugger: FAILED (missing DevTools payload)' "$FIXTURE/output"
+run_case 0 "$HELPER" --validate-only rohd_live_debugger
 [[ ! -s "$SDK_LOG" ]]
 
-touch "$FIXTURE/repo/extension/devtools/build/index.html"
-rm "$FIXTURE/repo/extension/devtools/config.yaml"
-run_case 1 "$HELPER" rohd
+touch "$FIXTURE/repo/packages/rohd_live_debugger/extension/devtools/build/index.html"
+rm "$FIXTURE/repo/packages/rohd_live_debugger/extension/devtools/config.yaml"
+run_case 1 "$HELPER" rohd_live_debugger
 [[ ! -s "$SDK_LOG" ]]
 
 rm "$FIXTURE/repo/packages/rohd_waveform/pubspec.yaml"

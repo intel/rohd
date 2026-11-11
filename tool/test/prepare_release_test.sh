@@ -35,8 +35,9 @@ fi
 export METADATA_SCRIPT="$RELEASE/tool/release/prepare_release_metadata.dart"
 
 mkdir -p "$FIXTURE/bin" "$UPSTREAM/tool/release" "$UPSTREAM/tool/gh_actions/devtool" \
-  "$UPSTREAM/lib/src/utilities" "$UPSTREAM/extension/devtools"
-for executable in bash cat cp dirname find git grep mkdir mktemp rm sed tar; do
+  "$UPSTREAM/lib/src/utilities" "$UPSTREAM/packages/rohd_live_debugger/extension/devtools" \
+  "$UPSTREAM/rohd_devtools_extension"
+for executable in awk bash cat cmp cp dirname find git grep mkdir mktemp mv rm sed tar; do
   ln -s "$(command -v "$executable")" "$FIXTURE/bin/$executable"
 done
 printf '%s\n' \
@@ -45,7 +46,11 @@ printf '%s\n' \
   '  shift' \
   '  exec "$REAL_DART" "--packages=$PACKAGE_CONFIG" "$@"' \
   'fi' \
-  'printf "%s|%s|%s\n" "${0##*/}" "$PWD" "$*" >> "$SDK_LOG"' \
+  'directory="$PWD"' \
+  'if [[ "${PWD##*/}" == rohd_live_debugger && "$*" == "pub publish --dry-run" ]]; then' \
+  '  directory="$RELEASE_DEBUGGER_DIR"' \
+  'fi' \
+  'printf "%s|%s|%s\n" "${0##*/}" "$directory" "$*" >> "$SDK_LOG"' \
   'case "$*" in' \
   '  "pub publish --dry-run") printf "dry-run\n" >> "$STAGE_LOG" ;;' \
   '  "pub get"|"format --output=none --set-exit-if-changed ."|"analyze --fatal-infos"|"test")' \
@@ -61,6 +66,7 @@ ln -s /bin/true "$FIXTURE/bin/pana"
 
 cp "$REPO_ROOT/tool/release/prepare_release.sh" \
   "$REPO_ROOT/tool/release/check_release.sh" \
+  "$REPO_ROOT/tool/release/stage_live_debugger.sh" \
   "$REPO_ROOT/tool/release/prepare_release_metadata.dart" \
   "$UPSTREAM/tool/release/"
 cp "$REPO_ROOT/tool/gh_actions/check_tmp_test.sh" "$UPSTREAM/tool/gh_actions/"
@@ -98,14 +104,16 @@ printf '%s\n' '#!/bin/bash' \
   'printf "fixture vsix\n" > "$1"' \
   'exit "${VSIX_STATUS:-0}"' > "$UPSTREAM/tool/release/package_vscode.sh"
 export VSIX_PATH_LOG="$FIXTURE/vsix-path.log"
+export RELEASE_DEBUGGER_DIR="$RELEASE/packages/rohd_live_debugger"
 chmod +x "$UPSTREAM/tool/gh_actions/check_tmp_test.sh" \
   "$UPSTREAM/tool/gh_actions/devtool/test_devtools_install.sh" "$UPSTREAM/tool/run_checks.sh"
 printf "version: '0.6.11' # release\n" > "$UPSTREAM/pubspec.yaml"
 printf "static const String version = '0.0.0';\n" > "$UPSTREAM/lib/src/utilities/config.dart"
 printf '## Next Release\n' > "$UPSTREAM/CHANGELOG.md"
-printf 'fixture configuration\n' > "$UPSTREAM/extension/devtools/config.yaml"
-printf 'extension/devtools/build/\n' > "$UPSTREAM/.gitignore"
-for package in rohd_hierarchy rohd_waveform rohd_devtools_widgets rohd_source_navigator; do
+printf 'name: rohd_live_debugger\nversion: 0.0.1\n' > "$UPSTREAM/packages/rohd_live_debugger/extension/devtools/config.yaml"
+printf 'version: 0.0.1+1\n' > "$UPSTREAM/rohd_devtools_extension/pubspec.yaml"
+printf 'packages/rohd_live_debugger/extension/devtools/build/\n' > "$UPSTREAM/.gitignore"
+for package in rohd_hierarchy rohd_waveform rohd_devtools_widgets rohd_source_navigator rohd_live_debugger; do
   mkdir -p "$UPSTREAM/packages/$package"
   printf '## Next Release\n' > "$UPSTREAM/packages/$package/CHANGELOG.md"
 done
@@ -113,6 +121,7 @@ printf 'version: 1.2.3\n' > "$UPSTREAM/packages/rohd_hierarchy/pubspec.yaml"
 printf 'version: 2.3.4\n' > "$UPSTREAM/packages/rohd_waveform/pubspec.yaml"
 printf 'version: 3.4.5\n' > "$UPSTREAM/packages/rohd_devtools_widgets/pubspec.yaml"
 printf 'version: 4.5.6\n' > "$UPSTREAM/packages/rohd_source_navigator/pubspec.yaml"
+printf 'version: 0.0.1\n' > "$UPSTREAM/packages/rohd_live_debugger/pubspec.yaml"
 
 git init --quiet --initial-branch=main "$UPSTREAM"
 git -C "$UPSTREAM" add .
@@ -120,9 +129,9 @@ git -C "$UPSTREAM" commit --quiet -m 'Fixture main'
 
 build_artifact() {
   git -C "$UPSTREAM" checkout --quiet --detach main
-  mkdir -p "$UPSTREAM/extension/devtools/build"
-  printf 'artifact payload\n' > "$UPSTREAM/extension/devtools/build/index.html"
-  git -C "$UPSTREAM" add -f extension/devtools/build/index.html
+  mkdir -p "$UPSTREAM/packages/rohd_live_debugger/extension/devtools/build"
+  printf 'artifact payload\n' > "$UPSTREAM/packages/rohd_live_debugger/extension/devtools/build/index.html"
+  git -C "$UPSTREAM" add -f packages/rohd_live_debugger/extension/devtools/build/index.html
   git -C "$UPSTREAM" commit --quiet -m 'Fixture artifact'
   git -C "$UPSTREAM" branch --force artifacts HEAD
   git -C "$UPSTREAM" checkout --quiet main
@@ -132,8 +141,8 @@ build_artifact
 git clone --quiet --branch main "$UPSTREAM" "$RELEASE"
 git -C "$RELEASE" checkout --quiet -b preparation
 git -C "$RELEASE" commit --quiet --allow-empty -m 'Fixture release preparation'
-mkdir -p "$RELEASE/extension/devtools/build"
-printf 'original payload\n' > "$RELEASE/extension/devtools/build/index.html"
+mkdir -p "$RELEASE/packages/rohd_live_debugger/extension/devtools/build"
+printf 'original payload\n' > "$RELEASE/packages/rohd_live_debugger/extension/devtools/build/index.html"
 
 passed=0
 run_case() {
@@ -159,9 +168,9 @@ assert_unchanged() {
   [[ "$(cat "$RELEASE/pubspec.yaml")" == "version: '0.6.11' # release" ]]
   [[ "$(cat "$RELEASE/lib/src/utilities/config.dart")" == "static const String version = '0.0.0';" ]]
   [[ "$(cat "$RELEASE/CHANGELOG.md")" == '## Next Release' ]]
-  [[ "$(cat "$RELEASE/extension/devtools/build/index.html")" == 'original payload' ]]
-  [[ "$(cat "$RELEASE/extension/devtools/config.yaml")" == 'fixture configuration' ]]
-  for package in rohd_hierarchy rohd_waveform rohd_devtools_widgets rohd_source_navigator; do
+  [[ "$(cat "$RELEASE/packages/rohd_live_debugger/extension/devtools/build/index.html")" == 'original payload' ]]
+  [[ "$(cat "$RELEASE/packages/rohd_live_debugger/extension/devtools/config.yaml")" == $'name: rohd_live_debugger\nversion: 0.0.1' ]]
+  for package in rohd_hierarchy rohd_waveform rohd_devtools_widgets rohd_source_navigator rohd_live_debugger; do
     [[ "$(cat "$RELEASE/packages/$package/CHANGELOG.md")" == '## Next Release' ]]
   done
 }
@@ -211,12 +220,12 @@ assert_unchanged
 unset SMOKE_STATUS
 
 run_case 0 "DevTools source commit (upstream main): $MAIN_COMMIT"
-[[ "$(cat "$STAGE_LOG")" == $'smoke\nchecks-skip-tests\nvsix\ndry-run\ndry-run\ndry-run\ndry-run\ndry-run' ]]
+[[ "$(cat "$STAGE_LOG")" == $'smoke\nchecks-skip-tests\nvsix\ndry-run\ndry-run\ndry-run\ndry-run\ndry-run\ndry-run' ]]
 [[ ! -e "$(cat "$VSIX_PATH_LOG")" ]]
 grep -Fq 'Test suites were not run.' "$FIXTURE/output"
 grep -Fq 'Pana score gates were not run.' "$FIXTURE/output"
 expected_log="$(
-  for package in rohd_hierarchy rohd_waveform rohd_devtools_widgets rohd_source_navigator; do
+  for package in rohd_hierarchy rohd_waveform rohd_devtools_widgets rohd_source_navigator rohd_live_debugger; do
     expected_checks "$package"
   done
   printf 'dart|%s|pub publish --dry-run\n' "$RELEASE"
@@ -224,23 +233,25 @@ expected_log="$(
   printf 'dart|%s|pub publish --dry-run\n' "$RELEASE/packages/rohd_waveform"
   printf 'flutter|%s|pub publish --dry-run\n' "$RELEASE/packages/rohd_devtools_widgets"
   printf 'dart|%s|pub publish --dry-run\n' "$RELEASE/packages/rohd_source_navigator"
+  printf 'dart|%s|pub publish --dry-run\n' "$RELEASE/packages/rohd_live_debugger"
 )"
 [[ "$(cat "$SDK_LOG")" == "$expected_log" ]]
 [[ "$(cat "$RELEASE/pubspec.yaml")" == "version: '0.6.11' # release" ]]
 [[ "$(cat "$RELEASE/lib/src/utilities/config.dart")" == "static const String version = '0.6.11';" ]]
 [[ "$(cat "$RELEASE/CHANGELOG.md")" == '## 0.6.11' ]]
-[[ "$(cat "$RELEASE/extension/devtools/build/index.html")" == 'artifact payload' ]]
+[[ "$(cat "$RELEASE/packages/rohd_live_debugger/extension/devtools/build/index.html")" == 'artifact payload' ]]
 [[ "$(git -C "$RELEASE" rev-parse HEAD)" != "$MAIN_COMMIT" ]]
 [[ "$(cat "$RELEASE/packages/rohd_hierarchy/CHANGELOG.md")" == '## 1.2.3' ]]
 [[ "$(cat "$RELEASE/packages/rohd_waveform/CHANGELOG.md")" == '## 2.3.4' ]]
 [[ "$(cat "$RELEASE/packages/rohd_devtools_widgets/CHANGELOG.md")" == '## 3.4.5' ]]
 [[ "$(cat "$RELEASE/packages/rohd_source_navigator/CHANGELOG.md")" == '## 4.5.6' ]]
+[[ "$(cat "$RELEASE/packages/rohd_live_debugger/CHANGELOG.md")" == '## 0.0.1' ]]
 git -C "$RELEASE" diff --exit-code -- pubspec.yaml 'packages/*/pubspec.yaml'
 
 run_case 0 "DevTools source commit (upstream main): $MAIN_COMMIT" --run-tests
-[[ "$(cat "$STAGE_LOG")" == $'smoke\nchecks\nvsix\ndry-run\ndry-run\ndry-run\ndry-run\ndry-run' ]]
+[[ "$(cat "$STAGE_LOG")" == $'smoke\nchecks\nvsix\ndry-run\ndry-run\ndry-run\ndry-run\ndry-run\ndry-run' ]]
 expected_log="$(
-  for package in rohd_hierarchy rohd_waveform rohd_devtools_widgets rohd_source_navigator; do
+  for package in rohd_hierarchy rohd_waveform rohd_devtools_widgets rohd_source_navigator rohd_live_debugger; do
     expected_checks "$package" true
   done
   printf 'dart|%s|pub publish --dry-run\n' "$RELEASE"
@@ -248,17 +259,33 @@ expected_log="$(
   printf 'dart|%s|pub publish --dry-run\n' "$RELEASE/packages/rohd_waveform"
   printf 'flutter|%s|pub publish --dry-run\n' "$RELEASE/packages/rohd_devtools_widgets"
   printf 'dart|%s|pub publish --dry-run\n' "$RELEASE/packages/rohd_source_navigator"
+  printf 'dart|%s|pub publish --dry-run\n' "$RELEASE/packages/rohd_live_debugger"
 )"
 [[ "$(cat "$SDK_LOG")" == "$expected_log" ]]
 ! grep -Fq 'Test suites were not run.' "$FIXTURE/output"
 grep -Fq 'Pana score gates were not run.' "$FIXTURE/output"
 
-run_case 0 "DevTools source commit (upstream main): $MAIN_COMMIT" rohd
+run_case 0 'VSIX build check passed' rohd
 [[ "$(cat "$SDK_LOG")" == "dart|$RELEASE|pub publish --dry-run" ]]
-[[ "$(cat "$STAGE_LOG")" == $'smoke\nchecks-skip-tests\nvsix\ndry-run' ]]
-run_case 0 "DevTools source commit (upstream main): $MAIN_COMMIT" --run-tests rohd
+[[ "$(cat "$STAGE_LOG")" == $'checks-skip-tests\nvsix\ndry-run' ]]
+run_case 0 'VSIX build check passed' --run-tests rohd
 [[ "$(cat "$SDK_LOG")" == "dart|$RELEASE|pub publish --dry-run" ]]
-[[ "$(cat "$STAGE_LOG")" == $'smoke\nchecks\nvsix\ndry-run' ]]
+[[ "$(cat "$STAGE_LOG")" == $'checks\nvsix\ndry-run' ]]
+
+run_case 0 "DevTools source commit (upstream main): $MAIN_COMMIT" rohd_live_debugger
+expected_log="$(
+  expected_checks rohd_live_debugger
+  printf 'dart|%s|pub publish --dry-run\n' "$RELEASE/packages/rohd_live_debugger"
+)"
+[[ "$(cat "$SDK_LOG")" == "$expected_log" ]]
+[[ "$(cat "$STAGE_LOG")" == $'smoke\ndry-run' ]]
+
+printf 'name: rohd_live_debugger\nversion: 0.0.1\n# Changed on release branch\n' \
+  > "$RELEASE/packages/rohd_live_debugger/extension/devtools/config.yaml"
+run_case 1 'artifact configuration differs' rohd_live_debugger
+[[ ! -s "$SDK_LOG" && ! -s "$STAGE_LOG" ]]
+printf 'name: rohd_live_debugger\nversion: 0.0.1\n' \
+  > "$RELEASE/packages/rohd_live_debugger/extension/devtools/config.yaml"
 
 export VSIX_STATUS=73
 run_case 73 '=== rohd: VS Code extension packaging check ==='
@@ -274,6 +301,10 @@ run_case 72 '=== rohd: project checks ==='
 unset ROOT_CHECK_STATUS
 
 git -C "$UPSTREAM" update-ref -d refs/heads/artifacts
+run_case 0 'VSIX build check passed' rohd
+[[ "$(cat "$STAGE_LOG")" == $'checks-skip-tests\nvsix\ndry-run' ]]
+run_case 128 'Fetching the ROHD DevTools build' rohd_live_debugger
+[[ ! -s "$SDK_LOG" && ! -s "$STAGE_LOG" ]]
 printf "static const String version = '0.0.0';\n" > "$RELEASE/lib/src/utilities/config.dart"
 printf '## Next Release\n' > "$RELEASE/CHANGELOG.md"
 run_case 0 'rohd_hierarchy: 1.2.3 (prepared from pubspec.yaml)' rohd_hierarchy rohd_waveform

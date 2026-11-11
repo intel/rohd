@@ -21,7 +21,8 @@ enum DevToolsThemeMode {
 /// Cubit for managing DevTools theme state.
 class DevToolsThemeCubit extends Cubit<DevToolsThemeMode> {
   /// Constructor for [DevToolsThemeCubit].
-  DevToolsThemeCubit() : super(DevToolsThemeMode.dark);
+  DevToolsThemeCubit({DevToolsThemeMode initialMode = DevToolsThemeMode.dark})
+      : super(initialMode);
 
   /// Toggle between light and dark themes.
   void toggleTheme() {

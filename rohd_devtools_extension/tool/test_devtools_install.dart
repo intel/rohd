@@ -15,7 +15,31 @@ import 'package:devtools_shared/devtools_extensions_io.dart';
 import 'package:path/path.dart' as p;
 
 Future<void> main(List<String> args) async {
-  final targetPath = args.isEmpty ? '../extension/devtools' : args.single;
+  if (args.length == 2 && args.first == '--expect-absent') {
+    final projectRoot = await _writeProjectRootPointingTo(
+      Directory(p.normalize(p.absolute(args.last))),
+      dependencyName: 'rohd',
+    );
+    try {
+      final logs = <String>[];
+      final manager = ExtensionsManager();
+      await manager.serveAvailableExtensions(
+        projectRoot.uri.toString(),
+        logs,
+        null,
+      );
+      if (manager.devtoolsExtensions.any((extension) =>
+          extension.name == 'rohd_live_debugger' || extension.name == 'rohd')) {
+        _fail('ROHD alone unexpectedly provides a DevTools extension.');
+      }
+      stdout.writeln('  ROHD alone does not provide a DevTools extension.');
+    } finally {
+      await projectRoot.delete(recursive: true);
+    }
+    return;
+  }
+  final targetPath =
+      args.isEmpty ? '../packages/rohd_live_debugger' : args.single;
   final resolvedTarget = await _resolveTarget(targetPath);
   final targetDir = resolvedTarget.directory;
 
@@ -39,7 +63,7 @@ Future<void> main(List<String> args) async {
     final rohdExtensions = manager.devtoolsExtensions
         .where(
           (extension) =>
-              extension.name == 'rohd' &&
+              extension.name == 'rohd_live_debugger' &&
               p.equals(extension.extensionAssetsPath, extensionAssetsPath),
         )
         .toList();
@@ -53,22 +77,42 @@ Future<void> main(List<String> args) async {
     }
 
     final extension = rohdExtensions.single;
+    _requireValue(extension.displayName, 'displayName', 'rohd_live_debugger');
     _requireValue(
       extension.issueTrackerLink,
       'issueTracker',
       'https://github.com/intel/rohd/issues',
     );
     _requireNonEmpty(extension.version, 'version');
+    _requireValue(
+      extension.identifier,
+      'identifier',
+      'rohd_live_debugger_${extension.version}',
+    );
 
     _requireFile(extensionAssetsPath, 'index.html');
     _requireFile(extensionAssetsPath, 'flutter_bootstrap.js');
     _requireFile(extensionAssetsPath, 'flutter.js');
     _requireFile(extensionAssetsPath, 'main.dart.js');
     _requireFile(extensionAssetsPath, 'version.json');
+    final versionData = jsonDecode(
+      File(p.join(extensionAssetsPath, 'version.json')).readAsStringSync(),
+    );
+    if (versionData is! Map<String, dynamic> ||
+        versionData['version'] != extension.version) {
+      _fail('Web build version does not match DevTools config '
+          '"${extension.version}": $versionData');
+    }
     _requireFile(extensionAssetsPath, p.join('assets', 'AssetManifest.bin'));
     _requireFile(extensionAssetsPath, p.join('assets', 'FontManifest.json'));
     _requireFile(extensionAssetsPath, p.join('canvaskit', 'canvaskit.js'));
     _requireFile(extensionAssetsPath, p.join('canvaskit', 'canvaskit.wasm'));
+    _requireFile(
+        extensionAssetsPath, p.join('dart_wellen', 'wellen_bridge.js'));
+    _requireFile(
+      extensionAssetsPath,
+      p.join('dart_wellen', 'wellen_bridge_bg.wasm'),
+    );
 
     stdout.writeln(
       '  DevTools loader found extension "${extension.name}" at '
@@ -236,7 +280,7 @@ Future<_ResolvedInstall> _createStandaloneInstall(
   );
   await _copyDirectory(extensionDir, stagedExtensionDir);
   await File(p.join(root.path, 'pubspec.yaml')).writeAsString('''
-name: rohd
+name: rohd_live_debugger
 environment:
   sdk: ^3.6.0
 ''');
@@ -265,7 +309,10 @@ Future<void> _copyDirectory(Directory source, Directory destination) async {
   }
 }
 
-Future<Directory> _writeProjectRootPointingTo(Directory packageRoot) async {
+Future<Directory> _writeProjectRootPointingTo(
+  Directory packageRoot, {
+  String dependencyName = 'rohd_live_debugger',
+}) async {
   final projectRoot = await Directory.systemTemp.createTemp(
     'rohd_devtools_extension_discovery_',
   );
@@ -275,21 +322,9 @@ name: rohd_devtools_extension_discovery
 environment:
   sdk: ^3.6.0
 dependencies:
-  rohd:
+  $dependencyName:
     path: ${jsonEncode(packageRoot.path)}
 ''');
-  final hierarchyDir = Directory(
-    p.join(packageRoot.path, 'packages', 'rohd_hierarchy'),
-  );
-  if (hierarchyDir.existsSync()) {
-    final overrides = File(p.join(projectRoot.path, 'pubspec_overrides.yaml'));
-    await overrides.writeAsString('''
-dependency_overrides:
-  rohd_hierarchy:
-    path: ${jsonEncode(hierarchyDir.path)}
-''');
-  }
-
   final result = await Process.run(
     Platform.resolvedExecutable,
     ['pub', 'get'],

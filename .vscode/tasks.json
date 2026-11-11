@@ -169,6 +169,42 @@
             }
         },
         {
+            "label": "Build: ROHD Live Debugger DevTools Package",
+            "type": "shell",
+            "command": "make -C rohd_devtools_extension devtools-package",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Check: ROHD Live Debugger DevTools Package",
+            "type": "shell",
+            "command": "make -C rohd_devtools_extension devtools-package-check",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Prepare Release: ROHD Live Debugger",
+            "type": "shell",
+            "command": "bash tool/release/prepare_release.sh rohd_live_debugger",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Check Release: ROHD Live Debugger",
+            "type": "shell",
+            "command": "bash tool/release/check_release.sh rohd_live_debugger",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": []
+        },
+        {
             "label": "Show DevTools Dependency Sources",
             "type": "shell",
             "command": "bash tool/devtools/devtools_dev_mode.sh show",

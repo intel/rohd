@@ -251,6 +251,8 @@ jobs:
             sdk: flutter
           - package: rohd_source_navigator
             sdk: dart
+          - package: rohd_live_debugger
+            sdk: dart
     defaults:
       run:
         working-directory: packages/${{ matrix.package }}
@@ -281,6 +283,10 @@ jobs:
 
       - name: Run package tests
         run: ${{ matrix.sdk }} test
+
+      - name: Build debugger package payload
+        if: matrix.package == 'rohd_live_debugger'
+        run: cd ../.. && bash tool/gh_actions/devtool/smoke_test_local_packages.sh
 
       - name: Gate hosted dependencies and Pana score
         run: bash ../../tool/gh_actions/pana_source.sh . ${{ matrix.sdk }}

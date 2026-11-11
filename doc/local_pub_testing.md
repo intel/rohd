@@ -110,7 +110,7 @@ tar -C "$source_package" \
 Use the package's producer-owned publication staging helper when one exists.
 The example is not a universal archive filter: preserve the package's
 `.pubignore`, licenses, generated API, declared assets, and required prebuilt
-runtime. ROHD publication also requires its verified DevTools distribution.
+runtime. Publication of `rohd_live_debugger` also requires its verified DevTools distribution.
 Do not strip required build outputs merely because they were generated.
 
 For workspace members, remove `resolution: workspace` in the disposable

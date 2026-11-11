@@ -126,14 +126,24 @@ services. The examples above deliberately show the individual services.
 
 ## Opening from Flutter DevTools
 
+The embedded extension is opt-in. Add `rohd_live_debugger: ^0.0.1` to
+your project's `dev_dependencies` and run `dart pub get`. ROHD itself no longer
+bundles the extension; projects upgrading from the old **ROHD** tab need to
+add this package explicitly. The standalone web debugger does not require it.
+Before the first publication, use a `path:` dependency pointing to this
+checkout's `packages/rohd_live_debugger` directory instead. Build its local web
+payload with `make -C rohd_devtools_extension devtools-package` from the
+repository root; `make -C rohd_devtools_extension devtools-package-check`
+checks discovery and assets without publishing.
+
 The normal user flow is through Flutter DevTools:
 
 1. Start debugging a ROHD program.
 2. Stop at a breakpoint or otherwise pause the debugged program.
 3. Use **Open DevTools in Browser** from VS Code.
-4. In the browser DevTools page, open the **ROHD** tab.
+4. In the browser DevTools page, open the **rohd_live_debugger** tab.
 
-If prompted, enable the ROHD extension for the connected application. Start
+If prompted, enable the `rohd_live_debugger` extension for the connected application. Start
 with a breakpoint after the service setup described above. Select `serializer`
 in the Module Tree, inspect `clk`, `reset`, `load`, `parallelData`, and
 `serialOut` in Details, then send signals to Waveform or Schematic. Resume to
@@ -146,6 +156,11 @@ See the Flutter DevTools documentation for the surrounding DevTools workflow:
 When opened this way, the extension runs inside Flutter DevTools and uses VS
 Code's Dart Tooling Daemon (DTD) integration to attach to and control the
 debugged Dart VM.
+
+The **Tools** menu opens the hosted Wave Viewer, Schematic Viewer, or
+standalone ROHD Live Debugger in a new browser tab. These applications require
+network access and are separate from the embedded DevTools connection; connect
+or load a design in the selected application as needed.
 
 ## Opening the Hosted Web Debugger
 

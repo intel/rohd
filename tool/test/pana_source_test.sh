@@ -15,12 +15,13 @@ export SOURCE="$FIXTURE/source package" SDK_LOG="$FIXTURE/sdk.log"
 export NAVIGATOR="$FIXTURE/rohd_source_navigator"
 export WIDGETS="$FIXTURE/rohd_devtools_widgets"
 export WAVEFORM="$FIXTURE/rohd_waveform"
+export DEBUGGER="$FIXTURE/rohd_live_debugger"
 export PUB_CACHE="$FIXTURE/pub cache" TMPDIR="$FIXTURE/temp space"
 export FLUTTER_ROOT="$FIXTURE/flutter sdk" PANA_ANALYSIS_INCLUDES=1
 
 mkdir -p "$SOURCE/lib" "$SOURCE/.dart_tool" "$SOURCE/example" \
   "$FIXTURE/bin" "$PUB_CACHE/bin" "$TMPDIR" "$FLUTTER_ROOT/bin"
-for executable in awk bash cat cmp dirname grep mkdir mktemp mv readlink rm tar; do
+for executable in awk bash cat cmp cp dirname grep mkdir mktemp mv readlink rm tar; do
   ln -s "$(command -v "$executable")" "$FIXTURE/bin/$executable"
 done
 printf 'name: fixture\n' > "$SOURCE/pubspec.yaml"
@@ -36,6 +37,11 @@ cp -R "$SOURCE" "$WIDGETS"
 cp -R "$WIDGETS" "$FIXTURE/original-widgets"
 cp -R "$SOURCE" "$WAVEFORM"
 cp -R "$WAVEFORM" "$FIXTURE/original-waveform"
+cp -R "$SOURCE" "$DEBUGGER"
+mkdir -p "$DEBUGGER/extension/devtools/build" "$DEBUGGER/example/build"
+printf 'debugger payload\n' > "$DEBUGGER/extension/devtools/build/index.html"
+printf 'unrelated build\n' > "$DEBUGGER/example/build/unrelated"
+cp -R "$DEBUGGER" "$FIXTURE/original-debugger"
 
 cat > "$FIXTURE/bin/dart" <<'EOF'
 #!/bin/bash
@@ -59,6 +65,10 @@ case "$*" in
     fi
     if grep -q 'rohd_hierarchy:' pubspec.yaml; then
       [[ -f ../rohd_hierarchy/pubspec.yaml ]]
+    fi
+    if [[ "${EXPECT_DEBUGGER_BUILD:-}" == 1 ]]; then
+      cmp extension/devtools/build/index.html "$DEBUGGER/extension/devtools/build/index.html"
+      [[ ! -e example/build ]]
     fi
     printf 'hosted resolution\n' > pubspec.lock ;;
   'pub downgrade') printf 'downgraded resolution\n' > pubspec.lock ;;
@@ -124,6 +134,7 @@ run_case() {
   diff -ru "$FIXTURE/original-navigator" "$NAVIGATOR"
   diff -ru "$FIXTURE/original-widgets" "$WIDGETS"
   diff -ru "$FIXTURE/original-waveform" "$WAVEFORM"
+  diff -ru "$FIXTURE/original-debugger" "$DEBUGGER"
   [[ -z "$(find "$TMPDIR" -mindepth 1 -print -quit)" ]]
   passed=$((passed + 1))
 }
@@ -166,6 +177,11 @@ export EXPECTED_SDK=dart EXPECTED_THRESHOLD=10
 run_case 0 "$WAVEFORM" dart
 [[ "$(cat "$SDK_LOG")" == $'dart|pub get\ndart|analyze --fatal-infos lib\ndart|pub downgrade\ndart|analyze --fatal-infos lib\npana' ]]
 PANA_STATUS=73 run_case 73 "$WAVEFORM" dart
+
+export EXPECTED_SDK=dart EXPECTED_THRESHOLD=10 EXPECT_DEBUGGER_BUILD=1
+export EXPECTED_PACKAGE_SOURCE="$DEBUGGER"
+run_case 0 "$DEBUGGER" dart
+unset EXPECT_DEBUGGER_BUILD EXPECTED_PACKAGE_SOURCE
 
 mkdir -p "$FIXTURE/rohd_hierarchy/lib"
 printf 'name: rohd_hierarchy\n' > "$FIXTURE/rohd_hierarchy/pubspec.yaml"

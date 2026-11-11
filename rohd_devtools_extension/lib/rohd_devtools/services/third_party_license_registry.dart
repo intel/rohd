@@ -6,6 +6,7 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:material_ui/material_ui.dart';
 
 bool _registeredBundledThirdPartyLicenses = false;
 
@@ -23,6 +24,27 @@ void registerBundledThirdPartyLicenses() {
       ], await _loadLicenseText(bundledLicense));
     }
   });
+}
+
+/// Opens the licenses page with the debugger's theme and localizations.
+void showRohdLicensePage(BuildContext context) {
+  registerBundledThirdPartyLicenses();
+  final navigator = Navigator.of(context);
+  final themes = InheritedTheme.capture(from: context, to: navigator.context);
+  final locale = Localizations.localeOf(context);
+
+  navigator.push(
+    MaterialPageRoute<void>(
+      builder: (context) => themes.wrap(
+        Localizations.override(
+          context: context,
+          locale: locale,
+          delegates: const [DefaultMaterialLocalizations.delegate],
+          child: const LicensePage(),
+        ),
+      ),
+    ),
+  );
 }
 
 Future<String> _loadLicenseText(_BundledLicense bundledLicense) async {

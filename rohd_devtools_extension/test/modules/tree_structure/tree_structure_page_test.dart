@@ -20,6 +20,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/cubit/hierarchy_cubit.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/rohd_devtools.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/services/devtools_dtd_connection.dart';
+import 'package:rohd_devtools_extension/rohd_devtools/ui/module_search_overlay.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/ui/module_tree_card.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/ui/signal_details_card.dart';
 import 'package:rohd_devtools_widgets/rohd_devtools_widgets.dart'
@@ -178,6 +179,31 @@ void main() {
         await tester.pump(const Duration(seconds: 1));
 
         expect(find.byType(SignalDetailsCard), findsOneWidget);
+
+        final search = tester.widget<ModuleSearchField>(
+          find.byType(ModuleSearchField),
+        );
+        expect(search.hierarchy, same(hierarchyCubit.currentService));
+
+        await tester.enterText(
+          find.descendant(
+            of: find.byType(ModuleSearchField),
+            matching: find.byType(TextField),
+          ),
+          'topmod',
+        );
+        await tester.pump();
+        final result = find.ancestor(
+          of: find.descendant(
+            of: find.byType(ModuleSearchField),
+            matching: find.text('topmod'),
+          ),
+          matching: find.byType(InkWell),
+        );
+        expect(result, findsOneWidget);
+        await tester.tap(result);
+        await tester.pump();
+        expect(hierarchyCubit.selectedModule?.name, 'topmod');
       },
     );
 
@@ -249,9 +275,11 @@ void main() {
       'synchronizes a loaded hierarchy and cleans up its DevTools services',
       (tester) async {
         final serviceCubit = _ControlledRohdServiceCubit();
+        final searchCubit = TreeSearchTermCubit();
         final treeService = MockTreeService();
         serviceCubit.treeService = treeService;
         addTearDown(serviceCubit.close);
+        addTearDown(searchCubit.close);
         Future<Map<String, dynamic>?> nullMap(Invocation _) async => null;
         Future<String?> nullPath(Invocation _) async => null;
         when(treeService.getSchematicJson).thenReturn(null);
@@ -265,9 +293,6 @@ void main() {
           tester.view.resetPhysicalSize();
           tester.view.resetDevicePixelRatio();
         });
-        when(() => treeSearchTermCubit.state).thenReturn(null);
-        when(() => treeSearchTermCubit.stream)
-            .thenAnswer((_) => const Stream.empty());
         final tree = HierarchyOccurrenceStub.simpleHierarchyOccurrence;
         final connectionStates = <bool>[];
         void onConnectionStateChanged({required bool connected}) =>
@@ -278,7 +303,7 @@ void main() {
             providers: [
               BlocProvider<RohdServiceCubit>.value(value: serviceCubit),
               BlocProvider<TreeSearchTermCubit>.value(
-                value: treeSearchTermCubit,
+                value: searchCubit,
               ),
               BlocProvider<DetailsTabCubit>.value(value: detailsTabCubit),
               BlocProvider<DevToolsThemeCubit>.value(value: themeCubit),
@@ -297,12 +322,36 @@ void main() {
         );
         await tester.pump();
 
+        await tester.enterText(
+          find.descendant(
+            of: find.byType(ModuleSearchField),
+            matching: find.byType(TextField),
+          ),
+          'topmod',
+        );
+        await tester.pump();
         serviceCubit.emitForTest(RohdServiceLoaded(tree));
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 10));
         expect(hierarchyCubit.currentRoot, same(tree));
         expect(hierarchyCubit.selectedModule, same(tree));
         expect(find.byType(ModuleTreeCard), findsOneWidget);
+        expect(
+          tester
+              .widget<ModuleSearchField>(find.byType(ModuleSearchField))
+              .hierarchy,
+          same(hierarchyCubit.currentService),
+        );
+        expect(
+          find.ancestor(
+            of: find.descendant(
+              of: find.byType(ModuleSearchField),
+              matching: find.text('topmod'),
+            ),
+            matching: find.byType(InkWell),
+          ),
+          findsOneWidget,
+        );
 
         final moduleTreeHeader = find
             .ancestor(

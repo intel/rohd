@@ -2,7 +2,7 @@ name: rohd_devtools_extension
 description: "DevTool extension on ROHD."
 publish_to: 'none'
 
-version: 1.0.0+1
+version: 0.0.1+1
 
 environment:
   sdk: ^3.6.0
@@ -30,6 +30,7 @@ dependencies:
   logging: ^1.2.0
   # Keep below 1.3.0 for the Dart 3.6 CI toolchain.
   material_ui: ">=1.1.0 <1.3.0"
+  package_info_plus: ^10.2.1
   path: ^1.9.0
   path_provider: ^2.1.0
   rohd: ^0.7.0

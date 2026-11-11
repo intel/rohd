@@ -25,6 +25,7 @@ const _packagePaths = {
   'rohd_waveform': 'packages/rohd_waveform',
   'rohd_devtools_widgets': 'packages/rohd_devtools_widgets',
   'rohd_source_navigator': 'packages/rohd_source_navigator',
+  'rohd_live_debugger': 'packages/rohd_live_debugger',
 };
 
 void main(List<String> arguments) {
@@ -52,6 +53,25 @@ void main(List<String> arguments) {
             '${manifestFile.path} needs a stable major.minor.patch version.');
       }
       versions[package] = version;
+
+      if (package == 'rohd_live_debugger') {
+        final extensionFile = File('$directory/extension/devtools/config.yaml');
+        final appFile =
+            File('${root.path}/rohd_devtools_extension/pubspec.yaml');
+        final extension = loadYaml(extensionFile.readAsStringSync());
+        final app = loadYaml(appFile.readAsStringSync());
+        if (extension is! YamlMap ||
+            extension['name'] != package ||
+            extension['version'] != version ||
+            app is! YamlMap ||
+            app['version'] is! String ||
+            (app['version'] as String).split('+').first != version) {
+          throw FormatException(
+            'Debugger package, DevTools config, and application versions must '
+            'match, and the extension name must be $package.',
+          );
+        }
+      }
 
       final changelog = File('$directory/CHANGELOG.md');
       final contents = changelog.readAsStringSync();

@@ -1,0 +1,7 @@
+.dart_tool/
+.packages
+pubspec.lock
+pubspec_overrides.yaml
+coverage/
+build/
+!extension/devtools/build/

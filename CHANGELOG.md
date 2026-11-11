@@ -1,3 +1,7 @@
+## 0.7.2
+
+- Move the DevTools extension to the opt-in `rohd_live_debugger` package.
+
 ## 0.7.1
 
 - Exclude independently published package sources and the DevTools and VS Code application sources from the ROHD pub.dev archive, while retaining the built DevTools extension and checkout-only workspace configuration.
