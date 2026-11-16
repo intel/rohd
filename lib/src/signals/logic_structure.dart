@@ -19,6 +19,11 @@ LogicType _checkedTypedClone<LogicType extends Logic>(
       'Clone did not preserve the requested $LogicType type.',
     );
   }
+  if (!sameTypedCloneShape(source, cloned)) {
+    throw LogicConstructionException(
+      'Clone did not preserve the declared signal type and format.',
+    );
+  }
   return cloned;
 }
 
@@ -41,7 +46,8 @@ void _validateTypedNamedClone(Logic source, String name) {
 /// already been widened to [Logic], this extension cannot recover its original
 /// subtype.
 extension TypedLogicUtilities<LogicType extends Logic> on LogicType {
-  /// Equivalent to [Logic.clone], preserving the receiver's static type.
+  /// Equivalent to [Logic.clone], preserving the receiver's static type and
+  /// any declared payload type and semantic shape.
   ///
   /// Literal cloning is legal: a concrete [Const] receiver returns another
   /// [Const] rather than a driveable alias.

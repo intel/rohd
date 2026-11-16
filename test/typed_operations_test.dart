@@ -256,6 +256,20 @@ class _ArrayOperationVectorHarness extends Module {
   }
 }
 
+class _WidenedArrayFlopHarness extends Module {
+  late final Logic registered;
+
+  _WidenedArrayFlopHarness({required bool packedInput}) {
+    final clk = SimpleClockGenerator(10).clk;
+    final reset = addInput('reset', Logic());
+    final data = LogicArray([2], 2, numUnpackedDimensions: 1)
+      ..gets(addInput('data', Logic(width: 4), width: 4));
+    registered = flop<Logic>(clk, packedInput ? data.packed : data,
+        reset: reset, outputGenerator: data.cloneTyped);
+    addOutput('out', width: 4) <= registered;
+  }
+}
+
 class _PacketArrayOperationVectorHarness extends Module {
   _PacketArrayOperationVectorHarness(
     Logic control,
@@ -866,6 +880,25 @@ void main() {
       await Simulator.reset();
     }
   }, timeout: const Timeout(Duration(minutes: 2)));
+
+  test('widened structured flop generator preserves unpacked array', () async {
+    final vectors = [
+      Vector({'reset': 1, 'data': 3}, {}),
+      Vector({'reset': 1, 'data': 3}, {'out': 0}),
+      Vector({'reset': 0, 'data': 9}, {'out': 0}),
+      Vector({'reset': 0, 'data': 9}, {'out': 9}),
+      Vector({'reset': 0, 'data': 6}, {'out': 9}),
+      Vector({'reset': 0, 'data': 6}, {'out': 6}),
+    ];
+    for (final packedInput in [false, true]) {
+      final harness = _WidenedArrayFlopHarness(packedInput: packedInput);
+      expect(harness.registered, isA<LogicArray>());
+      await harness.build();
+      await SimCompare.checkFunctionalVector(harness, vectors);
+      SimCompare.checkVerilatorVector(harness, vectors);
+      await Simulator.reset();
+    }
+  });
 
   test('nested typed-array packet operations match an emitted backend',
       () async {

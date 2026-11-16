@@ -1502,6 +1502,11 @@ class SynthModuleDefinition {
   /// Note that this can remove signals from [internalSignals] after marking
   /// them as having their declaration cleared.
   void _pruneUnused() {
+    // Structured array elements can have live fields without a SynthLogic.
+    bool hasPresentDescendant(Logic logic) =>
+        logicHasPresentSynthLogic(logic) ||
+        (logic is LogicStructure && logic.elements.any(hasPresentDescendant));
+
     var changed = true;
 
     while (changed) {
@@ -1558,7 +1563,7 @@ class SynthModuleDefinition {
 
         if (internalSignal.isArray) {
           if (logics.any(
-            (logicArray) => logicArray.elements.any(logicHasPresentSynthLogic),
+            (logicArray) => logicArray.elements.any(hasPresentDescendant),
           )) {
             // if it's an array, can only remove if all elements are removed
             reducedInternalSignals.add(internalSignal);

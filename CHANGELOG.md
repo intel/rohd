@@ -1,3 +1,10 @@
+## Unreleased
+
+- **Breaking:** `cloneTyped`, `addTypedInput`, and `addTypedInOut` reject clones that change declared signal types, including nested types, or recursive shape, including `PayloadShapeMetadata` formats, enum mappings, and typed-array codecs.
+- **Breaking:** `Module.addTypedInput` now preserves constant-containing structures passed as `Logic` by default, requiring driveable structured clones. Set `preserveStructuredConstants: false` to retain the previous flattened input.
+- Fix structured `FlipFlop<Logic>` outputs supplied by `outputGenerator` to use structure-preserving logic, including unpacked arrays and packed input bridges.
+- Fix SystemVerilog generation for unnamed local typed arrays containing structures with live fields (<https://github.com/intel/rohd/issues/763>).
+
 ## 0.7.2
 
 - Move the DevTools extension to the opt-in `rohd_live_debugger` package.

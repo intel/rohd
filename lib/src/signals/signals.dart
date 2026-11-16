@@ -25,6 +25,7 @@ part 'logic.dart';
 part 'wire.dart';
 part 'wire_net.dart';
 part 'logic_structure.dart';
+part 'payload_shape.dart';
 part 'base_logic_array.dart';
 part 'logic_array.dart';
 part 'typed_logic_array.dart';
