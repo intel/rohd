@@ -629,6 +629,14 @@ common inputs.
   A no-op module that preserves <code>LogicType</code>.
 </dd>
 
+          <dt id="PayloadShapeMetadata">
+  <span class="name "><a href="../rohd/PayloadShapeMetadata-class.html">PayloadShapeMetadata</a></span> 
+
+</dt>
+<dd>
+  Semantic signal metadata not represented by the hardware layout.
+</dd>
+
           <dt id="Pipeline">
   <span class="name "><a href="../rohd/Pipeline-class.html">Pipeline</a></span> 
 
@@ -1474,6 +1482,19 @@ index.
 
 </dd>
 
+          <dt id="hasDeclaredPayloadShape" class="callable">
+  <span class="name"><a href="../rohd/hasDeclaredPayloadShape.html">hasDeclaredPayloadShape</a></span><span class="signature">(<wbr><span class="parameter" id="hasDeclaredPayloadShape-param-signal"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">signal</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Whether <code>signal</code> declares a shape beyond a plain packed vector.
+  
+
+</dd>
+
           <dt id="mux" class="callable">
   <span class="name"><a href="../rohd/mux.html">mux</a></span><span class="signature">&lt;<wbr><span class="type-parameter">LogicType extends <a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span><span class="signature">(<wbr><span class="parameter" id="mux-param-control"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">control</span>, </span><span class="parameter" id="mux-param-d1"><span class="type-annotation">LogicType</span> <span class="parameter-name">d1</span>, </span><span class="parameter" id="mux-param-d0"><span class="type-annotation">LogicType</span> <span class="parameter-name">d0</span>, {</span><span class="parameter" id="mux-param-outputGenerator"><span class="type-annotation">LogicType</span> <span class="parameter-name">outputGenerator</span>({<span class="parameter" id="param-name"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">name</span></span>})?, </span><span class="parameter" id="mux-param-name"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span> = <span class="default-value">&#39;mux&#39;</span></span>})
     <span class="returntype parameter">&#8594; LogicType</span>
@@ -1483,6 +1504,32 @@ index.
 </dt>
 <dd>
   Performs a multiplexer/ternary operation.
+  
+
+</dd>
+
+          <dt id="sameDeclaredPayloadShape" class="callable">
+  <span class="name"><a href="../rohd/sameDeclaredPayloadShape.html">sameDeclaredPayloadShape</a></span><span class="signature">(<wbr><span class="parameter" id="sameDeclaredPayloadShape-param-template"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">template</span>, </span><span class="parameter" id="sameDeclaredPayloadShape-param-source"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">source</span>, {</span><span class="parameter" id="sameDeclaredPayloadShape-param-ignoreConstantNames"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">ignoreConstantNames</span> = <span class="default-value">false</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Whether two signals declare matching recursive layouts and formats.
+  
+
+</dd>
+
+          <dt id="sameTypedCloneShape" class="callable">
+  <span class="name"><a href="../rohd/sameTypedCloneShape.html">sameTypedCloneShape</a></span><span class="signature">(<wbr><span class="parameter" id="sameTypedCloneShape-param-source"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">source</span>, </span><span class="parameter" id="sameTypedCloneShape-param-clone"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">clone</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Whether <code>clone</code> preserves declared types and recursive semantic shape.
   
 
 </dd>

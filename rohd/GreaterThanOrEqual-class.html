@@ -633,13 +633,15 @@ named <code>name</code>.
 port that can be consumed inside this <a href="../rohd/Module-class.html">Module</a>. The type of the port will
 be <code>LogicType</code> and constructed via <a href="../rohd/Logic/clone.html">Logic.clone</a>, so it is required that
 the <code>source</code> implements clone functionality that matches the type and
-properly updates the <a href="../rohd/Logic/name.html">Logic.name</a> as well.
+properly updates the <a href="../rohd/Logic/name.html">Logic.name</a> as well. A declared payload must retain
+its runtime type and recursive shape, including any
+<a href="../rohd/PayloadShapeMetadata-class.html">PayloadShapeMetadata</a>.
   <div class="features"><span class="feature">inherited</span></div>
 
 </dd>
 
         <dt id="addTypedInput" class="callable inherited">
-  <span class="name"><a href="../rohd/Module/addTypedInput.html">addTypedInput</a></span><span class="signature">&lt;<wbr><span class="type-parameter">LogicType extends <a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span><span class="signature">(<wbr><span class="parameter" id="addTypedInput-param-name"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span>, </span><span class="parameter" id="addTypedInput-param-source"><span class="type-annotation">LogicType</span> <span class="parameter-name">source</span></span>)
+  <span class="name"><a href="../rohd/Module/addTypedInput.html">addTypedInput</a></span><span class="signature">&lt;<wbr><span class="type-parameter">LogicType extends <a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span><span class="signature">(<wbr><span class="parameter" id="addTypedInput-param-name"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span>, </span><span class="parameter" id="addTypedInput-param-source"><span class="type-annotation">LogicType</span> <span class="parameter-name">source</span>, {</span><span class="parameter" id="addTypedInput-param-preserveStructuredConstants"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">preserveStructuredConstants</span> = <span class="default-value">true</span></span>})
     <span class="returntype parameter">&#8594; LogicType</span>
   </span>
   
@@ -650,7 +652,8 @@ properly updates the <a href="../rohd/Logic/name.html">Logic.name</a> as well.
 port that can be consumed. The type of the port will be <code>LogicType</code> and
 constructed via <a href="../rohd/Logic/clone.html">Logic.clone</a>, so it is required that the <code>source</code>
 implements clone functionality that matches the type and properly updates
-the <a href="../rohd/Logic/name.html">Logic.name</a> as well.
+the <a href="../rohd/Logic/name.html">Logic.name</a> as well. A declared payload must retain its runtime type
+and recursive shape, including any <a href="../rohd/PayloadShapeMetadata-class.html">PayloadShapeMetadata</a>.
   <div class="features"><span class="feature">inherited</span></div>
 
 </dd>

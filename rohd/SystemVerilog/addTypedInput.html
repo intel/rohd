@@ -55,9 +55,10 @@
     <section class="multi-line-signature">
       
 <span class="returntype">LogicType</span>
-<span class="name ">addTypedInput</span>&lt;<wbr><span class="type-parameter">LogicType extends Logic</span>&gt;(<wbr><ol class="parameter-list single-line"> <li><span class="parameter" id="addTypedInput-param-name"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span>, </span></li>
-<li><span class="parameter" id="addTypedInput-param-source"><span class="type-annotation">LogicType</span> <span class="parameter-name">source</span></span></li>
-</ol>)
+<span class="name ">addTypedInput</span>&lt;<wbr><span class="type-parameter">LogicType extends Logic</span>&gt;(<wbr><ol class="parameter-list"> <li><span class="parameter" id="addTypedInput-param-name"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span>, </span></li>
+<li><span class="parameter" id="addTypedInput-param-source"><span class="type-annotation">LogicType</span> <span class="parameter-name">source</span>, {</span></li>
+<li><span class="parameter" id="addTypedInput-param-preserveStructuredConstants"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">preserveStructuredConstants</span> = <span class="default-value">true</span>, </span></li>
+</ol>})
 
       <div class="features"><span class="feature">inherited</span></div>
 
@@ -68,7 +69,8 @@
 port that can be consumed. The type of the port will be <code>LogicType</code> and
 constructed via <a href="../../rohd/Logic/clone.html">Logic.clone</a>, so it is required that the <code>source</code>
 implements clone functionality that matches the type and properly updates
-the <a href="../../rohd/Logic/name.html">Logic.name</a> as well.</p>
+the <a href="../../rohd/Logic/name.html">Logic.name</a> as well. A declared payload must retain its runtime type
+and recursive shape, including any <a href="../../rohd/PayloadShapeMetadata-class.html">PayloadShapeMetadata</a>.</p>
 <p>This is a good way to construct <a href="../../rohd/Module/input.html">input</a>s that have matching widths or
 dimensions to their <code>source</code> signal, or to make a <a href="../../rohd/LogicStructure-class.html">LogicStructure</a> an
 <a href="../../rohd/Module/input.html">input</a>. You can use this on a <a href="../../rohd/Logic-class.html">Logic</a>, <a href="../../rohd/LogicArray-class.html">LogicArray</a>,
@@ -78,7 +80,9 @@ its hardware element type and semantic value type.</p>
 <a href="../../rohd/Const-class.html">Const</a>, the <code>LogicType</code> must be set to <a href="../../rohd/Logic-class.html">Logic</a>, since <a href="../../rohd/Const-class.html">Const</a>s cannot be
 driven and are not suitable as ports. A <a href="../../rohd/LogicStructure-class.html">LogicStructure</a> containing
 <a href="../../rohd/Const-class.html">Const</a>s is accepted when its <a href="../../rohd/Logic/clone.html">Logic.clone</a> implementation creates a
-matching structure with only driveable elements.</p>
+matching structure with only driveable elements. When <code>LogicType</code> is
+<a href="../../rohd/Logic-class.html">Logic</a>, set <code>preserveStructuredConstants</code> to false to flatten such
+structures instead. Scalar constants are unaffected.</p>
 <p>The return value is the same as what is returned by <a href="../../rohd/Module/input.html">input</a> and should
 only be used within this <a href="../../rohd/Module-class.html">Module</a>. The provided <code>source</code> is accessible via
 <a href="../../rohd/Module/inputSource.html">inputSource</a>.</p>
@@ -89,12 +93,16 @@ only be used within this <a href="../../rohd/Module-class.html">Module</a>. The 
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">LogicType addTypedInput&lt;LogicType extends Logic&gt;(
-    String name, LogicType source) {
+    String name, LogicType source,
+    {bool preserveStructuredConstants = true}) {
   _checkForSafePortName(name);
 
+  final preserveStructure = preserveStructuredConstants &amp;&amp;
+      source is LogicStructure &amp;&amp;
+      source.hasConsts;
   final hasTypedStructuredConstants =
       LogicType != Logic &amp;&amp; source is LogicStructure &amp;&amp; source.hasConsts;
-  if (!hasTypedStructuredConstants) {
+  if (!hasTypedStructuredConstants &amp;&amp; !preserveStructure) {
     source = _validateType&lt;LogicType&gt;(source, isOutput: false, name: name);
   }
 
@@ -107,11 +115,23 @@ only be used within this <a href="../../rohd/Module-class.html">Module</a>. The 
     throw PortTypeException(source,
         &#39;The `clone` method did not preserve the requested port type.&#39;);
   }
+  if (preserveStructure &amp;&amp;
+      (cloned is! LogicStructure || cloned.hasConsts || cloned.hasNets)) {
+    throw PortTypeException(
+      source,
+      &#39;The `clone` method must produce a driveable structure without nets.&#39;,
+    );
+  }
   final inPort = _validateType&lt;LogicType&gt;(
     cloned,
     isOutput: true,
     name: name,
-  )..gets(source);
+  );
+  if (!sameTypedCloneShape(source, inPort)) {
+    throw PortTypeException.forIntendedName(
+        name, &#39;The `clone` method changed the declared type or format.&#39;);
+  }
+  inPort.gets(source);
 
   if (inPort.name != name) {
     throw PortTypeException.forIntendedName(name,

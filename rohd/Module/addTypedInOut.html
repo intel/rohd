@@ -68,7 +68,9 @@
 port that can be consumed inside this <a href="../../rohd/Module-class.html">Module</a>. The type of the port will
 be <code>LogicType</code> and constructed via <a href="../../rohd/Logic/clone.html">Logic.clone</a>, so it is required that
 the <code>source</code> implements clone functionality that matches the type and
-properly updates the <a href="../../rohd/Logic/name.html">Logic.name</a> as well.</p>
+properly updates the <a href="../../rohd/Logic/name.html">Logic.name</a> as well. A declared payload must retain
+its runtime type and recursive shape, including any
+<a href="../../rohd/PayloadShapeMetadata-class.html">PayloadShapeMetadata</a>.</p>
 <p>This is a good way to construct <a href="../../rohd/Module/inOut.html">inOut</a>s that have matching widths or
 dimensions to their <code>source</code> signal, or to make a <a href="../../rohd/LogicStructure-class.html">LogicStructure</a> an
 <a href="../../rohd/Module/inOut.html">inOut</a>. You can use this on a <a href="../../rohd/Logic-class.html">Logic</a>, <a href="../../rohd/LogicArray-class.html">LogicArray</a>,
@@ -97,6 +99,20 @@ only be used within this <a href="../../rohd/Module-class.html">Module</a>. The 
 
   source = _validateType&lt;LogicType&gt;(source, isOutput: false, name: name);
 
+  final inOutPort = source.clone(name: name);
+  if (inOutPort is! LogicType || !sameTypedCloneShape(source, inOutPort)) {
+    throw PortTypeException.forIntendedName(
+        name, &#39;The `clone` method changed the declared type or format.&#39;);
+  }
+  if (inOutPort.name != name) {
+    throw PortTypeException.forIntendedName(name,
+        &#39;The `clone` method for $source failed to update the signal name.&#39;);
+  }
+  if (!inOutPort.isNet) {
+    throw PortTypeException.forIntendedName(
+        name, &#39;The `clone` method must produce a net.&#39;);
+  }
+
   _inOutDrivers.add(source);
 
   &#47;&#47; we need to properly detect all inout sources
@@ -116,12 +132,7 @@ only be used within this <a href="../../rohd/Module-class.html">Module</a>. The 
     }
   }
 
-  final inOutPort = (source.clone(name: name) as LogicType)..gets(source);
-
-  if (inOutPort.name != name) {
-    throw PortTypeException.forIntendedName(name,
-        &#39;The `clone` method for $source failed to update the signal name.&#39;);
-  }
+  inOutPort.gets(source);
 
   if (inOutPort is LogicStructure) {
     inOutPort.setAllParentModule(this);
