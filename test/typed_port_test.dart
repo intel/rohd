@@ -234,6 +234,15 @@ class _ErasedStructure extends LogicStructure {
       LogicStructure([Logic(name: 'field')], name: name);
 }
 
+class _ChangedFieldStructure extends LogicStructure {
+  _ChangedFieldStructure({bool changed = false, super.name})
+      : super([Logic(name: changed ? 'other' : 'field')]);
+
+  @override
+  _ChangedFieldStructure clone({String? name}) =>
+      _ChangedFieldStructure(changed: true, name: name);
+}
+
 enum _CloneState { idle, busy }
 
 class _MisclonedEnumStructure extends LogicStructure {
@@ -442,6 +451,14 @@ void main() {
     changed = true;
     expect(array.cloneTyped, throwsA(isA<LogicConstructionException>()));
     expect(() => DummyModule().addTypedInput('arrayIn', array),
+        throwsA(isA<PortTypeException>()));
+  });
+
+  test('typed clones reject unrelated field name changes', () {
+    final source = _ChangedFieldStructure(name: 'source');
+    expect(() => source.cloneTyped(name: 'renamed'),
+        throwsA(isA<LogicConstructionException>()));
+    expect(() => DummyModule().addTypedInput('dataIn', source),
         throwsA(isA<PortTypeException>()));
   });
 

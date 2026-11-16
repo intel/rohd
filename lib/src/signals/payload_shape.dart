@@ -29,7 +29,12 @@ bool hasDeclaredPayloadShape(Logic signal) =>
 /// [ignoreConstantNames] permits a constant leaf's generated name to differ
 /// from the corresponding driveable clone.
 bool sameDeclaredPayloadShape(Logic template, Logic source,
-    {bool ignoreConstantNames = false}) {
+        {bool ignoreConstantNames = false}) =>
+    _sameDeclaredPayloadShape(template, source,
+        ignoreConstantNames: ignoreConstantNames, allowParentRenaming: false);
+
+bool _sameDeclaredPayloadShape(Logic template, Logic source,
+    {required bool ignoreConstantNames, required bool allowParentRenaming}) {
   if (template.width != source.width) {
     return false;
   }
@@ -54,9 +59,10 @@ bool sameDeclaredPayloadShape(Logic template, Logic source,
         ((template is LogicArray && source is LogicArray) ||
             (template.arrayElements.length == source.arrayElements.length &&
                 template.arrayElements.indexed.every((entry) =>
-                    sameDeclaredPayloadShape(
+                    _sameDeclaredPayloadShape(
                         entry.$2, source.arrayElements[entry.$1],
-                        ignoreConstantNames: ignoreConstantNames))));
+                        ignoreConstantNames: ignoreConstantNames,
+                        allowParentRenaming: allowParentRenaming))));
   }
   if (template is LogicEnum || source is LogicEnum) {
     return template is LogicEnum &&
@@ -71,17 +77,24 @@ bool sameDeclaredPayloadShape(Logic template, Logic source,
       template.elements.indexed.every((entry) {
         final other = source.elements[entry.$1];
         return (entry.$2.name == other.name ||
+                (allowParentRenaming &&
+                    template.name != source.name &&
+                    template.name.isNotEmpty &&
+                    entry.$2.name.replaceAll(template.name, source.name) ==
+                        other.name) ||
                 (ignoreConstantNames &&
                     (entry.$2 is Const || other is Const))) &&
-            sameDeclaredPayloadShape(entry.$2, other,
-                ignoreConstantNames: ignoreConstantNames);
+            _sameDeclaredPayloadShape(entry.$2, other,
+                ignoreConstantNames: ignoreConstantNames,
+                allowParentRenaming: allowParentRenaming);
       });
 }
 
 /// Whether [clone] preserves declared types and recursive semantic shape.
 bool sameTypedCloneShape(Logic source, Logic clone) =>
     !hasDeclaredPayloadShape(source) ||
-    (sameDeclaredPayloadShape(source, clone, ignoreConstantNames: true) &&
+    (_sameDeclaredPayloadShape(source, clone,
+            ignoreConstantNames: true, allowParentRenaming: true) &&
         _sameDeclaredCloneTypes(source, clone));
 
 bool _sameDeclaredCloneTypes(Logic source, Logic clone) {
