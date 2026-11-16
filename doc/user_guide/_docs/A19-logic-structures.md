@@ -122,6 +122,8 @@ additional semantic formats can implement `PayloadShapeMetadata`; its stable
 identifier must be equal exactly when those formats are compatible. Clones must
 preserve that identifier, including on nested fields. Field names derived from
 their parent structure's name may change when the parent is renamed.
+Use `sameRohdPayloadShape` to compare declared layouts and formats; this
+replaces the root-exported `sameDeclaredPayloadShape` name from ROHD 0.7.3.
 
 ## Using `LogicStructure` to group signals
 

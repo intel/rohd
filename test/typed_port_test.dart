@@ -12,6 +12,8 @@ import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
 
+import 'payload_shape_test_utils.dart';
+
 class MyStruct extends LogicStructure {
   final Logic ready;
   final Logic valid;
@@ -398,6 +400,19 @@ void main() {
     await Simulator.reset();
   });
 
+  test('ROHD payload shape helper coexists with downstream helper', () {
+    final constant = LogicStructure([Const(1)]);
+    final driveable = LogicStructure([Logic(name: 'field')]);
+    expect(sameDeclaredPayloadShape(constant, driveable), isFalse);
+    expect(sameRohdPayloadShape(constant, driveable), isFalse);
+    expect(sameRohdPayloadShape(constant, driveable, ignoreConstantNames: true),
+        isTrue);
+    expect(
+        sameRohdPayloadShape(
+            _FormatSignal('first', 'first'), _FormatSignal('second', 'second')),
+        isFalse);
+  });
+
   test('typed clones and inputs reject nested semantic changes', () {
     final scalar = _FormatSignal('first', 'second', name: 'field');
     final nested = LogicStructure([scalar], name: 'nested');
@@ -436,7 +451,7 @@ void main() {
   test('typed clones reject nested declared type erasure', () {
     final nested = LogicStructure([_ErasedStructure(name: 'member')]);
     final rawClone = nested.clone();
-    expect(sameDeclaredPayloadShape(nested, rawClone), isTrue);
+    expect(sameRohdPayloadShape(nested, rawClone), isTrue);
     expect(nested.cloneTyped, throwsA(isA<LogicConstructionException>()));
     expect(() => DummyModule().addTypedInput('dataIn', nested),
         throwsA(isA<PortTypeException>()));

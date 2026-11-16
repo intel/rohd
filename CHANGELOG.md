@@ -1,3 +1,8 @@
+## 0.7.4
+
+- Preserve drivers of locally assembled array elements consumed by concatenations during SystemVerilog synthesis.
+- Fix an import-name collision with ROHD-HCL 0.3.0 and 0.3.1 by replacing the root export `sameDeclaredPayloadShape` with `sameRohdPayloadShape`; users of the ROHD 0.7.3 helper should migrate to the new name.
+
 ## 0.7.3
 
 - Recognize WebAssembly as a web target while retaining its 64-bit integer behavior.
