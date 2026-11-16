@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2023 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // big_logic_value.dart
@@ -20,7 +20,7 @@ extension BigLogicValueBigIntUtilities on BigInt {
       throw Exception('Cannot convert Int when width $width'
           ' is greater than $INT_BITS');
     } else if (width == INT_BITS && INT_BITS > 32) {
-      assert(!kIsWeb, 'This code is not set up to work with JS.');
+      assert(!kIsJs, 'This code is not set up to work with JS.');
 
       // When width is 64, `BigInt.toInt()` will clamp values assuming that
       // it's a signed number.  To avoid that, if the width is 64, then do the

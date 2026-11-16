@@ -9,11 +9,12 @@
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/synthesizers/utilities/synth_logic.dart';
 import 'package:rohd/src/synthesizers/utilities/synth_module_definition.dart';
+import 'package:rohd/src/utilities/package_config_file.dart'
+    if (dart.library.io) 'package:rohd/src/utilities/package_config_file_io.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 
 /// A shared, deduplicated file table for `attributes.rohd.src_trace`
@@ -870,6 +871,8 @@ class SourceTracer {
   /// (e.g. once per module) do not re-read and re-parse the file.
   ///
   /// Returns an empty map if the file does not exist.
+  ///
+  /// Throws [UnsupportedError] on platforms without file IO.
   static Map<String, String> loadPackageMap(String packageRoot) {
     final cache = _current?._packageMapCache;
     if (cache != null) {
@@ -879,14 +882,13 @@ class SourceTracer {
       }
     }
 
-    final configFile = File('$packageRoot/.dart_tool/package_config.json');
-    if (!configFile.existsSync()) {
+    final contents = readPackageConfig(packageRoot);
+    if (contents == null) {
       _current?._packageMapCache[packageRoot] = const {};
       return const {};
     }
 
-    final config =
-        json.decode(configFile.readAsStringSync()) as Map<String, dynamic>;
+    final config = json.decode(contents) as Map<String, dynamic>;
     final packages = config['packages'] as List<dynamic>? ?? [];
     final result = <String, String>{};
 

@@ -1,5 +1,7 @@
 ## Unreleased
 
+- Recognize WebAssembly as a web target while retaining its 64-bit integer behavior.
+- Isolate source-trace package configuration file I/O behind a native platform boundary.
 - Allow typed clones and ports to rename structure fields derived from their parent name without rejecting their shape.
 - **Breaking:** `cloneTyped`, `addTypedInput`, and `addTypedInOut` reject clones that change declared signal types, including nested types, or recursive shape, including `PayloadShapeMetadata` formats, enum mappings, and typed-array codecs.
 - **Breaking:** `Module.addTypedInput` now preserves constant-containing structures passed as `Logic` by default, requiring driveable structured clones. Set `preserveStructuredConstants: false` to retain the previous flattened input.
