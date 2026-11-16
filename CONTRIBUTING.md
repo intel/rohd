@@ -81,6 +81,9 @@ The repository is a Pub workspace and includes Flutter packages. Run
 `flutter pub get` from the repository root to resolve all in-repository
 packages together.
 
+For WebAssembly status, browser tests, and remaining publication work, see the
+[WASM development notes](doc/wasm_development.md).
+
 ## How to Contribute
 
 ### Reporting Vulnerabilities
