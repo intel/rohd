@@ -68,6 +68,7 @@
 <p>Results are cached so that repeated calls with the same <code>packageRoot</code>
 (e.g. once per module) do not re-read and re-parse the file.</p>
 <p>Returns an empty map if the file does not exist.</p>
+<p>Throws <a href="https://api.flutter.dev/flutter/dart-core/UnsupportedError-class.html">UnsupportedError</a> on platforms without file IO.</p>
 </section>
 
 
@@ -83,14 +84,13 @@
     }
   }
 
-  final configFile = File(&#39;$packageRoot&#47;.dart_tool&#47;package_config.json&#39;);
-  if (!configFile.existsSync()) {
+  final contents = readPackageConfig(packageRoot);
+  if (contents == null) {
     _current?._packageMapCache[packageRoot] = const {};
     return const {};
   }
 
-  final config =
-      json.decode(configFile.readAsStringSync()) as Map&lt;String, dynamic&gt;;
+  final config = json.decode(contents) as Map&lt;String, dynamic&gt;;
   final packages = config[&#39;packages&#39;] as List&lt;dynamic&gt;? ?? [];
   final result = &lt;String, String&gt;{};
 

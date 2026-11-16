@@ -76,7 +76,7 @@
     throw Exception(&#39;Cannot convert Int when width $width&#39;
         &#39; is greater than $INT_BITS&#39;);
   } else if (width == INT_BITS &amp;&amp; INT_BITS &gt; 32) {
-    assert(!kIsWeb, &#39;This code is not set up to work with JS.&#39;);
+    assert(!kIsJs, &#39;This code is not set up to work with JS.&#39;);
 
     &#47;&#47; When width is 64, `BigInt.toInt()` will clamp values assuming that
     &#47;&#47; it&#39;s a signed number.  To avoid that, if the width is 64, then do the
