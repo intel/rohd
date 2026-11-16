@@ -1,4 +1,4 @@
-## Unreleased
+## 0.7.3
 
 - Recognize WebAssembly as a web target while retaining its 64-bit integer behavior.
 - Isolate source-trace package configuration file I/O behind a native platform boundary.
