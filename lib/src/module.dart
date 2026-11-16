@@ -727,7 +727,8 @@ abstract class Module {
   /// port that can be consumed. The type of the port will be [LogicType] and
   /// constructed via [Logic.clone], so it is required that the [source]
   /// implements clone functionality that matches the type and properly updates
-  /// the [Logic.name] as well.
+  /// the [Logic.name] as well. A declared payload must retain its runtime type
+  /// and recursive shape, including any [PayloadShapeMetadata].
   ///
   /// This is a good way to construct [input]s that have matching widths or
   /// dimensions to their [source] signal, or to make a [LogicStructure] an
@@ -739,18 +740,24 @@ abstract class Module {
   /// [Const], the [LogicType] must be set to [Logic], since [Const]s cannot be
   /// driven and are not suitable as ports. A [LogicStructure] containing
   /// [Const]s is accepted when its [Logic.clone] implementation creates a
-  /// matching structure with only driveable elements.
+  /// matching structure with only driveable elements. When [LogicType] is
+  /// [Logic], set [preserveStructuredConstants] to false to flatten such
+  /// structures instead. Scalar constants are unaffected.
   ///
   /// The return value is the same as what is returned by [input] and should
   /// only be used within this [Module]. The provided [source] is accessible via
   /// [inputSource].
   LogicType addTypedInput<LogicType extends Logic>(
-      String name, LogicType source) {
+      String name, LogicType source,
+      {bool preserveStructuredConstants = true}) {
     _checkForSafePortName(name);
 
+    final preserveStructure = preserveStructuredConstants &&
+        source is LogicStructure &&
+        source.hasConsts;
     final hasTypedStructuredConstants =
         LogicType != Logic && source is LogicStructure && source.hasConsts;
-    if (!hasTypedStructuredConstants) {
+    if (!hasTypedStructuredConstants && !preserveStructure) {
       source = _validateType<LogicType>(source, isOutput: false, name: name);
     }
 
@@ -763,11 +770,23 @@ abstract class Module {
       throw PortTypeException(source,
           'The `clone` method did not preserve the requested port type.');
     }
+    if (preserveStructure &&
+        (cloned is! LogicStructure || cloned.hasConsts || cloned.hasNets)) {
+      throw PortTypeException(
+        source,
+        'The `clone` method must produce a driveable structure without nets.',
+      );
+    }
     final inPort = _validateType<LogicType>(
       cloned,
       isOutput: true,
       name: name,
-    )..gets(source);
+    );
+    if (!sameTypedCloneShape(source, inPort)) {
+      throw PortTypeException.forIntendedName(
+          name, 'The `clone` method changed the declared type or format.');
+    }
+    inPort.gets(source);
 
     if (inPort.name != name) {
       throw PortTypeException.forIntendedName(name,
@@ -847,7 +866,9 @@ abstract class Module {
   /// port that can be consumed inside this [Module]. The type of the port will
   /// be [LogicType] and constructed via [Logic.clone], so it is required that
   /// the [source] implements clone functionality that matches the type and
-  /// properly updates the [Logic.name] as well.
+  /// properly updates the [Logic.name] as well. A declared payload must retain
+  /// its runtime type and recursive shape, including any
+  /// [PayloadShapeMetadata].
   ///
   /// This is a good way to construct [inOut]s that have matching widths or
   /// dimensions to their [source] signal, or to make a [LogicStructure] an
@@ -873,6 +894,20 @@ abstract class Module {
 
     source = _validateType<LogicType>(source, isOutput: false, name: name);
 
+    final inOutPort = source.clone(name: name);
+    if (inOutPort is! LogicType || !sameTypedCloneShape(source, inOutPort)) {
+      throw PortTypeException.forIntendedName(
+          name, 'The `clone` method changed the declared type or format.');
+    }
+    if (inOutPort.name != name) {
+      throw PortTypeException.forIntendedName(name,
+          'The `clone` method for $source failed to update the signal name.');
+    }
+    if (!inOutPort.isNet) {
+      throw PortTypeException.forIntendedName(
+          name, 'The `clone` method must produce a net.');
+    }
+
     _inOutDrivers.add(source);
 
     // we need to properly detect all inout sources
@@ -892,12 +927,7 @@ abstract class Module {
       }
     }
 
-    final inOutPort = (source.clone(name: name) as LogicType)..gets(source);
-
-    if (inOutPort.name != name) {
-      throw PortTypeException.forIntendedName(name,
-          'The `clone` method for $source failed to update the signal name.');
-    }
+    inOutPort.gets(source);
 
     if (inOutPort is LogicStructure) {
       inOutPort.setAllParentModule(this);

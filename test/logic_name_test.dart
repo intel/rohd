@@ -180,6 +180,21 @@ class VariousNamingStruct extends LogicStructure {
   VariousNamingStruct clone({String? name}) => VariousNamingStruct(name: name);
 }
 
+class NestedParentNamingStruct extends LogicStructure {
+  NestedParentNamingStruct({String name = 'root'})
+      : super([VariousNamingStruct(name: 'child_$name')], name: name);
+
+  @override
+  NestedParentNamingStruct clone({String? name}) =>
+      NestedParentNamingStruct(name: name ?? this.name);
+}
+
+class NamingInputModule extends Module {
+  NamingInputModule(NestedParentNamingStruct source) {
+    addTypedInput('dataIn', source);
+  }
+}
+
 class StructElementNamingModule extends Module {
   StructElementNamingModule(VariousNamingStruct inp) {
     inp = addTypedInput('inp', inp);
@@ -374,6 +389,22 @@ void main() {
             ' (~outp_mergeable) ^ outp_mergeable;'));
     expect(sv, contains('intermediate_my_sub_struct_ready'));
     expect(sv, contains('intermediate_my_sub_struct_valid'));
+  });
+
+  test('typed clone permits field names derived from the renamed parent', () {
+    final source = VariousNamingStruct();
+    final cloned = source.cloneTyped(name: 'renamed');
+
+    expect(cloned.elements[1].name, 'reserved_renamed');
+    expect(sameDeclaredPayloadShape(source, cloned), isFalse);
+  });
+
+  test('typed input permits parent-derived names at nested levels', () {
+    final source = NestedParentNamingStruct();
+    final input = NamingInputModule(source).input('dataIn') as LogicStructure;
+    final nested = input.elements.single as VariousNamingStruct;
+    expect(nested.name, 'child_dataIn');
+    expect(nested.elements[1].name, 'reserved_child_dataIn');
   });
 
   group('clone', () {

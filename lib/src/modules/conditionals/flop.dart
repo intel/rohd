@@ -102,7 +102,7 @@ class FlipFlop<LogicType extends Logic> extends Module {
       );
     }
 
-    if (LogicType == Logic || d is! LogicStructure) {
+    if (outputSchema is! LogicStructure) {
       return _ScalarFlipFlop<LogicType>(
         clk,
         d,
@@ -436,18 +436,20 @@ class _StructuredFlipFlop<LogicType extends Logic> extends FlipFlop<LogicType> {
     );
 
     final structuredQ = q as LogicStructure;
-    final structuredD = localD as LogicStructure;
     var offset = 0;
     for (var index = 0; index < structuredQ.leafElements.length; index++) {
       final leaf = structuredQ.leafElements[index];
       final width = leaf.width;
+      final leafData = localD is LogicStructure
+          ? localD.leafElements[index]
+          : localD.getRange(offset, offset + width);
       final leafResetValue = localResetValue != null
           ? localResetValue.getRange(offset, offset + width)
           : constantResetValue?.getRange(offset, offset + width);
       leaf <=
           flop<Logic>(
             localClock,
-            structuredD.leafElements[index],
+            leafData,
             en: localEnable,
             reset: localReset,
             resetValue: leafResetValue,

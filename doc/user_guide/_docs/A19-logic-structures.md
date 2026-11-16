@@ -37,9 +37,11 @@ nested typed arrays. A mux uses its `d0` operand as the default output
 prototype. Both operands must have matching concrete types and recursive
 geometry: field widths, array dimensions, packing hints, and leaf structure.
 Pass an `outputGenerator` to `Mux`, `FlipFlop`, `mux`, `flop`, or `cases` to
-select a different result representation. `Passthrough` always preserves its
-input representation; create and connect an explicit destination when another
-representation is needed.
+select a different result representation. A `FlipFlop<Logic>` with a structured
+output generator preserves that structure, including unpacked arrays, with
+either a compatible structured input or a packed input bridge. `Passthrough`
+always preserves its input representation; create and connect an explicit
+destination when another representation is needed.
 
 These operations can consume a structure containing `Const` leaves when its
 `clone()` implementation returns the same concrete structure type with
@@ -112,6 +114,14 @@ clone, while `Const.namedTyped()` is rejected because a named alias uses an
 ordinary `Logic` representation; use `Const.named()` when a named connected
 alias is intended. Use `Logic.from(constant)` when a plain-`Logic`
 source is needed for a materializing operation.
+
+`cloneTyped`, `Module.addTypedInput`, and `Module.addTypedInOut` reject clones
+that change declared runtime types, including nested types, or recursive shape.
+Shape includes structure fields, array dimensions and codecs, and enum mappings. Signals with
+additional semantic formats can implement `PayloadShapeMetadata`; its stable
+identifier must be equal exactly when those formats are compatible. Clones must
+preserve that identifier, including on nested fields. Field names derived from
+their parent structure's name may change when the parent is renamed.
 
 ## Using `LogicStructure` to group signals
 

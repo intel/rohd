@@ -38,6 +38,22 @@ class _SampleStructure extends LogicStructure {
       _SampleStructure(name: name ?? this.name, format: format);
 }
 
+class _NestedSampleStructure extends LogicStructure {
+  final _SampleStructure sample;
+
+  factory _NestedSampleStructure({String? name}) => _NestedSampleStructure._(
+        _SampleStructure(name: 'sample'),
+        name: name ?? 'nestedSample',
+      );
+
+  _NestedSampleStructure._(this.sample, {required String name})
+      : super([sample], name: name);
+
+  @override
+  _NestedSampleStructure clone({String? name}) =>
+      _NestedSampleStructure(name: name ?? this.name);
+}
+
 @immutable
 class _SampleValue {
   final LogicValue value;
@@ -547,8 +563,80 @@ class _TypedInputModule<T extends Logic> extends Module {
   }
 }
 
+class _UnnamedLocalStructuredArray extends Module {
+  _UnnamedLocalStructuredArray(
+      List<int> dimensions, int numUnpackedDimensions) {
+    final values = TypedLogicArray<_SampleStructure, LogicValue>(
+      dimensions,
+      _SampleStructure.new,
+      numUnpackedDimensions: numUnpackedDimensions,
+    );
+    for (final (index, element) in values.arrayElements.indexed) {
+      element <= addInput('input$index', Logic(width: 3), width: 3);
+    }
+    addOutput('packedOut', width: values.width) <= values.packed;
+    addOutput('firstLow') <= values.arrayElements.first.low;
+  }
+}
+
+class _UnnamedLocalNestedStructuredArray extends Module {
+  _UnnamedLocalNestedStructuredArray() {
+    final values = TypedLogicArray<_NestedSampleStructure, LogicValue>(
+      [2],
+      _NestedSampleStructure.new,
+    );
+    for (final (index, element) in values.arrayElements.indexed) {
+      element.sample.low <= addInput('low$index', Logic());
+      element.sample.high <= addInput('high$index', Logic(width: 2), width: 2);
+    }
+    addOutput('packedOut', width: values.width) <= values.packed;
+  }
+}
+
 void main() {
   group('TypedLogicArray', () {
+    for (final dimensions in [
+      [2],
+      [2, 2]
+    ]) {
+      for (var unpacked = 0; unpacked <= dimensions.length; unpacked++) {
+        test('unnamed local structured array $dimensions unpacked=$unpacked',
+            () async {
+          addTearDown(Simulator.reset);
+          final module = _UnnamedLocalStructuredArray(dimensions, unpacked);
+          await module.build();
+          final count = dimensions.reduce((a, b) => a * b);
+          final inputs = {
+            for (var index = 0; index < count; index++)
+              'input$index': 2 * index + 1
+          };
+          final packed = Iterable<int>.generate(count).fold<int>(
+              0, (value, index) => value | ((2 * index + 1) << (3 * index)));
+          final vectors = [
+            Vector(inputs, {'packedOut': packed, 'firstLow': 1}),
+            Vector({for (final key in inputs.keys) key: 0},
+                {'packedOut': 0, 'firstLow': 0}),
+          ];
+          await SimCompare.checkFunctionalVector(module, vectors);
+          SimCompare.checkIverilogVector(module, vectors);
+        });
+      }
+    }
+
+    test('unnamed local array with nested structured fields', () async {
+      addTearDown(Simulator.reset);
+      final module = _UnnamedLocalNestedStructuredArray();
+      await module.build();
+      final vectors = [
+        Vector({'low0': 1, 'high0': 2, 'low1': 0, 'high1': 1},
+            {'packedOut': 0x15}),
+        Vector(
+            {'low0': 0, 'high0': 0, 'low1': 0, 'high1': 0}, {'packedOut': 0}),
+      ];
+      await SimCompare.checkFunctionalVector(module, vectors);
+      SimCompare.checkIverilogVector(module, vectors);
+    });
+
     test('rank zero contains exactly one scalar', () {
       final scalar = TypedLogicArray<Logic, LogicValue>(
         [],

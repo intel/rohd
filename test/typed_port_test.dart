@@ -175,6 +175,117 @@ class StructWithConstAndDriveableClone extends LogicStructure {
       StructWithConstAndDriveableClone._(Logic(), name: name);
 }
 
+class _ConstWithNetClone extends LogicStructure {
+  _ConstWithNetClone(Logic element, {super.name}) : super([element]);
+
+  @override
+  _ConstWithNetClone clone({String? name}) =>
+      _ConstWithNetClone(LogicNet(), name: name);
+}
+
+class _MixedConstantStructure extends LogicStructure {
+  Logic get data => elements[0];
+  Logic get fixedBits => elements[1];
+
+  _MixedConstantStructure(Logic data, Logic fixedBits, {super.name})
+      : super([data, fixedBits]);
+
+  @override
+  _MixedConstantStructure clone({String? name}) => _MixedConstantStructure(
+        Logic(name: 'data', width: 2),
+        Logic(name: 'fixedBits', width: 2),
+        name: name ?? this.name,
+      );
+}
+
+class _FormatSignal extends Logic implements PayloadShapeMetadata {
+  final String format;
+  final String cloneFormat;
+
+  _FormatSignal(this.format, this.cloneFormat, {super.name}) : super(width: 2);
+
+  @override
+  String get payloadShapeMetadata => format;
+
+  @override
+  _FormatSignal clone({String? name}) =>
+      _FormatSignal(cloneFormat, cloneFormat, name: name ?? this.name);
+}
+
+class _FormatNet extends LogicNet implements PayloadShapeMetadata {
+  final String format;
+  final String cloneFormat;
+
+  _FormatNet(this.format, this.cloneFormat, {super.name}) : super(width: 2);
+
+  @override
+  String get payloadShapeMetadata => format;
+
+  @override
+  _FormatNet clone({String? name}) =>
+      _FormatNet(cloneFormat, cloneFormat, name: name ?? this.name);
+}
+
+class _ErasedStructure extends LogicStructure {
+  _ErasedStructure({super.name}) : super([Logic(name: 'field')]);
+
+  @override
+  LogicStructure clone({String? name}) =>
+      LogicStructure([Logic(name: 'field')], name: name);
+}
+
+class _ChangedFieldStructure extends LogicStructure {
+  _ChangedFieldStructure({bool changed = false, super.name})
+      : super([Logic(name: changed ? 'other' : 'field')]);
+
+  @override
+  _ChangedFieldStructure clone({String? name}) =>
+      _ChangedFieldStructure(changed: true, name: name);
+}
+
+enum _CloneState { idle, busy }
+
+class _MisclonedEnumStructure extends LogicStructure {
+  _MisclonedEnumStructure({bool changed = false, super.name})
+      : super([
+          LogicEnum<_CloneState>.withMapping(
+              changed
+                  ? {_CloneState.idle: 1, _CloneState.busy: 0}
+                  : {_CloneState.idle: 0, _CloneState.busy: 1},
+              name: 'state')
+        ]);
+
+  @override
+  _MisclonedEnumStructure clone({String? name}) =>
+      _MisclonedEnumStructure(changed: true, name: name);
+}
+
+class _PreservingInputChild extends Module {
+  Logic get result => output('result');
+  Logic get fixedBits => output('fixedBits');
+
+  _PreservingInputChild(Logic source) {
+    final port = addTypedInput('source', source);
+    final structure = port as _MixedConstantStructure;
+    addOutput('result', width: 4) <= structure;
+    addOutput('fixedBits', width: 2) <= structure.fixedBits;
+  }
+}
+
+class _PreservingInputParent extends Module {
+  _PreservingInputParent(Logic data) {
+    data = addInput('data', data, width: 2);
+    final source = _MixedConstantStructure(
+      data,
+      Const('xz', width: 2),
+      name: 'source',
+    );
+    final child = _PreservingInputChild(source);
+    addOutput('result', width: 4) <= child.result;
+    addOutput('fixedBits', width: 2) <= child.fixedBits;
+  }
+}
+
 class ModuleWithPartialAssignInlineAndOutReuseModule extends Module {
   ModuleWithPartialAssignInlineAndOutReuseModule(MyStruct inp) {
     inp = addTypedInput('inp', inp);
@@ -285,6 +396,83 @@ class _MyStructChildToParentOutput extends Module {
 void main() {
   tearDown(() async {
     await Simulator.reset();
+  });
+
+  test('typed clones and inputs reject nested semantic changes', () {
+    final scalar = _FormatSignal('first', 'second', name: 'field');
+    final nested = LogicStructure([scalar], name: 'nested');
+    expect(scalar.cloneTyped, throwsA(isA<LogicConstructionException>()));
+    expect(nested.cloneTyped, throwsA(isA<LogicConstructionException>()));
+    final module = DummyModule();
+    expect(() => module.addTypedInput<Logic>('dataIn', nested),
+        throwsA(isA<PortTypeException>()));
+    expect(module.inputs, isEmpty);
+    expect(_MisclonedEnumStructure().cloneTyped,
+        throwsA(isA<LogicConstructionException>()));
+    expect(() => module.addTypedInput('stateIn', _MisclonedEnumStructure()),
+        throwsA(isA<PortTypeException>()));
+
+    final Logic erased = _ErasedStructure();
+    expect(erased.cloneTyped, throwsA(isA<LogicConstructionException>()));
+    expect(() => module.addTypedInput('erased', erased),
+        throwsA(isA<PortTypeException>()));
+
+    final valid = _FormatSignal('first', 'first');
+    expect(valid.cloneTyped().payloadShapeMetadata, 'first');
+    expect(
+        module.addTypedInput('validData', valid).payloadShapeMetadata, 'first');
+  });
+
+  test('typed inouts reject semantic changes before registering ports', () {
+    final net = _FormatNet('first', 'second');
+    final module = DummyModule();
+    expect(() => module.addTypedInOut<Logic>('io', net),
+        throwsA(isA<PortTypeException>()));
+    expect(module.inOuts, isEmpty);
+    final valid = _FormatNet('first', 'first');
+    expect(module.addTypedInOut<Logic>('io', valid), isA<_FormatNet>());
+  });
+
+  test('typed clones reject nested declared type erasure', () {
+    final nested = LogicStructure([_ErasedStructure(name: 'member')]);
+    final rawClone = nested.clone();
+    expect(sameDeclaredPayloadShape(nested, rawClone), isTrue);
+    expect(nested.cloneTyped, throwsA(isA<LogicConstructionException>()));
+    expect(() => DummyModule().addTypedInput('dataIn', nested),
+        throwsA(isA<PortTypeException>()));
+
+    var changed = false;
+    final array = TypedLogicArray<Logic, LogicValue>(
+      [2],
+      ({name}) => changed
+          ? LogicStructure([Logic(name: 'field')], name: name)
+          : _ErasedStructure(name: name),
+    );
+    changed = true;
+    expect(array.cloneTyped, throwsA(isA<LogicConstructionException>()));
+    expect(() => DummyModule().addTypedInput('arrayIn', array),
+        throwsA(isA<PortTypeException>()));
+  });
+
+  test('typed clones reject unrelated field name changes', () {
+    final source = _ChangedFieldStructure(name: 'source');
+    expect(() => source.cloneTyped(name: 'renamed'),
+        throwsA(isA<LogicConstructionException>()));
+    expect(() => DummyModule().addTypedInput('dataIn', source),
+        throwsA(isA<PortTypeException>()));
+  });
+
+  test('typed array clones reject changed element formats', () {
+    var changed = false;
+    final array = TypedLogicArray<_FormatSignal, LogicValue>(
+        [2],
+        ({name}) => _FormatSignal(
+            changed ? 'second' : 'first', changed ? 'second' : 'first',
+            name: name));
+    changed = true;
+    expect(array.cloneTyped, throwsA(isA<LogicConstructionException>()));
+    expect(() => DummyModule().addTypedInput('dataIn', array),
+        throwsA(isA<PortTypeException>()));
   });
 
   test('simple struct module', () async {
@@ -437,7 +625,7 @@ void main() {
           failed = true;
         }
 
-        expect(failed, portType == 'inOut');
+        expect(failed, portType == 'inOut' || portType == 'input');
       });
     }
 
@@ -448,6 +636,79 @@ void main() {
       expect(input, isA<StructWithConstAndDriveableClone>());
       expect(input.hasConsts, isFalse);
       expect(input.data.value, LogicValue.one);
+    });
+  });
+
+  group('structure-preserving typed inputs', () {
+    test('preserves by default and supports explicit flattening', () {
+      final source = StructWithConstAndDriveableClone.constant();
+      final flattened = DummyModule().addTypedInput<Logic>('p', source,
+          preserveStructuredConstants: false);
+      final module = DummyModule();
+      final preserved = module.addTypedInput<Logic>('p', source);
+
+      expect(flattened, isNot(isA<LogicStructure>()));
+      expect(preserved, isA<StructWithConstAndDriveableClone>());
+      expect((preserved as LogicStructure).hasConsts, isFalse);
+      expect(preserved.value, LogicValue.one);
+      expect(module.input('p'), same(preserved));
+      expect(module.inputSource('p'), same(source));
+      final typed = DummyModule().addTypedInput('p', source);
+      expect(typed, isA<StructWithConstAndDriveableClone>());
+    });
+
+    test('retains existing behavior for ordinary inputs and scalar constants',
+        () {
+      final signal = Logic(width: 2);
+      final signalModule = DummyModule();
+      final signalPort = signalModule.addTypedInput('p', signal);
+      expect(signalPort.width, 2);
+      expect(signalModule.inputSource('p'), same(signal));
+
+      final structure = MyStruct();
+      final preserved = DummyModule().addTypedInput<Logic>('p', structure);
+      expect(preserved, isA<MyStruct>());
+
+      final scalar = DummyModule().addTypedInput<Logic>('p', Const(1));
+      expect(scalar, isNot(isA<Const>()));
+      expect(scalar.value, LogicValue.one);
+      expect(
+        () => DummyModule().addTypedInput('p', Const(1)),
+        throwsA(isA<PortTypeException>()),
+      );
+    });
+
+    test('rejects constant-containing clones that are not driveable', () {
+      expect(
+        () => DummyModule().addTypedInput<Logic>('p', StructWithConst()),
+        throwsA(isA<PortTypeException>()),
+      );
+      expect(
+        () => DummyModule()
+            .addTypedInput<Logic>('p', _ConstWithNetClone(Const(1))),
+        throwsA(isA<PortTypeException>()),
+      );
+    });
+
+    test('rejects constant-containing structures with nets', () {
+      final source = LogicStructure([Const(1), LogicNet()]);
+      expect(
+        () => DummyModule().addTypedInput<Logic>('p', source),
+        throwsA(isA<PortTypeException>()),
+      );
+    });
+
+    test('preserves mixed constant fields through a child with X and Z',
+        () async {
+      final module = _PreservingInputParent(Logic(width: 2));
+      await module.build();
+      final vectors = [
+        Vector({'data': '00'}, {'result': 'xz00', 'fixedBits': 'xz'}),
+        Vector({'data': '11'}, {'result': 'xz11', 'fixedBits': 'xz'}),
+        Vector({'data': 'zx'}, {'result': 'xzzx', 'fixedBits': 'xz'}),
+      ];
+      await SimCompare.checkFunctionalVector(module, vectors);
+      SimCompare.checkIverilogVector(module, vectors);
     });
   });
 
