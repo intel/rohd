@@ -396,7 +396,7 @@ void main() {
     final cloned = source.cloneTyped(name: 'renamed');
 
     expect(cloned.elements[1].name, 'reserved_renamed');
-    expect(sameDeclaredPayloadShape(source, cloned), isFalse);
+    expect(sameRohdPayloadShape(source, cloned), isFalse);
   });
 
   test('typed input permits parent-derived names at nested levels', () {

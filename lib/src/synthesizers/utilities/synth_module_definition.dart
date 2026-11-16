@@ -2768,6 +2768,29 @@ class SynthModuleDefinition {
     final assignmentsBySource =
         _assignmentsBy(assignments, (assignment) => assignment.src.resolved);
     final submoduleSignalUses = _submoduleSignalUseIndex();
+    // Keep slice helpers for arrays consumed by concatenations: later pruning
+    // relies on their original connections to retain the concatenation.
+    final concatInputs = <SynthLogic>[
+      for (final instantiation in subModuleInstantiations)
+        if (instantiation.needsInstantiation && instantiation.module is Concat)
+          ...instantiation.inputMapping.values,
+    ];
+    final concatenatedArrays = <SynthLogic>{};
+    final visited = <SynthLogic>{};
+    while (concatInputs.isNotEmpty) {
+      final signal = concatInputs.removeLast().resolved;
+      if (!visited.add(signal)) {
+        continue;
+      }
+      if (signal is SynthLogicArrayElement) {
+        concatenatedArrays.add(_arrayRoot(signal));
+        continue;
+      }
+      for (final driver
+          in assignmentsByDestination[signal] ?? const <SynthAssignment>[]) {
+        concatInputs.add(driver.src);
+      }
+    }
     final knownSourceRanges = {
       for (final entry in busSubsetRanges.entries) entry.key: entry.value.range,
     };
@@ -2794,6 +2817,7 @@ class SynthModuleDefinition {
 
       final dst = assignment.dst.resolved;
       if (dst.width <= 1 ||
+          concatenatedArrays.contains(_arrayRoot(dst)) ||
           dst.logics.any((logic) => logic is BaseLogicArray)) {
         updatedAssignments.add(assignment);
         continue;

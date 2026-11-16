@@ -623,6 +623,55 @@ class WideTemporarySliceToArrayWords extends Module {
   }
 }
 
+class _LocalArrayTransform extends Module {
+  late final TypedLogicArray<Logic, LogicValue> result;
+
+  _LocalArrayTransform(Logic input, Logic clk, Logic reset, Logic enable,
+      TypedLogicArray<Logic, LogicValue> output,
+      {required bool reverse, required bool explicitConcat}) {
+    final source = addInput('source', input, width: 16);
+    final clock = addInput('clk', clk);
+    final resetPort = addInput('reset', reset);
+    final enabled = addInput('enable', enable);
+    final localInput = Logic(width: 16)..gets(source);
+    final array = output.cloneTyped();
+    for (var index = 0; index < 2; index++) {
+      final sourceIndex = reverse ? 1 - index : index;
+      array.arrayElements[index] <=
+          localInput.getRange(sourceIndex * 8, sourceIndex * 8 + 8);
+    }
+    final stored = Logic(name: 'stored_data', width: 16);
+    Sequential(clock, reset: resetPort, [
+      If(enabled, then: [
+        stored < (explicitConcat ? array.leafElements.rconcat() : array.packed)
+      ])
+    ]);
+    result = addTypedOutput('result', output.cloneTyped);
+    for (var index = 0; index < 2; index++) {
+      result.arrayElements[index] <= stored.getRange(index * 8, index * 8 + 8);
+    }
+  }
+}
+
+class _LocalArrayTransformTop extends Module {
+  _LocalArrayTransformTop(
+      {required bool reverse,
+      required bool explicitConcat,
+      required bool unpacked}) {
+    final input = addInput('data', Logic(width: 16), width: 16);
+    final clk = addInput('clk', Logic());
+    final reset = addInput('reset', Logic());
+    final enable = addInput('enable', Logic());
+    final schema = TypedLogicArray<Logic, LogicValue>(
+        [2], ({name}) => Logic(width: 8, name: name),
+        name: 'lanes', numUnpackedDimensions: unpacked ? 1 : 0);
+    final child = _LocalArrayTransform(input, clk, reset, enable, schema,
+        reverse: reverse, explicitConcat: explicitConcat);
+    addOutput('out0', width: 8) <= child.result.arrayElements[0];
+    addOutput('out1', width: 8) <= child.result.arrayElements[1];
+  }
+}
+
 /// Uses a manually-created array with a subset-like name.
 class ManualSubsetNamedArrayRangeAssignment extends Module {
   ManualSubsetNamedArrayRangeAssignment()
@@ -2474,6 +2523,49 @@ void main() {
   tearDown(() async {
     await Simulator.reset();
   });
+
+  for (final unpacked in [false, true]) {
+    for (final reverse in [false, true]) {
+      for (final explicitConcat in [false, true]) {
+        test(
+            'local array slices survive concatenation '
+            'unpacked=$unpacked reverse=$reverse concat=$explicitConcat',
+            () async {
+          final dut = _LocalArrayTransformTop(
+              reverse: reverse,
+              explicitConcat: explicitConcat,
+              unpacked: unpacked);
+          await dut.build();
+          final low = LogicValue.ofString('10xz0101');
+          final high = LogicValue.ofString('1z0x1100');
+          final output = {
+            'out0': reverse ? high : low,
+            'out1': reverse ? low : high,
+          };
+          final vectors = [
+            Vector({
+              'clk': 0,
+              'reset': 1,
+              'enable': 0,
+              'data': 0,
+            }, {}),
+            Vector({'clk': 1}, {}),
+            Vector({
+              'clk': 0,
+              'reset': 0,
+              'enable': 1,
+              'data': LogicValue.ofString('1z0x110010xz0101'),
+            }, {}),
+            Vector({'clk': 1}, output),
+            Vector({'clk': 0, 'enable': 0, 'data': 0}, output),
+            Vector({'clk': 1}, output),
+          ];
+          await SimCompare.checkFunctionalVector(dut, vectors);
+          SimCompare.checkIverilogVector(dut, vectors);
+        });
+      }
+    }
+  }
 
   test('packed child output split maps seven bits and one bit directly',
       () async {

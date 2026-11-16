@@ -28,10 +28,20 @@ bool hasDeclaredPayloadShape(Logic signal) =>
 ///
 /// [ignoreConstantNames] permits a constant leaf's generated name to differ
 /// from the corresponding driveable clone.
-bool sameDeclaredPayloadShape(Logic template, Logic source,
+bool sameRohdPayloadShape(Logic template, Logic source,
         {bool ignoreConstantNames = false}) =>
     _sameDeclaredPayloadShape(template, source,
         ignoreConstantNames: ignoreConstantNames, allowParentRenaming: false);
+
+/// Compatibility alias for direct imports of the internal signals library.
+///
+/// The public `package:rohd/rohd.dart` API exports [sameRohdPayloadShape]
+/// instead, to avoid collisions with downstream libraries.
+@Deprecated('Use sameRohdPayloadShape instead.')
+bool sameDeclaredPayloadShape(Logic template, Logic source,
+        {bool ignoreConstantNames = false}) =>
+    sameRohdPayloadShape(template, source,
+        ignoreConstantNames: ignoreConstantNames);
 
 bool _sameDeclaredPayloadShape(Logic template, Logic source,
     {required bool ignoreConstantNames, required bool allowParentRenaming}) {

@@ -20,7 +20,8 @@ export 'src/interfaces/interfaces.dart';
 export 'src/module.dart';
 export 'src/modules/modules.dart';
 export 'src/selection.dart';
-export 'src/signals/signals.dart' hide BaseLogicArray, LogicDef;
+export 'src/signals/signals.dart'
+    hide BaseLogicArray, LogicDef, sameDeclaredPayloadShape;
 export 'src/simulator.dart';
 export 'src/synthesizers/synthesizers.dart';
 export 'src/synthesizers/systemverilog/system_verilog_service.dart';
