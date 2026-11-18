@@ -16,6 +16,29 @@ When connecting an `Interface` to a `Module`, you should always create a new ins
 
 The `connectIO` function under the hood calls `addInput` and `addOutput` directly on the `Module` and connects those `Module` ports to the correct ports on the `Interface`s.  Connection is based on signal names.  You can use the `uniquify` Function argument in `connectIO` to uniquify inputs and outputs in case you have multiple instances of the same `Interface` connected to your module.
 
+Interfaces may opt individual payload ports into schema-aware registration:
+
+```dart
+@override
+Map<String, TypedInterfacePortPolicy> get typedPayloadPorts => {
+  'data': TypedInterfacePortPolicy.packedBridge,
+};
+```
+
+Keys are the interface's registered port names, before `uniquify` is applied.
+`matching` requires equal declared shapes; `packedBridge` also permits an
+equal-width plain packed endpoint. If both endpoints declare shapes, they must
+match even under `packedBridge`. Set `ignoreConstantPayloadNames` to `true`
+when constant leaf names should not prevent a match. Only selected tags are
+registered, and typed inOut endpoints must both be nets.
+
+The policy applies to ordinary `connectIO` and its flat registration helpers,
+not the experimental grouped structured-port API below. Validation occurs at
+construction time and does not itself generate hardware; registration still
+creates the required ports and connections. Components relating several
+payloads should compare all declared schemas directly: two different schemas
+can each be compatible with the same plain packed bridge.
+
 `Module` has functions called `addInterfacePorts` and `addPairInterfacePorts` which register an `Interface` (or `PairInterface` for a given `PairRole`) on the `Module` and return the "internal" copy of the interface to use within the `Module`. For these to work, all `Interface`s must implement a `clone()` method so that an internal copy can be created. Prefer these over calling `connectIO` or `pairConnectIO` directly so that module code does not depend on how interface ports are laid out.
 
 When the internal interface should intentionally be a different object or type than a clone of the external one, use `addInterfaceFrom` or `addPairInterfaceFrom`, which register a provided target against the source and return that target.

@@ -1644,6 +1644,16 @@ void main() {
     });
   });
   group('Utility operations', () {
+    test('log2Ceil preserves width and four-state semantics', () {
+      expect(LogicValue.ofInt(0, 8).log2Ceil, LogicValue.ofInt(0, 8));
+      expect(LogicValue.ofInt(8, 8).log2Ceil, LogicValue.ofInt(3, 8));
+      expect(LogicValue.ofInt(9, 8).log2Ceil, LogicValue.ofInt(4, 8));
+      expect(LogicValue.ofBigInt(BigInt.one << 100, 128).log2Ceil,
+          LogicValue.ofInt(100, 128));
+      expect(LogicValue.ofString('10x0').log2Ceil, LogicValue.ofString('xxxx'));
+      expect(LogicValue.ofString('10z0').log2Ceil, LogicValue.ofString('xxxx'));
+    });
+
     test('clog2 operation', () {
       expect(LogicValue.ofInt(15, INT_BITS).clog2().toInt(), 4);
       expect(LogicValue.ofInt(16, INT_BITS).clog2().toInt(), 4);

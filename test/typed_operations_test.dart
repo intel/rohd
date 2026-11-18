@@ -37,6 +37,17 @@ class _ScalarDomainLogic extends Logic {
       _ScalarDomainLogic(schema: schema, name: name ?? this.name);
 }
 
+class _FormattedLogic extends Logic implements PayloadShapeMetadata {
+  @override
+  final String payloadShapeMetadata;
+
+  _FormattedLogic(this.payloadShapeMetadata, {super.name}) : super(width: 4);
+
+  @override
+  _FormattedLogic clone({String? name}) =>
+      _FormattedLogic(payloadShapeMetadata, name: name ?? this.name);
+}
+
 enum _OperationEnum { idle, active, done }
 
 class _DomainPacket extends LogicStructure {
@@ -1144,6 +1155,20 @@ void main() {
     expect(
       Mux<Logic>(Logic(), secondArray.packed, firstArray.packed).out,
       isA<Logic>(),
+    );
+  });
+
+  test('semantic payload checks do not change existing operator defaults', () {
+    final first = _FormattedLogic('first');
+    final second = _FormattedLogic('second');
+    final select = Logic();
+    expect(rohdPayloadsCompatible([first, second]), isFalse);
+    expect(mux(Const(1), first, second), same(first));
+    expect(() => Mux<Logic>(select, first, second), returnsNormally);
+    expect(() => cases<Logic>(select, {0: first, 1: second}), returnsNormally);
+    expect(
+      () => FlipFlop<Logic>(Logic(), first, reset: Logic(), resetValue: second),
+      returnsNormally,
     );
   });
 
