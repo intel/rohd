@@ -33,6 +33,31 @@ bool sameRohdPayloadShape(Logic template, Logic source,
     _sameDeclaredPayloadShape(template, source,
         ignoreConstantNames: ignoreConstantNames, allowParentRenaming: false);
 
+/// Whether all [payloads] are pairwise compatible through packed bridges.
+///
+/// Every pair must have equal width. Two declared shapes must also match;
+/// a plain [Logic] may bridge a declared shape of the same width. Compatibility
+/// through a bridge is not transitive, so all declared shapes are compared.
+/// [ignoreConstantNames] has the same meaning as in [sameRohdPayloadShape].
+bool rohdPayloadsCompatible(Iterable<Logic> payloads,
+    {bool ignoreConstantNames = false}) {
+  final values = payloads.toList();
+  for (var i = 0; i < values.length; i++) {
+    for (var j = i + 1; j < values.length; j++) {
+      final first = values[i];
+      final second = values[j];
+      if (first.width != second.width ||
+          (hasDeclaredPayloadShape(first) &&
+              hasDeclaredPayloadShape(second) &&
+              !sameRohdPayloadShape(first, second,
+                  ignoreConstantNames: ignoreConstantNames))) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
 /// Compatibility alias for direct imports of the internal signals library.
 ///
 /// The public `package:rohd/rohd.dart` API exports [sameRohdPayloadShape]

@@ -413,6 +413,24 @@ void main() {
         isFalse);
   });
 
+  test('payload sets compare declared formats across packed bridges', () {
+    final first = _FormatSignal('first', 'first');
+    final matching = _FormatSignal('first', 'first');
+    final second = _FormatSignal('second', 'second');
+    final bridge = Logic(width: 2);
+    expect(rohdPayloadsCompatible([first, bridge, matching]), isTrue);
+    expect(rohdPayloadsCompatible([first, bridge, second]), isFalse);
+    expect(rohdPayloadsCompatible([bridge, first, second]), isFalse);
+    expect(rohdPayloadsCompatible([first, Logic(width: 3)]), isFalse);
+    final constant = LogicStructure([Const(1)]);
+    final driveable = LogicStructure([Logic(name: 'field')]);
+    expect(rohdPayloadsCompatible([constant, driveable]), isFalse);
+    expect(
+        rohdPayloadsCompatible([constant, driveable],
+            ignoreConstantNames: true),
+        isTrue);
+  });
+
   test('typed clones and inputs reject nested semantic changes', () {
     final scalar = _FormatSignal('first', 'second', name: 'field');
     final nested = LogicStructure([scalar], name: 'nested');

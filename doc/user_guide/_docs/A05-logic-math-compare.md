@@ -32,3 +32,10 @@ a_gte_b   <=  a.gte(b) // greater than or equal
 a_gte_b   <=  (a >= b) // greater than or equal (alt) NOTE: careful with order of operations, >= needs parentheses in this case
 answer    <=  mux(selectA, a, b) // answer = selectA ? a : b
 ```
+
+For elaboration-time non-negative Dart `int` and `BigInt` values, the ROHD
+extensions provide `log2Ceil` and `log2Floor` getters. A `LogicValue` instead
+has a `log2Ceil` getter (also available as `clog2()`) that interprets the bits
+as unsigned and returns a same-width `LogicValue`, or all `x` for an invalid
+input. Both integer and value-domain ceiling operations return zero for zero.
+These helpers are not synthesizable `Logic` operations.

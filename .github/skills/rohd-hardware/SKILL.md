@@ -30,18 +30,16 @@ composing `Module` subclasses that have typed ports (`Logic`, `LogicArray`,
 | ---------------- | ------------------------------------- | ----------------- |
 | `Logic`          | Single wire/bus, fixed width          | `logic [N-1:0]`   |
 | `LogicValue`     | Immutable 4-state value (0,1,x,z)     | —---------------- |
-| `LogicArray`     | Multi-dimensional array of `Logic`    | unpacked array    |
+| `LogicArray`     | Multi-dimensional array of `Logic`    | packed or unpacked array |
 | `TypedLogicArray<T, V>` | Array with a concrete hardware element type `T` and semantic value type `V` | typed packed/unpacked array |
-| `LogicStructure` | Named bundle of heterogeneous signals | struct            |
+| `LogicStructure` | Named bundle of heterogeneous signals | packed bits       |
 | `Interface`      | Directional port bundle with tags     | interface/modport |
 | `LogicNet`       | Net-type for multi-driver/tri-state   | `wire`/`tri`      |
 
-Payload structures should describe data semantics, not transport. Use names
-such as `Frame<T>`, `CountedFrame<T>`, `MaskedLanes<T>`, `CompactedLanes<T>`,
-`Tagged<T>`, and `PoolRequest<T>`, then wrap the payload in
-`ReadyValidInterface<T>`, `CreditInterface<T>`, or direct scheduled ports.
-Do not prefix a `LogicStructure` with `ReadyValid` unless the structure itself
-actually contains ready/valid transport semantics.
+Payload structures should describe data semantics rather than transport.
+Represent repeated heterogeneous payloads with typed arrays where appropriate.
+For reusable components and protocol-specific guidance, consult ROHD-HCL's
+`rohd-hcl-components` skill when available.
 
 ### Signal assignment operators
 
@@ -49,8 +47,8 @@ actually contains ready/valid transport semantics.
 | --------     | ----------------------------------- | ----------------------------------------- |
 | `<=`         | Outside `_Always` blocks            | Continuous connection (`gets`)            |
 | `<`          | Inside `Combinational`/`Sequential` | Conditional assignment                    |
-| `.inject(v)` | Test code only                      | Force a value without hardware connection |
-| `.put(v)`    | Simulation actions                  | Drive a value at a simulation timestamp   |
+| `.inject(v)` | Test stimulus                       | Schedule a value in the current simulator tick |
+| `.put(v)`    | Simulation behavior/actions         | Immediately propagate a value |
 
 ---
 
@@ -121,15 +119,14 @@ this.sample = addTypedInput('sample', sample);
 
 ### 2.4 Driving `LogicArray` outputs
 
-**Always drive element-by-element**, never via `concat()`:
+Whole-array assignment is supported when packed widths match. For typed or
+unpacked arrays, preserve the declared shape when the interface contract
+requires it; assign individual elements when composing different sources.
+Use `packed` or `concat()` deliberately when bit-vector behavior is intended,
+not as a substitute for validating typed layouts.
 
 ```dart
-// CORRECT — preserves array structure in synthesis
-outputArray.elements.forEachIndexed((i, d) =>
-    d <= flop(clk, reset: reset, en: enable & count.eq(i), serialized));
-
-// WRONG — flattens the array
-outputArray <= [...].concat();
+outputArray <= inputArray;
 ```
 
 ### 2.5 Typed ports and typed arrays
@@ -255,45 +252,26 @@ parentAvailable <= child.available; // child output: valid boundary crossing
 #### Interfaces and composition
 
 `addInterfacePorts`, `addPairInterfacePorts`, and `addPairInterfaceFrom`
-create or return an **internal connected clone**. That clone is for the module
-implementation
-only. Keep it private:
-
-```dart
-late final ReadyValidInterface<Payload> _upstream;
-
-_upstream = addPairInterfacePorts(
-  upstream,
-  PairRole.consumer,
-  uniquify: (original) => 'upstream_$original',
-);
-```
+create or return an **internal connected clone**. Keep it private to the module
+implementation.
 
 Do not publish the clone as a public hardware field. Callers already own the
 external interface passed to the constructor.
 
-Prefer the repository's `addInterfacePorts`/`addPairInterfacePorts` helper
-seam over
-calling `connectIO` or `pairConnectIO` directly. Direct calls are appropriate
+Prefer `addInterfacePorts`/`addPairInterfacePorts` over calling `connectIO` or
+`pairConnectIO` directly. Direct calls are appropriate
 only inside the helper implementation or when a documented exceptional
 retyping pattern cannot use `addPairInterfaceFrom`.
 
 When composing children, create the connecting interface in the parent and
-pass that same parent-owned interface to both children:
-
-```dart
-final link = ReadyValidInterface(Payload(name: 'linkPayload'));
-Producer(clk: clk, reset: reset, downstream: link);
-Consumer(clk: clk, reset: reset, upstream: link);
-```
-
-Never connect children by reading `producer.downstream`,
+pass that same parent-owned interface to both children. Never connect children
+by reading `producer.downstream`,
 `consumer.upstream`, or another child field unless that field is an actual
 module output getter backed by `output(...)`.
 
 #### Child-signal audit before protocol debugging
 
-Before debugging ready/valid timing, list every `child.member` used by the
+Before debugging protocol timing, list every `child.member` used by the
 parent and verify:
 
 1. Parent reads only child outputs or the parent's own connecting interface.
@@ -301,40 +279,42 @@ parent and verify:
 3. Every child output getter is backed by `addOutput`, `addTypedOutput`,
    `addOutputArray`, or an output interface port.
 4. Connected interface clones and child-internal registers are private.
-5. No `rohd_hierarchy/non_port_public_hardware` diagnostic is suppressed.
+5. If the ROHD hierarchy analyzer is enabled, investigate any
+   `rohd_hierarchy/non_port_public_hardware` diagnostic.
 
 If any item fails, fix ownership first. Do not try to solve the resulting trace
-error by changing ready/valid equations.
+error by changing protocol equations.
 
 ### 2.8 Count and index width safety
 
-Keep zero-based indices and cardinality counts conceptually separate:
-
-- An index over `N` entries represents `0` through `N - 1`; use
-  `indexWidthForCount(N)`.
-- A count for up to `N` entries represents `0` through `N`; use
-  `countWidthForMaximum(N)`.
-- Do not use `log2Ceil(N)` for a count that may equal `N`. It wraps to zero
-  when `N` is a power of two.
-
-When deriving a one-based count from a zero-based index, extend the index to
-the count width **before** adding one:
+Keep zero-based indices and cardinality counts conceptually separate. For a
+positive Dart `int` capacity `n`, ROHD exports `n.log2Ceil` and Dart provides
+`n.bitLength`:
 
 ```dart
-completedCount < oneBasedCountFromIndex(
-  index,
-  countWidth: completedCount.width,
-);
+final indexWidth = max(1, n.log2Ceil); // indices 0 through n - 1
+final countWidth = max(1, n.bitLength); // counts 0 through n
 ```
 
-Do not write `completedCount < index + 1`: ROHD sizes the addition from the
+Import `dart:math` for `max` and validate that `n` is positive. Both integer
+helpers produce zero for zero; the example deliberately uses a minimum
+one-bit port. `n.log2Ceil` alone cannot represent a count equal to `n` when
+`n` is a power of two. For a four-state `LogicValue`, `value.log2Ceil` returns
+a same-width `LogicValue` and propagates invalid bits as `x`; `value.clog2()`
+is an equivalent, non-deprecated method. These are value-domain operations,
+not synthesizable `Logic` operators. Check the ROHD version when using the
+newer getter.
+
+When deriving a one-based count from a zero-based index, extend the index to
+the count width **before** adding one. Do not write
+`completedCount < index + 1`: ROHD sizes the addition from the
 index expression, so the full count may truncate before assignment or fail
 port-width validation.
 
 Count-bearing payload consumers must reject fields too narrow for every legal
 value when the protocol permits a full-capacity count. Arithmetic that combines
-counts, credits, occupancy, or accepted-lane totals should use an explicitly
-extended intermediate width and narrow only after bounds have been enforced.
+counts should use an explicitly extended intermediate width and narrow only
+after bounds have been enforced.
 
 Every count-bearing component must test capacities `1`, `2`, and at least one
 larger power of two. The test must reach the exact full count, not merely
@@ -379,7 +359,8 @@ Sequential(clk, reset: reset, [
 ```
 
 Signals assigned with `<` inside `Sequential` are automatically flopped.
-Unassigned signals hold their previous value (implicit latch).
+When a conditional branch does not assign a signal, its register holds its
+previous value; this is not a combinational latch.
 
 ### 3.3 Pipeline
 
@@ -414,7 +395,6 @@ stateOut <= _fsm.currentState.zeroExtend(stateOut.width);
 | --- | --- |
 | `x <= mux(sel, a, b)` | Simple 2-input select |
 | `x <= flop(clk, data)` | Simple register |
-| `condFlop(clk?, d)` | Optional pipeline stage |
 | `a & b`, `a \| b`, `~a` | Logic gates |
 | `a + b`, `a * b`, `a - b` | Arithmetic |
 | `a.eq(b)`, `a.lt(b)` | Comparison |
@@ -456,39 +436,33 @@ final isNormal = exponent.neq(zero).named('isNormal', naming: Naming.mergeable);
 
 ```dart
 class FilterSample extends LogicStructure {
-  late final Logic data;
-  late final Logic valid;
+  final int dataWidth;
+  Logic get data => elements[0];
+  Logic get valid => elements[1];
 
-  FilterSample({int dataWidth = 16, String? name})
+  FilterSample({this.dataWidth = 16, String? name})
       : super([
           Logic(name: 'data', width: dataWidth),
           Logic(name: 'valid'),
-        ], name: name ?? 'filter_sample') {
-    data = elements[0];
-    valid = elements[1];
-  }
-```
+        ], name: name ?? 'filter_sample');
 
-### 4.2 Required: `clone()`
-
-```dart
   @override
-  FilterSample clone({String? name}) => FilterSample._clone(
-        elements.map((e) => e.clone(name: e.name)),
+  FilterSample clone({String? name}) => FilterSample(
+        dataWidth: dataWidth,
         name: name ?? this.name,
       );
+}
 ```
 
-### 4.3 Always name structures
+### 4.2 Name structures
 
-Unnamed structures produce `_st_null_fieldName` in SystemVerilog.
-**Always pass a meaningful `name:` parameter.**
+Use meaningful names when they improve generated hardware and debugging.
 
-### 4.4 Derived properties as `late final`
+### 4.3 Derived properties as `late final`
 
 ```dart
-late final Logic hasData = valid & data.or()
-    .named('hasData', naming: Naming.mergeable);
+late final Logic hasData =
+    (valid & data.or()).named('hasData', naming: Naming.mergeable);
 ```
 
 Creates hardware once, provides stable `Logic` reference.
@@ -499,26 +473,27 @@ Creates hardware once, provides stable `Logic` reference.
 
 ```dart
 class MyInterface extends Interface<MyPortTag> {
+  final int width;
   Logic get dataIn => port('dataIn');
   Logic get dataOut => port('dataOut');
 
-  MyInterface({int width = 8}) {
+  MyInterface({this.width = 8}) {
     setPorts([Logic.port('dataIn', width)], [MyPortTag.input]);
     setPorts([Logic.port('dataOut', width)], [MyPortTag.output]);
   }
 
   @override
-  MyInterface clone() => MyInterface(width: _width);
+  MyInterface clone() => MyInterface(width: width);
 }
 ```
 
-Connect with:
+With an enum `MyPortTag` containing `input` and `output`, register the
+interface inside a module with:
 
 ```dart
-intf = MyInterface(width: dataWidth)
-  ..connectIO(this, srcIntf,
-      inputTags: [MyPortTag.input],
-      outputTags: [MyPortTag.output]);
+intf = addInterfacePorts(srcIntf,
+    inputTags: {MyPortTag.input},
+    outputTags: {MyPortTag.output});
 ```
 
 The connected `intf` object above is internal implementation state and should
@@ -531,43 +506,46 @@ normally be private. The source interface remains the caller-visible API.
 ### 6.1 Test file structure
 
 ```dart
-import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
+import 'package:rohd/rohd.dart';
 
 void main() {
   tearDown(() async {
     await Simulator.reset();
   });
 
-  test('descriptive name of what is being tested', () async {
-    // 1. Build DUT
-    final dut = MyModule(inputSignal, width: 8);
+  test('passes data through', () async {
+    final input = Logic(width: 8);
+    final dut = MyModule(input); // MyModule from section 2.1
     await dut.build();
-
-    // 2. Configure simulation
-    Simulator.setMaxSimTime(2000);
-    unawaited(Simulator.run());
-
-    // 3. Stimulus + checks
-    inputSignal.inject(42);
-    await clk.nextPosedge;
-    expect(dut.result.value.toInt(), equals(42));
-
-    await Simulator.endSimulation();
+    input.put(42);
+    expect(dut.result.value.toInt(), 42);
   });
 }
 ```
 
 ### 6.2 SimCompare — multi-backend vector testing
 
-`SimCompare` runs the same stimulus vectors against multiple backends:
-ROHD functional simulation and Icarus Verilog.
+ROHD's internal test utility `SimCompare` checks the same vectors across its
+default backends: ROHD simulation, Icarus Verilog, and SystemC. Availability
+and requirements differ by backend; inspect reported skips and exclusions.
+The utility is a `src` import, not part of ROHD's public API.
 
 ```dart
+import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
+import 'package:test/test.dart';
 
-test('simcompare myModule', () async {
-  final dut = MyModule(Logic(width: 8), Logic(width: 8));
+class SumModule extends Module {
+  SumModule(Logic a, Logic b) {
+    a = addInput('a', a, width: a.width);
+    b = addInput('b', b, width: b.width);
+    addOutput('result', width: a.width) <= a + b;
+  }
+}
+
+test('simcompare sum', () async {
+  final dut = SumModule(Logic(width: 8), Logic(width: 8));
   await dut.build();
 
   final vectors = [
@@ -576,11 +554,7 @@ test('simcompare myModule', () async {
     Vector({'a': 255, 'b': 1}, {'result': 0}),  // overflow wraps
   ];
 
-  // Functional simulation (always available)
-  await SimCompare.checkFunctionalVector(dut, vectors);
-
-  // Icarus Verilog (requires iverilog installed)
-  SimCompare.checkIverilogVector(dut, vectors);
+  await SimCompare.checkVectors(dut, vectors);
 });
 ```
 
@@ -593,16 +567,15 @@ exercise every boundary direction by connecting:
 
 - parent inputs to DUT inputs;
 - DUT outputs into parent outputs or parent logic; and
-- ready/valid interfaces through parent-owned interface instances.
+- interfaces through parent-owned interface instances.
 
 For interface-heavy modules, also verify each external direction appears in
 the harnessed DUT's `inputs` or `outputs` maps. Generate SystemVerilog or run an
 Icarus test for at least one representative hierarchy.
 
-The touched files must pass the analyzer with no
-`rohd_hierarchy/non_port_public_hardware` diagnostics. Do not add an ignore for
-this diagnostic as a substitute for making the signal a real port or private
-implementation state.
+When the optional ROHD hierarchy analyzer is enabled, investigate
+`rohd_hierarchy/non_port_public_hardware` diagnostics rather than suppressing
+an ownership problem.
 
 ### 6.3 Vector format
 
@@ -617,8 +590,8 @@ Values can be: `int`, `BigInt`, `LogicValue`, or `String` (binary literal).
 
 ### 6.4 Sequential (clocked) testing with vectors
 
-For sequential modules, vectors execute one per clock cycle. Include
-clock and reset in your vectors:
+For sequential modules, drive explicit clock transitions in the vectors;
+each vector supplies a stimulus/check step, not an automatic clock edge:
 
 ```dart
 final vectors = [
@@ -631,33 +604,35 @@ final vectors = [
 
 ### 6.5 Event-driven simulation testing
 
-For complex sequential behavior (FSMs, pipelines), use direct simulation:
+For complex sequential behavior (FSMs, pipelines), use direct simulation.
+Ensure stimulus is applied before the sampling edge and sample outputs after
+the simulator has settled; do not assume an edge notification itself means
+all downstream logic has settled:
 
 ```dart
+import 'dart:async';
+
 test('pipeline latency', () async {
   final clk = SimpleClockGenerator(10).clk;
   final reset = Logic(name: 'reset');
+  final dataIn = Logic(name: 'dataIn', width: 16);
   final dut = MyPipeline(clk, reset, dataIn, width: 16);
   await dut.build();
 
+  reset.put(1);
+  dataIn.put(0);
   Simulator.setMaxSimTime(500);
   unawaited(Simulator.run());
 
-  // Reset sequence
-  reset.inject(1);
-  dataIn.inject(0);
-  await clk.nextPosedge;
-  await clk.nextPosedge;
+  // Change stimulus away from the rising sampling edge.
+  await clk.nextNegedge;
   reset.inject(0);
-
-  // Inject stimulus
   dataIn.inject(42);
-  await clk.nextPosedge;
-  dataIn.inject(0);
 
-  // Wait for pipeline latency (2 stages)
+  // Wait for two sampling edges, then check away from the rising edge.
   await clk.nextPosedge;
   await clk.nextPosedge;
+  await clk.nextNegedge;
   expect(dut.result.value.toInt(), equals(42));
 
   await Simulator.endSimulation();
@@ -683,7 +658,8 @@ test('debug with waves', () async {
 - **Always `tearDown(() async { await Simulator.reset(); })`** — prevents
   state leakage between tests.
 - **Use `inject()` in tests, `put()` in simulation actions** — `inject` is
-  safe outside simulation tick context.
+  scheduled by the simulator; `put` updates immediately and can also be used
+  for initialization outside a running simulation.
 - **`Simulator.setMaxSimTime()`** — prevents runaway simulations.
 - **Test names describe the scenario**, not the module name.
 - **Comment above each test** explaining the stimulus strategy, especially
@@ -796,7 +772,7 @@ MyModule(Logic a, Logic b, ...) {
 | 1 | Uppercase `super.name = 'Serializer'` | Use lowercase: `'serializer'` |
 | 2 | Using external signal after `addInput` | Reassign: `sig = addInput('sig', sig, ...)` |
 | 3 | Missing `definitionName` for parameterized modules | Always encode sizing: `'Mod_W$width'` |
-| 4 | Driving `LogicArray` via `concat()` | Drive each element individually |
+| 4 | Treating a packed array connection as typed compatibility | Validate shapes and preserve or explicitly reinterpret the layout |
 | 5 | Unnamed `LogicStructure` instances | Always pass `name:` parameter |
 | 6 | `addOutput` in subclass when base already created it | Use `output('name')` instead |
 | 7 | Unnecessary `@protected` getters for ports used only in constructor | Just use the local variable |
@@ -829,9 +805,9 @@ MyModule(Logic a, Logic b, ...) {
 | 34 | Public hardware field is not a module port | Make it private/`@protected`, or expose it with the matching `addOutput` API |
 | 35 | Root DUT builds, nested use throws a trace error | Add a parent harness build test and audit every cross-module signal |
 | 36 | Silencing `rohd_hierarchy/non_port_public_hardware` | Fix ownership; do not suppress the diagnostic |
-| 37 | Count width uses `log2Ceil(capacity)` | Use `countWidthForMaximum(capacity)` so the full count is representable |
-| 38 | Index width uses count width unnecessarily | Use `indexWidthForCount(entryCount)` for values through `entryCount - 1` |
-| 39 | Assigning `index + 1` into a count | Use `oneBasedCountFromIndex`; extend before adding |
+| 37 | Count width uses `capacity.log2Ceil` | Use at least `capacity.bitLength` to represent full capacity |
+| 38 | Index width uses count width unnecessarily | Use `entryCount.log2Ceil` for indices, with the required minimum width |
+| 39 | Assigning `index + 1` into a count | Extend the index to the count width before adding |
 
 ---
 

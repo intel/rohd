@@ -1370,10 +1370,16 @@ abstract class LogicValue implements Comparable<LogicValue> {
         isDivision: true,
       );
 
-  /// Ceil of log base 2 operation.
+  /// Ceiling of the base-two logarithm of this unsigned bit pattern.
   ///
-  /// Returns ceil of log base 2 of valid input.
-  /// Returns `x` if any bit of input is invalid.
+  /// Returns a value with the same width, or all `x` if any bit is invalid.
+  /// Zero and one both produce zero.
+  LogicValue get log2Ceil => clog2();
+
+  /// Ceiling of the base-two logarithm of this unsigned bit pattern.
+  ///
+  /// Equivalent to [log2Ceil]; the method name follows SystemVerilog's
+  /// `$clog2` terminology.
   LogicValue clog2() => _doUnaryMath(_clog2);
 
   /// Executes mathematical operations on single [LogicValue]

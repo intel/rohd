@@ -13,6 +13,15 @@ import 'package:rohd/rohd.dart';
 import 'package:rohd/src/signals/signals.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 
+/// Compatibility policy for a schema-aware interface port.
+enum TypedInterfacePortPolicy {
+  /// Both endpoints must have the same shape, including declared schemas.
+  matching,
+
+  /// An equal-width plain packed endpoint may bridge a declared payload.
+  packedBridge,
+}
+
 /// Represents a logical interface to a [Module].
 ///
 /// Interfaces make it easier to define port connections of a [Module] in a
@@ -26,6 +35,17 @@ import 'package:rohd/src/utilities/sanitizer.dart';
 /// [Interface], and also breaks the rules for [Module] input and output
 /// connectivity.
 class Interface<TagType extends Enum> {
+  /// Ports that should retain and validate their declared payload schemas.
+  ///
+  /// Keys are interface port names. Unlisted ports retain the existing
+  /// [connectIO] behavior, including when a port's tag is not selected.
+  /// This applies to ordinary [connectIO], not grouped structured ports.
+  /// Validation takes place during construction and does not generate hardware.
+  Map<String, TypedInterfacePortPolicy> get typedPayloadPorts => const {};
+
+  /// Whether generated constant leaf names can differ from driveable clones.
+  bool get ignoreConstantPayloadNames => false;
+
   /// Internal map from the [Interface]'s defined port name to an instance
   /// of a [Logic].
   ///
@@ -83,9 +103,31 @@ class Interface<TagType extends Enum> {
       Iterable<TagType>? inOutTags,
       String Function(String original)? uniquify}) {
     uniquify ??= (original) => original;
+    final inputs = inputTags == null ? <String, Logic>{} : getPorts(inputTags);
+    final outputs =
+        outputTags == null ? <String, Logic>{} : getPorts(outputTags);
+    final inOuts = inOutTags == null ? <String, Logic>{} : getPorts(inOutTags);
+    final typedPorts = typedPayloadPorts;
+    for (final name in typedPorts.keys) {
+      if (inOuts.containsKey(name) &&
+          (inputs.containsKey(name) || outputs.containsKey(name))) {
+        throw PortTypeException.forIntendedName(
+            name, 'A typed payload cannot be both directional and inOut.');
+      }
+    }
 
     if (inputTags != null) {
-      for (final port in getPorts(inputTags).values) {
+      for (final entry in inputs.entries) {
+        final port = entry.value;
+        final policy = typedPorts[entry.key];
+        if (policy != null) {
+          final source = srcInterface.port(entry.key);
+          _validateTypedPayload(port, source, entry.key, policy);
+          final bridge = port.cloneTyped(name: '${entry.key}_input_bridge')
+            ..gets(source);
+          port <= module.addTypedInput<Logic>(uniquify(port.name), bridge);
+          continue;
+        }
         port <=
             switch (port) {
               LogicArray() => module.addInputArray(
@@ -109,7 +151,22 @@ class Interface<TagType extends Enum> {
     }
 
     if (outputTags != null) {
-      for (final port in getPorts(outputTags).values) {
+      for (final entry in outputs.entries) {
+        final port = entry.value;
+        final policy = typedPorts[entry.key];
+        if (policy != null) {
+          final source = srcInterface.port(entry.key);
+          _validateTypedPayload(port, source, entry.key, policy);
+          final output = module.addTypedOutput<Logic>(
+              uniquify(port.name), port.cloneTyped);
+          if (!sameTypedCloneShape(port, output)) {
+            throw PortTypeException.forIntendedName(
+                entry.key, 'The output clone changed the payload schema.');
+          }
+          output <= port;
+          source <= output;
+          continue;
+        }
         final output = switch (port) {
           LogicArray() => module.addOutputArray(
               uniquify(port.name),
@@ -137,7 +194,20 @@ class Interface<TagType extends Enum> {
         srcInterface,
         inOutTags,
         uniquify: uniquify,
+        typedPorts: typedPorts,
       );
+    }
+  }
+
+  void _validateTypedPayload(
+      Logic local, Logic source, String name, TypedInterfacePortPolicy policy) {
+    if (policy == TypedInterfacePortPolicy.matching
+        ? !sameRohdPayloadShape(local, source,
+            ignoreConstantNames: ignoreConstantPayloadNames)
+        : !rohdPayloadsCompatible([local, source],
+            ignoreConstantNames: ignoreConstantPayloadNames)) {
+      throw PortTypeException.forIntendedName(
+          name, 'Typed interface payload schemas do not match.');
     }
   }
 
@@ -257,8 +327,23 @@ class Interface<TagType extends Enum> {
     Interface<dynamic> srcInterface,
     Iterable<TagType> inOutTags, {
     required String Function(String original) uniquify,
+    Map<String, TypedInterfacePortPolicy> typedPorts = const {},
   }) {
-    for (final port in getPorts(inOutTags).values) {
+    for (final entry in getPorts(inOutTags).entries) {
+      final port = entry.value;
+      final policy = typedPorts[entry.key];
+      if (policy != null) {
+        final source = srcInterface.port(entry.key);
+        _validateTypedPayload(port, source, entry.key, policy);
+        if (!port.isNet || !source.isNet) {
+          throw PortTypeException.forIntendedName(
+              entry.key, 'Typed inOut payloads must be nets.');
+        }
+        final bridge = port.cloneTyped(name: '${entry.key}_inout_bridge')
+          ..gets(source);
+        port <= module.addTypedInOut<Logic>(uniquify(port.name), bridge);
+        continue;
+      }
       if (port is BaseLogicArray) {
         if (!port.isNet) {
           throw PortTypeException(
