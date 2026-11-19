@@ -2396,22 +2396,34 @@ void main() {
     });
 
     test('array selection retains its input array connectivity', () async {
-      final module = _TracedArraySelectionModule();
-      final json = await _synthToMap(module);
-      final moduleDef =
-          _modules(json)[module.definitionName] as Map<String, dynamic>;
-      final input = (_ports(moduleDef)['data'] as Map<String, dynamic>)['bits'];
-      final slices = _cells(moduleDef)
-          .values
-          .cast<Map<String, dynamic>>()
-          .where((cell) => cell['synthetic_origin'] == 'arraySlice')
-          .toList();
+      for (final enableDce in [false, true]) {
+        final module = _TracedArraySelectionModule();
+        final json = await _synthToMap(
+          module,
+          configuration: NetlistSynthesizerConfiguration(
+            enableDeadCellElimination: enableDce,
+          ),
+        );
+        final moduleDef =
+            _modules(json)[module.definitionName] as Map<String, dynamic>;
+        final input =
+            (_ports(moduleDef)['data'] as Map<String, dynamic>)['bits'];
+        final cells = _cells(moduleDef).values.cast<Map<String, dynamic>>();
+        final slices = cells
+            .where((cell) => cell['synthetic_origin'] == 'arraySlice')
+            .toList();
 
-      expect(slices, hasLength(4));
-      for (final slice in slices) {
-        final connections = slice['connections'] as Map<String, dynamic>;
-        expect(connections['A'], orderedEquals(input as List),
-            reason: 'Array selection must be driven by the input array.');
+        expect(slices, hasLength(4));
+        for (final slice in slices) {
+          final connections = slice['connections'] as Map<String, dynamic>;
+          expect(connections['A'], orderedEquals(input as List),
+              reason: 'Array selection must be driven by the input array.');
+        }
+        final concats =
+            cells.where((cell) => cell['synthetic_origin'] == 'arrayConcat');
+        expect(concats, enableDce ? isEmpty : isNotEmpty,
+            reason:
+                'The disconnected concat is removed only with DCE enabled.');
       }
     });
 

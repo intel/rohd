@@ -1117,6 +1117,12 @@ class NetlistSynthesizer extends Synthesizer {
           }
         }
       }
+      // Rewriting can leave an aggregate unused even though its former
+      // aliased output bits were consumed when cleanup ran above.
+      translation.processCellCleanup(
+        enableDce: configuration.enableDeadCellElimination,
+        preservedNameBits: preservedNameBits,
+      );
     }
 
     translation.processNetnames(
