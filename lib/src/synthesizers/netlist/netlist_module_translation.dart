@@ -797,7 +797,7 @@ class NetlistModuleTranslation {
         bits = resolveAggregateBits(bits);
         final typeLogic = NetlistUtils.typeLogicFromSynthLogic(synthLogic);
         addNetname(
-          Sanitizer.sanitizeSV(name),
+          synthLogic.name,
           bits,
           computed: synthLogic.isConstant,
           preservedName: synthLogic.hasPreservedName,

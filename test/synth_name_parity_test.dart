@@ -11,6 +11,7 @@
 import 'dart:convert';
 
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/synthesizers/utilities/generated_code_references.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
@@ -179,6 +180,35 @@ class _NestedNameModule extends Module {
             valuesIn.at([index]).lanes.at([lane]);
       }
     }
+  }
+}
+
+class _ArrayTraceModule extends Module {
+  _ArrayTraceModule() {
+    final input = addInputArray('data', LogicArray([4], 8),
+        dimensions: [4], elementWidth: 8);
+    final index = addInput('index', Logic(width: 2), width: 2);
+    final values = LogicArray([4], 8, name: 'values');
+    for (var i = 0; i < values.elements.length; i++) {
+      values.elements[i] <= input.elements[i];
+    }
+    addOutput('out', width: 8) <= values.elements.selectIndex(index);
+    final distinct =
+        Logic(name: 'values_0_', width: 8, naming: Naming.renameable)
+          ..gets(input.elements[0] + Const(1, width: 8));
+    addOutput('other', width: 8) <= distinct;
+    final keyword =
+        Logic(name: 'namespace', width: 8, naming: Naming.renameable)
+          ..gets(input.elements[1] + Const(2, width: 8));
+    addOutput('keyword', width: 8) <= keyword;
+  }
+}
+
+class _NestedArrayTraceModule extends Module {
+  _NestedArrayTraceModule() {
+    final array = addInputArray('arr', LogicArray([2, 2], 8),
+        dimensions: [2, 2], elementWidth: 8);
+    addOutput('out', width: 8) <= ~array.elements[1].elements[0];
   }
 }
 
@@ -604,6 +634,102 @@ void main() {
         expect(emittedNetlistNames, contains(name),
             reason: 'SV and netlist should preserve signal name $name.');
       }
+    });
+
+    test('array references use canonical netlist and FLC output names',
+        () async {
+      SourceTracer.activate();
+      addTearDown(SourceTracer.clear);
+      final module = _ArrayTraceModule();
+      await module.build();
+      final sv = SystemVerilogService(module, register: false);
+      final sc = SystemCService(module, register: false, multiFile: false);
+      final trace =
+          TraceService(module, svService: sv, scService: sc, register: false);
+      final netlist =
+          jsonDecode(module.generateNetlist()) as Map<String, dynamic>;
+      final definitions = netlist['modules'] as Map<String, dynamic>;
+      final definition =
+          definitions[module.definitionName] as Map<String, dynamic>;
+      final netnames = definition['netnames'] as Map<String, dynamic>;
+
+      expect(netnames, containsPair('values[0]', isA<Map<String, dynamic>>()));
+      expect(netnames, contains('values_0_'));
+      expect(
+        (netnames['values[0]'] as Map<String, dynamic>)['bits'],
+        isNot((netnames['values_0_'] as Map<String, dynamic>)['bits']),
+      );
+
+      final svPosition =
+          sv.singleFileSvLineMaps[module.definitionName]!['values[0]']!.first;
+      final scPosition =
+          sc.singleFileScLineMaps[module.definitionName]!['values[0]']!.first;
+      String atPosition(String text, String position) {
+        final parts = position.split(':').map(int.parse).toList();
+        return text.split('\n')[parts[0] - 1].substring(parts[1] - 1);
+      }
+
+      expect(atPosition(sv.output, svPosition), startsWith('values[0]'));
+      expect(
+        atPosition(sc.output, scPosition),
+        startsWith('sc_uint<8>(values.read().range(7, 0))'),
+      );
+      final keywordPosition =
+          sc.singleFileScLineMaps[module.definitionName]!['namespace']!.first;
+      expect(atPosition(sc.output, keywordPosition), startsWith('namespace_'));
+      final symbols = <String>[];
+      void collectSymbols(Object? node) {
+        if (node is List) {
+          node.forEach(collectSymbols);
+        } else if (node is String && node.startsWith('values[0]@')) {
+          symbols.add(node);
+        }
+      }
+
+      final flc = jsonDecode(trace.flcJson) as Map<String, dynamic>;
+      final modules = flc['modules'] as Map<String, dynamic>;
+      collectSymbols((modules[module.definitionName] as Map)['tree']);
+      expect(symbols, hasLength(1));
+      expect(symbols.single, contains('sv:$svPosition'));
+      expect(symbols.single, contains('sc:$scPosition'));
+    });
+
+    test('output reference locations exclude comments and quoted text', () {
+      const text = '''
+// values[0]
+"values[0]"
+/* values[0] */ different_values[0];
+instance.values[0];
+out = values[0];
+''';
+      expect(generatedCodeReferencePositions(text, ['values[0]']),
+          {'values[0]': '5:7'});
+    });
+
+    test('nested array references agree across synthesis and tracing',
+        () async {
+      SourceTracer.activate();
+      addTearDown(SourceTracer.clear);
+      final module = _NestedArrayTraceModule();
+      await module.build();
+      final sv = SystemVerilogService(module, register: false);
+      final sc = SystemCService(module, register: false, multiFile: false);
+      final trace =
+          TraceService(module, svService: sv, scService: sc, register: false);
+      final netlist =
+          jsonDecode(module.generateNetlist()) as Map<String, dynamic>;
+      final definitions = netlist['modules'] as Map<String, dynamic>;
+      final netnames =
+          (definitions[module.definitionName] as Map)['netnames'] as Map;
+      const name = 'arr[1][0]';
+      expect(netnames, contains(name));
+      final svPosition =
+          sv.singleFileSvLineMaps[module.definitionName]![name]!.first;
+      final scPosition =
+          sc.singleFileScLineMaps[module.definitionName]![name]!.first;
+      expect(trace.flcJson, contains('$name@sv:$svPosition;sc:$scPosition'));
+      expect(sv.output, contains('~$name'));
+      expect(sc.output, contains('arr.read().range(23, 16)'));
     });
   });
 }

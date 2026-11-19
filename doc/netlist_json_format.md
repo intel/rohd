@@ -166,6 +166,12 @@ Enum attributes describe retained signals and constant uses without changing
 bit connectivity or adding enum cells. Raw uses of a shared packed constant
 remain untyped when another use has enum metadata.
 
+Retained synthesized signal names use the same canonical names as FLC traces.
+Array elements may therefore have reference names such as `data[0]`; these
+names are JSON keys, not separate SystemVerilog identifier declarations.
+Names of previously generated element netnames such as `data_0_` change to
+their canonical reference form.
+
 ## Cell-level extensions
 
 ROHD maps most hardware constructs onto standard Yosys internal cell types

@@ -619,17 +619,9 @@ class NetlistSynthesizer extends Synthesizer {
               ];
 
     // -- Elide trivial $slice cells ----------------------------------
-    // Also elide struct_slice cells ([SynthStructureSlice] instances from
-    // `_subsetReceiveStructPort`) because the new `$struct_unpack` cells
-    // emitted below supersede them with better-named field-level connections.
     cells.removeWhere((cellKey, cell) {
       if (cell['type'] != r'$slice') {
         return false;
-      }
-      // Unconditionally remove struct_slice cells — they are duplicated by
-      // $struct_unpack cells which carry field names.
-      if (NetlistCell.hasOrigin(cell, NetlistCellOrigin.structureSlice)) {
-        return true;
       }
       final params = cell['parameters'] as Map<String, Object?>?;
       final offset = params?['OFFSET'];
@@ -760,6 +752,63 @@ class NetlistSynthesizer extends Synthesizer {
       }
     }
 
+    // Only remove a structure slice when an unpack path supplies the same
+    // output bits from the same input bits. Some slices have no unpack peer.
+    final unpackMappings = <int, Set<Object>>{};
+    for (final cell in cells.values) {
+      if (!NetlistCell.hasOrigin(cell, NetlistCellOrigin.structureUnpack)) {
+        continue;
+      }
+      final conns = cell['connections']! as Map<String, dynamic>;
+      final dirs = cell['port_directions']! as Map<String, dynamic>;
+      final params = cell['parameters']! as Map<String, dynamic>;
+      final input = conns['A']! as List;
+      final fields = dirs.entries.where((entry) => entry.value == 'output');
+      for (final (index, field) in fields.indexed) {
+        final offset = params['FIELD_${index}_OFFSET']! as int;
+        final output = conns[field.key]! as List;
+        for (var i = 0; i < output.length; i++) {
+          if (output[i] is int && offset + i < input.length) {
+            (unpackMappings[output[i] as int] ??= <Object>{})
+                .add(input[offset + i] as Object);
+          }
+        }
+      }
+    }
+    Object? unpackSource(Object bit) {
+      final visited = <int>{};
+      while (bit is int && unpackMappings.containsKey(bit)) {
+        if (!visited.add(bit) || unpackMappings[bit]!.length != 1) {
+          return null;
+        }
+        bit = unpackMappings[bit]!.single;
+      }
+      return bit;
+    }
+
+    cells.removeWhere((_, cell) {
+      if (!NetlistCell.hasOrigin(cell, NetlistCellOrigin.structureSlice)) {
+        return false;
+      }
+      final conns = cell['connections']! as Map<String, dynamic>;
+      final input = conns['A']! as List;
+      final output = conns['Y']! as List;
+      final params = cell['parameters']! as Map<String, dynamic>;
+      final offset = params['OFFSET']! as int;
+      return output.isNotEmpty &&
+          output.indexed.every((entry) {
+            final bit = entry.$2;
+            if (bit is! int ||
+                offset + entry.$1 >= input.length ||
+                !unpackMappings.containsKey(bit)) {
+              return false;
+            }
+            final unpackRoot = unpackSource(bit);
+            return unpackRoot != null &&
+                unpackRoot == unpackSource(input[offset + entry.$1] as Object);
+          });
+    });
+
     // -- Emit $struct_pack cells for output struct ports ------------------
     // Group compose entries by destination port and emit a single
     // multi-port cell per group.  Each group has:
@@ -790,7 +839,9 @@ class NetlistSynthesizer extends Synthesizer {
         // Filter out trivial fields.
         final nonTrivialFields = fields
             .map((sc) {
-              final resolvedSrcBits = applyAlias(sc.srcIds.cast<Object>());
+              final resolvedSrcBits = applyArraySliceOutputs(
+                applyAlias(sc.srcIds.cast<Object>()),
+              );
               final yBits = resolvedDstBits.sublist(
                 sc.dstLowerIndex,
                 sc.dstUpperIndex + 1,
@@ -956,12 +1007,41 @@ class NetlistSynthesizer extends Synthesizer {
       }
     }
 
+    // A slice supplying a concat is upstream of it, even when their array
+    // IDs alias. Redirecting that slice's input would create a cycle.
+    bool sliceFeedsConcat(String? sliceKey, String concatKey) {
+      final slice = cells[sliceKey];
+      final concat = cells[concatKey];
+      if (slice == null ||
+          concat == null ||
+          !NetlistCell.hasOrigin(slice, NetlistCellOrigin.arraySlice)) {
+        return false;
+      }
+      final sliceConnections = slice['connections']! as Map<String, dynamic>;
+      final sliceOutputs =
+          (sliceConnections['Y']! as List).whereType<int>().toSet();
+      final concatConnections = concat['connections']! as Map<String, dynamic>;
+      final concatDirections =
+          concat['port_directions']! as Map<String, dynamic>;
+      return concatConnections.entries.any(
+        (entry) =>
+            concatDirections[entry.key] == 'input' &&
+            (entry.value as List).whereType<int>().any(sliceOutputs.contains),
+      );
+    }
+
     List<Object> rewriteArrayConcatConsumerBits(
       List<Object> bits, {
       String? consumingCellKey,
     }) {
+      final upstreamConcatKeys = <String>{
+        for (final replacement in arrayConcatReplacements)
+          if (sliceFeedsConcat(consumingCellKey, replacement.cellKey))
+            replacement.cellKey,
+      };
       for (final replacement in arrayConcatReplacements) {
         if (replacement.cellKey == consumingCellKey ||
+            upstreamConcatKeys.contains(replacement.cellKey) ||
             replacement.oldBits.length != bits.length) {
           continue;
         }
@@ -982,7 +1062,9 @@ class NetlistSynthesizer extends Synthesizer {
         final producerIndices = arrayConcatOutputProducers[bit]
             ?.where(
               (index) =>
-                  arrayConcatReplacements[index].cellKey != consumingCellKey,
+                  arrayConcatReplacements[index].cellKey != consumingCellKey &&
+                  !upstreamConcatKeys
+                      .contains(arrayConcatReplacements[index].cellKey),
             )
             .toList();
         if (producerIndices == null || producerIndices.length != 1) {

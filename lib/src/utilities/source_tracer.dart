@@ -298,7 +298,7 @@ class SourceTracer {
       // that's the module constructor frame.
       int? lastModuleLine;
       for (var i = lines.length - 1; i >= 0; i--) {
-        if (lines[i].contains(baseName)) {
+        if (_lineIsModuleConstructor(lines[i], {baseName})) {
           lastModuleLine = i;
           break;
         }
@@ -345,6 +345,11 @@ class SourceTracer {
           removed++;
         }
         cutIndex = i;
+      }
+      for (var i = lines.length - 1; i >= cutIndex; i--) {
+        if (_lineIsModuleConstructor(lines[i], moduleTypes)) {
+          return _trimTraceAtOutermostModule(traceString, moduleTypes);
+        }
       }
       return lines.sublist(0, cutIndex).join('\n');
     }
@@ -393,9 +398,25 @@ class SourceTracer {
 
   /// Returns `true` if [line] contains any of the known module type names.
   static bool _lineIsModuleConstructor(String line, Set<String> moduleTypes) {
+    bool isIdentifier(int char) =>
+        char >= 65 && char <= 90 ||
+        char >= 97 && char <= 122 ||
+        char >= 48 && char <= 57 ||
+        char == 95;
+
+    final vmFrame = frameRe.firstMatch(line);
+    final description = vmFrame?.group(1) ?? line;
     for (final typeName in moduleTypes) {
-      if (line.contains(typeName)) {
-        return true;
+      final name = vmFrame == null ? typeName : 'new $typeName';
+      var index = description.indexOf(name);
+      while (index >= 0) {
+        final end = index + name.length;
+        if ((index == 0 || !isIdentifier(description.codeUnitAt(index - 1))) &&
+            (end == description.length ||
+                !isIdentifier(description.codeUnitAt(end)))) {
+          return true;
+        }
+        index = description.indexOf(name, index + 1);
       }
     }
     return false;
@@ -1441,15 +1462,16 @@ class SourceTracer {
       if (useSynthDef) {
         for (final sl in allSynthLogics) {
           final logicNames = <String>{for (final l in sl.logics) l.name};
+          final canonicalName = sl.name;
+          final outputPositions = outputPositionsFor(canonicalName);
           final frames = encodeFrames(
             synthLogicTrace(module, sl, sourceLogics: sourceLogics),
             module,
           );
-          if (frames == null) {
+          if (frames == null && outputPositions.isEmpty) {
             continue;
           }
 
-          final canonicalName = sl.name;
           String? origName;
           if (!logicNames.contains(canonicalName)) {
             final base = canonicalName.replaceFirst(RegExp(r'_\d+$'), '');
@@ -1467,10 +1489,8 @@ class SourceTracer {
           }
 
           final needsOrig = origName != null && origName != canonicalName;
-          final outputPositions = outputPositionsFor(canonicalName);
-
           insertIntoTrie(
-            frames,
+            frames ?? const ['-1:1:1'],
             encodeSymbol(
               canonicalName,
               outputPositions:
@@ -1490,14 +1510,14 @@ class SourceTracer {
 
       // --- Instances ---
       for (final sub in module.subModules) {
-        final frames = encodeFrames(_current!._moduleTraces[sub], module);
-        if (frames == null) {
-          continue;
-        }
         final instName = sub.uniqueInstanceName;
         final instPositions = outputPositionsFor(instName);
+        final frames = encodeFrames(_current!._moduleTraces[sub], module);
+        if (frames == null && instPositions.isEmpty) {
+          continue;
+        }
         insertIntoTrie(
-          frames,
+          frames ?? const ['-1:1:1'],
           encodeSymbol(
             instName,
             isInstance: true,
@@ -1682,7 +1702,10 @@ const stats = document.getElementById('stats');
 let totalSymbols = 0;
 
 function makeLinks(frames) {
-  return frames.map(f => {
+  return frames.filter(f => {
+    const fi = parseInt(f.split(':')[0]);
+    return fi >= 0 && fi < files.length;
+  }).map(f => {
     const parts = f.split(':');
     const fi = parseInt(parts[0]);
     const line = parts[1];

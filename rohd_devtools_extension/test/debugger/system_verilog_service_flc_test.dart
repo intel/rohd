@@ -10,6 +10,7 @@
 @TestOn('vm')
 library;
 
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:rohd/rohd.dart';
@@ -204,6 +205,35 @@ void main() {
       SystemCService(dut, register: false).synthesisResults,
       isNotEmpty,
     );
+  });
+
+  test('FLC preserves generated positions without a Dart source frame',
+      () async {
+    SourceTracer.activate();
+    final dut = _FlcTop(Logic());
+    await dut.build();
+    final service = SystemVerilogService(dut, register: false);
+    final position =
+        service.singleFileSvLineMaps[dut.definitionName]!['y']!.first;
+    final trace = SourceTracer.traceJsonForHierarchy(
+      dut,
+      packageRoot: Directory.current.path,
+      skipPatterns: [''],
+      svLineMaps: {
+        dut.definitionName: {
+          'y': [position],
+        },
+      },
+      svFileMap: {dut.definitionName: 'generated.sv'},
+    )!;
+    final modules = trace['modules']! as Map<String, Object>;
+    final tree = (modules[dut.definitionName]! as Map<String, Object>)['tree']!;
+    expect(tree, [
+      ['-1:1:1', 'y@$position'],
+    ]);
+    expect(trace['files'], isEmpty);
+    final html = SourceTracer.flcHtmlViewer(jsonEncode(trace));
+    expect(html, contains('fi >= 0 && fi < files.length'));
   });
 
   test(

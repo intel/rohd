@@ -1,3 +1,11 @@
+## Unreleased
+
+- Preserve canonical array-reference names in netlists and FLC output locations for SystemVerilog and SystemC.
+- Preserve component construction frames when stack trimming would discard them, and retain FLC entries with generated output locations even when no Dart source frame exists.
+- Correct FLC line and column positions for output connections following multiline SystemVerilog instance inputs.
+- Preserve input-array connectivity when synthetic array slices feed a concat of the same array, avoiding a disconnected cycle in the netlist.
+- Preserve array-slice connections to structure output fields and avoid duplicate structure-field slice drivers in generated netlists.
+
 ## 0.7.4
 
 - Preserve drivers of locally assembled array elements consumed by concatenations during SystemVerilog synthesis.

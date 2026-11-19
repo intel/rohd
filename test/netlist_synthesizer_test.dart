@@ -462,6 +462,19 @@ class InternalArrayToChildModule extends Module {
   }
 }
 
+class _TracedArraySelectionModule extends Module {
+  _TracedArraySelectionModule() {
+    final input = addInputArray('data', LogicArray([4], 8),
+        dimensions: [4], elementWidth: 8);
+    final index = addInput('index', Logic(width: 2), width: 2);
+    final values = LogicArray([4], 8, name: 'values');
+    for (var i = 0; i < values.elements.length; i++) {
+      values.elements[i] <= input.elements[i];
+    }
+    addOutput('out', width: 8) <= values.elements.selectIndex(index);
+  }
+}
+
 /// Parent whose internal LogicArray groups elements from another child output
 /// array before feeding a child input port.
 class RegroupedArrayOutputToChildModule extends Module {
@@ -2379,6 +2392,26 @@ void main() {
             (connections['Y'] as List<dynamic>).whereType<int>().toSet();
 
         expect(inputBits.intersection(outputBits), isEmpty);
+      }
+    });
+
+    test('array selection retains its input array connectivity', () async {
+      final module = _TracedArraySelectionModule();
+      final json = await _synthToMap(module);
+      final moduleDef =
+          _modules(json)[module.definitionName] as Map<String, dynamic>;
+      final input = (_ports(moduleDef)['data'] as Map<String, dynamic>)['bits'];
+      final slices = _cells(moduleDef)
+          .values
+          .cast<Map<String, dynamic>>()
+          .where((cell) => cell['synthetic_origin'] == 'arraySlice')
+          .toList();
+
+      expect(slices, hasLength(4));
+      for (final slice in slices) {
+        final connections = slice['connections'] as Map<String, dynamic>;
+        expect(connections['A'], orderedEquals(input as List),
+            reason: 'Array selection must be driven by the input array.');
       }
     });
 
