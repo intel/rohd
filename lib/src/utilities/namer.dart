@@ -76,6 +76,24 @@ class Namer {
       : _uniquifier = uniquifier,
         _portLogics = portLogics;
 
+  /// Creates a backend-local namespace seeded with already allocated names.
+  ///
+  /// Backend-only objects must not affect names allocated by other backends.
+  factory Namer.forGeneratedNames(Iterable<String> existingNames) => Namer._(
+        uniquifier: Uniquifier(reservedNames: existingNames.toSet()),
+        portLogics: const {},
+      );
+
+  /// Extends this module's namespace for backend-only objects.
+  Namer generatedNames() => Namer.forGeneratedNames({
+        ..._uniquifier.takenNames,
+        ..._uniquifier.reservedNames,
+      });
+
+  /// Allocates a unique name for an object emitted once in this namespace.
+  String allocateGeneratedName(String base) =>
+      _uniquifier.getUniqueName(initialName: Sanitizer.sanitizeSV(base));
+
   /// Creates a [Namer] for the given [module]'s ports.
   ///
   /// Port names are reserved in the shared namespace.  Port names are

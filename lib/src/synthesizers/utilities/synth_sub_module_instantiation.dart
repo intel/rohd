@@ -31,11 +31,11 @@ class SynthSubModuleInstantiation {
   ///
   /// Names are allocated (and cached) via [Namer.instanceNameOf] so that
   /// repeated synthesis passes over the same hierarchy always produce the
-  /// same instance name.
-  void pickName(Module parentModule) {
+  /// same instance name. A backend-only instance can supply its local [namer].
+  void pickName(Module parentModule, {Namer? namer}) {
     assert(_name == null, 'Should only pick a name once.');
 
-    _name = parentModule.namer.instanceNameOf(module);
+    _name = (namer ?? parentModule.namer).instanceNameOf(module);
   }
 
   /// A mapping of input port name to [SynthLogic].

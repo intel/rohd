@@ -741,7 +741,8 @@ class NetlistSynthesizer extends Synthesizer {
           params['FIELD_${i}_WIDTH'] = f.width;
         }
 
-        cells['struct_unpack_${suIdx}_$structName'] = NetlistCell(
+        cells[translation.generatedName('struct_unpack_${suIdx}_$structName')] =
+            NetlistCell(
           type: r'$struct_unpack',
           origin: NetlistCellOrigin.structureUnpack,
           parameters: params,
@@ -919,12 +920,7 @@ class NetlistSynthesizer extends Synthesizer {
         }
 
         final baseCellName = '${cellName}_$structName';
-        var uniqueCellName = baseCellName;
-        var suffix = 0;
-        while (cells.containsKey(uniqueCellName)) {
-          uniqueCellName = '${baseCellName}_${suffix++}';
-        }
-        cells[uniqueCellName] = NetlistCell(
+        cells[translation.generatedName(baseCellName)] = NetlistCell(
           type: r'$struct_pack',
           origin: NetlistCellOrigin.structurePack,
           parameters: params,
@@ -1157,6 +1153,7 @@ class NetlistSynthesizer extends Synthesizer {
       cells: cells,
       netnames: netnames,
       attributes: attr,
+      omitRohdMetadata: configuration.omitRohdMetadata,
     );
   }
 
@@ -1243,10 +1240,17 @@ class NetlistSynthesizer extends Synthesizer {
     }
     swCompress.stop();
 
+    if (configuration.omitRohdMetadata) {
+      modules.values.forEach(removeRohdNetlistMetadata);
+    }
+
     final combined = {
       'creator': 'NetlistSynthesizer (rohd)',
       'version': formatVersion,
-      if (fileTable != null && !fileTable.isEmpty) 'files': fileTable.files,
+      if (!configuration.omitRohdMetadata &&
+          fileTable != null &&
+          !fileTable.isEmpty)
+        'files': fileTable.files,
       'modules': modules,
     };
 

@@ -478,6 +478,104 @@ final _hierarchicalExpected = {
 void main() {
   tearDown(Simulator.reset);
 
+  for (final collapse in [false, true]) {
+    test(
+        'omitting metadata preserves the complete netlist (collapse=$collapse)',
+        () async {
+      SourceTracer.activate();
+      addTearDown(SourceTracer.clear);
+      final module = _ConnectivityStress(Logic(width: 16), Logic(width: 8),
+          LogicArray([4], 4), _Pair(), _Envelope());
+      await module.build();
+
+      Map<String, dynamic> emit({required bool omitMetadata}) =>
+          jsonDecode(NetlistSynthesizer(
+            configuration: NetlistSynthesizerConfiguration(
+              collapseTransparentClusters: collapse,
+              trace: true,
+              omitRohdMetadata: omitMetadata,
+            ),
+          ).synthesizeToJson(module)) as Map<String, dynamic>;
+
+      final normal = emit(omitMetadata: false);
+      final stripped = emit(omitMetadata: true);
+      expect(normal.remove('files'), isNotEmpty);
+      final normalModules = normal['modules'] as Map<String, dynamic>;
+      var syntheticCells = 0;
+      var typedEntries = 0;
+      var traces = 0;
+      for (final value in normalModules.values) {
+        final definition = value as Map<String, dynamic>;
+        final attributes = definition['attributes'] as Map<String, dynamic>;
+        if (attributes.remove('rohd.src_trace') != null) {
+          traces++;
+        }
+        for (final section in ['ports', 'netnames']) {
+          for (final entry in (definition[section] as Map).values) {
+            if ((entry as Map).remove('logic_type') != null) {
+              typedEntries++;
+            }
+          }
+        }
+        for (final entry in (definition['cells'] as Map).values) {
+          final cell = entry as Map;
+          if (cell.remove('is_synthetic') != null) {
+            syntheticCells++;
+          }
+          cell.remove('synthetic_origin');
+        }
+      }
+      expect(syntheticCells, greaterThan(0));
+      expect(typedEntries, greaterThan(0));
+      expect(traces, greaterThan(0));
+      expect(stripped, equals(normal));
+    });
+  }
+
+  test('individual netlist files also omit metadata without changing wiring',
+      () async {
+    final module = _ConnectivityStress(Logic(width: 16), Logic(width: 8),
+        LogicArray([4], 4), _Pair(), _Envelope());
+    await module.build();
+
+    Map<String, Map<String, dynamic>> files({required bool omitMetadata}) {
+      final synth = NetlistSynthesizer(
+        configuration:
+            NetlistSynthesizerConfiguration(omitRohdMetadata: omitMetadata),
+      );
+      return {
+        for (final file in SynthBuilder(module, synth).getSynthFileContents())
+          file.name: jsonDecode(file.contents) as Map<String, dynamic>,
+      };
+    }
+
+    final original = files(omitMetadata: false);
+    final stripped = files(omitMetadata: true);
+    var syntheticCells = 0;
+    for (final document in original.values) {
+      for (final value
+          in (document['modules'] as Map<String, dynamic>).values) {
+        final definition = value as Map<String, dynamic>;
+        for (final section in ['ports', 'netnames']) {
+          for (final entry
+              in (definition[section] as Map<String, dynamic>).values) {
+            (entry as Map<String, dynamic>).remove('logic_type');
+          }
+        }
+        for (final entry
+            in (definition['cells'] as Map<String, dynamic>).values) {
+          final cell = entry as Map<String, dynamic>;
+          if (cell.remove('is_synthetic') != null) {
+            syntheticCells++;
+          }
+          cell.remove('synthetic_origin');
+        }
+      }
+    }
+    expect(syntheticCells, greaterThan(0));
+    expect(stripped, equals(original));
+  });
+
   test('bus subset oracle agrees with ROHD and SystemVerilog simulation',
       () async {
     final module = _BusSubsetSelections(Logic(width: 8));

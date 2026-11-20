@@ -1,5 +1,7 @@
 ## Unreleased
 
+- Allocate netlist-only names through Namer without renaming shared signals; distinguish constant driver paths from their wire paths and preserve computed constant values.
+- Allow omitting ROHD type, synthetic-cell, and source-trace metadata from netlist JSON without changing connectivity; include required unsigned parameters for Yosys unary and binary cells.
 - Preserve shared procedural outputs and constants, and avoid overwriting structure-pack cells, in generated netlists.
 - Fix reversed `BusSubset` bit ordering and invalid slice offsets in generated netlists.
 - Preserve canonical array-reference names in netlists and FLC output locations for SystemVerilog and SystemC.

@@ -285,7 +285,81 @@ Future<Map<String, String>> _collapsedInstanceCollisionNamesAfter(
   };
 }
 
+class _NameCollisions extends Module {}
+
 void main() {
+  test('array helpers leave SystemVerilog names and namespace unchanged',
+      () async {
+    Future<Module> makeDesign() async {
+      final dut = _NameCollisions();
+      final input = dut.addInputArray('data', LogicArray([2], 4),
+          dimensions: [2], elementWidth: 4);
+      final named = (~input.elements[0]).named('array_slice');
+      dut.addOutput('out', width: 4).gets(named ^ input.elements[1]);
+      await dut.build();
+      return dut;
+    }
+
+    String generateSv(Module dut) => SystemVerilogService(dut, register: false)
+        .output
+        .replaceFirst(RegExp(r' \* Generation time: [^\n]*\n'), '');
+    final baseline = await makeDesign();
+    final expectedSv = generateSv(baseline);
+    expect(expectedSv, contains('assign array_slice ='));
+    expect(baseline.namer.isAvailable('array_slice_0'), isTrue);
+
+    final dut = await makeDesign();
+    final document = jsonDecode(dut.generateNetlist()) as Map<String, dynamic>;
+    final definition = (document['modules'] as Map)[dut.definitionName]
+        as Map<String, dynamic>;
+    expect((definition['netnames'] as Map).keys, contains('array_slice'));
+    expect((definition['cells'] as Map).keys, contains('array_slice_0'));
+    expect(dut.namer.isAvailable('array_slice_0'), isTrue);
+    expect(generateSv(dut), expectedSv);
+  });
+
+  test('netlist-only names cannot shadow canonical ports or signals', () async {
+    Future<Module> makeDesign() async {
+      final dut = _NameCollisions();
+      final input = dut.addInput('const_0_4_h1', Logic(width: 4), width: 4);
+      final driverName = dut.addInput('const_0_4_h1_driver', Logic());
+      final bufferName = dut.addInput('passthrough_buf_0', Logic());
+      dut.addOutput('out', width: 4).gets(input);
+      dut.addOutput('constant', width: 4).gets(Const(1, width: 4));
+      dut.addOutput('other').gets(driverName ^ bufferName);
+      await dut.build();
+      return dut;
+    }
+
+    String generateSv(Module dut) => SystemVerilogService(dut, register: false)
+        .output
+        .replaceFirst(RegExp(r' \* Generation time: [^\n]*\n'), '');
+    final sv = generateSv(await makeDesign());
+    final dut = await makeDesign();
+    for (final cluster in [false, true]) {
+      final config = NetlistSynthesizerConfiguration(
+        collapseTransparentClusters: cluster,
+      );
+      final json = dut.generateNetlist(configuration: config);
+      expect(dut.generateNetlist(configuration: config), json);
+      final document = jsonDecode(json) as Map<String, dynamic>;
+      final definition = (document['modules'] as Map)[dut.definitionName]
+          as Map<String, dynamic>;
+      final cells = definition['cells'] as Map<String, dynamic>;
+      final nets = definition['netnames'] as Map<String, dynamic>;
+      final ports = definition['ports'] as Map<String, dynamic>;
+      expect(cells.keys.toSet().intersection({...ports.keys, ...nets.keys}),
+          isEmpty);
+      expect(nets.keys, containsAll(ports.keys));
+      final constant = cells.entries.singleWhere(
+        (entry) => (entry.value as Map)['type'] == r'$const',
+      );
+      expect(constant.key, startsWith('const_0_4_h1_driver_'));
+      expect((constant.value as Map)['connections'], contains("4'h1"));
+    }
+    expect(generateSv(dut), sv);
+  });
+
   tearDown(() async {
     await Simulator.reset();
   });

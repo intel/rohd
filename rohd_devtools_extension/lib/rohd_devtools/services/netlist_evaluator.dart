@@ -13,7 +13,7 @@
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 import 'package:flutter/foundation.dart' show debugPrint;
-import 'package:rohd/rohd.dart' show LogicValue;
+import 'package:rohd/rohd.dart' show LogicValue, RohdException;
 import 'package:rohd_devtools_extension/rohd_devtools/utils/regex_utils.dart';
 
 const _arrayElementPattern = r'^(.+)(?:\[(\d+)\]|_(\d+)_)$';
@@ -155,11 +155,16 @@ _ResolvedModule? _resolveModulePath(
     final nextType = cell['type'] as String?;
     // $const cell: the output port name IS the Verilog constant literal.
     if (nextType == r'$const' && constResult != null) {
-      try {
-        final lv = LogicValue.ofRadixString(parts.last);
-        constResult.value = (value: lv.toString(), width: lv.width);
-      } on Object {
-        constResult.value = null;
+      final directions = cell['port_directions'] as Map<String, dynamic>?;
+      if (i == parts.length - 2 && directions?[parts.last] == 'output') {
+        try {
+          final lv = LogicValue.ofRadixString(parts.last);
+          constResult.value = (value: lv.toString(), width: lv.width);
+        } on FormatException catch (error) {
+          debugPrint('Invalid constant port on $cellName: $error');
+        } on RohdException catch (error) {
+          debugPrint('Invalid constant port on $cellName: $error');
+        }
       }
       return null;
     }
@@ -484,7 +489,12 @@ class NetlistEvaluator {
     if (parts.length < 2) {
       return false;
     }
-    final resolved = _resolveModulePath(_modules, parts, _cache);
+    final constant = _Box<({String value, int width})?>(null);
+    final resolved =
+        _resolveModulePath(_modules, parts, _cache, constResult: constant);
+    if (constant.value != null) {
+      return true;
+    }
     if (resolved == null) {
       return false;
     }
@@ -524,7 +534,12 @@ class NetlistEvaluator {
     if (parts.length < 2) {
       return false;
     }
-    final resolved = _resolveModulePath(_modules, parts, _cache);
+    final constant = _Box<({String value, int width})?>(null);
+    final resolved =
+        _resolveModulePath(_modules, parts, _cache, constResult: constant);
+    if (constant.value != null) {
+      return true;
+    }
     if (resolved == null) {
       return false;
     }
@@ -551,9 +566,11 @@ class NetlistEvaluator {
     if (parts.length < 2) {
       return 0;
     }
-    final resolved = _resolveModulePath(_modules, parts, _cache);
+    final constant = _Box<({String value, int width})?>(null);
+    final resolved =
+        _resolveModulePath(_modules, parts, _cache, constResult: constant);
     if (resolved == null) {
-      return 0;
+      return constant.value?.width ?? 0;
     }
     final signalName = parts.last;
     final nnData = resolved.index.netnames[signalName] as Map<String, dynamic>?;
@@ -784,8 +801,6 @@ class _ResolvedModule {
     }
   }
 
-  final ports = idx.ports;
-  final netnames = idx.netnames;
   final bitToSig = idx.bitToSig;
   final bitIndexInSig = idx.bitIndexInSig;
   final driverOf = idx.driverOf;
@@ -1313,19 +1328,7 @@ class _ResolvedModule {
     }
   }
 
-  // Get target signal width from the netlist bit-array length.
-  var targetWidth = 1;
-  final nnData = netnames[signalName] as Map<String, dynamic>?;
-  if (nnData != null) {
-    targetWidth = (nnData['bits'] as List?)?.whereType<int>().length ?? 1;
-  } else {
-    final pData = ports[signalName] as Map<String, dynamic>?;
-    if (pData != null) {
-      targetWidth = (pData['bits'] as List?)?.whereType<int>().length ?? 1;
-    }
-  }
-
-  final result = resolve(signalName, targetWidth);
+  final result = resolve(signalName, tw > 0 ? tw : 1);
 
   // Store all newly resolved values back into the cross-call cache.
   if (evalCache != null) {

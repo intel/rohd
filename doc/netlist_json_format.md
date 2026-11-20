@@ -6,12 +6,39 @@ SPDX-License-Identifier: BSD-3-Clause
 # ROHD Netlist JSON Format
 
 `NetlistSynthesizer` (`lib/src/synthesizers/netlist/netlist_synthesizer.dart`)
-emits a Yosys-JSON-*compatible* netlist: any tool that reads standard Yosys
-`write_json` output can load the structural parts of a ROHD netlist. On top
-of that shared base, ROHD adds a small number of extension fields so that
+emits a Yosys-JSON-*style* netlist. ROHD adds extension fields so that
 richer, ROHD-specific information (struct/array/enum typing, source
 cross-probing, generated-vs-authored signals) survives the round trip to
 JSON for tools like the schematic viewer.
+
+For an external Yosys flow, set
+`NetlistSynthesizerConfiguration(omitRohdMetadata: true)`. This omits
+`logic_type`, synthetic-cell markers, and inline source traces at serialization
+time, after connectivity processing. It retains cell types, parameters, ports,
+wire IDs, and connections. The default retains all metadata.
+
+This option alone does not make every ROHD netlist usable by Yosys. ROHD-specific
+cells require suitable models or techmaps, and not every cell representation has
+been validated against Yosys. In particular, struct models must match each
+cell's actual field ports and bit offsets; treating these cells as black boxes
+cannot establish functional equivalence. See [the Yosys test](../test/netlist_yosys_test.dart) for
+a small design-specific direct-JSON versus SystemVerilog equivalence test.
+The test uses `yosys` on `PATH`, or the executable in `ROHD_YOSYS`, and is
+skipped when it is unavailable.
+
+For a combinational design, the checkout's
+[`yosys_netlist_miter.dart`](../tool/yosys_netlist_miter.dart) checks both
+netlists for structural problems and proves that their top-level outputs match
+for two-state inputs:
+
+```shell
+dart run tool/yosys_netlist_miter.dart design.rohd.json design.sv Top [techmap.v]
+```
+
+The JSON is read directly from the file without rewriting it. The optional
+techmap must model all nonstandard cells for the particular design. This flow
+does not establish sequential or four-state equivalence; unsupported cells or
+unproven comparisons are errors, not successful checks.
 
 This document lists every field ROHD's netlist JSON emits that is **not**
 part of the standard Yosys JSON schema, what it means, and which schema
@@ -171,6 +198,15 @@ Array elements may therefore have reference names such as `data[0]`; these
 names are JSON keys, not separate SystemVerilog identifier declarations.
 Names of previously generated element netnames such as `data_0_` change to
 their canonical reference form.
+
+Netlist-only objects, including array slice and concat helpers, are allocated
+in a separate namespace seeded after canonical module names are assigned.
+They cannot claim names from SystemVerilog, even when the netlist is generated
+first. A synthetic constant keeps its `const_<index>_<value>` wire name
+when available; its driver instance uses a separate name with a `_driver`
+suffix before uniquification. The cell's output port still carries the literal
+(for example `4'h1`), and its connections identify the driven bits. Consumers
+should not infer values from cell or wire names.
 
 ## Cell-level extensions
 

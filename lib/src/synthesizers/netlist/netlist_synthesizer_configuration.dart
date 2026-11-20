@@ -107,6 +107,12 @@ class NetlistSynthesizerConfiguration {
   /// Whether to embed `rohd.src_trace` attributes in generated modules.
   final bool trace;
 
+  /// Omits ROHD type, synthetic-cell, and source-trace metadata from JSON.
+  ///
+  /// Cell types, parameters, ports, and connections are unchanged. This does
+  /// not by itself make ROHD-specific cells understood by other tools.
+  final bool omitRohdMetadata;
+
   /// The package root used to make trace source paths relative.
   final String? packageRoot;
 
@@ -121,6 +127,7 @@ class NetlistSynthesizerConfiguration {
     @visibleForTesting this.compressBitRanges = false,
     this.compactJson = false,
     this.trace = false,
+    this.omitRohdMetadata = false,
     this.packageRoot,
   });
 

@@ -13,6 +13,7 @@ import 'package:rohd/src/synthesizers/netlist/netlist_cell.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_port_direction.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_synthesis_result.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_utils.dart';
+import 'package:rohd/src/utilities/namer.dart';
 
 /// Post-processing optimization passes for netlist synthesis.
 ///
@@ -153,6 +154,7 @@ class NetlistPasses {
       }
 
       final ports = moduleDef['ports'] as Map<String, dynamic>? ?? {};
+      final netnames = moduleDef['netnames'] as Map<String, Object?>? ?? {};
       final preservedNameBits = _preservedNameBits(moduleDef);
 
       // ── Gather transparent cells ──
@@ -256,6 +258,11 @@ class NetlistPasses {
 
       final cellsToRemove = <String>{};
       final cellsToAdd = <String, Map<String, Object?>>{};
+      final namer = Namer.forGeneratedNames([
+        ...ports.keys,
+        ...cells.keys,
+        ...netnames.keys,
+      ]);
 
       for (final comp in components) {
         // Build output-bit → input-bit map for the whole cluster.
@@ -322,7 +329,8 @@ class NetlistPasses {
           continue;
         }
 
-        cellsToAdd['cluster_buf_${comp.first}'] = NetlistUtils.makeBufCell(
+        final name = namer.allocateGeneratedName('cluster_buf_${comp.first}');
+        cellsToAdd[name] = NetlistUtils.makeBufCell(
           aList.length,
           aList,
           yList,

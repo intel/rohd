@@ -1381,6 +1381,14 @@ void main() {
     test(r'And2Gate maps to $and cell', () async {
       final json = await _synthToMap(AndModule(Logic(), Logic()));
       expect(_hasCellType(json, r'$and'), isTrue);
+      final module = _modules(json).values.single as Map<String, dynamic>;
+      final cell =
+          _cells(module).values.cast<Map<String, dynamic>>().singleWhere(
+                (cell) => cell['type'] == r'$and',
+              );
+      final parameters = cell['parameters'] as Map<String, dynamic>;
+      expect(parameters['A_SIGNED'], 0);
+      expect(parameters['B_SIGNED'], 0);
     });
 
     test(r'Or2Gate maps to $or cell', () async {
@@ -1396,6 +1404,12 @@ void main() {
     test(r'NotGate maps to $not cell', () async {
       final json = await _synthToMap(NotModule(Logic()));
       expect(_hasCellType(json, r'$not'), isTrue);
+      final module = _modules(json).values.single as Map<String, dynamic>;
+      final cell =
+          _cells(module).values.cast<Map<String, dynamic>>().singleWhere(
+                (cell) => cell['type'] == r'$not',
+              );
+      expect((cell['parameters'] as Map<String, dynamic>)['A_SIGNED'], 0);
     });
 
     test('user-named internal signals remain driven and named', () async {

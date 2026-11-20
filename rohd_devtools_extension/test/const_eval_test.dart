@@ -15,8 +15,33 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:rohd/rohd.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/services/netlist_evaluator.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/utils/regex_utils.dart';
+import 'package:rohd_hierarchy/rohd_hierarchy.dart';
+
+class _Pair extends LogicStructure {
+  _Pair({super.name})
+      : super([Logic(name: 'low', width: 4), Logic(name: 'high', width: 4)]);
+
+  @override
+  _Pair clone({String? name}) => _Pair(name: name);
+}
+
+class _SyntheticPaths extends Module {
+  _SyntheticPaths() {
+    final pair = addTypedInput('pair', _Pair());
+    final a = addInputArray('a', LogicArray([2], 4),
+        dimensions: [2], elementWidth: 4);
+    final out = addTypedOutput('result', _Pair.new);
+    out.elements[0] <= pair.elements[1] ^ a.elements[0];
+    out.elements[1] <= Const(1, width: 4);
+    final arrayOut =
+        addOutputArray('arrayOut', dimensions: [2], elementWidth: 4);
+    arrayOut.elements[0] <= ~a.elements[0];
+    arrayOut.elements[1] <= ~a.elements[1];
+  }
+}
 
 void main() {
   late Map<String, dynamic> netlistJson;
@@ -27,6 +52,53 @@ void main() {
         await File('test/fixtures/filter_bank.json').readAsString();
     netlistJson = jsonDecode(jsonContent) as Map<String, dynamic>;
     modules = netlistJson['modules'] as Map<String, dynamic>;
+  });
+
+  test('generated synthetic cells and ports round-trip through hierarchy',
+      () async {
+    final dut = _SyntheticPaths();
+    await dut.build();
+    final json = NetlistSynthesizer().synthesizeToJson(dut);
+    final hierarchy = NetlistHierarchyAdapter.fromJson(json);
+    final types = <String>{};
+    const syntheticTypes = {
+      r'$const',
+      r'$slice',
+      r'$concat',
+      r'$struct_pack',
+      r'$struct_unpack',
+    };
+    for (final child in hierarchy.root.children) {
+      if (!syntheticTypes.contains(child.definition)) {
+        continue;
+      }
+      types.add(child.definition!);
+      expect(hierarchy.occurrenceByPathname(child.path()), same(child));
+      expect(hierarchy.pathnameToAddress(child.path()), child.address);
+      for (final port in child.ports) {
+        expect(hierarchy.portByPathname(port.path()), same(port));
+        expect(hierarchy.pathnameToAddress(port.path()), port.address);
+      }
+    }
+    expect(types, syntheticTypes);
+  });
+
+  test('legacy same-name net does not shadow constant occurrence', () {
+    final hierarchy = NetlistHierarchyAdapter.fromMap(
+      netlistJson,
+      rootNameOverride: 'FilterBank',
+    );
+    final owner = hierarchy.root;
+    final driver = owner.children.firstWhere(
+      (child) =>
+          child.definition == r'$const' &&
+          owner.signalIndexByName(child.name) >= 0,
+    );
+    final net = owner.signals[owner.signalIndexByName(driver.name)];
+    expect(hierarchy.pathnameToAddress(net.path()), net.address);
+    expect(hierarchy.occurrenceByPathname(driver.path()), same(driver));
+    expect(hierarchy.portByPathname(driver.ports.single.path()),
+        same(driver.ports.single));
   });
 
   /// Find all $const cell-port paths in the top module.
