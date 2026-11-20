@@ -60,29 +60,29 @@ void main() {
 
     // Sub-signals should have correct individual values for ch0
     expect(
-      consts.containsKey('FilterBank/ch0/coeffArray_0_'),
+      consts.containsKey('FilterBank/ch0/coeffArray[0]'),
       isTrue,
-      reason: 'ch0/coeffArray_0 should be extracted',
+      reason: 'ch0/coeffArray[0] should be extracted',
     );
     expect(
-      consts.containsKey('FilterBank/ch0/coeffArray_1_'),
+      consts.containsKey('FilterBank/ch0/coeffArray[1]'),
       isTrue,
-      reason: 'ch0/coeffArray_1 should be extracted',
+      reason: 'ch0/coeffArray[1] should be extracted',
     );
     expect(
-      consts.containsKey('FilterBank/ch0/coeffArray_2_'),
+      consts.containsKey('FilterBank/ch0/coeffArray[2]'),
       isTrue,
-      reason: 'ch0/coeffArray_2 should be extracted',
+      reason: 'ch0/coeffArray[2] should be extracted',
     );
 
     // Check values: ch0 coefficients = [1, 2, 1]
-    expect(consts['FilterBank/ch0/coeffArray_0_']!['value'], "16'h1");
-    expect(consts['FilterBank/ch0/coeffArray_1_']!['value'], "16'h2");
-    expect(consts['FilterBank/ch0/coeffArray_2_']!['value'], "16'h1");
+    expect(consts['FilterBank/ch0/coeffArray[0]']!['value'], "16'h1");
+    expect(consts['FilterBank/ch0/coeffArray[1]']!['value'], "16'h2");
+    expect(consts['FilterBank/ch0/coeffArray[2]']!['value'], "16'h1");
 
     // Check values: ch1 coefficients = [1, -2 (0xFFFE), 1]
-    expect(consts['FilterBank/ch1/coeffArray_0_']!['value'], "16'h1");
-    expect(consts['FilterBank/ch1/coeffArray_1_']!['value'], "16'hfffe");
-    expect(consts['FilterBank/ch1/coeffArray_2_']!['value'], "16'h1");
+    expect(consts['FilterBank/ch1/coeffArray[0]']!['value'], "16'h1");
+    expect(consts['FilterBank/ch1/coeffArray[1]']!['value'], "16'hfffe");
+    expect(consts['FilterBank/ch1/coeffArray[2]']!['value'], "16'h1");
   });
 }
