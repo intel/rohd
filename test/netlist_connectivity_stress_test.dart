@@ -10,6 +10,7 @@
 import 'dart:convert';
 
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
 
 class _Pair extends LogicStructure {
@@ -169,6 +170,59 @@ class _ConnectivityStressParent extends Module {
   }
 }
 
+class _BusSubsetSelections extends Module {
+  _BusSubsetSelections(Logic data, {String? onlyOutput})
+      : super(definitionName: 'BusSubsetSelections') {
+    data = addInput('data', data, width: 8);
+    Logic intermediate() => BusSubset(data, 2, 6)
+        .subset
+        .named('intermediate', naming: Naming.renameable);
+    final outputs = <String, Logic Function()>{
+      'forward': () => BusSubset(data, 1, 3).subset,
+      'reverseInside': () => BusSubset(data, 3, 1).subset,
+      'reverseOutside': () => BusSubset(data, 6, 3).subset,
+      'reverseFull': () => BusSubset(data, 7, 0).subset,
+      'single': () => BusSubset(data, 5, 5).subset,
+      'reverseNested': () => BusSubset(intermediate(), 3, 1).subset,
+      'reverseTwice': () {
+        final reversed = BusSubset(intermediate(), 4, 0)
+            .subset
+            .named('reverseTwiceInput', naming: Naming.renameable);
+        return BusSubset(reversed, 4, 0).subset;
+      },
+      'combined': () => [
+            BusSubset(data, 3, 1).subset,
+            BusSubset(data, 1, 3).subset,
+          ].concat(),
+      'reverseAdjacent': () => [
+            BusSubset(data, 3, 2).subset,
+            BusSubset(data, 5, 4).subset,
+          ].concat(),
+      'reverseConcat': () => BusSubset(
+            [data.getRange(0, 4), data.getRange(4, 8)].concat(),
+            5,
+            2,
+          ).subset,
+    };
+    for (final entry in outputs.entries) {
+      if (onlyOutput == null || onlyOutput == entry.key) {
+        final value = entry.value();
+        addOutput(entry.key, width: value.width) <= value;
+      }
+    }
+  }
+}
+
+class _BusSubsetParent extends Module {
+  _BusSubsetParent(Logic data, String onlyOutput)
+      : super(definitionName: 'BusSubsetParent') {
+    data = addInput('data', data, width: 8);
+    final child = _BusSubsetSelections(data, onlyOutput: onlyOutput);
+    final output = child.output(onlyOutput);
+    addOutput(onlyOutput, width: output.width) <= output;
+  }
+}
+
 typedef _Source = ({String port, int bit});
 
 /// Traces transparent cell outputs back to input-port bits.
@@ -233,11 +287,10 @@ Map<String, List<_Source>> _traceOutputs(
         final input = conns['A'] as List;
         final output = conns['Y'] as List;
         final offset = params['OFFSET'] as int;
-        final start = input.length == output.length ? 0 : offset;
-        if (start + output.length > input.length) {
+        if (offset < 0 || offset + output.length > input.length) {
           throw StateError('$name selects beyond its input');
         }
-        mapBits(output, input.sublist(start, start + output.length));
+        mapBits(output, input.sublist(offset, offset + output.length));
       case r'$concat':
         final names = dirs.entries
             .where((port) => port.value == 'input')
@@ -250,11 +303,11 @@ Map<String, List<_Source>> _traceOutputs(
           if (port == 'B') {
             return (conns['A'] as List).length;
           }
-          final match = RegExp(r'^\[\d+:(\d+)\]$').firstMatch(port);
+          final match = RegExp(r'^\[(\d+)(?::(\d+))?\]$').firstMatch(port);
           if (match == null) {
             throw StateError('$name has unknown port $port');
           }
-          return int.parse(match.group(1)!);
+          return int.parse(match.group(2) ?? match.group(1)!);
         }
 
         names.sort((a, b) => offset(a).compareTo(offset(b)));
@@ -340,6 +393,19 @@ List<_Source> _bits(String port, Iterable<int> indices) =>
 Iterable<int> _range(int start, int end) =>
     Iterable.generate(end - start, (i) => start + i);
 
+final _busSubsetExpected = <String, List<_Source>>{
+  'forward': _bits('data', [1, 2, 3]),
+  'reverseInside': _bits('data', [3, 2, 1]),
+  'reverseOutside': _bits('data', [6, 5, 4, 3]),
+  'reverseFull': _bits('data', [7, 6, 5, 4, 3, 2, 1, 0]),
+  'single': _bits('data', [5]),
+  'reverseNested': _bits('data', [5, 4, 3]),
+  'reverseTwice': _bits('data', [2, 3, 4, 5, 6]),
+  'combined': _bits('data', [1, 2, 3, 3, 2, 1]),
+  'reverseAdjacent': _bits('data', [5, 4, 3, 2]),
+  'reverseConcat': _bits('data', [1, 0, 7, 6]),
+};
+
 final _expected = <String, List<_Source>>{
   'adjacent': _bits('vector', _range(0, 8)),
   'permuted': _bits('vector', [
@@ -411,6 +477,59 @@ final _hierarchicalExpected = {
 
 void main() {
   tearDown(Simulator.reset);
+
+  test('bus subset oracle agrees with ROHD and SystemVerilog simulation',
+      () async {
+    final module = _BusSubsetSelections(Logic(width: 8));
+    await module.build();
+    final vectors = [
+      for (var inputBit = 0; inputBit < 8; inputBit++)
+        Vector(
+          {'data': 1 << inputBit},
+          {
+            for (final output in _busSubsetExpected.entries)
+              output.key: output.value.indexed.fold<int>(
+                0,
+                (value, bit) =>
+                    value | (bit.$2.bit == inputBit ? 1 << bit.$1 : 0),
+              ),
+          },
+        ),
+    ];
+    await SimCompare.checkFunctionalVector(module, vectors);
+    SimCompare.checkIverilogVector(module, vectors);
+  });
+
+  for (final entry in _busSubsetExpected.entries) {
+    for (final dce in [false, true]) {
+      for (final collapse in [false, true]) {
+        for (final hierarchical in [false, true]) {
+          test(
+              'bus subset ${entry.key} bit mapping '
+              '(DCE=$dce, collapse=$collapse, hierarchy=$hierarchical)',
+              () async {
+            final module = hierarchical
+                ? _BusSubsetParent(Logic(width: 8), entry.key)
+                : _BusSubsetSelections(Logic(width: 8), onlyOutput: entry.key);
+            await module.build();
+            final synthesizer = NetlistSynthesizer(
+              configuration: NetlistSynthesizerConfiguration(
+                enableDeadCellElimination: dce,
+                collapseTransparentClusters: collapse,
+              ),
+            );
+            final json =
+                jsonDecode(synthesizer.synthesizeToJson(module)) as Map;
+            final modules = json['modules'] as Map<String, dynamic>;
+            final definition =
+                modules[module.definitionName] as Map<String, dynamic>;
+            expect(
+                _traceOutputs(definition, modules), {entry.key: entry.value});
+          });
+        }
+      }
+    }
+  }
 
   for (final hierarchical in [false, true]) {
     test('stress simulation agrees with the oracle (hierarchy=$hierarchical)',

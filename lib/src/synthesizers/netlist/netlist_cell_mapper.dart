@@ -283,12 +283,19 @@ class NetlistCellMapper {
         final inName = sub.inputs.keys.first;
         final outName = sub.outputs.keys.first;
         final r = ctx.remap({inName: 'A', outName: 'Y'});
+        final reversed = sub.startIndex > sub.endIndex;
+        if (reversed) {
+          // A Yosys slice is always ascending in its input bit order.
+          r.connections['A'] = r.connections['A']!.reversed.toList();
+        }
         return (
           cellType: r'$slice',
           portDirs: r.portDirs,
           connections: r.connections,
           parameters: <String, Object?>{
-            'OFFSET': sub.startIndex,
+            'OFFSET': reversed
+                ? ctx.width(inName) - 1 - sub.startIndex
+                : sub.startIndex,
             'A_WIDTH': ctx.width(inName),
             'Y_WIDTH': ctx.width(outName),
           },

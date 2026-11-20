@@ -644,8 +644,8 @@ void main() {
       await module.build();
       final sv = SystemVerilogService(module, register: false);
       final sc = SystemCService(module, register: false, multiFile: false);
-      final trace =
-          TraceService(module, svService: sv, scService: sc, register: false);
+      final trace = TraceService(module,
+          svService: sv, scService: sc, packageRoot: '', register: false);
       final netlist =
           jsonDecode(module.generateNetlist()) as Map<String, dynamic>;
       final definitions = netlist['modules'] as Map<String, dynamic>;
@@ -686,8 +686,9 @@ void main() {
         }
       }
 
-      final flc = jsonDecode(trace.flcJson) as Map<String, dynamic>;
-      final modules = flc['modules'] as Map<String, dynamic>;
+      final flc = trace.singleFileFlcHierarchy('${module.definitionName}.sv',
+          scFilename: '${module.definitionName}.sc', packageMap: const {})!;
+      final modules = flc['modules']! as Map<String, dynamic>;
       collectSymbols((modules[module.definitionName] as Map)['tree']);
       expect(symbols, hasLength(1));
       expect(symbols.single, contains('sv:$svPosition'));
@@ -714,8 +715,8 @@ out = values[0];
       await module.build();
       final sv = SystemVerilogService(module, register: false);
       final sc = SystemCService(module, register: false, multiFile: false);
-      final trace =
-          TraceService(module, svService: sv, scService: sc, register: false);
+      final trace = TraceService(module,
+          svService: sv, scService: sc, packageRoot: '', register: false);
       final netlist =
           jsonDecode(module.generateNetlist()) as Map<String, dynamic>;
       final definitions = netlist['modules'] as Map<String, dynamic>;
@@ -727,7 +728,9 @@ out = values[0];
           sv.singleFileSvLineMaps[module.definitionName]![name]!.first;
       final scPosition =
           sc.singleFileScLineMaps[module.definitionName]![name]!.first;
-      expect(trace.flcJson, contains('$name@sv:$svPosition;sc:$scPosition'));
+      final flc = trace.singleFileFlcHierarchy('${module.definitionName}.sv',
+          scFilename: '${module.definitionName}.sc', packageMap: const {})!;
+      expect(jsonEncode(flc), contains('$name@sv:$svPosition;sc:$scPosition'));
       expect(sv.output, contains('~$name'));
       expect(sc.output, contains('arr.read().range(23, 16)'));
     });

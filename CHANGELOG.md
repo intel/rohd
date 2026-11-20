@@ -1,5 +1,6 @@
 ## Unreleased
 
+- Fix reversed `BusSubset` bit ordering and invalid slice offsets in generated netlists.
 - Preserve canonical array-reference names in netlists and FLC output locations for SystemVerilog and SystemC.
 - Preserve component construction frames when stack trimming would discard them, and retain FLC entries with generated output locations even when no Dart source frame exists.
 - Correct FLC line and column positions for output connections following multiline SystemVerilog instance inputs.
