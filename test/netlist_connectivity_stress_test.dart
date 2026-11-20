@@ -478,12 +478,19 @@ final _hierarchicalExpected = {
 void main() {
   tearDown(Simulator.reset);
 
-  for (final collapse in [false, true]) {
+  for (final (collapse, trace) in [
+    (false, false),
+    (true, false),
+    (false, true),
+    (true, true),
+  ]) {
     test(
-        'omitting metadata preserves the complete netlist (collapse=$collapse)',
-        () async {
-      SourceTracer.activate();
-      addTearDown(SourceTracer.clear);
+        'omitting metadata preserves the complete netlist '
+        '(collapse=$collapse, trace=$trace)', () async {
+      if (trace) {
+        SourceTracer.activate();
+        addTearDown(SourceTracer.clear);
+      }
       final module = _ConnectivityStress(Logic(width: 16), Logic(width: 8),
           LogicArray([4], 4), _Pair(), _Envelope());
       await module.build();
@@ -492,14 +499,14 @@ void main() {
           jsonDecode(NetlistSynthesizer(
             configuration: NetlistSynthesizerConfiguration(
               collapseTransparentClusters: collapse,
-              trace: true,
+              trace: trace,
               omitRohdMetadata: omitMetadata,
             ),
           ).synthesizeToJson(module)) as Map<String, dynamic>;
 
       final normal = emit(omitMetadata: false);
       final stripped = emit(omitMetadata: true);
-      expect(normal.remove('files'), isNotEmpty);
+      expect(normal.remove('files'), trace ? isNotEmpty : isNull);
       final normalModules = normal['modules'] as Map<String, dynamic>;
       var syntheticCells = 0;
       var typedEntries = 0;
@@ -527,9 +534,9 @@ void main() {
       }
       expect(syntheticCells, greaterThan(0));
       expect(typedEntries, greaterThan(0));
-      expect(traces, greaterThan(0));
+      expect(traces, trace ? greaterThan(0) : isZero);
       expect(stripped, equals(normal));
-    });
+    }, testOn: trace ? 'vm' : null);
   }
 
   test('individual netlist files also omit metadata without changing wiring',
