@@ -918,7 +918,13 @@ class NetlistSynthesizer extends Synthesizer {
           params['FIELD_${i}_WIDTH'] = f.dstUpperIndex - f.dstLowerIndex + 1;
         }
 
-        cells['${cellName}_$structName'] = NetlistCell(
+        final baseCellName = '${cellName}_$structName';
+        var uniqueCellName = baseCellName;
+        var suffix = 0;
+        while (cells.containsKey(uniqueCellName)) {
+          uniqueCellName = '${baseCellName}_${suffix++}';
+        }
+        cells[uniqueCellName] = NetlistCell(
           type: r'$struct_pack',
           origin: NetlistCellOrigin.structurePack,
           parameters: params,

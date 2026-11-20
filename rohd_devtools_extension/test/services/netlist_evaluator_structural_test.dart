@@ -66,6 +66,97 @@ void _expectValue(
 }
 
 void main() {
+  test('resolves legacy array names from a parent snapshot', () {
+    final modules = _topModule(
+      ports: {
+        'data': _signal([1, 2, 3, 4]),
+      },
+      netnames: {
+        'data_0_': _signal([5, 6]),
+        'data_1_': _signal([7, 8]),
+      },
+      cells: {
+        'slim': {'type': 'unavailable'},
+      },
+    );
+    final evaluator = NetlistEvaluator(modules);
+    _expectValue(
+      _evaluate(modules, 'data_1_', snapshot: {'top/data': "4'hd"}),
+      3,
+      2,
+    );
+    expect(evaluator.isComputed('top/data_1_'), isTrue);
+    expect(evaluator.canEvaluate('top/data_1_'), isTrue);
+    expect(evaluator.isComputed('top/data_2_'), isFalse);
+  });
+
+  test('does not confuse a distinct underscore name with an array element', () {
+    final modules = _topModule(
+      ports: {
+        'data': _signal([1, 2, 3, 4]),
+        'source': _signal([9, 10]),
+      },
+      netnames: {
+        'data[0]': _signal([5, 6]),
+        'data_0_': _signal([7, 8]),
+      },
+      cells: {
+        'buffer': _cell(
+          type: r'$buf',
+          connections: {
+            'A': [9, 10],
+            'Y': [7, 8],
+          },
+          directions: {'A': 'input', 'Y': 'output'},
+        ),
+      },
+    );
+    _expectValue(
+      _evaluate(
+        modules,
+        'data_0_',
+        snapshot: {'top/data': "4'hf", 'top/source': "2'h1"},
+      ),
+      1,
+      2,
+    );
+    _expectValue(
+      _evaluate(modules, 'data[0]', snapshot: {'top/data': "4'hf"}),
+      3,
+      2,
+    );
+  });
+
+  test('resolves a canonical element from a computed parent', () {
+    final modules = _topModule(
+      ports: {
+        'source': _signal([1, 2, 3, 4]),
+      },
+      netnames: {
+        'data': _signal([5, 6, 7, 8]),
+        'data[1]': _signal([9, 10]),
+      },
+      cells: {
+        'buffer': _cell(
+          type: r'$buf',
+          connections: {
+            'A': [1, 2, 3, 4],
+            'Y': [5, 6, 7, 8],
+          },
+          directions: {'A': 'input', 'Y': 'output'},
+        ),
+      },
+    );
+    final evaluator = NetlistEvaluator(modules);
+    _expectValue(
+      _evaluate(modules, 'data[1]', snapshot: {'top/source': "4'h9"}),
+      2,
+      2,
+    );
+    expect(evaluator.collectLeaves('top/data[1]'), {'top/source'});
+    expect(evaluator.allEvaluablePaths('top'), contains('top/data[1]'));
+  });
+
   test('evaluates concat and slice-style structural cells', () {
     final concatModules = _topModule(
       ports: {

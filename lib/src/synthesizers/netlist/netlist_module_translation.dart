@@ -971,15 +971,24 @@ class NetlistModuleTranslation {
   }) {
     var constantIndex = 0;
     final emittedConstantWires = <int>{};
+    final consumedIds = NetlistValidation.connectedBits(
+      ports,
+      cells,
+      portDirections: const {'output', 'inout'},
+      cellDirection: 'input',
+    )..addAll(preservedNameBits);
     for (final entry in _synthLogicIds.entries
         .where((entry) => entry.key.isConstant)
-        .where((entry) => !_blockedConstSynthLogics.contains(entry.key))
         .where((entry) => entry.value.isNotEmpty)) {
       final constant = NetlistUtils.constValueFromSynthLogic(entry.key);
       if (constant == null) {
         continue;
       }
       final resolvedIds = applyAlias(entry.value.cast<Object>());
+      if (_blockedConstSynthLogics.contains(entry.key) &&
+          !resolvedIds.whereType<int>().any(consumedIds.contains)) {
+        continue;
+      }
       final firstWire = resolvedIds.firstWhere(
         (bit) => bit is int,
         orElse: () => -1,
@@ -1007,12 +1016,6 @@ class NetlistModuleTranslation {
     if (!pruneFloating) {
       return;
     }
-    final consumedIds = NetlistValidation.connectedBits(
-      ports,
-      cells,
-      portDirections: const {'output', 'inout'},
-      cellDirection: 'input',
-    )..addAll(preservedNameBits);
     cells.removeWhere((_, rawCell) {
       final cell = rawCell as Map<String, dynamic>;
       if (cell['type'] != r'$const') {

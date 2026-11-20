@@ -1,3 +1,7 @@
+## Unreleased
+
+- Evaluate canonical nested array element names in the DevTools netlist evaluator.
+
 ## 0.1.0
 
 - Publish the ROHD Live Debugger as an opt-in Dart DevTools extension.
