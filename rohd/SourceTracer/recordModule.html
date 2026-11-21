@@ -112,7 +112,7 @@ subclass constructor, and everything below that is calling context).</p>
     &#47;&#47; that&#39;s the module constructor frame.
     int? lastModuleLine;
     for (var i = lines.length - 1; i &gt;= 0; i--) {
-      if (lines[i].contains(baseName)) {
+      if (_lineIsModuleConstructor(lines[i], {baseName})) {
         lastModuleLine = i;
         break;
       }

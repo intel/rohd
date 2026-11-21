@@ -609,17 +609,9 @@ SynthesisResult synthesize(
             ];
 
   &#47;&#47; -- Elide trivial $slice cells ----------------------------------
-  &#47;&#47; Also elide struct_slice cells ([SynthStructureSlice] instances from
-  &#47;&#47; `_subsetReceiveStructPort`) because the new `$struct_unpack` cells
-  &#47;&#47; emitted below supersede them with better-named field-level connections.
   cells.removeWhere((cellKey, cell) {
     if (cell[&#39;type&#39;] != r&#39;$slice&#39;) {
       return false;
-    }
-    &#47;&#47; Unconditionally remove struct_slice cells — they are duplicated by
-    &#47;&#47; $struct_unpack cells which carry field names.
-    if (NetlistCell.hasOrigin(cell, NetlistCellOrigin.structureSlice)) {
-      return true;
     }
     final params = cell[&#39;parameters&#39;] as Map&lt;String, Object?&gt;?;
     final offset = params?[&#39;OFFSET&#39;];
@@ -739,7 +731,8 @@ SynthesisResult synthesize(
         params[&#39;FIELD_${i}_WIDTH&#39;] = f.width;
       }
 
-      cells[&#39;struct_unpack_${suIdx}_$structName&#39;] = NetlistCell(
+      cells[translation.generatedName(&#39;struct_unpack_${suIdx}_$structName&#39;)] =
+          NetlistCell(
         type: r&#39;$struct_unpack&#39;,
         origin: NetlistCellOrigin.structureUnpack,
         parameters: params,
@@ -749,6 +742,63 @@ SynthesisResult synthesize(
       suIdx++;
     }
   }
+
+  &#47;&#47; Only remove a structure slice when an unpack path supplies the same
+  &#47;&#47; output bits from the same input bits. Some slices have no unpack peer.
+  final unpackMappings = &lt;int, Set&lt;Object&gt;&gt;{};
+  for (final cell in cells.values) {
+    if (!NetlistCell.hasOrigin(cell, NetlistCellOrigin.structureUnpack)) {
+      continue;
+    }
+    final conns = cell[&#39;connections&#39;]! as Map&lt;String, dynamic&gt;;
+    final dirs = cell[&#39;port_directions&#39;]! as Map&lt;String, dynamic&gt;;
+    final params = cell[&#39;parameters&#39;]! as Map&lt;String, dynamic&gt;;
+    final input = conns[&#39;A&#39;]! as List;
+    final fields = dirs.entries.where((entry) =&gt; entry.value == &#39;output&#39;);
+    for (final (index, field) in fields.indexed) {
+      final offset = params[&#39;FIELD_${index}_OFFSET&#39;]! as int;
+      final output = conns[field.key]! as List;
+      for (var i = 0; i &lt; output.length; i++) {
+        if (output[i] is int &amp;&amp; offset + i &lt; input.length) {
+          (unpackMappings[output[i] as int] ??= &lt;Object&gt;{})
+              .add(input[offset + i] as Object);
+        }
+      }
+    }
+  }
+  Object? unpackSource(Object bit) {
+    final visited = &lt;int&gt;{};
+    while (bit is int &amp;&amp; unpackMappings.containsKey(bit)) {
+      if (!visited.add(bit) || unpackMappings[bit]!.length != 1) {
+        return null;
+      }
+      bit = unpackMappings[bit]!.single;
+    }
+    return bit;
+  }
+
+  cells.removeWhere((_, cell) {
+    if (!NetlistCell.hasOrigin(cell, NetlistCellOrigin.structureSlice)) {
+      return false;
+    }
+    final conns = cell[&#39;connections&#39;]! as Map&lt;String, dynamic&gt;;
+    final input = conns[&#39;A&#39;]! as List;
+    final output = conns[&#39;Y&#39;]! as List;
+    final params = cell[&#39;parameters&#39;]! as Map&lt;String, dynamic&gt;;
+    final offset = params[&#39;OFFSET&#39;]! as int;
+    return output.isNotEmpty &amp;&amp;
+        output.indexed.every((entry) {
+          final bit = entry.$2;
+          if (bit is! int ||
+              offset + entry.$1 &gt;= input.length ||
+              !unpackMappings.containsKey(bit)) {
+            return false;
+          }
+          final unpackRoot = unpackSource(bit);
+          return unpackRoot != null &amp;&amp;
+              unpackRoot == unpackSource(input[offset + entry.$1] as Object);
+        });
+  });
 
   &#47;&#47; -- Emit $struct_pack cells for output struct ports ------------------
   &#47;&#47; Group compose entries by destination port and emit a single
@@ -780,7 +830,9 @@ SynthesisResult synthesize(
       &#47;&#47; Filter out trivial fields.
       final nonTrivialFields = fields
           .map((sc) {
-            final resolvedSrcBits = applyAlias(sc.srcIds.cast&lt;Object&gt;());
+            final resolvedSrcBits = applyArraySliceOutputs(
+              applyAlias(sc.srcIds.cast&lt;Object&gt;()),
+            );
             final yBits = resolvedDstBits.sublist(
               sc.dstLowerIndex,
               sc.dstUpperIndex + 1,
@@ -857,7 +909,8 @@ SynthesisResult synthesize(
         params[&#39;FIELD_${i}_WIDTH&#39;] = f.dstUpperIndex - f.dstLowerIndex + 1;
       }
 
-      cells[&#39;${cellName}_$structName&#39;] = NetlistCell(
+      final baseCellName = &#39;${cellName}_$structName&#39;;
+      cells[translation.generatedName(baseCellName)] = NetlistCell(
         type: r&#39;$struct_pack&#39;,
         origin: NetlistCellOrigin.structurePack,
         parameters: params,
@@ -946,12 +999,41 @@ SynthesisResult synthesize(
     }
   }
 
+  &#47;&#47; A slice supplying a concat is upstream of it, even when their array
+  &#47;&#47; IDs alias. Redirecting that slice&#39;s input would create a cycle.
+  bool sliceFeedsConcat(String? sliceKey, String concatKey) {
+    final slice = cells[sliceKey];
+    final concat = cells[concatKey];
+    if (slice == null ||
+        concat == null ||
+        !NetlistCell.hasOrigin(slice, NetlistCellOrigin.arraySlice)) {
+      return false;
+    }
+    final sliceConnections = slice[&#39;connections&#39;]! as Map&lt;String, dynamic&gt;;
+    final sliceOutputs =
+        (sliceConnections[&#39;Y&#39;]! as List).whereType&lt;int&gt;().toSet();
+    final concatConnections = concat[&#39;connections&#39;]! as Map&lt;String, dynamic&gt;;
+    final concatDirections =
+        concat[&#39;port_directions&#39;]! as Map&lt;String, dynamic&gt;;
+    return concatConnections.entries.any(
+      (entry) =&gt;
+          concatDirections[entry.key] == &#39;input&#39; &amp;&amp;
+          (entry.value as List).whereType&lt;int&gt;().any(sliceOutputs.contains),
+    );
+  }
+
   List&lt;Object&gt; rewriteArrayConcatConsumerBits(
     List&lt;Object&gt; bits, {
     String? consumingCellKey,
   }) {
+    final upstreamConcatKeys = &lt;String&gt;{
+      for (final replacement in arrayConcatReplacements)
+        if (sliceFeedsConcat(consumingCellKey, replacement.cellKey))
+          replacement.cellKey,
+    };
     for (final replacement in arrayConcatReplacements) {
       if (replacement.cellKey == consumingCellKey ||
+          upstreamConcatKeys.contains(replacement.cellKey) ||
           replacement.oldBits.length != bits.length) {
         continue;
       }
@@ -972,7 +1054,9 @@ SynthesisResult synthesize(
       final producerIndices = arrayConcatOutputProducers[bit]
           ?.where(
             (index) =&gt;
-                arrayConcatReplacements[index].cellKey != consumingCellKey,
+                arrayConcatReplacements[index].cellKey != consumingCellKey &amp;&amp;
+                !upstreamConcatKeys
+                    .contains(arrayConcatReplacements[index].cellKey),
           )
           .toList();
       if (producerIndices == null || producerIndices.length != 1) {
@@ -1025,6 +1109,12 @@ SynthesisResult synthesize(
         }
       }
     }
+    &#47;&#47; Rewriting can leave an aggregate unused even though its former
+    &#47;&#47; aliased output bits were consumed when cleanup ran above.
+    translation.processCellCleanup(
+      enableDce: configuration.enableDeadCellElimination,
+      preservedNameBits: preservedNameBits,
+    );
   }
 
   translation.processNetnames(
@@ -1053,6 +1143,7 @@ SynthesisResult synthesize(
     cells: cells,
     netnames: netnames,
     attributes: attr,
+    omitRohdMetadata: configuration.omitRohdMetadata,
   );
 }</code></pre>
 </section>

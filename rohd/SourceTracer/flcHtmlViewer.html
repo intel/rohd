@@ -128,7 +128,10 @@ const stats = document.getElementById(&#39;stats&#39;);
 let totalSymbols = 0;
 
 function makeLinks(frames) {
-return frames.map(f =&gt; {
+return frames.filter(f =&gt; {
+  const fi = parseInt(f.split(&#39;:&#39;)[0]);
+  return fi &gt;= 0 &amp;&amp; fi &lt; files.length;
+}).map(f =&gt; {
   const parts = f.split(&#39;:&#39;);
   const fi = parseInt(parts[0]);
   const line = parts[1];

@@ -288,15 +288,16 @@ construction provenance.</p>
     if (useSynthDef) {
       for (final sl in allSynthLogics) {
         final logicNames = &lt;String&gt;{for (final l in sl.logics) l.name};
+        final canonicalName = sl.name;
+        final outputPositions = outputPositionsFor(canonicalName);
         final frames = encodeFrames(
           synthLogicTrace(module, sl, sourceLogics: sourceLogics),
           module,
         );
-        if (frames == null) {
+        if (frames == null &amp;&amp; outputPositions.isEmpty) {
           continue;
         }
 
-        final canonicalName = sl.name;
         String? origName;
         if (!logicNames.contains(canonicalName)) {
           final base = canonicalName.replaceFirst(RegExp(r&#39;_\d+$&#39;), &#39;&#39;);
@@ -314,10 +315,8 @@ construction provenance.</p>
         }
 
         final needsOrig = origName != null &amp;&amp; origName != canonicalName;
-        final outputPositions = outputPositionsFor(canonicalName);
-
         insertIntoTrie(
-          frames,
+          frames ?? const [&#39;-1:1:1&#39;],
           encodeSymbol(
             canonicalName,
             outputPositions:
@@ -337,14 +336,14 @@ construction provenance.</p>
 
     &#47;&#47; --- Instances ---
     for (final sub in module.subModules) {
-      final frames = encodeFrames(_current!._moduleTraces[sub], module);
-      if (frames == null) {
-        continue;
-      }
       final instName = sub.uniqueInstanceName;
       final instPositions = outputPositionsFor(instName);
+      final frames = encodeFrames(_current!._moduleTraces[sub], module);
+      if (frames == null &amp;&amp; instPositions.isEmpty) {
+        continue;
+      }
       insertIntoTrie(
-        frames,
+        frames ?? const [&#39;-1:1:1&#39;],
         encodeSymbol(
           instName,
           isInstance: true,

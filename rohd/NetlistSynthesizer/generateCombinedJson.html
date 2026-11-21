@@ -105,10 +105,17 @@ duplicated inside each module's own attributes.</p>
   }
   swCompress.stop();
 
+  if (configuration.omitRohdMetadata) {
+    modules.values.forEach(removeRohdNetlistMetadata);
+  }
+
   final combined = {
     &#39;creator&#39;: &#39;NetlistSynthesizer (rohd)&#39;,
     &#39;version&#39;: formatVersion,
-    if (fileTable != null &amp;&amp; !fileTable.isEmpty) &#39;files&#39;: fileTable.files,
+    if (!configuration.omitRohdMetadata &amp;&amp;
+        fileTable != null &amp;&amp;
+        !fileTable.isEmpty)
+      &#39;files&#39;: fileTable.files,
     &#39;modules&#39;: modules,
   };
 
