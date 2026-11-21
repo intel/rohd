@@ -67,7 +67,7 @@ if [ ! -f "$DEST/config.yaml" ]; then
   cat > "$DEST/config.yaml" << 'CFGEOF'
 name: rohd_live_debugger
 issueTracker: https://github.com/intel/rohd/issues
-version: 0.1.0
+version: 0.1.1
 materialIconCodePoint: '0xe1c5'
 requiresConnection: false
 CFGEOF

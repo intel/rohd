@@ -132,13 +132,13 @@ services. The examples above deliberately show the individual services.
 
 ## Opening from Flutter DevTools
 
-The embedded extension is opt-in. Add `rohd_live_debugger: ^0.1.0` to
+The embedded extension is opt-in. Add `rohd_live_debugger: ^0.1.1` to
 your project's `dev_dependencies` and run `dart pub get`. ROHD itself no longer
 bundles the extension; projects upgrading from the old **ROHD** tab need to
 add this package explicitly. The standalone web debugger does not require it.
-Before the first publication, use a `path:` dependency pointing to this
-checkout's `packages/rohd_live_debugger` directory instead. Build its local web
-payload with `make -C rohd_devtools_extension devtools-package` from the
+To test a checkout instead, use a `path:` dependency pointing to its
+`packages/rohd_live_debugger` directory. Build its local web payload with
+`make -C rohd_devtools_extension devtools-package` from the
 repository root; `make -C rohd_devtools_extension devtools-package-check`
 checks discovery and assets without publishing.
 
