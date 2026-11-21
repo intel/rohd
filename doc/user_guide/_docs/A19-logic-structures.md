@@ -124,6 +124,11 @@ preserve that identifier, including on nested fields. Field names derived from
 their parent structure's name may change when the parent is renamed.
 Use `sameRohdPayloadShape` to compare declared layouts and formats; this
 replaces the root-exported `sameDeclaredPayloadShape` name from ROHD 0.7.3.
+Use `rohdPayloadsCompatible` to compare a set of payloads when equal-width
+plain packed signals may bridge declared formats. It compares all pairs:
+different declared formats must not be hidden by a shared packed bridge.
+This explicit construction-time check does not change existing operator
+behavior or add hardware.
 
 ## Using `LogicStructure` to group signals
 

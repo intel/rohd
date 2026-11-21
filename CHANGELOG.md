@@ -1,4 +1,4 @@
-## Unreleased
+## 0.7.5
 
 - Allocate netlist-only names through Namer without renaming shared signals; distinguish constant driver paths from their wire paths and preserve computed constant values.
 - Allow omitting ROHD type, synthetic-cell, and source-trace metadata from netlist JSON without changing connectivity; include required unsigned parameters for Yosys unary and binary cells.
@@ -9,6 +9,9 @@
 - Correct FLC line and column positions for output connections following multiline SystemVerilog instance inputs.
 - Preserve input-array connectivity when synthetic array slices feed a concat of the same array, avoiding a disconnected cycle in the netlist.
 - Preserve array-slice connections to structure output fields and avoid duplicate structure-field slice drivers in generated netlists.
+- Add `LogicValue.log2Ceil` as a same-width, four-state alias for `clog2()`.
+- Add opt-in schema-aware flat interface port registration with explicit packed-bridge policy.
+- Add `rohdPayloadsCompatible` for opt-in pairwise payload checks with packed bridges.
 
 ## 0.7.4
 

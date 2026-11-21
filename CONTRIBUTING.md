@@ -81,6 +81,10 @@ The repository is a Pub workspace and includes Flutter packages. Run
 `flutter pub get` from the repository root to resolve all in-repository
 packages together.
 
+For AI-assisted hardware modeling, the repository includes a
+[ROHD hardware skill](.github/skills/rohd-hardware/SKILL.md). The user guide
+and API documentation remain authoritative.
+
 For WebAssembly status, browser tests, and remaining publication work, see the
 [WASM development notes](doc/wasm_development.md).
 
