@@ -1,4 +1,4 @@
-## Unreleased
+## 0.7.5
 
 - Allocate netlist-only names through Namer without renaming shared signals; distinguish constant driver paths from their wire paths and preserve computed constant values.
 - Allow omitting ROHD type, synthetic-cell, and source-trace metadata from netlist JSON without changing connectivity; include required unsigned parameters for Yosys unary and binary cells.
