@@ -593,8 +593,173 @@ class _UnnamedLocalNestedStructuredArray extends Module {
   }
 }
 
+class _SubsetInner extends LogicStructure {
+  final Logic a;
+  final Logic b;
+
+  factory _SubsetInner({String? name}) => _SubsetInner._(
+        Logic(name: 'a', width: 3),
+        Logic(name: 'b', width: 5),
+        name: name ?? 'subsetInner',
+      );
+
+  _SubsetInner._(this.a, this.b, {required String name})
+      : super([a, b], name: name);
+
+  @override
+  _SubsetInner clone({String? name}) => _SubsetInner(name: name ?? this.name);
+}
+
+class _SubsetEntry extends LogicStructure {
+  final Logic flag;
+  final Logic data;
+  final _SubsetInner inner;
+
+  factory _SubsetEntry({String? name}) => _SubsetEntry._(
+        Logic(name: 'flag'),
+        Logic(name: 'data', width: 16),
+        _SubsetInner(),
+        name: name ?? 'subsetEntry',
+      );
+
+  _SubsetEntry._(this.flag, this.data, this.inner, {required String name})
+      : super([flag, data, inner], name: name);
+
+  @override
+  _SubsetEntry clone({String? name}) => _SubsetEntry(name: name ?? this.name);
+}
+
+/// Selects sub-ranges of fields inside structured array elements.
+class _StructuredFieldSubsetModule extends Module {
+  _StructuredFieldSubsetModule(
+      List<int> dimensions, int numUnpackedDimensions) {
+    final entries = addTypedInput(
+      'entries',
+      TypedLogicArray<_SubsetEntry, LogicValue>(
+        dimensions,
+        _SubsetEntry.new,
+        numUnpackedDimensions: numUnpackedDimensions,
+      ),
+    );
+    final first = entries.arrayElements.first;
+    final last = entries.arrayElements.last;
+    addOutput('upperByte', width: 8) <= last.data.getRange(8, 16);
+    addOutput('dataBit') <= first.data[3];
+    addOutput('reversedData', width: 16) <= last.data.reversed;
+    addOutput('innerBits', width: 3) <= first.inner.b.getRange(1, 4);
+  }
+}
+
+/// Selects sub-ranges of a field inside a nested structured array.
+class _NestedFieldSubsetModule extends Module {
+  _NestedFieldSubsetModule(int outerUnpacked, int innerUnpacked) {
+    final entries = addTypedInput(
+      'entries',
+      TypedLogicArray<TypedLogicArray<_SubsetEntry, LogicValue>, LogicValue>(
+        [2],
+        ({name}) => TypedLogicArray<_SubsetEntry, LogicValue>(
+          [3],
+          _SubsetEntry.new,
+          name: name,
+          numUnpackedDimensions: innerUnpacked,
+        ),
+        numUnpackedDimensions: outerUnpacked,
+      ),
+    );
+    final data = entries.at([1]).at([2]).data;
+    addOutput('middleByte', width: 8) <= data.getRange(4, 12);
+    addOutput('reversedData', width: 16) <= data.reversed;
+  }
+}
+
+/// The packed value of the [_SubsetEntry] at flat [index] in the tests.
+LogicValue _subsetEntryValue(int index) => [
+      LogicValue.ofInt(index.isOdd ? 1 : 0, 1),
+      LogicValue.ofInt((0x1357 * (index + 3)) & 0xffff, 16),
+      LogicValue.ofInt(index & 7, 3),
+      LogicValue.ofInt((3 * index + 22) & 31, 5),
+    ].rconcat();
+
 void main() {
   group('TypedLogicArray', () {
+    for (final dimensions in [
+      [2],
+      [2, 2]
+    ]) {
+      for (var unpacked = 0; unpacked <= dimensions.length; unpacked++) {
+        test(
+            'sub-range of a structured array field $dimensions '
+            'unpacked=$unpacked', () async {
+          addTearDown(Simulator.reset);
+          final module = _StructuredFieldSubsetModule(dimensions, unpacked);
+          await module.build();
+
+          final sv = module.dumpSystemVerilog();
+          expect(
+              sv, isNot(contains(RegExp(r'entries(\[\d+\])*\[\d+:\d+\]\['))));
+
+          final count = dimensions.reduce((a, b) => a * b);
+          final entries = [
+            for (var i = 0; i < count; i++) _subsetEntryValue(i),
+          ];
+          const firstData = (0x1357 * 3) & 0xffff;
+          final lastData = (0x1357 * (count + 2)) & 0xffff;
+          const firstB = 22;
+          final vectors = [
+            Vector({
+              'entries': entries.rconcat()
+            }, {
+              'upperByte': lastData >> 8,
+              'dataBit': (firstData >> 3) & 1,
+              'reversedData': LogicValue.ofInt(lastData, 16).reversed.toInt(),
+              'innerBits': (firstB >> 1) & 7,
+            }),
+            Vector({
+              'entries': 0
+            }, {
+              'upperByte': 0,
+              'dataBit': 0,
+              'reversedData': 0,
+              'innerBits': 0,
+            }),
+          ];
+          await SimCompare.checkFunctionalVector(module, vectors);
+          SimCompare.checkIverilogVector(module, vectors);
+        });
+      }
+    }
+
+    for (var outerUnpacked = 0; outerUnpacked <= 1; outerUnpacked++) {
+      for (var innerUnpacked = 0; innerUnpacked <= 1; innerUnpacked++) {
+        test(
+            'sub-range of a nested structured array field '
+            'outerUnpacked=$outerUnpacked innerUnpacked=$innerUnpacked',
+            () async {
+          addTearDown(Simulator.reset);
+          final module = _NestedFieldSubsetModule(outerUnpacked, innerUnpacked);
+          await module.build();
+
+          final sv = module.dumpSystemVerilog();
+          expect(
+              sv, isNot(contains(RegExp(r'entries(\[\d+\])*\[\d+:\d+\]\['))));
+
+          final entries = [for (var i = 0; i < 6; i++) _subsetEntryValue(i)];
+          const data = (0x1357 * 8) & 0xffff;
+          final vectors = [
+            Vector({
+              'entries': entries.rconcat()
+            }, {
+              'middleByte': (data >> 4) & 0xff,
+              'reversedData': LogicValue.ofInt(data, 16).reversed.toInt(),
+            }),
+            Vector({'entries': 0}, {'middleByte': 0, 'reversedData': 0}),
+          ];
+          await SimCompare.checkFunctionalVector(module, vectors);
+          SimCompare.checkIverilogVector(module, vectors);
+        });
+      }
+    }
+
     for (final dimensions in [
       [2],
       [2, 2]

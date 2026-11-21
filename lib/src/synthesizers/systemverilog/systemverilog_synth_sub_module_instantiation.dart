@@ -94,10 +94,51 @@ class SystemVerilogSynthSubModuleInstantiation
     }
   }
 
+  /// Renders a [BusSubset] of a signal that already references a part-select
+  /// of an array element, or `null` if [module] is not such a subset.
+  ///
+  /// The names of these signals end in a part-select (e.g. `arr[1][15:0]`),
+  /// so appending another select would produce a chained part-select, which
+  /// SystemVerilog does not allow. Instead, the ranges are composed through
+  /// [SynthLogic.rangeName] (e.g. `arr[1][15:8]`).
+  String? _composedBusSubsetVerilog() {
+    final subset = module;
+    if (subset is! BusSubset || subset.original.isNet) {
+      return null;
+    }
+
+    final original = inputMapping[subset.original.name];
+    if (original == null ||
+        original.width <= 1 ||
+        original.declarationCleared ||
+        synthLogicToInlineableSynthSubmoduleMap?[original] != null ||
+        (original is! SynthLogicArrayStructureElement &&
+            original is! SynthLogicPackedRangeReference)) {
+      return null;
+    }
+
+    if (subset.startIndex <= subset.endIndex) {
+      return original.rangeName(subset.startIndex, subset.endIndex);
+    }
+
+    // SystemVerilog doesn't allow reverse-order select to reverse a bus, so
+    // select each bit separately, as [BusSubset] does.
+    final bits = List.generate(
+      subset.startIndex - subset.endIndex + 1,
+      (i) => original.rangeName(subset.endIndex + i, subset.endIndex + i),
+    );
+    return '{${bits.join(',')}}';
+  }
+
   /// Provides the inline SV representation for this module.
   ///
   /// Should only be called if [module] is [InlineSystemVerilog].
   String inlineVerilog() {
+    final composedSubset = _composedBusSubsetVerilog();
+    if (composedSubset != null) {
+      return '($composedSubset)';
+    }
+
     final portNameToValueMapping = _modulePortsMapWithInline(
       {...inputMapping, ...inOutMapping}
         ..remove((module as InlineSystemVerilog).resultSignalName),
@@ -154,6 +195,12 @@ class SystemVerilogSynthSubModuleInstantiation
       final result = ports[inlineModule.resultSignalName];
       final enumType = inlineResultLogic!.enumDefinition!.definitionName;
       return "assign $result = $enumType'${inlineVerilog()};  // $name";
+    }
+
+    final composedSubset = _composedBusSubsetVerilog();
+    if (composedSubset != null) {
+      final result = ports[(module as InlineSystemVerilog).resultSignalName];
+      return 'assign $result = $composedSubset;  // $name';
     }
 
     return SystemVerilogSynthesizer.instantiationVerilogFor(
