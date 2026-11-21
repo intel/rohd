@@ -17,6 +17,20 @@ enum _CaptureDirection { input, output }
 
 class _EmptyModule extends Module {}
 
+class _GroupedPayloadInterface extends Interface<MyDirection> {
+  _GroupedPayloadInterface(Logic data) {
+    setPorts([data, Logic(name: 'valid')], [MyDirection.dir1]);
+  }
+
+  @override
+  Map<String, TypedInterfacePortPolicy> get typedPayloadPorts =>
+      {'data': TypedInterfacePortPolicy.packedBridge};
+
+  @override
+  _GroupedPayloadInterface clone() =>
+      _GroupedPayloadInterface(port('data').cloneInterfacePort());
+}
+
 class _Payload extends LogicStructure implements PayloadShapeMetadata {
   @override
   final String payloadShapeMetadata;
@@ -308,6 +322,27 @@ class BadNetModule extends Module {
 }
 
 void main() {
+  test('grouped typed input keeps the local schema across a packed bridge', () {
+    final source = _GroupedPayloadInterface(Logic(name: 'data', width: 8));
+    final local = _GroupedPayloadInterface(_Payload('word', name: 'data'));
+    final module = _EmptyModule();
+    local.connectIOAsStructuredPorts(module, source,
+        name: 'bus', inputTags: [MyDirection.dir1]);
+    final input = module.input('bus_in') as LogicStructure;
+    expect(input.elements.first, isA<_Payload>());
+    source.port('data').put(42);
+    expect(local.port('data').value.toInt(), 42);
+
+    final wrong = _GroupedPayloadInterface(_Payload('other', name: 'data'));
+    final rejected = _EmptyModule();
+    expect(
+        () => wrong.connectIOAsStructuredPorts(
+            rejected, _GroupedPayloadInterface(_Payload('word', name: 'data')),
+            name: 'bus', outputTags: [MyDirection.dir1]),
+        throwsA(isA<PortTypeException>()));
+    expect(rejected.outputs, isEmpty);
+  });
+
   tearDown(() async {
     await Simulator.reset();
   });

@@ -28,19 +28,36 @@ bool hasDeclaredPayloadShape(Logic signal) =>
 ///
 /// [ignoreConstantNames] permits a constant leaf's generated name to differ
 /// from the corresponding driveable clone.
-bool sameRohdPayloadShape(Logic template, Logic source,
-        {bool ignoreConstantNames = false}) =>
-    _sameDeclaredPayloadShape(template, source,
-        ignoreConstantNames: ignoreConstantNames, allowParentRenaming: false);
+/// [allowRenamedClones] also permits recursively type-preserving parent
+/// renames and implies [ignoreConstantNames].
+bool sameRohdPayloadShape(
+  Logic template,
+  Logic source, {
+  bool ignoreConstantNames = false,
+  bool allowRenamedClones = false,
+}) =>
+    _sameDeclaredPayloadShape(
+      template,
+      source,
+      ignoreConstantNames: ignoreConstantNames || allowRenamedClones,
+      allowParentRenaming: false,
+    ) ||
+    (allowRenamedClones &&
+        hasDeclaredPayloadShape(template) &&
+        hasDeclaredPayloadShape(source) &&
+        sameTypedCloneShape(template, source));
 
 /// Whether all [payloads] are pairwise compatible through packed bridges.
 ///
 /// Every pair must have equal width. Two declared shapes must also match;
 /// a plain [Logic] may bridge a declared shape of the same width. Compatibility
 /// through a bridge is not transitive, so all declared shapes are compared.
-/// [ignoreConstantNames] has the same meaning as in [sameRohdPayloadShape].
-bool rohdPayloadsCompatible(Iterable<Logic> payloads,
-    {bool ignoreConstantNames = false}) {
+/// Options have the same meaning as in [sameRohdPayloadShape].
+bool rohdPayloadsCompatible(
+  Iterable<Logic> payloads, {
+  bool ignoreConstantNames = false,
+  bool allowRenamedClones = false,
+}) {
   final values = payloads.toList();
   for (var i = 0; i < values.length; i++) {
     for (var j = i + 1; j < values.length; j++) {
@@ -49,8 +66,12 @@ bool rohdPayloadsCompatible(Iterable<Logic> payloads,
       if (first.width != second.width ||
           (hasDeclaredPayloadShape(first) &&
               hasDeclaredPayloadShape(second) &&
-              !sameRohdPayloadShape(first, second,
-                  ignoreConstantNames: ignoreConstantNames))) {
+              !sameRohdPayloadShape(
+                first,
+                second,
+                ignoreConstantNames: ignoreConstantNames,
+                allowRenamedClones: allowRenamedClones,
+              ))) {
         return false;
       }
     }
@@ -111,12 +132,17 @@ bool _sameDeclaredPayloadShape(Logic template, Logic source,
   return template.elements.length == source.elements.length &&
       template.elements.indexed.every((entry) {
         final other = source.elements[entry.$1];
-        return (entry.$2.name == other.name ||
+        final fieldName = entry.$2.name;
+        return (fieldName == other.name ||
                 (allowParentRenaming &&
                     template.name != source.name &&
                     template.name.isNotEmpty &&
-                    entry.$2.name.replaceAll(template.name, source.name) ==
-                        other.name) ||
+                    (fieldName.replaceAll(template.name, source.name) ==
+                            other.name ||
+                        (fieldName.startsWith('${template.name}_') &&
+                            fieldName.replaceFirst(
+                                    template.name, source.name) ==
+                                other.name))) ||
                 (ignoreConstantNames &&
                     (entry.$2 is Const || other is Const))) &&
             _sameDeclaredPayloadShape(entry.$2, other,
@@ -125,12 +151,17 @@ bool _sameDeclaredPayloadShape(Logic template, Logic source,
       });
 }
 
-/// Whether [clone] preserves declared types and recursive semantic shape.
+/// Whether [clone] preserves width, declared types, and semantic shape.
 bool sameTypedCloneShape(Logic source, Logic clone) =>
-    !hasDeclaredPayloadShape(source) ||
-    (_sameDeclaredPayloadShape(source, clone,
-            ignoreConstantNames: true, allowParentRenaming: true) &&
-        _sameDeclaredCloneTypes(source, clone));
+    source.width == clone.width &&
+    (!hasDeclaredPayloadShape(source) ||
+        (_sameDeclaredPayloadShape(
+              source,
+              clone,
+              ignoreConstantNames: true,
+              allowParentRenaming: true,
+            ) &&
+            _sameDeclaredCloneTypes(source, clone)));
 
 bool _sameDeclaredCloneTypes(Logic source, Logic clone) {
   if (hasDeclaredPayloadShape(source) &&

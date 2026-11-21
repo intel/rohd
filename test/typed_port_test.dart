@@ -14,6 +14,13 @@ import 'package:test/test.dart';
 
 import 'payload_shape_test_utils.dart';
 
+class _WidthChangingLogic extends Logic {
+  _WidthChangingLogic() : super(width: 8);
+
+  @override
+  Logic clone({String? name}) => Logic(name: name, width: 7);
+}
+
 class MyStruct extends LogicStructure {
   final Logic ready;
   final Logic valid;
@@ -453,7 +460,73 @@ void main() {
     final valid = _FormatSignal('first', 'first');
     expect(valid.cloneTyped().payloadShapeMetadata, 'first');
     expect(
-        module.addTypedInput('validData', valid).payloadShapeMetadata, 'first');
+      module.addTypedInput('validData', valid).payloadShapeMetadata,
+      'first',
+    );
+  });
+
+  test('typed clone and schema-checked output reject scalar width changes', () {
+    final schema = Logic(width: 8);
+    final Logic malformed = _WidthChangingLogic();
+    expect(malformed.cloneTyped, throwsA(isA<LogicConstructionException>()));
+    expect(sameTypedCloneShape(schema, Logic(width: 7)), isFalse);
+    final module = DummyModule();
+    expect(
+      () => module.addTypedOutput(
+        'result',
+        ({name = 'result'}) => Logic(name: name, width: 7),
+        schema: schema,
+      ),
+      throwsA(isA<PortTypeException>()),
+    );
+    expect(module.outputs, isEmpty);
+    expect(
+      module.addTypedOutput('result', schema.clone, schema: schema).width,
+      8,
+    );
+  });
+
+  test('interface cloning normalizes only widened scalar constants', () {
+    final constant = Const(1, width: 8);
+    final Logic widened = constant;
+    expect(constant.cloneInterfacePort(), isA<Const>());
+    final clone = widened.cloneInterfacePort(name: 'data');
+    expect(clone, isNot(isA<Const>()));
+    expect(clone.width, 8);
+    expect(clone.name, 'data');
+    clone.put(42);
+    expect(clone.value.toInt(), 42);
+  });
+
+  test('renamed payload matching is opt-in and pairwise through bridges', () {
+    LogicStructure payload(String name) =>
+        LogicStructure([Logic(name: '${name}_bits', width: 8)], name: name);
+    final first = payload('first');
+    final second = payload('second');
+    final bridge = Logic(width: 8);
+    final mismatch = LogicStructure([Logic(name: 'different', width: 8)]);
+    expect(sameRohdPayloadShape(first, second), isFalse);
+    expect(
+      sameRohdPayloadShape(
+        payload('b'),
+        payload('renamed'),
+        allowRenamedClones: true,
+      ),
+      isTrue,
+    );
+    expect(rohdPayloadsCompatible([first, bridge, second]), isFalse);
+    expect(
+      rohdPayloadsCompatible([first, bridge, second], allowRenamedClones: true),
+      isTrue,
+    );
+    expect(
+      rohdPayloadsCompatible([
+        first,
+        bridge,
+        mismatch,
+      ], allowRenamedClones: true),
+      isFalse,
+    );
   });
 
   test('typed inouts reject semantic changes before registering ports', () {

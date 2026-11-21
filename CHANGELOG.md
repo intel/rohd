@@ -1,3 +1,8 @@
+## Unreleased
+
+- Reject width-changing typed clones and allow typed output generators to be checked against an expected payload schema.
+- Add opt-in parent-renamed payload compatibility, driveable scalar interface schema clones, and schema-aware grouped interface ports.
+
 ## 0.7.5
 
 - Require rohd_hierarchy 0.1.2 for correct occurrence lookup when older netlists contain same-named signals and synthetic cells.

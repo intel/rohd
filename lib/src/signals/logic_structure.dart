@@ -21,7 +21,7 @@ LogicType _checkedTypedClone<LogicType extends Logic>(
   }
   if (!sameTypedCloneShape(source, cloned)) {
     throw LogicConstructionException(
-      'Clone did not preserve the declared signal type and format.',
+      'Clone did not preserve the width, declared signal type, and format.',
     );
   }
   return cloned;
@@ -52,6 +52,17 @@ extension TypedLogicUtilities<LogicType extends Logic> on LogicType {
   /// Literal cloning is legal: a concrete [Const] receiver returns another
   /// [Const] rather than a driveable alias.
   LogicType cloneTyped({String? name}) => _checkedTypedClone(this, name: name);
+
+  /// Clones an interface schema, normalizing a scalar [Const] widened to
+  /// [Logic] to a driveable signal. Structured payloads retain their types
+  /// and constant fields according to their normal typed clone contracts.
+  LogicType cloneInterfacePort({String? name}) {
+    final source = this;
+    if (LogicType == Logic && source is Const) {
+      return Logic(name: name ?? source.name, width: source.width) as LogicType;
+    }
+    return cloneTyped(name: name);
+  }
 
   /// Creates a named driveable alias while preserving the static result type.
   ///
