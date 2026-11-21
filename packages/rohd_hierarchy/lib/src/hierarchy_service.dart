@@ -70,11 +70,14 @@ abstract mixin class HierarchyService {
 
   /// Resolve a `/`-separated pathname to a [HierarchyOccurrence].
   ///
-  /// Convenience that composes [pathnameToAddress] and [occurrenceByAddress].
-  /// Returns `null` when [pathname] does not match any occurrence in the
-  /// tree.
+  /// Ignores signals, including a signal with the same name as an occurrence
+  /// in a legacy netlist.
   HierarchyOccurrence? occurrenceByPathname(String pathname) {
-    final addr = pathnameToAddress(pathname);
+    final addr = OccurrenceAddress.tryFromPathname(
+      pathname,
+      root,
+      occurrencesOnly: true,
+    );
     return addr == null ? null : occurrenceByAddress(addr);
   }
 

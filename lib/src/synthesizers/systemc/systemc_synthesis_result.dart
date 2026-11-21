@@ -14,6 +14,7 @@ import 'package:rohd/src/modules/conditionals/always.dart';
 import 'package:rohd/src/synthesizers/systemc/systemc_synth_module_definition.dart';
 import 'package:rohd/src/synthesizers/systemc/systemc_synth_sub_module_instantiation.dart';
 import 'package:rohd/src/synthesizers/systemc/systemc_synthesizer_configuration.dart';
+import 'package:rohd/src/synthesizers/utilities/generated_code_references.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 
@@ -110,10 +111,16 @@ class SystemCSynthesisResult extends SynthesisResult {
         (s) => s.needsInstantiation,
       ))
         smi.name,
+      ..._arrayElementsWritten.keys,
     };
 
     if (targets.isEmpty) {
       return;
+    }
+
+    final targetsByIdentifier = <String, Set<String>>{};
+    for (final target in targets) {
+      (targetsByIdentifier[_scName(target)] ??= {}).add(target);
     }
 
     final outputBoundNames = <String>{
@@ -137,14 +144,16 @@ class SystemCSynthesisResult extends SynthesisResult {
         final lineText = scText.substring(lineStart, i);
         for (final match in identRe.allMatches(lineText)) {
           final word = match.group(0)!;
-          if (!targets.contains(word)) {
+          final names = targetsByIdentifier[word];
+          if (names == null || names.length != 1) {
             continue;
           }
+          final name = names.single;
           final pos = '$lineNum:${match.start + 1}';
-          final list = _scLineMap[word];
+          final list = _scLineMap[name];
           if (list == null) {
             // First occurrence — declaration / port / sub-module member.
-            _scLineMap[word] = [pos];
+            _scLineMap[name] = [pos];
           } else if (_isAssignmentLhs(lineText, match.end) &&
               !list.contains(pos)) {
             // Subsequent occurrence on an assignment LHS — record it.
@@ -157,6 +166,24 @@ class SystemCSynthesisResult extends SynthesisResult {
         }
         lineNum++;
         lineStart = i + 1;
+      }
+    }
+
+    final arrayExpressions = <String, Set<String>>{};
+    for (final signal in _synthModuleDefinition.internalSignals) {
+      if ((signal is SynthLogicArrayElement ||
+              signal is SynthLogicArrayStructureElement) &&
+          !signal.declarationCleared &&
+          signal.replacement == null) {
+        (arrayExpressions[_arrayElementReadExpr(signal)] ??= {})
+            .add(signal.name);
+      }
+    }
+    for (final entry
+        in generatedCodeReferencePositions(scText, arrayExpressions.keys)
+            .entries) {
+      for (final name in arrayExpressions[entry.key]!) {
+        _scLineMap.putIfAbsent(name, () => [entry.value]);
       }
     }
   }

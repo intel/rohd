@@ -14,6 +14,7 @@ import 'package:rohd/rohd.dart';
 import 'package:rohd/src/modules/conditionals/always.dart';
 import 'package:rohd/src/synthesizers/systemverilog/systemverilog_synth_module_definition.dart';
 import 'package:rohd/src/synthesizers/systemverilog/systemverilog_synth_sub_module_instantiation.dart';
+import 'package:rohd/src/synthesizers/utilities/generated_code_references.dart';
 import 'package:rohd/src/synthesizers/utilities/synth_enum_definition.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
 
@@ -473,7 +474,7 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
   /// in the generated SV output (both 1-based).
   ///
   /// Populated by [_toVerilog] when [SourceTracer.hasTraces] is `true`.
-  /// Keys match the names used in the FLC trace data: [Logic.name] for
+  /// Keys match the names used in the FLC trace data: [SynthLogic.name] for
   /// signals and [Module.uniqueInstanceName] for submodule instances.
   ///
   /// The first entry is the declaration line; subsequent entries are
@@ -529,7 +530,11 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
     /// position is only recorded as the declaration entry the first
     /// time [name] is seen.
     bool scanAndRecord(String name, String fragment, {bool append = false}) {
-      final nameRe = RegExp(r'\b' + RegExp.escape(name) + r'\b');
+      final nameRe = RegExp(
+        r'\b' +
+            RegExp.escape(name) +
+            (RegExp(r'\w$').hasMatch(name) ? r'\b' : ''),
+      );
       for (var i = lineIdx; i < lines.length; i++) {
         if (lines[i].contains(fragment)) {
           lineIdx = i + 1; // advance past this line for the next search
@@ -644,13 +649,21 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
                     synthLogic.replacement != null) {
                   continue;
                 }
-                final wireName = synthLogic.nameOrNull;
-                if (wireName == null ||
+                if (synthLogic.nameOrNull == null) {
+                  continue;
+                }
+                final wireName = synthLogic.name;
+                final offset = outputPortColumns[wireName];
+                if (offset == null ||
+                    offset < 1 ||
+                    offset > sv.length ||
                     wireName == smi.module.uniqueInstanceName) {
                   continue;
                 }
-                final col = outputPortColumns[wireName] ?? 1;
-                final pos = '$instLine:$col';
+                final prefix = sv.substring(0, offset - 1);
+                final lineOffset = '\n'.allMatches(prefix).length;
+                final col = prefix.length - prefix.lastIndexOf('\n');
+                final pos = '${instLine + lineOffset}:$col';
                 final list = _svLineMap[wireName];
                 if (list == null) {
                   _svLineMap[wireName] = [pos];
@@ -699,6 +712,19 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
         // Restore scan position past the instantiation.
         lineIdx = postInstIdx;
       }
+    }
+
+    final references = <String>{
+      for (final signal in _synthModuleDefinition.internalSignals)
+        if ((signal is SynthLogicArrayElement ||
+                signal is SynthLogicArrayStructureElement) &&
+            !signal.declarationCleared &&
+            signal.replacement == null)
+          signal.name,
+    };
+    for (final entry
+        in generatedCodeReferencePositions(svText, references).entries) {
+      _svLineMap.putIfAbsent(entry.key, () => [entry.value]);
     }
   }
 }

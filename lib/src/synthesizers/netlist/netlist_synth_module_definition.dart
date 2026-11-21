@@ -11,10 +11,14 @@ import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/signals/signals.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
+import 'package:rohd/src/utilities/namer.dart';
 
 /// A [SynthModuleDefinition] that preserves cells for netlist synthesis.
 @internal
 class NetlistSynthModuleDefinition extends SynthModuleDefinition {
+  /// Namespace for netlist-only helpers, seeded after shared names are picked.
+  late final Namer generatedNames = module.namer.generatedNames();
+
   /// Creates a netlist synthesis definition for [module].
   NetlistSynthModuleDefinition(Module module) : super(module) {
     // Create explicit $slice cells for LogicArray input ports so the
@@ -100,7 +104,7 @@ class NetlistSynthModuleDefinition extends SynthModuleDefinition {
       getSynthSubModuleInstantiation(subsetModule)
         ..setOutputMapping(subsetModule.subset.name, elementSynth)
         ..setInputMapping(subsetModule.original.name, portSynth)
-        ..pickName(module);
+        ..pickName(module, namer: generatedNames);
 
       if (element is BaseLogicArray) {
         _subsetReceiveArrayPort(element);
@@ -134,7 +138,7 @@ class NetlistSynthModuleDefinition extends SynthModuleDefinition {
       instantiation.setInputMapping(inputName, elementSynth);
     }
 
-    instantiation.pickName(module);
+    instantiation.pickName(module, namer: generatedNames);
   }
 
   @override

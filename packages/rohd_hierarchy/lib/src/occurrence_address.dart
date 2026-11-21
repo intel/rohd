@@ -94,7 +94,7 @@ class OccurrenceAddress {
   ///
   /// The last segment is first tried as a **signal** name within the
   /// current occurrence; if that fails it is tried as a **child**
-  /// occurrence name.
+  /// occurrence name. Set [occurrencesOnly] to look up only child occurrences.
   /// This mirrors the pathname convention where a signal path has one more
   /// segment than its parent module path.
   ///
@@ -108,8 +108,9 @@ class OccurrenceAddress {
   /// ```
   static OccurrenceAddress? tryFromPathname(
     String pathname,
-    HierarchyOccurrence root,
-  ) {
+    HierarchyOccurrence root, {
+    bool occurrencesOnly = false,
+  }) {
     final rootAddr = root.address ?? OccurrenceAddress.root;
     final parts = pathname
         .replaceAll('.', hierarchyPathSeparator)
@@ -121,18 +122,21 @@ class OccurrenceAddress {
     // schematic displays the module definition. Accept either as a prefix.
     final isRootPrefix = parts.isNotEmpty &&
         (parts.first == root.name || parts.first == root.definition);
-    final segments = isRootPrefix ? parts.skip(1) : parts;
+    final start = isRootPrefix ? 1 : 0;
 
     ({HierarchyOccurrence node, OccurrenceAddress addr})? step(
       ({HierarchyOccurrence node, OccurrenceAddress addr})? cur,
-      String segment,
+      (int, String) part,
     ) {
       if (cur == null) {
         return null;
       }
-      final si = cur.node.signalIndexByName(segment);
-      if (identical(segment, segments.last) && si >= 0) {
-        return (node: cur.node, addr: cur.addr.signal(si));
+      final (index, segment) = part;
+      if (!occurrencesOnly && index == parts.length - 1) {
+        final si = cur.node.signalIndexByName(segment);
+        if (si >= 0) {
+          return (node: cur.node, addr: cur.addr.signal(si));
+        }
       }
       final ci = cur.node.childIndexByName(segment);
       return ci >= 0
@@ -140,7 +144,9 @@ class OccurrenceAddress {
           : null;
     }
 
-    return segments.fold<({HierarchyOccurrence node, OccurrenceAddress addr})?>(
+    return parts.indexed
+        .skip(start)
+        .fold<({HierarchyOccurrence node, OccurrenceAddress addr})?>(
       (node: root, addr: rootAddr),
       step,
     )?.addr;

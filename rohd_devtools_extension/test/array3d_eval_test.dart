@@ -120,66 +120,72 @@ void main() {
     // Snapshot has only the full port value (what the server provides).
     final snapshot = <String, String>{'Inner3D/data': fullValue};
 
-    // Level 1: data_0_ (96 bits = first 12 bytes), data_1_ (next 12 bytes)
-    final r0 = eval('data_0_', snapshot: snapshot);
-    expect(r0, isNotNull, reason: 'data_0_ should be evaluable');
+    // Level 1: data[0] (96 bits = first 12 bytes), data[1] (next 12 bytes)
+    final r0 = eval('data[0]', snapshot: snapshot);
+    expect(r0, isNotNull, reason: 'data[0] should be evaluable');
     expect(r0!.width, 96);
-    // data_0_ = bytes[0..11] = 0c0b0a090807060504030201
+    // data[0] = bytes[0..11] = 0c0b0a090807060504030201
     expect(hexOf(r0.value, 96), '0c0b0a090807060504030201');
 
-    final r1 = eval('data_1_', snapshot: snapshot);
-    expect(r1, isNotNull, reason: 'data_1_ should be evaluable');
+    final r1 = eval('data[1]', snapshot: snapshot);
+    expect(r1, isNotNull, reason: 'data[1] should be evaluable');
     expect(r1!.width, 96);
-    // data_1_ = bytes[12..23] = upper 96 bits
+    // data[1] = bytes[12..23] = upper 96 bits
     expect(
       hexOf(r1.value, 96).contains('x'),
       isFalse,
-      reason: 'data_1_ should not contain x',
+      reason: 'data[1] should not contain x',
     );
     expect(hexOf(r1.value, 96), '1817161514131211100f0e0d');
 
-    // Level 2: data_0__0_ (32 bits = 4 bytes), data_0__1_ (32 bits)
-    final r00 = eval('data_0__0_', snapshot: snapshot);
-    expect(r00, isNotNull, reason: 'data_0__0_ should be evaluable');
+    // Level 2: data[0][0] (32 bits = 4 bytes), data[0][1] (32 bits)
+    final r00 = eval('data[0][0]', snapshot: snapshot);
+    expect(r00, isNotNull, reason: 'data[0][0] should be evaluable');
     expect(r00!.width, 32);
-    // data_0__0_ = bytes[0..3] = 04030201
+    // data[0][0] = bytes[0..3] = 04030201
     expect(hexOf(r00.value, 32), '04030201');
 
-    final r01 = eval('data_0__1_', snapshot: snapshot);
-    expect(r01, isNotNull, reason: 'data_0__1_ should be evaluable');
+    final r01 = eval('data[0][1]', snapshot: snapshot);
+    expect(r01, isNotNull, reason: 'data[0][1] should be evaluable');
     expect(r01!.width, 32);
-    // data_0__1_ = bytes[4..7] = 08070605
+    // data[0][1] = bytes[4..7] = 08070605
     expect(hexOf(r01.value, 32), '08070605');
 
-    // Level 3: data_0__0__0_ (8 bits), data_0__0__1_, etc.
-    final r000 = eval('data_0__0__0_', snapshot: snapshot);
-    expect(r000, isNotNull, reason: 'data_0__0__0_ should be evaluable');
+    // Level 3: data[0][0][0] (8 bits), data[0][0][1], etc.
+    final r000 = eval('data[0][0][0]', snapshot: snapshot);
+    expect(r000, isNotNull, reason: 'data[0][0][0] should be evaluable');
     expect(r000!.width, 8);
-    // data_0__0__0_ = byte[0] = 01
+    // data[0][0][0] = byte[0] = 01
     expect(hexOf(r000.value, 8), '01');
 
-    final r001 = eval('data_0__0__1_', snapshot: snapshot);
-    expect(r001, isNotNull, reason: 'data_0__0__1_ should be evaluable');
+    final r001 = eval('data[0][0][1]', snapshot: snapshot);
+    expect(r001, isNotNull, reason: 'data[0][0][1] should be evaluable');
     expect(r001!.width, 8);
     expect(hexOf(r001.value, 8), '02');
 
-    final r012 = eval('data_0__1__2_', snapshot: snapshot);
-    expect(r012, isNotNull, reason: 'data_0__1__2_ should be evaluable');
+    final r012 = eval('data[0][1][2]', snapshot: snapshot);
+    expect(r012, isNotNull, reason: 'data[0][1][2] should be evaluable');
     expect(r012!.width, 8);
-    // data_0__1__2_ = element [0][1][2] = byte index 4+2 = 6 → 07
+    // data[0][1][2] = element [0][1][2] = byte index 4+2 = 6 → 07
     expect(hexOf(r012.value, 8), '07');
 
-    final r123 = eval('data_1__2__3_', snapshot: snapshot);
-    expect(r123, isNotNull, reason: 'data_1__2__3_ should be evaluable');
+    final r123 = eval('data[1][2][3]', snapshot: snapshot);
+    expect(r123, isNotNull, reason: 'data[1][2][3] should be evaluable');
     expect(r123!.width, 8);
-    // data_1__2__3_ = element [1][2][3] = byte index 12 + 8 + 3 = 23 → 18
+    // data[1][2][3] = element [1][2][3] = byte index 12 + 8 + 3 = 23 → 18
     expect(hexOf(r123.value, 8), '18');
   });
 
   test('isComputed returns true for 3D array sub-elements', () {
-    // data_0__0__0_ should be recognized as computed (array element pattern)
-    expect(evaluator.isComputed('Inner3D/data_0__0__0_'), isTrue);
-    expect(evaluator.isComputed('Inner3D/data_0__1_'), isTrue);
-    expect(evaluator.isComputed('Inner3D/data_1__2__3_'), isTrue);
+    expect(evaluator.isComputed('Inner3D/data[0][0][0]'), isTrue);
+    expect(evaluator.isComputed('Inner3D/data[0][1]'), isTrue);
+    expect(evaluator.isComputed('Inner3D/data[1][2][3]'), isTrue);
+    expect(evaluator.signalWidth('Inner3D/data[1][2][3]'), 8);
+    expect(evaluator.collectLeaves('Inner3D/data[1][2][3]'),
+        contains('Inner3D/data'));
+    expect(
+      evaluator.allEvaluablePaths('Top3D'),
+      contains('Top3D/Inner3D/data[1][2][3]'),
+    );
   });
 }

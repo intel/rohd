@@ -18,6 +18,7 @@ import 'package:rohd/src/synthesizers/netlist/netlist_utils.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_validation.dart';
 import 'package:rohd/src/synthesizers/utilities/synth_enum_definition.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
+import 'package:rohd/src/utilities/namer.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 
 /// Mutable state for translating one module level into a netlist.
@@ -49,6 +50,14 @@ class NetlistModuleTranslation {
 
   /// Emitted netnames.
   final Map<String, Object?> netnames = {};
+
+  late final Namer _generatedNames =
+      synthDef?.generatedNames ?? _module.namer.generatedNames();
+  final Map<String, String> _constantNetNames = {};
+
+  /// Allocates a netlist-only name without changing canonical module names.
+  String generatedName(String base) =>
+      _generatedNames.allocateGeneratedName(base);
 
   final Set<SynthLogic> _blockedConstSynthLogics = {};
 
@@ -237,7 +246,7 @@ class NetlistModuleTranslation {
       operationName: 'array_concat_output',
       destination: array,
     );
-    cells[cellName] = NetlistCell(
+    cells[generatedName(cellName)] = NetlistCell(
       type: r'$concat',
       origin: NetlistCellOrigin.outputArrayConcat,
       parameters: <String, Object?>{
@@ -302,7 +311,7 @@ class NetlistModuleTranslation {
     connections['Y'] = outputIds.cast<Object>();
     directions['Y'] = NetlistPortDirection.output;
 
-    cells[Sanitizer.sanitizeSV('struct_pack_$packName')] = NetlistCell(
+    cells[generatedName('struct_pack_$packName')] = NetlistCell(
       type: r'$struct_pack',
       origin: NetlistCellOrigin.structurePack,
       parameters: <String, Object?>{
@@ -467,7 +476,8 @@ class NetlistModuleTranslation {
           concatDirections['Y'] = NetlistPortDirection.output;
           cellConnections[portName] = concatOutput;
 
-          cells['array_concat_${cellKey}_$portName'] = NetlistCell(
+          cells[generatedName('array_concat_${cellKey}_$portName')] =
+              NetlistCell(
             type: r'$concat',
             origin: NetlistCellOrigin.arrayConcat,
             parameters: <String, Object?>{
@@ -557,7 +567,7 @@ class NetlistModuleTranslation {
 
     final resetMuxOutput =
         List<Object>.generate(dBits.length, (_) => allocateWireId());
-    cells['${cellKey}_reset_mux'] = NetlistCell(
+    cells[generatedName('${cellKey}_reset_mux')] = NetlistCell(
       type: r'$mux',
       parameters: <String, Object?>{'WIDTH': dBits.length},
       portDirections: {
@@ -595,7 +605,7 @@ class NetlistModuleTranslation {
         return false;
       }
       final effectiveEnable = <Object>[allocateWireId()];
-      cells['${cellKey}_reset_enable'] = NetlistCell(
+      cells[generatedName('${cellKey}_reset_enable')] = NetlistCell(
         type: r'$or',
         parameters: <String, Object?>{
           'A_WIDTH': 1,
@@ -797,7 +807,7 @@ class NetlistModuleTranslation {
         bits = resolveAggregateBits(bits);
         final typeLogic = NetlistUtils.typeLogicFromSynthLogic(synthLogic);
         addNetname(
-          Sanitizer.sanitizeSV(name),
+          synthLogic.name,
           bits,
           computed: synthLogic.isConstant,
           preservedName: synthLogic.hasPreservedName,
@@ -815,7 +825,8 @@ class NetlistModuleTranslation {
       final connections =
           cell.value['connections'] as Map<String, List<Object>>?;
       if (connections != null && connections.isNotEmpty) {
-        addNetname(cell.key, connections.values.first, computed: true);
+        final name = _constantNetNames[cell.key] ?? generatedName(cell.key);
+        addNetname(name, connections.values.first, computed: true);
       }
     }
 
@@ -838,7 +849,7 @@ class NetlistModuleTranslation {
         }
         if (missingBits.isNotEmpty) {
           addNetname(
-            Sanitizer.sanitizeSV('${cell.key}_${connection.key}'),
+            generatedName('${cell.key}_${connection.key}'),
             missingBits,
             hideName: true,
           );
@@ -881,7 +892,8 @@ class NetlistModuleTranslation {
         outputBits.length,
         (_) => allocateWireId(),
       );
-      cells['passthrough_buf_$bufferIndex'] = NetlistUtils.makeBufCell(
+      cells[generatedName('passthrough_buf_$bufferIndex')] =
+          NetlistUtils.makeBufCell(
         outputBits.length,
         outputBits,
         freshBits,
@@ -971,15 +983,24 @@ class NetlistModuleTranslation {
   }) {
     var constantIndex = 0;
     final emittedConstantWires = <int>{};
+    final consumedIds = NetlistValidation.connectedBits(
+      ports,
+      cells,
+      portDirections: const {'output', 'inout'},
+      cellDirection: 'input',
+    )..addAll(preservedNameBits);
     for (final entry in _synthLogicIds.entries
         .where((entry) => entry.key.isConstant)
-        .where((entry) => !_blockedConstSynthLogics.contains(entry.key))
         .where((entry) => entry.value.isNotEmpty)) {
       final constant = NetlistUtils.constValueFromSynthLogic(entry.key);
       if (constant == null) {
         continue;
       }
       final resolvedIds = applyAlias(entry.value.cast<Object>());
+      if (_blockedConstSynthLogics.contains(entry.key) &&
+          !resolvedIds.whereType<int>().any(consumedIds.contains)) {
+        continue;
+      }
       final firstWire = resolvedIds.firstWhere(
         (bit) => bit is int,
         orElse: () => -1,
@@ -992,7 +1013,10 @@ class NetlistModuleTranslation {
       }
 
       final valuePart = NetlistUtils.constValuePart(constant);
-      final cellName = 'const_${constantIndex}_$valuePart';
+      final baseName = 'const_${constantIndex}_$valuePart';
+      final netName = generatedName(baseName);
+      final cellName = generatedName('${baseName}_driver');
+      _constantNetNames[cellName] = netName;
       final valueLiteral = valuePart.replaceFirst('_', "'");
       cells[cellName] = NetlistCell(
         type: r'$const',
@@ -1007,12 +1031,6 @@ class NetlistModuleTranslation {
     if (!pruneFloating) {
       return;
     }
-    final consumedIds = NetlistValidation.connectedBits(
-      ports,
-      cells,
-      portDirections: const {'output', 'inout'},
-      cellDirection: 'input',
-    )..addAll(preservedNameBits);
     cells.removeWhere((_, rawCell) {
       final cell = rawCell as Map<String, dynamic>;
       if (cell['type'] != r'$const') {

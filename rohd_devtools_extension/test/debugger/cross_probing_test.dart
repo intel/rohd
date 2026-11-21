@@ -462,16 +462,33 @@ void main() {
       );
     }
 
+    final localConfig = File('.dart_tool/package_config.json');
+    final config = localConfig.existsSync()
+        ? localConfig
+        : File('$packageRoot/.dart_tool/package_config.json');
+    final configJson = jsonDecode(config.readAsStringSync()) as Map;
+    final packageLibraries = <String, Uri>{
+      for (final package
+          in (configJson['packages'] as List).cast<Map<String, dynamic>>())
+        package['name'] as String: config.absolute.uri
+            .resolve(
+                '${(package['rootUri'] as String).replaceFirst(RegExp(r'/$'), '')}/')
+            .resolve(package['packageUri'] as String),
+    };
+
     // All non-SDK files exist on disk.
     for (final f in built.files) {
       if (f.startsWith('dart:')) {
         continue;
       }
-      expect(
-        File('$packageRoot/$f').existsSync(),
-        isTrue,
-        reason: 'File should exist: $f',
-      );
+      final uri = Uri.parse(f);
+      final fileUri = uri.scheme == 'package'
+          ? packageLibraries[uri.pathSegments.first]
+              ?.resolve(uri.pathSegments.skip(1).join('/'))
+          : Directory(packageRoot).uri.resolveUri(uri);
+      expect(fileUri, isNotNull, reason: 'Source URI should resolve: $f');
+      expect(File.fromUri(fileUri!).existsSync(), isTrue,
+          reason: 'File should exist: $f');
     }
   });
 

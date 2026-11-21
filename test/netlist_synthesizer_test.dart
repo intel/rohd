@@ -462,6 +462,19 @@ class InternalArrayToChildModule extends Module {
   }
 }
 
+class _TracedArraySelectionModule extends Module {
+  _TracedArraySelectionModule() {
+    final input = addInputArray('data', LogicArray([4], 8),
+        dimensions: [4], elementWidth: 8);
+    final index = addInput('index', Logic(width: 2), width: 2);
+    final values = LogicArray([4], 8, name: 'values');
+    for (var i = 0; i < values.elements.length; i++) {
+      values.elements[i] <= input.elements[i];
+    }
+    addOutput('out', width: 8) <= values.elements.selectIndex(index);
+  }
+}
+
 /// Parent whose internal LogicArray groups elements from another child output
 /// array before feeding a child input port.
 class RegroupedArrayOutputToChildModule extends Module {
@@ -808,6 +821,61 @@ class _NamedConstModule extends Module {
   }
 }
 
+class _SharedProceduralOutputs extends Module {
+  _SharedProceduralOutputs()
+      : super(definitionName: 'SharedProceduralOutputs') {
+    final clk = addInput('clk', Logic());
+    final data = addInput('data', Logic(width: 8), width: 8);
+    final bank = LogicArray([2], 4, name: 'bank');
+    Sequential(clk, [
+      bank.elements[0] < data.getRange(0, 4),
+      bank.elements[1] < data.getRange(4, 8),
+    ]);
+    final first = [bank.elements[1], bank.elements[0]]
+        .concat()
+        .named('first', naming: Naming.renameable);
+    final second = [bank.elements[0], bank.elements[1]]
+        .concat()
+        .named('second', naming: Naming.renameable);
+    addOutput('firstOut', width: 8) <= first;
+    addOutput('secondOut', width: 8) <= second;
+    addOutput('tap', width: 4) <= bank.elements[0];
+  }
+}
+
+class _SharedProceduralConstant extends Module {
+  _SharedProceduralConstant()
+      : super(definitionName: 'SharedProceduralConstant') {
+    final clk = addInput('clk', Logic());
+    final data = addInput('data', Logic());
+    final enabled = Const(1);
+    final state = addOutput('state');
+    Sequential(clk, [
+      If(enabled, then: [state < data]),
+    ]);
+    addOutput('gated') <= data & enabled;
+  }
+}
+
+class _MultipleStructuredMuxes extends Module {
+  _MultipleStructuredMuxes()
+      : super(definitionName: 'MultipleStructuredMuxes') {
+    final select = addInput('select', Logic());
+    final values = [
+      for (var i = 0; i < 4; i++) addInput('value$i', Logic(width: 4), width: 4)
+    ];
+    NetlistPairStruct pair(int i) {
+      final result = NetlistPairStruct();
+      result.low <= values[i];
+      result.high <= Const(i, width: 4);
+      return result;
+    }
+
+    addOutput('out0', width: 8) <= Mux(select, pair(0), pair(1)).out;
+    addOutput('out1', width: 8) <= Mux(select, pair(2), pair(3)).out;
+  }
+}
+
 class _ConstantPaths extends Module {
   _ConstantPaths(Logic data) : super(definitionName: 'ConstantPaths') {
     data = addInput('data', data, width: 8);
@@ -979,6 +1047,73 @@ bool _hasCellType(Map<String, dynamic> json, String cellType) {
   return (undrivenInputs: undrivenInputs, driversByBit: driversByBit);
 }
 
+List<int> _traceTransparentBits(
+  Map<String, dynamic> moduleDef,
+  List<dynamic> bits,
+  Set<int> sources,
+) {
+  final upstream = <int, int>{};
+  void mapBits(List<dynamic> output, List<dynamic> input) {
+    if (output.length != input.length) {
+      throw StateError('Mismatched transparent-cell widths.');
+    }
+    for (final (index, bit) in output.indexed) {
+      if (bit is int && input[index] is int) {
+        upstream[bit] = input[index] as int;
+      }
+    }
+  }
+
+  for (final rawCell in _cells(moduleDef).values) {
+    final cell = rawCell as Map<String, dynamic>;
+    final conns = cell['connections'] as Map<String, dynamic>;
+    switch (cell['type']) {
+      case r'$buf':
+        mapBits(conns['Y'] as List, conns['A'] as List);
+      case r'$slice':
+        final input = conns['A'] as List;
+        final output = conns['Y'] as List;
+        final offset =
+            (cell['parameters'] as Map<String, dynamic>)['OFFSET'] as int;
+        mapBits(output, input.sublist(offset, offset + output.length));
+      case r'$concat':
+        final dirs = cell['port_directions'] as Map<String, dynamic>;
+        final inputs = dirs.keys.where((key) => dirs[key] == 'input').toList();
+        int offset(String key) {
+          if (key == 'A') {
+            return 0;
+          }
+          if (key == 'B') {
+            return (conns['A'] as List).length;
+          }
+          final match = RegExp(r'^\[(\d+)(?::(\d+))?\]$').firstMatch(key);
+          if (match == null) {
+            throw StateError('Unknown concat port $key.');
+          }
+          return int.parse(match.group(2) ?? match.group(1)!);
+        }
+
+        inputs.sort((a, b) => offset(a).compareTo(offset(b)));
+        mapBits(conns['Y'] as List, [
+          for (final name in inputs) ...(conns[name] as List),
+        ]);
+    }
+  }
+
+  int trace(int bit) {
+    final visited = <int>{};
+    while (!sources.contains(bit)) {
+      if (!visited.add(bit) || !upstream.containsKey(bit)) {
+        throw StateError('Cannot trace transparent bit $bit to a source.');
+      }
+      bit = upstream[bit]!;
+    }
+    return bit;
+  }
+
+  return [for (final bit in bits) trace(bit as int)];
+}
+
 // ────────────────────────────────────────────────────────────────────
 // Tests
 // ────────────────────────────────────────────────────────────────────
@@ -987,6 +1122,131 @@ void main() {
   tearDown(() async {
     await Simulator.reset();
   });
+
+  for (final enableDce in [false, true]) {
+    for (final collapse in [false, true]) {
+      final config = NetlistSynthesizerConfiguration(
+        enableDeadCellElimination: enableDce,
+        collapseTransparentClusters: collapse,
+      );
+      for (final (label, create) in <(String, Module Function())>[
+        ('shared procedural outputs', _SharedProceduralOutputs.new),
+        ('shared procedural constant', _SharedProceduralConstant.new),
+        ('multiple structured muxes', _MultipleStructuredMuxes.new),
+      ]) {
+        test('$label stay connected (DCE=$enableDce, collapse=$collapse)',
+            () async {
+          final module = create();
+          final json = await _synthToMap(module, configuration: config);
+          final definition =
+              _modules(json)[module.definitionName] as Map<String, dynamic>;
+          final report = _connectivityReport(definition);
+          expect(report.undrivenInputs, isEmpty,
+              reason: report.undrivenInputs.join('\n'));
+          for (final entry in _ports(definition).entries) {
+            final port = entry.value as Map<String, dynamic>;
+            if (port['direction'] == 'output') {
+              for (final bit in (port['bits'] as List).whereType<int>()) {
+                expect(report.driversByBit[bit], hasLength(1),
+                    reason: '${entry.key} bit $bit must have one driver');
+              }
+            }
+          }
+          expect(
+            report.driversByBit.entries
+                .where((entry) => entry.value.length > 1),
+            isEmpty,
+            reason: 'netlist bits must not have multiple drivers',
+          );
+          if (label == 'shared procedural outputs') {
+            final seq = _cells(definition)
+                .values
+                .cast<Map<String, dynamic>>()
+                .singleWhere((cell) => cell['type'] == 'Sequential');
+            final directions = seq['port_directions'] as Map<String, dynamic>;
+            final connections = seq['connections'] as Map<String, dynamic>;
+            final sourceBits = {
+              for (final port in connections.entries)
+                if (directions[port.key] == 'output')
+                  ...(port.value as List).cast<int>(),
+            };
+            final netnames = _netnames(definition);
+            List<int> bankBits(int index) =>
+                ((netnames['bank[$index]'] as Map<String, dynamic>)['bits']
+                        as List)
+                    .cast<int>();
+            final low = bankBits(0);
+            final high = bankBits(1);
+            expect(sourceBits, containsAll([...low, ...high]));
+            List<int> traceOutput(String portName) => _traceTransparentBits(
+                  definition,
+                  (_ports(definition)[portName] as Map<String, dynamic>)['bits']
+                      as List,
+                  sourceBits,
+                );
+            expect(traceOutput('firstOut'), [...low, ...high]);
+            expect(traceOutput('secondOut'), [...high, ...low]);
+            expect(traceOutput('tap'), low);
+          } else if (label == 'shared procedural constant') {
+            final cells = _cells(definition);
+            final gate = cells.values
+                .cast<Map<String, dynamic>>()
+                .singleWhere((cell) => cell['type'] == r'$and');
+            final constant = cells.values
+                .cast<Map<String, dynamic>>()
+                .singleWhere((cell) =>
+                    cell['type'] == r'$const' &&
+                    (cell['connections'] as Map<String, dynamic>)
+                        .containsKey("1'h1"));
+            expect(
+              (gate['connections'] as Map<String, dynamic>)['A'],
+              (constant['connections'] as Map<String, dynamic>)["1'h1"],
+            );
+          } else if (label == 'multiple structured muxes') {
+            final cells = _cells(definition);
+            for (var i = 0; i < 2; i++) {
+              final mux =
+                  cells[i == 0 ? 'mux' : 'mux_0'] as Map<String, dynamic>;
+              final muxConnections = mux['connections'] as Map<String, dynamic>;
+              for (final (port, inputIndex) in [
+                ('A', 2 * i + 1),
+                ('B', 2 * i)
+              ]) {
+                final muxBits = muxConnections[port] as List;
+                final pack = cells.values
+                    .cast<Map<String, dynamic>>()
+                    .singleWhere((cell) {
+                  final connections =
+                      cell['connections'] as Map<String, dynamic>;
+                  final output = connections['Y'];
+                  return cell['type'] == r'$struct_pack' &&
+                      output is List &&
+                      output.length == muxBits.length &&
+                      output.indexed.every((e) => e.$2 == muxBits[e.$1]);
+                });
+                final packConnections =
+                    pack['connections'] as Map<String, dynamic>;
+                final input = _ports(definition)['value$inputIndex']
+                    as Map<String, dynamic>;
+                expect(packConnections['low'], input['bits']);
+                final constant = cells.values
+                    .cast<Map<String, dynamic>>()
+                    .singleWhere((cell) =>
+                        cell['type'] == r'$const' &&
+                        (cell['connections'] as Map<String, dynamic>)
+                            .containsKey("4'h$inputIndex"));
+                expect(
+                  packConnections['high'],
+                  (constant['connections']
+                      as Map<String, dynamic>)["4'h$inputIndex"],
+                );
+              }
+            }
+          }
+        });
+      }
+    }
+  }
 
   test('connection views reuse ordered wire IDs through replacements',
       () async {
@@ -1121,6 +1381,14 @@ void main() {
     test(r'And2Gate maps to $and cell', () async {
       final json = await _synthToMap(AndModule(Logic(), Logic()));
       expect(_hasCellType(json, r'$and'), isTrue);
+      final module = _modules(json).values.single as Map<String, dynamic>;
+      final cell =
+          _cells(module).values.cast<Map<String, dynamic>>().singleWhere(
+                (cell) => cell['type'] == r'$and',
+              );
+      final parameters = cell['parameters'] as Map<String, dynamic>;
+      expect(parameters['A_SIGNED'], 0);
+      expect(parameters['B_SIGNED'], 0);
     });
 
     test(r'Or2Gate maps to $or cell', () async {
@@ -1136,6 +1404,12 @@ void main() {
     test(r'NotGate maps to $not cell', () async {
       final json = await _synthToMap(NotModule(Logic()));
       expect(_hasCellType(json, r'$not'), isTrue);
+      final module = _modules(json).values.single as Map<String, dynamic>;
+      final cell =
+          _cells(module).values.cast<Map<String, dynamic>>().singleWhere(
+                (cell) => cell['type'] == r'$not',
+              );
+      expect((cell['parameters'] as Map<String, dynamic>)['A_SIGNED'], 0);
     });
 
     test('user-named internal signals remain driven and named', () async {
@@ -2379,6 +2653,38 @@ void main() {
             (connections['Y'] as List<dynamic>).whereType<int>().toSet();
 
         expect(inputBits.intersection(outputBits), isEmpty);
+      }
+    });
+
+    test('array selection retains its input array connectivity', () async {
+      for (final enableDce in [false, true]) {
+        final module = _TracedArraySelectionModule();
+        final json = await _synthToMap(
+          module,
+          configuration: NetlistSynthesizerConfiguration(
+            enableDeadCellElimination: enableDce,
+          ),
+        );
+        final moduleDef =
+            _modules(json)[module.definitionName] as Map<String, dynamic>;
+        final input =
+            (_ports(moduleDef)['data'] as Map<String, dynamic>)['bits'];
+        final cells = _cells(moduleDef).values.cast<Map<String, dynamic>>();
+        final slices = cells
+            .where((cell) => cell['synthetic_origin'] == 'arraySlice')
+            .toList();
+
+        expect(slices, hasLength(4));
+        for (final slice in slices) {
+          final connections = slice['connections'] as Map<String, dynamic>;
+          expect(connections['A'], orderedEquals(input as List),
+              reason: 'Array selection must be driven by the input array.');
+        }
+        final concats =
+            cells.where((cell) => cell['synthetic_origin'] == 'arrayConcat');
+        expect(concats, enableDce ? isEmpty : isNotEmpty,
+            reason:
+                'The disconnected concat is removed only with DCE enabled.');
       }
     });
 

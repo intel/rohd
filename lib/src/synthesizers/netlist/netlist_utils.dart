@@ -220,7 +220,7 @@ abstract class NetlistUtils {
   ///
   /// **Output side**: Similarly, Combinational output ports that feed into
   /// the inputs of the same Concat submodule are collapsed into a single
-  /// aggregate port connected to the Concat's output wire IDs.
+  /// aggregate port retaining the original output wire IDs.
   static void collapseAlwaysBlockPorts(
     NetlistAlwaysBlockPortCollapseIndex index,
     SynthSubModuleInstantiation instance,
@@ -386,14 +386,15 @@ abstract class NetlistUtils {
       if (maxBit >= outIds.length) {
         continue;
       }
-      final aggBits = outIds.sublist(minBit, maxBit + 1).cast<Object>();
+      final aggBits = <Object>[
+        for (final (portName, _, _, _) in ports) ...connections[portName]!,
+      ];
 
       final outName =
           tryGetSynthLogicName(swizOutSL) ?? 'agg_out_${minBit}_$maxBit';
 
-      // Replace individual ports with the aggregate.  The bypassed
-      // Concat cells are left in place; the post-synthesis DCE pass
-      // will remove them if their outputs are no longer consumed.
+      // Retain the individual output bits: other consumers, including the
+      // concat itself, may still depend on them.
       for (final (portName, _, _, _) in ports) {
         connections.remove(portName);
         portDirs.remove(portName);

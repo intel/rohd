@@ -160,6 +160,7 @@ class NetlistCellMapper {
       portDirs: r.portDirs,
       connections: r.connections,
       parameters: <String, Object?>{
+        'A_SIGNED': 0,
         'A_WIDTH': ctx.width(inN),
         'Y_WIDTH': ctx.width(out),
       },
@@ -185,7 +186,9 @@ class NetlistCellMapper {
       portDirs: r.portDirs,
       connections: r.connections,
       parameters: <String, Object?>{
+        'A_SIGNED': 0,
         'A_WIDTH': ctx.width(a),
+        'B_SIGNED': 0,
         'B_WIDTH': ctx.width(b),
         'Y_WIDTH': ctx.width(out),
       },
@@ -222,10 +225,7 @@ class NetlistCellMapper {
   /// Map a two-input gate with ports A, B, Y (e.g. `$pow`, `$div`, `$mod`),
   /// including the standard Yosys `A_SIGNED`/`B_SIGNED` parameters.
   ///
-  /// Unlike [binaryABY], this always emits the full standard parameter set
-  /// (`A_SIGNED`, `A_WIDTH`, `B_SIGNED`, `B_WIDTH`, `Y_WIDTH`) so the result
-  /// is directly consumable by standard Yosys tooling that expects these
-  /// arithmetic cells to be fully specified.
+  /// Unlike [binaryABY], signedness can be selected independently per input.
   static NetlistCellMapping? binaryABYSigned(
     NetlistCellContext ctx,
     String cellType, {
@@ -283,12 +283,19 @@ class NetlistCellMapper {
         final inName = sub.inputs.keys.first;
         final outName = sub.outputs.keys.first;
         final r = ctx.remap({inName: 'A', outName: 'Y'});
+        final reversed = sub.startIndex > sub.endIndex;
+        if (reversed) {
+          // A Yosys slice is always ascending in its input bit order.
+          r.connections['A'] = r.connections['A']!.reversed.toList();
+        }
         return (
           cellType: r'$slice',
           portDirs: r.portDirs,
           connections: r.connections,
           parameters: <String, Object?>{
-            'OFFSET': sub.startIndex,
+            'OFFSET': reversed
+                ? ctx.width(inName) - 1 - sub.startIndex
+                : sub.startIndex,
             'A_WIDTH': ctx.width(inName),
             'Y_WIDTH': ctx.width(outName),
           },

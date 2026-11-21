@@ -15,6 +15,12 @@ creating the module hierarchy, and clear it when the tracing session is over.
 `TraceService` is the supported API for FLC sidecars and emits the current
 FLC v6 format.
 
+FLC signal keys use canonical synthesized names, including array references
+such as `data[0]`. Netlists use the same names for retained signals. Output
+positions identify actual generated expressions, which may have different
+syntax in SystemC; an output position is omitted when no matching expression
+is emitted.
+
 ## Quick start: SystemVerilog and FLC v6
 
 ```dart
@@ -139,7 +145,8 @@ is organized by generated implementation name:
 `files` maps the first component of each source frame
 (`fileIndex:line:column`) to a package-relative source path. `tree` is a
 trie: every node is `[frame, ...childrenOrSymbols]`, with outer source frames
-stored before inner frames.
+stored before inner frames. A `-1:1:1` frame marks an output-only entry with
+no Dart source frame; consumers must not resolve `-1` against `files`.
 
 Leaf symbols use this grammar:
 

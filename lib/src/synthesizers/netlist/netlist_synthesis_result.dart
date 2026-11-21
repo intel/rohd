@@ -28,6 +28,9 @@ class NetlistSynthesisResult extends SynthesisResult {
   /// Attributes for this module (e.g., top marker).
   final Map<String, Object?> attributes;
 
+  /// Whether to omit ROHD-only metadata when writing individual files.
+  final bool omitRohdMetadata;
+
   /// Cached JSON string for comparison and output.
   late final String _cachedJson = _buildJson();
 
@@ -39,6 +42,7 @@ class NetlistSynthesisResult extends SynthesisResult {
     required Map<String, Map<String, Object?>> cells,
     required Map<String, Object?> netnames,
     Map<String, Object?> attributes = const {},
+    this.omitRohdMetadata = false,
   })  : ports = _freezeNestedMap(ports),
         cells = _freezeNestedMap(cells),
         netnames = _freezeObjectMap(netnames),
@@ -65,12 +69,17 @@ class NetlistSynthesisResult extends SynthesisResult {
   @override
   List<SynthFileContents> toSynthFileContents() {
     final typeName = instanceTypeName;
-    final moduleEntry = <String, Object?>{
-      'attributes': attributes,
-      'ports': ports,
-      'cells': cells,
-      'netnames': netnames,
-    };
+    final moduleEntry = omitRohdMetadata
+        ? (jsonDecode(_cachedJson) as Map<String, dynamic>)
+        : <String, Object?>{
+            'attributes': attributes,
+            'ports': ports,
+            'cells': cells,
+            'netnames': netnames,
+          };
+    if (omitRohdMetadata) {
+      removeRohdNetlistMetadata(moduleEntry);
+    }
     final contents = const JsonEncoder.withIndent('  ').convert({
       'creator': 'NetlistSynthesizer (rohd)',
       'version': NetlistSynthesizer.formatVersion,
@@ -83,6 +92,21 @@ class NetlistSynthesisResult extends SynthesisResult {
         contents: contents,
       ),
     ];
+  }
+}
+
+/// Removes ROHD-only metadata from a mutable, fully processed module entry.
+void removeRohdNetlistMetadata(Map<String, dynamic> module) {
+  (module['attributes'] as Map<String, dynamic>).remove('rohd.src_trace');
+  for (final section in ['ports', 'netnames']) {
+    for (final value in (module[section] as Map<String, dynamic>).values) {
+      (value as Map<String, dynamic>).remove('logic_type');
+    }
+  }
+  for (final value in (module['cells'] as Map<String, dynamic>).values) {
+    (value as Map<String, dynamic>)
+      ..remove('is_synthetic')
+      ..remove('synthetic_origin');
   }
 }
 

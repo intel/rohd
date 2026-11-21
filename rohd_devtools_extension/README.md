@@ -15,6 +15,12 @@ snapshots, and cross-probing, see
 
 ## Preparing the Program Being Debugged
 
+ROHD and the debugger do not need to be upgraded together. A program built with
+ROHD 0.7.4 can still connect to the updated debugger. Fixes to netlist generation
+apply when the program uses a newer ROHD; fixes to signal evaluation apply when
+using a newer debugger. Synthetic cell names in generated JSON are not stable
+identifiers across ROHD versions.
+
 The debugger UI and the ROHD simulation are separate programs. Opening the UI
 does not instrument the simulation: the program being debugged must register
 the services it needs after building its top module and before simulation.

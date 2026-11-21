@@ -20,7 +20,7 @@ import 'package:rohd/src/utilities/namer.dart';
 
 /// A version of [BusSubset] that can be used for slicing on [LogicStructure]
 /// ports.
-class _BusSubsetForStructSlice extends BusSubset {
+class _BusSubsetForStructSlice extends SynthStructureSlice {
   /// The stable destination [Logic] this slice drives.
   ///
   /// Used as the [instanceNameKey] so that, although a fresh
@@ -35,13 +35,8 @@ class _BusSubsetForStructSlice extends BusSubset {
     super.bus,
     super.startIndex,
     super.endIndex, {
-    required Logic destination,
-  })  : _destination = destination,
-        super(name: 'struct_slice');
-
-  // we override this since it's added post-build
-  @override
-  bool get hasBuilt => true;
+    required super.destination,
+  }) : _destination = destination;
 
   @override
   Object get instanceNameKey => _destination;

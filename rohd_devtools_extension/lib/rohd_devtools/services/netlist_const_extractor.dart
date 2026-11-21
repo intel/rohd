@@ -56,7 +56,7 @@ class NetlistConstExtractor {
       // Build bit → signal-path map for this module scope.
       //
       // Register narrower signals first so that array elements (e.g.
-      // `coefficients0_0_`, 16-bit) claim their bits before the wider
+      // `coefficients0[0]`, 16-bit) claim their bits before the wider
       // parent signal (e.g. `coefficients0`, 48-bit).  This ensures
       // that `$const` cells driving individual elements resolve to the
       // correct sub-signal path rather than the parent.

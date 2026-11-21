@@ -57,6 +57,14 @@ class NetlistValidation {
     Map<String, Object?>? netnames,
   }) {
     final issues = <NetlistValidationIssue>[];
+    for (final name in cells.keys) {
+      if (ports.containsKey(name) || (netnames?.containsKey(name) ?? false)) {
+        issues.add(NetlistValidationIssue(
+          'cell and signal share the name "$name"',
+          netname: name,
+        ));
+      }
+    }
 
     final driversByBit = _driversByBit(ports, cells);
     final aggregateNetnamesByBit = _aggregateNetnamesByBit(netnames);

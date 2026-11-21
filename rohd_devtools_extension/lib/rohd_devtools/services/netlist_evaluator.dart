@@ -13,14 +13,35 @@
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 import 'package:flutter/foundation.dart' show debugPrint;
-import 'package:rohd/rohd.dart' show LogicValue;
+import 'package:rohd/rohd.dart' show LogicValue, RohdException;
 import 'package:rohd_devtools_extension/rohd_devtools/utils/regex_utils.dart';
 
-/// Matches array element netnames of the form `parent_N_`.
-///
-/// Group 1: parent signal name (e.g. `data_0__0_`)
-/// Group 2: element index (e.g. `0`)
-const _arrayElementPattern = r'^(.+)_(\d+)_$';
+const _arrayElementPattern = r'^(.+)(?:\[(\d+)\]|_(\d+)_)$';
+
+({String parent, int index})? _arrayElement(
+  String name,
+  Map<String, List<int>> sigBits,
+) {
+  final match = regExpFirstMatch(_arrayElementPattern, name);
+  if (match == null) {
+    return null;
+  }
+  final parent = match.group(1)!;
+  final index = int.parse(match.group(2) ?? match.group(3)!);
+  final childBits = sigBits[name];
+  final parentBits = sigBits[parent];
+  if (childBits == null ||
+      childBits.isEmpty ||
+      parentBits == null ||
+      (index + 1) * childBits.length > parentBits.length) {
+    return null;
+  }
+  // An underscore name can be a distinct signal alongside a canonical element.
+  if (match.group(3) != null && sigBits.containsKey('$parent[$index]')) {
+    return null;
+  }
+  return (parent: parent, index: index);
+}
 
 // Yosys cell type → evaluable op name
 // ---------------------------------------------------------------------------
@@ -134,11 +155,16 @@ _ResolvedModule? _resolveModulePath(
     final nextType = cell['type'] as String?;
     // $const cell: the output port name IS the Verilog constant literal.
     if (nextType == r'$const' && constResult != null) {
-      try {
-        final lv = LogicValue.ofRadixString(parts.last);
-        constResult.value = (value: lv.toString(), width: lv.width);
-      } on Object {
-        constResult.value = null;
+      final directions = cell['port_directions'] as Map<String, dynamic>?;
+      if (i == parts.length - 2 && directions?[parts.last] == 'output') {
+        try {
+          final lv = LogicValue.ofRadixString(parts.last);
+          constResult.value = (value: lv.toString(), width: lv.width);
+        } on FormatException catch (error) {
+          debugPrint('Invalid constant port on $cellName: $error');
+        } on RohdException catch (error) {
+          debugPrint('Invalid constant port on $cellName: $error');
+        }
       }
       return null;
     }
@@ -349,13 +375,10 @@ class NetlistEvaluator {
           }
         }
         // Array element: walk the parent signal's leaves.
-        final arrayMatch = regExpFirstMatch(_arrayElementPattern, name);
-        if (arrayMatch != null) {
-          final parentName = arrayMatch.group(1)!;
-          if (idx.sigBits.containsKey(parentName)) {
-            walk(parentName);
-            return;
-          }
+        final arrayElement = _arrayElement(name, idx.sigBits);
+        if (arrayElement != null) {
+          walk(arrayElement.parent);
+          return;
         }
         leaves.add('$instancePath/$name');
         return;
@@ -466,7 +489,12 @@ class NetlistEvaluator {
     if (parts.length < 2) {
       return false;
     }
-    final resolved = _resolveModulePath(_modules, parts, _cache);
+    final constant = _Box<({String value, int width})?>(null);
+    final resolved =
+        _resolveModulePath(_modules, parts, _cache, constResult: constant);
+    if (constant.value != null) {
+      return true;
+    }
     if (resolved == null) {
       return false;
     }
@@ -490,13 +518,8 @@ class NetlistEvaluator {
         }
       }
     }
-    // Array element: name matches `parent_N_` and parent exists.
-    final arrayMatch = regExpFirstMatch(_arrayElementPattern, signalName);
-    if (arrayMatch != null) {
-      final parentName = arrayMatch.group(1)!;
-      if (resolved.index.sigBits.containsKey(parentName)) {
-        return true;
-      }
+    if (_arrayElement(signalName, resolved.index.sigBits) != null) {
+      return true;
     }
     return false;
   }
@@ -511,7 +534,12 @@ class NetlistEvaluator {
     if (parts.length < 2) {
       return false;
     }
-    final resolved = _resolveModulePath(_modules, parts, _cache);
+    final constant = _Box<({String value, int width})?>(null);
+    final resolved =
+        _resolveModulePath(_modules, parts, _cache, constResult: constant);
+    if (constant.value != null) {
+      return true;
+    }
     if (resolved == null) {
       return false;
     }
@@ -523,12 +551,8 @@ class NetlistEvaluator {
         // Even in slim modules, array sub-elements can be resolved
         // from the parent port's snapshot value.
         final signalName = parts.last;
-        final arrayMatch = regExpFirstMatch(_arrayElementPattern, signalName);
-        if (arrayMatch != null) {
-          final parentName = arrayMatch.group(1)!;
-          if (resolved.index.sigBits.containsKey(parentName)) {
-            return true;
-          }
+        if (_arrayElement(signalName, resolved.index.sigBits) != null) {
+          return true;
         }
         return false;
       }
@@ -542,9 +566,11 @@ class NetlistEvaluator {
     if (parts.length < 2) {
       return 0;
     }
-    final resolved = _resolveModulePath(_modules, parts, _cache);
+    final constant = _Box<({String value, int width})?>(null);
+    final resolved =
+        _resolveModulePath(_modules, parts, _cache, constResult: constant);
     if (resolved == null) {
-      return 0;
+      return constant.value?.width ?? 0;
     }
     final signalName = parts.last;
     final nnData = resolved.index.netnames[signalName] as Map<String, dynamic>?;
@@ -606,12 +632,8 @@ class NetlistEvaluator {
         continue;
       }
       // Array element: include if parent exists in this module.
-      final arrayMatch = regExpFirstMatch(_arrayElementPattern, name);
-      if (arrayMatch != null) {
-        final parentName = arrayMatch.group(1)!;
-        if (idx.sigBits.containsKey(parentName)) {
-          result.add('$instancePath/$name');
-        }
+      if (_arrayElement(name, idx.sigBits) != null) {
+        result.add('$instancePath/$name');
       }
     }
 
@@ -737,19 +759,14 @@ class _ResolvedModule {
       return parseHexToLV(snapVal, fw);
     }
     // Array element pattern: resolve parent from snapshot recursively.
-    final m = regExpFirstMatch(_arrayElementPattern, name);
-    if (m != null) {
-      final parentName = m.group(1)!;
-      final elementIndex = int.parse(m.group(2)!);
-      final parentBits = sigBits[parentName];
-      if (parentBits != null && parentBits.isNotEmpty) {
-        final parentWidth = parentBits.length;
-        final offset = elementIndex * fw;
-        if (offset + fw <= parentWidth) {
-          final parentVal = resolveFromSnapshot(parentName, parentWidth);
-          if (parentVal != null) {
-            return parentVal.getRange(offset, offset + fw);
-          }
+    final element = _arrayElement(name, sigBits);
+    if (element != null) {
+      final parentWidth = sigBits[element.parent]!.length;
+      final offset = element.index * fw;
+      if (offset + fw <= parentWidth) {
+        final parentVal = resolveFromSnapshot(element.parent, parentWidth);
+        if (parentVal != null) {
+          return parentVal.getRange(offset, offset + fw);
         }
       }
     }
@@ -784,8 +801,6 @@ class _ResolvedModule {
     }
   }
 
-  final ports = idx.ports;
-  final netnames = idx.netnames;
   final bitToSig = idx.bitToSig;
   final bitIndexInSig = idx.bitIndexInSig;
   final driverOf = idx.driverOf;
@@ -869,27 +884,21 @@ class _ResolvedModule {
         }
 
         // Transitive array-element resolution: if the signal name
-        // matches the pattern `parentName_N_` (LogicArray element
-        // naming), recursively resolve the parent and extract the
-        // sub-range.  This handles arrays with depth > 2 where
+        // names an array element, recursively resolve the parent and extract
+        // the sub-range. This handles arrays with depth > 2 where
         // only the first $slice level has an explicit cell.
         // This runs BEFORE wire-alias because registration order in
         // bitToSig can cause a smaller child to be found as alias,
         // producing 'x' for uncovered bits.
-        final arrayMatch = regExpFirstMatch(_arrayElementPattern, name);
-        if (arrayMatch != null) {
-          final parentName = arrayMatch.group(1)!;
-          final elementIndex = int.parse(arrayMatch.group(2)!);
-          final parentBits = sigBits[parentName];
-          if (parentBits != null && parentBits.isNotEmpty) {
-            final parentWidth = parentBits.length;
-            final offset = elementIndex * fw;
-            if (offset + fw <= parentWidth) {
-              final parentVal = resolve(parentName, parentWidth);
-              final slice = parentVal.getRange(offset, offset + fw);
-              cache[name] = slice;
-              return slice;
-            }
+        final element = _arrayElement(name, sigBits);
+        if (element != null) {
+          final parentWidth = sigBits[element.parent]!.length;
+          final offset = element.index * fw;
+          if (offset + fw <= parentWidth) {
+            final parentVal = resolve(element.parent, parentWidth);
+            final slice = parentVal.getRange(offset, offset + fw);
+            cache[name] = slice;
+            return slice;
           }
         }
 
@@ -1319,19 +1328,7 @@ class _ResolvedModule {
     }
   }
 
-  // Get target signal width from the netlist bit-array length.
-  var targetWidth = 1;
-  final nnData = netnames[signalName] as Map<String, dynamic>?;
-  if (nnData != null) {
-    targetWidth = (nnData['bits'] as List?)?.whereType<int>().length ?? 1;
-  } else {
-    final pData = ports[signalName] as Map<String, dynamic>?;
-    if (pData != null) {
-      targetWidth = (pData['bits'] as List?)?.whereType<int>().length ?? 1;
-    }
-  }
-
-  final result = resolve(signalName, targetWidth);
+  final result = resolve(signalName, tw > 0 ? tw : 1);
 
   // Store all newly resolved values back into the cross-call cache.
   if (evalCache != null) {
