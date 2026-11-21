@@ -30,7 +30,13 @@ name: rohd_live_debugger
 environment:
   sdk: ^3.6.0
 EOF
-cp "$REPO_ROOT/packages/rohd_live_debugger/extension/devtools/config.yaml" "$EXTENSION_DIR/config.yaml"
+cat > "$EXTENSION_DIR/config.yaml" <<'EOF'
+name: rohd_live_debugger
+issueTracker: https://github.com/intel/rohd/issues
+version: 0.1.0
+materialIconCodePoint: '0xe1c5'
+requiresConnection: false
+EOF
 for asset in index.html flutter_bootstrap.js flutter.js main.dart.js version.json \
   assets/AssetManifest.bin assets/FontManifest.json canvaskit/canvaskit.js canvaskit/canvaskit.wasm \
   dart_wellen/wellen_bridge.js dart_wellen/wellen_bridge_bg.wasm; do
@@ -103,7 +109,6 @@ touch "$BUILD_REPO/rohd_devtools_extension/web/dart_wellen/wellen_bridge.js" \
 )
 grep -Fq 'if(window.parent===window){window.location.replace("https://intel.github.io/rohd/rohd-live-debugger/")}' \
   "$BUILD_REPO/packages/rohd_live_debugger/extension/devtools/build/index.html"
-grep -Fxq 'version: 0.1.0' "$BUILD_REPO/packages/rohd_live_debugger/extension/devtools/config.yaml"
 cmp "$REPO_ROOT/packages/rohd_live_debugger/extension/devtools/config.yaml" \
   "$BUILD_REPO/packages/rohd_live_debugger/extension/devtools/config.yaml"
 [[ "$(awk '/^version: / {print $2}' "$REPO_ROOT/packages/rohd_live_debugger/extension/devtools/config.yaml")" == \
