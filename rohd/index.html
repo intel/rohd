@@ -1278,6 +1278,14 @@ signal value changes during simulation for DevTools inspection.
   Controls whether a type is included in a SystemVerilog port declaration.
 </dd>
 
+          <dt id="TypedInterfacePortPolicy">
+  <span class="name "><a href="../rohd/TypedInterfacePortPolicy.html">TypedInterfacePortPolicy</a></span> 
+
+</dt>
+<dd>
+  Compatibility policy for a schema-aware interface port.
+</dd>
+
           <dt id="WaveformSignalDirection">
   <span class="name "><a href="../rohd/WaveformSignalDirection.html">WaveformSignalDirection</a></span> 
 
@@ -1504,6 +1512,19 @@ index.
 </dt>
 <dd>
   Performs a multiplexer/ternary operation.
+  
+
+</dd>
+
+          <dt id="rohdPayloadsCompatible" class="callable">
+  <span class="name"><a href="../rohd/rohdPayloadsCompatible.html">rohdPayloadsCompatible</a></span><span class="signature">(<wbr><span class="parameter" id="rohdPayloadsCompatible-param-payloads"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> <span class="parameter-name">payloads</span>, {</span><span class="parameter" id="rohdPayloadsCompatible-param-ignoreConstantNames"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">ignoreConstantNames</span> = <span class="default-value">false</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Whether all <code>payloads</code> are pairwise compatible through packed bridges.
   
 
 </dd>
@@ -2000,7 +2021,7 @@ signal is being used before it was initialized.
 <footer>
   <span class="no-break">
     rohd
-      0.7.4
+      0.7.5
   </span>
   
 </footer>

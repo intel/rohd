@@ -98,9 +98,31 @@ respectively, no inputs, outputs, or inOuts will be added.</p>
     Iterable&lt;TagType&gt;? inOutTags,
     String Function(String original)? uniquify}) {
   uniquify ??= (original) =&gt; original;
+  final inputs = inputTags == null ? &lt;String, Logic&gt;{} : getPorts(inputTags);
+  final outputs =
+      outputTags == null ? &lt;String, Logic&gt;{} : getPorts(outputTags);
+  final inOuts = inOutTags == null ? &lt;String, Logic&gt;{} : getPorts(inOutTags);
+  final typedPorts = typedPayloadPorts;
+  for (final name in typedPorts.keys) {
+    if (inOuts.containsKey(name) &amp;&amp;
+        (inputs.containsKey(name) || outputs.containsKey(name))) {
+      throw PortTypeException.forIntendedName(
+          name, &#39;A typed payload cannot be both directional and inOut.&#39;);
+    }
+  }
 
   if (inputTags != null) {
-    for (final port in getPorts(inputTags).values) {
+    for (final entry in inputs.entries) {
+      final port = entry.value;
+      final policy = typedPorts[entry.key];
+      if (policy != null) {
+        final source = srcInterface.port(entry.key);
+        _validateTypedPayload(port, source, entry.key, policy);
+        final bridge = port.cloneTyped(name: &#39;${entry.key}_input_bridge&#39;)
+          ..gets(source);
+        port &lt;= module.addTypedInput&lt;Logic&gt;(uniquify(port.name), bridge);
+        continue;
+      }
       port &lt;=
           switch (port) {
             LogicArray() =&gt; module.addInputArray(
@@ -124,7 +146,22 @@ respectively, no inputs, outputs, or inOuts will be added.</p>
   }
 
   if (outputTags != null) {
-    for (final port in getPorts(outputTags).values) {
+    for (final entry in outputs.entries) {
+      final port = entry.value;
+      final policy = typedPorts[entry.key];
+      if (policy != null) {
+        final source = srcInterface.port(entry.key);
+        _validateTypedPayload(port, source, entry.key, policy);
+        final output = module.addTypedOutput&lt;Logic&gt;(
+            uniquify(port.name), port.cloneTyped);
+        if (!sameTypedCloneShape(port, output)) {
+          throw PortTypeException.forIntendedName(
+              entry.key, &#39;The output clone changed the payload schema.&#39;);
+        }
+        output &lt;= port;
+        source &lt;= output;
+        continue;
+      }
       final output = switch (port) {
         LogicArray() =&gt; module.addOutputArray(
             uniquify(port.name),
@@ -152,6 +189,7 @@ respectively, no inputs, outputs, or inOuts will be added.</p>
       srcInterface,
       inOutTags,
       uniquify: uniquify,
+      typedPorts: typedPorts,
     );
   }
 }</code></pre>
@@ -182,7 +220,7 @@ respectively, no inputs, outputs, or inOuts will be added.</p>
 <footer>
   <span class="no-break">
     rohd
-      0.7.4
+      0.7.5
   </span>
   
 </footer>
