@@ -1,3 +1,7 @@
+## 0.1.2
+
+- Resolve occurrence paths independently of same-named signals, including synthetic cells in older netlist JSON.
+
 ## 0.1.1
 
 - Add source-agnostic hierarchy models, addressing, adapters, and search utilities.

@@ -1,4 +1,4 @@
-## Unreleased
+## 0.1.1
 
 - Evaluate canonical nested array element names in the DevTools netlist evaluator.
 
