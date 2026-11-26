@@ -116,7 +116,12 @@ alias is intended. Use `Logic.from(constant)` when a plain-`Logic`
 source is needed for a materializing operation.
 
 `cloneTyped`, `Module.addTypedInput`, and `Module.addTypedInOut` reject clones
-that change declared runtime types, including nested types, or recursive shape.
+that change width, declared runtime types, including nested types, or
+recursive shape. `Module.addTypedOutput` takes a generator rather than a
+signal; pass `schema:` to check the generated port against an existing payload
+in the same way. `cloneInterfacePort()` is `cloneTyped()` for an interface's
+payload schema, except that a scalar `Const` held as a `Logic` becomes a
+driveable `Logic`.
 Shape includes structure fields, array dimensions and codecs, and enum mappings. Signals with
 additional semantic formats can implement `PayloadShapeMetadata`; its stable
 identifier must be equal exactly when those formats are compatible. Clones must
@@ -127,6 +132,8 @@ replaces the root-exported `sameDeclaredPayloadShape` name from ROHD 0.7.3.
 Use `rohdPayloadsCompatible` to compare a set of payloads when equal-width
 plain packed signals may bridge declared formats. It compares all pairs:
 different declared formats must not be hidden by a shared packed bridge.
+Both accept `allowRenamedClones: true` to treat a type-preserving clone whose
+field names changed with its parent's name as the same shape.
 This explicit construction-time check does not change existing operator
 behavior or add hardware.
 
