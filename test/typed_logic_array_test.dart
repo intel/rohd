@@ -673,7 +673,8 @@ void main() {
         // bits 7 down to 4 of the data are 1100, taken in reverse order
         const data = 0xa5c3;
         final vectors = [
-          Vector({'candidates': ((data << 4) | 0x9) << 20},
+          // a BigInt, as the value is wider than a web integer can shift
+          Vector({'candidates': BigInt.from((data << 4) | 0x9) << 20},
               {'upper': data >> 8, 'single': (data >> 3) & 1, 'reversed': 0x3}),
           Vector({'candidates': 0}, {'upper': 0, 'single': 0, 'reversed': 0}),
         ];
