@@ -466,6 +466,11 @@ class SynthModuleDefinition {
 
     var idx = 0;
     for (final leafElement in port.leafElements) {
+      if (leafElement.width == 0) {
+        // an empty field has no bits of the port to receive
+        continue;
+      }
+
       final leafSynth = getSynthLogic(leafElement)!;
       _retainInternalSignal(leafSynth);
 

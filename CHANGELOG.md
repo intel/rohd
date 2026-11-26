@@ -2,6 +2,11 @@
 
 - Reject width-changing typed clones and allow typed output generators to be checked against an expected payload schema.
 - Add opt-in parent-renamed payload compatibility, driveable scalar interface schema clones, and schema-aware grouped interface ports.
+- Fix `LogicValue.xor()` never returning for a 64-bit value with its top bit set (<https://github.com/intel/rohd/issues/776>).
+- Fix `<<` by a constant too large for the width of the value shifted, which shifted by the low bits of the amount instead of clearing the result, in simulation and in generated SystemVerilog (<https://github.com/intel/rohd/issues/778>).
+- Fix a `SignalRedrivenException` when `allowMultipleAssignments` is `false` and a reset or `If` condition is unknown, for a signal assigned once in each branch (<https://github.com/intel/rohd/issues/779>).
+- Fix SystemVerilog generation for a `LogicStructure` input port with a zero-width element, and `LogicStructure.put` when such an element is tied to a constant (<https://github.com/intel/rohd/issues/781>).
+- Fix generated SystemVerilog that selected part of a structure field in an array element with a second select after a part-select, which Icarus Verilog rejects (<https://github.com/intel/rohd/issues/768>).
 
 ## 0.7.5
 

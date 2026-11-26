@@ -1375,6 +1375,14 @@ void main() {
           LogicValue.ofString('010x').xor(),
           equals(LogicValue.x));
     });
+    test('xor of a 64-bit value with its top bit set', () {
+      expect(LogicValue.ofBigInt(BigInt.one << 63, 64).xor(),
+          equals(LogicValue.one));
+      expect(LogicValue.ofBigInt((BigInt.one << 63) | BigInt.one, 64).xor(),
+          equals(LogicValue.zero));
+      expect(
+          LogicValue.filled(64, LogicValue.one).xor(), equals(LogicValue.zero));
+    });
   });
   group('BigLogicValue', () {
     test('overrides', () {

@@ -222,6 +222,10 @@ class LogicStructure implements Logic {
 
     var index = 0;
     for (final element in leafElements) {
+      if (element.width == 0) {
+        // an empty field has no bits to receive, and may be tied to a constant
+        continue;
+      }
       element.put(logicVal.getRange(index, index + element.width));
       index += element.width;
     }

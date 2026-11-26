@@ -94,10 +94,46 @@ class SystemVerilogSynthSubModuleInstantiation
     }
   }
 
+  /// The bits a [BusSubset] takes from a signal that is itself a selection
+  /// from another, such as a field of a structure in an array, or `null` if
+  /// this is anything else.
+  ///
+  /// Such a signal is named by a part-select, like `array[1][15:0]`. A second
+  /// select cannot follow a part-select, so the two ranges are composed into
+  /// one, like `array[1][15:8]`.
+  String? _subsetOfSelection() {
+    final module = this.module;
+    if (module is! BusSubset || module.original.width == 1) {
+      return null;
+    }
+    final source = inputMapping[module.original.name] ??
+        inOutMapping[module.original.name];
+    if (source == null ||
+        source.declarationCleared ||
+        (source is! SynthLogicArrayStructureElement &&
+            source is! SynthLogicPackedRangeReference) ||
+        synthLogicToInlineableSynthSubmoduleMap?[source] != null) {
+      return null;
+    }
+    if (module.startIndex <= module.endIndex) {
+      return source.rangeName(module.startIndex, module.endIndex);
+    }
+    // a reversed selection is a concatenation of its bits
+    return '{${[
+      for (var bit = module.endIndex; bit <= module.startIndex; bit++)
+        source.rangeName(bit, bit)
+    ].join(',')}}';
+  }
+
   /// Provides the inline SV representation for this module.
   ///
   /// Should only be called if [module] is [InlineSystemVerilog].
   String inlineVerilog() {
+    final subsetOfSelection = _subsetOfSelection();
+    if (subsetOfSelection != null) {
+      return '($subsetOfSelection)';
+    }
+
     final portNameToValueMapping = _modulePortsMapWithInline(
       {...inputMapping, ...inOutMapping}
         ..remove((module as InlineSystemVerilog).resultSignalName),
@@ -154,6 +190,12 @@ class SystemVerilogSynthSubModuleInstantiation
       final result = ports[inlineModule.resultSignalName];
       final enumType = inlineResultLogic!.enumDefinition!.definitionName;
       return "assign $result = $enumType'${inlineVerilog()};  // $name";
+    }
+
+    final subsetOfSelection = _subsetOfSelection();
+    if (subsetOfSelection != null) {
+      final result = ports[(module as InlineSystemVerilog).resultSignalName];
+      return 'assign $result = $subsetOfSelection;  // $name';
     }
 
     return SystemVerilogSynthesizer.instantiationVerilogFor(

@@ -284,7 +284,9 @@ abstract class Conditional {
       throw e.cloneWithAddedPath('  at (driving X) $this  [$hierarchyString]');
     }
 
-    drivenSignals?.addAll(receivers);
+    // A receiver assigned in several branches is listed once for each, but
+    // driving X assigns it once.
+    drivenSignals?.addAll(receivers.toSet());
   }
 }
 

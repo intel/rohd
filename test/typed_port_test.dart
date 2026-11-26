@@ -101,6 +101,21 @@ class SimpleStructModuleContainer extends Module {
 
 class DummyModule extends Module {}
 
+/// A structure of a `fraction` field and an `integer` field of the given
+/// widths, least significant first; either may be empty.
+LogicStructure _fractionAndInteger(int fraction, int integer, {String? name}) =>
+    LogicStructure([
+      Logic(name: 'fraction', width: fraction),
+      Logic(name: 'integer', width: integer),
+    ], name: name ?? 'fields');
+
+class _PackedStructInput extends Module {
+  _PackedStructInput(LogicStructure s) : super(name: 'packedstructinput') {
+    s = addTypedInput('s', s);
+    addOutput('o', width: s.width) <= s.packed;
+  }
+}
+
 class CloneNoNameStruct extends LogicStructure {
   CloneNoNameStruct({bool asNet = false})
       : super([if (asNet) LogicNet() else Logic()], name: 'abc');
@@ -464,6 +479,21 @@ void main() {
       'first',
     );
   });
+
+  for (final (fraction, integer) in [(3, 1), (3, 0), (0, 3)]) {
+    test(
+        'structure input with fields of $fraction and $integer bits '
+        'generates and simulates', () async {
+      final mod = _PackedStructInput(_fractionAndInteger(fraction, integer));
+      await mod.build();
+      final vectors = [
+        Vector({'s': 5}, {'o': 5}),
+        Vector({'s': 2}, {'o': 2}),
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    });
+  }
 
   test('typed clone and schema-checked output reject scalar width changes', () {
     final schema = Logic(width: 8);

@@ -1094,6 +1094,37 @@ void main() {
     }
   });
 
+  for (final viaReset in [true, false]) {
+    test(
+        'an unknown ${viaReset ? 'reset' : 'If condition'} is not a repeated '
+        'assignment when redrive not allowed', () async {
+      final clk = SimpleClockGenerator(10).clk;
+      final control = Logic(name: 'control');
+      final d = Logic(name: 'd')..put(1);
+      final q = Logic(name: 'q');
+      // q is assigned once on either path, so driving it unknown while
+      // the control is unknown assigns it once as well.
+      Sequential(
+          clk,
+          viaReset
+              ? [q < d]
+              : [
+                  If(control, then: [q < 0], orElse: [q < d])
+                ],
+          reset: viaReset ? control : null,
+          allowMultipleAssignments: false);
+
+      LogicValue? whileUnknown;
+      Simulator.registerAction(12, () => whileUnknown = q.value);
+      Simulator.registerAction(13, () => control.put(0));
+      Simulator.setMaxSimTime(40);
+      await Simulator.run();
+
+      expect(whileUnknown, LogicValue.x);
+      expect(q.value, LogicValue.one);
+    });
+  }
+
   group('shorthand operations', () {
     Future<void> testShorthand(
         {required bool useArrays, required bool useSequential}) async {

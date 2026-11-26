@@ -372,6 +372,15 @@ abstract class _ShiftGate extends Module with InlineSystemVerilog {
   /// If the shift amount is a constant, this will be set to that constant.
   late final LogicValue? _shiftAmountConstant;
 
+  /// The amount of a constant shift as a non-negative integer, or `null` if
+  /// [shiftAmount] is negative or has unknown bits.
+  static BigInt? _constantAmount(dynamic shiftAmount) => switch (shiftAmount) {
+        int() when shiftAmount >= 0 => BigInt.from(shiftAmount),
+        BigInt() when !shiftAmount.isNegative => shiftAmount,
+        LogicValue() when shiftAmount.isValid => shiftAmount.toBigInt(),
+        _ => null,
+      };
+
   /// Constructs a two-input shift gate for an arbitrary custom functional
   /// implementation.
   ///
@@ -402,7 +411,14 @@ abstract class _ShiftGate extends Module with InlineSystemVerilog {
       _shiftAmountConstant = null;
     } else {
       if (_outputSvWidthExpansion) {
-        _shiftAmountConstant = LogicValue.of(shiftAmount, width: width);
+        // The amount is built at the width of the value shifted. An amount
+        // of that width or more clears the result, and the width itself
+        // always fits, so a larger amount is limited to it rather than
+        // reduced to its low bits.
+        final amount = _constantAmount(shiftAmount);
+        _shiftAmountConstant = amount != null && amount > BigInt.from(width)
+            ? LogicValue.ofInt(width, width)
+            : LogicValue.of(shiftAmount, width: width);
         shiftAmountLogic = Const(_shiftAmountConstant);
       } else {
         _shiftAmountConstant = LogicValue.ofInferWidth(shiftAmount);
