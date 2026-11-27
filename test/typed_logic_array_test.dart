@@ -563,6 +563,38 @@ class _TypedInputModule<T extends Logic> extends Module {
   }
 }
 
+class _TagAndData extends LogicStructure {
+  Logic get data => elements[1];
+
+  _TagAndData({String? name})
+      : super([Logic(name: 'tag', width: 4), Logic(name: 'data', width: 16)],
+            name: name ?? 'entry');
+
+  @override
+  _TagAndData clone({String? name}) => _TagAndData(name: name ?? this.name);
+}
+
+/// Selects parts of a field of a structure in an array, where the field is
+/// itself a part of the array element.
+class _FieldSubsetModule extends Module {
+  /// The array driving the `candidates` input.
+  final TypedLogicArray<_TagAndData, LogicValue> source;
+
+  _FieldSubsetModule({required bool unpacked})
+      : source = TypedLogicArray<_TagAndData, LogicValue>(
+          [2],
+          _TagAndData.new,
+          numUnpackedDimensions: unpacked ? 1 : 0,
+        ),
+        super(name: 'fieldsubset') {
+    final candidates = addTypedInput('candidates', source);
+    final data = candidates.arrayElements[1].data;
+    addOutput('upper', width: 8) <= data.getRange(8, 16);
+    addOutput('single') <= data[3];
+    addOutput('reversed', width: 4) <= BusSubset(data, 7, 4).subset;
+  }
+}
+
 class _UnnamedLocalStructuredArray extends Module {
   _UnnamedLocalStructuredArray(
       List<int> dimensions, int numUnpackedDimensions) {
@@ -621,6 +653,34 @@ void main() {
           SimCompare.checkIverilogVector(module, vectors);
         });
       }
+    }
+
+    for (final unpacked in [false, true]) {
+      test(
+          'part of a field of a structured ${unpacked ? 'unpacked' : 'packed'} '
+          'array element is one select', () async {
+        addTearDown(Simulator.reset);
+        final module = _FieldSubsetModule(unpacked: unpacked);
+        await module.build();
+
+        // the field is candidates[1][19:4]; a select cannot follow that
+        // part-select, so each part of the field is one select of the element
+        final generated = module.dumpSystemVerilog();
+        expect(generated, isNot(contains('[19:4]')));
+        expect(generated, contains('candidates[1][19:12]'));
+        expect(generated, contains('candidates[1][7]'));
+
+        // bits 7 down to 4 of the data are 1100, taken in reverse order
+        const data = 0xa5c3;
+        final vectors = [
+          // a BigInt, as the value is wider than a web integer can shift
+          Vector({'candidates': BigInt.from((data << 4) | 0x9) << 20},
+              {'upper': data >> 8, 'single': (data >> 3) & 1, 'reversed': 0x3}),
+          Vector({'candidates': 0}, {'upper': 0, 'single': 0, 'reversed': 0}),
+        ];
+        await SimCompare.checkFunctionalVector(module, vectors);
+        SimCompare.checkIverilogVector(module, vectors);
+      });
     }
 
     test('unnamed local array with nested structured fields', () async {

@@ -39,12 +39,17 @@ class Interface<TagType extends Enum> {
   ///
   /// Keys are interface port names. Unlisted ports retain the existing
   /// [connectIO] behavior, including when a port's tag is not selected.
-  /// This applies to ordinary [connectIO], not grouped structured ports.
+  /// Applies to ordinary and grouped structured ports.
   /// Validation takes place during construction and does not generate hardware.
   Map<String, TypedInterfacePortPolicy> get typedPayloadPorts => const {};
 
   /// Whether generated constant leaf names can differ from driveable clones.
   bool get ignoreConstantPayloadNames => false;
+
+  /// Whether typed ports accept recursively type-preserving parent renames.
+  ///
+  /// This also ignores generated constant names in schema comparisons.
+  bool get allowRenamedPayloadClones => false;
 
   /// Internal map from the [Interface]'s defined port name to an instance
   /// of a [Logic].
@@ -158,11 +163,8 @@ class Interface<TagType extends Enum> {
           final source = srcInterface.port(entry.key);
           _validateTypedPayload(port, source, entry.key, policy);
           final output = module.addTypedOutput<Logic>(
-              uniquify(port.name), port.cloneTyped);
-          if (!sameTypedCloneShape(port, output)) {
-            throw PortTypeException.forIntendedName(
-                entry.key, 'The output clone changed the payload schema.');
-          }
+              uniquify(port.name), port.cloneInterfacePort,
+              schema: port);
           output <= port;
           source <= output;
           continue;
@@ -203,9 +205,11 @@ class Interface<TagType extends Enum> {
       Logic local, Logic source, String name, TypedInterfacePortPolicy policy) {
     if (policy == TypedInterfacePortPolicy.matching
         ? !sameRohdPayloadShape(local, source,
-            ignoreConstantNames: ignoreConstantPayloadNames)
+            ignoreConstantNames: ignoreConstantPayloadNames,
+            allowRenamedClones: allowRenamedPayloadClones)
         : !rohdPayloadsCompatible([local, source],
-            ignoreConstantNames: ignoreConstantPayloadNames)) {
+            ignoreConstantNames: ignoreConstantPayloadNames,
+            allowRenamedClones: allowRenamedPayloadClones)) {
       throw PortTypeException.forIntendedName(
           name, 'Typed interface payload schemas do not match.');
     }
@@ -236,25 +240,48 @@ class Interface<TagType extends Enum> {
     );
     Logic? inputPort;
     Logic? outputPort;
+    final typedPorts = typedPayloadPorts;
+    final inputs = inputTags == null ? <String, Logic>{} : getPorts(inputTags);
+    final outputs =
+        outputTags == null ? <String, Logic>{} : getPorts(outputTags);
+    final inOuts = inOutTags == null ? <String, Logic>{} : getPorts(inOutTags);
+
+    for (final entry in typedPorts.entries) {
+      final key = entry.key;
+      final directional = inputs.containsKey(key) || outputs.containsKey(key);
+      if (directional && inOuts.containsKey(key)) {
+        throw PortTypeException.forIntendedName(
+            key, 'A typed payload cannot be both directional and inOut.');
+      }
+      if (directional) {
+        _validateTypedPayload(
+            port(key), srcInterface.port(key), key, entry.value);
+      }
+    }
 
     if (inputTags != null) {
-      final entries = getPorts(inputTags).entries.toList(growable: false);
+      final entries = inputs.entries.toList(growable: false);
       if (entries.length == 1) {
         final entry = entries.single;
-        final modulePort = _addSingleInputPort(
-          module,
-          _structuredFieldName(prefix, entry.key),
-          srcInterface.port(entry.key),
-        );
+        final name = _structuredFieldName(prefix, entry.key);
+        final source = srcInterface.port(entry.key);
+        final modulePort = typedPorts.containsKey(entry.key)
+            ? module.addTypedInput<Logic>(
+                name, entry.value.cloneInterfacePort()..gets(source))
+            : _addSingleInputPort(module, name, source);
         port(entry.key) <= modulePort;
         inputPort = modulePort;
       } else if (entries.length > 1) {
         final sourceStructure = LogicStructure(
           [
             for (final entry in entries)
-              srcInterface
-                  .port(entry.key)
-                  .clone(name: _structuredFieldName(prefix, entry.key)),
+              if (typedPorts.containsKey(entry.key))
+                entry.value.cloneInterfacePort(
+                    name: _structuredFieldName(prefix, entry.key))
+              else
+                srcInterface
+                    .port(entry.key)
+                    .clone(name: _structuredFieldName(prefix, entry.key)),
           ],
           name: '${prefix}_in',
         );
@@ -271,29 +298,37 @@ class Interface<TagType extends Enum> {
     }
 
     if (outputTags != null) {
-      final entries = getPorts(outputTags).entries.toList(growable: false);
+      final entries = outputs.entries.toList(growable: false);
       if (entries.length == 1) {
         final entry = entries.single;
-        final modulePort = _addSingleOutputPort(
-          module,
-          _structuredFieldName(prefix, entry.key),
-          port(entry.key),
-        );
+        final name = _structuredFieldName(prefix, entry.key);
+        final template = entry.value;
+        final modulePort = typedPorts.containsKey(entry.key)
+            ? module.addTypedOutput<Logic>(name, template.cloneInterfacePort,
+                schema: template)
+            : _addSingleOutputPort(module, name, template);
         modulePort <= port(entry.key);
         srcInterface.port(entry.key) <= modulePort;
         outputPort = modulePort;
       } else if (entries.length > 1) {
+        final hasTypedFields =
+            entries.any((entry) => typedPorts.containsKey(entry.key));
         final template = LogicStructure(
           [
             for (final entry in entries)
-              port(entry.key)
-                  .clone(name: _structuredFieldName(prefix, entry.key)),
+              if (typedPorts.containsKey(entry.key))
+                entry.value.cloneInterfacePort(
+                    name: _structuredFieldName(prefix, entry.key))
+              else
+                entry.value
+                    .clone(name: _structuredFieldName(prefix, entry.key)),
           ],
           name: '${prefix}_out',
         );
         final modulePort = module.addTypedOutput<LogicStructure>(
           template.name,
           template.clone,
+          schema: hasTypedFields ? template : null,
         );
         for (final (index, entry) in entries.indexed) {
           modulePort.elements[index] <= port(entry.key);
@@ -309,6 +344,7 @@ class Interface<TagType extends Enum> {
         srcInterface,
         inOutTags,
         uniquify: uniquify ?? (original) => original,
+        typedPorts: typedPorts,
       );
     }
 

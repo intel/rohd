@@ -14,6 +14,13 @@ import 'package:test/test.dart';
 
 import 'payload_shape_test_utils.dart';
 
+class _WidthChangingLogic extends Logic {
+  _WidthChangingLogic() : super(width: 8);
+
+  @override
+  Logic clone({String? name}) => Logic(name: name, width: 7);
+}
+
 class MyStruct extends LogicStructure {
   final Logic ready;
   final Logic valid;
@@ -93,6 +100,21 @@ class SimpleStructModuleContainer extends Module {
 }
 
 class DummyModule extends Module {}
+
+/// A structure of a `fraction` field and an `integer` field of the given
+/// widths, least significant first; either may be empty.
+LogicStructure _fractionAndInteger(int fraction, int integer, {String? name}) =>
+    LogicStructure([
+      Logic(name: 'fraction', width: fraction),
+      Logic(name: 'integer', width: integer),
+    ], name: name ?? 'fields');
+
+class _PackedStructInput extends Module {
+  _PackedStructInput(LogicStructure s) : super(name: 'packedstructinput') {
+    s = addTypedInput('s', s);
+    addOutput('o', width: s.width) <= s.packed;
+  }
+}
 
 class CloneNoNameStruct extends LogicStructure {
   CloneNoNameStruct({bool asNet = false})
@@ -453,7 +475,88 @@ void main() {
     final valid = _FormatSignal('first', 'first');
     expect(valid.cloneTyped().payloadShapeMetadata, 'first');
     expect(
-        module.addTypedInput('validData', valid).payloadShapeMetadata, 'first');
+      module.addTypedInput('validData', valid).payloadShapeMetadata,
+      'first',
+    );
+  });
+
+  for (final (fraction, integer) in [(3, 1), (3, 0), (0, 3)]) {
+    test(
+        'structure input with fields of $fraction and $integer bits '
+        'generates and simulates', () async {
+      final mod = _PackedStructInput(_fractionAndInteger(fraction, integer));
+      await mod.build();
+      final vectors = [
+        Vector({'s': 5}, {'o': 5}),
+        Vector({'s': 2}, {'o': 2}),
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    });
+  }
+
+  test('typed clone and schema-checked output reject scalar width changes', () {
+    final schema = Logic(width: 8);
+    final Logic malformed = _WidthChangingLogic();
+    expect(malformed.cloneTyped, throwsA(isA<LogicConstructionException>()));
+    expect(sameTypedCloneShape(schema, Logic(width: 7)), isFalse);
+    final module = DummyModule();
+    expect(
+      () => module.addTypedOutput(
+        'result',
+        ({name = 'result'}) => Logic(name: name, width: 7),
+        schema: schema,
+      ),
+      throwsA(isA<PortTypeException>()),
+    );
+    expect(module.outputs, isEmpty);
+    expect(
+      module.addTypedOutput('result', schema.clone, schema: schema).width,
+      8,
+    );
+  });
+
+  test('interface cloning normalizes only widened scalar constants', () {
+    final constant = Const(1, width: 8);
+    final Logic widened = constant;
+    expect(constant.cloneInterfacePort(), isA<Const>());
+    final clone = widened.cloneInterfacePort(name: 'data');
+    expect(clone, isNot(isA<Const>()));
+    expect(clone.width, 8);
+    expect(clone.name, 'data');
+    clone.put(42);
+    expect(clone.value.toInt(), 42);
+  });
+
+  test('renamed payload matching is opt-in and pairwise through bridges', () {
+    LogicStructure payload(String name) =>
+        LogicStructure([Logic(name: '${name}_bits', width: 8)], name: name);
+    final first = payload('first');
+    final second = payload('second');
+    final bridge = Logic(width: 8);
+    final mismatch = LogicStructure([Logic(name: 'different', width: 8)]);
+    expect(sameRohdPayloadShape(first, second), isFalse);
+    expect(
+      sameRohdPayloadShape(
+        payload('b'),
+        payload('renamed'),
+        allowRenamedClones: true,
+      ),
+      isTrue,
+    );
+    expect(rohdPayloadsCompatible([first, bridge, second]), isFalse);
+    expect(
+      rohdPayloadsCompatible([first, bridge, second], allowRenamedClones: true),
+      isTrue,
+    );
+    expect(
+      rohdPayloadsCompatible([
+        first,
+        bridge,
+        mismatch,
+      ], allowRenamedClones: true),
+      isFalse,
+    );
   });
 
   test('typed inouts reject semantic changes before registering ports', () {

@@ -1041,15 +1041,24 @@ abstract class Module {
   /// [LogicStructure]), the [LogicType] must be set to [Logic], since [Const]s
   /// cannot be driven and are not suitable as ports.
   ///
+  /// If [schema] is provided, the resulting port must preserve its width,
+  /// declared type, and semantic shape, including after port normalization.
+  ///
   /// The return value is the same as what is returned by [output].
   LogicType addTypedOutput<LogicType extends Logic>(
-      String name, LogicType Function({String name}) logicGenerator) {
+      String name, LogicType Function({String name}) logicGenerator,
+      {LogicType? schema}) {
     _checkForSafePortName(name);
 
     // must make a new clone of it, to avoid people using ports of other modules
     var outPort = logicGenerator(name: name);
 
     outPort = _validateType<LogicType>(outPort, isOutput: true, name: name);
+
+    if (schema != null && !sameTypedCloneShape(schema, outPort)) {
+      throw PortTypeException.forIntendedName(
+          name, 'Typed output must preserve the supplied payload schema.');
+    }
 
     if (outPort.isNet || (outPort is LogicStructure && outPort.hasNets)) {
       throw PortTypeException(

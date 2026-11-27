@@ -194,7 +194,8 @@ class _SmallLogicValue extends LogicValue {
     var result = 0;
     while (shiftedValue != 0) {
       result ^= shiftedValue & 1;
-      shiftedValue >>= 1;
+      // An arithmetic shift would never clear a value with its top bit set.
+      shiftedValue >>>= 1;
     }
     return result == 0 ? LogicValue.zero : LogicValue.one;
   }

@@ -29,11 +29,15 @@ Keys are the interface's registered port names, before `uniquify` is applied.
 `matching` requires equal declared shapes; `packedBridge` also permits an
 equal-width plain packed endpoint. If both endpoints declare shapes, they must
 match even under `packedBridge`. Set `ignoreConstantPayloadNames` to `true`
-when constant leaf names should not prevent a match. Only selected tags are
-registered, and typed inOut endpoints must both be nets.
+when constant leaf names should not prevent a match. Set
+`allowRenamedPayloadClones` to `true` to also accept a payload of the same
+types whose field names changed with the name of their parent, as they do in
+a clone under another name; this ignores constant leaf names as well. Only
+selected tags are registered, and typed inOut endpoints must both be nets.
 
-The policy applies to ordinary `connectIO` and its flat registration helpers,
-not the experimental grouped structured-port API below. Validation occurs at
+The policy applies to ordinary `connectIO`, its flat registration helpers, and
+the experimental grouped structured-port API below. A typed payload cannot be
+both directional and inOut in a grouped registration. Validation occurs at
 construction time and does not itself generate hardware; registration still
 creates the required ports and connections. Components relating several
 payloads should compare all declared schemas directly: two different schemas

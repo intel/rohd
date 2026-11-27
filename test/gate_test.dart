@@ -939,6 +939,34 @@ void main() {
         await SimCompare.checkFunctionalVector(gtm, vectors);
         SimCompare.checkIverilogVector(gtm, vectors);
       });
+
+      // A nonzero value shows whether a constant amount that does not fit in
+      // the width of the value shifted is applied in full.
+      for (final (constant, shiftedLeft, shiftedRight) in [
+        (39, BigInt.one << 39, BigInt.one),
+        (40, BigInt.zero, BigInt.zero),
+        (41, BigInt.zero, BigInt.zero),
+        ((BigInt.one << 40) | BigInt.one, BigInt.zero, BigInt.zero),
+        (BigInt.one << 100, BigInt.zero, BigInt.zero),
+      ]) {
+        test('all ones of 40 bits shifted by the constant $constant', () async {
+          final gtm = ShiftTestModule(Logic(width: 40), Logic(width: 8),
+              constant: constant);
+          await gtm.build();
+          final vectors = [
+            Vector({
+              'a': LogicValue.filled(40, LogicValue.one),
+              'b': 0
+            }, {
+              'a_lshift_const': shiftedLeft,
+              'a_rshift_const': shiftedRight,
+              'a_arshift_const': LogicValue.filled(40, LogicValue.one),
+            }),
+          ];
+          await SimCompare.checkFunctionalVector(gtm, vectors);
+          SimCompare.checkIverilogVector(gtm, vectors);
+        });
+      }
     });
 
     test('And2Gate single bit', () async {
