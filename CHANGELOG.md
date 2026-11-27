@@ -1,4 +1,4 @@
-## Unreleased
+## 0.7.6
 
 - Reject width-changing typed clones and allow typed output generators to be checked against an expected payload schema.
 - Add opt-in parent-renamed payload compatibility, driveable scalar interface schema clones, and schema-aware grouped interface ports.
