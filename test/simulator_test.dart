@@ -32,6 +32,58 @@ void main() {
     expect(actionTaken, equals(true));
   });
 
+  test('Simulator.wait completes after the requested simulation time',
+      () async {
+    final times = <int>[];
+    final flow = () async {
+      await Simulator.wait(5);
+      times.add(Simulator.time);
+      await Simulator.wait(10);
+      times.add(Simulator.time);
+      await Simulator.wait(0);
+      times.add(Simulator.time);
+    }();
+    Simulator.registerAction(100, () {});
+    await Simulator.run();
+    await flow;
+    expect(times, equals([5, 15, 15]));
+  });
+
+  test('Simulator.wait supports multiple concurrent waits', () async {
+    final events = <String>[];
+    final flowA = () async {
+      await Simulator.wait(20);
+      events.add('A@${Simulator.time}');
+    }();
+    final flowB = () async {
+      await Simulator.wait(10);
+      events.add('B@${Simulator.time}');
+    }();
+    final flowC = () async {
+      await Simulator.wait(10);
+      events.add('C@${Simulator.time}');
+    }();
+    Simulator.registerAction(100, () {});
+    await Simulator.run();
+    await Future.wait([flowA, flowB, flowC]);
+    expect(events, equals(['B@10', 'C@10', 'A@20']));
+  });
+
+  test('Simulator.wait with a negative delay throws', () async {
+    Object? thrown;
+    Simulator.registerAction(5, () {
+      try {
+        // Fails synchronously, so there is no Future to await.
+        // ignore: discarded_futures
+        Simulator.wait(-1);
+      } on Object catch (e) {
+        thrown = e;
+      }
+    });
+    await Simulator.run();
+    expect(thrown, isA<SimulatorException>());
+  });
+
   test('simulator warns when run has no events', () async {
     final warnings = <LogRecord>[];
     final subscription = Simulator.logger.onRecord.listen((record) {

@@ -217,6 +217,24 @@ abstract class Simulator {
     _pendingTimestamps[timestamp]!.add(action);
   }
 
+  /// Returns a [Future] that completes once [delay] units of simulation time
+  /// have passed, relative to the current [Simulator.time].
+  ///
+  /// This is a convenience wrapper around [registerAction], so it follows the
+  /// same rules: [delay] must not be negative, and the [Future] only completes
+  /// while the simulation is running. For example, `await Simulator.wait(10);`
+  /// resumes at `Simulator.time + 10`.
+  ///
+  /// Use it from an independent asynchronous flow. Do not return it from an
+  /// action passed to [registerAction] (or otherwise make such an action wait
+  /// on it), because the simulator awaits each action before moving on to the
+  /// next timestamp, so that action would never finish.
+  static Future<void> wait(int delay) {
+    final completer = Completer<void>();
+    registerAction(Simulator.time + delay, completer.complete);
+    return completer.future;
+  }
+
   /// Cancels an [action] previously scheduled for [timestamp].
   ///
   /// Returns true iff a [action] was previously registered at [timestamp].
