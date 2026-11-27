@@ -85,7 +85,9 @@ void driveX(Set&lt;Logic&gt;? drivenSignals) {
     throw e.cloneWithAddedPath(&#39;  at (driving X) $this  [$hierarchyString]&#39;);
   }
 
-  drivenSignals?.addAll(receivers);
+  &#47;&#47; A receiver assigned in several branches is listed once for each, but
+  &#47;&#47; driving X assigns it once.
+  drivenSignals?.addAll(receivers.toSet());
 }</code></pre>
 </section>
 

@@ -64,7 +64,7 @@
     </section>
     
 <section class="desc markdown">
-  <p>Whether <code>clone</code> preserves declared types and recursive semantic shape.</p>
+  <p>Whether <code>clone</code> preserves width, declared types, and semantic shape.</p>
 </section>
 
 
@@ -72,10 +72,15 @@
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">bool sameTypedCloneShape(Logic source, Logic clone) =&gt;
-    !hasDeclaredPayloadShape(source) ||
-    (_sameDeclaredPayloadShape(source, clone,
-            ignoreConstantNames: true, allowParentRenaming: true) &amp;&amp;
-        _sameDeclaredCloneTypes(source, clone));</code></pre>
+    source.width == clone.width &amp;&amp;
+    (!hasDeclaredPayloadShape(source) ||
+        (_sameDeclaredPayloadShape(
+              source,
+              clone,
+              ignoreConstantNames: true,
+              allowParentRenaming: true,
+            ) &amp;&amp;
+            _sameDeclaredCloneTypes(source, clone)));</code></pre>
 </section>
 
 

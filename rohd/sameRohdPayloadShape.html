@@ -58,6 +58,7 @@
 <span class="name ">sameRohdPayloadShape</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="sameRohdPayloadShape-param-template"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">template</span>, </span></li>
 <li><span class="parameter" id="sameRohdPayloadShape-param-source"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">source</span>, {</span></li>
 <li><span class="parameter" id="sameRohdPayloadShape-param-ignoreConstantNames"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">ignoreConstantNames</span> = <span class="default-value">false</span>, </span></li>
+<li><span class="parameter" id="sameRohdPayloadShape-param-allowRenamedClones"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">allowRenamedClones</span> = <span class="default-value">false</span>, </span></li>
 </ol>})
 
         
@@ -67,17 +68,31 @@
 <section class="desc markdown">
   <p>Whether two signals declare matching recursive layouts and formats.</p>
 <p><code>ignoreConstantNames</code> permits a constant leaf's generated name to differ
-from the corresponding driveable clone.</p>
+from the corresponding driveable clone.
+<code>allowRenamedClones</code> also permits recursively type-preserving parent
+renames and implies <code>ignoreConstantNames</code>.</p>
 </section>
 
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">bool sameRohdPayloadShape(Logic template, Logic source,
-        {bool ignoreConstantNames = false}) =&gt;
-    _sameDeclaredPayloadShape(template, source,
-        ignoreConstantNames: ignoreConstantNames, allowParentRenaming: false);</code></pre>
+  <pre class="language-dart"><code class="language-dart">bool sameRohdPayloadShape(
+  Logic template,
+  Logic source, {
+  bool ignoreConstantNames = false,
+  bool allowRenamedClones = false,
+}) =&gt;
+    _sameDeclaredPayloadShape(
+      template,
+      source,
+      ignoreConstantNames: ignoreConstantNames || allowRenamedClones,
+      allowParentRenaming: false,
+    ) ||
+    (allowRenamedClones &amp;&amp;
+        hasDeclaredPayloadShape(template) &amp;&amp;
+        hasDeclaredPayloadShape(source) &amp;&amp;
+        sameTypedCloneShape(template, source));</code></pre>
 </section>
 
 

@@ -57,6 +57,7 @@
 <span class="returntype"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
 <span class="name ">rohdPayloadsCompatible</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="rohdPayloadsCompatible-param-payloads"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> <span class="parameter-name">payloads</span>, {</span></li>
 <li><span class="parameter" id="rohdPayloadsCompatible-param-ignoreConstantNames"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">ignoreConstantNames</span> = <span class="default-value">false</span>, </span></li>
+<li><span class="parameter" id="rohdPayloadsCompatible-param-allowRenamedClones"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">allowRenamedClones</span> = <span class="default-value">false</span>, </span></li>
 </ol>})
 
         
@@ -68,15 +69,18 @@
 <p>Every pair must have equal width. Two declared shapes must also match;
 a plain <a href="../rohd/Logic-class.html">Logic</a> may bridge a declared shape of the same width. Compatibility
 through a bridge is not transitive, so all declared shapes are compared.
-<code>ignoreConstantNames</code> has the same meaning as in <a href="../rohd/sameRohdPayloadShape.html">sameRohdPayloadShape</a>.</p>
+Options have the same meaning as in <a href="../rohd/sameRohdPayloadShape.html">sameRohdPayloadShape</a>.</p>
 </section>
 
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">bool rohdPayloadsCompatible(Iterable&lt;Logic&gt; payloads,
-    {bool ignoreConstantNames = false}) {
+  <pre class="language-dart"><code class="language-dart">bool rohdPayloadsCompatible(
+  Iterable&lt;Logic&gt; payloads, {
+  bool ignoreConstantNames = false,
+  bool allowRenamedClones = false,
+}) {
   final values = payloads.toList();
   for (var i = 0; i &lt; values.length; i++) {
     for (var j = i + 1; j &lt; values.length; j++) {
@@ -85,8 +89,12 @@ through a bridge is not transitive, so all declared shapes are compared.
       if (first.width != second.width ||
           (hasDeclaredPayloadShape(first) &amp;&amp;
               hasDeclaredPayloadShape(second) &amp;&amp;
-              !sameRohdPayloadShape(first, second,
-                  ignoreConstantNames: ignoreConstantNames))) {
+              !sameRohdPayloadShape(
+                first,
+                second,
+                ignoreConstantNames: ignoreConstantNames,
+                allowRenamedClones: allowRenamedClones,
+              ))) {
         return false;
       }
     }

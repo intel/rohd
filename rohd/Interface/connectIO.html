@@ -153,11 +153,8 @@ respectively, no inputs, outputs, or inOuts will be added.</p>
         final source = srcInterface.port(entry.key);
         _validateTypedPayload(port, source, entry.key, policy);
         final output = module.addTypedOutput&lt;Logic&gt;(
-            uniquify(port.name), port.cloneTyped);
-        if (!sameTypedCloneShape(port, output)) {
-          throw PortTypeException.forIntendedName(
-              entry.key, &#39;The output clone changed the payload schema.&#39;);
-        }
+            uniquify(port.name), port.cloneInterfacePort,
+            schema: port);
         output &lt;= port;
         source &lt;= output;
         continue;

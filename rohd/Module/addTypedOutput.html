@@ -55,10 +55,11 @@
     <section class="multi-line-signature">
       
 <span class="returntype">LogicType</span>
-<span class="name ">addTypedOutput</span>&lt;<wbr><span class="type-parameter">LogicType extends Logic</span>&gt;(<wbr><ol class="parameter-list single-line"> <li><span class="parameter" id="addTypedOutput-param-name"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span>, </span></li>
+<span class="name ">addTypedOutput</span>&lt;<wbr><span class="type-parameter">LogicType extends Logic</span>&gt;(<wbr><ol class="parameter-list"> <li><span class="parameter" id="addTypedOutput-param-name"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span>, </span></li>
 <li><span class="parameter" id="addTypedOutput-param-logicGenerator"><span class="type-annotation">LogicType</span> <span class="parameter-name">logicGenerator</span>({<ol class="parameter-list"> <li><span class="parameter" id="param-name"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span>, </span></li>
-</ol>})</span></li>
-</ol>)
+</ol>}), {</span></li>
+<li><span class="parameter" id="addTypedOutput-param-schema"><span class="type-annotation">LogicType?</span> <span class="parameter-name">schema</span>, </span></li>
+</ol>})
 
       
 
@@ -78,6 +79,8 @@ type and semantic value type.</p>
 <a href="../../rohd/LogicNet-class.html">LogicNet</a>s in them. If a <a href="../../rohd/Const-class.html">Const</a> is generated (or included in a
 <a href="../../rohd/LogicStructure-class.html">LogicStructure</a>), the <code>LogicType</code> must be set to <a href="../../rohd/Logic-class.html">Logic</a>, since <a href="../../rohd/Const-class.html">Const</a>s
 cannot be driven and are not suitable as ports.</p>
+<p>If <code>schema</code> is provided, the resulting port must preserve its width,
+declared type, and semantic shape, including after port normalization.</p>
 <p>The return value is the same as what is returned by <a href="../../rohd/Module/output.html">output</a>.</p>
 </section>
 
@@ -86,13 +89,19 @@ cannot be driven and are not suitable as ports.</p>
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">LogicType addTypedOutput&lt;LogicType extends Logic&gt;(
-    String name, LogicType Function({String name}) logicGenerator) {
+    String name, LogicType Function({String name}) logicGenerator,
+    {LogicType? schema}) {
   _checkForSafePortName(name);
 
   &#47;&#47; must make a new clone of it, to avoid people using ports of other modules
   var outPort = logicGenerator(name: name);
 
   outPort = _validateType&lt;LogicType&gt;(outPort, isOutput: true, name: name);
+
+  if (schema != null &amp;&amp; !sameTypedCloneShape(schema, outPort)) {
+    throw PortTypeException.forIntendedName(
+        name, &#39;Typed output must preserve the supplied payload schema.&#39;);
+  }
 
   if (outPort.isNet || (outPort is LogicStructure &amp;&amp; outPort.hasNets)) {
     throw PortTypeException(
