@@ -31,6 +31,32 @@ abstract class ExternalSystemVerilogModule extends Module with SystemVerilog {
     super.name = 'external_module',
   }) : super(definitionName: definitionName, reserveDefinitionName: true);
 
+  /// Constructs an instance of an externally defined SystemVerilog module
+  /// without needing to declare a new subclass.
+  ///
+  /// The module is named [definitionName] in SystemVerilog and is instantiated
+  /// with the given [parameters]. Each entry in [inputs] connects the [Logic]
+  /// to an input port of the same name, taking the width from the [Logic]. Each
+  /// entry in [outputs] adds an output port whose width is the value. Use
+  /// [Module.output] on the returned module to access the output ports.
+  ///
+  /// ```dart
+  /// final mod = ExternalSystemVerilogModule.simple(
+  ///   definitionName: 'my_adder',
+  ///   inputs: {'a': a, 'b': b},
+  ///   outputs: {'sum': 9},
+  ///   parameters: {'WIDTH': '8'},
+  /// );
+  /// final sum = mod.output('sum');
+  /// ```
+  factory ExternalSystemVerilogModule.simple({
+    required String definitionName,
+    Map<String, Logic> inputs,
+    Map<String, int> outputs,
+    Map<String, String>? parameters,
+    String name,
+  }) = _SimpleExternalSystemVerilogModule;
+
   @override
   String instantiationVerilog(
     String instanceType,
@@ -45,4 +71,23 @@ abstract class ExternalSystemVerilogModule extends Module with SystemVerilog {
         parameters: parameters,
         forceStandardInstantiation: true,
       );
+}
+
+/// An [ExternalSystemVerilogModule] whose ports are all declared at
+/// construction, used by [ExternalSystemVerilogModule.simple].
+class _SimpleExternalSystemVerilogModule extends ExternalSystemVerilogModule {
+  _SimpleExternalSystemVerilogModule({
+    required super.definitionName,
+    Map<String, Logic> inputs = const {},
+    Map<String, int> outputs = const {},
+    super.parameters,
+    super.name,
+  }) {
+    for (final input in inputs.entries) {
+      addInput(input.key, input.value, width: input.value.width);
+    }
+    for (final output in outputs.entries) {
+      addOutput(output.key, width: output.value);
+    }
+  }
 }

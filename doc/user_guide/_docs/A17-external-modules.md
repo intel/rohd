@@ -59,3 +59,23 @@ external_module_name #(.WIDTH(2)) external_module(.a(a),.b(b));
 ```
 
 Connect `addInput` / `addOutput` / `addInOut` names to the SV port names.  Behavioral simulation of the external module itself is not included unless you add a model or use [ROHD Cosim](https://github.com/intel/rohd-cosim).
+
+
+### Instantiating without a subclass
+
+If you only need to instantiate a module and do not want to declare a class for it, use `ExternalSystemVerilogModule.simple`.  Each entry in `inputs` connects a `Logic` to the input port of the same name (the width comes from the `Logic`), and each entry in `outputs` adds an output port with the given width.  Use `output('name')` on the returned module to get the output.
+
+```dart
+class TopModule extends Module {
+  TopModule(Logic a) {
+    a = addInput('a', a, width: a.width);
+    final mod = ExternalSystemVerilogModule.simple(
+      definitionName: 'external_module_name',
+      inputs: {'a': a},
+      outputs: {'b': a.width},
+      parameters: {'WIDTH': '${a.width}'},
+    );
+    addOutput('b', width: a.width) <= mod.output('b');
+  }
+}
+```
