@@ -313,6 +313,14 @@ abstract class Simulator {
     }
   }
 
+  /// Returns true iff there is an injected action or a pending timestamp that
+  /// is less than or equal to [time].
+  static bool _hasStepsAtOrBefore(int time) {
+    final nextTimeStamp = _pendingTimestamps.firstKey();
+    return _injectedActionsPending ||
+        (nextTimeStamp != null && nextTimeStamp <= time);
+  }
+
   /// Updates [_currentTimestamp] with the next time stamp.
   ///
   /// Returns true iff there is a next time stamp.
@@ -444,7 +452,24 @@ abstract class Simulator {
 
   /// Starts the simulation, executing all pending actions in time-order until
   /// it finishes or is stopped.
-  static Future<void> run() async {
+  static Future<void> run() => _run();
+
+  /// Runs the simulation like [run], but pauses without ending it once there
+  /// are no more steps to execute at or before [time].
+  ///
+  /// Every tick scheduled at a timestamp less than or equal to [time] is
+  /// executed. The simulation is then left paused: [simulationEnded] is not
+  /// completed and end-of-simulation actions are not executed. [Simulator.time]
+  /// remains at the last tick that was executed, and any actions registered
+  /// for later timestamps stay pending. Call [run] or [runUntil] again to
+  /// continue, for example after performing some other activity.
+  ///
+  /// If the simulation ends before [time] is reached (for instance because of
+  /// [endSimulation], [setMaxSimTime], an exception, or running out of
+  /// steps), [runUntil] behaves the same as [run].
+  static Future<void> runUntil(int time) => _run(until: time);
+
+  static Future<void> _run({int? until}) async {
     if (simulationHasEnded) {
       throw Exception('Simulation has already been run and ended.'
           '  To run a new simulation, use Simulator.reset().');
@@ -464,7 +489,8 @@ abstract class Simulator {
     while (hasStepsRemaining() &&
         _simExceptions.isEmpty &&
         !_simulationEndRequested &&
-        (_maxSimTime < 0 || _currentTimestamp < _maxSimTime)) {
+        (_maxSimTime < 0 || _currentTimestamp < _maxSimTime) &&
+        (until == null || _hasStepsAtOrBefore(until))) {
       try {
         await tick();
       } catch (_) {
@@ -473,6 +499,15 @@ abstract class Simulator {
 
         rethrow;
       }
+    }
+
+    // paused at the requested time: leave the simulation running
+    if (until != null &&
+        hasStepsRemaining() &&
+        _simExceptions.isEmpty &&
+        !_simulationEndRequested &&
+        (_maxSimTime < 0 || _currentTimestamp < _maxSimTime)) {
+      return;
     }
 
     // initially, just log the exceptions

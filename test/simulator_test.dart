@@ -424,4 +424,45 @@ void main() {
     expect(endOfTickActionTaken, isTrue);
     expect(numStartTicks, equals(2));
   });
+
+  group('runUntil', () {
+    test('pauses without ending, then continues', () async {
+      final ran = <int>[];
+      var endActionRan = false;
+      for (final t in [10, 20, 30]) {
+        Simulator.registerAction(t, () => ran.add(t));
+      }
+      Simulator.registerEndOfSimulationAction(() => endActionRan = true);
+
+      await Simulator.runUntil(20);
+
+      expect(ran, equals([10, 20]));
+      expect(Simulator.time, equals(20));
+      expect(Simulator.simulationHasEnded, isFalse);
+      expect(endActionRan, isFalse);
+      expect(Simulator.hasStepsRemaining(), isTrue);
+
+      // other activity can happen while paused
+      Simulator.registerAction(25, () => ran.add(25));
+
+      await Simulator.runUntil(25);
+      expect(ran, equals([10, 20, 25]));
+      expect(Simulator.simulationHasEnded, isFalse);
+
+      await Simulator.run();
+      expect(ran, equals([10, 20, 25, 30]));
+      expect(Simulator.simulationHasEnded, isTrue);
+      expect(endActionRan, isTrue);
+    });
+
+    test('ends the simulation if it runs out of steps first', () async {
+      var ran = false;
+      Simulator.registerAction(10, () => ran = true);
+
+      await Simulator.runUntil(100);
+
+      expect(ran, isTrue);
+      expect(Simulator.simulationHasEnded, isTrue);
+    });
+  });
 }
